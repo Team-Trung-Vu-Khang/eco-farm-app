@@ -17,6 +17,8 @@ import PlanCreatePage from "./pages/plan/PlanCreatePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { Toaster, TooltipProvider } from "@tankhang1/eco-shared-ui";
 import BankPage from "./pages/bank/BankPage";
+import BankCreatePage from "./pages/bank/BankCreatePage";
+import BankEditPage from "./pages/bank/BankEditPage";
 import GeoZonePage from "./pages/geo-zone/GeoZonePage";
 import CultivationZonePage from "./pages/cultivation-zone/CultivationZonePage";
 import SeedPage from "./pages/seed/SeedPage";
@@ -54,6 +56,8 @@ function Router() {
       <Route path="/branch/create" component={BranchCreatePage} />
       <Route path="/branch/:id/edit" component={BranchEditPage} />
       <Route path="/bank" component={BankPage} />
+      <Route path="/bank/create" component={BankCreatePage} />
+      <Route path="/bank/:id/edit" component={BankEditPage} />
       <Route path="/contact" component={ContactPage} />
       <Route path="/department" component={DepartmentPage} />
       <Route path="/position" component={PositionPage} />
