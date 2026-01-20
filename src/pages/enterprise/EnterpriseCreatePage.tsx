@@ -7,10 +7,26 @@ import {
   Upload,
   FileText,
   Image,
-  X,
   Check,
+  Users,
+  Plus,
+  Trash2,
 } from "lucide-react";
-import { useToast } from "@tankhang1/eco-shared-ui";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  useToast,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@tankhang1/eco-shared-ui";
 import { StepperForm, type Step } from "@tankhang1/eco-shared-ui";
 import { RadioGroup, RadioGroupItem } from "@tankhang1/eco-shared-ui";
 import { Input } from "@tankhang1/eco-shared-ui";
@@ -24,17 +40,35 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@tankhang1/eco-shared-ui";
+
+interface Branch {
+  name: string;
+  taxCode: string;
+  phone: string;
+  taxAddress: string;
+  email: string;
+  address: string;
+  note: string;
+}
 
 export default function EnterpriseCreatePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
-    type: "enterprise" as "enterprise" | "farm",
+    type: "enterprise" as "enterprise" | "farm" | "cooperative",
     code: "",
     name: "",
+    brandName: "",
     taxCode: "",
+    taxAddress: "",
+    classification: "production",
     foundedDate: "",
     representative: "",
     phone: "",
@@ -45,34 +79,67 @@ export default function EnterpriseCreatePage() {
     ward: "",
     address: "",
     description: "",
-    mainProducts: [] as string[],
+    branches: [] as Branch[],
     documents: [] as { name: string; type: string; size: string }[],
   });
 
-  const [newProduct, setNewProduct] = useState("");
+  const [newBranch, setNewBranch] = useState<Branch>({
+    name: "",
+    taxCode: "",
+    phone: "",
+    taxAddress: "",
+    email: "",
+    address: "",
+    note: "",
+  });
 
-  const addProduct = () => {
-    if (newProduct.trim()) {
+  const addBranch = () => {
+    if (newBranch.name.trim()) {
       setFormData({
         ...formData,
-        mainProducts: [...formData.mainProducts, newProduct.trim()],
+        branches: [...formData.branches, newBranch],
       });
-      setNewProduct("");
+      setNewBranch({
+        name: "",
+        taxCode: "",
+        phone: "",
+        taxAddress: "",
+        email: "",
+        address: "",
+        note: "",
+      });
+    } else {
+      toast({
+        title: "Lỗi",
+        description: "Tên chi nhánh không được để trống",
+        variant: "destructive",
+      });
     }
   };
 
-  const removeProduct = (index: number) => {
+  const removeBranch = (index: number) => {
     setFormData({
       ...formData,
-      mainProducts: formData.mainProducts.filter((_, i) => i !== index),
+      branches: formData.branches.filter((_, i) => i !== index),
     });
   };
 
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
   const handleComplete = () => {
+    setShowConfirmDialog(true);
+  };
+
+  const submitForm = () => {
+    setShowConfirmDialog(false);
     toast({
       title: "Thành công",
       description: `Đã tạo ${
-        formData.type === "enterprise" ? "doanh nghiệp" : "nông hộ"
+        formData.type === "enterprise"
+          ? "doanh nghiệp"
+          : formData.type === "cooperative"
+            ? "hợp tác xã"
+            : "nông hộ"
       } "${formData.name}"`,
     });
     setLocation("/enterprise");
@@ -90,15 +157,15 @@ export default function EnterpriseCreatePage() {
               Chọn loại hình tổ chức
             </h2>
             <p className="text-muted-foreground mt-1">
-              Bạn muốn tạo doanh nghiệp hay nông hộ?
+              Bạn muốn tạo doanh nghiệp, hợp tác xã hay nông hộ?
             </p>
           </div>
           <RadioGroup
             value={formData.type}
-            onValueChange={(value: "enterprise" | "farm") =>
+            onValueChange={(value: "enterprise" | "farm" | "cooperative") =>
               setFormData({ ...formData, type: value })
             }
-            className="grid grid-cols-2 gap-4"
+            className="grid grid-cols-1 md:grid-cols-3 gap-4"
           >
             <Label
               htmlFor="enterprise"
@@ -118,14 +185,38 @@ export default function EnterpriseCreatePage() {
               </div>
               <div className="text-center">
                 <p className="font-semibold">Doanh nghiệp</p>
-                <p className="text-sm text-muted-foreground">
-                  Công ty, HTX, trang trại lớn
-                </p>
+                <p className="text-sm text-muted-foreground">Công ty lớn</p>
               </div>
               {formData.type === "enterprise" && (
                 <Check className="w-5 h-5 text-primary" />
               )}
             </Label>
+
+            <Label
+              htmlFor="cooperative"
+              className={`flex flex-col items-center gap-4 p-6 rounded-xl border-2 cursor-pointer transition-all ${
+                formData.type === "cooperative"
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:border-primary/50"
+              }`}
+            >
+              <RadioGroupItem
+                value="cooperative"
+                id="cooperative"
+                className="sr-only"
+              />
+              <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center">
+                <Users className="w-8 h-8 text-orange-600" />
+              </div>
+              <div className="text-center">
+                <p className="font-semibold">Hợp tác xã</p>
+                <p className="text-sm text-muted-foreground">HTX, tổ hợp tác</p>
+              </div>
+              {formData.type === "cooperative" && (
+                <Check className="w-5 h-5 text-primary" />
+              )}
+            </Label>
+
             <Label
               htmlFor="farm"
               className={`flex flex-col items-center gap-4 p-6 rounded-xl border-2 cursor-pointer transition-all ${
@@ -155,27 +246,69 @@ export default function EnterpriseCreatePage() {
     {
       id: "basic",
       title: "Thông tin cơ bản",
-      description: "Tên, mã, thông tin chung",
+      description: "Tên, thương hiệu, mã, thuế",
       content: (
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="code">
-                Mã {formData.type === "enterprise" ? "doanh nghiệp" : "nông hộ"}{" "}
-                *
-              </Label>
+              <Label htmlFor="code">Mã đơn vị *</Label>
               <Input
                 id="code"
                 value={formData.code}
                 onChange={(e) =>
                   setFormData({ ...formData, code: e.target.value })
                 }
-                placeholder={
-                  formData.type === "enterprise" ? "VD: DN001" : "VD: NH001"
-                }
+                placeholder="VD: DN001, HTX001..."
                 data-testid="input-code"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="classification">Phân loại</Label>
+              <Select
+                value={formData.classification}
+                onValueChange={(val) =>
+                  setFormData({ ...formData, classification: val })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn phân loại" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="production">Sản xuất</SelectItem>
+                  <SelectItem value="processing">Chế biến</SelectItem>
+                  <SelectItem value="trading">Thương mại</SelectItem>
+                  <SelectItem value="service">Dịch vụ</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="name">Tên đầy đủ *</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              placeholder="VD: Công ty TNHH ABC..."
+              data-testid="input-name"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="brandName">Tên thương hiệu</Label>
+            <Input
+              id="brandName"
+              value={formData.brandName}
+              onChange={(e) =>
+                setFormData({ ...formData, brandName: e.target.value })
+              }
+              placeholder="VD: EcoFarm..."
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="taxCode">Mã số thuế</Label>
               <Input
@@ -184,26 +317,22 @@ export default function EnterpriseCreatePage() {
                 onChange={(e) =>
                   setFormData({ ...formData, taxCode: e.target.value })
                 }
-                placeholder="Nhập mã số thuế (nếu có)"
-                data-testid="input-taxCode"
+                placeholder="Nhập mã số thuế"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="taxAddress">Địa chỉ thuế</Label>
+              <Input
+                id="taxAddress"
+                value={formData.taxAddress}
+                onChange={(e) =>
+                  setFormData({ ...formData, taxAddress: e.target.value })
+                }
+                placeholder="Địa chỉ đăng ký thuế"
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="name">
-              Tên {formData.type === "enterprise" ? "doanh nghiệp" : "nông hộ"}{" "}
-              *
-            </Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              placeholder="Nhập tên đầy đủ"
-              data-testid="input-name"
-            />
-          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="representative">Người đại diện *</Label>
@@ -214,7 +343,6 @@ export default function EnterpriseCreatePage() {
                   setFormData({ ...formData, representative: e.target.value })
                 }
                 placeholder="Họ và tên"
-                data-testid="input-representative"
               />
             </div>
             <div className="space-y-2">
@@ -226,10 +354,10 @@ export default function EnterpriseCreatePage() {
                 onChange={(e) =>
                   setFormData({ ...formData, foundedDate: e.target.value })
                 }
-                data-testid="input-foundedDate"
               />
             </div>
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="description">Mô tả</Label>
             <Textarea
@@ -240,7 +368,6 @@ export default function EnterpriseCreatePage() {
               }
               placeholder="Giới thiệu về doanh nghiệp/nông hộ"
               rows={3}
-              data-testid="input-description"
             />
           </div>
         </div>
@@ -250,7 +377,7 @@ export default function EnterpriseCreatePage() {
     {
       id: "contact",
       title: "Liên hệ",
-      description: "Điện thoại, email, website",
+      description: "Điện thoại, email, địa chỉ",
       content: (
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="grid grid-cols-2 gap-4">
@@ -263,7 +390,6 @@ export default function EnterpriseCreatePage() {
                   setFormData({ ...formData, phone: e.target.value })
                 }
                 placeholder="0901234567"
-                data-testid="input-phone"
               />
             </div>
             <div className="space-y-2">
@@ -276,7 +402,6 @@ export default function EnterpriseCreatePage() {
                   setFormData({ ...formData, email: e.target.value })
                 }
                 placeholder="contact@example.com"
-                data-testid="input-email"
               />
             </div>
           </div>
@@ -289,50 +414,71 @@ export default function EnterpriseCreatePage() {
                 setFormData({ ...formData, website: e.target.value })
               }
               placeholder="https://example.com"
-              data-testid="input-website"
             />
           </div>
           <div className="pt-4 border-t">
             <div className="flex items-center gap-2 mb-4">
               <MapPin className="w-5 h-5 text-primary" />
-              <h3 className="font-semibold">Địa chỉ</h3>
+              <h3 className="font-semibold">Địa chỉ trụ sở</h3>
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="province">Tỉnh/Thành phố *</Label>
-                <Input
-                  id="province"
+                <Select
                   value={formData.province}
-                  onChange={(e) =>
-                    setFormData({ ...formData, province: e.target.value })
+                  onValueChange={(val) =>
+                    setFormData({ ...formData, province: val })
                   }
-                  placeholder="VD: TP. Hồ Chí Minh"
-                  data-testid="input-province"
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn Tỉnh/Thành" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hcm">TP. Hồ Chí Minh</SelectItem>
+                    <SelectItem value="hn">Hà Nội</SelectItem>
+                    <SelectItem value="dn">Đà Nẵng</SelectItem>
+                    <SelectItem value="bd">Bình Dương</SelectItem>
+                    <SelectItem value="la">Long An</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="district">Quận/Huyện *</Label>
-                <Input
-                  id="district"
+                <Select
                   value={formData.district}
-                  onChange={(e) =>
-                    setFormData({ ...formData, district: e.target.value })
+                  onValueChange={(val) =>
+                    setFormData({ ...formData, district: val })
                   }
-                  placeholder="VD: Củ Chi"
-                  data-testid="input-district"
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn Quận/Huyện" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="q1">Quận 1</SelectItem>
+                    <SelectItem value="q3">Quận 3</SelectItem>
+                    <SelectItem value="cu_chi">Củ Chi</SelectItem>
+                    <SelectItem value="thu_duc">Thủ Đức</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ward">Phường/Xã</Label>
-                <Input
-                  id="ward"
+                <Select
                   value={formData.ward}
-                  onChange={(e) =>
-                    setFormData({ ...formData, ward: e.target.value })
+                  onValueChange={(val) =>
+                    setFormData({ ...formData, ward: val })
                   }
-                  placeholder="VD: Tân Phú"
-                  data-testid="input-ward"
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn Phường/Xã" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="p1">Phường 1</SelectItem>
+                    <SelectItem value="p2">Phường 2</SelectItem>
+                    <SelectItem value="tan_phu">Tân Phú</SelectItem>
+                    <SelectItem value="tan_phong">Tân Phong</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="space-y-2 mt-4">
@@ -344,7 +490,6 @@ export default function EnterpriseCreatePage() {
                   setFormData({ ...formData, address: e.target.value })
                 }
                 placeholder="Số nhà, đường, ấp..."
-                data-testid="input-address"
               />
             </div>
           </div>
@@ -353,53 +498,252 @@ export default function EnterpriseCreatePage() {
       isValid: formData.phone.length > 0 && formData.email.length > 0,
     },
     {
-      id: "products",
-      title: "Sản phẩm chính",
-      description: "Cây trồng, sản phẩm",
+      id: "branches",
+      title: "Chi nhánh",
+      description: "Quản lý chi nhánh",
       content: (
-        <div className="max-w-2xl mx-auto space-y-6">
-          <div className="text-center mb-4">
-            <h3 className="font-semibold">Sản phẩm/Cây trồng chính</h3>
-            <p className="text-sm text-muted-foreground">
-              Thêm các sản phẩm chính mà bạn sản xuất
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Input
-              value={newProduct}
-              onChange={(e) => setNewProduct(e.target.value)}
-              placeholder="VD: Sầu riêng, Xoài, Bưởi..."
-              onKeyDown={(e) =>
-                e.key === "Enter" && (e.preventDefault(), addProduct())
-              }
-              data-testid="input-new-product"
-            />
-            <Button onClick={addProduct} data-testid="add-product">
-              Thêm
-            </Button>
-          </div>
-          <div className="flex flex-wrap gap-2 min-h-[100px] p-4 border border-dashed rounded-lg">
-            {formData.mainProducts.length === 0 ? (
-              <p className="text-muted-foreground text-sm w-full text-center">
-                Chưa có sản phẩm nào. Nhập tên và nhấn "Thêm".
-              </p>
+        <div className="max-w-4xl mx-auto space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-medium flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-primary" />
+                Quản lý chi nhánh
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="create" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="select">Chọn từ danh sách</TabsTrigger>
+                  <TabsTrigger value="create">Tạo mới</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="select" className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Chọn chi nhánh có sẵn</Label>
+                    <Select
+                      onValueChange={(val) => {
+                        const selected = [
+                          {
+                            name: "Chi nhánh Miền Bắc",
+                            taxCode: "0101234567-001",
+                            phone: "02412345678",
+                            email: "bac@enterprise.com",
+                            address: "Hoàn Kiếm, Hà Nội",
+                            taxAddress: "Hoàn Kiếm, Hà Nội",
+                            note: "Văn phòng đại diện",
+                          },
+                          {
+                            name: "Chi nhánh Miền Trung",
+                            taxCode: "0101234567-002",
+                            phone: "02361234567",
+                            email: "trung@enterprise.com",
+                            address: "Hải Châu, Đà Nẵng",
+                            taxAddress: "Hải Châu, Đà Nẵng",
+                            note: "Kho vận",
+                          },
+                        ].find((b) => b.name === val);
+                        if (selected) {
+                          setNewBranch(selected);
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn chi nhánh..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Chi nhánh Miền Bắc">
+                          Chi nhánh Miền Bắc
+                        </SelectItem>
+                        <SelectItem value="Chi nhánh Miền Trung">
+                          Chi nhánh Miền Trung
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {newBranch.name && (
+                    <div className="bg-muted/50 p-4 rounded-lg border text-sm space-y-2">
+                      <p>
+                        <strong>Mã số thuế:</strong> {newBranch.taxCode}
+                      </p>
+                      <p>
+                        <strong>Địa chỉ:</strong> {newBranch.address}
+                      </p>
+                      <Button onClick={addBranch} className="w-full mt-2">
+                        Thêm chi nhánh này
+                      </Button>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="create" className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Tên chi nhánh *</Label>
+                      <Input
+                        value={newBranch.name}
+                        onChange={(e) =>
+                          setNewBranch({ ...newBranch, name: e.target.value })
+                        }
+                        placeholder="Nhập tên chi nhánh"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Mã số thuế</Label>
+                      <Input
+                        value={newBranch.taxCode}
+                        onChange={(e) =>
+                          setNewBranch({
+                            ...newBranch,
+                            taxCode: e.target.value,
+                          })
+                        }
+                        placeholder="MST chi nhánh"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Số điện thoại</Label>
+                      <Input
+                        value={newBranch.phone}
+                        onChange={(e) =>
+                          setNewBranch({ ...newBranch, phone: e.target.value })
+                        }
+                        placeholder="SĐT chi nhánh"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Email</Label>
+                      <Input
+                        value={newBranch.email}
+                        onChange={(e) =>
+                          setNewBranch({ ...newBranch, email: e.target.value })
+                        }
+                        placeholder="Email chi nhánh"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Địa chỉ thuế</Label>
+                      <Input
+                        value={newBranch.taxAddress}
+                        onChange={(e) =>
+                          setNewBranch({
+                            ...newBranch,
+                            taxAddress: e.target.value,
+                          })
+                        }
+                        placeholder="Địa chỉ đăng ký thuế"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Địa chỉ chi nhánh</Label>
+                      <Input
+                        value={newBranch.address}
+                        onChange={(e) =>
+                          setNewBranch({
+                            ...newBranch,
+                            address: e.target.value,
+                          })
+                        }
+                        placeholder="Địa chỉ hoạt động"
+                      />
+                    </div>
+                    <div className="col-span-2 space-y-2">
+                      <Label>Ghi chú</Label>
+                      <Textarea
+                        value={newBranch.note}
+                        onChange={(e) =>
+                          setNewBranch({ ...newBranch, note: e.target.value })
+                        }
+                        placeholder="Ghi chú thêm..."
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                  <Button onClick={addBranch} className="w-full">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Thêm chi nhánh mới
+                  </Button>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+
+          <div className="space-y-4">
+            <h4 className="font-semibold text-lg flex items-center justify-between">
+              Danh sách chi nhánh
+              <Badge variant="secondary">{formData.branches.length}</Badge>
+            </h4>
+
+            {formData.branches.length === 0 ? (
+              <div className="text-center py-12 border-2 border-dashed rounded-xl bg-muted/10">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                  <Building2 className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground font-medium">
+                  Chưa có chi nhánh nào được thêm
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Vui lòng thêm chi nhánh từ form bên trên
+                </p>
+              </div>
             ) : (
-              formData.mainProducts.map((product, index) => (
-                <Badge
-                  key={index}
-                  variant="secondary"
-                  className="text-sm py-1.5 px-3 gap-2"
-                >
-                  {product}
-                  <button
-                    onClick={() => removeProduct(index)}
-                    className="hover:text-destructive"
-                    data-testid={`remove-product-${index}`}
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </Badge>
-              ))
+              <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/40">
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                        Tên chi nhánh
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                        Mã số thuế
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                        Liên hệ
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                        Địa chỉ
+                      </th>
+                      <th className="text-right py-3 px-4 font-medium text-muted-foreground">
+                        Thao tác
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {formData.branches.map((branch, index) => (
+                      <tr
+                        key={index}
+                        className="border-b last:border-0 hover:bg-muted/10 transition-colors"
+                      >
+                        <td className="py-3 px-4 font-medium">{branch.name}</td>
+                        <td className="py-3 px-4">{branch.taxCode || "-"}</td>
+                        <td className="py-3 px-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs">{branch.phone}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {branch.email}
+                            </span>
+                          </div>
+                        </td>
+                        <td
+                          className="py-3 px-4 max-w-[200px] truncate"
+                          title={branch.address}
+                        >
+                          {branch.address || "-"}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            onClick={() => removeBranch(index)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>
@@ -480,64 +824,111 @@ export default function EnterpriseCreatePage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Building2 className="w-4 h-4" />
-                Thông tin{" "}
-                {formData.type === "enterprise" ? "doanh nghiệp" : "nông hộ"}
+                Thông tin chung
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Loại hình:</span>
-                <Badge>
-                  {formData.type === "enterprise" ? "Doanh nghiệp" : "Nông hộ"}
-                </Badge>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Mã:</span>
-                <span className="font-medium">{formData.code || "-"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tên:</span>
-                <span className="font-medium">{formData.name || "-"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Người đại diện:</span>
-                <span>{formData.representative || "-"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Điện thoại:</span>
-                <span>{formData.phone || "-"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Email:</span>
-                <span>{formData.email || "-"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Địa chỉ:</span>
-                <span className="text-right max-w-[200px]">
-                  {[
-                    formData.address,
-                    formData.ward,
-                    formData.district,
-                    formData.province,
-                  ]
-                    .filter(Boolean)
-                    .join(", ") || "-"}
-                </span>
-              </div>
-              {formData.mainProducts.length > 0 && (
-                <div className="pt-2 border-t">
-                  <span className="text-muted-foreground">Sản phẩm chính:</span>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {formData.mainProducts.map((p, i) => (
-                      <Badge key={i} variant="secondary">
-                        {p}
-                      </Badge>
-                    ))}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Loại hình:</span>
+                    <Badge>
+                      {formData.type === "enterprise"
+                        ? "Doanh nghiệp"
+                        : formData.type === "cooperative"
+                          ? "Hợp tác xã"
+                          : "Nông hộ"}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Phân loại:</span>
+                    <span className="font-medium capitalize">
+                      {formData.classification}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Mã đơn vị:</span>
+                    <span className="font-medium">{formData.code || "-"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tên đầy đủ:</span>
+                    <span className="font-medium">{formData.name || "-"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Thương hiệu:</span>
+                    <span className="font-medium">
+                      {formData.brandName || "-"}
+                    </span>
                   </div>
                 </div>
-              )}
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Mã số thuế:</span>
+                    <span>{formData.taxCode || "-"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Địa chỉ thuế:</span>
+                    <span className="text-right max-w-[150px] truncate">
+                      {formData.taxAddress || "-"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Đại diện:</span>
+                    <span>{formData.representative || "-"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Điện thoại:</span>
+                    <span>{formData.phone || "-"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Email:</span>
+                    <span className="truncate max-w-[150px]">
+                      {formData.email || "-"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="pt-2 border-t mt-2">
+                <span className="text-muted-foreground block mb-1">
+                  Địa chỉ trụ sở:
+                </span>
+                <span className="font-medium">
+                  {formData.address}
+                  {formData.ward && `, ${formData.ward}`}
+                  {formData.district && `, ${formData.district}`}
+                  {formData.province && `, ${formData.province}`}
+                </span>
+              </div>
             </CardContent>
           </Card>
+
+          {formData.branches.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  Danh sách chi nhánh ({formData.branches.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {formData.branches.map((branch, i) => (
+                  <div
+                    key={i}
+                    className="p-3 bg-muted/30 rounded border border-border text-sm"
+                  >
+                    <div className="font-bold">{branch.name}</div>
+                    <div className="grid grid-cols-2 gap-2 mt-2 text-muted-foreground">
+                      <div>MST: {branch.taxCode || "-"}</div>
+                      <div>SĐT: {branch.phone || "-"}</div>
+                      <div className="col-span-2">
+                        Đ/c: {branch.address || "-"}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </div>
       ),
     },
@@ -546,7 +937,11 @@ export default function EnterpriseCreatePage() {
   return (
     <AdminLayout
       title={`Tạo mới ${
-        formData.type === "enterprise" ? "Doanh nghiệp" : "Nông hộ"
+        formData.type === "enterprise"
+          ? "Doanh nghiệp"
+          : formData.type === "cooperative"
+            ? "Hợp tác xã"
+            : "Nông hộ"
       }`}
       description="Điền thông tin theo từng bước để tạo mới"
     >
@@ -560,6 +955,28 @@ export default function EnterpriseCreatePage() {
           />
         </CardContent>
       </Card>
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận tạo mới</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn tạo mới{" "}
+              {formData.type === "enterprise"
+                ? "doanh nghiệp"
+                : formData.type === "cooperative"
+                  ? "hợp tác xã"
+                  : "nông hộ"}{" "}
+              "{formData.name}" không?
+              <br />
+              Thông tin đã nhập sẽ được lưu vào hệ thống.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={submitForm}>Xác nhận</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }
