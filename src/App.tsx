@@ -4,6 +4,8 @@ import TerrainPage from "./pages/terrain/TerrainPage";
 
 import EnterprisePage from "./pages/enterprise/EnterprisePage";
 import EnterpriseCreatePage from "./pages/enterprise/EnterpriseCreatePage";
+import EnterpriseDetailPage from "./pages/enterprise/EnterpriseDetailPage";
+import EnterpriseEditPage from "./pages/enterprise/EnterpriseEditPage";
 import CropPage from "./pages/crop/CropPage";
 import CropCreatePage from "./pages/crop/CropCreatePage";
 import PesticidePage from "./pages/pesticide/PesticidePage";
@@ -44,6 +46,8 @@ function Router() {
       <Route path="/certificate" component={CertificatePage} />
       <Route path="/enterprise" component={EnterprisePage} />
       <Route path="/enterprise/create" component={EnterpriseCreatePage} />
+      <Route path="/enterprise/:id" component={EnterpriseDetailPage} />
+      <Route path="/enterprise/:id/edit" component={EnterpriseEditPage} />
       <Route path="/branch" component={BranchPage} />
       <Route path="/bank" component={BankPage} />
       <Route path="/contact" component={ContactPage} />
