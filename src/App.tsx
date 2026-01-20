@@ -28,9 +28,16 @@ import LandPage from "./pages/land/LandPage";
 import FarmingMethodPage from "./pages/farming-method/FarmingMethodPage";
 import CertificatePage from "./pages/certificate/CertificatePage";
 import ContactPage from "./pages/contact/ContactPage";
+import ContactCreatePage from "./pages/contact/ContactCreatePage";
+import ContactEditPage from "./pages/contact/ContactEditPage";
 import DepartmentPage from "./pages/department/DepartmentPage";
 import PositionPage from "./pages/position/PositionPage";
+import PersonnelPage from "./pages/personnel/PersonnelPage";
+import PersonnelCreatePage from "./pages/personnel/PersonnelCreatePage";
+import PersonnelEditPage from "./pages/personnel/PersonnelEditPage";
 import TeamPage from "./pages/team/TeamPage";
+import TeamCreatePage from "./pages/team/TeamCreatePage";
+import TeamDetailPage from "./pages/team/TeamDetailPage";
 import VarietyPage from "./pages/variety/VarietyPage";
 import MaterialPage from "./pages/material/MaterialPage";
 import FertilizerPage from "./pages/fertilizer/FertilizerPage";
@@ -59,9 +66,16 @@ function Router() {
       <Route path="/bank/create" component={BankCreatePage} />
       <Route path="/bank/:id/edit" component={BankEditPage} />
       <Route path="/contact" component={ContactPage} />
+      <Route path="/contact/create" component={ContactCreatePage} />
+      <Route path="/contact/:id/edit" component={ContactEditPage} />
       <Route path="/department" component={DepartmentPage} />
       <Route path="/position" component={PositionPage} />
+      <Route path="/personnel" component={PersonnelPage} />
+      <Route path="/personnel/create" component={PersonnelCreatePage} />
+      <Route path="/personnel/:id/edit" component={PersonnelEditPage} />
       <Route path="/team" component={TeamPage} />
+      <Route path="/team/create" component={TeamCreatePage} />
+      <Route path="/team/:id" component={TeamDetailPage} />
       <Route path="/geo-zone" component={GeoZonePage} />
       <Route path="/cultivation-zone" component={CultivationZonePage} />
       <Route path="/crop" component={CropPage} />
