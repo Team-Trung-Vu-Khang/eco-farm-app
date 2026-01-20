@@ -6,6 +6,9 @@ import EnterprisePage from "./pages/enterprise/EnterprisePage";
 import EnterpriseCreatePage from "./pages/enterprise/EnterpriseCreatePage";
 import EnterpriseDetailPage from "./pages/enterprise/EnterpriseDetailPage";
 import EnterpriseEditPage from "./pages/enterprise/EnterpriseEditPage";
+import BranchPage from "./pages/branch/BranchPage";
+import BranchCreatePage from "./pages/branch/BranchCreatePage";
+import BranchEditPage from "./pages/branch/BranchEditPage";
 import CropPage from "./pages/crop/CropPage";
 import CropCreatePage from "./pages/crop/CropCreatePage";
 import PesticidePage from "./pages/pesticide/PesticidePage";
@@ -22,7 +25,6 @@ import SeasonPage from "./pages/season/SeasonPage";
 import LandPage from "./pages/land/LandPage";
 import FarmingMethodPage from "./pages/farming-method/FarmingMethodPage";
 import CertificatePage from "./pages/certificate/CertificatePage";
-import BranchPage from "./pages/branch/BranchPage";
 import ContactPage from "./pages/contact/ContactPage";
 import DepartmentPage from "./pages/department/DepartmentPage";
 import PositionPage from "./pages/position/PositionPage";
@@ -49,6 +51,8 @@ function Router() {
       <Route path="/enterprise/:id" component={EnterpriseDetailPage} />
       <Route path="/enterprise/:id/edit" component={EnterpriseEditPage} />
       <Route path="/branch" component={BranchPage} />
+      <Route path="/branch/create" component={BranchCreatePage} />
+      <Route path="/branch/:id/edit" component={BranchEditPage} />
       <Route path="/bank" component={BankPage} />
       <Route path="/contact" component={ContactPage} />
       <Route path="/department" component={DepartmentPage} />
