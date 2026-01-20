@@ -29,6 +29,7 @@ interface Enterprise {
   code: string;
   name: string;
   type: "enterprise" | "farm";
+  classification: "production" | "processing" | "trading" | "service";
   taxCode: string;
   address: string;
   phone: string;
@@ -43,6 +44,7 @@ const initialData: Enterprise[] = [
     code: "DN001",
     name: "Công ty TNHH Nông nghiệp Xanh",
     type: "enterprise",
+    classification: "production",
     taxCode: "0123456789",
     address: "123 Đường ABC, Quận 1, TP.HCM",
     phone: "0901234567",
@@ -55,6 +57,7 @@ const initialData: Enterprise[] = [
     code: "NH001",
     name: "Nông hộ Nguyễn Văn A",
     type: "farm",
+    classification: "production",
     taxCode: "",
     address: "Ấp 1, Xã Tân Phú, Huyện Củ Chi",
     phone: "0912345678",
@@ -67,6 +70,7 @@ const initialData: Enterprise[] = [
     code: "DN002",
     name: "HTX Nông sản Sạch Bình Dương",
     type: "enterprise",
+    classification: "trading",
     taxCode: "0987654321",
     address: "456 Đường XYZ, TP. Thủ Dầu Một, Bình Dương",
     phone: "0923456789",
@@ -79,6 +83,7 @@ const initialData: Enterprise[] = [
     code: "NH002",
     name: "Trang trại Trần Thị B",
     type: "farm",
+    classification: "processing",
     taxCode: "",
     address: "Ấp 3, Xã Long An, Huyện Long Thành",
     phone: "0934567890",
@@ -91,6 +96,7 @@ const initialData: Enterprise[] = [
     code: "DN003",
     name: "Công ty CP Xuất khẩu Trái cây Việt",
     type: "enterprise",
+    classification: "trading",
     taxCode: "1122334455",
     address: "789 Đường DEF, Quận Bình Thạnh, TP.HCM",
     phone: "0945678901",
@@ -111,6 +117,11 @@ export default function EnterprisePage() {
     code: "",
     name: "",
     type: "enterprise" as "enterprise" | "farm",
+    classification: "production" as
+      | "production"
+      | "processing"
+      | "trading"
+      | "service",
     taxCode: "",
     address: "",
     phone: "",
@@ -129,8 +140,22 @@ export default function EnterprisePage() {
         </Badge>
       ),
     },
+    {
+      key: "classification",
+      label: "Phân loại",
+      render: (value) => {
+        const labels: Record<string, string> = {
+          production: "Sản xuất",
+          processing: "Chế biến",
+          trading: "Thương mại",
+          service: "Dịch vụ",
+        };
+        return labels[value] || value;
+      },
+    },
     { key: "phone", label: "Điện thoại" },
     { key: "email", label: "Email" },
+    { key: "address", label: "Địa chỉ" },
     {
       key: "status",
       label: "Trạng thái",
@@ -142,12 +167,34 @@ export default function EnterprisePage() {
     },
   ];
 
+  const filters = [
+    {
+      key: "type",
+      label: "Loại hình",
+      options: [
+        { label: "Doanh nghiệp", value: "enterprise" },
+        { label: "Nông hộ", value: "farm" },
+      ],
+    },
+    {
+      key: "classification",
+      label: "Phân loại",
+      options: [
+        { label: "Sản xuất", value: "production" },
+        { label: "Chế biến", value: "processing" },
+        { label: "Thương mại", value: "trading" },
+        { label: "Dịch vụ", value: "service" },
+      ],
+    },
+  ];
+
   const handleAdd = () => {
     setEditItem(null);
     setFormData({
       code: "",
       name: "",
       type: "enterprise",
+      classification: "production",
       taxCode: "",
       address: "",
       phone: "",
@@ -162,6 +209,7 @@ export default function EnterprisePage() {
       code: item.code,
       name: item.name,
       type: item.type,
+      classification: item.classification,
       taxCode: item.taxCode,
       address: item.address,
       phone: item.phone,
@@ -179,8 +227,8 @@ export default function EnterprisePage() {
     if (editItem) {
       setData((prev) =>
         prev.map((item) =>
-          item.id === editItem.id ? { ...item, ...formData } : item
-        )
+          item.id === editItem.id ? { ...item, ...formData } : item,
+        ),
       );
       toast({ title: "Thành công", description: "Đã cập nhật thông tin" });
     } else {
@@ -232,6 +280,7 @@ export default function EnterprisePage() {
         onEdit={handleEdit}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm doanh nghiệp/nông hộ..."
+        filters={filters}
         selectable
       />
 
@@ -279,6 +328,27 @@ export default function EnterprisePage() {
                 </Select>
               </div>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="classification">Phân loại</Label>
+              <Select
+                value={formData.classification}
+                onValueChange={(value: any) =>
+                  setFormData({ ...formData, classification: value })
+                }
+              >
+                <SelectTrigger data-testid="select-classification">
+                  <SelectValue placeholder="Chọn phân loại" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="production">Sản xuất</SelectItem>
+                  <SelectItem value="processing">Chế biến</SelectItem>
+                  <SelectItem value="trading">Thương mại</SelectItem>
+                  <SelectItem value="service">Dịch vụ</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="name">Tên doanh nghiệp / Nông hộ</Label>
               <Input
