@@ -21,6 +21,20 @@ import BankCreatePage from "./pages/bank/BankCreatePage";
 import BankEditPage from "./pages/bank/BankEditPage";
 import GeoZonePage from "./pages/geo-zone/GeoZonePage";
 import CultivationZonePage from "./pages/cultivation-zone/CultivationZonePage";
+
+// Region Chart Pages
+import RegionDistributionPage from "./pages/region-chart/RegionDistributionPage";
+import AreaDistributionPage from "./pages/region-chart/AreaDistributionPage";
+import PlotDistributionPage from "./pages/region-chart/PlotDistributionPage";
+import MapViewPage from "./pages/region-chart/MapViewPage";
+
+// Cultivation Zone Sub-pages
+import CultivationAreaPage from "./pages/cultivation-zone/CultivationAreaPage";
+import DistributionDetailPage from "./pages/cultivation-zone/DistributionDetailPage";
+import DistributionDetailV2Page from "./pages/cultivation-zone/DistributionDetailV2Page";
+import SearchCropPage from "./pages/cultivation-zone/SearchCropPage";
+import SearchZonePage from "./pages/cultivation-zone/SearchZonePage";
+
 import SeedPage from "./pages/seed/SeedPage";
 import GrowthCyclePage from "./pages/growth-cycle/GrowthCyclePage";
 import SeasonPage from "./pages/season/SeasonPage";
@@ -76,8 +90,27 @@ function Router() {
       <Route path="/team" component={TeamPage} />
       <Route path="/team/create" component={TeamCreatePage} />
       <Route path="/team/:id" component={TeamDetailPage} />
+
+      {/* Old routes kept for safety, though removed from sidebar */}
       <Route path="/geo-zone" component={GeoZonePage} />
       <Route path="/cultivation-zone" component={CultivationZonePage} />
+
+      {/* Region Chart Routes */}
+      <Route path="/region-distribution" component={RegionDistributionPage} />
+      <Route path="/area-distribution" component={AreaDistributionPage} />
+      <Route path="/plot-distribution" component={PlotDistributionPage} />
+      <Route path="/map-view" component={MapViewPage} />
+
+      {/* Cultivation Zone Sub-Routes */}
+      <Route path="/cultivation-area" component={CultivationAreaPage} />
+      <Route path="/distribution-detail" component={DistributionDetailPage} />
+      <Route
+        path="/distribution-detail-v2"
+        component={DistributionDetailV2Page}
+      />
+      <Route path="/search-crop" component={SearchCropPage} />
+      <Route path="/search-zone" component={SearchZonePage} />
+
       <Route path="/crop" component={CropPage} />
       <Route path="/crop/create" component={CropCreatePage} />
       <Route path="/variety" component={VarietyPage} />
