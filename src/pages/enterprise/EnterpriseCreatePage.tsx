@@ -11,6 +11,7 @@ import {
   Users,
   Plus,
   Trash2,
+  CreditCard,
 } from "lucide-react";
 import {
   Tabs,
@@ -57,6 +58,14 @@ interface Branch {
   note: string;
 }
 
+interface BankAccount {
+  bankName: string;
+  accountHolder: string;
+  accountNumber: string;
+  branch: string;
+  note: string;
+}
+
 export default function EnterpriseCreatePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -80,7 +89,16 @@ export default function EnterpriseCreatePage() {
     address: "",
     description: "",
     branches: [] as Branch[],
+    bankAccounts: [] as BankAccount[],
     documents: [] as { name: string; type: string; size: string }[],
+  });
+
+  const [newBankAccount, setNewBankAccount] = useState<BankAccount>({
+    bankName: "",
+    accountHolder: "",
+    accountNumber: "",
+    branch: "",
+    note: "",
   });
 
   const [newBranch, setNewBranch] = useState<Branch>({
@@ -121,6 +139,35 @@ export default function EnterpriseCreatePage() {
     setFormData({
       ...formData,
       branches: formData.branches.filter((_, i) => i !== index),
+    });
+  };
+
+  const addBankAccount = () => {
+    if (newBankAccount.bankName && newBankAccount.accountNumber) {
+      setFormData({
+        ...formData,
+        bankAccounts: [...formData.bankAccounts, newBankAccount],
+      });
+      setNewBankAccount({
+        bankName: "",
+        accountHolder: "",
+        accountNumber: "",
+        branch: "",
+        note: "",
+      });
+    } else {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng nhập tên ngân hàng và số tài khoản",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const removeBankAccount = (index: number) => {
+    setFormData({
+      ...formData,
+      bankAccounts: formData.bankAccounts.filter((_, i) => i !== index),
     });
   };
 
@@ -750,6 +797,251 @@ export default function EnterpriseCreatePage() {
       ),
     },
     {
+      id: "bank",
+      title: "Ngân hàng",
+      description: "Tài khoản thanh toán",
+      content: (
+        <div className="max-w-4xl mx-auto space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-medium flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-primary" />
+                Quản lý tài khoản ngân hàng
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="create" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="select">Chọn từ danh sách</TabsTrigger>
+                  <TabsTrigger value="create">Tạo mới</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="select" className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Chọn tài khoản mẫu</Label>
+                    <Select
+                      onValueChange={(val) => {
+                        const selected = [
+                          {
+                            bankName:
+                              "Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)",
+                            accountHolder: "ECOFARM CORP",
+                            accountNumber: "0011001234567",
+                            branch: "Sở Giao Dịch",
+                            note: "Tài khoản chính",
+                          },
+                          {
+                            bankName: "Ngân hàng TMCP Quân Đội (MBBank)",
+                            accountHolder: "NGUYEN VAN A",
+                            accountNumber: "88889999",
+                            branch: "Hoàn Kiếm",
+                            note: "Tài khoản cá nhân",
+                          },
+                        ].find((b) => b.bankName === val);
+                        if (selected) {
+                          setNewBankAccount(selected);
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn tài khoản..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)">
+                          Vietcombank - ECOFARM CORP
+                        </SelectItem>
+                        <SelectItem value="Ngân hàng TMCP Quân Đội (MBBank)">
+                          MBBank - NGUYEN VAN A
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {newBankAccount.bankName && (
+                    <div className="bg-muted/50 p-4 rounded-lg border text-sm space-y-2">
+                      <p>
+                        <strong>Số tài khoản:</strong>{" "}
+                        {newBankAccount.accountNumber}
+                      </p>
+                      <p>
+                        <strong>Chủ tài khoản:</strong>{" "}
+                        {newBankAccount.accountHolder}
+                      </p>
+                      <Button onClick={addBankAccount} className="w-full mt-2">
+                        Thêm tài khoản này
+                      </Button>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="create" className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2 col-span-2">
+                      <Label>Ngân hàng *</Label>
+                      <Select
+                        value={newBankAccount.bankName}
+                        onValueChange={(val) =>
+                          setNewBankAccount({
+                            ...newBankAccount,
+                            bankName: val,
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Chọn ngân hàng" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Vietcombank">
+                            Vietcombank
+                          </SelectItem>
+                          <SelectItem value="VietinBank">VietinBank</SelectItem>
+                          <SelectItem value="BIDV">BIDV</SelectItem>
+                          <SelectItem value="Agribank">Agribank</SelectItem>
+                          <SelectItem value="MBBank">MBBank</SelectItem>
+                          <SelectItem value="Techcombank">
+                            Techcombank
+                          </SelectItem>
+                          <SelectItem value="ACB">ACB</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Số tài khoản *</Label>
+                      <Input
+                        value={newBankAccount.accountNumber}
+                        onChange={(e) =>
+                          setNewBankAccount({
+                            ...newBankAccount,
+                            accountNumber: e.target.value,
+                          })
+                        }
+                        placeholder="Nhập số tài khoản"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Chủ tài khoản</Label>
+                      <Input
+                        value={newBankAccount.accountHolder}
+                        onChange={(e) =>
+                          setNewBankAccount({
+                            ...newBankAccount,
+                            accountHolder: e.target.value.toUpperCase(),
+                          })
+                        }
+                        placeholder="TÊN CHỦ TÀI KHOẢN"
+                      />
+                    </div>
+                    <div className="space-y-2 col-span-2">
+                      <Label>Chi nhánh ngân hàng</Label>
+                      <Input
+                        value={newBankAccount.branch}
+                        onChange={(e) =>
+                          setNewBankAccount({
+                            ...newBankAccount,
+                            branch: e.target.value,
+                          })
+                        }
+                        placeholder="VD: CN Hoàn Kiếm"
+                      />
+                    </div>
+                    <div className="col-span-2 space-y-2">
+                      <Label>Ghi chú</Label>
+                      <Textarea
+                        value={newBankAccount.note}
+                        onChange={(e) =>
+                          setNewBankAccount({
+                            ...newBankAccount,
+                            note: e.target.value,
+                          })
+                        }
+                        placeholder="Ghi chú thêm..."
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                  <Button onClick={addBankAccount} className="w-full">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Thêm tài khoản
+                  </Button>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+
+          <div className="space-y-4">
+            <h4 className="font-semibold text-lg flex items-center justify-between">
+              Danh sách tài khoản
+              <Badge variant="secondary">{formData.bankAccounts.length}</Badge>
+            </h4>
+
+            {formData.bankAccounts.length === 0 ? (
+              <div className="text-center py-12 border-2 border-dashed rounded-xl bg-muted/10">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                  <CreditCard className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground font-medium">
+                  Chưa có tài khoản nào được thêm
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Vui lòng thêm tài khoản từ form bên trên
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/40">
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                        Ngân hàng
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                        Số tài khoản
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                        Chủ tài khoản
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                        Chi nhánh
+                      </th>
+                      <th className="text-right py-3 px-4 font-medium text-muted-foreground">
+                        Thao tác
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {formData.bankAccounts.map((acc, index) => (
+                      <tr
+                        key={index}
+                        className="border-b last:border-0 hover:bg-muted/10 transition-colors"
+                      >
+                        <td className="py-3 px-4 font-medium">
+                          {acc.bankName}
+                        </td>
+                        <td className="py-3 px-4 font-mono">
+                          {acc.accountNumber}
+                        </td>
+                        <td className="py-3 px-4">{acc.accountHolder}</td>
+                        <td className="py-3 px-4">{acc.branch || "-"}</td>
+                        <td className="py-3 px-4 text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            onClick={() => removeBankAccount(index)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
       id: "documents",
       title: "Tài liệu",
       description: "Giấy phép, chứng chỉ",
@@ -901,6 +1193,34 @@ export default function EnterpriseCreatePage() {
               </div>
             </CardContent>
           </Card>
+
+          {formData.bankAccounts.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <CreditCard className="w-4 h-4" />
+                  Tài khoản ngân hàng ({formData.bankAccounts.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {formData.bankAccounts.map((acc, i) => (
+                  <div
+                    key={i}
+                    className="p-3 bg-muted/30 rounded border border-border text-sm"
+                  >
+                    <div className="font-bold flex justify-between">
+                      <span>{acc.bankName}</span>
+                      <span className="font-mono">{acc.accountNumber}</span>
+                    </div>
+                    <div className="text-muted-foreground mt-1 flex justify-between">
+                      <span>Chủ TK: {acc.accountHolder}</span>
+                      {acc.branch && <span>CN: {acc.branch}</span>}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           {formData.branches.length > 0 && (
             <Card>

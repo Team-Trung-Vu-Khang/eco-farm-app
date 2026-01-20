@@ -44,6 +44,14 @@ interface Branch {
   note: string;
 }
 
+interface BankAccount {
+  bankName: string;
+  accountHolder: string;
+  accountNumber: string;
+  branch: string;
+  note: string;
+}
+
 export default function EnterpriseDetailPage() {
   const [, params] = useRoute("/enterprise/:id");
   const [, setLocation] = useLocation();
@@ -83,6 +91,22 @@ export default function EnterpriseDetailPage() {
             email: "hcm@ecofarm.vn",
             address: "Số 456 Nguyễn Thị Minh Khai, Q1",
             note: "Văn phòng đại diện phía Nam",
+          },
+        ],
+        bankAccounts: [
+          {
+            bankName: "Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)",
+            accountHolder: "ECOFARM CORP",
+            accountNumber: "0011001234567",
+            branch: "Sở Giao Dịch",
+            note: "Tài khoản chính",
+          },
+          {
+            bankName: "Ngân hàng TMCP Quân Đội (MBBank)",
+            accountHolder: "NGUYEN VAN A",
+            accountNumber: "88889999",
+            branch: "Hoàn Kiếm",
+            note: "Tài khoản cá nhân",
           },
         ],
         documents: [
@@ -269,6 +293,12 @@ export default function EnterpriseDetailPage() {
                 Chi nhánh ({data.branches.length})
               </TabsTrigger>
               <TabsTrigger
+                value="bankAccounts"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-3"
+              >
+                Ngân hàng ({data.bankAccounts?.length || 0})
+              </TabsTrigger>
+              <TabsTrigger
                 value="documents"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-3"
               >
@@ -380,6 +410,64 @@ export default function EnterpriseDetailPage() {
                             </span>
                             <div className="font-medium mt-0.5 max-w-full truncate">
                               {branch.note || "-"}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="bankAccounts" className="m-0">
+                <div className="grid gap-4">
+                  {data.bankAccounts?.map((account: BankAccount, i: number) => (
+                    <Card key={i}>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                              <CreditCard className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-lg">
+                                {account.bankName}
+                              </h3>
+                              <p className="text-sm text-muted-foreground font-mono">
+                                {account.accountNumber}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className="text-green-600 bg-green-50"
+                          >
+                            Hoạt động
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm bg-muted/30 p-4 rounded-lg">
+                          <div>
+                            <span className="text-muted-foreground">
+                              Chủ tài khoản:
+                            </span>
+                            <div className="font-medium mt-0.5 uppercase">
+                              {account.accountHolder}
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">
+                              Chi nhánh:
+                            </span>
+                            <div className="font-medium mt-0.5">
+                              {account.branch || "-"}
+                            </div>
+                          </div>
+                          <div className="col-span-2">
+                            <span className="text-muted-foreground">
+                              Ghi chú:
+                            </span>
+                            <div className="font-medium mt-0.5">
+                              {account.note || "-"}
                             </div>
                           </div>
                         </div>
