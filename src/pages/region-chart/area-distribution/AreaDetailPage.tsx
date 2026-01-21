@@ -1,0 +1,248 @@
+import { useLocation, useRoute } from "wouter";
+import {
+  AdminLayout,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Badge,
+} from "@tankhang1/eco-shared-ui";
+import { ChevronLeft, Edit, MapPin } from "lucide-react";
+import { MapContainer, TileLayer, Rectangle, Tooltip } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+import {
+  MOCK_AREAS,
+  MOCK_REGIONS,
+  LAND_TYPES,
+  TERRAIN_TYPES,
+} from "../constants";
+import { MapController } from "../components/DraggableRectangle";
+
+const AreaDetailPage = () => {
+  const [, setLocation] = useLocation();
+  const [match, params] = useRoute("/area-distribution/detail/:id");
+  const id = match && params?.id ? parseInt(params.id) : null;
+
+  const areaData = MOCK_AREAS.find((a) => a.id === id);
+  const regionData = areaData
+    ? MOCK_REGIONS.find((r) => r.id === areaData.regionId)
+    : null;
+
+  if (!areaData) {
+    return (
+      <AdminLayout
+        title="Chi tiết khu vực"
+        description="Không tìm thấy thông tin khu vực"
+        actions={
+          <Button
+            variant="outline"
+            onClick={() => setLocation("/area-distribution")}
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại
+          </Button>
+        }
+      >
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Khu vực không tồn tại</p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  // Calculate bounds for map centering
+  let bounds = L.latLngBounds([11.53, 106.88], [11.55, 106.91]);
+  if (areaData.coordinates && areaData.coordinates.length >= 2) {
+    const lats = areaData.coordinates.map((c) => c.lat);
+    const lngs = areaData.coordinates.map((c) => c.lng);
+    bounds = L.latLngBounds(
+      [Math.min(...lats), Math.min(...lngs)],
+      [Math.max(...lats), Math.max(...lngs)],
+    );
+  }
+
+  const landTypeName =
+    LAND_TYPES.find((l) => l.id === areaData.landType)?.name ||
+    areaData.landType;
+  const terrainName =
+    TERRAIN_TYPES.find((t) => t.id === areaData.terrain)?.name ||
+    areaData.terrain;
+
+  return (
+    <AdminLayout
+      title={`Chi tiết khu vực: ${areaData.name}`}
+      description={`Mã khu vực: ${areaData.code}`}
+      actions={
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setLocation("/area-distribution")}
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại
+          </Button>
+          <Button
+            onClick={() =>
+              setLocation(`/area-distribution/edit/${areaData.id}`)
+            }
+          >
+            <Edit className="w-4 h-4 mr-2" /> Chỉnh sửa
+          </Button>
+        </div>
+      }
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column: Info */}
+        <div className="lg:col-span-1 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Thông tin chung</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <span className="text-sm font-medium text-muted-foreground">
+                  Trạng thái
+                </span>
+                <div className="mt-1">
+                  <Badge
+                    className={
+                      areaData.status === "active"
+                        ? "bg-green-100 text-green-700 hover:bg-green-100"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-100"
+                    }
+                  >
+                    {areaData.status === "active"
+                      ? "Đang hoạt động"
+                      : "Ngừng hoạt động"}
+                  </Badge>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-sm font-medium text-muted-foreground">
+                  Thuộc vùng trồng
+                </span>
+                <p className="font-medium mt-1">
+                  {regionData?.name || "Không xác định"}
+                </p>
+              </div>
+
+              <div>
+                <span className="text-sm font-medium text-muted-foreground">
+                  Diện tích
+                </span>
+                <p className="font-medium mt-1">{areaData.area} ha</p>
+              </div>
+
+              <div>
+                <span className="text-sm font-medium text-muted-foreground">
+                  Loại đất
+                </span>
+                <p className="font-medium mt-1">{landTypeName}</p>
+              </div>
+
+              <div>
+                <span className="text-sm font-medium text-muted-foreground">
+                  Địa hình
+                </span>
+                <p className="font-medium mt-1">{terrainName}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Thống kê lô</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">
+                {areaData.plots?.length || 0}
+              </div>
+              <p className="text-sm text-muted-foreground">Tổng số lô</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column: Map */}
+        <div className="lg:col-span-2">
+          <Card className="h-full min-h-[500px] flex flex-col">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="w-5 h-5" /> Bản đồ khu vực & Lô
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 p-0 overflow-hidden relative rounded-b-lg">
+              <MapContainer
+                center={[bounds.getCenter().lat, bounds.getCenter().lng]}
+                zoom={15}
+                className="h-[500px] w-full"
+                scrollWheelZoom={true}
+              >
+                <TileLayer
+                  attribution="&copy; OpenStreetMap"
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <MapController
+                  center={[bounds.getCenter().lat, bounds.getCenter().lng]}
+                />
+
+                {/* Area Boundary */}
+                {areaData.coordinates && areaData.coordinates.length >= 2 && (
+                  <Rectangle
+                    bounds={bounds}
+                    pathOptions={{
+                      color: "blue",
+                      fillColor: "blue",
+                      fillOpacity: 0.1,
+                      weight: 2,
+                      dashArray: "5, 5",
+                    }}
+                  >
+                    <Tooltip sticky direction="top">
+                      {areaData.name} ({areaData.area} ha)
+                    </Tooltip>
+                  </Rectangle>
+                )}
+
+                {/* Plots */}
+                {areaData.plots?.map((plot) => {
+                  if (!plot.coordinates || plot.coordinates.length < 2)
+                    return null;
+                  const lats = plot.coordinates.map((c) => c.lat);
+                  const lngs = plot.coordinates.map((c) => c.lng);
+                  const plotBounds = [
+                    [Math.min(...lats), Math.min(...lngs)],
+                    [Math.max(...lats), Math.max(...lngs)],
+                  ];
+                  return (
+                    <Rectangle
+                      key={plot.id}
+                      bounds={plotBounds as any}
+                      pathOptions={{
+                        color: "orange",
+                        fillColor: "orange",
+                        fillOpacity: 0.3,
+                        weight: 2,
+                      }}
+                    >
+                      <Tooltip sticky>
+                        <div className="text-sm">
+                          <strong>{plot.name}</strong>
+                          <br />
+                          {plot.area} ha
+                        </div>
+                      </Tooltip>
+                    </Rectangle>
+                  );
+                })}
+              </MapContainer>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </AdminLayout>
+  );
+};
+
+export default AreaDetailPage;

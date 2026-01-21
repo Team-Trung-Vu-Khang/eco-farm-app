@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
-import { useLocation, Link } from "wouter";
+import { useLocation } from "wouter";
 import { Plus } from "lucide-react";
-
 import {
   AdminLayout,
   Badge,
@@ -11,29 +10,28 @@ import {
   useToast,
 } from "@tankhang1/eco-shared-ui";
 
-import { type Region, MOCK_REGIONS } from "../constants";
+import { type Area, MOCK_AREAS, MOCK_REGIONS } from "../constants";
 
-const RegionDistributionPage = () => {
+const AreaDistributionPage = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [data, setData] = useState<Region[]>([]);
+  const [data, setData] = useState<Area[]>([]);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  // Initial Data Load
   useEffect(() => {
-    setData(MOCK_REGIONS);
+    setData(MOCK_AREAS);
   }, []);
 
   const handleAdd = () => {
-    setLocation("/region-distribution/create");
+    setLocation("/area-distribution/create");
   };
 
-  const handleEdit = (item: Region) => {
-    setLocation(`/region-distribution/edit/${item.id}`);
+  const handleEdit = (item: Area) => {
+    setLocation(`/area-distribution/edit/${item.id}`);
   };
 
-  const handleDelete = (item: Region) => {
+  const handleDelete = (item: Area) => {
     setDeletingId(item.id);
     setDeleteOpen(true);
   };
@@ -41,19 +39,19 @@ const RegionDistributionPage = () => {
   const confirmDelete = () => {
     if (deletingId) {
       setData((prev) => prev.filter((i) => i.id !== deletingId));
-      toast({ title: "Thành công", description: "Đã xóa vùng trồng" });
+      toast({ title: "Thành công", description: "Đã xóa khu vực" });
       setDeleteOpen(false);
     }
   };
 
   return (
     <AdminLayout
-      title="Phân bố vùng"
-      description="Quản lý danh sách và bản đồ phân bố vùng trồng"
+      title="Phân bố khu vực"
+      description="Quản lý danh sách và bản đồ phân bố các khu vực trồng"
       actions={
         <Button onClick={handleAdd}>
           <Plus className="w-4 h-4 mr-2" />
-          Thêm vùng trồng
+          Thêm khu vực
         </Button>
       }
     >
@@ -61,16 +59,25 @@ const RegionDistributionPage = () => {
         columns={[
           {
             key: "code",
-            label: "Mã vùng",
-            render: (v, r) => (
-              <Link href={`/region-distribution/detail/${r.id}`}>
-                <a className="font-medium text-primary hover:underline">{v}</a>
-              </Link>
+            label: "Mã khu vực",
+            render: (value, row) => (
+              <span
+                className="font-medium text-primary hover:underline cursor-pointer"
+                onClick={() =>
+                  setLocation(`/area-distribution/detail/${row.id}`)
+                }
+              >
+                {value}
+              </span>
             ),
           },
-          { key: "name", label: "Tên vùng" },
+          { key: "name", label: "Tên khu vực" },
+          {
+            key: "regionId",
+            label: "Thuộc vùng",
+            render: (v) => MOCK_REGIONS.find((r) => r.id === v)?.name || v,
+          },
           { key: "area", label: "Diện tích (ha)" },
-          { key: "address", label: "Địa chỉ" },
           {
             key: "status",
             label: "Trạng thái",
@@ -81,7 +88,7 @@ const RegionDistributionPage = () => {
             ),
           },
         ]}
-        data={MOCK_REGIONS}
+        data={data}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
@@ -90,10 +97,9 @@ const RegionDistributionPage = () => {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         onConfirm={confirmDelete}
-        description="Bạn có chắc chắn muốn xóa vùng trồng này?"
+        description="Bạn có chắc chắn muốn xóa khu vực này?"
       />
     </AdminLayout>
   );
 };
-
-export default RegionDistributionPage;
+export default AreaDistributionPage;

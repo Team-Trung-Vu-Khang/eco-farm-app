@@ -25,8 +25,12 @@ import CultivationZonePage from "./pages/cultivation-zone/CultivationZonePage";
 // Region Chart Pages
 import RegionDistributionPage from "./pages/region-chart/region-distribution/RegionDistributionPage";
 import RegionCreatePage from "./pages/region-chart/region-distribution/RegionCreatePage";
-import AreaDistributionPage from "./pages/region-chart/AreaDistributionPage";
-import PlotDistributionPage from "./pages/region-chart/PlotDistributionPage";
+import AreaDistributionPage from "./pages/region-chart/area-distribution/AreaDistributionPage";
+import AreaCreatePage from "./pages/region-chart/area-distribution/AreaCreatePage";
+import AreaDetailPage from "./pages/region-chart/area-distribution/AreaDetailPage";
+import PlotDistributionPage from "./pages/region-chart/plot-distribution/PlotDistributionPage";
+import PlotCreatePage from "./pages/region-chart/plot-distribution/PlotCreatePage";
+import PlotDetailPage from "./pages/region-chart/plot-distribution/PlotDetailPage";
 import MapViewPage from "./pages/region-chart/MapViewPage";
 
 // Cultivation Zone Sub-pages
@@ -61,6 +65,7 @@ import EquipmentPage from "./pages/equipment/EquipmentPage";
 import UnitPage from "./pages/unit/UnitPage";
 import TaskPage from "./pages/task/TaskPage";
 import SettingsPage from "./pages/settings/SettingsPage";
+import RegionDetailPage from "./pages/region-chart/region-distribution/RegionDetailPage";
 
 function Router() {
   return (
@@ -99,8 +104,22 @@ function Router() {
       {/* Region Chart Routes */}
       <Route path="/region-distribution" component={RegionDistributionPage} />
       <Route path="/region-distribution/create" component={RegionCreatePage} />
+      <Route
+        path="/region-distribution/detail/:id"
+        component={RegionDetailPage}
+      />
+      <Route
+        path="/region-distribution/edit/:id"
+        component={RegionCreatePage}
+      />
       <Route path="/area-distribution" component={AreaDistributionPage} />
+      <Route path="/area-distribution/detail/:id" component={AreaDetailPage} />
+      <Route path="/area-distribution/create" component={AreaCreatePage} />
+      <Route path="/area-distribution/edit/:id" component={AreaCreatePage} />
       <Route path="/plot-distribution" component={PlotDistributionPage} />
+      <Route path="/plot-distribution/create" component={PlotCreatePage} />
+      <Route path="/plot-distribution/edit/:id" component={PlotCreatePage} />
+      <Route path="/plot-distribution/detail/:id" component={PlotDetailPage} />
       <Route path="/map-view" component={MapViewPage} />
 
       {/* Cultivation Zone Sub-Routes */}

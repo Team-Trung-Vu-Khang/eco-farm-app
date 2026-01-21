@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
+import { useState, useEffect } from "react";
+import { useLocation, useRoute } from "wouter";
 import {
   AdminLayout,
   Input,
@@ -32,6 +32,7 @@ import {
   ENTERPRISES,
   LAND_TYPES,
   TERRAIN_TYPES,
+  MOCK_REGIONS,
 } from "../constants";
 import {
   DraggableRectangle,
@@ -41,6 +42,28 @@ import {
 const RegionCreatePage = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [match, params] = useRoute("/region-distribution/edit/:id");
+  const isEditMode = match && !!params?.id;
+
+  useEffect(() => {
+    if (isEditMode && params?.id) {
+      const regionId = parseInt(params.id);
+      const found = MOCK_REGIONS.find((r) => r.id === regionId);
+      if (found) {
+        setFormData(found);
+        if (found.coordinates && found.coordinates.length >= 2) {
+          const lats = found.coordinates.map((c) => c.lat);
+          const lngs = found.coordinates.map((c) => c.lng);
+          setCurrentBounds(
+            L.latLngBounds(
+              [Math.min(...lats), Math.min(...lngs)],
+              [Math.max(...lats), Math.max(...lngs)],
+            ),
+          );
+        }
+      }
+    }
+  }, [isEditMode, params?.id]);
 
   // Form State
   const defaultBounds = L.latLngBounds(
@@ -100,7 +123,9 @@ const RegionCreatePage = () => {
     console.log("Submitting:", finalData);
     toast({
       title: "Thành công",
-      description: "Đã tạo mới vùng trồng thành công",
+      description: isEditMode
+        ? "Cập nhật vùng trồng thành công"
+        : "Đã tạo mới vùng trồng thành công",
     });
     setLocation("/region-distribution");
   };
@@ -541,7 +566,7 @@ const RegionCreatePage = () => {
     {
       id: "subarea",
       title: "Phân chia khu vực",
-      description: "Tạo các lô/khu vực con",
+      description: "Tạo khu vực con",
       content: (
         <Card className="h-[750px] flex flex-col">
           <CardHeader>
@@ -1042,8 +1067,12 @@ const RegionCreatePage = () => {
 
   return (
     <AdminLayout
-      title="Thêm mới vùng trồng"
-      description="Tạo vùng trồng mới theo quy trình từng bước"
+      title={isEditMode ? "Cập nhật vùng trồng" : "Thêm mới vùng trồng"}
+      description={
+        isEditMode
+          ? "Chỉnh sửa thông tin vùng trồng"
+          : "Tạo vùng trồng mới theo quy trình từng bước"
+      }
       actions={
         <Button
           variant="outline"
@@ -1058,7 +1087,7 @@ const RegionCreatePage = () => {
           steps={steps}
           onComplete={handleSubmit}
           onCancel={() => setLocation("/region-distribution")}
-          completeLabel="Tạo vùng trồng"
+          completeLabel={isEditMode ? "Lưu thay đổi" : "Tạo vùng trồng"}
         />
       </div>
     </AdminLayout>
