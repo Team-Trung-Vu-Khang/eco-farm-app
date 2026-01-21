@@ -23,7 +23,8 @@ import GeoZonePage from "./pages/geo-zone/GeoZonePage";
 import CultivationZonePage from "./pages/cultivation-zone/CultivationZonePage";
 
 // Region Chart Pages
-import RegionDistributionPage from "./pages/region-chart/RegionDistributionPage";
+import RegionDistributionPage from "./pages/region-chart/region-distribution/RegionDistributionPage";
+import RegionCreatePage from "./pages/region-chart/region-distribution/RegionCreatePage";
 import AreaDistributionPage from "./pages/region-chart/AreaDistributionPage";
 import PlotDistributionPage from "./pages/region-chart/PlotDistributionPage";
 import MapViewPage from "./pages/region-chart/MapViewPage";
@@ -97,6 +98,7 @@ function Router() {
 
       {/* Region Chart Routes */}
       <Route path="/region-distribution" component={RegionDistributionPage} />
+      <Route path="/region-distribution/create" component={RegionCreatePage} />
       <Route path="/area-distribution" component={AreaDistributionPage} />
       <Route path="/plot-distribution" component={PlotDistributionPage} />
       <Route path="/map-view" component={MapViewPage} />
