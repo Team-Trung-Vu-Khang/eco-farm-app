@@ -31,7 +31,7 @@ import AreaDetailPage from "./pages/region-chart/area-distribution/AreaDetailPag
 import PlotDistributionPage from "./pages/region-chart/plot-distribution/PlotDistributionPage";
 import PlotCreatePage from "./pages/region-chart/plot-distribution/PlotCreatePage";
 import PlotDetailPage from "./pages/region-chart/plot-distribution/PlotDetailPage";
-import MapViewPage from "./pages/region-chart/MapViewPage";
+import MapViewPage from "./pages/region-chart/map-view/MapViewPage";
 
 // Cultivation Zone Sub-pages
 import CultivationAreaPage from "./pages/cultivation-zone/CultivationAreaPage";

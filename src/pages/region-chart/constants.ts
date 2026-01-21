@@ -225,3 +225,57 @@ export const MOCK_AREAS: Area[] = [
     createdAt: "2024-02-05",
   },
 ];
+
+export interface Plant {
+  id: string;
+  code: string;
+  name: string; // e.g., "Sầu riêng Dona", "Bơ 034"
+  type: string; // "fruit", "industrial", etc.
+  status: "healthy" | "diseased" | "harvesting" | "removed";
+  plantedDate: string;
+  coordinate: Coordinate;
+  plotId: string;
+}
+
+export const MOCK_PLANTS: Plant[] = [
+  {
+    id: "plant-1",
+    code: "TREE-001",
+    name: "Sầu riêng Dona",
+    type: "fruit",
+    status: "healthy",
+    plantedDate: "2020-05-15",
+    coordinate: { lat: 11.532, lng: 106.882 },
+    plotId: "PLOT-001",
+  },
+  {
+    id: "plant-2",
+    code: "TREE-002",
+    name: "Sầu riêng Ri6",
+    type: "fruit",
+    status: "harvesting",
+    plantedDate: "2019-11-20",
+    coordinate: { lat: 11.533, lng: 106.883 },
+    plotId: "PLOT-001",
+  },
+  {
+    id: "plant-3",
+    code: "TREE-003",
+    name: "Bơ 034",
+    type: "fruit",
+    status: "diseased",
+    plantedDate: "2021-03-10",
+    coordinate: { lat: 11.534, lng: 106.884 },
+    plotId: "PLOT-002",
+  },
+  {
+    id: "plant-4",
+    code: "TREE-004",
+    name: "Tiêu Vĩnh Linh",
+    type: "spice",
+    status: "healthy",
+    plantedDate: "2022-01-01",
+    coordinate: { lat: 11.54, lng: 106.9 },
+    plotId: "PLOT-001", // Assuming in same plot for mock
+  },
+];
