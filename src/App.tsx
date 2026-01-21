@@ -20,7 +20,6 @@ import BankPage from "./pages/bank/BankPage";
 import BankCreatePage from "./pages/bank/BankCreatePage";
 import BankEditPage from "./pages/bank/BankEditPage";
 import GeoZonePage from "./pages/geo-zone/GeoZonePage";
-import CultivationZonePage from "./pages/cultivation-zone/CultivationZonePage";
 
 // Region Chart Pages
 import RegionDistributionPage from "./pages/region-chart/region-distribution/RegionDistributionPage";
@@ -36,8 +35,8 @@ import MapViewPage from "./pages/region-chart/map-view/MapViewPage";
 // Cultivation Zone Sub-pages
 import CultivationAreaPage from "./pages/cultivation-zone/cultivation-area/CultivationAreaPage";
 import CultivationAreaCreatePage from "./pages/cultivation-zone/cultivation-area/CultivationAreaCreatePage";
-import DistributionDetailPage from "./pages/cultivation-zone/DistributionDetailPage";
-import DistributionDetailV2Page from "./pages/cultivation-zone/DistributionDetailV2Page";
+import DistributionDetailPage from "./pages/cultivation-zone/distribution-detail/DistributionDetailPage";
+import PlantDistributionCreatePage from "./pages/cultivation-zone/distribution-detail/PlantDistributionCreatePage";
 import SearchCropPage from "./pages/cultivation-zone/SearchCropPage";
 import SearchZonePage from "./pages/cultivation-zone/SearchZonePage";
 
@@ -102,7 +101,6 @@ function Router() {
 
       {/* Old routes kept for safety, though removed from sidebar */}
       <Route path="/geo-zone" component={GeoZonePage} />
-      <Route path="/cultivation-zone" component={CultivationZonePage} />
 
       {/* Region Chart Routes */}
       <Route path="/region-distribution" component={RegionDistributionPage} />
@@ -141,8 +139,12 @@ function Router() {
       />
       <Route path="/distribution-detail" component={DistributionDetailPage} />
       <Route
-        path="/distribution-detail-v2"
-        component={DistributionDetailV2Page}
+        path="/distribution-detail/create"
+        component={PlantDistributionCreatePage}
+      />
+      <Route
+        path="/distribution-detail/:id/edit"
+        component={PlantDistributionCreatePage}
       />
       <Route path="/search-crop" component={SearchCropPage} />
       <Route path="/search-zone" component={SearchZonePage} />
