@@ -34,7 +34,8 @@ import PlotDetailPage from "./pages/region-chart/plot-distribution/PlotDetailPag
 import MapViewPage from "./pages/region-chart/map-view/MapViewPage";
 
 // Cultivation Zone Sub-pages
-import CultivationAreaPage from "./pages/cultivation-zone/CultivationAreaPage";
+import CultivationAreaPage from "./pages/cultivation-zone/cultivation-area/CultivationAreaPage";
+import CultivationAreaCreatePage from "./pages/cultivation-zone/cultivation-area/CultivationAreaCreatePage";
 import DistributionDetailPage from "./pages/cultivation-zone/DistributionDetailPage";
 import DistributionDetailV2Page from "./pages/cultivation-zone/DistributionDetailV2Page";
 import SearchCropPage from "./pages/cultivation-zone/SearchCropPage";
@@ -66,6 +67,8 @@ import UnitPage from "./pages/unit/UnitPage";
 import TaskPage from "./pages/task/TaskPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 import RegionDetailPage from "./pages/region-chart/region-distribution/RegionDetailPage";
+import CultivationAreaDetailPage from "./pages/cultivation-zone/cultivation-area/CultivationAreaDetailPage";
+import CultivationAreaEditPage from "./pages/cultivation-zone/cultivation-area/CultivationAreaEditPage";
 
 function Router() {
   return (
@@ -124,6 +127,18 @@ function Router() {
 
       {/* Cultivation Zone Sub-Routes */}
       <Route path="/cultivation-area" component={CultivationAreaPage} />
+      <Route
+        path="/cultivation-area/create"
+        component={CultivationAreaCreatePage}
+      />
+      <Route
+        path="/cultivation-area/:id"
+        component={CultivationAreaDetailPage}
+      />
+      <Route
+        path="/cultivation-area/:id/edit"
+        component={CultivationAreaEditPage}
+      />
       <Route path="/distribution-detail" component={DistributionDetailPage} />
       <Route
         path="/distribution-detail-v2"
