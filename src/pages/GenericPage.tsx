@@ -89,8 +89,8 @@ export function GenericPage({
     if (editItem) {
       setData((prev) =>
         prev.map((item) =>
-          item.id === editItem.id ? { ...item, ...formData } : item
-        )
+          item.id === editItem.id ? { ...item, ...formData } : item,
+        ),
       );
       toast({ title: "Thành công", description: `Đã cập nhật ${entityName}` });
     } else {
