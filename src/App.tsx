@@ -11,7 +11,10 @@ import BranchCreatePage from "./pages/branch/BranchCreatePage";
 import BranchEditPage from "./pages/branch/BranchEditPage";
 import CropPage from "./pages/crop/CropPage";
 import CropCreatePage from "./pages/crop/CropCreatePage";
+
 import PesticidePage from "./pages/pesticide/PesticidePage";
+import PesticideCreatePage from "./pages/pesticide/PesticideCreatePage";
+import PesticideDetailPage from "./pages/pesticide/PesticideDetailPage";
 import PlanPage from "./pages/plan/PlanPage";
 import PlanCreatePage from "./pages/plan/PlanCreatePage";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -98,10 +101,8 @@ function Router() {
       <Route path="/team" component={TeamPage} />
       <Route path="/team/create" component={TeamCreatePage} />
       <Route path="/team/:id" component={TeamDetailPage} />
-
       {/* Old routes kept for safety, though removed from sidebar */}
       <Route path="/geo-zone" component={GeoZonePage} />
-
       {/* Region Chart Routes */}
       <Route path="/region-distribution" component={RegionDistributionPage} />
       <Route path="/region-distribution/create" component={RegionCreatePage} />
@@ -122,7 +123,6 @@ function Router() {
       <Route path="/plot-distribution/edit/:id" component={PlotCreatePage} />
       <Route path="/plot-distribution/detail/:id" component={PlotDetailPage} />
       <Route path="/map-view" component={MapViewPage} />
-
       {/* Cultivation Zone Sub-Routes */}
       <Route path="/cultivation-area" component={CultivationAreaPage} />
       <Route
@@ -148,7 +148,6 @@ function Router() {
       />
       <Route path="/search-crop" component={SearchCropPage} />
       <Route path="/search-zone" component={SearchZonePage} />
-
       <Route path="/crop" component={CropPage} />
       <Route path="/crop/create" component={CropCreatePage} />
       <Route path="/variety" component={VarietyPage} />
@@ -156,6 +155,9 @@ function Router() {
       <Route path="/growth-cycle" component={GrowthCyclePage} />
       <Route path="/season" component={SeasonPage} />
       <Route path="/pesticide" component={PesticidePage} />
+      <Route path="/pesticide/create" component={PesticideCreatePage} />
+      <Route path="/pesticide/:id/edit" component={PesticideCreatePage} />
+      <Route path="/pesticide/:id" component={PesticideDetailPage} />
       <Route path="/fertilizer" component={FertilizerPage} />
       <Route path="/material" component={MaterialPage} />
       <Route path="/equipment" component={EquipmentPage} />
