@@ -78,6 +78,9 @@ import SettingsPage from "./pages/settings/SettingsPage";
 import RegionDetailPage from "./pages/region-chart/region-distribution/RegionDetailPage";
 import CultivationAreaDetailPage from "./pages/cultivation-zone/cultivation-area/CultivationAreaDetailPage";
 import CultivationAreaEditPage from "./pages/cultivation-zone/cultivation-area/CultivationAreaEditPage";
+import ContractDetailPage from "./pages/contract/ContractDetailPage";
+import ContractCreatePage from "./pages/contract/ContractCreatePage";
+import ContractEditPage from "./pages/contract/ContractEditPage";
 
 function Router() {
   return (
@@ -177,6 +180,9 @@ function Router() {
       <Route path="/equipment/:id/edit" component={EquipmentCreatePage} />
       <Route path="/equipment/:id" component={EquipmentDetailPage} />
       <Route path="/contract" component={ContractPage} />
+      <Route path="/contract/create" component={ContractCreatePage} />
+      <Route path="/contract/:id/edit" component={ContractEditPage} />
+      <Route path="/contract/:id" component={ContractDetailPage} />
       <Route path="/unit" component={UnitPage} />
       <Route path="/unit/create" component={UnitCreatePage} />
       <Route path="/unit/:id/edit" component={UnitCreatePage} />
