@@ -17,6 +17,10 @@ import PesticideCreatePage from "./pages/pesticide/PesticideCreatePage";
 import PesticideDetailPage from "./pages/pesticide/PesticideDetailPage";
 import PlanPage from "./pages/plan/PlanPage";
 import PlanCreatePage from "./pages/plan/PlanCreatePage";
+import FertilizerCreatePage from "./pages/fertilizer/FertilizerCreatePage";
+import MaterialCreatePage from "./pages/material/MaterialCreatePage";
+import MaterialDetailPage from "./pages/material/MaterialDetailPage";
+
 import NotFoundPage from "./pages/NotFoundPage";
 import { Toaster, TooltipProvider } from "@tankhang1/eco-shared-ui";
 import BankPage from "./pages/bank/BankPage";
@@ -159,7 +163,13 @@ function Router() {
       <Route path="/pesticide/:id/edit" component={PesticideCreatePage} />
       <Route path="/pesticide/:id" component={PesticideDetailPage} />
       <Route path="/fertilizer" component={FertilizerPage} />
+
+      <Route path="/fertilizer/create" component={FertilizerCreatePage} />
+      <Route path="/fertilizer/:id/edit" component={FertilizerCreatePage} />
       <Route path="/material" component={MaterialPage} />
+      <Route path="/material/create" component={MaterialCreatePage} />
+      <Route path="/material/:id/edit" component={MaterialCreatePage} />
+      <Route path="/material/:id" component={MaterialDetailPage} />
       <Route path="/equipment" component={EquipmentPage} />
       <Route path="/contract" component={ContractPage} />
       <Route path="/unit" component={UnitPage} />
