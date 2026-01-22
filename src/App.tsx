@@ -20,6 +20,9 @@ import PlanCreatePage from "./pages/plan/PlanCreatePage";
 import FertilizerCreatePage from "./pages/fertilizer/FertilizerCreatePage";
 import MaterialCreatePage from "./pages/material/MaterialCreatePage";
 import MaterialDetailPage from "./pages/material/MaterialDetailPage";
+import EquipmentCreatePage from "./pages/equipment/EquipmentCreatePage";
+import EquipmentDetailPage from "./pages/equipment/EquipmentDetailPage";
+import UnitCreatePage from "./pages/unit/UnitCreatePage";
 
 import NotFoundPage from "./pages/NotFoundPage";
 import { Toaster, TooltipProvider } from "@tankhang1/eco-shared-ui";
@@ -163,16 +166,20 @@ function Router() {
       <Route path="/pesticide/:id/edit" component={PesticideCreatePage} />
       <Route path="/pesticide/:id" component={PesticideDetailPage} />
       <Route path="/fertilizer" component={FertilizerPage} />
-
       <Route path="/fertilizer/create" component={FertilizerCreatePage} />
       <Route path="/fertilizer/:id/edit" component={FertilizerCreatePage} />
       <Route path="/material" component={MaterialPage} />
       <Route path="/material/create" component={MaterialCreatePage} />
-      <Route path="/material/:id/edit" component={MaterialCreatePage} />
       <Route path="/material/:id" component={MaterialDetailPage} />
+
       <Route path="/equipment" component={EquipmentPage} />
+      <Route path="/equipment/create" component={EquipmentCreatePage} />
+      <Route path="/equipment/:id/edit" component={EquipmentCreatePage} />
+      <Route path="/equipment/:id" component={EquipmentDetailPage} />
       <Route path="/contract" component={ContractPage} />
       <Route path="/unit" component={UnitPage} />
+      <Route path="/unit/create" component={UnitCreatePage} />
+      <Route path="/unit/:id/edit" component={UnitCreatePage} />
       <Route path="/plan" component={PlanPage} />
       <Route path="/plan/create" component={PlanCreatePage} />
       <Route path="/task" component={TaskPage} />
