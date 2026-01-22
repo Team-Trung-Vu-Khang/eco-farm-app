@@ -135,6 +135,8 @@ const AreaCreatePage = () => {
       name: "Lô mới",
       area: 0,
       coordinates: [],
+      contour: "",
+      altitude: 0,
     };
     setEditingPlot(newPlot);
     setPlotBounds(currentBounds);
@@ -620,6 +622,33 @@ const AreaCreatePage = () => {
                               area: parseFloat(e.target.value),
                             })
                           }
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Đường đồng mức</Label>
+                        <Input
+                          value={editingPlot.contour || ""}
+                          onChange={(e) =>
+                            setEditingPlot({
+                              ...editingPlot,
+                              contour: e.target.value,
+                            })
+                          }
+                          placeholder="VD: 100m"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Độ cao (m)</Label>
+                        <Input
+                          type="number"
+                          value={editingPlot.altitude || ""}
+                          onChange={(e) =>
+                            setEditingPlot({
+                              ...editingPlot,
+                              altitude: parseFloat(e.target.value),
+                            })
+                          }
+                          placeholder="VD: 150"
                         />
                       </div>
 

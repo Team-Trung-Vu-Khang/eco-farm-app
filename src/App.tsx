@@ -37,8 +37,8 @@ import CultivationAreaPage from "./pages/cultivation-zone/cultivation-area/Culti
 import CultivationAreaCreatePage from "./pages/cultivation-zone/cultivation-area/CultivationAreaCreatePage";
 import DistributionDetailPage from "./pages/cultivation-zone/distribution-detail/DistributionDetailPage";
 import PlantDistributionCreatePage from "./pages/cultivation-zone/distribution-detail/PlantDistributionCreatePage";
-import SearchCropPage from "./pages/cultivation-zone/SearchCropPage";
-import SearchZonePage from "./pages/cultivation-zone/SearchZonePage";
+import SearchCropPage from "./pages/cultivation-zone/search-crop/SearchCropPage";
+import SearchZonePage from "./pages/cultivation-zone/search-zone/SearchZonePage";
 
 import SeedPage from "./pages/seed/SeedPage";
 import GrowthCyclePage from "./pages/growth-cycle/GrowthCyclePage";
