@@ -1128,3 +1128,544 @@ export const ACTIVITY_TYPES = [
   { id: "harvesting", name: "Thu hoạch" },
   { id: "other", name: "Khác" },
 ];
+
+// Cultivation Zone (Vùng trồng) interfaces
+export interface StaffMember {
+  id: string;
+  name: string;
+  role: string; // Vai trò: Quản lý, Kỹ thuật viên, Công nhân
+  phone: string;
+  email?: string;
+  assignedDate: string;
+  specialization?: string; // Chuyên môn
+}
+
+export interface CropVariety {
+  id: string;
+  name: string; // Tên cây trồng
+  variety: string; // Giống
+  plantedDate: string;
+  totalPlants: number; // Tổng số cây
+  area: number; // Diện tích (ha)
+  expectedYield: number; // Năng suất dự kiến (tấn/ha)
+  status: "growing" | "flowering" | "harvesting" | "completed";
+}
+
+export interface CultivationPlan {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: "planned" | "in-progress" | "completed" | "cancelled";
+  activities: {
+    id: string;
+    name: string;
+    scheduledDate: string;
+    completedDate?: string;
+    assignedTo: string;
+    status: "pending" | "in-progress" | "completed";
+    notes?: string;
+  }[];
+  budget: number;
+  actualCost?: number;
+}
+
+export interface CultivationZone {
+  id: string;
+  code: string;
+  name: string;
+  location: string; // Địa chỉ
+  province: string;
+  district: string;
+  totalArea: number; // Tổng diện tích (ha)
+  cultivatedArea: number; // Diện tích canh tác (ha)
+  coordinates: Coordinate[]; // Tọa độ bản đồ
+  mapCenter: Coordinate;
+
+  // Thông tin canh tác
+  cropVarieties: CropVariety[];
+  mainCrop: string; // Cây trồng chính
+  soilType: string; // Loại đất
+  irrigationSystem: string; // Hệ thống tưới
+
+  // Nhân viên
+  staff: StaffMember[];
+  manager: string; // Người quản lý
+
+  // Giấy chứng nhận
+  certifications: Certification[];
+
+  // Kế hoạch canh tác
+  cultivationPlans: CultivationPlan[];
+
+  // Thông tin khác
+  establishedDate: string;
+  status: "active" | "inactive" | "under-construction";
+  notes: string;
+}
+
+export const MOCK_CULTIVATION_ZONES: CultivationZone[] = [
+  {
+    id: "zone-001",
+    code: "ZONE-BP-001",
+    name: "Vùng Sầu riêng Bình Phước",
+    location: "Khu phố 3, Phường Tân Đồng, TP Đồng Xoài",
+    province: "Bình Phước",
+    district: "Đồng Xoài",
+    totalArea: 50.5,
+    cultivatedArea: 48.2,
+    coordinates: [
+      { lat: 11.53, lng: 106.88 },
+      { lat: 11.53, lng: 106.91 },
+      { lat: 11.55, lng: 106.91 },
+      { lat: 11.55, lng: 106.88 },
+    ],
+    mapCenter: { lat: 11.54, lng: 106.895 },
+
+    cropVarieties: [
+      {
+        id: "cv-001",
+        name: "Sầu riêng",
+        variety: "Dona Malaysia",
+        plantedDate: "2020-05-15",
+        totalPlants: 850,
+        area: 25.5,
+        expectedYield: 12,
+        status: "flowering",
+      },
+      {
+        id: "cv-002",
+        name: "Sầu riêng",
+        variety: "Ri6 Thái Lan",
+        plantedDate: "2019-11-20",
+        totalPlants: 720,
+        area: 18.2,
+        expectedYield: 15,
+        status: "harvesting",
+      },
+      {
+        id: "cv-003",
+        name: "Sầu riêng",
+        variety: "Monthong",
+        plantedDate: "2018-03-25",
+        totalPlants: 180,
+        area: 4.5,
+        expectedYield: 18,
+        status: "harvesting",
+      },
+    ],
+    mainCrop: "Sầu riêng",
+    soilType: "Đất đỏ Bazan",
+    irrigationSystem: "Tưới nhỏ giọt tự động",
+
+    staff: [
+      {
+        id: "staff-001",
+        name: "Nguyễn Văn A",
+        role: "Quản lý vùng",
+        phone: "0901234567",
+        email: "nguyenvana@example.com",
+        assignedDate: "2020-01-15",
+        specialization: "Kỹ thuật trồng sầu riêng",
+      },
+      {
+        id: "staff-002",
+        name: "Trần Văn B",
+        role: "Kỹ thuật viên",
+        phone: "0912345678",
+        email: "tranvanb@example.com",
+        assignedDate: "2020-03-01",
+        specialization: "Bảo vệ thực vật",
+      },
+      {
+        id: "staff-003",
+        name: "Lê Thị C",
+        role: "Kỹ thuật viên",
+        phone: "0923456789",
+        assignedDate: "2020-06-10",
+        specialization: "Dinh dưỡng cây trồng",
+      },
+      {
+        id: "staff-004",
+        name: "Phạm Văn D",
+        role: "Trưởng nhóm công nhân",
+        phone: "0934567890",
+        assignedDate: "2020-02-01",
+      },
+    ],
+    manager: "Nguyễn Văn A",
+
+    certifications: [
+      {
+        id: "cert-zone-001",
+        name: "VietGAP",
+        issuer: "Sở Nông nghiệp Bình Phước",
+        issueDate: "2023-01-10",
+        expiryDate: "2025-01-10",
+        certificateNumber: "VG-BP-2023-001",
+        status: "valid",
+      },
+      {
+        id: "cert-zone-002",
+        name: "GlobalGAP",
+        issuer: "SGS Vietnam",
+        issueDate: "2023-06-01",
+        expiryDate: "2025-06-01",
+        certificateNumber: "GG-VN-2023-089",
+        status: "valid",
+      },
+    ],
+
+    cultivationPlans: [
+      {
+        id: "plan-001",
+        name: "Kế hoạch canh tác Quý 1/2024",
+        startDate: "2024-01-01",
+        endDate: "2024-03-31",
+        status: "in-progress",
+        budget: 150000000,
+        actualCost: 85000000,
+        activities: [
+          {
+            id: "act-001",
+            name: "Bón phân lần 1",
+            scheduledDate: "2024-01-15",
+            completedDate: "2024-01-15",
+            assignedTo: "Lê Thị C",
+            status: "completed",
+            notes: "Đã hoàn thành đúng kế hoạch",
+          },
+          {
+            id: "act-002",
+            name: "Phun thuốc phòng bệnh",
+            scheduledDate: "2024-02-01",
+            completedDate: "2024-02-02",
+            assignedTo: "Trần Văn B",
+            status: "completed",
+          },
+          {
+            id: "act-003",
+            name: "Cắt tỉa cành",
+            scheduledDate: "2024-02-15",
+            assignedTo: "Phạm Văn D",
+            status: "in-progress",
+          },
+          {
+            id: "act-004",
+            name: "Bón phân lần 2",
+            scheduledDate: "2024-03-15",
+            assignedTo: "Lê Thị C",
+            status: "pending",
+          },
+        ],
+      },
+      {
+        id: "plan-002",
+        name: "Kế hoạch thu hoạch 2024",
+        startDate: "2024-04-01",
+        endDate: "2024-08-31",
+        status: "planned",
+        budget: 200000000,
+        activities: [
+          {
+            id: "act-005",
+            name: "Thu hoạch đợt 1 - Ri6",
+            scheduledDate: "2024-04-15",
+            assignedTo: "Phạm Văn D",
+            status: "pending",
+          },
+          {
+            id: "act-006",
+            name: "Thu hoạch đợt 2 - Monthong",
+            scheduledDate: "2024-05-20",
+            assignedTo: "Phạm Văn D",
+            status: "pending",
+          },
+        ],
+      },
+    ],
+
+    establishedDate: "2019-10-01",
+    status: "active",
+    notes:
+      "Vùng trồng thử nghiệm sầu riêng chất lượng cao, áp dụng công nghệ tưới tiên tiến",
+  },
+  {
+    id: "zone-002",
+    code: "ZONE-DN-001",
+    name: "Nông trại Hữu cơ Đồng Nai",
+    location: "Xã Gia Kiệm, Huyện Thống Nhất",
+    province: "Đồng Nai",
+    district: "Thống Nhất",
+    totalArea: 120.0,
+    cultivatedArea: 115.5,
+    coordinates: [
+      { lat: 10.957, lng: 107.22 },
+      { lat: 10.957, lng: 107.23 },
+      { lat: 10.965, lng: 107.23 },
+      { lat: 10.965, lng: 107.22 },
+    ],
+    mapCenter: { lat: 10.961, lng: 107.225 },
+
+    cropVarieties: [
+      {
+        id: "cv-004",
+        name: "Xoài",
+        variety: "Cát Hòa Lộc",
+        plantedDate: "2020-12-05",
+        totalPlants: 1200,
+        area: 40.0,
+        expectedYield: 8,
+        status: "growing",
+      },
+      {
+        id: "cv-005",
+        name: "Thanh long",
+        variety: "Ruột đỏ",
+        plantedDate: "2022-01-20",
+        totalPlants: 2500,
+        area: 35.5,
+        expectedYield: 20,
+        status: "flowering",
+      },
+      {
+        id: "cv-006",
+        name: "Nhãn",
+        variety: "Ido Thái Lan",
+        plantedDate: "2019-10-05",
+        totalPlants: 800,
+        area: 25.0,
+        expectedYield: 10,
+        status: "harvesting",
+      },
+      {
+        id: "cv-007",
+        name: "Chôm chôm",
+        variety: "Chôm chôm Nhãn",
+        plantedDate: "2020-04-12",
+        totalPlants: 450,
+        area: 15.0,
+        expectedYield: 7,
+        status: "flowering",
+      },
+    ],
+    mainCrop: "Rau màu hữu cơ",
+    soilType: "Đất phù sa",
+    irrigationSystem: "Tưới phun mưa",
+
+    staff: [
+      {
+        id: "staff-005",
+        name: "Hoàng Văn E",
+        role: "Quản lý vùng",
+        phone: "0945678901",
+        email: "hoangvane@example.com",
+        assignedDate: "2019-08-01",
+        specialization: "Nông nghiệp hữu cơ",
+      },
+      {
+        id: "staff-006",
+        name: "Võ Văn F",
+        role: "Kỹ thuật viên",
+        phone: "0956789012",
+        assignedDate: "2020-01-15",
+        specialization: "Trồng trọt hữu cơ",
+      },
+      {
+        id: "staff-007",
+        name: "Đặng Thị G",
+        role: "Kỹ thuật viên",
+        phone: "0967890123",
+        assignedDate: "2020-05-20",
+        specialization: "Kiểm soát chất lượng",
+      },
+    ],
+    manager: "Hoàng Văn E",
+
+    certifications: [
+      {
+        id: "cert-zone-003",
+        name: "Organic Certificate",
+        issuer: "Control Union Vietnam",
+        issueDate: "2023-08-01",
+        expiryDate: "2025-08-01",
+        certificateNumber: "ORG-VN-2023-167",
+        status: "valid",
+      },
+      {
+        id: "cert-zone-004",
+        name: "VietGAP",
+        issuer: "Sở Nông nghiệp Đồng Nai",
+        issueDate: "2023-06-15",
+        expiryDate: "2025-06-15",
+        certificateNumber: "VG-DN-2023-089",
+        status: "valid",
+      },
+    ],
+
+    cultivationPlans: [
+      {
+        id: "plan-003",
+        name: "Kế hoạch canh tác hữu cơ 2024",
+        startDate: "2024-01-01",
+        endDate: "2024-12-31",
+        status: "in-progress",
+        budget: 300000000,
+        actualCost: 120000000,
+        activities: [
+          {
+            id: "act-007",
+            name: "Bón phân hữu cơ",
+            scheduledDate: "2024-01-20",
+            completedDate: "2024-01-20",
+            assignedTo: "Võ Văn F",
+            status: "completed",
+          },
+          {
+            id: "act-008",
+            name: "Kiểm tra chất lượng đất",
+            scheduledDate: "2024-02-10",
+            completedDate: "2024-02-11",
+            assignedTo: "Đặng Thị G",
+            status: "completed",
+          },
+          {
+            id: "act-009",
+            name: "Phun thuốc sinh học",
+            scheduledDate: "2024-03-01",
+            assignedTo: "Võ Văn F",
+            status: "pending",
+          },
+        ],
+      },
+    ],
+
+    establishedDate: "2019-05-15",
+    status: "active",
+    notes: "Nông trại chuyên canh rau màu hữu cơ theo tiêu chuẩn quốc tế",
+  },
+  {
+    id: "zone-003",
+    code: "ZONE-DL-001",
+    name: "Đồi Cà phê Buôn Ma Thuột",
+    location: "Km 15, Quốc lộ 14, TP Buôn Ma Thuột",
+    province: "Đắk Lắk",
+    district: "Buôn Ma Thuột",
+    totalArea: 200.5,
+    cultivatedArea: 195.0,
+    coordinates: [
+      { lat: 12.667, lng: 108.037 },
+      { lat: 12.667, lng: 108.05 },
+      { lat: 12.68, lng: 108.05 },
+      { lat: 12.68, lng: 108.037 },
+    ],
+    mapCenter: { lat: 12.6735, lng: 108.0435 },
+
+    cropVarieties: [
+      {
+        id: "cv-008",
+        name: "Cà phê",
+        variety: "Robusta Đắk Lắk",
+        plantedDate: "2020-08-15",
+        totalPlants: 15000,
+        area: 150.0,
+        expectedYield: 2.5,
+        status: "flowering",
+      },
+      {
+        id: "cv-009",
+        name: "Cà phê",
+        variety: "Arabica Cầu Đất",
+        plantedDate: "2021-02-20",
+        totalPlants: 5000,
+        area: 45.0,
+        expectedYield: 1.8,
+        status: "growing",
+      },
+    ],
+    mainCrop: "Cà phê Robusta",
+    soilType: "Đất đỏ Bazan",
+    irrigationSystem: "Tưới nhỏ giọt",
+
+    staff: [
+      {
+        id: "staff-008",
+        name: "Nguyễn Văn H",
+        role: "Quản lý vùng",
+        phone: "0978901234",
+        email: "nguyenvanh@example.com",
+        assignedDate: "2020-06-01",
+        specialization: "Kỹ thuật trồng cà phê",
+      },
+      {
+        id: "staff-009",
+        name: "Lê Văn I",
+        role: "Kỹ thuật viên",
+        phone: "0989012345",
+        assignedDate: "2020-08-01",
+        specialization: "Chế biến cà phê",
+      },
+      {
+        id: "staff-010",
+        name: "Trần Thị K",
+        role: "Kỹ thuật viên",
+        phone: "0990123456",
+        assignedDate: "2021-01-10",
+        specialization: "Bảo vệ thực vật",
+      },
+    ],
+    manager: "Nguyễn Văn H",
+
+    certifications: [
+      {
+        id: "cert-zone-005",
+        name: "Rainforest Alliance",
+        issuer: "Rainforest Alliance",
+        issueDate: "2023-04-01",
+        expiryDate: "2026-04-01",
+        certificateNumber: "RA-VN-2023-156",
+        status: "valid",
+      },
+      {
+        id: "cert-zone-006",
+        name: "UTZ Certified",
+        issuer: "UTZ Vietnam",
+        issueDate: "2023-05-10",
+        expiryDate: "2025-05-10",
+        certificateNumber: "UTZ-2023-789",
+        status: "valid",
+      },
+    ],
+
+    cultivationPlans: [
+      {
+        id: "plan-004",
+        name: "Kế hoạch thu hoạch cà phê 2024",
+        startDate: "2024-10-01",
+        endDate: "2024-12-31",
+        status: "planned",
+        budget: 500000000,
+        activities: [
+          {
+            id: "act-010",
+            name: "Chuẩn bị thu hoạch",
+            scheduledDate: "2024-10-01",
+            assignedTo: "Lê Văn I",
+            status: "pending",
+          },
+          {
+            id: "act-011",
+            name: "Thu hoạch đợt 1",
+            scheduledDate: "2024-11-01",
+            assignedTo: "Nguyễn Văn H",
+            status: "pending",
+          },
+        ],
+      },
+    ],
+
+    establishedDate: "2020-05-01",
+    status: "active",
+    notes: "Vùng cà phê xuất khẩu chất lượng cao, áp dụng quy trình bền vững",
+  },
+];
