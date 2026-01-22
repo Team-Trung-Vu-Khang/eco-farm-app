@@ -1,0 +1,200 @@
+import type { SerializedEditorState } from "@tankhang1/eco-shared-ui";
+import type { Docs } from "./types";
+
+const now = Date.now();
+
+export const initialData: Docs[] = [
+  {
+    id: "TL001",
+    variety: "Ri6",
+    crop: "Sầu riêng",
+    season: ["Mùa mưa", "Mùa nắng sớm"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 40,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 2,
+  },
+  {
+    id: "TL002",
+    crop: "Sầu riêng",
+    variety: "Monthong (Thái)",
+    season: ["Mùa mưa"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 55,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 7,
+  },
+  {
+    id: "TL003",
+    crop: "Sầu riêng",
+    variety: "Musang King",
+    season: ["Mùa nắng sớm"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 70,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 12,
+  },
+  {
+    id: "TL004",
+    crop: "Sầu riêng",
+    variety: "DONA",
+    season: ["Mùa mưa", "Mùa nắng sớm"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 22,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 4,
+  },
+  {
+    id: "TL005",
+    crop: "Sầu riêng",
+    variety: "Chuồng Bò",
+    season: ["Mùa mưa", "Mùa nắng sớm"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 18,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 3,
+  },
+  {
+    id: "TL006",
+    crop: "Sầu riêng",
+    variety: "Khổ Qua Xanh",
+    season: ["Mùa mưa"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 95,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 20,
+  },
+  {
+    id: "TL007",
+    crop: "Sầu riêng",
+    variety: "Hạt lép (Local)",
+    season: ["Mùa nắng sớm", "Mùa mưa"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 33,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 6,
+  },
+  {
+    id: "TL008",
+    crop: "Sầu riêng",
+    variety: "Chín Hóa",
+    season: ["Mùa nắng sớm"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 60,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 10,
+  },
+  {
+    id: "TL009",
+    crop: "Sầu riêng",
+    variety: "Sữa",
+    season: ["Mùa mưa", "Mùa nắng sớm"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 120,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 30,
+  },
+  {
+    id: "TL010",
+    crop: "Sầu riêng",
+    variety: "Bí (Local)",
+    season: ["Mùa nắng sớm"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 75,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 9,
+  },
+  {
+    id: "TL011",
+    crop: "Sầu riêng",
+    variety: "Sầu riêng Thái (Chanee)",
+    season: ["Mùa nắng sớm", "Mùa mưa"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 44,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 5,
+  },
+  {
+    id: "TL012",
+    crop: "Sầu riêng",
+    variety: "Kanyao (Thái)",
+    season: ["Mùa mưa"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 88,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 14,
+  },
+  {
+    id: "TL013",
+    crop: "Sầu riêng",
+    variety: "Phượng Hoàng",
+    season: ["Mùa mưa"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 150,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 45,
+  },
+  {
+    id: "TL014",
+    crop: "Sầu riêng",
+    variety: "Sầu riêng Vàng (Local)",
+    season: ["Mùa mưa", "Mùa nắng sớm"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 26,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 8,
+  },
+  {
+    id: "TL015",
+    crop: "Sầu riêng",
+    variety: "Sầu riêng Đỏ (Red Prawn)",
+    season: ["Mùa mưa", "Mùa nắng sớm"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 64,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 11,
+  },
+  {
+    id: "TL016",
+    crop: "Sầu riêng",
+    variety: "Black Thorn",
+    season: ["Mùa nắng sớm"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 105,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 16,
+  },
+  {
+    id: "TL017",
+    crop: "Sầu riêng",
+    variety: "Sultan",
+    season: ["Mùa mưa"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 52,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 13,
+  },
+  {
+    id: "TL018",
+    crop: "Sầu riêng",
+    variety: "Bawor",
+    season: ["Mùa nắng sớm", "Mùa mưa"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 82,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 19,
+  },
+  {
+    id: "TL019",
+    crop: "Sầu riêng",
+    variety: "Ochee (Malaysia)",
+    season: ["Mùa mưa", "Mùa nắng sớm"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 29,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 6,
+  },
+  {
+    id: "TL020",
+    crop: "Sầu riêng",
+    variety: "Mon Thong Dona (Hybrid)",
+    season: ["Mùa nắng sớm"],
+    createdAt: now - 1000 * 60 * 60 * 24 * 140,
+    updatedAt: now - 1000 * 60 * 60 * 24 * 22,
+  },
+];
+
+export const seasonOptions = [
+  { label: "Mùa mưa", value: "Mùa mưa" },
+  { label: "Mùa nắng sớm", value: "Mùa nắng sớm" },
+  { label: "Chính vụ", value: "Chính vụ" },
+  { label: "Nghịch vụ", value: "Nghịch vụ" },
+];
+
+export const keywordOptions = [
+  { label: "VietGAP", value: "VietGAP" },
+  { label: "Phòng bệnh", value: "Phòng bệnh" },
+  { label: "Hữu cơ", value: "Hữu cơ" },
+  { label: "Tưới tiêu", value: "Tưới tiêu" },
+];
+
+export const initialEditorValue = {
+  root: {
+    children: [
+      {
+        indent: 0,
+        version: 1,
+        format: "",
+        direction: "ltr",
+        type: "paragraph",
+      },
+    ],
+    indent: 0,
+    version: 1,
+    format: "",
+    type: "root",
+    direction: "ltr",
+  },
+} as unknown as SerializedEditorState;
