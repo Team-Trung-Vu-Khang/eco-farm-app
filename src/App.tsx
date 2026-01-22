@@ -71,6 +71,10 @@ import SettingsPage from "./pages/settings/SettingsPage";
 import RegionDetailPage from "./pages/region-chart/region-distribution/RegionDetailPage";
 import CultivationAreaDetailPage from "./pages/cultivation-zone/cultivation-area/CultivationAreaDetailPage";
 import CultivationAreaEditPage from "./pages/cultivation-zone/cultivation-area/CultivationAreaEditPage";
+import GroupCropPage from "./pages/group-crop/GroupCropPage";
+import DocsPage from "./pages/docs/DocsPage";
+import CreateDocsPage from "./pages/docs/CreateDocsPage";
+import UpdateDocsPage from "./pages/docs/UpdateDocsPage";
 
 function Router() {
   return (
@@ -150,6 +154,10 @@ function Router() {
       <Route path="/search-zone" component={SearchZonePage} />
       <Route path="/crop" component={CropPage} />
       <Route path="/crop/create" component={CropCreatePage} />
+      <Route path="/group-crop" component={GroupCropPage} />
+      <Route path="/docs" component={DocsPage} />
+      <Route path="/docs/create" component={CreateDocsPage} />
+      <Route path="/docs/update/:id" component={UpdateDocsPage} />
       <Route path="/variety" component={VarietyPage} />
       <Route path="/seed" component={SeedPage} />
       <Route path="/growth-cycle" component={GrowthCyclePage} />
