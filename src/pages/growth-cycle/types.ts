@@ -1,0 +1,30 @@
+import type { SerializedEditorState } from "@tankhang1/eco-shared-ui";
+
+export interface GrowthStage {
+  id: string;
+  name: string;
+  duration: number;
+  usePdf: boolean;
+  pdfFile?: File | null;
+  content: SerializedEditorState;
+}
+
+export interface GrowthCycle {
+  id: string;
+  name: string;
+  cropId: string;
+  cropName: string;
+  variety: string;
+  totalDays: number;
+  numStages: number;
+  stages: GrowthStage[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface CreateGrowthCycleForm {
+  cropId: string;
+  variety: string;
+  totalDays: number;
+  stages: GrowthStage[];
+}
