@@ -17,6 +17,8 @@ import PesticideCreatePage from "./pages/pesticide/PesticideCreatePage";
 import PesticideDetailPage from "./pages/pesticide/PesticideDetailPage";
 import PlanPage from "./pages/plan/PlanPage";
 import PlanCreatePage from "./pages/plan/PlanCreatePage";
+import PlanDetailPage from "./pages/plan/PlanDetailPage";
+import PlanEditPage from "./pages/plan/PlanEditPage";
 import FertilizerCreatePage from "./pages/fertilizer/FertilizerCreatePage";
 import MaterialCreatePage from "./pages/material/MaterialCreatePage";
 import MaterialDetailPage from "./pages/material/MaterialDetailPage";
@@ -188,6 +190,8 @@ function Router() {
       <Route path="/unit/:id/edit" component={UnitCreatePage} />
       <Route path="/plan" component={PlanPage} />
       <Route path="/plan/create" component={PlanCreatePage} />
+      <Route path="/plan/:id/edit" component={PlanEditPage} />
+      <Route path="/plan/:id" component={PlanDetailPage} />
       <Route path="/task" component={TaskPage} />
       <Route path="/settings" component={SettingsPage} />
       <Route component={NotFoundPage} />
