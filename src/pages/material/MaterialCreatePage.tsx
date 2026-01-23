@@ -1,0 +1,575 @@
+import { useState, useEffect } from "react";
+import { useLocation, useRoute } from "wouter";
+import {
+  AdminLayout,
+  StepperForm,
+  Card,
+  CardContent,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+  Button,
+  Badge,
+  useToast,
+} from "@tankhang1/eco-shared-ui";
+import {
+  materialTypes,
+  commonHashtags,
+  suppliers,
+  units,
+  initialMaterials,
+} from "./constants";
+import {
+  ChevronLeft,
+  Upload,
+  Plus,
+  CheckCircle2,
+  Building2,
+  Tags,
+  Image as ImageIcon,
+  X,
+  Hammer,
+} from "lucide-react";
+
+interface MaterialFormData {
+  // Step 1
+  code: string;
+  name: string;
+  type: string;
+  description: string;
+  hashtags: string[];
+  imageUrl?: string;
+
+  // Step 2
+  supplierDetails: {
+    supplierId: string;
+    quantity: string;
+    unit: string;
+    packaging: string;
+  }[];
+}
+
+const MaterialCreatePage = () => {
+  const [, setLocation] = useLocation();
+  const [match, params] = useRoute("/material/:id/edit");
+  const isEdit = match && !!params?.id;
+  const { toast } = useToast();
+
+  const [formData, setFormData] = useState<MaterialFormData>({
+    code: "",
+    name: "",
+    type: "",
+    description: "",
+    hashtags: [],
+    supplierDetails: [],
+  });
+
+  const [paramHashtag, setParamHashtag] = useState("");
+  const [tempSupplier, setTempSupplier] = useState({
+    supplierId: "",
+    quantity: "",
+    unit: "",
+    packaging: "",
+  });
+
+  // Load initial data for Edit
+  useEffect(() => {
+    if (isEdit && params?.id) {
+      const item = initialMaterials.find((p) => p.id === Number(params.id));
+      if (item) {
+        setFormData({
+          code: item.code,
+          name: item.name,
+          type: item.type,
+          description: item.description,
+          hashtags: ["BenBi", "TietKiem"],
+          supplierDetails: [
+            {
+              supplierId: "sup1",
+              quantity: "50",
+              unit: "Cuộn",
+              packaging: "Cuộn 1000m",
+            },
+          ],
+        });
+      }
+    }
+  }, [isEdit, params?.id]);
+
+  const updateField = (field: keyof MaterialFormData, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddHashtag = () => {
+    if (paramHashtag && !formData.hashtags.includes(paramHashtag)) {
+      updateField("hashtags", [...formData.hashtags, paramHashtag]);
+      setParamHashtag("");
+    }
+  };
+
+  const removeHashtag = (tag: string) => {
+    updateField(
+      "hashtags",
+      formData.hashtags.filter((t) => t !== tag),
+    );
+  };
+
+  const addSupplierItem = () => {
+    if (
+      !tempSupplier.supplierId ||
+      !tempSupplier.quantity ||
+      !tempSupplier.unit
+    ) {
+      toast({
+        title: "Thiếu thông tin",
+        description: "Vui lòng chọn nhà cung cấp, số lượng và đơn vị",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateField("supplierDetails", [...formData.supplierDetails, tempSupplier]);
+    setTempSupplier({ supplierId: "", quantity: "", unit: "", packaging: "" });
+  };
+
+  const removeSupplierItem = (index: number) => {
+    const newDetails = [...formData.supplierDetails];
+    newDetails.splice(index, 1);
+    updateField("supplierDetails", newDetails);
+  };
+
+  // --- Step 1: Basic Information ---
+  const renderStep1 = () => (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="lg:col-span-2 space-y-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+          <h3 className="font-semibold text-lg flex items-center gap-2">
+            <Hammer className="w-5 h-5 text-primary" />
+            Thông tin chung
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>
+                Mã vật tư <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                value={formData.code}
+                onChange={(e) => updateField("code", e.target.value)}
+                placeholder="VD: VL001"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>
+                Tên vật tư <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                value={formData.name}
+                onChange={(e) => updateField("name", e.target.value)}
+                placeholder="Nhập tên vật tư..."
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Phân loại</Label>
+              <Select
+                value={formData.type}
+                onValueChange={(v) => updateField("type", v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn loại vật tư" />
+                </SelectTrigger>
+                <SelectContent>
+                  {materialTypes.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Mô tả chi tiết</Label>
+            <Textarea
+              value={formData.description}
+              onChange={(e) => updateField("description", e.target.value)}
+              placeholder="Mô tả đặc điểm, thông số kỹ thuật..."
+              rows={4}
+            />
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+          <h3 className="font-semibold text-lg flex items-center gap-2">
+            <Tags className="w-5 h-5 text-primary" />
+            Hashtags
+          </h3>
+          <div className="space-y-3">
+            <Label>Thêm Hashtag</Label>
+            <div className="flex gap-2">
+              <Input
+                value={paramHashtag}
+                onChange={(e) => setParamHashtag(e.target.value)}
+                placeholder="Nhập hashtag..."
+                onKeyDown={(e) => e.key === "Enter" && handleAddHashtag()}
+              />
+              <Button
+                type="button"
+                onClick={handleAddHashtag}
+                variant="outline"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2 pt-2">
+              {commonHashtags.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="outline"
+                  className={`cursor-pointer transition-all ${
+                    formData.hashtags.includes(tag)
+                      ? "bg-primary/10 border-primary text-primary"
+                      : "hover:bg-slate-100"
+                  }`}
+                  onClick={() =>
+                    formData.hashtags.includes(tag)
+                      ? removeHashtag(tag)
+                      : updateField("hashtags", [...formData.hashtags, tag])
+                  }
+                >
+                  #{tag}
+                </Badge>
+              ))}
+              {formData.hashtags
+                .filter((t) => !commonHashtags.includes(t))
+                .map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
+                    #{tag}
+                    <X
+                      className="w-3 h-3 cursor-pointer"
+                      onClick={() => removeHashtag(tag)}
+                    />
+                  </Badge>
+                ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+          <h3 className="font-semibold text-lg flex items-center gap-2">
+            <ImageIcon className="w-5 h-5 text-primary" />
+            Hình ảnh
+          </h3>
+          <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer min-h-[200px]">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary">
+              <Upload className="w-8 h-8" />
+            </div>
+            <p className="font-medium text-slate-900">Tải lên ảnh vật tư</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Kéo thả hoặc click để chọn file
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // --- Step 2: Suppliers ---
+  const renderStep2 = () => (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-4xl mx-auto">
+      <div className="bg-white p-6 rounded-xl shadow-sm border space-y-6">
+        <div>
+          <h3 className="font-semibold text-lg flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-primary" />
+            Danh sách nhà cung cấp
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Quản lý nguồn cung ứng vật tư
+          </p>
+        </div>
+
+        {/* Add Form */}
+        <div className="bg-slate-50 p-4 rounded-xl border space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Chọn nhà cung cấp</Label>
+              <Select
+                value={tempSupplier.supplierId}
+                onValueChange={(v) =>
+                  setTempSupplier({ ...tempSupplier, supplierId: v })
+                }
+              >
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Chọn đối tác..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {suppliers.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name} ({s.type === "enterprise" ? "DN" : "NH"})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Quy cách đóng gói</Label>
+              <Input
+                placeholder="VD: Thùng 20 cái"
+                value={tempSupplier.packaging}
+                onChange={(e) =>
+                  setTempSupplier({
+                    ...tempSupplier,
+                    packaging: e.target.value,
+                  })
+                }
+                className="bg-white"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Số lượng</Label>
+              <Input
+                type="number"
+                placeholder="0"
+                value={tempSupplier.quantity}
+                onChange={(e) =>
+                  setTempSupplier({ ...tempSupplier, quantity: e.target.value })
+                }
+                className="bg-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Đơn vị tính</Label>
+              <Select
+                value={tempSupplier.unit}
+                onValueChange={(v) =>
+                  setTempSupplier({ ...tempSupplier, unit: v })
+                }
+              >
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Đơn vị..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {units.map((u) => (
+                    <SelectItem key={u} value={u}>
+                      {u}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <Button
+            onClick={addSupplierItem}
+            className="w-full md:w-auto"
+            type="button"
+          >
+            <Plus className="w-4 h-4 mr-2" /> Thêm vào danh sách
+          </Button>
+        </div>
+
+        {/* List */}
+        <div className="space-y-2">
+          <Label>Danh sách đã chọn ({formData.supplierDetails.length})</Label>
+          {formData.supplierDetails.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground bg-slate-50 rounded-lg border border-dashed">
+              Chưa có nhà cung cấp nào được chọn
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {formData.supplierDetails.map((item, idx) => {
+                const supInfo = suppliers.find((s) => s.id === item.supplierId);
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-white shadow-sm"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 font-bold">
+                        {idx + 1}
+                      </div>
+                      <div>
+                        <div className="font-medium text-sm">
+                          {supInfo?.name || item.supplierId}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {item.quantity} {item.unit} • {item.packaging}
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeSupplierItem(idx)}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  // --- Step 3: Confirmation ---
+  const renderStep3 = () => (
+    <div className="max-w-3xl mx-auto animate-in fade-in zoom-in duration-300">
+      <div className="bg-green-50 border border-green-100 rounded-2xl p-8 text-center mb-8">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600">
+          <CheckCircle2 className="w-8 h-8" />
+        </div>
+        <h3 className="text-2xl font-bold text-green-900">
+          Xác nhận thông tin
+        </h3>
+        <p className="text-green-700 mt-2">
+          Vui lòng kiểm tra kỹ thông tin trước khi hoàn tất
+        </p>
+      </div>
+
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-6">
+            <h4 className="font-semibold mb-4 text-slate-800 border-b pb-2">
+              Thông tin vật tư
+            </h4>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">Mã:</span>{" "}
+                <span className="font-medium">{formData.code}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Tên:</span>{" "}
+                <span className="font-medium">{formData.name}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Loại:</span>{" "}
+                <span className="font-medium">{formData.type}</span>
+              </div>
+              <div className="col-span-2">
+                <span className="text-muted-foreground block mb-1">Mô tả:</span>
+                <span className="font-medium bg-slate-50 p-2 block rounded border border-slate-100">
+                  {formData.description || "Không có mô tả"}
+                </span>
+              </div>
+              <div className="col-span-2">
+                <span className="text-muted-foreground">Tags:</span>{" "}
+                <div className="inline-flex gap-1 flex-wrap mt-1">
+                  {formData.hashtags.map((t) => (
+                    <Badge key={t} variant="secondary" className="text-xs">
+                      #{t}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <h4 className="font-semibold mb-4 text-slate-800 border-b pb-2">
+              Thông tin cung ứng ({formData.supplierDetails.length})
+            </h4>
+            <div className="space-y-2">
+              {formData.supplierDetails.map((item, idx) => {
+                const supInfo = suppliers.find((s) => s.id === item.supplierId);
+                return (
+                  <div
+                    key={idx}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50 text-sm"
+                  >
+                    <span className="font-medium text-slate-900">
+                      {idx + 1}. {supInfo?.name}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {item.quantity} {item.unit} / {item.packaging}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+
+  const steps = [
+    {
+      id: "info",
+      title: "Thông tin cơ bản",
+      content: renderStep1(),
+    },
+    {
+      id: "supply",
+      title: "Nhà cung cấp",
+      content: renderStep2(),
+    },
+    {
+      id: "confirm",
+      title: "Xác nhận",
+      content: renderStep3(),
+    },
+  ];
+
+  return (
+    <AdminLayout
+      title={isEdit ? "Cập nhật vật tư" : "Thêm mới vật tư"}
+      description={
+        isEdit
+          ? `Chỉnh sửa thông tin ${formData.name}`
+          : "Khai báo thông tin vật tư, thiết bị mới"
+      }
+    >
+      <div className="mb-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setLocation("/material")}
+          className="gap-2 pl-0 text-muted-foreground hover:text-primary"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Quay lại danh sách
+        </Button>
+      </div>
+
+      <div className="bg-white/50 backdrop-blur-xs rounded-xl">
+        <StepperForm
+          steps={steps}
+          completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
+          onComplete={() => {
+            console.log("Submit:", formData);
+            toast({
+              title: "Thành công",
+              description: isEdit
+                ? "Đã cập nhật thông tin vật tư"
+                : "Đã thêm mới vật tư",
+            });
+            setLocation("/material");
+          }}
+          onCancel={() => setLocation("/material")}
+        />
+      </div>
+    </AdminLayout>
+  );
+};
+
+export default MaterialCreatePage;

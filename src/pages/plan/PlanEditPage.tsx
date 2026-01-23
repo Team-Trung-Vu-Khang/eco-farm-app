@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 
 import {
   ClipboardList,
@@ -39,37 +39,83 @@ import {
 // Interface cho vật tư chi tiết
 interface MaterialAllocation {
   id: number;
-  cycle: string; // Chu kỳ (VD: "Chu kỳ 1", "Chu kỳ 2")
-  stage: string; // Giai đoạn
-  materialCategory: string; // Loại vật tư (pesticide, fertilizer, other)
-  materialType: string; // Loại vật tư cụ thể (VD: "Phân NPK", "Thuốc trừ sâu")
-  materialName: string; // Tên vật tư cụ thể
+  cycle: string;
+  stage: string;
+  materialCategory: string;
+  materialType: string;
+  materialName: string;
   quantity: string;
   unit: string;
-  packaging: string; // Quy cách đóng gói
+  packaging: string;
 }
 
-export default function PlanCreatePage() {
+// Mock data - trong thực tế sẽ fetch từ API
+const mockPlanData = {
+  id: "1",
+  code: "KH001",
+  name: "Kế hoạch sầu riêng vụ Xuân 2025",
+  season: "Vụ Xuân 2025",
+  startDate: "2025-01-01",
+  endDate: "2025-06-30",
+  zone: "Vùng A1 - Bình Phước",
+  cultivationArea: "Khu A",
+  plot: "Lô 1",
+  crop: "Sầu riêng",
+  variety: "Monthon",
+  area: "10",
+  expectedYield: "50",
+  description: "Kế hoạch canh tác sầu riêng Monthon vụ Xuân 2025 tại vùng A1",
+  stages: [
+    "Chuẩn bị đất",
+    "Gieo trồng",
+    "Chăm sóc giai đoạn 1",
+    "Bón phân lần 1",
+    "Phun thuốc BVTV",
+  ],
+  materialAllocations: [
+    {
+      id: 1,
+      cycle: "Chu kỳ 1",
+      stage: "Chuẩn bị đất",
+      materialCategory: "fertilizer",
+      materialType: "Phân hữu cơ",
+      materialName: "Phân chuồng",
+      quantity: "500",
+      unit: "kg",
+      packaging: "Bao 50kg",
+    },
+    {
+      id: 2,
+      cycle: "Chu kỳ 1",
+      stage: "Bón phân lần 1",
+      materialCategory: "fertilizer",
+      materialType: "Phân NPK",
+      materialName: "NPK 20-20-15",
+      quantity: "100",
+      unit: "kg",
+      packaging: "Bao 25kg",
+    },
+    {
+      id: 3,
+      cycle: "Chu kỳ 1",
+      stage: "Phun thuốc BVTV",
+      materialCategory: "pesticide",
+      materialType: "Thuốc trừ sâu",
+      materialName: "Abamectin",
+      quantity: "2",
+      unit: "lít",
+      packaging: "Chai 1 lít",
+    },
+  ] as MaterialAllocation[],
+};
+
+export default function PlanEditPage() {
+  const params = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const [formData, setFormData] = useState({
-    code: "",
-    name: "",
-    season: "",
-    startDate: "",
-    endDate: "",
-    zone: "",
-    cultivationArea: "", // Khu vực canh tác
-    plot: "", // Lô
-    crop: "",
-    variety: "",
-    area: "",
-    expectedYield: "",
-    description: "",
-    stages: [] as string[],
-    materialAllocations: [] as MaterialAllocation[],
-  });
+  // Load existing data
+  const [formData, setFormData] = useState(mockPlanData);
 
   // State cho form thêm vật tư
   const [newMaterial, setNewMaterial] = useState({
@@ -96,10 +142,8 @@ export default function PlanCreatePage() {
     "Thu hoạch",
   ];
 
-  // Danh sách chu kỳ
   const cycles = ["Chu kỳ 1", "Chu kỳ 2", "Chu kỳ 3", "Chu kỳ 4"];
 
-  // Danh sách loại vật tư theo category
   const materialTypes: Record<string, string[]> = {
     fertilizer: [
       "Phân NPK",
@@ -117,7 +161,6 @@ export default function PlanCreatePage() {
     other: ["Giống cây", "Vật tư khác"],
   };
 
-  // Danh sách vật tư cụ thể theo loại
   const specificMaterials: Record<string, string[]> = {
     "Phân NPK": ["NPK 16-16-8", "NPK 20-20-15", "NPK 30-10-10"],
     "Phân hữu cơ": ["Phân chuồng", "Phân compost", "Phân vi sinh"],
@@ -132,7 +175,6 @@ export default function PlanCreatePage() {
     "Vật tư khác": ["Khác"],
   };
 
-  // Quy cách đóng gói
   const packagingOptions = [
     "Bao 50kg",
     "Bao 25kg",
@@ -193,9 +235,9 @@ export default function PlanCreatePage() {
   const handleComplete = () => {
     toast({
       title: "Thành công",
-      description: `Đã tạo kế hoạch "${formData.name}"`,
+      description: `Đã cập nhật kế hoạch "${formData.name}"`,
     });
-    setLocation("/plan");
+    setLocation(`/plan/${params.id}`);
   };
 
   const steps: Step[] = [
@@ -213,7 +255,7 @@ export default function PlanCreatePage() {
               Thông tin kế hoạch
             </h3>
             <p className="text-muted-foreground">
-              Nhập thông tin cơ bản về kế hoạch canh tác
+              Chỉnh sửa thông tin cơ bản về kế hoạch canh tác
             </p>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -894,10 +936,10 @@ export default function PlanCreatePage() {
               <Check className="w-8 h-8 text-primary" />
             </div>
             <h3 className="font-display font-bold text-xl">
-              Xác nhận kế hoạch
+              Xác nhận thay đổi
             </h3>
             <p className="text-muted-foreground mt-2">
-              Kiểm tra lại thông tin trước khi tạo kế hoạch
+              Kiểm tra lại thông tin trước khi cập nhật kế hoạch
             </p>
           </div>
 
@@ -1003,7 +1045,6 @@ export default function PlanCreatePage() {
                 </p>
               ) : (
                 <div className="space-y-4">
-                  {/* Tổng hợp theo chu kỳ */}
                   {cycles.map((cycle) => {
                     const cycleMaterials = formData.materialAllocations.filter(
                       (m) => m.cycle === cycle,
@@ -1019,7 +1060,6 @@ export default function PlanCreatePage() {
                           </Badge>
                         </div>
                         <div className="ml-4 space-y-2">
-                          {/* Nhóm theo giai đoạn */}
                           {Array.from(
                             new Set(cycleMaterials.map((m) => m.stage)),
                           ).map((stage) => {
@@ -1133,16 +1173,16 @@ export default function PlanCreatePage() {
 
   return (
     <AdminLayout
-      title="Tạo mới kế hoạch canh tác"
-      description="Lập kế hoạch canh tác theo từng bước"
+      title="Chỉnh sửa kế hoạch canh tác"
+      description={`Cập nhật thông tin kế hoạch ${formData.code}`}
     >
       <Card>
         <CardContent className="p-6">
           <StepperForm
             steps={steps}
             onComplete={handleComplete}
-            onCancel={() => setLocation("/plan")}
-            completeLabel="Tạo kế hoạch"
+            onCancel={() => setLocation(`/plan/${params.id}`)}
+            completeLabel="Cập nhật kế hoạch"
           />
         </CardContent>
       </Card>
