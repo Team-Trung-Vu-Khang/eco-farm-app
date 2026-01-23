@@ -11,6 +11,7 @@ import BranchCreatePage from "./pages/branch/BranchCreatePage";
 import BranchEditPage from "./pages/branch/BranchEditPage";
 import CropPage from "./pages/crop/CropPage";
 import CropCreatePage from "./pages/crop/CropCreatePage";
+import CropDetailPage from "./pages/crop/CropDetailPage";
 
 import PesticidePage from "./pages/pesticide/PesticidePage";
 import PesticideCreatePage from "./pages/pesticide/PesticideCreatePage";
@@ -45,6 +46,8 @@ import SearchZonePage from "./pages/cultivation-zone/search-zone/SearchZonePage"
 
 import SeedPage from "./pages/seed/SeedPage";
 import GrowthCyclePage from "./pages/growth-cycle/GrowthCyclePage";
+import CreateGrowthCyclePage from "./pages/growth-cycle/CreateGrowthCyclePage";
+import UpdateGrowthCyclePage from "./pages/growth-cycle/UpdateGrowthCyclePage";
 import SeasonPage from "./pages/season/SeasonPage";
 import LandPage from "./pages/land/LandPage";
 import FarmingMethodPage from "./pages/farming-method/FarmingMethodPage";
@@ -61,6 +64,8 @@ import TeamPage from "./pages/team/TeamPage";
 import TeamCreatePage from "./pages/team/TeamCreatePage";
 import TeamDetailPage from "./pages/team/TeamDetailPage";
 import VarietyPage from "./pages/variety/VarietyPage";
+import CreateVarietyPage from "./pages/variety/CreateVarietyPage";
+import VarietyEditPage from "./pages/variety/VarietyEditPage";
 import MaterialPage from "./pages/material/MaterialPage";
 import FertilizerPage from "./pages/fertilizer/FertilizerPage";
 import ContractPage from "./pages/contract/ContractPage";
@@ -75,6 +80,11 @@ import GroupCropPage from "./pages/group-crop/GroupCropPage";
 import DocsPage from "./pages/docs/DocsPage";
 import CreateDocsPage from "./pages/docs/CreateDocsPage";
 import UpdateDocsPage from "./pages/docs/UpdateDocsPage";
+import CreateSeedPage from "./pages/seed/CreateSeedPage";
+import SeedDetailPage from "./pages/seed/SeedDetailPage";
+import UpdateSeedPage from "./pages/seed/UpdateSeedPage";
+import TreatmentPage from "./pages/treatment/TreatmentPage";
+import CreateTreatmentPage from "./pages/treatment/CreateTreatmentPage";
 
 function Router() {
   return (
@@ -154,13 +164,21 @@ function Router() {
       <Route path="/search-zone" component={SearchZonePage} />
       <Route path="/crop" component={CropPage} />
       <Route path="/crop/create" component={CropCreatePage} />
+      <Route path="/crop/:id" component={CropDetailPage} />
       <Route path="/group-crop" component={GroupCropPage} />
       <Route path="/docs" component={DocsPage} />
       <Route path="/docs/create" component={CreateDocsPage} />
       <Route path="/docs/update/:id" component={UpdateDocsPage} />
       <Route path="/variety" component={VarietyPage} />
+      <Route path="/variety/create" component={CreateVarietyPage} />
+      <Route path="/variety/:id/edit" component={VarietyEditPage} />
       <Route path="/seed" component={SeedPage} />
+      <Route path="/seed/create" component={CreateSeedPage} />
+      <Route path="/seed/:id/edit" component={UpdateSeedPage} />
+      <Route path="/seed/:id" component={SeedDetailPage} />
       <Route path="/growth-cycle" component={GrowthCyclePage} />
+      <Route path="/growth-cycle/create" component={CreateGrowthCyclePage} />
+      <Route path="/growth-cycle/:id/edit" component={UpdateGrowthCyclePage} />
       <Route path="/season" component={SeasonPage} />
       <Route path="/pesticide" component={PesticidePage} />
       <Route path="/pesticide/create" component={PesticideCreatePage} />
@@ -175,6 +193,8 @@ function Router() {
       <Route path="/plan/create" component={PlanCreatePage} />
       <Route path="/task" component={TaskPage} />
       <Route path="/settings" component={SettingsPage} />
+      <Route path="/treatment" component={TreatmentPage} />
+      <Route path="/treatment/create" component={CreateTreatmentPage} />
       <Route component={NotFoundPage} />
     </Switch>
   );
