@@ -1,54 +1,125 @@
-import GenericPage from "../GenericPage";
+import {
+  AdminLayout,
+  Badge,
+  Button,
+  DataTable,
+  DeleteDialog,
+  useToast,
+  type Column,
+} from "@tankhang1/eco-shared-ui";
+import { useState } from "react";
+import { Link, useLocation } from "wouter";
+import { Hash, Layers, Plus, Sprout } from "lucide-react";
+import type { GrowthCycle } from "./types";
+import { initialGrowthCycles } from "./mocks";
+
+const columns: Column<GrowthCycle>[] = [
+  {
+    key: "id",
+    label: "Mã mẫu",
+    render: (value) => (
+      <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-muted-foreground bg-muted/50 px-2 py-1 rounded-md border w-fit">
+        <Hash className="w-3 h-3 opacity-60" />
+        {value}
+      </div>
+    ),
+  },
+  {
+    key: "name",
+    label: "Chu kỳ",
+    render: (value) => (
+      <div className="flex items-center gap-2">
+        <Sprout className="w-4 h-4 text-primary" />
+        <span className="font-semibold">{value}</span>
+      </div>
+    ),
+  },
+  {
+    key: "totalDays",
+    label: "Thời gian",
+    render: (value) => (
+      <Badge
+        variant="secondary"
+        className="bg-blue-50 text-blue-700 border-blue-100 text-[10px] font-bold uppercase tracking-wider"
+      >
+        {value} NGÀY
+      </Badge>
+    ),
+  },
+  {
+    key: "numStages",
+    label: "Số giai đoạn",
+    render: (value) => (
+      <div className="flex items-center gap-1.5 text-sm text-muted-foreground font-medium">
+        <Layers className="w-3.5 h-3.5 opacity-60" />
+        {value} giai đoạn
+      </div>
+    ),
+  },
+];
 
 const GrowthCyclePage = () => {
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const [data, setData] = useState<GrowthCycle[]>(initialGrowthCycles);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<GrowthCycle | null>(null);
+
+  const handleDelete = (item: GrowthCycle) => {
+    setDeleteItem(item);
+    setDeleteOpen(true);
+  };
+
+  const handleEdit = (item: GrowthCycle) => {
+    setLocation(`/growth-cycle/${item.id}/edit`);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteItem) {
+      setData((prev) => prev.filter((i) => i.id !== deleteItem.id));
+      toast({ title: "Thành công", description: "Đã xóa chu kỳ sinh trưởng" });
+    }
+    setDeleteOpen(false);
+  };
+
   return (
-    <GenericPage
+    <AdminLayout
       title="Quản lý chu kỳ sinh trưởng"
       description="Các giai đoạn phát triển của cây trồng"
-      entityName="chu kỳ"
-      initialData={[
-        {
-          id: 1,
-          code: "CK001",
-          name: "Giai đoạn cây con",
-          description: "0-12 tháng sau trồng",
-          status: "active",
-          createdAt: "2024-01-10",
-        },
-        {
-          id: 2,
-          code: "CK002",
-          name: "Giai đoạn sinh trưởng",
-          description: "12-36 tháng",
-          status: "active",
-          createdAt: "2024-01-11",
-        },
-        {
-          id: 3,
-          code: "CK003",
-          name: "Giai đoạn ra hoa",
-          description: "Cây bắt đầu ra hoa",
-          status: "active",
-          createdAt: "2024-01-12",
-        },
-        {
-          id: 4,
-          code: "CK004",
-          name: "Giai đoạn đậu quả",
-          description: "Cây đậu quả và phát triển",
-          status: "active",
-          createdAt: "2024-01-13",
-        },
-        {
-          id: 5,
-          code: "CK005",
-          name: "Giai đoạn thu hoạch",
-          description: "Quả chín, sẵn sàng thu hoạch",
-          status: "active",
-          createdAt: "2024-01-14",
-        },
-      ]}
-    />
+      actions={
+        <div className="flex gap-2">
+          {/* <Button variant="outline" size="sm" className="h-9 px-3 border-dashed hover:bg-muted/50">
+            <Download className="w-4 h-4 mr-2" />
+            Xuất Excel
+          </Button> */}
+          <Link href="/growth-cycle/create">
+            <Button
+              size="sm"
+              className="h-9 px-3 shadow-sm hover:shadow-md transition-all active:scale-95"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Thêm mới
+            </Button>
+          </Link>
+        </div>
+      }
+    >
+      <DataTable
+        data={data}
+        selectable
+        columns={columns}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        searchPlaceholder="Tìm kiếm chu kỳ..."
+      />
+
+      <DeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onConfirm={handleConfirmDelete}
+      />
+    </AdminLayout>
   );
 };
+
 export default GrowthCyclePage;
