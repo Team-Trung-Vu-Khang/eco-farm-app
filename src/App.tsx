@@ -83,6 +83,7 @@ import CultivationAreaEditPage from "./pages/cultivation-zone/cultivation-area/C
 import ContractDetailPage from "./pages/contract/ContractDetailPage";
 import ContractCreatePage from "./pages/contract/ContractCreatePage";
 import ContractEditPage from "./pages/contract/ContractEditPage";
+import TreatmentPage from "./pages/treatment/TreatmentPage";
 
 function Router() {
   return (
@@ -158,6 +159,7 @@ function Router() {
         path="/distribution-detail/:id/edit"
         component={PlantDistributionCreatePage}
       />
+      <Route path="/treatment" component={TreatmentPage} />
       <Route path="/search-crop" component={SearchCropPage} />
       <Route path="/search-zone" component={SearchZonePage} />
       <Route path="/crop" component={CropPage} />
