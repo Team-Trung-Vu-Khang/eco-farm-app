@@ -18,6 +18,15 @@ import PesticideCreatePage from "./pages/pesticide/PesticideCreatePage";
 import PesticideDetailPage from "./pages/pesticide/PesticideDetailPage";
 import PlanPage from "./pages/plan/PlanPage";
 import PlanCreatePage from "./pages/plan/PlanCreatePage";
+import PlanDetailPage from "./pages/plan/PlanDetailPage";
+import PlanEditPage from "./pages/plan/PlanEditPage";
+import FertilizerCreatePage from "./pages/fertilizer/FertilizerCreatePage";
+import MaterialCreatePage from "./pages/material/MaterialCreatePage";
+import MaterialDetailPage from "./pages/material/MaterialDetailPage";
+import EquipmentCreatePage from "./pages/equipment/EquipmentCreatePage";
+import EquipmentDetailPage from "./pages/equipment/EquipmentDetailPage";
+import UnitCreatePage from "./pages/unit/UnitCreatePage";
+
 import NotFoundPage from "./pages/NotFoundPage";
 import { Toaster, TooltipProvider } from "@tankhang1/eco-shared-ui";
 import BankPage from "./pages/bank/BankPage";
@@ -76,6 +85,10 @@ import SettingsPage from "./pages/settings/SettingsPage";
 import RegionDetailPage from "./pages/region-chart/region-distribution/RegionDetailPage";
 import CultivationAreaDetailPage from "./pages/cultivation-zone/cultivation-area/CultivationAreaDetailPage";
 import CultivationAreaEditPage from "./pages/cultivation-zone/cultivation-area/CultivationAreaEditPage";
+import ContractDetailPage from "./pages/contract/ContractDetailPage";
+import ContractCreatePage from "./pages/contract/ContractCreatePage";
+import ContractEditPage from "./pages/contract/ContractEditPage";
+import TreatmentPage from "./pages/treatment/TreatmentPage";
 import GroupCropPage from "./pages/group-crop/GroupCropPage";
 import DocsPage from "./pages/docs/DocsPage";
 import CreateDocsPage from "./pages/docs/CreateDocsPage";
@@ -83,7 +96,6 @@ import UpdateDocsPage from "./pages/docs/UpdateDocsPage";
 import CreateSeedPage from "./pages/seed/CreateSeedPage";
 import SeedDetailPage from "./pages/seed/SeedDetailPage";
 import UpdateSeedPage from "./pages/seed/UpdateSeedPage";
-import TreatmentPage from "./pages/treatment/TreatmentPage";
 import CreateTreatmentPage from "./pages/treatment/CreateTreatmentPage";
 
 function Router() {
@@ -160,6 +172,7 @@ function Router() {
         path="/distribution-detail/:id/edit"
         component={PlantDistributionCreatePage}
       />
+      <Route path="/treatment" component={TreatmentPage} />
       <Route path="/search-crop" component={SearchCropPage} />
       <Route path="/search-zone" component={SearchZonePage} />
       <Route path="/crop" component={CropPage} />
@@ -185,12 +198,27 @@ function Router() {
       <Route path="/pesticide/:id/edit" component={PesticideCreatePage} />
       <Route path="/pesticide/:id" component={PesticideDetailPage} />
       <Route path="/fertilizer" component={FertilizerPage} />
+      <Route path="/fertilizer/create" component={FertilizerCreatePage} />
+      <Route path="/fertilizer/:id/edit" component={FertilizerCreatePage} />
       <Route path="/material" component={MaterialPage} />
+      <Route path="/material/create" component={MaterialCreatePage} />
+      <Route path="/material/:id" component={MaterialDetailPage} />
+
       <Route path="/equipment" component={EquipmentPage} />
+      <Route path="/equipment/create" component={EquipmentCreatePage} />
+      <Route path="/equipment/:id/edit" component={EquipmentCreatePage} />
+      <Route path="/equipment/:id" component={EquipmentDetailPage} />
       <Route path="/contract" component={ContractPage} />
+      <Route path="/contract/create" component={ContractCreatePage} />
+      <Route path="/contract/:id/edit" component={ContractEditPage} />
+      <Route path="/contract/:id" component={ContractDetailPage} />
       <Route path="/unit" component={UnitPage} />
+      <Route path="/unit/create" component={UnitCreatePage} />
+      <Route path="/unit/:id/edit" component={UnitCreatePage} />
       <Route path="/plan" component={PlanPage} />
       <Route path="/plan/create" component={PlanCreatePage} />
+      <Route path="/plan/:id/edit" component={PlanEditPage} />
+      <Route path="/plan/:id" component={PlanDetailPage} />
       <Route path="/task" component={TaskPage} />
       <Route path="/settings" component={SettingsPage} />
       <Route path="/treatment" component={TreatmentPage} />
