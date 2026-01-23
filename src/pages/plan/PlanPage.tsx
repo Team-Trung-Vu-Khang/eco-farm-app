@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Plus, Calendar, MapPin, Sprout } from "lucide-react";
 import {
   AdminLayout,
@@ -92,6 +92,7 @@ const initialData: Plan[] = [
 
 export default function PlanPage() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [data, setData] = useState<Plan[]>(initialData);
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -123,15 +124,15 @@ export default function PlanPage() {
             value === "active"
               ? "default"
               : value === "completed"
-              ? "secondary"
-              : "outline"
+                ? "secondary"
+                : "outline"
           }
         >
           {value === "active"
             ? "Đang thực hiện"
             : value === "completed"
-            ? "Hoàn thành"
-            : "Bản nháp"}
+              ? "Hoàn thành"
+              : "Bản nháp"}
         </Badge>
       ),
     },
@@ -155,18 +156,7 @@ export default function PlanPage() {
   };
 
   const handleEdit = (item: Plan) => {
-    setEditItem(item);
-    setFormData({
-      code: item.code,
-      name: item.name,
-      season: item.season,
-      zone: item.zone,
-      crop: item.crop,
-      variety: item.variety,
-      startDate: item.startDate,
-      endDate: item.endDate,
-    });
-    setFormOpen(true);
+    setLocation(`/plan/${item.id}/edit`);
   };
 
   const handleDelete = (item: Plan) => {
@@ -178,8 +168,8 @@ export default function PlanPage() {
     if (editItem) {
       setData((prev) =>
         prev.map((item) =>
-          item.id === editItem.id ? { ...item, ...formData } : item
-        )
+          item.id === editItem.id ? { ...item, ...formData } : item,
+        ),
       );
       toast({
         title: "Thành công",
@@ -267,9 +257,7 @@ export default function PlanPage() {
       <DataTable
         columns={columns}
         data={data}
-        onView={(item) =>
-          toast({ title: "Xem chi tiết", description: item.name })
-        }
+        onView={(item) => setLocation(`/plan/${item.id}`)}
         onEdit={handleEdit}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm kế hoạch..."
