@@ -15,7 +15,6 @@ export default defineConfig({
       filename: "remoteEntry.js",
       exposes: {
         "./App": "./src/App.tsx",
-        "./FarmerFarmingWorkPage": "./src/pages/farmer/farming-work/index.tsx",
       },
       shared: [],
     }),
