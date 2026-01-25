@@ -18,8 +18,6 @@ import {
   Button,
   Badge,
   ScrollArea,
-  RadioGroup,
-  RadioGroupItem,
 } from "@tankhang1/eco-shared-ui";
 import { MapContainer, TileLayer, Popup, Tooltip, Marker } from "react-leaflet";
 import L from "leaflet";
@@ -439,356 +437,472 @@ const PlantDistributionCreatePage = () => {
   );
 
   const renderStep2 = () => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
-        <div className="text-green-600">
-          <Sprout className="w-5 h-5" />
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="bg-green-50 border border-green-200 rounded-lg p-5 flex items-start gap-4">
+        <div className="bg-green-100 p-2 rounded-full text-green-600 shrink-0">
+          <Sprout className="w-6 h-6" />
         </div>
-        <div className="text-sm text-green-800">
-          <div className="font-semibold mb-1">
+        <div className="text-green-900">
+          <div className="font-bold text-lg mb-1">
             Bước 2: Cấu hình phân bổ cây trồng
           </div>
-          <div>
-            Chọn hạt giống và thiết lập phương thức phân bổ (theo vùng hoặc theo
-            hàng).
+          <div className="text-sm opacity-90 leading-relaxed max-w-2xl">
+            Lựa chọn hạt giống và thiết lập phương thức phân bổ. Bạn có thể chọn
+            nhiều loại hạt giống để phân bổ cho vùng trồng này.
           </div>
         </div>
       </div>
 
-      {/* Seed Selection */}
-      <div className="space-y-3">
-        <Label className="text-base font-semibold text-slate-800">
-          Chọn hạt giống
-        </Label>
-        <ScrollArea className="h-[200px] border rounded-lg p-3 bg-white">
-          <div className="space-y-2">
-            {MOCK_SEEDS.map((seed) => (
-              <div
-                key={seed.id}
-                onClick={() => toggleSeed(seed.id)}
-                className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
-                  selectedSeedIds.includes(seed.id)
-                    ? "bg-green-50 border-green-200 ring-1 ring-green-500/30"
-                    : "bg-white border-slate-200 hover:border-green-300"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center ${selectedSeedIds.includes(seed.id) ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}
-                  >
-                    <Sprout className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold">{seed.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {seed.code} • {seed.variety}
-                    </div>
-                  </div>
-                </div>
-                {selectedSeedIds.includes(seed.id) && (
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                )}
-              </div>
-            ))}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-8">
+        {/* Left Column: Seed Selection */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label className="text-base font-semibold text-slate-800">
+              Chọn hạt giống
+            </Label>
+            <Badge variant="outline" className="text-xs">
+              Đã chọn: {selectedSeedIds.length}
+            </Badge>
           </div>
-        </ScrollArea>
-      </div>
 
-      {/* Distribution Method */}
-      {selectedSeedIds.length > 0 && (
-        <div className="space-y-3 animate-in slide-in-from-top-2">
-          <Label className="text-base font-semibold text-slate-800">
-            Phương thức phân bổ
-          </Label>
-          <RadioGroup
-            value={distributionMethod}
-            onValueChange={(v) => {
-              setDistributionMethod(v as DistributionMethod);
-              setPlantEntries([]);
-              setRowConfigs([]);
-            }}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div
-                className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
-                  distributionMethod === "zone"
-                    ? "border-primary bg-primary/5"
-                    : "border-slate-200 hover:border-primary/30"
-                }`}
-                onClick={() => {
-                  setDistributionMethod("zone");
-                  setPlantEntries([]);
-                  setRowConfigs([]);
-                }}
-              >
-                <div className="flex items-center space-x-3">
-                  <RadioGroupItem value="zone" id="zone" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <Grid3x3 className="w-4 h-4 text-primary" />
-                      <Label
-                        htmlFor="zone"
-                        className="font-semibold cursor-pointer"
-                      >
-                        Phân bổ theo vùng
-                      </Label>
+          <ScrollArea className="h-[500px] -mr-4 pr-4">
+            <div className="grid grid-cols-1 gap-3">
+              {MOCK_SEEDS.map((seed) => {
+                const isSelected = selectedSeedIds.includes(seed.id);
+                return (
+                  <div
+                    key={seed.id}
+                    onClick={() => toggleSeed(seed.id)}
+                    className={`group relative flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                      isSelected
+                        ? "bg-green-50/50 border-green-500 shadow-sm"
+                        : "bg-white border-slate-100 hover:border-green-300 hover:shadow-md"
+                    }`}
+                  >
+                    {/* Seed Image/Icon */}
+                    <div className="relative w-16 h-16 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
+                      {seed.imageUrl ? (
+                        <div className="w-full h-full relative group-hover:scale-105 transition-transform duration-300">
+                          <img
+                            src={seed.imageUrl}
+                            alt={seed.name}
+                            className={`w-full h-full object-cover transition-all ${isSelected ? "opacity-100" : "opacity-90 group-hover:opacity-100"}`}
+                          />
+                          {!isSelected && (
+                            <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/10 transition-colors"></div>
+                          )}
+                        </div>
+                      ) : (
+                        <div
+                          className={`w-full h-full flex items-center justify-center transition-colors ${isSelected ? "bg-green-100 text-green-600" : "text-slate-400 group-hover:text-green-500"}`}
+                        >
+                          <Sprout className="w-8 h-8" />
+                        </div>
+                      )}
+
+                      {isSelected && (
+                        <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center backdrop-blur-[1px]">
+                          <div className="bg-white rounded-full p-0.5 shadow-sm">
+                            <CheckCircle2 className="w-5 h-5 text-green-600 fill-green-100" />
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Thiết lập danh sách cây cho toàn vùng
-                    </p>
+
+                    <div className="flex-1 min-w-0 py-0.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div
+                          className={`font-semibold truncate ${isSelected ? "text-green-900" : "text-slate-900"}`}
+                        >
+                          {seed.name}
+                        </div>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5 font-medium">
+                        {seed.variety}
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] px-1.5 h-5 bg-slate-100 text-slate-500 border-slate-200"
+                        >
+                          {seed.code}
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        </div>
+
+        {/* Right Column: Configuration */}
+        <div className="space-y-6">
+          {selectedSeedIds.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center border-2 border-dashed rounded-xl bg-slate-50/50 text-slate-400 gap-4 min-h-[400px]">
+              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+                <Navigation className="w-8 h-8 opacity-20" />
               </div>
-
-              <div
-                className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
-                  distributionMethod === "row"
-                    ? "border-primary bg-primary/5"
-                    : "border-slate-200 hover:border-primary/30"
-                }`}
-                onClick={() => {
-                  setDistributionMethod("row");
-                  setPlantEntries([]);
-                  setRowConfigs([]);
-                }}
-              >
-                <div className="flex items-center space-x-3">
-                  <RadioGroupItem value="row" id="row" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <Rows className="w-4 h-4 text-primary" />
-                      <Label
-                        htmlFor="row"
-                        className="font-semibold cursor-pointer"
-                      >
-                        Phân bổ theo hàng
-                      </Label>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Thiết lập từng hàng cụ thể
-                    </p>
-                  </div>
-                </div>
+              <div className="text-center max-w-xs">
+                <span className="font-medium text-slate-600 block mb-1">
+                  Chưa chọn hạt giống
+                </span>
+                <span className="text-sm">
+                  Vui lòng chọn ít nhất một loại hạt giống từ danh sách bên trái
+                  để tiếp tục cấu hình.
+                </span>
               </div>
             </div>
-          </RadioGroup>
+          ) : (
+            <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
+              {/* Distribution Method Cards */}
+              <div className="space-y-3">
+                <Label className="text-base font-semibold text-slate-800">
+                  Phương thức phân bổ
+                </Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    {
+                      id: "zone",
+                      label: "Phân bổ theo vùng",
+                      desc: "Tự động phân bổ cây vào toàn bộ vùng đã chọn",
+                      icon: Grid3x3,
+                    },
+                    {
+                      id: "row",
+                      label: "Phân bổ theo hàng",
+                      desc: "Thiết lập chi tiết số lượng cây cho từng hàng",
+                      icon: Rows,
+                    },
+                  ].map((method) => {
+                    const isSelected = distributionMethod === method.id;
+                    return (
+                      <div
+                        key={method.id}
+                        onClick={() => {
+                          setDistributionMethod(
+                            method.id as DistributionMethod,
+                          );
+                          setPlantEntries([]);
+                          setRowConfigs([]);
+                        }}
+                        className={`cursor-pointer rounded-xl border-2 p-4 relative transition-all overflow-hidden ${
+                          isSelected
+                            ? "border-primary bg-primary/5 shadow-md"
+                            : "border-slate-200 bg-white hover:border-primary/30 hover:shadow-sm"
+                        }`}
+                      >
+                        {isSelected && (
+                          <div className="absolute top-0 right-0 w-16 h-16 bg-primary/10 -mr-8 -mt-8 rounded-full blur-xl"></div>
+                        )}
+                        <div className="flex items-start gap-3 relative z-10">
+                          <div
+                            className={`p-2 rounded-lg shrink-0 transition-colors ${isSelected ? "bg-primary text-white" : "bg-slate-100 text-slate-500"}`}
+                          >
+                            <method.icon className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div
+                              className={`font-bold ${isSelected ? "text-primary dark:text-primary" : "text-slate-700"}`}
+                            >
+                              {method.label}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1 leading-snug">
+                              {method.desc}
+                            </div>
+                          </div>
+                          {isSelected && (
+                            <div className="absolute top-0 right-0">
+                              <CheckCircle2 className="w-5 h-5 text-primary" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Configuration Panel */}
+              <Card className="border-none shadow-lg bg-white overflow-hidden ring-1 ring-slate-200/50">
+                <div className="h-1 bg-linear-to-r from-primary/40 to-primary/10"></div>
+                <CardHeader className="border-b bg-slate-50/50 pb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <Edit2 className="w-4 h-4 text-primary" />
+                        {distributionMethod === "zone"
+                          ? "Cấu hình chi tiết vùng"
+                          : "Cấu hình chi tiết hàng"}
+                      </CardTitle>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {distributionMethod === "zone"
+                          ? "Thêm các mục để xác định số lượng cây cho từng loại hạt giống"
+                          : "Xác định số lượng cây và loại hạt giống cho từng hàng cụ thể"}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={
+                        distributionMethod === "zone"
+                          ? addPlantEntry
+                          : addRowConfig
+                      }
+                      className="shadow-sm"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      {distributionMethod === "zone"
+                        ? "Thêm loại cây"
+                        : "Thêm hàng mới"}
+                    </Button>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="p-0">
+                  <ScrollArea className="h-[350px]">
+                    <div className="p-4 space-y-3">
+                      {(distributionMethod === "zone"
+                        ? plantEntries
+                        : rowConfigs
+                      ).length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
+                          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                            <Plus className="w-6 h-6" />
+                          </div>
+                          <div className="text-slate-500 font-medium">
+                            Chưa có cấu hình nào
+                          </div>
+                          <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                            Nhấn nút "Thêm" ở góc trên để bắt đầu thiết lập số
+                            lượng cây trồng
+                          </p>
+                        </div>
+                      ) : (
+                        // Dynamic content based on method
+                        <>
+                          {distributionMethod === "zone"
+                            ? // ZONE ENTRIES
+                              (plantEntries as PlantEntry[]).map((entry) => (
+                                <div
+                                  key={entry.id}
+                                  className="group relative grid grid-cols-12 gap-3 p-4 rounded-xl border border-slate-200 bg-white hover:shadow-md transition-all hover:border-primary/20"
+                                >
+                                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-slate-200 rounded-l-xl group-hover:bg-primary transition-colors"></div>
+
+                                  <div className="col-span-5 sm:col-span-4">
+                                    <Label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1.5 block">
+                                      Loại cây
+                                    </Label>
+                                    <Select
+                                      value={entry.variety}
+                                      onValueChange={(v) =>
+                                        updatePlantEntry(entry.id, "variety", v)
+                                      }
+                                    >
+                                      <SelectTrigger className="h-9 bg-slate-50 border-slate-200 focus:bg-white focus:ring-primary/20">
+                                        <SelectValue placeholder="Chọn loại..." />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {availableVarieties.map((v) => (
+                                          <SelectItem key={v} value={v}>
+                                            {v}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div className="col-span-4 sm:col-span-5">
+                                    <Label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1.5 block">
+                                      Hạt giống
+                                    </Label>
+                                    <Select
+                                      value={entry.seedId}
+                                      onValueChange={(v) =>
+                                        updatePlantEntry(entry.id, "seedId", v)
+                                      }
+                                      disabled={!entry.variety}
+                                    >
+                                      <SelectTrigger className="h-9 bg-slate-50 border-slate-200 focus:bg-white focus:ring-primary/20">
+                                        <SelectValue
+                                          placeholder={
+                                            entry.variety
+                                              ? "Chọn hạt..."
+                                              : "---"
+                                          }
+                                        />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {selectedSeeds
+                                          .filter(
+                                            (s) => s.variety === entry.variety,
+                                          )
+                                          .map((s) => (
+                                            <SelectItem key={s.id} value={s.id}>
+                                              <div className="flex items-center gap-2">
+                                                <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                                {s.name}
+                                              </div>
+                                            </SelectItem>
+                                          ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div className="col-span-3 sm:col-span-2">
+                                    <Label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1.5 block">
+                                      Số lượng
+                                    </Label>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      value={entry.quantity}
+                                      onChange={(e) =>
+                                        updatePlantEntry(
+                                          entry.id,
+                                          "quantity",
+                                          parseInt(e.target.value) || 0,
+                                        )
+                                      }
+                                      className="h-9 bg-slate-50 border-slate-200 focus:bg-white text-center font-medium"
+                                    />
+                                  </div>
+
+                                  <div className="col-span-12 sm:col-span-1 flex items-end justify-end sm:justify-center">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => removePlantEntry(entry.id)}
+                                      className="h-9 w-9 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))
+                            : // ROW CONFIGS
+                              (rowConfigs as RowConfig[]).map((row) => (
+                                <div
+                                  key={row.id}
+                                  className="group relative grid grid-cols-12 gap-3 p-4 rounded-xl border border-slate-200 bg-white hover:shadow-md transition-all hover:border-primary/20"
+                                >
+                                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-slate-200 rounded-l-xl group-hover:bg-primary transition-colors"></div>
+
+                                  <div className="col-span-3 sm:col-span-2">
+                                    <Label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1.5 block">
+                                      Hàng #
+                                    </Label>
+                                    <div className="relative">
+                                      <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400">
+                                        <Rows className="w-3 h-3" />
+                                      </div>
+                                      <Input
+                                        type="number"
+                                        value={row.rowNumber}
+                                        onChange={(e) =>
+                                          updateRowConfig(
+                                            row.id,
+                                            "rowNumber",
+                                            parseInt(e.target.value) || 1,
+                                          )
+                                        }
+                                        className="h-9 pl-8 bg-slate-50 border-slate-200 focus:bg-white font-bold text-slate-700"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div className="col-span-9 sm:col-span-4">
+                                    <Label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1.5 block">
+                                      Loại cây
+                                    </Label>
+                                    <Select
+                                      value={row.variety}
+                                      onValueChange={(v) =>
+                                        updateRowConfig(row.id, "variety", v)
+                                      }
+                                    >
+                                      <SelectTrigger className="h-9 bg-slate-50 border-slate-200 focus:bg-white">
+                                        <SelectValue placeholder="Chọn loại..." />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {availableVarieties.map((v) => (
+                                          <SelectItem key={v} value={v}>
+                                            {v}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div className="col-span-8 sm:col-span-4">
+                                    <Label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1.5 block">
+                                      Hạt giống
+                                    </Label>
+                                    <Select
+                                      value={row.seedId}
+                                      onValueChange={(v) =>
+                                        updateRowConfig(row.id, "seedId", v)
+                                      }
+                                      disabled={!row.variety}
+                                    >
+                                      <SelectTrigger className="h-9 bg-slate-50 border-slate-200 focus:bg-white">
+                                        <SelectValue placeholder="Chọn hạt..." />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {selectedSeeds
+                                          .filter(
+                                            (s) => s.variety === row.variety,
+                                          )
+                                          .map((s) => (
+                                            <SelectItem key={s.id} value={s.id}>
+                                              {s.name}
+                                            </SelectItem>
+                                          ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div className="col-span-4 sm:col-span-2">
+                                    <Label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1.5 block">
+                                      Số cây
+                                    </Label>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      value={row.quantity}
+                                      onChange={(e) =>
+                                        updateRowConfig(
+                                          row.id,
+                                          "quantity",
+                                          parseInt(e.target.value) || 0,
+                                        )
+                                      }
+                                      className="h-9 bg-slate-50 border-slate-200 focus:bg-white text-center font-medium"
+                                    />
+                                  </div>
+
+                                  <div className="absolute right-2 top-2 sm:static sm:col-span-12 sm:flex sm:justify-end sm:mt-2 md:col-span-1 md:mt-0 md:justify-center md:items-end">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => removeRowConfig(row.id)}
+                                      className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                        </>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
-      )}
-
-      {/* Zone Distribution Configuration */}
-      {distributionMethod === "zone" && selectedSeedIds.length > 0 && (
-        <Card className="border-slate-200 animate-in slide-in-from-top-2">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center justify-between">
-              <span>Danh sách cây trồng</span>
-              <Button size="sm" onClick={addPlantEntry}>
-                <Plus className="w-4 h-4 mr-1" />
-                Thêm
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {plantEntries.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">
-                Chưa có cây trồng nào. Nhấn "Thêm" để bắt đầu.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {plantEntries.map((entry, idx) => (
-                  <div
-                    key={entry.id}
-                    className="grid grid-cols-12 gap-3 p-3 border rounded-lg bg-slate-50"
-                  >
-                    <div className="col-span-4">
-                      <Label className="text-xs mb-1">Giống cây</Label>
-                      <Select
-                        value={entry.variety}
-                        onValueChange={(v) =>
-                          updatePlantEntry(entry.id, "variety", v)
-                        }
-                      >
-                        <SelectTrigger className="h-9 bg-white">
-                          <SelectValue placeholder="Chọn..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableVarieties.map((v) => (
-                            <SelectItem key={v} value={v}>
-                              {v}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="col-span-4">
-                      <Label className="text-xs mb-1">Hạt giống</Label>
-                      <Select
-                        value={entry.seedId}
-                        onValueChange={(v) =>
-                          updatePlantEntry(entry.id, "seedId", v)
-                        }
-                      >
-                        <SelectTrigger className="h-9 bg-white">
-                          <SelectValue placeholder="Chọn..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {selectedSeeds
-                            .filter((s) => s.variety === entry.variety)
-                            .map((s) => (
-                              <SelectItem key={s.id} value={s.id}>
-                                {s.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="col-span-3">
-                      <Label className="text-xs mb-1">Số cây</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={entry.quantity}
-                        onChange={(e) =>
-                          updatePlantEntry(
-                            entry.id,
-                            "quantity",
-                            parseInt(e.target.value) || 0,
-                          )
-                        }
-                        className="h-9"
-                      />
-                    </div>
-                    <div className="col-span-1 flex items-end">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removePlantEntry(entry.id)}
-                        className="h-9 w-9 p-0 text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Row Distribution Configuration */}
-      {distributionMethod === "row" && selectedSeedIds.length > 0 && (
-        <Card className="border-slate-200 animate-in slide-in-from-top-2">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center justify-between">
-              <span>Cấu hình theo hàng</span>
-              <Button size="sm" onClick={addRowConfig}>
-                <Plus className="w-4 h-4 mr-1" />
-                Thêm hàng
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {rowConfigs.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">
-                Chưa có hàng nào. Nhấn "Thêm hàng" để bắt đầu.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {rowConfigs.map((row) => (
-                  <div
-                    key={row.id}
-                    className="grid grid-cols-12 gap-3 p-3 border rounded-lg bg-slate-50"
-                  >
-                    <div className="col-span-2">
-                      <Label className="text-xs mb-1">Hàng số</Label>
-                      <Input
-                        type="number"
-                        value={row.rowNumber}
-                        onChange={(e) =>
-                          updateRowConfig(
-                            row.id,
-                            "rowNumber",
-                            parseInt(e.target.value) || 1,
-                          )
-                        }
-                        className="h-9"
-                      />
-                    </div>
-                    <div className="col-span-3">
-                      <Label className="text-xs mb-1">Giống cây</Label>
-                      <Select
-                        value={row.variety}
-                        onValueChange={(v) =>
-                          updateRowConfig(row.id, "variety", v)
-                        }
-                      >
-                        <SelectTrigger className="h-9 bg-white">
-                          <SelectValue placeholder="Chọn..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableVarieties.map((v) => (
-                            <SelectItem key={v} value={v}>
-                              {v}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="col-span-4">
-                      <Label className="text-xs mb-1">Hạt giống</Label>
-                      <Select
-                        value={row.seedId}
-                        onValueChange={(v) =>
-                          updateRowConfig(row.id, "seedId", v)
-                        }
-                      >
-                        <SelectTrigger className="h-9 bg-white">
-                          <SelectValue placeholder="Chọn..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {selectedSeeds
-                            .filter((s) => s.variety === row.variety)
-                            .map((s) => (
-                              <SelectItem key={s.id} value={s.id}>
-                                {s.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="col-span-2">
-                      <Label className="text-xs mb-1">Số cây</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={row.quantity}
-                        onChange={(e) =>
-                          updateRowConfig(
-                            row.id,
-                            "quantity",
-                            parseInt(e.target.value) || 0,
-                          )
-                        }
-                        className="h-9"
-                      />
-                    </div>
-                    <div className="col-span-1 flex items-end">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeRowConfig(row.id)}
-                        className="h-9 w-9 p-0 text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      </div>
     </div>
   );
 
@@ -800,338 +914,388 @@ const PlantDistributionCreatePage = () => {
 
     return (
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 flex items-start gap-3">
-          <div className="text-purple-600">
-            <Navigation className="w-5 h-5" />
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-5 flex items-start gap-4">
+          <div className="bg-purple-100 p-2 rounded-full text-purple-600 shrink-0">
+            <Navigation className="w-6 h-6" />
           </div>
-          <div className="text-sm text-purple-800">
-            <div className="font-semibold mb-1">Bước 3: Định vị GPS</div>
-            <div>
-              Tạo tọa độ GPS cho từng cây trồng dựa trên cấu hình phân bổ.
+          <div className="text-purple-900">
+            <div className="font-bold text-lg mb-1">Bước 3: Định vị GPS</div>
+            <div className="text-sm opacity-90">
+              Xác định và điều chỉnh tọa độ GPS cho từng cây trồng. Bạn có thể
+              kéo thả marker trên bản đồ hoặc nhập tọa độ chính xác.
             </div>
           </div>
         </div>
 
-        <Card className="border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center justify-between">
-              <span>Thông tin phân bổ</span>
-              <Badge variant="outline" className="font-mono">
-                {totalPlants} cây
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg">
-              <div>
-                <div className="text-xs text-muted-foreground">Phương thức</div>
-                <div className="font-semibold">
-                  {distributionMethod === "zone"
-                    ? "Phân bổ theo vùng"
-                    : "Phân bổ theo hàng"}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Tổng số cây</div>
-                <div className="font-semibold">{totalPlants} cây</div>
-              </div>
+        {plantLocations.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed rounded-2xl bg-slate-50 text-slate-500">
+            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
+              <Navigation className="w-10 h-10 text-purple-500 opacity-80" />
             </div>
-
-            {plantLocations.length === 0 ? (
-              <div className="text-center py-8">
-                <Button onClick={generatePlantLocations} size="lg">
-                  <Navigation className="w-4 h-4 mr-2" />
-                  Tạo định vị GPS
-                </Button>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Hệ thống sẽ tự động tạo tọa độ cho {totalPlants} cây
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">
-                    Đã tạo {plantLocations.length} vị trí
-                  </span>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">
+              Chưa có dữ liệu định vị
+            </h3>
+            <p className="text-muted-foreground text-center max-w-md mb-6">
+              Hệ thống sẽ tự động khởi tạo tọa độ GPS cho{" "}
+              <strong>{totalPlants}</strong> cây trồng dựa trên phương thức phân
+              bổ đã chọn.
+            </p>
+            <Button
+              onClick={generatePlantLocations}
+              size="lg"
+              className="bg-purple-600 hover:bg-purple-700 shadow-lg shadow-purple-200"
+            >
+              <Navigation className="w-5 h-5 mr-2" />
+              Khởi tạo {totalPlants} điểm GPS
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
+            {/* Left Column: Interactive Map */}
+            <div className="lg:col-span-2 flex flex-col gap-4 h-full">
+              <Card className="flex-1 border-none shadow-lg overflow-hidden flex flex-col relative ring-1 ring-slate-200">
+                <div className="absolute top-4 right-4 z-[1000] flex gap-2">
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     onClick={generatePlantLocations}
+                    className="shadow-md bg-white/90 backdrop-blur hover:bg-white text-xs h-8"
                   >
-                    Tạo lại
+                    <Edit2 className="w-3 h-3 mr-1.5" />
+                    Tạo lại tất cả
                   </Button>
                 </div>
 
-                {/* Map View */}
-                <div className="border rounded-lg overflow-hidden relative">
-                  <MapContainer
-                    center={[
-                      plantLocations[0]?.coordinate.lat || 11.558,
-                      plantLocations[0]?.coordinate.lng || 107.134,
-                    ]}
-                    zoom={16}
-                    style={{ height: "400px", width: "100%" }}
-                  >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    {plantLocations.map((loc) => {
-                      const seed = MOCK_SEEDS.find((s) => s.id === loc.seedId);
-                      const isSelected = selectedPlantId === loc.id;
-                      const color = getSeedColor(loc.seedId);
+                <MapContainer
+                  center={[
+                    plantLocations[0]?.coordinate.lat || 11.558,
+                    plantLocations[0]?.coordinate.lng || 107.134,
+                  ]}
+                  zoom={18}
+                  style={{ height: "100%", width: "100%" }}
+                  className="z-0 bg-slate-100"
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                  />
+                  <TileLayer
+                    attribution="Labels"
+                    url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+                  />
 
-                      return (
-                        <Marker
-                          key={loc.id}
-                          position={[loc.coordinate.lat, loc.coordinate.lng]}
-                          icon={createCustomIcon(color, isSelected)}
-                          draggable={true}
-                          eventHandlers={{
-                            dragend: (e) => {
-                              const marker = e.target;
-                              const position = marker.getLatLng();
-                              updatePlantLocation(
-                                loc.id,
-                                position.lat,
-                                position.lng,
-                              );
-                            },
-                            click: () => {
-                              setSelectedPlantId(loc.id);
-                            },
-                          }}
-                        >
+                  {plantLocations.map((loc) => {
+                    const seed = MOCK_SEEDS.find((s) => s.id === loc.seedId);
+                    const isSelected = selectedPlantId === loc.id;
+                    const color = getSeedColor(loc.seedId);
+
+                    return (
+                      <Marker
+                        key={loc.id}
+                        position={[loc.coordinate.lat, loc.coordinate.lng]}
+                        icon={createCustomIcon(color, isSelected)}
+                        draggable={true}
+                        eventHandlers={{
+                          dragend: (e) => {
+                            const marker = e.target;
+                            const position = marker.getLatLng();
+                            updatePlantLocation(
+                              loc.id,
+                              position.lat,
+                              position.lng,
+                            );
+                          },
+                          click: () => {
+                            setSelectedPlantId(loc.id);
+                          },
+                        }}
+                      >
+                        {/* Simplified Tooltip for better performance/look */}
+                        {isSelected && (
                           <Tooltip
                             direction="top"
-                            offset={[0, -8]}
-                            opacity={0.9}
+                            offset={[0, -10]}
+                            opacity={1}
+                            permanent
                           >
-                            <div className="text-xs">
-                              <div className="font-bold">{loc.plantCode}</div>
-                              <div>{seed?.name}</div>
+                            <div className="text-[10px] font-bold px-1 py-0.5 bg-white border rounded shadow-sm">
+                              {loc.plantCode}
                             </div>
                           </Tooltip>
-                          <Popup>
-                            <div className="text-xs space-y-2 min-w-[200px]">
-                              <div className="font-bold text-sm">
-                                {loc.plantCode}
-                              </div>
-                              <div className="text-muted-foreground">
-                                {seed?.name}
-                              </div>
-                              {loc.rowNumber && (
-                                <div className="text-xs">
-                                  Hàng: {loc.rowNumber}
-                                </div>
-                              )}
+                        )}
 
-                              {/* Manual Coordinate Edit */}
-                              <div className="pt-2 border-t space-y-2">
-                                <div className="text-xs font-semibold">
-                                  Tọa độ GPS
+                        <Popup closeButton={false} className="custom-popup">
+                          <div className="p-1">
+                            <div className="flex items-center gap-2 mb-2 pb-2 border-b">
+                              <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center">
+                                {seed?.imageUrl ? (
+                                  <img
+                                    src={seed.imageUrl}
+                                    className="w-full h-full object-cover rounded"
+                                  />
+                                ) : (
+                                  <Sprout className="w-4 h-4 text-green-600" />
+                                )}
+                              </div>
+                              <div>
+                                <div className="font-bold text-sm">
+                                  {loc.plantCode}
+                                </div>
+                                <div className="text-[10px] text-muted-foreground">
+                                  {seed?.name}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                  <label className="text-[10px] uppercase text-muted-foreground font-bold">
+                                    Vĩ độ (Lat)
+                                  </label>
+                                  <input
+                                    className="w-full text-xs p-1 border rounded bg-slate-50 font-mono"
+                                    type="number"
+                                    step="0.000001"
+                                    value={loc.coordinate.lat}
+                                    onChange={(e) => {
+                                      const val = parseFloat(e.target.value);
+                                      if (!isNaN(val))
+                                        updatePlantLocation(
+                                          loc.id,
+                                          val,
+                                          loc.coordinate.lng,
+                                        );
+                                    }}
+                                  />
                                 </div>
                                 <div className="space-y-1">
-                                  <div className="flex items-center gap-2">
-                                    <label className="text-xs w-12">Lat:</label>
+                                  <label className="text-[10px] uppercase text-muted-foreground font-bold">
+                                    Kinh độ (Lng)
+                                  </label>
+                                  <input
+                                    className="w-full text-xs p-1 border rounded bg-slate-50 font-mono"
+                                    type="number"
+                                    step="0.000001"
+                                    value={loc.coordinate.lng}
+                                    onChange={(e) => {
+                                      const val = parseFloat(e.target.value);
+                                      if (!isNaN(val))
+                                        updatePlantLocation(
+                                          loc.id,
+                                          loc.coordinate.lat,
+                                          val,
+                                        );
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                              <div className="text-[10px] text-green-600 italic flex items-center gap-1 justify-center bg-green-50 p-1 rounded">
+                                <Navigation className="w-3 h-3" />
+                                Kéo thả để điều chỉnh vị trí
+                              </div>
+                            </div>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    );
+                  })}
+                </MapContainer>
+
+                {/* Legend Overlay */}
+                <div className="absolute bottom-4 left-4 right-auto bg-white/90 backdrop-blur-md p-3 rounded-lg shadow-lg border border-slate-200 max-w-[200px] z-[500]">
+                  <div className="text-xs font-bold mb-2 text-slate-800">
+                    Chú thích loại cây
+                  </div>
+                  <div className="space-y-1.5 max-h-[100px] overflow-y-auto pr-1 custom-scrollbar">
+                    {Array.from(
+                      new Set(plantLocations.map((l) => l.seedId)),
+                    ).map((seedId) => {
+                      const seed = MOCK_SEEDS.find((s) => s.id === seedId);
+                      const count = plantLocations.filter(
+                        (l) => l.seedId === seedId,
+                      ).length;
+                      const color = getSeedColor(seedId);
+                      return (
+                        <div
+                          key={seedId}
+                          className="flex items-center gap-2 text-[10px]"
+                        >
+                          <span
+                            className="w-2.5 h-2.5 rounded-full shadow-sm"
+                            style={{ backgroundColor: color }}
+                          ></span>
+                          <span className="flex-1 truncate font-medium text-slate-700">
+                            {seed?.name}
+                          </span>
+                          <span className="text-slate-400 font-mono">
+                            {count}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Right Column: List & Details */}
+            <div className="flex flex-col gap-4 h-full">
+              <Card className="flex-none bg-indigo-900 text-white border-none shadow-md overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-6 -mt-6 blur-2xl"></div>
+                <CardContent className="p-5 relative z-10">
+                  <div className="text-white/70 text-xs font-medium uppercase tracking-wider mb-1">
+                    Tổng quan
+                  </div>
+                  <div className="flex items-end gap-2 mb-4">
+                    <span className="text-3xl font-bold">{totalPlants}</span>
+                    <span className="text-sm font-medium mb-1.5 text-white/80">
+                      cây đã định vị
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="bg-white/10 rounded px-2 py-1.5 backdrop-blur-sm">
+                      <div className="text-white/50 mb-0.5">Phương thức</div>
+                      <div className="font-semibold">
+                        {distributionMethod === "zone"
+                          ? "Theo vùng"
+                          : "Theo hàng"}
+                      </div>
+                    </div>
+                    <div className="bg-white/10 rounded px-2 py-1.5 backdrop-blur-sm">
+                      <div className="text-white/50 mb-0.5">Mật độ</div>
+                      <div className="font-semibold">
+                        ~{totalPlants > 0 ? (totalPlants / 10).toFixed(1) : 0}
+                        /m²
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="flex-1 border-slate-200 shadow-sm flex flex-col min-h-0 bg-white">
+                <CardHeader className="py-3 px-4 border-b bg-slate-50 min-h-[48px] flex justify-center">
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-semibold text-sm text-slate-700 flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-slate-400" />
+                      Danh sách tọa độ
+                    </span>
+                    <Badge
+                      variant="outline"
+                      className="bg-white text-xs font-normal"
+                    >
+                      {plantLocations.length} điểm
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0 flex-1 relative">
+                  <div className="absolute inset-0">
+                    <ScrollArea className="h-full">
+                      <div className="divide-y divide-slate-100">
+                        {plantLocations.map((loc) => {
+                          const seed = MOCK_SEEDS.find(
+                            (s) => s.id === loc.seedId,
+                          );
+                          const isSelected = selectedPlantId === loc.id;
+
+                          return (
+                            <div
+                              key={loc.id}
+                              onClick={() => setSelectedPlantId(loc.id)}
+                              className={`p-3 text-sm cursor-pointer transition-colors hover:bg-slate-50 ${isSelected ? "bg-indigo-50/60" : ""}`}
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span
+                                      className={`font-mono font-bold text-xs ${isSelected ? "text-indigo-700" : "text-slate-700"}`}
+                                    >
+                                      {loc.plantCode}
+                                    </span>
+                                    {isSelected && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-[10px] h-4 px-1 bg-indigo-100 text-indigo-700"
+                                      >
+                                        Active
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
+                                    <span
+                                      className="w-2 h-2 rounded-full flex-shrink-0"
+                                      style={{
+                                        backgroundColor: getSeedColor(
+                                          loc.seedId,
+                                        ),
+                                      }}
+                                    ></span>
+                                    {seed?.name}
+                                  </div>
+                                </div>
+
+                                <div className="flex flex-col gap-1 items-end">
+                                  <div className="bg-slate-100 rounded text-[10px] font-mono px-1.5 py-0.5 text-slate-500 whitespace-nowrap">
+                                    {loc.coordinate.lat.toFixed(6)},{" "}
+                                    {loc.coordinate.lng.toFixed(6)}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {isSelected && (
+                                <div className="mt-2 grid grid-cols-2 gap-2 animate-in slide-in-from-top-1 bg-white p-2 rounded border border-indigo-100 shadow-sm">
+                                  <div>
+                                    <label className="text-[10px] text-muted-foreground block mb-0.5">
+                                      Lat
+                                    </label>
                                     <input
+                                      className="w-full text-xs p-1 border rounded font-mono focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200 outline-none"
                                       type="number"
                                       step="0.000001"
                                       value={loc.coordinate.lat}
                                       onChange={(e) => {
-                                        const newLat = parseFloat(
-                                          e.target.value,
-                                        );
-                                        if (!isNaN(newLat)) {
+                                        const val = parseFloat(e.target.value);
+                                        if (!isNaN(val))
                                           updatePlantLocation(
                                             loc.id,
-                                            newLat,
+                                            val,
                                             loc.coordinate.lng,
                                           );
-                                        }
                                       }}
-                                      className="flex-1 px-2 py-1 text-xs border rounded"
                                     />
                                   </div>
-                                  <div className="flex items-center gap-2">
-                                    <label className="text-xs w-12">Lng:</label>
+                                  <div>
+                                    <label className="text-[10px] text-muted-foreground block mb-0.5">
+                                      Lng
+                                    </label>
                                     <input
+                                      className="w-full text-xs p-1 border rounded font-mono focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200 outline-none"
                                       type="number"
                                       step="0.000001"
                                       value={loc.coordinate.lng}
                                       onChange={(e) => {
-                                        const newLng = parseFloat(
-                                          e.target.value,
-                                        );
-                                        if (!isNaN(newLng)) {
+                                        const val = parseFloat(e.target.value);
+                                        if (!isNaN(val))
                                           updatePlantLocation(
                                             loc.id,
                                             loc.coordinate.lat,
-                                            newLng,
+                                            val,
                                           );
-                                        }
                                       }}
-                                      className="flex-1 px-2 py-1 text-xs border rounded"
                                     />
                                   </div>
                                 </div>
-                              </div>
-
-                              <div className="text-xs text-green-600 mt-2 bg-green-50 p-1.5 rounded flex items-center gap-1">
-                                <Edit2 className="w-3 h-3" />
-                                <span>Kéo marker để di chuyển</span>
-                              </div>
+                              )}
                             </div>
-                          </Popup>
-                        </Marker>
-                      );
-                    })}
-                  </MapContainer>
-
-                  {/* Legend */}
-                  <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm p-3 rounded-lg shadow-lg z-1000 border">
-                    <div className="text-xs font-bold mb-2 flex items-center gap-1">
-                      <Sprout className="w-3 h-3" />
-                      Chú thích
-                    </div>
-                    <div className="space-y-1.5">
-                      {Array.from(
-                        new Set(plantLocations.map((l) => l.seedId)),
-                      ).map((seedId) => {
-                        const seed = MOCK_SEEDS.find((s) => s.id === seedId);
-                        const count = plantLocations.filter(
-                          (l) => l.seedId === seedId,
-                        ).length;
-                        return (
-                          <div
-                            key={seedId}
-                            className="flex items-center gap-2 text-xs"
-                          >
-                            <div
-                              className="w-3 h-3 rounded-full border-2"
-                              style={{
-                                backgroundColor: getSeedColor(seedId),
-                                borderColor: getSeedColor(seedId),
-                              }}
-                            />
-                            <span className="flex-1">{seed?.name}</span>
-                            <span className="text-muted-foreground font-mono">
-                              {count}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="mt-2 pt-2 border-t text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Edit2 className="w-3 h-3" />
-                        <span>Kéo marker để di chuyển</span>
+                          );
+                        })}
                       </div>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <Target className="w-3 h-3" />
-                        <span>Click để chỉnh sửa tọa độ</span>
-                      </div>
-                    </div>
+                    </ScrollArea>
                   </div>
-                </div>
-
-                {/* List View */}
-                <ScrollArea className="h-[200px] border rounded-lg p-3 bg-white">
-                  <div className="space-y-2">
-                    {plantLocations.slice(0, 50).map((loc) => {
-                      const seed = MOCK_SEEDS.find((s) => s.id === loc.seedId);
-                      const isSelected = selectedPlantId === loc.id;
-                      return (
-                        <div
-                          key={loc.id}
-                          className={`p-3 border rounded transition-all ${
-                            isSelected
-                              ? "bg-primary/10 border-primary"
-                              : "hover:bg-slate-50"
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            {/* Plant Info */}
-                            <div
-                              className="flex-1 cursor-pointer"
-                              onClick={() => setSelectedPlantId(loc.id)}
-                            >
-                              <div className="font-mono font-semibold text-sm">
-                                {loc.plantCode}
-                              </div>
-                              <div className="text-xs text-muted-foreground mt-0.5">
-                                {seed?.name}
-                                {loc.rowNumber && ` • Hàng ${loc.rowNumber}`}
-                              </div>
-                              <div className="text-xs text-muted-foreground mt-1">
-                                📅 {loc.plantedDate}
-                              </div>
-                            </div>
-
-                            {/* Coordinate Inputs */}
-                            <div className="space-y-1.5">
-                              <div className="flex items-center gap-2">
-                                <label className="text-xs text-muted-foreground w-8">
-                                  Lat:
-                                </label>
-                                <input
-                                  type="number"
-                                  step="0.000001"
-                                  value={loc.coordinate.lat}
-                                  onChange={(e) => {
-                                    e.stopPropagation();
-                                    const newLat = parseFloat(e.target.value);
-                                    if (!isNaN(newLat)) {
-                                      updatePlantLocation(
-                                        loc.id,
-                                        newLat,
-                                        loc.coordinate.lng,
-                                      );
-                                    }
-                                  }}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="w-32 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary"
-                                />
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <label className="text-xs text-muted-foreground w-8">
-                                  Lng:
-                                </label>
-                                <input
-                                  type="number"
-                                  step="0.000001"
-                                  value={loc.coordinate.lng}
-                                  onChange={(e) => {
-                                    e.stopPropagation();
-                                    const newLng = parseFloat(e.target.value);
-                                    if (!isNaN(newLng)) {
-                                      updatePlantLocation(
-                                        loc.id,
-                                        loc.coordinate.lat,
-                                        newLng,
-                                      );
-                                    }
-                                  }}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="w-32 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {plantLocations.length > 50 && (
-                      <div className="text-center text-muted-foreground text-xs py-2">
-                        ... và {plantLocations.length - 50} vị trí khác
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
       </div>
     );
   };

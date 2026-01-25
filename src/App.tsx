@@ -97,6 +97,7 @@ import CreateSeedPage from "./pages/seed/CreateSeedPage";
 import SeedDetailPage from "./pages/seed/SeedDetailPage";
 import UpdateSeedPage from "./pages/seed/UpdateSeedPage";
 import CreateTreatmentPage from "./pages/treatment/CreateTreatmentPage";
+import PlantDistributionListPage from "./pages/cultivation-zone/distribution-detail/PlantDistributionListPage";
 
 function Router() {
   return (
@@ -163,7 +164,14 @@ function Router() {
         path="/cultivation-area/:id/edit"
         component={CultivationAreaEditPage}
       />
-      <Route path="/distribution-detail" component={DistributionDetailPage} />
+      <Route
+        path="/distribution-detail"
+        component={PlantDistributionListPage}
+      />
+      <Route
+        path="/distribution-detail/:id"
+        component={DistributionDetailPage}
+      />
       <Route
         path="/distribution-detail/create"
         component={PlantDistributionCreatePage}

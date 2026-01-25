@@ -7,6 +7,7 @@ export interface Seed {
   type: string; // Loại (fruit, vegetable, etc.)
   origin: string;
   quality: "A" | "B" | "C";
+  imageUrl?: string; // Optional image URL
 }
 
 export const MOCK_SEEDS: Seed[] = [
@@ -18,6 +19,8 @@ export const MOCK_SEEDS: Seed[] = [
     type: "Trái cây",
     origin: "Thái Lan",
     quality: "A",
+    imageUrl:
+      "https://vuacaygiong.com/wp-content/uploads/2022/03/dia_chi_cung_cap_giong_sau_rieng_ri6_monthon_musang_king_black_thorn.jpg",
   },
   {
     id: "seed-2",
@@ -27,6 +30,8 @@ export const MOCK_SEEDS: Seed[] = [
     type: "Trái cây",
     origin: "Việt Nam",
     quality: "A",
+    imageUrl:
+      "https://bizweb.dktcdn.net/thumb/grande/100/407/635/products/cay-giong-sau-rieng-ri6.jpg?v=1637295175713",
   },
   {
     id: "seed-3",
@@ -36,6 +41,8 @@ export const MOCK_SEEDS: Seed[] = [
     type: "Trái cây",
     origin: "Việt Nam",
     quality: "A",
+    imageUrl:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT19UCTo9SJEvSVoM-A4b6h3MHpNmf1-rYVlQ&s",
   },
   {
     id: "seed-4",
@@ -45,6 +52,8 @@ export const MOCK_SEEDS: Seed[] = [
     type: "Trái cây",
     origin: "Việt Nam",
     quality: "A",
+    imageUrl:
+      "https://bizweb.dktcdn.net/thumb/grande/100/422/567/files/cay-giong-xoai-cat-hoa-loc-8ac19b60-86e6-4915-ac84-f34faf708e6d.jpg?v=1635758427166",
   },
 ];
 
