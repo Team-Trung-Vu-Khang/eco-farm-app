@@ -37,7 +37,11 @@ export default function VarietyEditPage() {
   const [formData, setFormData] = useState<CreateVarietyForm>({
     varietyCode: existingVariety?.varietyCode || "",
     varietyName: existingVariety?.varietyName || "",
+    scientificName: existingVariety?.scientificName || "",
     crop: existingVariety?.crop || "",
+    origin: existingVariety?.origin || "",
+    growthDuration: existingVariety?.growthDuration || "",
+    averageYield: existingVariety?.averageYield || "",
     description: existingVariety?.description || "",
     illustration: null,
     contentType: "pdf",
@@ -134,6 +138,42 @@ export default function VarietyEditPage() {
                   />
                 </div>
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="scientificName"
+                    className="text-sm font-semibold"
+                  >
+                    Tên khoa học
+                  </Label>
+                  <Input
+                    id="scientificName"
+                    value={formData.scientificName}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        scientificName: e.target.value,
+                      })
+                    }
+                    className="focus-visible:ring-green-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="origin" className="text-sm font-semibold">
+                    Nguồn gốc
+                  </Label>
+                  <Input
+                    id="origin"
+                    value={formData.origin}
+                    onChange={(e) =>
+                      setFormData({ ...formData, origin: e.target.value })
+                    }
+                    className="focus-visible:ring-green-500"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="crop" className="text-sm font-semibold">
                   Cây trồng *
@@ -154,6 +194,45 @@ export default function VarietyEditPage() {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="growthDuration"
+                    className="text-sm font-semibold"
+                  >
+                    Thời gian sinh trưởng
+                  </Label>
+                  <Input
+                    id="growthDuration"
+                    value={formData.growthDuration}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        growthDuration: e.target.value,
+                      })
+                    }
+                    className="focus-visible:ring-green-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="averageYield"
+                    className="text-sm font-semibold"
+                  >
+                    Năng suất bình quân
+                  </Label>
+                  <Input
+                    id="averageYield"
+                    value={formData.averageYield}
+                    onChange={(e) =>
+                      setFormData({ ...formData, averageYield: e.target.value })
+                    }
+                    className="focus-visible:ring-green-500"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="description" className="text-sm font-semibold">
                   Mô tả

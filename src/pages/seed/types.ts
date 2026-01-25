@@ -24,6 +24,7 @@ export interface Variety {
 export interface CreateVarietyForm {
   varietyCode: string;
   varietyName: string;
+  cropGroup: string;
   crop: string;
   supplier: string;
   origin: string;
@@ -32,6 +33,7 @@ export interface CreateVarietyForm {
   yield: string;
   description: string;
   illustration: File | null;
+  expiryDate: Date | undefined;
   contentType: "pdf" | "editor";
   pdfFile: File | null;
   editorContent: string;

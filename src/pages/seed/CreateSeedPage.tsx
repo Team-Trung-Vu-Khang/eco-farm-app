@@ -19,14 +19,11 @@ import {
   type Step,
 } from "@tankhang1/eco-shared-ui";
 import {
-  Briefcase,
+  Search,
   CloudUpload,
   FileText,
-  Hash,
-  Phone,
-  Search,
-  Trash,
-  User,
+  Sprout,
+  CheckCircle2,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -35,77 +32,110 @@ import type { CreateVarietyForm } from "./types";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 
-interface Supplier {
-  id: string;
-  name: string;
-  type: "NÔNG HỘ" | "DOANH NGHIỆP";
-  code: string;
-  representative: string;
-  phone: string;
-  email: string;
-  address: string;
-}
+import { mockSuppliers } from "./mocks";
 
-const mockSuppliers: Supplier[] = [
-  {
-    id: "s1",
-    name: "Vườn Lan Ba Hùng",
-    type: "NÔNG HỘ",
-    code: "FARM-BAHUNG",
-    representative: "Phạm Hùng",
-    phone: "0988777666",
-    email: "bahung.lan@yahoo.com",
-    address: "Xã Đam B'ri, TP. Bảo Lộc, Lâm Đồng",
-  },
-  {
-    id: "s2",
-    name: "Công ty Phân bón Bình Điền",
-    type: "DOANH NGHIỆP",
-    code: "SUP-PHANBON",
-    representative: "Ngô Văn Cường",
-    phone: "02837560110",
-    email: "info@binhdien.com",
-    address: "C12/21 Quốc lộ 1, Bình Chánh, HCM",
-  },
-  {
-    id: "s3",
-    name: "Hợp tác xã Nông nghiệp Xanh",
-    type: "NÔNG HỘ",
-    code: "COOP-XANH",
-    representative: "Lê Văn Tám",
-    phone: "0345678901",
-    email: "htxxanh@gmail.com",
-    address: "Đức Trọng, Lâm Đồng",
-  },
-  {
-    id: "s4",
-    name: "Giống cây trồng Miền Nam",
-    type: "DOANH NGHIỆP",
-    code: "SSC-SEEDS",
-    representative: "Trần Minh Tâm",
-    phone: "02838441454",
-    email: "info@ssc.com.vn",
-    address: "Bình Chánh, TP. Hồ Chí Minh",
-  },
-  {
-    id: "s5",
-    name: "Vườn giống Tư Sang",
-    type: "NÔNG HỘ",
-    code: "FARM-TUSANG",
-    representative: "Nguyễn Tư Sang",
-    phone: "0912345678",
-    email: "tusang@gmail.com",
-    address: "Chợ Lách, Bến Tre",
-  },
+// Mock data for hierarchy
+const cropGroups = [
+  { id: "food", name: "Cây lương thực" },
+  { id: "fruit", name: "Cây ăn quả" },
+  { id: "industrial", name: "Cây công nghiệp" },
 ];
+
+const crops: Record<string, { id: string; name: string; image: string }[]> = {
+  food: [
+    {
+      id: "rice",
+      name: "Lúa",
+      image:
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQO3jT_HEXMWHft0Z_YK9nDApKXFJsh1qXdcA&s",
+    },
+    {
+      id: "corn",
+      name: "Bắp",
+      image:
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSjE-P9TcZSVsvzEDOqbCqIwpfSBakq8901Cg&s",
+    },
+  ],
+  fruit: [
+    {
+      id: "durian",
+      name: "Sầu riêng",
+      image:
+        "https://bizweb.dktcdn.net/thumb/grande/100/422/567/products/cay-giong-can-tho-sau-rieng-musanking-1-2.jpg?v=1638949736430",
+    },
+    {
+      id: "mango",
+      name: "Xoài",
+      image:
+        "https://suckhoedoisong.qltns.mediacdn.vn/Images/duylinh/2019/08/15/8-loi-ich-it-biet-cua-xoai1565855128.jpg",
+    },
+  ],
+  industrial: [
+    {
+      id: "coffee",
+      name: "Cà phê",
+      image:
+        "https://thoibaotaichinhvietnam.vn/stores/news_dataimages/2026/012026/25/06/in_article/ngay-251-gia-ca-phe-tang-manh-ho-tieu-neo-cao-o-nguong-150000-dongkg-20260125062559.jpg?rt=20260125062600",
+    },
+    {
+      id: "pepper",
+      name: "Hồ tiêu",
+      image:
+        "https://bcp.cdnchinhphu.vn/334894974524682240/2025/2/25/444132dd1a93f3cdaa82-17404595689801945801880.jpg",
+    },
+  ],
+};
+
+const varieties: Record<
+  string,
+  { id: string; name: string; code?: string; image?: string }[]
+> = {
+  durian: [
+    {
+      id: "ri6",
+      name: "Sầu riêng Ri6",
+      code: "SR-RI6",
+      image:
+        "https://bizweb.dktcdn.net/thumb/grande/100/396/015/products/logovietfruit-7fc573e9-36f8-44a5-80ba-e2ce2bd998ca.jpg?v=1671522040127",
+    },
+    {
+      id: "dona",
+      name: "Sầu riêng Dona",
+      code: "SR-DONA",
+      image:
+        "https://traicaytonyteo.com/uploads/source/sau-rieng-dona-thai-2.jpg",
+    },
+    {
+      id: "musang",
+      name: "Sầu riêng Musang King",
+      code: "SR-MUSANG",
+      image:
+        "https://sauriengoi.vn/wp-content/uploads/2023/08/SAU-RIENG-MUSANG-KING-1-1.jpg",
+    },
+  ],
+  rice: [
+    { id: "st25", name: "Lúa ST25", code: "L-ST25" },
+    { id: "om5451", name: "Lúa OM5451", code: "L-OM5451" },
+  ],
+  corn: [
+    { id: "lvn10", name: "Bắp LVN10", code: "B-LVN10" },
+    { id: "nk66", name: "Bắp NK66", code: "B-NK66" },
+  ],
+  // Add other mappings as needed or use default empty array
+};
 
 export default function CreateSeedPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
+  const [selectedCropGroup, setSelectedCropGroup] = useState<string>("");
+  const [selectedCrop, setSelectedCrop] = useState<string>("");
+  const [selectedVariety, setSelectedVariety] = useState<string>("");
+
   const [formData, setFormData] = useState<CreateVarietyForm>({
-    varietyCode: "SR-1112",
+    varietyCode: "",
     varietyName: "",
+    cropGroup: "",
     crop: "",
     supplier: "",
     origin: "",
@@ -114,6 +144,7 @@ export default function CreateSeedPage() {
     yield: "",
     description: "",
     illustration: null,
+    expiryDate: undefined,
     contentType: "pdf",
     pdfFile: null,
     editorContent: "",
@@ -167,303 +198,435 @@ export default function CreateSeedPage() {
 
   const steps: Step[] = [
     {
-      id: "basic",
-      title: "Thông tin chung",
-      description: "Nhập mã, tên giống, loại cây và chọn nhà cung cấp",
+      id: "selection",
+      title: "Chọn giống cây",
+      description: "Lựa chọn loại cây và giống cây cần nhập kho",
       content: (
-        <div className="space-y-8 py-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-slate-700">
-                  Mã giống cây
-                </Label>
-                <Input
-                  value={formData.varietyCode}
-                  readOnly
-                  className="bg-slate-50 border-slate-200 text-slate-500 font-medium cursor-not-allowed"
-                />
-              </div>
+        <div className="space-y-8 py-6">
+          {/* Group 1: Crop Selection */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-xs font-bold text-green-600">
+                1
+              </span>
+              <Label className="text-base font-semibold text-slate-800">
+                Lựa chọn cây trồng
+              </Label>
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pl-8">
               <div className="space-y-2">
-                <Label className="text-sm font-semibold text-slate-700">
-                  Tên giống <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  placeholder="VD: Giống Ri6"
-                  value={formData.varietyName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, varietyName: e.target.value })
-                  }
-                  className="focus:ring-green-500"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-slate-700">
-                  Cây trồng <span className="text-red-500">*</span>
+                <Label className="text-sm font-medium text-slate-600">
+                  Nhóm cây trồng <span className="text-red-500">*</span>
                 </Label>
                 <Select
-                  value={formData.crop}
-                  onValueChange={(val) =>
-                    setFormData({ ...formData, crop: val })
-                  }
+                  value={selectedCropGroup}
+                  onValueChange={(val) => {
+                    setSelectedCropGroup(val);
+                    setSelectedCrop("");
+                    setSelectedVariety("");
+                    setFormData((prev) => ({
+                      ...prev,
+                      cropGroup: val,
+                      crop: "",
+                      varietyName: "",
+                      varietyCode: "",
+                    }));
+                  }}
                 >
-                  <SelectTrigger className="border-slate-200 focus:ring-green-500">
-                    <SelectValue placeholder="Chọn loại cây" />
+                  <SelectTrigger className="h-11 border-slate-200 focus:ring-green-500 bg-white">
+                    <SelectValue placeholder="-- Chọn nhóm cây --" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Sầu riêng">Sầu riêng</SelectItem>
-                    <SelectItem value="Xoài">Xoài</SelectItem>
-                    <SelectItem value="Lúa">Lúa</SelectItem>
-                    <SelectItem value="Bắp">Bắp</SelectItem>
+                    {cropGroups.map((group) => (
+                      <SelectItem key={group.id} value={group.id}>
+                        {group.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-            </div>
 
-            <div className="space-y-4">
-              <Label className="text-sm font-semibold text-slate-700">
-                Chọn nhà cung cấp
-              </Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input
-                  placeholder="Tìm kiếm nhà cung cấp..."
-                  className="pl-10 h-10 border-slate-200 focus:ring-green-500 text-sm"
-                  value={supplierSearchQuery}
-                  onChange={(e) => setSupplierSearchQuery(e.target.value)}
-                />
-              </div>
-
-              <div className="flex gap-4 overflow-x-auto pb-4 pt-2 -mx-1 px-1 custom-scrollbar scroll-smooth">
-                {filteredSuppliers.length > 0 ? (
-                  filteredSuppliers.map((s) => (
-                    <div
-                      key={s.id}
-                      onClick={() => {
-                        setSelectedSupplierId(s.id);
-                        setFormData({ ...formData, supplier: s.name });
-                      }}
-                      className={cn(
-                        "relative flex-none w-[280px] p-4 rounded-xl border-2 transition-all cursor-pointer group",
-                        selectedSupplierId === s.id
-                          ? "border-blue-500 bg-blue-50/30"
-                          : "border-slate-100 bg-white hover:border-slate-200 shadow-sm",
-                      )}
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="h-10 w-10 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
-                          <Briefcase className="w-5 h-5 text-slate-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <h4 className="font-bold text-slate-800 text-sm truncate pr-2">
-                              {s.name}
-                            </h4>
-                            <span
-                              className={cn(
-                                "text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-tighter shrink-0",
-                                s.type === "NÔNG HỘ"
-                                  ? "bg-orange-50 text-orange-600"
-                                  : "bg-blue-50 text-blue-600",
-                              )}
-                            >
-                              {s.type}
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-1 gap-y-1">
-                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
-                              <Hash className="w-2.5 h-2.5 opacity-60" />
-                              <span className="truncate">{s.code}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
-                              <User className="w-2.5 h-2.5 opacity-60" />
-                              <span className="truncate">
-                                {s.representative}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
-                              <Phone className="w-2.5 h-2.5 opacity-60" />
-                              <span>{s.phone}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center py-10 px-4 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-                    <Search className="w-8 h-8 text-slate-300 mb-2" />
-                    <p className="text-xs font-medium text-slate-400">
-                      Không tìm thấy nhà cung cấp phù hợp
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-slate-600">
+                  Cây trồng <span className="text-red-500">*</span>
+                </Label>
+                {!selectedCropGroup ? (
+                  <div className="h-[120px] rounded-xl border border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center text-slate-400">
+                    <p className="text-sm font-medium">
+                      Vui lòng chọn nhóm cây trước
                     </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-4">
+                    {crops[selectedCropGroup]?.map((crop) => (
+                      <div
+                        key={crop.id}
+                        onClick={() => {
+                          setSelectedCrop(crop.id);
+                          setSelectedVariety("");
+                          setFormData((prev) => ({
+                            ...prev,
+                            crop: crop.name,
+                            varietyName: "",
+                            varietyCode: "",
+                          }));
+                        }}
+                        className={cn(
+                          "group relative flex flex-col gap-2 p-2 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md bg-white",
+                          selectedCrop === crop.id
+                            ? "border-green-500 ring-2 ring-green-500/20"
+                            : "border-slate-100 hover:border-green-200",
+                        )}
+                      >
+                        <div className="aspect-[4/3] w-full rounded-lg overflow-hidden bg-slate-100 relative">
+                          <img
+                            src={crop.image}
+                            alt={crop.name}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          />
+                          {selectedCrop === crop.id && (
+                            <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center backdrop-blur-[1px]">
+                              <div className="bg-white rounded-full p-1 shadow-sm">
+                                <CheckCircle2 className="w-5 h-5 text-green-600 fill-green-100" />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <p className="font-bold text-slate-800 text-center text-sm">
+                          {crop.name}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
             </div>
           </div>
-        </div>
-      ),
-      isValid:
-        formData.varietyName.trim() !== "" &&
-        formData.crop !== "" &&
-        selectedSupplierId !== "",
-    },
-    {
-      id: "specs",
-      title: "Thông số & Media",
-      description: "Thiết lập các chỉ số kỹ thuật và hình ảnh minh họa",
-      content: (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 py-4">
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold text-slate-700">
-                Xuất xứ
-              </Label>
-              <Select
-                value={formData.origin}
-                onValueChange={(val) =>
-                  setFormData({ ...formData, origin: val })
-                }
-              >
-                <SelectTrigger className="border-slate-200 focus:ring-green-500">
-                  <SelectValue placeholder="Chọn quốc gia" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Vietnam">Việt Nam</SelectItem>
-                  <SelectItem value="Thailand">Thái Lan</SelectItem>
-                  <SelectItem value="USA">Mỹ</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-slate-700">
-                  Tỷ lệ nảy mầm (%)
-                </Label>
-                <Input
-                  type="number"
-                  value={formData.germinationRate}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      germinationRate: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  className="focus:ring-green-500"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-slate-700">
-                  Độ đồng đều (%)
-                </Label>
-                <Input
-                  type="number"
-                  value={formData.uniformity}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      uniformity: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  className="focus:ring-green-500"
-                />
-              </div>
-            </div>
+          <div className="border-t border-slate-100 my-6"></div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold text-slate-700">
-                Năng suất
-              </Label>
-              <Input
-                placeholder="25 tấn/ha"
-                value={formData.yield}
-                onChange={(e) =>
-                  setFormData({ ...formData, yield: e.target.value })
-                }
-                className="focus:ring-green-500"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold text-slate-700">
-                Mô tả
-              </Label>
-              <Card className="rounded-2xl border-slate-200 overflow-hidden shadow-sm">
-                <Editor
-                  maxLength={5000}
-                  contentEditableClassname="h-[150px] p-4 bg-white focus:outline-none"
-                  editorSerializedState={formData.description as any}
-                  onSerializedChange={(v) =>
-                    setFormData({ ...formData, description: v as any })
-                  }
-                />
-              </Card>
-            </div>
-          </div>
-
+          {/* Group 2: Variety Selection */}
           <div className="space-y-4">
-            <Label className="text-sm font-semibold text-slate-700">
-              Hình ảnh hạt giống
-            </Label>
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className={cn(
-                "group relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed aspect-video transition-all duration-300 cursor-pointer overflow-hidden bg-slate-50",
-                illustrationPreview
-                  ? "border-green-500/20"
-                  : "border-slate-200 hover:border-green-500/50 hover:bg-green-50/10",
-              )}
-            >
-              <input
-                type="file"
-                accept="image/*"
-                ref={fileInputRef}
-                className="hidden"
-                onChange={(e) => onPickIllustration(e.target.files?.[0])}
-              />
+            <div className="flex items-center gap-2 mb-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-xs font-bold text-green-600">
+                2
+              </span>
+              <Label className="text-base font-semibold text-slate-800">
+                Chọn giống cây
+              </Label>
+            </div>
 
-              {!illustrationPreview ? (
-                <div className="flex flex-col items-center gap-3 text-center p-6">
-                  <CloudUpload className="h-12 w-12 text-slate-300 group-hover:text-green-500 transition-colors" />
-                  <div className="space-y-1">
-                    <p className="font-semibold text-slate-600">
-                      Kéo thả ảnh tại đây
-                    </p>
-                    <p className="text-xs text-slate-400 font-medium">
-                      JPG, PNG, WebP (Tối đa 5MB)
-                    </p>
-                  </div>
+            <div className="pl-8">
+              {!selectedCrop ? (
+                <div className="h-[160px] rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/30 flex flex-col items-center justify-center text-slate-400 gap-3">
+                  <Sprout className="w-10 h-10 opacity-20" />
+                  <p className="text-sm font-medium">
+                    Vui lòng chọn loại cây ở bước trên
+                  </p>
                 </div>
               ) : (
-                <div className="relative h-full w-full">
-                  <img
-                    src={illustrationPreview}
-                    alt="Preview"
-                    className="h-full w-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="h-10 w-10 rounded-full shadow-xl"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFormData((p) => ({ ...p, illustration: null }));
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {varieties[selectedCrop]?.map((v) => (
+                    <div
+                      key={v.id}
+                      onClick={() => {
+                        setSelectedVariety(v.id);
+                        setFormData((prev) => ({
+                          ...prev,
+                          varietyName: v.name,
+                          varietyCode: v.code || `SEED-${v.id.toUpperCase()}`,
+                          illustration: null,
+                        }));
+                        if (v.image) setIllustrationPreview(v.image);
                       }}
+                      className={cn(
+                        "flex flex-col gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all bg-white hover:shadow-md",
+                        selectedVariety === v.id
+                          ? "border-green-500 bg-green-50/10"
+                          : "border-slate-100 hover:border-green-200",
+                      )}
                     >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
+                      <div className="flex items-start justify-between">
+                        <div className="w-12 h-12 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-100">
+                          {v.image ? (
+                            <img
+                              src={v.image}
+                              alt={v.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Sprout className="w-6 h-6 text-slate-300" />
+                            </div>
+                          )}
+                        </div>
+                        {selectedVariety === v.id && (
+                          <CheckCircle2 className="w-6 h-6 text-green-600 fill-green-100" />
+                        )}
+                      </div>
+
+                      <div>
+                        <p className="font-bold text-slate-900 line-clamp-1">
+                          {v.name}
+                        </p>
+                        <p className="text-xs font-mono text-slate-500 mt-1 bg-slate-100 px-2 py-0.5 rounded w-fit">
+                          {v.code || "---"}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {(!varieties[selectedCrop] ||
+                    varieties[selectedCrop].length === 0) && (
+                    <div className="col-span-full py-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                      <p className="text-sm text-slate-500 italic">
+                        Chưa có dữ liệu giống cho cây này.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           </div>
         </div>
       ),
+      isValid: !!selectedCropGroup && !!selectedCrop && !!selectedVariety,
+    },
+    {
+      id: "details",
+      title: "Chi tiết lô giống",
+      description: "Thông tin nhà cung cấp và thông số kỹ thuật",
+      content: (
+        <div className="space-y-8 py-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Left Column: Supplier & Origin */}
+            <div className="lg:col-span-7 space-y-6">
+              <Card className="border-slate-200 shadow-sm">
+                <CardContent className="p-5 space-y-4">
+                  <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
+                    <Label className="font-bold text-slate-700">
+                      Nguồn gốc & Nhà cung cấp
+                    </Label>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-slate-600">
+                      Nhà cung cấp
+                    </Label>
+                    <div className="relative group">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-green-500 transition-colors" />
+                      <Input
+                        placeholder="Tìm kiếm nhà cung cấp..."
+                        value={supplierSearchQuery}
+                        onChange={(e) => setSupplierSearchQuery(e.target.value)}
+                        className="pl-10 h-10 bg-slate-50 border-slate-200 focus:bg-white focus:ring-green-500 transition-all"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar bg-slate-50/50 p-2 rounded-lg border border-slate-100">
+                      {filteredSuppliers.map((s) => (
+                        <div
+                          key={s.id}
+                          onClick={() => {
+                            setSelectedSupplierId(s.id);
+                            setFormData({ ...formData, supplier: s.name });
+                          }}
+                          className={cn(
+                            "flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-all",
+                            selectedSupplierId === s.id
+                              ? "border-blue-500 bg-blue-50/50 shadow-sm"
+                              : "border-transparent hover:bg-white hover:border-slate-200 hover:shadow-sm",
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 shadow-sm",
+                              selectedSupplierId === s.id
+                                ? "bg-blue-500 text-white"
+                                : "bg-white text-slate-500 border border-slate-200",
+                            )}
+                          >
+                            {s.name.charAt(0)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className={cn(
+                                "text-sm font-medium truncate",
+                                selectedSupplierId === s.id
+                                  ? "text-blue-700"
+                                  : "text-slate-700",
+                              )}
+                            >
+                              {s.name}
+                            </p>
+                            <p className="text-[10px] text-slate-500">
+                              {s.phone}
+                            </p>
+                          </div>
+                          {selectedSupplierId === s.id && (
+                            <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-2">
+                    <Label className="text-sm font-medium text-slate-600">
+                      Xuất xứ
+                    </Label>
+                    <Select
+                      value={formData.origin}
+                      onValueChange={(val) =>
+                        setFormData({ ...formData, origin: val })
+                      }
+                    >
+                      <SelectTrigger className="h-10 border-slate-200">
+                        <SelectValue placeholder="Chọn quốc gia" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Vietnam">Việt Nam</SelectItem>
+                        <SelectItem value="Thailand">Thái Lan</SelectItem>
+                        <SelectItem value="USA">Mỹ</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Column: Technical Specs & Image */}
+            <div className="lg:col-span-5 space-y-6">
+              <Card className="border-slate-200 shadow-sm">
+                <CardContent className="p-5 space-y-5">
+                  <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
+                    <Label className="font-bold text-slate-700">
+                      Thông số kỹ thuật
+                    </Label>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-slate-600">
+                      Hạn sử dụng <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      type="date"
+                      value={
+                        formData.expiryDate
+                          ? formData.expiryDate.toISOString().split("T")[0]
+                          : ""
+                      }
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          expiryDate: e.target.valueAsDate || undefined,
+                        })
+                      }
+                      className="h-10 border-slate-200 focus:ring-green-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-slate-600">
+                        Độ sạch (%)
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          placeholder="99"
+                          className="pr-8"
+                          value={formData.uniformity}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              uniformity: parseInt(e.target.value) || 0,
+                            })
+                          }
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                          %
+                        </span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-slate-600">
+                        Nảy mầm (%)
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          placeholder="85"
+                          className="pr-8"
+                          value={formData.germinationRate}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              germinationRate: parseInt(e.target.value) || 0,
+                            })
+                          }
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                          %
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-slate-700">
+                  Hình ảnh bao bì
+                </Label>
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className={cn(
+                    "group relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed h-40 transition-all cursor-pointer overflow-hidden bg-white hover:bg-slate-50",
+                    illustrationPreview
+                      ? "border-green-500/30"
+                      : "border-slate-200 hover:border-green-500/50",
+                  )}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={(e) => onPickIllustration(e.target.files?.[0])}
+                  />
+                  {illustrationPreview ? (
+                    <div className="w-full h-full relative">
+                      <img
+                        src={illustrationPreview}
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                        alt="Preview"
+                      />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-[1px]">
+                        <div className="bg-white/90 px-4 py-2 rounded-full shadow-lg">
+                          <p className="text-slate-800 font-bold text-xs flex items-center gap-2">
+                            <CloudUpload className="w-3.5 h-3.5" /> Thay đổi ảnh
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center p-4">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-2 text-slate-400 group-hover:scale-110 transition-transform group-hover:bg-green-100 group-hover:text-green-600">
+                        <CloudUpload className="w-5 h-5" />
+                      </div>
+                      <p className="text-xs font-medium text-slate-500 group-hover:text-green-700">
+                        Click để tải ảnh lên
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+      isValid: !!formData.supplier && !!formData.expiryDate,
     },
     {
       id: "docs",
@@ -592,6 +755,95 @@ export default function CreateSeedPage() {
               </Card>
             </div>
           )}
+        </div>
+      ),
+    },
+    {
+      id: "review",
+      title: "Xác nhận",
+      description: "Kiểm tra lại thông tin trước khi tạo",
+      content: (
+        <div className="max-w-2xl mx-auto py-6 space-y-6">
+          <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center gap-4 border-b border-slate-200 pb-4">
+              <div className="w-16 h-16 rounded-lg bg-white border border-slate-200 p-1">
+                {illustrationPreview ? (
+                  <img
+                    src={illustrationPreview}
+                    className="w-full h-full object-cover rounded-md"
+                    alt=""
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-slate-100 rounded-md">
+                    <Sprout className="w-6 h-6 text-slate-400" />
+                  </div>
+                )}
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-slate-800">
+                  {formData.varietyName}
+                </h3>
+                <p className="text-sm text-slate-500">{formData.varietyCode}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Cây trồng
+                </p>
+                <p className="font-medium text-slate-700">{formData.crop}</p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Nhà cung cấp
+                </p>
+                <p className="font-medium text-slate-700">
+                  {formData.supplier}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Xuất xứ
+                </p>
+                <p className="font-medium text-slate-700">
+                  {formData.origin || "Chưa chọn"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Hạn sử dụng
+                </p>
+                <p className="font-medium text-slate-700">
+                  {formData.expiryDate?.toLocaleDateString("vi-VN") || "---"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Tỷ lệ nảy mầm
+                </p>
+                <p className="font-medium text-slate-700">
+                  {formData.germinationRate}%
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Độ sạch
+                </p>
+                <p className="font-medium text-slate-700">
+                  {formData.uniformity}%
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 p-4 bg-yellow-50 text-yellow-800 rounded-xl border border-yellow-100">
+            <CheckCircle2 className="w-5 h-5 shrink-0" />
+            <p className="text-sm">
+              Vui lòng kiểm tra kỹ thông tin. Bạn có thể chỉnh sửa lại sau khi
+              tạo.
+            </p>
+          </div>
         </div>
       ),
     },

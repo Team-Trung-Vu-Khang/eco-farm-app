@@ -172,9 +172,6 @@ const VarietyPage = () => {
 
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Chi tiết giống cây</DialogTitle>
-          </DialogHeader>
           {selectedId && <VarietyDetailPage id={selectedId} />}
         </DialogContent>
       </Dialog>

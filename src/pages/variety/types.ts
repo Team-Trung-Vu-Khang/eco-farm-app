@@ -4,6 +4,10 @@ export interface Variety {
   crop: string;
   varietyCode: string;
   varietyName: string;
+  scientificName?: string;
+  origin?: string;
+  growthDuration?: string;
+  averageYield?: string;
   description: string;
   documents: {
     name: string;
@@ -16,7 +20,11 @@ export interface Variety {
 export interface CreateVarietyForm {
   varietyCode: string;
   varietyName: string;
+  scientificName: string;
   crop: string;
+  origin: string;
+  growthDuration: string;
+  averageYield: string;
   description: string;
   illustration: File | null;
   contentType: "pdf" | "editor";

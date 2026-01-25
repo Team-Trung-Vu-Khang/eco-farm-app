@@ -6,7 +6,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@tankhang1/eco-shared-ui";
-import { Edit, FileText, Hash, Leaf, Sprout } from "lucide-react";
+import {
+  Archive,
+  BookOpen,
+  Calendar,
+  CloudUpload,
+  Edit,
+  FileText,
+  FlaskConical,
+  Hash,
+  MapPin,
+  Scale,
+  Sprout,
+} from "lucide-react";
 import { Link } from "wouter";
 import { initialData } from "./mocks";
 
@@ -19,103 +31,200 @@ export default function VarietyDetailPage({ id }: VarietyDetailPageProps) {
 
   if (!variety) {
     return (
-      <div className="flex flex-col items-center justify-center py-10">
-        <p className="text-muted-foreground">
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+          <Sprout className="w-10 h-10 text-slate-400" />
+        </div>
+        <p className="text-slate-500 font-medium text-lg">
           Không tìm thấy thông tin giống cây này.
         </p>
+        <Link href="/variety">
+          <Button variant="outline" className="mt-4">
+            Quay lại danh sách
+          </Button>
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-end">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+            Chi tiết giống cây
+          </h2>
+          <p className="text-slate-500 text-sm">
+            Xem và quản lý thông tin chi tiết của giống {variety.varietyName}
+          </p>
+        </div>
         <Link href={`/variety/${variety.id}/edit`}>
-          <Button className="bg-green-600 hover:bg-green-700">
+          <Button className="bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg transition-all">
             <Edit className="w-4 h-4 mr-2" />
-            Chỉnh sửa
+            Chỉnh sửa thông tin
           </Button>
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-1 border-none shadow-md shadow-zinc-200/50 ring-1 ring-zinc-200/50 overflow-hidden bg-white">
-          <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden border-b">
-            {variety.illustration ? (
-              <img
-                src={
-                  variety.illustration instanceof File
-                    ? URL.createObjectURL(variety.illustration)
-                    : variety.illustration
-                }
-                className="w-full h-full object-cover"
-                alt={variety.varietyName}
-              />
-            ) : (
-              <Sprout className="w-16 h-16 text-muted-foreground/30" />
-            )}
-          </div>
-          <CardContent className="p-6 space-y-4">
-            <div className="space-y-1">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                Mã giống
-              </p>
-              <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-muted-foreground bg-muted/50 px-2 py-1 rounded-md border w-fit">
-                <Hash className="w-3 h-3 opacity-60" />
-                {variety.varietyCode}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Left Column - Overview */}
+        <div className="lg:col-span-4 space-y-6">
+          <Card className="overflow-hidden border-none shadow-md ring-1 ring-slate-200">
+            <div className="aspect-square relative group">
+              {variety.illustration ? (
+                <img
+                  src={
+                    variety.illustration instanceof File
+                      ? URL.createObjectURL(variety.illustration)
+                      : variety.illustration
+                  }
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  alt={variety.varietyName}
+                />
+              ) : (
+                <div className="w-full h-full bg-slate-50 flex items-center justify-center">
+                  <Sprout className="w-20 h-20 text-slate-300" />
+                </div>
+              )}
+              <div className="absolute top-4 right-4">
+                <Badge
+                  className={
+                    variety.status === "active"
+                      ? "bg-green-500 hover:bg-green-600"
+                      : "bg-slate-500 hover:bg-slate-600"
+                  }
+                >
+                  {variety.status === "active"
+                    ? "Đang kinh doanh"
+                    : "Ngừng kinh doanh"}
+                </Badge>
+              </div>
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6">
+                <p className="text-white/80 text-xs font-bold uppercase tracking-wider mb-1">
+                  {variety.crop}
+                </p>
+                <h3 className="text-white text-2xl font-bold">
+                  {variety.varietyName}
+                </h3>
               </div>
             </div>
-            <div className="space-y-1">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                Trạng thái
-              </p>
-              <Badge
-                variant={variety.status === "active" ? "default" : "outline"}
-              >
-                {variety.status === "active" ? "Hoạt động" : "Ngừng kinh doanh"}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
 
-        <div className="md:col-span-2 space-y-6">
-          <Card className="border-none shadow-md shadow-zinc-200/50 ring-1 ring-zinc-200/50 bg-white">
-            <CardHeader className="bg-zinc-50/50 border-b border-zinc-100/50">
-              <CardTitle className="text-lg font-bold flex items-center gap-2 text-green-700">
-                <Leaf className="w-5 h-5" />
-                Thông tin cơ bản
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
+                <div className="space-y-1">
+                  <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                    Mã giống
+                  </p>
+                  <p className="font-mono text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                    <Hash className="w-3.5 h-3.5" />
+                    {variety.varietyCode}
+                  </p>
+                </div>
+                <div className="text-right space-y-1">
+                  <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                    Cập nhật
+                  </p>
+                  <p className="text-sm font-medium text-slate-700">
+                    {new Date(variety.updatedAt).toLocaleDateString("vi-VN")}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column - Details */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* General Information */}
+          <Card className="border-none shadow-md ring-1 ring-slate-200">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
+              <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-800">
+                <Archive className="w-4 h-4 text-green-600" />
+                Thông tin định danh
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6 space-y-6">
-              <div className="grid grid-cols-2 gap-6">
+            <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-4">
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Tên giống cây</p>
-                  <p className="font-bold text-foreground text-lg">
-                    {variety.varietyName}
+                  <p className="text-xs font-bold text-slate-400 uppercase">
+                    Tên khoa học
                   </p>
+                  <div className="flex items-center gap-2">
+                    <FlaskConical className="w-4 h-4 text-slate-400" />
+                    <p className="font-serif italic text-lg text-slate-700">
+                      {variety.scientificName || "N/A"}
+                    </p>
+                  </div>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">
-                    Loại cây trồng
+                  <p className="text-xs font-bold text-slate-400 uppercase">
+                    Nguồn gốc
                   </p>
-                  <p className="font-bold text-foreground text-lg">
-                    {variety.crop}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-slate-400" />
+                    <p className="font-medium text-lg text-slate-700">
+                      {variety.origin || "N/A"}
+                    </p>
+                  </div>
                 </div>
               </div>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Mô tả</p>
-                <p className="text-foreground leading-relaxed">
-                  {variety.description || "Không có mô tả cho giống cây này."}
+
+              <div className="space-y-2 pl-6 border-l border-slate-100">
+                <p className="text-xs font-bold text-slate-400 uppercase">
+                  Mô tả đặc tính
+                </p>
+                <p className="text-slate-600 leading-relaxed text-sm">
+                  {variety.description || "Chưa có mô tả chi tiết."}
                 </p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-md shadow-zinc-200/50 ring-1 ring-zinc-200/50 bg-white">
-            <CardHeader className="bg-zinc-50/50 border-b border-zinc-100/50">
-              <CardTitle className="text-lg font-bold flex items-center gap-2 text-green-700">
-                <FileText className="w-5 h-5" />
+          {/* Growth Characteristics */}
+          <Card className="border-none shadow-md ring-1 ring-slate-200">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
+              <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-800">
+                <BookOpen className="w-4 h-4 text-amber-600" />
+                Đặc tính nông học
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-amber-50/50 border border-amber-100 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-amber-600 shadow-sm shrink-0">
+                    <Calendar className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase">
+                      Thời gian sinh trưởng
+                    </p>
+                    <p className="text-lg font-bold text-slate-800">
+                      {variety.growthDuration || "---"}
+                    </p>
+                  </div>
+                </div>
+                <div className="p-4 rounded-xl bg-amber-50/50 border border-amber-100 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-amber-600 shadow-sm shrink-0">
+                    <Scale className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase">
+                      Năng suất bình quân
+                    </p>
+                    <p className="text-lg font-bold text-slate-800">
+                      {variety.averageYield || "---"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Technical Documents */}
+          <Card className="border-none shadow-md ring-1 ring-slate-200">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
+              <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-800">
+                <FileText className="w-4 h-4 text-purple-600" />
                 Tài liệu kỹ thuật
               </CardTitle>
             </CardHeader>
@@ -125,33 +234,40 @@ export default function VarietyDetailPage({ id }: VarietyDetailPageProps) {
                   {variety.documents.map((doc, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between p-3 rounded-xl bg-zinc-50/50 ring-1 ring-zinc-100 hover:bg-zinc-100 transition-colors"
+                      className="group flex items-center justify-between p-4 rounded-xl bg-white border border-slate-200 hover:border-purple-200 hover:shadow-sm transition-all"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-green-600 border">
-                          <FileText className="w-5 h-5" />
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
+                          <FileText className="w-6 h-6" />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-foreground truncate max-w-[200px]">
+                          <p className="font-bold text-slate-800 group-hover:text-purple-700 transition-colors">
                             {doc.name}
                           </p>
-                          <p className="text-[10px] text-muted-foreground uppercase font-medium">
-                            Tài liệu hướng dẫn
+                          <p className="text-xs text-slate-500 font-medium mt-0.5">
+                            PDF • 2.4 MB
                           </p>
                         </div>
                       </div>
-                      <Button variant="outline" size="sm" asChild>
+                      <Button
+                        variant="ghost"
+                        className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                        asChild
+                      >
                         <a href={doc.url} target="_blank" rel="noreferrer">
-                          Xem tài liệu
+                          Tải về
                         </a>
                       </Button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-10 border-2 border-dashed rounded-2xl border-muted-foreground/10">
-                  <p className="text-muted-foreground text-sm font-medium">
-                    Chưa có tài liệu kỹ thuật nào được đính kèm.
+                <div className="text-center py-12 flex flex-col items-center justify-center bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                  <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+                    <CloudUpload className="w-6 h-6" />
+                  </div>
+                  <p className="text-slate-500 font-medium">
+                    Chưa có tài liệu kỹ thuật nào.
                   </p>
                 </div>
               )}

@@ -160,19 +160,23 @@ export default function CropCreatePage() {
       id: "basic",
       title: "Thông tin cây",
       content: (
-        <div className="space-y-8">
-          <div className="flex items-center gap-3 border-l-4 border-green-500 pl-4 py-1 mb-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 text-green-600">
-              <Leaf className="h-6 w-6" />
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="relative overflow-hidden rounded-xl border border-green-200 bg-gradient-to-r from-green-50 via-white to-green-50 p-6">
+            <div className="relative z-10 flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-white shadow-sm border border-green-100 flex items-center justify-center text-green-600 shrink-0">
+                <Leaf className="w-7 h-7" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Thông tin cơ bản
+                </h3>
+                <p className="text-sm text-slate-500">
+                  Thiết lập các thông tin định danh và phân loại cho giống cây
+                  trồng mới
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-foreground">
-                Thông tin cơ bản
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Mã định danh, tên gọi và phân loại cây trồng
-              </p>
-            </div>
+            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-green-500/10 rounded-full blur-2xl"></div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8">
@@ -364,19 +368,23 @@ export default function CropCreatePage() {
       id: "seeds",
       title: "Hạt giống",
       content: (
-        <div className="space-y-8">
-          <div className="flex items-center gap-3 border-l-4 border-amber-500 pl-4 py-1 mb-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-              <Bug className="h-6 w-6" />
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="relative overflow-hidden rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-amber-50 p-6">
+            <div className="relative z-10 flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-white shadow-sm border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                <Bug className="w-7 h-7" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Danh sách hạt giống
+                </h3>
+                <p className="text-sm text-slate-500">
+                  Lựa chọn các loại hạt giống phù hợp để liên kết với cây trồng
+                  này
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-foreground">
-                Danh sách hạt giống
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Lựa chọn hạt giống phù hợp cho loại cây trồng này
-              </p>
-            </div>
+            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl"></div>
           </div>
 
           <div className="space-y-6">
@@ -505,50 +513,52 @@ export default function CropCreatePage() {
       id: "growth",
       title: "Sinh trưởng",
       content: (
-        <div className="space-y-8">
-          <div className="flex items-center gap-3 border-l-4 border-blue-500 pl-4 py-1 mb-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-              <CalendarDays className="h-6 w-6" />
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="flex items-start gap-4 p-5 rounded-2xl bg-blue-50/50 border border-blue-100">
+            <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+              <Sprout className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-foreground">
+              <h3 className="text-base font-bold text-slate-900">
                 Chu kỳ sinh trưởng
               </h3>
-              <p className="text-sm text-muted-foreground">
-                Định nghĩa các giai đoạn phát triển chi tiết
+              <p className="text-sm text-slate-500 mt-1">
+                Thiết lập lộ trình và các giai đoạn phát triển tiêu chuẩn của
+                cây
               </p>
             </div>
           </div>
 
-          <div className="space-y-8">
+          <div className="space-y-4">
             {formData.growthCycles.map((cycle, index) => (
               <Card
                 key={cycle.id}
-                className="relative overflow-hidden border-none shadow-md shadow-zinc-200/50 ring-1 ring-zinc-200/50"
+                className="group relative border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300"
               >
-                <CardContent className="p-6 space-y-6">
-                  <div className="flex items-center justify-between">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between mb-6">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-green-600 text-white flex items-center justify-center font-bold text-sm">
+                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-xs font-bold">
                         {index + 1}
                       </div>
-                      <h4 className="font-bold text-foreground text-lg">
-                        Chu kỳ phát triển
+                      <h4 className="font-bold text-slate-900 text-base">
+                        Thông tin chu kỳ
                       </h4>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                      className="h-8 w-8 text-slate-400 hover:text-rose-600 hover:bg-rose-50"
                       onClick={() => handleRemoveGrowthCycle(cycle.id)}
                     >
                       <Trash className="w-4 h-4" />
                     </Button>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold">
-                        Tên chu kỳ
+                      <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        Tên chu kỳ <span className="text-rose-500">*</span>
                       </Label>
                       <Select
                         value={cycle.name}
@@ -556,7 +566,7 @@ export default function CropCreatePage() {
                           handleUpdateGrowthCycle(cycle.id, { name: v })
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="font-medium">
                           <SelectValue placeholder="Chọn chu kỳ" />
                         </SelectTrigger>
                         <SelectContent>
@@ -567,28 +577,34 @@ export default function CropCreatePage() {
                         </SelectContent>
                       </Select>
                     </div>
+
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold">
-                        Thời gian ước tính (ngày)
+                      <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        Thời gian (ngày){" "}
+                        <span className="text-rose-500">*</span>
                       </Label>
-                      <Input
-                        type="number"
-                        value={cycle.estimatedDays}
-                        onChange={(e) =>
-                          handleUpdateGrowthCycle(cycle.id, {
-                            estimatedDays: e.target.value,
-                          })
-                        }
-                        placeholder="VD: 10"
-                      />
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          className="font-medium pr-12"
+                          value={cycle.estimatedDays}
+                          onChange={(e) =>
+                            handleUpdateGrowthCycle(cycle.id, {
+                              estimatedDays: e.target.value,
+                            })
+                          }
+                          placeholder="0"
+                        />
+                      </div>
                     </div>
+
                     <div className="md:col-span-2 space-y-2">
-                      <Label className="text-sm font-semibold">
+                      <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                         Giai đoạn chi tiết
                       </Label>
                       <MultiSelect
                         options={stageOptions}
-                        placeholder="Chọn các giai đoạn"
+                        placeholder="Chọn các giai đoạn phát triển..."
                         value={cycle.stages}
                         onChange={(v) =>
                           handleUpdateGrowthCycle(cycle.id, { stages: v })
@@ -599,127 +615,160 @@ export default function CropCreatePage() {
                 </CardContent>
               </Card>
             ))}
+
             <Button
               variant="outline"
-              className="w-full h-12 border-dashed border-2 hover:bg-green-50 hover:border-green-500/50 text-green-600 font-bold rounded-xl transition-all"
+              className="w-full h-12 border-dashed border-2 border-slate-200 hover:border-blue-500 hover:bg-blue-50/50 text-slate-600 hover:text-blue-600 font-bold rounded-xl transition-all gap-2"
               onClick={handleAddGrowthCycle}
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <div className="w-5 h-5 rounded-full bg-current flex items-center justify-center text-white">
+                <Plus className="w-3 h-3" />
+              </div>
               Thêm chu kỳ sinh trưởng mới
             </Button>
           </div>
         </div>
       ),
+      isValid:
+        formData.growthCycles.length > 0 &&
+        formData.growthCycles.every(
+          (c) => c.name.trim() !== "" && c.estimatedDays !== "",
+        ),
     },
     {
       id: "docs",
       title: "Tài liệu",
       content: (
-        <div className="space-y-12">
-          {["farmingTechnique", "qualityStandard"].map((docKey) => {
-            const doc = formData.docs[docKey as keyof typeof formData.docs];
-            const isFarming = docKey === "farmingTechnique";
-            return (
-              <div key={docKey} className="space-y-6">
-                <div
-                  className={cn(
-                    "flex items-center gap-3 border-l-4 pl-4 py-1",
-                    isFarming ? "border-green-500" : "border-blue-500",
-                  )}
-                >
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="relative overflow-hidden rounded-xl border border-purple-200 bg-linear-to-r from-purple-50 via-white to-purple-50 p-6">
+            <div className="relative z-10 flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-white shadow-sm border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+                <FileText className="w-7 h-7" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Hệ thống tài liệu
+                </h3>
+                <p className="text-sm text-slate-500">
+                  Cập nhật các hướng dẫn kỹ thuật và tiêu chuẩn chất lượng
+                </p>
+              </div>
+            </div>
+            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl"></div>
+          </div>
+
+          <div className="space-y-12">
+            {["farmingTechnique", "qualityStandard"].map((docKey) => {
+              const doc = formData.docs[docKey as keyof typeof formData.docs];
+              const isFarming = docKey === "farmingTechnique";
+              return (
+                <div key={docKey} className="space-y-6">
                   <div
                     className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-lg",
-                      isFarming
-                        ? "bg-green-50 text-green-600"
-                        : "bg-blue-50 text-blue-600",
+                      "flex items-center gap-3 border-l-4 pl-4 py-1",
+                      isFarming ? "border-green-500" : "border-blue-500",
                     )}
                   >
-                    {isFarming ? (
-                      <Leaf className="h-6 w-6" />
-                    ) : (
-                      <ShieldCheck className="h-6 w-6" />
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-foreground">
-                      {isFarming
-                        ? "Kỹ thuật canh tác"
-                        : "Tiêu chuẩn chất lượng"}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {isFarming
-                        ? "Quy trình làm đất, bón phân, tưới nước và chăm sóc định kỳ"
-                        : "Các tiêu chí VietGAP, GlobalGAP, tiêu chuẩn xuất khẩu..."}
-                    </p>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <RadioGroup
-                    value={doc.type}
-                    onValueChange={(v) => {
-                      const newDocs = { ...formData.docs };
-                      (
-                        newDocs[docKey as keyof typeof formData.docs] as any
-                      ).type = v;
-                      handleUpdateField("docs", newDocs);
-                    }}
-                    className="flex items-center gap-6 pl-1"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="editor" id={`${docKey}-editor`} />
-                      <Label
-                        htmlFor={`${docKey}-editor`}
-                        className="text-sm font-medium cursor-pointer flex items-center gap-1.5"
-                      >
-                        <FileText className="w-3.5 h-3.5" />
-                        Soạn thảo nội dung
-                      </Label>
+                    <div
+                      className={cn(
+                        "flex h-10 w-10 items-center justify-center rounded-lg",
+                        isFarming
+                          ? "bg-green-50 text-green-600"
+                          : "bg-blue-50 text-blue-600",
+                      )}
+                    >
+                      {isFarming ? (
+                        <Leaf className="h-6 w-6" />
+                      ) : (
+                        <ShieldCheck className="h-6 w-6" />
+                      )}
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="pdf" id={`${docKey}-pdf`} />
-                      <Label
-                        htmlFor={`${docKey}-pdf`}
-                        className="text-sm font-medium cursor-pointer flex items-center gap-1.5"
-                      >
-                        <Upload className="w-3.5 h-3.5" />
-                        Upload PDF
-                      </Label>
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900">
+                        {isFarming
+                          ? "Kỹ thuật canh tác"
+                          : "Tiêu chuẩn chất lượng"}
+                      </h3>
+                      <p className="text-sm text-slate-500">
+                        {isFarming
+                          ? "Quy trình làm đất, bón phân, tưới nước và chăm sóc định kỳ"
+                          : "Các tiêu chí VietGAP, GlobalGAP, tiêu chuẩn xuất khẩu..."}
+                      </p>
                     </div>
-                  </RadioGroup>
+                  </div>
 
-                  {doc.type === "editor" ? (
-                    <Card className="overflow-hidden border-2 focus-within:border-green-500/50 transition-all shadow-sm">
-                      <Editor
-                        maxLength={10000}
-                        contentEditableClassname="h-[200px] p-4 focus:outline-none bg-white font-sans text-sm"
-                        editorSerializedState={doc.content}
-                        onSerializedChange={(content) => {
-                          const newDocs = { ...formData.docs };
-                          (
-                            newDocs[docKey as keyof typeof formData.docs] as any
-                          ).content = content;
-                          handleUpdateField("docs", newDocs);
-                        }}
-                      />
-                    </Card>
-                  ) : (
-                    <div className="border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center bg-muted/20 hover:bg-muted/30 transition-colors cursor-pointer group">
-                      <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                        <Upload className="w-5 h-5 text-muted-foreground/60" />
+                  <div className="space-y-4">
+                    <RadioGroup
+                      value={doc.type}
+                      onValueChange={(v) => {
+                        const newDocs = { ...formData.docs };
+                        (
+                          newDocs[docKey as keyof typeof formData.docs] as any
+                        ).type = v;
+                        handleUpdateField("docs", newDocs);
+                      }}
+                      className="flex items-center gap-6 pl-1"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem
+                          value="editor"
+                          id={`${docKey}-editor`}
+                        />
+                        <Label
+                          htmlFor={`${docKey}-editor`}
+                          className="text-sm font-medium cursor-pointer flex items-center gap-1.5"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          Soạn thảo nội dung
+                        </Label>
                       </div>
-                      <p className="text-sm font-bold text-foreground">
-                        Click để tải lên PDF
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Hỗ trợ định dạng .pdf, dung lượng tối đa 10MB
-                      </p>
-                    </div>
-                  )}
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="pdf" id={`${docKey}-pdf`} />
+                        <Label
+                          htmlFor={`${docKey}-pdf`}
+                          className="text-sm font-medium cursor-pointer flex items-center gap-1.5"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          Upload PDF
+                        </Label>
+                      </div>
+                    </RadioGroup>
+
+                    {doc.type === "editor" ? (
+                      <Card className="overflow-hidden border-2 focus-within:border-green-500/50 transition-all shadow-sm">
+                        <Editor
+                          maxLength={10000}
+                          contentEditableClassname="h-[200px] p-4 focus:outline-none bg-white font-sans text-sm"
+                          editorSerializedState={doc.content}
+                          onSerializedChange={(content) => {
+                            const newDocs = { ...formData.docs };
+                            (
+                              newDocs[
+                                docKey as keyof typeof formData.docs
+                              ] as any
+                            ).content = content;
+                            handleUpdateField("docs", newDocs);
+                          }}
+                        />
+                      </Card>
+                    ) : (
+                      <div className="border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center bg-muted/20 hover:bg-muted/30 transition-colors cursor-pointer group">
+                        <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                          <Upload className="w-5 h-5 text-muted-foreground/60" />
+                        </div>
+                        <p className="text-sm font-bold text-foreground">
+                          Click để tải lên PDF
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Hỗ trợ định dạng .pdf, dung lượng tối đa 10MB
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       ),
     },
@@ -727,18 +776,20 @@ export default function CropCreatePage() {
       id: "confirm",
       title: "Xác nhận",
       content: (
-        <div className="space-y-8">
-          <div className="text-center space-y-2">
-            <div className="w-16 h-16 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-md">
-              <Check className="w-8 h-8" />
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="text-center space-y-4 py-6">
+            <div className="w-20 h-20 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto shadow-lg shadow-green-100 ring-4 ring-white">
+              <Check className="w-10 h-10" />
             </div>
-            <h3 className="text-2xl font-bold text-foreground">
-              Xác nhận thông tin cây trồng
-            </h3>
-            <p className="text-muted-foreground max-w-lg mx-auto text-sm">
-              Vui lòng kiểm tra kỹ tất cả các thông tin đã nhập trước khi hoàn
-              tất quá trình khởi tạo cây trồng mới.
-            </p>
+            <div>
+              <h3 className="text-2xl font-bold text-slate-900">
+                Xác nhận thông tin
+              </h3>
+              <p className="text-slate-500 max-w-lg mx-auto text-sm mt-2">
+                Vui lòng kiểm tra kỹ tất cả các thông tin đã nhập trước khi hoàn
+                tất quá trình khởi tạo cây trồng mới.
+              </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

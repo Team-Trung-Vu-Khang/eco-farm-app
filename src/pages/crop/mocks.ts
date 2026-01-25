@@ -213,11 +213,21 @@ export const harvestMethodOptions = [
 
 export const stageOptions = [
   { label: "Gieo hạt", value: "Gieo hạt" },
+  { label: "Nảy mầm", value: "Nảy mầm" },
   { label: "Cây con", value: "Cây con" },
+  { label: "Ra lá", value: "Ra lá" },
+  { label: "Phân cành", value: "Phân cành" },
   { label: "Sinh trưởng mạnh", value: "Sinh trưởng mạnh" },
   { label: "Ra hoa", value: "Ra hoa" },
+  { label: "Nở hoa", value: "Nở hoa" },
+  { label: "Thụ phấn", value: "Thụ phấn" },
+  { label: "Đậu quả", value: "Đậu quả" },
   { label: "Kết trái", value: "Kết trái" },
+  { label: "Phát triển quả", value: "Phát triển quả" },
+  { label: "Chín", value: "Chín" },
   { label: "Thu hoạch", value: "Thu hoạch" },
+  { label: "Ngủ đông", value: "Ngủ đông" },
+  { label: "Hồi phục", value: "Hồi phục" },
 ];
 
 export interface ExtendedSeed {
