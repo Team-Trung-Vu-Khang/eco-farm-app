@@ -18,6 +18,7 @@ interface GenericItem {
   id: number;
   code: string;
   name: string;
+  image?: string;
   description: string;
   status: "active" | "inactive";
   createdAt: string;
@@ -28,6 +29,7 @@ interface GenericPageProps {
   description: string;
   entityName: string;
   initialData: GenericItem[];
+  enableImage?: boolean;
 }
 
 export function GenericPage({
@@ -35,6 +37,7 @@ export function GenericPage({
   description,
   entityName,
   initialData,
+  enableImage = false,
 }: GenericPageProps) {
   const { toast } = useToast();
   const [data, setData] = useState<GenericItem[]>(initialData);
@@ -42,14 +45,31 @@ export function GenericPage({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editItem, setEditItem] = useState<GenericItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<GenericItem | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Partial<GenericItem>>({
     code: "",
     name: "",
+    image: "",
     description: "",
   });
 
   const columns: Column<GenericItem>[] = [
     { key: "code", label: "Mã" },
+    ...(enableImage
+      ? [
+          {
+            key: "image" as keyof GenericItem,
+            label: "Hình ảnh",
+            render: (value: any) =>
+              value ? (
+                <img
+                  src={value as string}
+                  alt="item"
+                  className="w-10 h-10 object-cover rounded-md border"
+                />
+              ) : null,
+          },
+        ]
+      : []),
     { key: "name", label: "Tên" },
     { key: "description", label: "Mô tả" },
     {
@@ -66,7 +86,7 @@ export function GenericPage({
 
   const handleAdd = () => {
     setEditItem(null);
-    setFormData({ code: "", name: "", description: "" });
+    setFormData({ code: "", name: "", image: "", description: "" });
     setFormOpen(true);
   };
 
@@ -75,6 +95,7 @@ export function GenericPage({
     setFormData({
       code: item.code,
       name: item.name,
+      image: item.image || "",
       description: item.description,
     });
     setFormOpen(true);
@@ -96,7 +117,10 @@ export function GenericPage({
     } else {
       const newItem: GenericItem = {
         id: Date.now(),
-        ...formData,
+        code: formData.code || "",
+        name: formData.name || "",
+        description: formData.description || "",
+        image: formData.image,
         status: "active",
         createdAt: new Date().toISOString().split("T")[0],
       };
@@ -164,6 +188,50 @@ export function GenericPage({
               data-testid="input-name"
             />
           </div>
+          {enableImage && (
+            <div className="space-y-2">
+              <Label htmlFor="image">Hình ảnh</Label>
+              <div className="flex flex-col gap-4">
+                <Input
+                  id="image"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const url = URL.createObjectURL(file);
+                      setFormData({ ...formData, image: url });
+                    }
+                  }}
+                  data-testid="input-image"
+                />
+                <div className="text-sm text-gray-500">
+                  Hoặc nhập URL hình ảnh:
+                </div>
+                <Input
+                  value={formData.image || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, image: e.target.value })
+                  }
+                  placeholder="https://..."
+                />
+              </div>
+
+              {formData.image && (
+                <div className="mt-2 relative w-full h-40">
+                  <img
+                    src={formData.image}
+                    alt="Preview"
+                    className="w-full h-full object-cover rounded-md border"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        "https://placehold.co/400x200?text=Invalid+Image";
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="description">Mô tả</Label>
             <Textarea
