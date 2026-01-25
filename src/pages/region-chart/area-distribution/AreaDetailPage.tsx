@@ -9,7 +9,7 @@ import {
   Badge,
 } from "@tankhang1/eco-shared-ui";
 import { ChevronLeft, Edit, MapPin } from "lucide-react";
-import { MapContainer, TileLayer, Rectangle, Tooltip } from "react-leaflet";
+import { MapContainer, TileLayer, Polygon, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -54,13 +54,11 @@ const AreaDetailPage = () => {
 
   // Calculate bounds for map centering
   let bounds = L.latLngBounds([11.53, 106.88], [11.55, 106.91]);
-  if (areaData.coordinates && areaData.coordinates.length >= 2) {
-    const lats = areaData.coordinates.map((c) => c.lat);
-    const lngs = areaData.coordinates.map((c) => c.lng);
-    bounds = L.latLngBounds(
-      [Math.min(...lats), Math.min(...lngs)],
-      [Math.max(...lats), Math.max(...lngs)],
-    );
+  if (areaData.coordinates && areaData.coordinates.length > 0) {
+    const points = areaData.coordinates.map((c) => L.latLng(c.lat, c.lng));
+    if (points.length >= 1) {
+      bounds = L.latLngBounds(points);
+    }
   }
 
   const landTypeName =
@@ -92,7 +90,7 @@ const AreaDetailPage = () => {
         </div>
       }
     >
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-6">
         {/* Left Column: Info */}
         <div className="lg:col-span-1 space-y-6">
           <Card>
@@ -153,13 +151,39 @@ const AreaDetailPage = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Thống kê lô</CardTitle>
+              <CardTitle>
+                Danh sách lô ({areaData.plots?.length || 0})
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">
-                {areaData.plots?.length || 0}
+              <div className="space-y-3">
+                {areaData.plots && areaData.plots.length > 0 ? (
+                  areaData.plots.map((plot) => (
+                    <div
+                      key={plot.id}
+                      className="border p-3 rounded-lg text-sm bg-muted/20"
+                    >
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                          <span className="font-semibold">{plot.name}</span>
+                        </div>
+                        <span className="text-muted-foreground text-xs font-mono">
+                          {plot.area} ha
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                        <div>Độ cao: {plot.altitude}m</div>
+                        <div>Đồng mức: {plot.contour || "-"}</div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Chưa có lô nào.
+                  </p>
+                )}
               </div>
-              <p className="text-sm text-muted-foreground">Tổng số lô</p>
             </CardContent>
           </Card>
         </div>
@@ -176,7 +200,7 @@ const AreaDetailPage = () => {
               <MapContainer
                 center={[bounds.getCenter().lat, bounds.getCenter().lng]}
                 zoom={15}
-                className="h-[500px] w-full"
+                className="h-[600px] w-full"
                 scrollWheelZoom={true}
               >
                 <TileLayer
@@ -188,9 +212,9 @@ const AreaDetailPage = () => {
                 />
 
                 {/* Area Boundary */}
-                {areaData.coordinates && areaData.coordinates.length >= 2 && (
-                  <Rectangle
-                    bounds={bounds}
+                {areaData.coordinates && areaData.coordinates.length >= 3 && (
+                  <Polygon
+                    positions={areaData.coordinates.map((c) => [c.lat, c.lng])}
                     pathOptions={{
                       color: "blue",
                       fillColor: "blue",
@@ -202,23 +226,18 @@ const AreaDetailPage = () => {
                     <Tooltip sticky direction="top">
                       {areaData.name} ({areaData.area} ha)
                     </Tooltip>
-                  </Rectangle>
+                  </Polygon>
                 )}
 
                 {/* Plots */}
                 {areaData.plots?.map((plot) => {
-                  if (!plot.coordinates || plot.coordinates.length < 2)
+                  if (!plot.coordinates || plot.coordinates.length < 3)
                     return null;
-                  const lats = plot.coordinates.map((c) => c.lat);
-                  const lngs = plot.coordinates.map((c) => c.lng);
-                  const plotBounds = [
-                    [Math.min(...lats), Math.min(...lngs)],
-                    [Math.max(...lats), Math.max(...lngs)],
-                  ];
+
                   return (
-                    <Rectangle
+                    <Polygon
                       key={plot.id}
-                      bounds={plotBounds as any}
+                      positions={plot.coordinates.map((c) => [c.lat, c.lng])}
                       pathOptions={{
                         color: "orange",
                         fillColor: "orange",
@@ -233,7 +252,7 @@ const AreaDetailPage = () => {
                           {plot.area} ha
                         </div>
                       </Tooltip>
-                    </Rectangle>
+                    </Polygon>
                   );
                 })}
               </MapContainer>

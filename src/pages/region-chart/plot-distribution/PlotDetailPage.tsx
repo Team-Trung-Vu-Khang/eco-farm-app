@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@tankhang1/eco-shared-ui";
 import { ChevronLeft, Edit, MapPin } from "lucide-react";
-import { MapContainer, TileLayer, Rectangle, Tooltip } from "react-leaflet";
+import { MapContainer, TileLayer, Polygon, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -21,9 +21,6 @@ const PlotDetailPage = () => {
   const id = match && params?.id ? params.id : null;
 
   const plotData = MOCK_PLOTS.find((p) => p.id === id);
-  // Find Area that contains this plot - for mock data we might need a reverse lookup or just find area that has this plot
-  // Since MOCK_PLOTS is specific, we might not have the link back to Area easily unless we search.
-  // In `MOCK_AREAS` (constants.ts), areas have `plots: Plot[]`.
   const parentArea = MOCK_AREAS.find((a) => a.plots?.some((p) => p.id === id));
   const parentRegion = parentArea
     ? MOCK_REGIONS.find((r) => r.id === parentArea.regionId)
@@ -52,23 +49,17 @@ const PlotDetailPage = () => {
 
   // Calculate bounds
   let bounds = L.latLngBounds([11.53, 106.88], [11.55, 106.91]);
-  if (plotData.coordinates && plotData.coordinates.length >= 2) {
-    const lats = plotData.coordinates.map((c) => c.lat);
-    const lngs = plotData.coordinates.map((c) => c.lng);
+  if (plotData.coordinates && plotData.coordinates.length >= 3) {
     bounds = L.latLngBounds(
-      [Math.min(...lats), Math.min(...lngs)],
-      [Math.max(...lats), Math.max(...lngs)],
+      plotData.coordinates.map((c) => L.latLng(c.lat, c.lng)),
     );
   } else if (
     parentArea &&
     parentArea.coordinates &&
-    parentArea.coordinates.length >= 2
+    parentArea.coordinates.length >= 3
   ) {
-    const lats = parentArea.coordinates.map((c) => c.lat);
-    const lngs = parentArea.coordinates.map((c) => c.lng);
     bounds = L.latLngBounds(
-      [Math.min(...lats), Math.min(...lngs)],
-      [Math.max(...lats), Math.max(...lngs)],
+      parentArea.coordinates.map((c) => L.latLng(c.lat, c.lng)),
     );
   }
 
@@ -166,28 +157,12 @@ const PlotDetailPage = () => {
                 {/* Parent Area Boundary (Context) */}
                 {parentArea &&
                   parentArea.coordinates &&
-                  parentArea.coordinates.length >= 2 && (
-                    <Rectangle
-                      bounds={
-                        [
-                          [
-                            Math.min(
-                              ...parentArea.coordinates.map((c) => c.lat),
-                            ),
-                            Math.min(
-                              ...parentArea.coordinates.map((c) => c.lng),
-                            ),
-                          ],
-                          [
-                            Math.max(
-                              ...parentArea.coordinates.map((c) => c.lat),
-                            ),
-                            Math.max(
-                              ...parentArea.coordinates.map((c) => c.lng),
-                            ),
-                          ],
-                        ] as any
-                      }
+                  parentArea.coordinates.length >= 3 && (
+                    <Polygon
+                      positions={parentArea.coordinates.map((c) => [
+                        c.lat,
+                        c.lng,
+                      ])}
                       pathOptions={{
                         color: "blue",
                         fill: false,
@@ -196,24 +171,13 @@ const PlotDetailPage = () => {
                       }}
                     >
                       <Tooltip direction="top">{parentArea.name}</Tooltip>
-                    </Rectangle>
+                    </Polygon>
                   )}
 
                 {/* Plot Boundary */}
-                {plotData.coordinates && plotData.coordinates.length >= 2 && (
-                  <Rectangle
-                    bounds={
-                      [
-                        [
-                          Math.min(...plotData.coordinates.map((c) => c.lat)),
-                          Math.min(...plotData.coordinates.map((c) => c.lng)),
-                        ],
-                        [
-                          Math.max(...plotData.coordinates.map((c) => c.lat)),
-                          Math.max(...plotData.coordinates.map((c) => c.lng)),
-                        ],
-                      ] as any
-                    }
+                {plotData.coordinates && plotData.coordinates.length >= 3 && (
+                  <Polygon
+                    positions={plotData.coordinates.map((c) => [c.lat, c.lng])}
                     pathOptions={{
                       color: "orange",
                       fillColor: "orange",
@@ -224,7 +188,7 @@ const PlotDetailPage = () => {
                     <Tooltip sticky>
                       {plotData.name} ({plotData.area} ha)
                     </Tooltip>
-                  </Rectangle>
+                  </Polygon>
                 )}
               </MapContainer>
             </CardContent>

@@ -12,21 +12,24 @@ export const MOCK_CERTIFICATES: Certificate[] = [
     name: "VietGAP",
     code: "VG-2024-001",
     organization: "Trung tâm Khuyến nông Quốc gia",
-    imageUrl: "https://minio.ae-de.com/ecofarm/cert-vietgap.png", // Placeholder
+    imageUrl:
+      "https://cdn.vietnambiz.vn/2020/3/2/vg-15831176957661073999454.jpg", // Placeholder
   },
   {
     id: "cert-2",
     name: "GlobalGAP",
     code: "GG-2023-999",
     organization: "GlobalGAP Secretariat",
-    imageUrl: "https://minio.ae-de.com/ecofarm/cert-globalgap.png",
+    imageUrl:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0VCMHRpDAs8PTI0U7WmPd-Bnifg92-ai4_Q&s",
   },
   {
     id: "cert-3",
     name: "Organic USDA",
     code: "US-ORG-123",
     organization: "USDA",
-    imageUrl: "https://minio.ae-de.com/ecofarm/cert-usda.png",
+    imageUrl:
+      "https://cdn.shopify.com/s/files/1/0789/8483/files/Untitled-4.png?875230042906236671",
   },
 ];
 
@@ -102,12 +105,43 @@ export interface CropVariety {
   id: string;
   name: string;
   type: string;
+  imageUrl: string;
 }
 
 export const CROP_VARIETIES: CropVariety[] = [
-  { id: "crop-1", name: "Sầu riêng Monthong", type: "Fruit" },
-  { id: "crop-2", name: "Dâu tây Hana", type: "Fruit" },
-  { id: "crop-3", name: "Cà chua Cherry", type: "Vegetable" },
-  { id: "crop-4", name: "Lúa ST25", type: "Grain" },
-  { id: "crop-5", name: "Bơ 034", type: "Fruit" },
+  {
+    id: "crop-1",
+    name: "Sầu riêng Monthong",
+    type: "Fruit",
+    imageUrl:
+      "https://images.unsplash.com/photo-1580910051074-3eb694886505?w=400&h=400&fit=crop",
+  },
+  {
+    id: "crop-2",
+    name: "Dâu tây Hana",
+    type: "Fruit",
+    imageUrl:
+      "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=400&h=400&fit=crop",
+  },
+  {
+    id: "crop-3",
+    name: "Cà chua Cherry",
+    type: "Vegetable",
+    imageUrl:
+      "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&h=400&fit=crop",
+  },
+  {
+    id: "crop-4",
+    name: "Lúa ST25",
+    type: "Grain",
+    imageUrl:
+      "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&h=400&fit=crop",
+  },
+  {
+    id: "crop-5",
+    name: "Bơ 034",
+    type: "Fruit",
+    imageUrl:
+      "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400&h=400&fit=crop",
+  },
 ];

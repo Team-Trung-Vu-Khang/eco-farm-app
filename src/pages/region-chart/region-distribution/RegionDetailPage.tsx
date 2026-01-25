@@ -9,7 +9,7 @@ import {
   Label,
   Badge,
 } from "@tankhang1/eco-shared-ui";
-import { MapContainer, TileLayer, Rectangle } from "react-leaflet";
+import { MapContainer, TileLayer, Polygon } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { ChevronLeft, Edit } from "lucide-react";
@@ -49,14 +49,17 @@ const RegionDetailPage = () => {
   }
 
   // Calculate Bounds
-  let bounds = L.latLngBounds([11.53, 106.88], [11.55, 106.91]);
-  if (region.coordinates && region.coordinates.length >= 2) {
-    const lats = region.coordinates.map((c) => c.lat);
-    const lngs = region.coordinates.map((c) => c.lng);
-    bounds = L.latLngBounds(
-      [Math.min(...lats), Math.min(...lngs)],
-      [Math.max(...lats), Math.max(...lngs)],
-    );
+  // Default bounds if no coords
+  let bounds = L.latLngBounds([
+    [11.53, 106.88],
+    [11.55, 106.91],
+  ]);
+
+  if (region.coordinates && region.coordinates.length > 0) {
+    const points = region.coordinates.map((c) => L.latLng(c.lat, c.lng));
+    if (points.length >= 1) {
+      bounds = L.latLngBounds(points);
+    }
   }
 
   const provinceName =
@@ -196,31 +199,33 @@ const RegionDetailPage = () => {
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <Rectangle
-                  bounds={bounds}
-                  pathOptions={{
-                    color: "blue",
-                    fill: false,
-                    dashArray: "5, 5",
-                  }}
-                />
+
+                {/* Main Region Polygon */}
+                {region.coordinates && region.coordinates.length > 0 && (
+                  <Polygon
+                    positions={region.coordinates.map((c) => [c.lat, c.lng])}
+                    pathOptions={{
+                      color: "blue",
+                      fill: false,
+                      dashArray: "5, 5",
+                    }}
+                  />
+                )}
+
+                {/* Sub Areas Polygons */}
                 {region.subAreas?.map((sub) => {
-                  if (!sub.coordinates || sub.coordinates.length < 2)
+                  if (!sub.coordinates || sub.coordinates.length < 3)
                     return null;
-                  const lats = sub.coordinates.map((c) => c.lat);
-                  const lngs = sub.coordinates.map((c) => c.lng);
-                  const b = [
-                    [Math.min(...lats), Math.min(...lngs)],
-                    [Math.max(...lats), Math.max(...lngs)],
-                  ];
+
                   return (
-                    <Rectangle
+                    <Polygon
                       key={sub.id}
-                      bounds={b as any}
+                      positions={sub.coordinates.map((c) => [c.lat, c.lng])}
                       pathOptions={{ color: "green", weight: 2 }}
-                    ></Rectangle>
+                    />
                   );
                 })}
+
                 <MapController
                   center={[bounds.getCenter().lat, bounds.getCenter().lng]}
                 />

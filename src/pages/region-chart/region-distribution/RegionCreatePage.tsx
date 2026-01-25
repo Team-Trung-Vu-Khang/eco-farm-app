@@ -19,10 +19,29 @@ import {
   type Step,
   Button,
 } from "@tankhang1/eco-shared-ui";
-import { MapContainer, TileLayer, Rectangle } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Polygon,
+  Marker,
+  useMapEvents,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Plus, Edit, Trash2, ChevronLeft } from "lucide-react";
+
+const customIcon = new L.Icon({
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+import { Plus, Edit, Trash2, ChevronLeft, X } from "lucide-react";
 
 import {
   type Region,
@@ -34,10 +53,20 @@ import {
   TERRAIN_TYPES,
   MOCK_REGIONS,
 } from "../constants";
-import {
-  DraggableRectangle,
-  MapController,
-} from "../components/DraggableRectangle";
+import { MapController } from "../components/DraggableRectangle";
+
+const MapClickHandler = ({
+  onClick,
+}: {
+  onClick: (latlng: L.LatLng) => void;
+}) => {
+  useMapEvents({
+    click(e) {
+      onClick(e.latlng);
+    },
+  });
+  return null;
+};
 
 const RegionCreatePage = () => {
   const [, setLocation] = useLocation();
@@ -45,31 +74,13 @@ const RegionCreatePage = () => {
   const [match, params] = useRoute("/region-distribution/edit/:id");
   const isEditMode = match && !!params?.id;
 
-  useEffect(() => {
-    if (isEditMode && params?.id) {
-      const regionId = parseInt(params.id);
-      const found = MOCK_REGIONS.find((r) => r.id === regionId);
-      if (found) {
-        setFormData(found);
-        if (found.coordinates && found.coordinates.length >= 2) {
-          const lats = found.coordinates.map((c) => c.lat);
-          const lngs = found.coordinates.map((c) => c.lng);
-          setCurrentBounds(
-            L.latLngBounds(
-              [Math.min(...lats), Math.min(...lngs)],
-              [Math.max(...lats), Math.max(...lngs)],
-            ),
-          );
-        }
-      }
-    }
-  }, [isEditMode, params?.id]);
-
   // Form State
-  const defaultBounds = L.latLngBounds(
-    [11.53, 106.88], // SW
-    [11.55, 106.91], // NE
-  );
+  const defaultPoints = [
+    L.latLng(11.53, 106.88),
+    L.latLng(11.55, 106.88),
+    L.latLng(11.55, 106.91),
+    L.latLng(11.53, 106.91),
+  ];
 
   const [formData, setFormData] = useState<Partial<Region>>({
     code: "",
@@ -87,36 +98,146 @@ const RegionCreatePage = () => {
     note: "",
   });
 
-  const [currentBounds, setCurrentBounds] =
-    useState<L.LatLngBounds>(defaultBounds);
+  const [regionPoints, setRegionPoints] = useState<L.LatLng[]>(defaultPoints);
+
+  useEffect(() => {
+    if (isEditMode && params?.id) {
+      const regionId = parseInt(params.id);
+      const found = MOCK_REGIONS.find((r) => r.id === regionId);
+      if (found) {
+        setFormData(found);
+        if (found.coordinates && found.coordinates.length >= 3) {
+          setRegionPoints(found.coordinates.map((c) => L.latLng(c.lat, c.lng)));
+        }
+      }
+    }
+  }, [isEditMode, params?.id]);
 
   // Sub-area State
   const [editingSubArea, setEditingSubArea] = useState<Partial<SubArea> | null>(
     null,
   );
-  const [subAreaBounds, setSubAreaBounds] =
-    useState<L.LatLngBounds>(defaultBounds);
+
+  const getBoundsFromPoints = (points: L.LatLng[]) => {
+    if (points.length === 0) return L.latLngBounds(defaultPoints);
+    return L.latLngBounds(points);
+  };
+
+  const [subAreaPoints, setSubAreaPoints] = useState<L.LatLng[]>([]);
 
   // --- Handlers ---
 
-  const handleSubmit = () => {
-    // Save map bounds to coordinates if not already saved or updated
-    // For simplicity, we recalculate here just to be safe
-    const sw = currentBounds.getSouthWest();
-    const ne = currentBounds.getNorthEast();
-    const nw = L.latLng(ne.lat, sw.lng);
-    const se = L.latLng(sw.lat, ne.lng);
+  const handlePointDrag = (index: number, latlng: L.LatLng) => {
+    const newPoints = [...regionPoints];
+    newPoints[index] = latlng;
+    setRegionPoints(newPoints);
+  };
 
-    const newCoords = [
-      { lat: sw.lat, lng: sw.lng },
-      { lat: nw.lat, lng: nw.lng },
-      { lat: ne.lat, lng: ne.lng },
-      { lat: se.lat, lng: se.lng },
-    ];
+  const handleSubAreaPointDrag = (index: number, latlng: L.LatLng) => {
+    const newPoints = [...subAreaPoints];
+    newPoints[index] = latlng;
+    setSubAreaPoints(newPoints);
+  };
+
+  const handleAddPoint = () => {
+    const center = getBoundsFromPoints(regionPoints).getCenter();
+    setRegionPoints([
+      ...regionPoints,
+      L.latLng(center.lat + 0.005, center.lng + 0.005),
+    ]);
+  };
+
+  const handleAddSubAreaPoint = () => {
+    const center = getBoundsFromPoints(subAreaPoints).getCenter();
+    setSubAreaPoints([
+      ...subAreaPoints,
+      L.latLng(center.lat + 0.002, center.lng + 0.002),
+    ]);
+  };
+
+  const handleMapClick = (latlng: L.LatLng) => {
+    setRegionPoints([...regionPoints, latlng]);
+  };
+
+  const handleSubAreaMapClick = (latlng: L.LatLng) => {
+    if (editingSubArea) {
+      setSubAreaPoints([...subAreaPoints, latlng]);
+    }
+  };
+
+  const removePoint = (index: number) => {
+    if (regionPoints.length <= 3) {
+      toast({
+        title: "Không thể xóa",
+        description: "Vùng trồng cần ít nhất 3 điểm để tạo thành hình",
+        variant: "destructive",
+      });
+      return;
+    }
+    const newPoints = regionPoints.filter((_, i) => i !== index);
+    setRegionPoints(newPoints);
+  };
+
+  const removeSubAreaPoint = (index: number) => {
+    if (subAreaPoints.length <= 3) {
+      toast({
+        title: "Không thể xóa",
+        description: "Khu vực cần ít nhất 3 điểm",
+        variant: "destructive",
+      });
+      return;
+    }
+    const newPoints = subAreaPoints.filter((_, i) => i !== index);
+    setSubAreaPoints(newPoints);
+  };
+
+  const handlePointInputChange = (
+    index: number,
+    field: "lat" | "lng",
+    value: string,
+  ) => {
+    const val = parseFloat(value);
+    if (isNaN(val)) return;
+
+    const newPoints = [...regionPoints];
+    const currentPoint = newPoints[index];
+    newPoints[index] = L.latLng(
+      field === "lat" ? val : currentPoint.lat,
+      field === "lng" ? val : currentPoint.lng,
+    );
+    setRegionPoints(newPoints);
+  };
+
+  const handleSubAreaPointInputChange = (
+    index: number,
+    field: "lat" | "lng",
+    value: string,
+  ) => {
+    const val = parseFloat(value);
+    if (isNaN(val)) return;
+
+    const newPoints = [...subAreaPoints];
+    const currentPoint = newPoints[index];
+    newPoints[index] = L.latLng(
+      field === "lat" ? val : currentPoint.lat,
+      field === "lng" ? val : currentPoint.lng,
+    );
+    setSubAreaPoints(newPoints);
+  };
+
+  const handleSubmit = () => {
+    if (regionPoints.length < 3) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng chọn ít nhất 3 điểm cho vùng trồng",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const finalData = {
       ...formData,
-      coordinates: newCoords,
+      coordinates: regionPoints.map((p) => ({ lat: p.lat, lng: p.lng })),
       createdAt: new Date().toISOString(),
     };
 
@@ -139,22 +260,28 @@ const RegionCreatePage = () => {
       coordinates: [],
     };
     setEditingSubArea(newSub);
-    setSubAreaBounds(currentBounds);
+    const center = getBoundsFromPoints(regionPoints).getCenter();
+    setSubAreaPoints([
+      L.latLng(center.lat - 0.002, center.lng - 0.002),
+      L.latLng(center.lat + 0.002, center.lng - 0.002),
+      L.latLng(center.lat + 0.002, center.lng + 0.002),
+      L.latLng(center.lat - 0.002, center.lng + 0.002),
+    ]);
   };
 
   const saveSubArea = () => {
     if (!editingSubArea) return;
 
-    const sw = subAreaBounds.getSouthWest();
-    const ne = subAreaBounds.getNorthEast();
-    const nw = L.latLng(ne.lat, sw.lng);
-    const se = L.latLng(sw.lat, ne.lng);
-    const fullCoords = [
-      { lat: sw.lat, lng: sw.lng },
-      { lat: nw.lat, lng: nw.lng },
-      { lat: ne.lat, lng: ne.lng },
-      { lat: se.lat, lng: se.lng },
-    ];
+    if (subAreaPoints.length < 3) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng chọn ít nhất 3 điểm cho khu vực",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const fullCoords = subAreaPoints.map((p) => ({ lat: p.lat, lng: p.lng }));
 
     const updatedSub = {
       ...editingSubArea,
@@ -292,7 +419,14 @@ const RegionCreatePage = () => {
                   <SelectContent>
                     {ENTERPRISES.map((e) => (
                       <SelectItem key={e.id} value={e.id}>
-                        {e.name}
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={e.image}
+                            alt={e.name}
+                            className="w-5 h-5 rounded-full object-cover border"
+                          />
+                          <span>{e.name}</span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -375,188 +509,116 @@ const RegionCreatePage = () => {
       title: "Bản đồ vùng trồng",
       description: "Xác định vị trí trên bản đồ",
       content: (
-        <Card>
+        <Card className="h-[750px] flex flex-col">
           <CardHeader>
             <CardTitle>Bản đồ vị trí</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="h-[500px] w-full rounded-lg border overflow-hidden relative z-0">
+          <CardContent className="flex-1 p-4 overflow-hidden flex gap-4">
+            <div className="flex-1 h-full rounded-lg border overflow-hidden relative z-0">
               <MapContainer
                 center={[
-                  currentBounds.getCenter().lat,
-                  currentBounds.getCenter().lng,
+                  getBoundsFromPoints(regionPoints).getCenter().lat,
+                  getBoundsFromPoints(regionPoints).getCenter().lng,
                 ]}
-                zoom={13}
+                zoom={14}
                 className="h-full w-full"
               >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <DraggableRectangle
-                  bounds={currentBounds}
-                  setBounds={setCurrentBounds}
-                  color="blue"
+
+                <MapClickHandler onClick={handleMapClick} />
+
+                <Polygon
+                  positions={regionPoints}
+                  pathOptions={{ color: "blue", fillOpacity: 0.1 }}
                 />
+
+                {regionPoints.map((point, idx) => (
+                  <Marker
+                    key={`point-${idx}`}
+                    position={point}
+                    draggable={true}
+                    icon={customIcon}
+                    eventHandlers={{
+                      drag: (e) => {
+                        handlePointDrag(idx, e.target.getLatLng());
+                      },
+                    }}
+                  />
+                ))}
+
                 <MapController
                   center={[
-                    currentBounds.getCenter().lat,
-                    currentBounds.getCenter().lng,
+                    getBoundsFromPoints(regionPoints).getCenter().lat,
+                    getBoundsFromPoints(regionPoints).getCenter().lng,
                   ]}
                 />
               </MapContainer>
             </div>
-            <div className="text-sm text-muted-foreground p-2 bg-muted rounded-md mb-4">
-              <strong>Hướng dẫn:</strong> Kéo thả các điểm đánh dấu trên bản đồ
-              hoặc nhập trực tiếp toạ độ bên dưới để xác định phạm vi vùng
-              trồng.
-              <br />
-              Toạ độ hiện tại: {currentBounds
-                .getSouthWest()
-                .lat.toFixed(4)}, {currentBounds.getSouthWest().lng.toFixed(4)}{" "}
-              - {currentBounds.getNorthEast().lat.toFixed(4)},{" "}
-              {currentBounds.getNorthEast().lng.toFixed(4)}
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              {/* SW */}
-              <div className="space-y-2">
-                <Label>Điểm 1 (Tây Nam)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Lat"
-                    value={currentBounds.getSouthWest().lat || 0}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (isNaN(val)) return;
-                      const ne = currentBounds.getNorthEast();
-                      const sw = currentBounds.getSouthWest();
-                      setCurrentBounds(
-                        L.latLngBounds(L.latLng(val, sw.lng), ne),
-                      );
-                    }}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Lng"
-                    value={currentBounds.getSouthWest().lng || 0}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (isNaN(val)) return;
-                      const ne = currentBounds.getNorthEast();
-                      const sw = currentBounds.getSouthWest();
-                      setCurrentBounds(
-                        L.latLngBounds(L.latLng(sw.lat, val), ne),
-                      );
-                    }}
-                  />
-                </div>
+            <div className="w-[300px] flex flex-col h-full bg-slate-50 border rounded-lg overflow-hidden">
+              <div className="p-3 border-b bg-white">
+                <h4 className="font-semibold text-sm">Danh sách toạ độ</h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Kéo thả điểm trên bản đồ hoặc click để thêm điểm mới.
+                </p>
               </div>
+              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                {regionPoints.map((p, i) => (
+                  <div
+                    key={i}
+                    className="flex flex-col gap-2 p-2 bg-white rounded border text-xs relative"
+                  >
+                    <div className="absolute top-2 right-2 flex gap-1">
+                      {regionPoints.length > 3 && (
+                        <button
+                          onClick={() => removePoint(i)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                    <span className="font-semibold">Điểm {i + 1}</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-gray-500">Lat</label>
+                        <input
+                          className="w-full border rounded px-1 py-0.5"
+                          type="number"
+                          value={p.lat}
+                          onChange={(e) =>
+                            handlePointInputChange(i, "lat", e.target.value)
+                          }
+                          step="0.0001"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-gray-500">Lng</label>
+                        <input
+                          className="w-full border rounded px-1 py-0.5"
+                          type="number"
+                          value={p.lng}
+                          onChange={(e) =>
+                            handlePointInputChange(i, "lng", e.target.value)
+                          }
+                          step="0.0001"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
 
-              {/* NW */}
-              <div className="space-y-2">
-                <Label>Điểm 2 (Tây Bắc)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Lat"
-                    value={currentBounds.getNorthEast().lat || 0}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (isNaN(val)) return;
-                      const sw = currentBounds.getSouthWest();
-                      const ne = currentBounds.getNorthEast();
-                      setCurrentBounds(
-                        L.latLngBounds(sw, L.latLng(val, ne.lng)),
-                      );
-                    }}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Lng"
-                    value={currentBounds.getSouthWest().lng || 0}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (isNaN(val)) return;
-                      const sw = currentBounds.getSouthWest();
-                      const ne = currentBounds.getNorthEast();
-                      setCurrentBounds(
-                        L.latLngBounds(L.latLng(sw.lat, val), ne),
-                      );
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* NE */}
-              <div className="space-y-2">
-                <Label>Điểm 3 (Đông Bắc)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Lat"
-                    value={currentBounds.getNorthEast().lat || 0}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (isNaN(val)) return;
-                      const sw = currentBounds.getSouthWest();
-                      const ne = currentBounds.getNorthEast();
-                      setCurrentBounds(
-                        L.latLngBounds(sw, L.latLng(val, ne.lng)),
-                      );
-                    }}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Lng"
-                    value={currentBounds.getNorthEast().lng || 0}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (isNaN(val)) return;
-                      const sw = currentBounds.getSouthWest();
-                      const ne = currentBounds.getNorthEast();
-                      setCurrentBounds(
-                        L.latLngBounds(sw, L.latLng(ne.lat, val)),
-                      );
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* SE */}
-              <div className="space-y-2">
-                <Label>Điểm 4 (Đông Nam)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Lat"
-                    value={currentBounds.getSouthWest().lat || 0}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (isNaN(val)) return;
-                      const ne = currentBounds.getNorthEast();
-                      const sw = currentBounds.getSouthWest();
-                      setCurrentBounds(
-                        L.latLngBounds(L.latLng(val, sw.lng), ne),
-                      );
-                    }}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Lng"
-                    value={currentBounds.getNorthEast().lng || 0}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (isNaN(val)) return;
-                      const sw = currentBounds.getSouthWest();
-                      const ne = currentBounds.getNorthEast();
-                      setCurrentBounds(
-                        L.latLngBounds(sw, L.latLng(ne.lat, val)),
-                      );
-                    }}
-                  />
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-dashed"
+                  onClick={handleAddPoint}
+                >
+                  <Plus className="w-4 h-4 mr-2" /> Thêm điểm
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -577,8 +639,8 @@ const RegionCreatePage = () => {
               <div className="lg:col-span-3 h-full rounded-lg border overflow-hidden relative">
                 <MapContainer
                   center={[
-                    currentBounds.getCenter().lat,
-                    currentBounds.getCenter().lng,
+                    getBoundsFromPoints(regionPoints).getCenter().lat,
+                    getBoundsFromPoints(regionPoints).getCenter().lng,
                   ]}
                   zoom={14}
                   className="h-full w-full"
@@ -587,9 +649,12 @@ const RegionCreatePage = () => {
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
-                  {/* Main Region Boundary (Static Reference) */}
-                  <Rectangle
-                    bounds={currentBounds}
+
+                  <MapClickHandler onClick={handleSubAreaMapClick} />
+
+                  {/* Main Region Boundary (Dynamic Polygon) */}
+                  <Polygon
+                    positions={regionPoints}
                     pathOptions={{
                       color: "blue",
                       fill: false,
@@ -597,60 +662,73 @@ const RegionCreatePage = () => {
                     }}
                   />
 
-                  {/* Existing Sub Areas (Static Reference) */}
+                  {/* Existing Sub Areas (Static) */}
                   {formData.subAreas?.map((sub) => {
-                    // Don't show the one currently being edited as a static rect
+                    // Don't show the one currently being edited as a static poly
                     if (editingSubArea && sub.id === editingSubArea.id)
                       return null;
 
-                    if (!sub.coordinates || sub.coordinates.length < 2)
+                    if (!sub.coordinates || sub.coordinates.length < 3)
                       return null;
-                    const lats = sub.coordinates.map((c) => c.lat);
-                    const lngs = sub.coordinates.map((c) => c.lng);
-                    const b = [
-                      [Math.min(...lats), Math.min(...lngs)],
-                      [Math.max(...lats), Math.max(...lngs)],
-                    ];
+
+                    const positions = sub.coordinates.map((c) =>
+                      L.latLng(c.lat, c.lng),
+                    );
+
                     return (
-                      <Rectangle
+                      <Polygon
                         key={sub.id}
-                        bounds={b as any}
+                        positions={positions}
                         pathOptions={{ color: "green", weight: 2 }}
                         eventHandlers={{
                           click: () => {
-                            // Optional: Click to edit?
                             setEditingSubArea(sub);
                             if (
                               sub.coordinates &&
-                              sub.coordinates.length >= 2
+                              sub.coordinates.length >= 3
                             ) {
-                              const lats = sub.coordinates.map((c) => c.lat);
-                              const lngs = sub.coordinates.map((c) => c.lng);
-                              setSubAreaBounds(
-                                L.latLngBounds(
-                                  [Math.min(...lats), Math.min(...lngs)],
-                                  [Math.max(...lats), Math.max(...lngs)],
+                              setSubAreaPoints(
+                                sub.coordinates.map((c) =>
+                                  L.latLng(c.lat, c.lng),
                                 ),
                               );
                             }
                           },
                         }}
-                      ></Rectangle>
+                      />
                     );
                   })}
 
-                  {/* Editing Sub Area (Draggable) */}
+                  {/* Editing Sub Area (Dynamic) */}
                   {editingSubArea && (
-                    <DraggableRectangle
-                      bounds={subAreaBounds}
-                      setBounds={setSubAreaBounds}
-                      color="#22c55e" // green
-                    />
+                    <>
+                      <Polygon
+                        positions={subAreaPoints}
+                        pathOptions={{
+                          color: "#22c55e",
+                          weight: 2,
+                          fillOpacity: 0.2,
+                        }}
+                      />
+                      {subAreaPoints.map((point, idx) => (
+                        <Marker
+                          key={`sub-point-${idx}`}
+                          position={point}
+                          draggable={true}
+                          icon={customIcon}
+                          eventHandlers={{
+                            drag: (e) => {
+                              handleSubAreaPointDrag(idx, e.target.getLatLng());
+                            },
+                          }}
+                        />
+                      ))}
+                    </>
                   )}
                   <MapController
                     center={[
-                      currentBounds.getCenter().lat,
-                      currentBounds.getCenter().lng,
+                      getBoundsFromPoints(regionPoints).getCenter().lat,
+                      getBoundsFromPoints(regionPoints).getCenter().lng,
                     ]}
                   />
                 </MapContainer>
@@ -727,243 +805,172 @@ const RegionCreatePage = () => {
                     </div>
 
                     {/* MANUAL COORDINATES INPUTS */}
-                    <div className="space-y-3 bg-muted/30 p-3 rounded-lg border">
-                      <Label className="text-xs font-semibold uppercase text-muted-foreground">
-                        Toạ độ (Kéo thả hoặc nhập)
-                      </Label>
-                      <div className="grid grid-cols-2 gap-3">
-                        {/* SW */}
-                        <div className="space-y-1">
-                          <Label className="text-[10px]">1. Tây Nam</Label>
-                          <div className="flex gap-1">
-                            <Input
-                              className="h-7 text-xs px-1"
-                              placeholder="Lat"
-                              type="number"
-                              value={subAreaBounds.getSouthWest().lat || 0}
-                              onChange={(e) => {
-                                const val = parseFloat(e.target.value);
-                                if (isNaN(val)) return;
-                                const ne = subAreaBounds.getNorthEast();
-                                const sw = subAreaBounds.getSouthWest();
-                                setSubAreaBounds(
-                                  L.latLngBounds(L.latLng(val, sw.lng), ne),
-                                );
-                              }}
-                            />
-                            <Input
-                              className="h-7 text-xs px-1"
-                              placeholder="Lng"
-                              type="number"
-                              value={subAreaBounds.getSouthWest().lng || 0}
-                              onChange={(e) => {
-                                const val = parseFloat(e.target.value);
-                                if (isNaN(val)) return;
-                                const ne = subAreaBounds.getNorthEast();
-                                const sw = subAreaBounds.getSouthWest();
-                                setSubAreaBounds(
-                                  L.latLngBounds(L.latLng(sw.lat, val), ne),
-                                );
-                              }}
-                            />
+                    <div className="w-full flex flex-col bg-slate-50 border rounded-lg overflow-hidden mt-2">
+                      <div className="p-3 border-b bg-white">
+                        <h4 className="font-semibold text-sm">
+                          Danh sách toạ độ
+                        </h4>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Kéo thả điểm hoặc click bản đồ để thêm.
+                        </p>
+                      </div>
+                      <div className="flex-1 overflow-y-auto p-3 space-y-3 max-h-[300px]">
+                        {subAreaPoints.map((p, i) => (
+                          <div
+                            key={i}
+                            className="flex flex-col gap-2 p-2 bg-white rounded border text-xs relative"
+                          >
+                            <div className="absolute top-2 right-2 flex gap-1">
+                              {subAreaPoints.length > 3 && (
+                                <button
+                                  onClick={() => removeSubAreaPoint(i)}
+                                  className="text-red-500 hover:text-red-700"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                            <span className="font-semibold">Điểm {i + 1}</span>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[10px] text-gray-500">
+                                  Lat
+                                </label>
+                                <input
+                                  className="w-full border rounded px-1 py-0.5"
+                                  type="number"
+                                  value={p.lat}
+                                  onChange={(e) =>
+                                    handleSubAreaPointInputChange(
+                                      i,
+                                      "lat",
+                                      e.target.value,
+                                    )
+                                  }
+                                  step="0.0001"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] text-gray-500">
+                                  Lng
+                                </label>
+                                <input
+                                  className="w-full border rounded px-1 py-0.5"
+                                  type="number"
+                                  value={p.lng}
+                                  onChange={(e) =>
+                                    handleSubAreaPointInputChange(
+                                      i,
+                                      "lng",
+                                      e.target.value,
+                                    )
+                                  }
+                                  step="0.0001"
+                                />
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        {/* NW */}
-                        <div className="space-y-1">
-                          <Label className="text-[10px]">2. Tây Bắc</Label>
-                          <div className="flex gap-1">
-                            <Input
-                              className="h-7 text-xs px-1"
-                              placeholder="Lat"
-                              type="number"
-                              value={subAreaBounds.getNorthEast().lat || 0}
-                              onChange={(e) => {
-                                const val = parseFloat(e.target.value);
-                                if (isNaN(val)) return;
-                                const sw = subAreaBounds.getSouthWest();
-                                const ne = subAreaBounds.getNorthEast();
-                                setSubAreaBounds(
-                                  L.latLngBounds(sw, L.latLng(val, ne.lng)),
-                                );
-                              }}
-                            />
-                            <Input
-                              className="h-7 text-xs px-1"
-                              placeholder="Lng"
-                              type="number"
-                              value={subAreaBounds.getSouthWest().lng || 0}
-                              onChange={(e) => {
-                                const val = parseFloat(e.target.value);
-                                if (isNaN(val)) return;
-                                const sw = subAreaBounds.getSouthWest();
-                                const ne = subAreaBounds.getNorthEast();
-                                setSubAreaBounds(
-                                  L.latLngBounds(L.latLng(sw.lat, val), ne),
-                                );
-                              }}
-                            />
-                          </div>
-                        </div>
-                        {/* NE */}
-                        <div className="space-y-1">
-                          <Label className="text-[10px]">3. Đông Bắc</Label>
-                          <div className="flex gap-1">
-                            <Input
-                              className="h-7 text-xs px-1"
-                              placeholder="Lat"
-                              type="number"
-                              value={subAreaBounds.getNorthEast().lat || 0}
-                              onChange={(e) => {
-                                const val = parseFloat(e.target.value);
-                                if (isNaN(val)) return;
-                                const sw = subAreaBounds.getSouthWest();
-                                const ne = subAreaBounds.getNorthEast();
-                                setSubAreaBounds(
-                                  L.latLngBounds(sw, L.latLng(val, ne.lng)),
-                                );
-                              }}
-                            />
-                            <Input
-                              className="h-7 text-xs px-1"
-                              placeholder="Lng"
-                              type="number"
-                              value={subAreaBounds.getNorthEast().lng || 0}
-                              onChange={(e) => {
-                                const val = parseFloat(e.target.value);
-                                if (isNaN(val)) return;
-                                const sw = subAreaBounds.getSouthWest();
-                                const ne = subAreaBounds.getNorthEast();
-                                setSubAreaBounds(
-                                  L.latLngBounds(sw, L.latLng(ne.lat, val)),
-                                );
-                              }}
-                            />
-                          </div>
-                        </div>
-                        {/* SE */}
-                        <div className="space-y-1">
-                          <Label className="text-[10px]">4. Đông Nam</Label>
-                          <div className="flex gap-1">
-                            <Input
-                              className="h-7 text-xs px-1"
-                              placeholder="Lat"
-                              type="number"
-                              value={subAreaBounds.getSouthWest().lat || 0}
-                              onChange={(e) => {
-                                const val = parseFloat(e.target.value);
-                                if (isNaN(val)) return;
-                                const ne = subAreaBounds.getNorthEast();
-                                const sw = subAreaBounds.getSouthWest();
-                                setSubAreaBounds(
-                                  L.latLngBounds(L.latLng(val, sw.lng), ne),
-                                );
-                              }}
-                            />
-                            <Input
-                              className="h-7 text-xs px-1"
-                              placeholder="Lng"
-                              type="number"
-                              value={subAreaBounds.getNorthEast().lng || 0}
-                              onChange={(e) => {
-                                const val = parseFloat(e.target.value);
-                                if (isNaN(val)) return;
-                                const sw = subAreaBounds.getSouthWest();
-                                const ne = subAreaBounds.getNorthEast();
-                                setSubAreaBounds(
-                                  L.latLngBounds(sw, L.latLng(ne.lat, val)),
-                                );
-                              }}
-                            />
-                          </div>
-                        </div>
+                        ))}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full border-dashed"
+                          onClick={handleAddSubAreaPoint}
+                        >
+                          <Plus className="w-4 h-4 mr-2" /> Thêm điểm
+                        </Button>
                       </div>
                     </div>
 
-                    <div className="mt-auto pt-4 border-t flex gap-3">
-                      <Button className="flex-1" onClick={saveSubArea}>
-                        Lưu khu vực
-                      </Button>
-                    </div>
+                    {/* Actions */}
+                    <Button className="w-full mt-4" onClick={saveSubArea}>
+                      Lưu và Đóng
+                    </Button>
                   </div>
                 ) : (
                   // LIST MODE
-                  <div className="flex flex-col h-full gap-4">
-                    <Button onClick={addSubArea} className="w-full">
-                      <Plus className="w-4 h-4 mr-2" /> Thêm khu vực mới
-                    </Button>
-
-                    {!formData.subAreas || formData.subAreas.length === 0 ? (
-                      <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg bg-muted/10 p-4 text-center">
-                        <p>Danh sách trống.</p>
-                        <p className="text-sm">Hãy thêm khu vực đầu tiên.</p>
-                      </div>
-                    ) : (
-                      <div className="flex-1 overflow-y-auto space-y-3 pr-2">
-                        {formData.subAreas.map((sub) => (
+                  <div className="flex flex-col h-full bg-slate-50 border rounded-lg">
+                    <div className="flex items-center justify-between p-3 border-b bg-white">
+                      <h4 className="font-semibold text-sm">
+                        Danh sách khu vực
+                      </h4>
+                      <Button size="sm" onClick={addSubArea}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Thêm khu vực
+                      </Button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                      {!formData.subAreas || formData.subAreas.length === 0 ? (
+                        <div className="text-center text-muted-foreground py-8">
+                          Chưa có khu vực con nào được tạo.
+                        </div>
+                      ) : (
+                        formData.subAreas.map((sub) => (
                           <div
                             key={sub.id}
-                            className="p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors flex flex-col gap-2 shadow-sm"
+                            className="bg-white p-3 rounded-lg border shadow-sm group hover:border-blue-300 transition-colors"
                           >
-                            <div className="flex justify-between items-start">
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 bg-green-500 rounded-full" />
-                                <span className="font-medium">{sub.name}</span>
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <h5 className="font-medium text-sm text-blue-700">
+                                  {sub.name}
+                                </h5>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  {sub.area} ha •{" "}
+                                  {
+                                    LAND_TYPES.find(
+                                      (l) => l.id === sub.landType,
+                                    )?.name
+                                  }
+                                </div>
                               </div>
-                              <div className="flex gap-1">
+                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Button
-                                  size="icon"
                                   variant="ghost"
-                                  className="h-6 w-6"
+                                  size="icon"
+                                  className="h-7 w-7"
                                   onClick={() => {
                                     setEditingSubArea(sub);
                                     if (
                                       sub.coordinates &&
-                                      sub.coordinates.length >= 2
+                                      sub.coordinates.length >= 3
                                     ) {
-                                      const lats = sub.coordinates.map(
-                                        (c) => c.lat,
-                                      );
-                                      const lngs = sub.coordinates.map(
-                                        (c) => c.lng,
-                                      );
-                                      setSubAreaBounds(
-                                        L.latLngBounds(
-                                          [
-                                            Math.min(...lats),
-                                            Math.min(...lngs),
-                                          ],
-                                          [
-                                            Math.max(...lats),
-                                            Math.max(...lngs),
-                                          ],
+                                      setSubAreaPoints(
+                                        sub.coordinates.map((c) =>
+                                          L.latLng(c.lat, c.lng),
                                         ),
                                       );
                                     }
                                   }}
                                 >
-                                  <Edit className="w-3 h-3" />
+                                  <Edit className="w-3.5 h-3.5" />
                                 </Button>
                                 <Button
-                                  size="icon"
                                   variant="ghost"
-                                  className="h-6 w-6 text-destructive hover:text-destructive"
+                                  size="icon"
+                                  className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-50"
                                   onClick={() => removeSubArea(sub.id)}
                                 >
-                                  <Trash2 className="w-3 h-3" />
+                                  <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
                               </div>
                             </div>
-                            <div className="text-xs text-muted-foreground grid grid-cols-2 gap-2">
-                              <span>DT: {sub.area} ha</span>
-                              <span>
-                                {LAND_TYPES.find((l) => l.id === sub.landType)
-                                  ?.name || "-"}
-                              </span>
+                            <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
+                              <div className="bg-slate-50 p-1 rounded">
+                                {sub.coordinates?.length || 0} điểm toạ độ
+                              </div>
+                              {sub.coordinates &&
+                                sub.coordinates.length > 0 && (
+                                  <div className="bg-slate-50 p-1 rounded truncate">
+                                    {sub.coordinates[0].lat.toFixed(4)},{" "}
+                                    {sub.coordinates[0].lng.toFixed(4)}
+                                  </div>
+                                )}
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        ))
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1023,8 +1030,14 @@ const RegionCreatePage = () => {
                   <div className="grid grid-cols-3">
                     <span className="text-muted-foreground">Toạ độ:</span>
                     <span className="col-span-2 font-medium truncate">
-                      {currentBounds.getSouthWest().lat.toFixed(4)},{" "}
-                      {currentBounds.getSouthWest().lng.toFixed(4)} ...
+                      {regionPoints.length > 0
+                        ? regionPoints[0].lat.toFixed(4)
+                        : "0"}
+                      ,{" "}
+                      {regionPoints.length > 0
+                        ? regionPoints[0].lng.toFixed(4)
+                        : "0"}{" "}
+                      ...
                     </span>
                   </div>
                   <div className="grid grid-cols-3">

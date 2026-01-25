@@ -13,10 +13,31 @@ import {
   type Step,
   useToast,
 } from "@tankhang1/eco-shared-ui";
-import { MapContainer, TileLayer, Rectangle } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Polygon,
+  Marker,
+  useMapEvents,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { ChevronLeft, Check, Plus, Trash2, Edit } from "lucide-react";
+import { ChevronLeft, Check, Plus, Trash2, Edit, X } from "lucide-react";
+
+// Fix Leaflet Default Icon
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+const customIcon = new L.Icon({
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
 
 import {
   MOCK_REGIONS,
@@ -26,10 +47,25 @@ import {
   LAND_TYPES,
   TERRAIN_TYPES,
 } from "../constants";
-import {
-  DraggableRectangle,
-  MapController,
-} from "../components/DraggableRectangle";
+import { MapController } from "../components/DraggableRectangle";
+
+const MapClickHandler = ({
+  onClick,
+}: {
+  onClick: (latlng: L.LatLng) => void;
+}) => {
+  useMapEvents({
+    click(e) {
+      onClick(e.latlng);
+    },
+  });
+  return null;
+};
+
+const getBoundsFromPoints = (points: L.LatLng[]): L.LatLngBounds => {
+  if (points.length === 0) return L.latLngBounds([0, 0], [0, 0]);
+  return L.latLngBounds(points);
+};
 
 const AreaCreatePage = () => {
   const [, setLocation] = useLocation();
@@ -49,12 +85,14 @@ const AreaCreatePage = () => {
     plots: [],
   });
 
-  const defaultBounds = L.latLngBounds([11.53, 106.88], [11.55, 106.91]);
-  const [currentBounds, setCurrentBounds] =
-    useState<L.LatLngBounds>(defaultBounds);
+  const [areaPoints, setAreaPoints] = useState<L.LatLng[]>([
+    L.latLng(11.53, 106.88),
+    L.latLng(11.55, 106.91),
+    L.latLng(11.53, 106.91),
+  ]);
 
   // Plot Editing
-  const [plotBounds, setPlotBounds] = useState<L.LatLngBounds>(defaultBounds);
+  const [plotPoints, setPlotPoints] = useState<L.LatLng[]>([]);
   const [editingPlot, setEditingPlot] = useState<Partial<Plot> | null>(null);
 
   useEffect(() => {
@@ -64,21 +102,15 @@ const AreaCreatePage = () => {
       if (found) {
         setFormData(found);
         setSelectedRegionId(found.regionId);
-        if (found.coordinates && found.coordinates.length >= 2) {
-          const lats = found.coordinates.map((c) => c.lat);
-          const lngs = found.coordinates.map((c) => c.lng);
-          setCurrentBounds(
-            L.latLngBounds(
-              [Math.min(...lats), Math.min(...lngs)],
-              [Math.max(...lats), Math.max(...lngs)],
-            ),
-          );
+        if (found.coordinates && found.coordinates.length >= 3) {
+          setAreaPoints(found.coordinates.map((c) => L.latLng(c.lat, c.lng)));
         }
       }
     }
   }, [isEditMode, params?.id]);
 
   // When region changes, update bounds and auto-fill details
+  // When region changes, update map center if we don't have points yet
   useEffect(() => {
     if (selectedRegionId) {
       const region = MOCK_REGIONS.find((r) => r.id === selectedRegionId);
@@ -90,34 +122,86 @@ const AreaCreatePage = () => {
           terrain: region.terrain,
         }));
 
-        // Update map bounds to region's bounds if available
-        if (region.coordinates && region.coordinates.length >= 2) {
-          const lats = region.coordinates.map((c) => c.lat);
-          const lngs = region.coordinates.map((c) => c.lng);
-          setCurrentBounds(
-            L.latLngBounds(
-              [Math.min(...lats), Math.min(...lngs)],
-              [Math.max(...lats), Math.max(...lngs)],
-            ),
-          );
+        // If creating new area and region has coords, use region center
+        if (
+          !isEditMode &&
+          region.coordinates &&
+          region.coordinates.length > 0
+        ) {
+          const points = region.coordinates.map((c) => L.latLng(c.lat, c.lng));
+          const center = L.latLngBounds(points).getCenter();
+          // Default triangle at center
+          setAreaPoints([
+            L.latLng(center.lat - 0.005, center.lng - 0.005),
+            L.latLng(center.lat + 0.005, center.lng),
+            L.latLng(center.lat - 0.005, center.lng + 0.005),
+          ]);
         }
       }
     }
   }, [selectedRegionId]);
 
-  const handleSubmit = () => {
-    // Convert bounds to coords
-    const sw = currentBounds.getSouthWest();
-    const ne = currentBounds.getNorthEast();
-    const nw = L.latLng(ne.lat, sw.lng);
-    const se = L.latLng(sw.lat, ne.lng);
+  // --- Handlers ---
 
-    const newCoords = [
-      { lat: sw.lat, lng: sw.lng },
-      { lat: nw.lat, lng: nw.lng },
-      { lat: ne.lat, lng: ne.lng },
-      { lat: se.lat, lng: se.lng },
-    ];
+  const handlePointDrag = (index: number, latlng: L.LatLng) => {
+    const newPoints = [...areaPoints];
+    newPoints[index] = latlng;
+    setAreaPoints(newPoints);
+  };
+
+  const handleMapClick = (latlng: L.LatLng) => {
+    setAreaPoints([...areaPoints, latlng]);
+  };
+
+  const removePoint = (index: number) => {
+    if (areaPoints.length <= 3) {
+      toast({
+        title: "Không thể xóa",
+        description: "Khu vực cần ít nhất 3 điểm",
+        variant: "destructive",
+      });
+      return;
+    }
+    const newPoints = areaPoints.filter((_, i) => i !== index);
+    setAreaPoints(newPoints);
+  };
+
+  const handlePointInputChange = (
+    index: number,
+    field: "lat" | "lng",
+    value: string,
+  ) => {
+    const val = parseFloat(value);
+    if (isNaN(val)) return;
+
+    const newPoints = [...areaPoints];
+    const currentPoint = newPoints[index];
+    newPoints[index] = L.latLng(
+      field === "lat" ? val : currentPoint.lat,
+      field === "lng" ? val : currentPoint.lng,
+    );
+    setAreaPoints(newPoints);
+  };
+
+  const handleAddPoint = () => {
+    const center = getBoundsFromPoints(areaPoints).getCenter();
+    setAreaPoints([
+      ...areaPoints,
+      L.latLng(center.lat + 0.002, center.lng + 0.002),
+    ]);
+  };
+
+  const handleSubmit = () => {
+    if (areaPoints.length < 3) {
+      toast({
+        title: "Lỗi",
+        description: "Khu vực cần ít nhất 3 điểm",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newCoords = areaPoints.map((p) => ({ lat: p.lat, lng: p.lng }));
 
     console.log("Submitting Area:", { ...formData, coordinates: newCoords });
     toast({
@@ -127,6 +211,56 @@ const AreaCreatePage = () => {
         : "Tạo khu vực mới thành công",
     });
     setLocation("/area-distribution");
+  };
+
+  const handlePlotPointDrag = (index: number, latlng: L.LatLng) => {
+    const newPoints = [...plotPoints];
+    newPoints[index] = latlng;
+    setPlotPoints(newPoints);
+  };
+
+  const handlePlotMapClick = (latlng: L.LatLng) => {
+    if (editingPlot) {
+      setPlotPoints([...plotPoints, latlng]);
+    }
+  };
+
+  const handleAddPlotPoint = () => {
+    const center = getBoundsFromPoints(plotPoints).getCenter();
+    setPlotPoints([
+      ...plotPoints,
+      L.latLng(center.lat + 0.002, center.lng + 0.002),
+    ]);
+  };
+
+  const removePlotPoint = (index: number) => {
+    if (plotPoints.length <= 3) {
+      toast({
+        title: "Không thể xóa",
+        description: "Lô cần ít nhất 3 điểm",
+        variant: "destructive",
+      });
+      return;
+    }
+    const newPoints = plotPoints.filter((_, i) => i !== index);
+    setPlotPoints(newPoints);
+  };
+
+  const handlePlotPointInputChange = (
+    index: number,
+    field: "lat" | "lng",
+    value: string,
+  ) => {
+    const val = parseFloat(value);
+    if (isNaN(val)) return;
+
+    const newPoints = [...plotPoints];
+    const currentPoint = newPoints[index];
+    newPoints[index] = L.latLng(
+      field === "lat" ? val : currentPoint.lat,
+      field === "lng" ? val : currentPoint.lng,
+    );
+    setPlotPoints(newPoints);
   };
 
   const addPlot = () => {
@@ -139,22 +273,28 @@ const AreaCreatePage = () => {
       altitude: 0,
     };
     setEditingPlot(newPlot);
-    setPlotBounds(currentBounds);
+    const center = getBoundsFromPoints(areaPoints).getCenter();
+    setPlotPoints([
+      L.latLng(center.lat - 0.002, center.lng - 0.002),
+      L.latLng(center.lat + 0.002, center.lng - 0.002),
+      L.latLng(center.lat + 0.002, center.lng + 0.002),
+      L.latLng(center.lat - 0.002, center.lng + 0.002),
+    ]);
   };
 
   const savePlot = () => {
     if (!editingPlot) return;
-    const sw = plotBounds.getSouthWest();
-    const ne = plotBounds.getNorthEast();
-    const nw = L.latLng(ne.lat, sw.lng);
-    const se = L.latLng(sw.lat, ne.lng);
 
-    const fullCoords = [
-      { lat: sw.lat, lng: sw.lng },
-      { lat: nw.lat, lng: nw.lng },
-      { lat: ne.lat, lng: ne.lng },
-      { lat: se.lat, lng: se.lng },
-    ];
+    if (plotPoints.length < 3) {
+      toast({
+        title: "Lỗi",
+        description: "Lô cần ít nhất 3 điểm",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const fullCoords = plotPoints.map((p) => ({ lat: p.lat, lng: p.lng }));
 
     const updatedPlot = { ...editingPlot, coordinates: fullCoords } as Plot;
 
@@ -302,16 +442,16 @@ const AreaCreatePage = () => {
       title: "Bản đồ khu vực",
       description: "Xác định vị trí khu vực",
       content: (
-        <Card>
+        <Card className="h-[750px] flex flex-col">
           <CardHeader>
             <CardTitle>Định vị khu vực trên bản đồ</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-[500px] rounded-lg border overflow-hidden relative">
+          <CardContent className="flex-1 p-4 overflow-hidden flex gap-4">
+            <div className="flex-1 h-full rounded-lg border overflow-hidden relative">
               <MapContainer
                 center={[
-                  currentBounds.getCenter().lat,
-                  currentBounds.getCenter().lng,
+                  getBoundsFromPoints(areaPoints).getCenter().lat,
+                  getBoundsFromPoints(areaPoints).getCenter().lng,
                 ]}
                 zoom={14}
                 className="h-full w-full"
@@ -320,186 +460,95 @@ const AreaCreatePage = () => {
                   attribution="&copy; OpenStreetMap"
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <DraggableRectangle
-                  bounds={currentBounds}
-                  setBounds={setCurrentBounds}
-                  color="blue"
+
+                <MapClickHandler onClick={handleMapClick} />
+
+                <Polygon
+                  positions={areaPoints}
+                  pathOptions={{ color: "blue", fillOpacity: 0.1 }}
                 />
+
+                {areaPoints.map((point, idx) => (
+                  <Marker
+                    key={`pt-${idx}`}
+                    position={point}
+                    draggable={true}
+                    icon={customIcon}
+                    eventHandlers={{
+                      drag: (e) => handlePointDrag(idx, e.target.getLatLng()),
+                    }}
+                  />
+                ))}
+
                 <MapController
                   center={[
-                    currentBounds.getCenter().lat,
-                    currentBounds.getCenter().lng,
+                    getBoundsFromPoints(areaPoints).getCenter().lat,
+                    getBoundsFromPoints(areaPoints).getCenter().lng,
                   ]}
                 />
               </MapContainer>
             </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              Kéo thả khung hình chữ nhật màu xanh để xác định vị trí của khu
-              vực này trong vùng trồng.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t">
-              {/* Point 1: SW */}
-              <div className="space-y-2">
-                <Label>Góc Tây Nam (SW)</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="number"
-                    step="0.000001"
-                    value={currentBounds.getSouth()}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val)) {
-                        setCurrentBounds(
-                          L.latLngBounds(
-                            [val, currentBounds.getWest()],
-                            currentBounds.getNorthEast(),
-                          ),
-                        );
-                      }
-                    }}
-                    placeholder="Lat"
-                  />
-                  <Input
-                    type="number"
-                    step="0.000001"
-                    value={currentBounds.getWest()}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val)) {
-                        setCurrentBounds(
-                          L.latLngBounds(
-                            [currentBounds.getSouth(), val],
-                            currentBounds.getNorthEast(),
-                          ),
-                        );
-                      }
-                    }}
-                    placeholder="Lng"
-                  />
-                </div>
-              </div>
 
-              {/* Point 2: NW */}
-              <div className="space-y-2">
-                <Label>Góc Tây Bắc (NW)</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="number"
-                    step="0.000001"
-                    value={currentBounds.getNorth()}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val)) {
-                        setCurrentBounds(
-                          L.latLngBounds(currentBounds.getSouthWest(), [
-                            val,
-                            currentBounds.getEast(),
-                          ]),
-                        );
-                      }
-                    }}
-                    placeholder="Lat"
-                  />
-                  <Input
-                    type="number"
-                    step="0.000001"
-                    value={currentBounds.getWest()}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val)) {
-                        setCurrentBounds(
-                          L.latLngBounds(
-                            [currentBounds.getSouth(), val],
-                            currentBounds.getNorthEast(),
-                          ),
-                        );
-                      }
-                    }}
-                    placeholder="Lng"
-                  />
-                </div>
+            <div className="w-[300px] flex flex-col h-full bg-slate-50 border rounded-lg overflow-hidden">
+              <div className="p-3 border-b bg-white">
+                <h4 className="font-semibold text-sm">Danh sách toạ độ</h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Kéo thả hoặc click bản đồ để thêm.
+                </p>
               </div>
-
-              {/* Point 3: NE */}
-              <div className="space-y-2">
-                <Label>Góc Đông Bắc (NE)</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="number"
-                    step="0.000001"
-                    value={currentBounds.getNorth()}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val)) {
-                        setCurrentBounds(
-                          L.latLngBounds(currentBounds.getSouthWest(), [
-                            val,
-                            currentBounds.getEast(),
-                          ]),
-                        );
-                      }
-                    }}
-                    placeholder="Lat"
-                  />
-                  <Input
-                    type="number"
-                    step="0.000001"
-                    value={currentBounds.getEast()}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val)) {
-                        setCurrentBounds(
-                          L.latLngBounds(currentBounds.getSouthWest(), [
-                            currentBounds.getNorth(),
-                            val,
-                          ]),
-                        );
-                      }
-                    }}
-                    placeholder="Lng"
-                  />
-                </div>
-              </div>
-
-              {/* Point 4: SE */}
-              <div className="space-y-2">
-                <Label>Góc Đông Nam (SE)</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="number"
-                    step="0.000001"
-                    value={currentBounds.getSouth()}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val)) {
-                        setCurrentBounds(
-                          L.latLngBounds(
-                            [val, currentBounds.getWest()],
-                            currentBounds.getNorthEast(),
-                          ),
-                        );
-                      }
-                    }}
-                    placeholder="Lat"
-                  />
-                  <Input
-                    type="number"
-                    step="0.000001"
-                    value={currentBounds.getEast()}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val)) {
-                        setCurrentBounds(
-                          L.latLngBounds(currentBounds.getSouthWest(), [
-                            currentBounds.getNorth(),
-                            val,
-                          ]),
-                        );
-                      }
-                    }}
-                    placeholder="Lng"
-                  />
-                </div>
+              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                {areaPoints.map((p, i) => (
+                  <div
+                    key={i}
+                    className="flex flex-col gap-2 p-2 bg-white rounded border text-xs relative"
+                  >
+                    <div className="absolute top-2 right-2 flex gap-1">
+                      {areaPoints.length > 3 && (
+                        <button
+                          onClick={() => removePoint(i)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                    <span className="font-semibold">Điểm {i + 1}</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-gray-500">Lat</label>
+                        <input
+                          className="w-full border rounded px-1 py-0.5"
+                          type="number"
+                          value={p.lat}
+                          onChange={(e) =>
+                            handlePointInputChange(i, "lat", e.target.value)
+                          }
+                          step="0.0001"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-gray-500">Lng</label>
+                        <input
+                          className="w-full border rounded px-1 py-0.5"
+                          type="number"
+                          value={p.lng}
+                          onChange={(e) =>
+                            handlePointInputChange(i, "lng", e.target.value)
+                          }
+                          step="0.0001"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-dashed"
+                  onClick={handleAddPoint}
+                >
+                  <Plus className="w-4 h-4 mr-2" /> Thêm điểm
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -520,8 +569,8 @@ const AreaCreatePage = () => {
               <div className="lg:col-span-3 h-full rounded-lg border overflow-hidden relative">
                 <MapContainer
                   center={[
-                    currentBounds.getCenter().lat,
-                    currentBounds.getCenter().lng,
+                    getBoundsFromPoints(areaPoints).getCenter().lat,
+                    getBoundsFromPoints(areaPoints).getCenter().lng,
                   ]}
                   zoom={15}
                   className="h-full w-full"
@@ -530,9 +579,12 @@ const AreaCreatePage = () => {
                     attribution="&copy; OpenStreetMap"
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
+
+                  <MapClickHandler onClick={handlePlotMapClick} />
+
                   {/* Area Boundary */}
-                  <Rectangle
-                    bounds={currentBounds}
+                  <Polygon
+                    positions={areaPoints}
                     pathOptions={{
                       color: "blue",
                       fill: false,
@@ -544,36 +596,68 @@ const AreaCreatePage = () => {
                   {formData.plots?.map((plot) => {
                     // Hide if currently editing
                     if (editingPlot && plot.id === editingPlot.id) return null;
-                    if (!plot.coordinates || plot.coordinates.length < 2)
+                    if (!plot.coordinates || plot.coordinates.length < 3)
                       return null;
 
-                    const lats = plot.coordinates.map((c) => c.lat);
-                    const lngs = plot.coordinates.map((c) => c.lng);
-                    const b = [
-                      [Math.min(...lats), Math.min(...lngs)],
-                      [Math.max(...lats), Math.max(...lngs)],
-                    ];
+                    const positions = plot.coordinates.map((c) => [
+                      c.lat,
+                      c.lng,
+                    ]);
+
                     return (
-                      <Rectangle
+                      <Polygon
                         key={plot.id}
-                        bounds={b as any}
+                        positions={positions as any}
                         pathOptions={{ color: "orange", weight: 2 }}
+                        eventHandlers={{
+                          click: () => {
+                            setEditingPlot(plot);
+                            if (
+                              plot.coordinates &&
+                              plot.coordinates.length >= 3
+                            ) {
+                              setPlotPoints(
+                                plot.coordinates.map((c) =>
+                                  L.latLng(c.lat, c.lng),
+                                ),
+                              );
+                            }
+                          },
+                        }}
                       />
                     );
                   })}
 
                   {/* Editing Plot */}
                   {editingPlot && (
-                    <DraggableRectangle
-                      bounds={plotBounds}
-                      setBounds={setPlotBounds}
-                      color="orange"
-                    />
+                    <>
+                      <Polygon
+                        positions={plotPoints}
+                        pathOptions={{
+                          color: "orange",
+                          weight: 2,
+                          fillOpacity: 0.2,
+                        }}
+                      />
+                      {plotPoints.map((point, idx) => (
+                        <Marker
+                          key={`plot-point-${idx}`}
+                          position={point}
+                          draggable={true}
+                          icon={customIcon}
+                          eventHandlers={{
+                            drag: (e) => {
+                              handlePlotPointDrag(idx, e.target.getLatLng());
+                            },
+                          }}
+                        />
+                      ))}
+                    </>
                   )}
                   <MapController
                     center={[
-                      currentBounds.getCenter().lat,
-                      currentBounds.getCenter().lng,
+                      getBoundsFromPoints(areaPoints).getCenter().lat,
+                      getBoundsFromPoints(areaPoints).getCenter().lng,
                     ]}
                   />
                 </MapContainer>
@@ -609,21 +693,39 @@ const AreaCreatePage = () => {
                               name: e.target.value,
                             })
                           }
+                          placeholder="Nhập tên lô..."
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label>Diện tích (ha)</Label>
-                        <Input
-                          type="number"
-                          value={editingPlot.area || ""}
-                          onChange={(e) =>
-                            setEditingPlot({
-                              ...editingPlot,
-                              area: parseFloat(e.target.value),
-                            })
-                          }
-                        />
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label>Diện tích (ha)</Label>
+                          <Input
+                            type="number"
+                            value={editingPlot.area || ""}
+                            onChange={(e) =>
+                              setEditingPlot({
+                                ...editingPlot,
+                                area: parseFloat(e.target.value),
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Độ cao (m)</Label>
+                          <Input
+                            type="number"
+                            value={editingPlot.altitude || ""}
+                            onChange={(e) =>
+                              setEditingPlot({
+                                ...editingPlot,
+                                altitude: parseFloat(e.target.value),
+                              })
+                            }
+                          />
+                        </div>
                       </div>
+
                       <div className="space-y-1">
                         <Label>Đường đồng mức</Label>
                         <Input
@@ -637,187 +739,83 @@ const AreaCreatePage = () => {
                           placeholder="VD: 100m"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label>Độ cao (m)</Label>
-                        <Input
-                          type="number"
-                          value={editingPlot.altitude || ""}
-                          onChange={(e) =>
-                            setEditingPlot({
-                              ...editingPlot,
-                              altitude: parseFloat(e.target.value),
-                            })
-                          }
-                          placeholder="VD: 150"
-                        />
-                      </div>
 
-                      <div className="space-y-3 pt-2 border-t">
-                        <Label>Tọa độ (4 góc)</Label>
-                        <div className="grid grid-cols-1 gap-3">
-                          {/* SW */}
-                          <div className="space-y-1">
-                            <span className="text-xs text-muted-foreground font-semibold">
-                              Tây Nam (SW)
-                            </span>
-                            <div className="grid grid-cols-2 gap-2">
-                              <Input
-                                type="number"
-                                step="0.000001"
-                                placeholder="Lat"
-                                value={plotBounds.getSouth()}
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value);
-                                  if (!isNaN(val))
-                                    setPlotBounds(
-                                      L.latLngBounds(
-                                        [val, plotBounds.getWest()],
-                                        plotBounds.getNorthEast(),
-                                      ),
-                                    );
-                                }}
-                              />
-                              <Input
-                                type="number"
-                                step="0.000001"
-                                placeholder="Lng"
-                                value={plotBounds.getWest()}
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value);
-                                  if (!isNaN(val))
-                                    setPlotBounds(
-                                      L.latLngBounds(
-                                        [plotBounds.getSouth(), val],
-                                        plotBounds.getNorthEast(),
-                                      ),
-                                    );
-                                }}
-                              />
+                      <div className="w-full flex flex-col bg-slate-50 border rounded-lg overflow-hidden mt-2">
+                        <div className="p-3 border-b bg-white">
+                          <h4 className="font-semibold text-sm">
+                            Danh sách toạ độ
+                          </h4>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Kéo thả điểm hoặc click bản đồ để thêm.
+                          </p>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-3 space-y-3 max-h-[300px]">
+                          {plotPoints.map((p, i) => (
+                            <div
+                              key={i}
+                              className="flex flex-col gap-2 p-2 bg-white rounded border text-xs relative"
+                            >
+                              <div className="absolute top-2 right-2 flex gap-1">
+                                {plotPoints.length > 3 && (
+                                  <button
+                                    onClick={() => removePlotPoint(i)}
+                                    className="text-red-500 hover:text-red-700"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
+                              <span className="font-semibold">
+                                Điểm {i + 1}
+                              </span>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="text-[10px] text-gray-500">
+                                    Lat
+                                  </label>
+                                  <input
+                                    className="w-full border rounded px-1 py-0.5"
+                                    type="number"
+                                    value={p.lat}
+                                    onChange={(e) =>
+                                      handlePlotPointInputChange(
+                                        i,
+                                        "lat",
+                                        e.target.value,
+                                      )
+                                    }
+                                    step="0.0001"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] text-gray-500">
+                                    Lng
+                                  </label>
+                                  <input
+                                    className="w-full border rounded px-1 py-0.5"
+                                    type="number"
+                                    value={p.lng}
+                                    onChange={(e) =>
+                                      handlePlotPointInputChange(
+                                        i,
+                                        "lng",
+                                        e.target.value,
+                                      )
+                                    }
+                                    step="0.0001"
+                                  />
+                                </div>
+                              </div>
                             </div>
-                          </div>
-
-                          {/* NW */}
-                          <div className="space-y-1">
-                            <span className="text-xs text-muted-foreground font-semibold">
-                              Tây Bắc (NW)
-                            </span>
-                            <div className="grid grid-cols-2 gap-2">
-                              <Input
-                                type="number"
-                                step="0.000001"
-                                placeholder="Lat"
-                                value={plotBounds.getNorth()}
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value);
-                                  if (!isNaN(val))
-                                    setPlotBounds(
-                                      L.latLngBounds(
-                                        plotBounds.getSouthWest(),
-                                        [val, plotBounds.getEast()],
-                                      ),
-                                    );
-                                }}
-                              />
-                              <Input
-                                type="number"
-                                step="0.000001"
-                                placeholder="Lng"
-                                value={plotBounds.getWest()}
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value);
-                                  if (!isNaN(val))
-                                    setPlotBounds(
-                                      L.latLngBounds(
-                                        [plotBounds.getSouth(), val],
-                                        plotBounds.getNorthEast(),
-                                      ),
-                                    );
-                                }}
-                              />
-                            </div>
-                          </div>
-
-                          {/* NE */}
-                          <div className="space-y-1">
-                            <span className="text-xs text-muted-foreground font-semibold">
-                              Đông Bắc (NE)
-                            </span>
-                            <div className="grid grid-cols-2 gap-2">
-                              <Input
-                                type="number"
-                                step="0.000001"
-                                placeholder="Lat"
-                                value={plotBounds.getNorth()}
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value);
-                                  if (!isNaN(val))
-                                    setPlotBounds(
-                                      L.latLngBounds(
-                                        plotBounds.getSouthWest(),
-                                        [val, plotBounds.getEast()],
-                                      ),
-                                    );
-                                }}
-                              />
-                              <Input
-                                type="number"
-                                step="0.000001"
-                                placeholder="Lng"
-                                value={plotBounds.getEast()}
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value);
-                                  if (!isNaN(val))
-                                    setPlotBounds(
-                                      L.latLngBounds(
-                                        plotBounds.getSouthWest(),
-                                        [plotBounds.getNorth(), val],
-                                      ),
-                                    );
-                                }}
-                              />
-                            </div>
-                          </div>
-
-                          {/* SE */}
-                          <div className="space-y-1">
-                            <span className="text-xs text-muted-foreground font-semibold">
-                              Đông Nam (SE)
-                            </span>
-                            <div className="grid grid-cols-2 gap-2">
-                              <Input
-                                type="number"
-                                step="0.000001"
-                                placeholder="Lat"
-                                value={plotBounds.getSouth()}
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value);
-                                  if (!isNaN(val))
-                                    setPlotBounds(
-                                      L.latLngBounds(
-                                        [val, plotBounds.getWest()],
-                                        plotBounds.getNorthEast(),
-                                      ),
-                                    );
-                                }}
-                              />
-                              <Input
-                                type="number"
-                                step="0.000001"
-                                placeholder="Lng"
-                                value={plotBounds.getEast()}
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value);
-                                  if (!isNaN(val))
-                                    setPlotBounds(
-                                      L.latLngBounds(
-                                        plotBounds.getSouthWest(),
-                                        [plotBounds.getNorth(), val],
-                                      ),
-                                    );
-                                }}
-                              />
-                            </div>
-                          </div>
+                          ))}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full border-dashed"
+                            onClick={handleAddPlotPoint}
+                          >
+                            <Plus className="w-4 h-4 mr-2" /> Thêm điểm
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -830,73 +828,65 @@ const AreaCreatePage = () => {
                   </div>
                 ) : (
                   // LIST MODE
-                  <div className="flex flex-col h-full gap-4">
-                    <Button onClick={addPlot} className="w-full">
-                      <Plus className="w-4 h-4 mr-2" /> Thêm lô mới
-                    </Button>
+                  <div className="flex flex-col h-full bg-slate-50 border rounded-lg">
+                    <div className="flex items-center justify-between p-3 border-b bg-white">
+                      <h4 className="font-semibold text-sm">Danh sách lô</h4>
+                      <Button size="sm" onClick={addPlot}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Thêm lô mới
+                      </Button>
+                    </div>
 
                     {!formData.plots || formData.plots.length === 0 ? (
-                      <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg bg-muted/10 p-4 text-center">
+                      <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-4 text-center">
                         <p>Danh sách trống.</p>
                       </div>
                     ) : (
-                      <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+                      <div className="flex-1 overflow-y-auto space-y-3 p-3">
                         {formData.plots.map((plot) => (
                           <div
                             key={plot.id}
-                            className="p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors flex flex-col gap-2 shadow-sm"
+                            className="bg-white p-3 border rounded-lg hover:border-orange-300 transition-colors shadow-sm group"
                           >
-                            <div className="flex justify-between items-start">
+                            <div className="flex justify-between items-start mb-2">
                               <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-orange-500 rounded-full" />
                                 <span className="font-medium">{plot.name}</span>
                               </div>
-                              <div className="flex gap-1">
+                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Button
-                                  size="icon"
                                   variant="ghost"
-                                  className="h-6 w-6"
+                                  size="icon"
+                                  className="h-7 w-7"
                                   onClick={() => {
                                     setEditingPlot(plot);
                                     if (
                                       plot.coordinates &&
-                                      plot.coordinates.length >= 2
+                                      plot.coordinates.length >= 3
                                     ) {
-                                      const lats = plot.coordinates.map(
-                                        (c) => c.lat,
-                                      );
-                                      const lngs = plot.coordinates.map(
-                                        (c) => c.lng,
-                                      );
-                                      setPlotBounds(
-                                        L.latLngBounds(
-                                          [
-                                            Math.min(...lats),
-                                            Math.min(...lngs),
-                                          ],
-                                          [
-                                            Math.max(...lats),
-                                            Math.max(...lngs),
-                                          ],
+                                      setPlotPoints(
+                                        plot.coordinates.map((c) =>
+                                          L.latLng(c.lat, c.lng),
                                         ),
                                       );
                                     }
                                   }}
                                 >
-                                  <Edit className="w-3 h-3" />
+                                  <Edit className="w-3.5 h-3.5" />
                                 </Button>
                                 <Button
-                                  size="icon"
                                   variant="ghost"
-                                  className="h-6 w-6 text-destructive hover:text-destructive"
+                                  size="icon"
+                                  className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-50"
                                   onClick={() => removePlot(plot.id)}
                                 >
-                                  <Trash2 className="w-3 h-3" />
+                                  <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
                               </div>
                             </div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-xs text-muted-foreground grid grid-cols-2 gap-2">
                               <span>DT: {plot.area} ha</span>
+                              <span>Độ cao: {plot.altitude}m</span>
                             </div>
                           </div>
                         ))}

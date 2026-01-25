@@ -18,6 +18,7 @@ import {
   GeoJSON,
   LayersControl,
   LayerGroup,
+  Marker,
   useMap,
   useMapEvents,
 } from "react-leaflet";
@@ -51,6 +52,37 @@ const isPointInPolygon = (point: [number, number], vs: [number, number][]) => {
     if (intersect) inside = !inside;
   }
   return inside;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getPolygonCenter = (feature: any): L.LatLng | null => {
+  if (!feature.geometry) return null;
+
+  try {
+    let layer;
+    if (feature.geometry.type === "Polygon") {
+      // Flip coordinates from GeoJSON [lng, lat] to Leaflet [lat, lng]
+      const latlngs = feature.geometry.coordinates[0].map((c: any) => [
+        c[1],
+        c[0],
+      ]);
+      layer = L.polygon(latlngs);
+    } else if (feature.geometry.type === "MultiPolygon") {
+      // Take the first polygon for simplicity or calculate true center
+      const latlngs = feature.geometry.coordinates[0][0].map((c: any) => [
+        c[1],
+        c[0],
+      ]);
+      layer = L.polygon(latlngs);
+    }
+
+    if (layer) {
+      return layer.getBounds().getCenter();
+    }
+  } catch (e) {
+    console.error("Error calculating center for feature:", feature, e);
+  }
+  return null;
 };
 
 const getLocationInfo = (lng: number, lat: number) => {
@@ -762,42 +794,110 @@ const MapViewPage = () => {
               </LayersControl.Overlay>
             </LayersControl>
 
+            {/* Labels */}
+            {visibleLayers.zone &&
+              (zoneData as any).features.map((f: any, i: number) => {
+                const center = getPolygonCenter(f);
+                if (!center) return null;
+                return (
+                  <Marker
+                    key={`label-zone-${i}`}
+                    position={center}
+                    icon={L.divIcon({
+                      className: "bg-transparent border-none",
+                      html: `
+                        <div class="flex flex-col items-center justify-center">
+                          <div class="w-2 h-2 bg-blue-500 rounded-full border border-white shadow-sm"></div>
+                          <div class="text-blue-800 text-xs font-bold whitespace-nowrap drop-shadow-md mt-0.5">${f.properties.name}</div>
+                        </div>
+                      `,
+                      iconSize: [0, 0],
+                    })}
+                  />
+                );
+              })}
+
+            {visibleLayers.area &&
+              (areaData as any).features.map((f: any, i: number) => {
+                const center = getPolygonCenter(f);
+                if (!center) return null;
+                return (
+                  <Marker
+                    key={`label-area-${i}`}
+                    position={center}
+                    icon={L.divIcon({
+                      className: "bg-transparent border-none",
+                      html: `
+                        <div class="flex flex-col items-center justify-center">
+                          <div class="w-1.5 h-1.5 bg-red-500 rounded-full border border-white shadow-sm"></div>
+                          <div class="text-red-700 text-[10px] font-bold whitespace-nowrap drop-shadow-md mt-0.5">${f.properties.name}</div>
+                        </div>
+                      `,
+                      iconSize: [0, 0],
+                    })}
+                  />
+                );
+              })}
+
+            {visibleLayers.plot &&
+              (plotData as any).features.map((f: any, i: number) => {
+                const center = getPolygonCenter(f);
+                if (!center) return null;
+                return (
+                  <Marker
+                    key={`label-plot-${i}`}
+                    position={center}
+                    icon={L.divIcon({
+                      className: "bg-transparent border-none",
+                      html: `
+                        <div class="flex flex-col items-center justify-center">
+                          <div class="w-1.5 h-1.5 bg-green-500 rounded-full border border-white shadow-sm"></div>
+                          <div class="text-green-900 text-[9px] font-bold whitespace-nowrap drop-shadow-md mt-0.5">${f.properties.name}</div>
+                        </div>
+                      `,
+                      iconSize: [0, 0],
+                    })}
+                  />
+                );
+              })}
+
             {/* Legend - Updated with Dynamic Status */}
-            <div className="absolute bottom-4 left-4 bg-white p-2 rounded shadow-lg z-1000 text-xs">
+            <div className="absolute bottom-4 left-4 bg-white p-2 rounded shadow-lg z-1000 text-xs text-slate-700">
               <div className="font-semibold mb-2">Chú thích</div>
               <div
                 className={`flex items-center gap-2 mb-1 ${visibleLayers.plant ? "opacity-100" : "opacity-40"}`}
               >
-                <div className="w-3 h-3 rounded-full bg-green-500"></div> Khỏe
-                mạnh
+                <div className="w-3 h-3 rounded-full bg-green-500 border border-white shadow-sm"></div>{" "}
+                Khỏe mạnh
               </div>
               <div
                 className={`flex items-center gap-2 mb-1 ${visibleLayers.plant ? "opacity-100" : "opacity-40"}`}
               >
-                <div className="w-3 h-3 rounded-full bg-yellow-500"></div> Thu
-                hoạch
+                <div className="w-3 h-3 rounded-full bg-yellow-500 border border-white shadow-sm"></div>{" "}
+                Thu hoạch
               </div>
               <div
                 className={`flex items-center gap-2 mb-1 ${visibleLayers.plant ? "opacity-100" : "opacity-40"}`}
               >
-                <div className="w-3 h-3 rounded-full bg-red-500"></div> Sâu bệnh
+                <div className="w-3 h-3 rounded-full bg-red-500 border border-white shadow-sm"></div>{" "}
+                Sâu bệnh
               </div>
               <div
-                className={`flex items-center gap-2 ${visibleLayers.zone ? "opacity-100" : "opacity-40"}`}
+                className={`flex items-center gap-2 mb-1 ${visibleLayers.zone ? "opacity-100" : "opacity-40"}`}
               >
-                <span className="block w-4 h-0.5 bg-blue-500 border-t border-dashed border-blue-500"></span>{" "}
+                <div className="w-3 h-3 rounded-full bg-blue-500 border border-white shadow-sm"></div>
                 Vùng
               </div>
               <div
-                className={`flex items-center gap-2 ${visibleLayers.area ? "opacity-100" : "opacity-40"}`}
+                className={`flex items-center gap-2 mb-1 ${visibleLayers.area ? "opacity-100" : "opacity-40"}`}
               >
-                <span className="block w-4 h-3 bg-red-500/10 border border-red-500"></span>{" "}
+                <div className="w-3 h-3 rounded-full bg-red-500 border border-white shadow-sm"></div>
                 Khu vực
               </div>
               <div
                 className={`flex items-center gap-2 ${visibleLayers.plot ? "opacity-100" : "opacity-40"}`}
               >
-                <span className="block w-4 h-3 bg-green-500/20 border border-green-700"></span>{" "}
+                <div className="w-3 h-3 rounded-full bg-green-500 border border-white shadow-sm"></div>
                 Lô
               </div>
             </div>

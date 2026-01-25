@@ -376,6 +376,7 @@ const CultivationAreaDetailPage = () => {
 
         {/* Statistics Tab */}
         <TabsContent value="statistics" className="space-y-6">
+          {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               {
@@ -426,6 +427,58 @@ const CultivationAreaDetailPage = () => {
                 </CardContent>
               </Card>
             ))}
+          </div>
+
+          {/* Filters & Chart */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-3 space-y-4">
+              <Card>
+                <CardHeader className="pb-3 border-b">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <CardTitle>Biểu đồ năng suất thu hoạch</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" className="h-8">
+                        Last 7 days
+                      </Button>
+                      <Button variant="secondary" size="sm" className="h-8">
+                        Last 30 days
+                      </Button>
+                      <Button variant="outline" size="sm" className="h-8">
+                        This Year
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="h-[350px] flex items-end justify-between gap-2 px-2">
+                    {/* Mock Chart Bars */}
+                    {[45, 60, 30, 75, 50, 80, 65, 90, 70, 55, 60, 40].map(
+                      (h, i) => (
+                        <div
+                          key={i}
+                          className="flex-1 flex flex-col items-center gap-2 group"
+                        >
+                          <div
+                            className="w-full bg-primary/20 hover:bg-primary/40 transition-all rounded-t relative group-hover:bg-primary/60"
+                            style={{ height: `${h}%` }}
+                          >
+                            <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+                              {h} tấn
+                            </div>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            T{i + 1}
+                          </span>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                  <div className="text-center text-sm text-muted-foreground mt-4">
+                    Năng suất theo tháng (Năm 2024)
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </TabsContent>
       </Tabs>

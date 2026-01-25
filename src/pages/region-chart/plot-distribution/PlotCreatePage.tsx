@@ -13,10 +13,31 @@ import {
   type Step,
   useToast,
 } from "@tankhang1/eco-shared-ui";
-import { MapContainer, TileLayer, Rectangle } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Polygon,
+  Marker,
+  useMapEvents,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Check, ChevronLeft } from "lucide-react";
+import { Check, ChevronLeft, Plus, X } from "lucide-react";
+
+// Fix Leaflet Default Icon
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+const customIcon = new L.Icon({
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
 
 import {
   MOCK_REGIONS,
@@ -25,10 +46,25 @@ import {
   type Plot,
   ENTERPRISES,
 } from "../constants";
-import {
-  DraggableRectangle,
-  MapController,
-} from "../components/DraggableRectangle";
+import { MapController } from "../components/DraggableRectangle";
+
+const MapClickHandler = ({
+  onClick,
+}: {
+  onClick: (latlng: L.LatLng) => void;
+}) => {
+  useMapEvents({
+    click(e) {
+      onClick(e.latlng);
+    },
+  });
+  return null;
+};
+
+const getBoundsFromPoints = (points: L.LatLng[]): L.LatLngBounds => {
+  if (points.length === 0) return L.latLngBounds([0, 0], [0, 0]);
+  return L.latLngBounds(points);
+};
 
 const PlotCreatePage = () => {
   const [, setLocation] = useLocation();
@@ -48,10 +84,8 @@ const PlotCreatePage = () => {
     coordinates: [],
   });
 
-  const defaultBounds = L.latLngBounds([11.53, 106.88], [11.55, 106.91]);
-  const [currentBounds, setCurrentBounds] =
-    useState<L.LatLngBounds>(defaultBounds);
-  const [areaBounds, setAreaBounds] = useState<L.LatLngBounds | null>(null);
+  const [currentPoints, setCurrentPoints] = useState<L.LatLng[]>([]);
+  const [areaPolygon, setAreaPolygon] = useState<L.LatLng[]>([]);
 
   // Filtered Areas
   const filteredAreas = MOCK_AREAS.filter(
@@ -85,15 +119,8 @@ const PlotCreatePage = () => {
           coordinates: plot.coordinates,
         });
 
-        if (plot.coordinates && plot.coordinates.length >= 2) {
-          const lats = plot.coordinates.map((c) => c.lat);
-          const lngs = plot.coordinates.map((c) => c.lng);
-          setCurrentBounds(
-            L.latLngBounds(
-              [Math.min(...lats), Math.min(...lngs)],
-              [Math.max(...lats), Math.max(...lngs)],
-            ),
-          );
+        if (plot.coordinates && plot.coordinates.length >= 3) {
+          setCurrentPoints(plot.coordinates.map((c) => L.latLng(c.lat, c.lng)));
         }
       }
     }
@@ -113,45 +140,83 @@ const PlotCreatePage = () => {
     if (selectedAreaId) {
       const area = MOCK_AREAS.find((a) => a.id === selectedAreaId);
       if (area && area.coordinates && area.coordinates.length >= 2) {
-        const lats = area.coordinates.map((c) => c.lat);
-        const lngs = area.coordinates.map((c) => c.lng);
-        const bounds = L.latLngBounds(
-          [Math.min(...lats), Math.min(...lngs)],
-          [Math.max(...lats), Math.max(...lngs)],
-        );
-        setAreaBounds(bounds);
+        const points = area.coordinates.map((c) => L.latLng(c.lat, c.lng));
+        setAreaPolygon(points);
+        const bounds = L.latLngBounds(points);
 
-        // If creating new, default plot bounds to center of area
-        // If Edit mode, we Only reset if we haven't loaded coords yet OR if user explicitly changed area (which implies New location)
-        // This is tricky.
-        // Simple heuristic: If formData has no coordinates, use area center.
         if (!formData.coordinates || formData.coordinates.length === 0) {
           const center = bounds.getCenter();
-          const size = 0.002;
-          setCurrentBounds(
-            L.latLngBounds(
-              [center.lat - size / 2, center.lng - size / 2],
-              [center.lat + size / 2, center.lng + size / 2],
-            ),
-          );
+          setCurrentPoints([
+            L.latLng(center.lat - 0.001, center.lng - 0.001),
+            L.latLng(center.lat + 0.001, center.lng),
+            L.latLng(center.lat - 0.001, center.lng + 0.001),
+          ]);
         }
       }
     }
   }, [selectedAreaId]);
 
+  // --- Map Handlers ---
+  const handlePointDrag = (index: number, latlng: L.LatLng) => {
+    const newPoints = [...currentPoints];
+    newPoints[index] = latlng;
+    setCurrentPoints(newPoints);
+  };
+
+  const handleMapClick = (latlng: L.LatLng) => {
+    setCurrentPoints([...currentPoints, latlng]);
+  };
+
+  const removePoint = (index: number) => {
+    if (currentPoints.length <= 3) {
+      toast({
+        title: "Lỗi",
+        description: "Cần ít nhất 3 điểm",
+        variant: "destructive",
+      });
+      return;
+    }
+    setCurrentPoints(currentPoints.filter((_, i) => i !== index));
+  };
+
+  const handlePointInputChange = (
+    index: number,
+    field: "lat" | "lng",
+    value: string,
+  ) => {
+    const val = parseFloat(value);
+    if (isNaN(val)) return;
+
+    const newPoints = [...currentPoints];
+    const currentPoint = newPoints[index];
+    newPoints[index] = L.latLng(
+      field === "lat" ? val : currentPoint.lat,
+      field === "lng" ? val : currentPoint.lng,
+    );
+    setCurrentPoints(newPoints);
+  };
+
+  const handleAddPoint = () => {
+    if (currentPoints.length === 0) return;
+    const center = getBoundsFromPoints(currentPoints).getCenter();
+    setCurrentPoints([
+      ...currentPoints,
+      L.latLng(center.lat + 0.001, center.lng + 0.001),
+    ]);
+  };
+
   const handleSubmit = () => {
     // Process coordinates
-    const sw = currentBounds.getSouthWest();
-    const ne = currentBounds.getNorthEast();
-    const nw = L.latLng(ne.lat, sw.lng);
-    const se = L.latLng(sw.lat, ne.lng);
+    if (currentPoints.length < 3) {
+      toast({
+        title: "Lỗi",
+        description: "Lô cần ít nhất 3 điểm",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    const coords = [
-      { lat: sw.lat, lng: sw.lng },
-      { lat: nw.lat, lng: nw.lng },
-      { lat: ne.lat, lng: ne.lng },
-      { lat: se.lat, lng: se.lng },
-    ];
+    const coords = currentPoints.map((p) => ({ lat: p.lat, lng: p.lng }));
 
     console.log("Submitting Plot:", {
       ...formData,
@@ -334,16 +399,20 @@ const PlotCreatePage = () => {
       title: "Bản đồ",
       description: "Xác định vị trí trên bản đồ",
       content: (
-        <Card>
+        <Card className="h-[750px] flex flex-col">
           <CardHeader>
             <CardTitle>Định vị lô đất</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-[500px] rounded-lg border overflow-hidden relative">
+          <CardContent className="flex-1 p-4 overflow-hidden flex gap-4">
+            <div className="flex-1 h-full rounded-lg border overflow-hidden relative">
               <MapContainer
                 center={[
-                  currentBounds.getCenter().lat,
-                  currentBounds.getCenter().lng,
+                  getBoundsFromPoints(
+                    areaPolygon.length ? areaPolygon : currentPoints,
+                  ).getCenter().lat,
+                  getBoundsFromPoints(
+                    areaPolygon.length ? areaPolygon : currentPoints,
+                  ).getCenter().lng,
                 ]}
                 zoom={16}
                 className="h-full w-full"
@@ -352,9 +421,13 @@ const PlotCreatePage = () => {
                   attribution="&copy; OpenStreetMap"
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                {areaBounds && (
-                  <Rectangle
-                    bounds={areaBounds}
+
+                <MapClickHandler onClick={handleMapClick} />
+
+                {/* Parent Area Polygon */}
+                {areaPolygon.length > 0 && (
+                  <Polygon
+                    positions={areaPolygon}
                     pathOptions={{
                       color: "blue",
                       fill: false,
@@ -362,174 +435,98 @@ const PlotCreatePage = () => {
                     }}
                   />
                 )}
-                <DraggableRectangle
-                  bounds={currentBounds}
-                  setBounds={setCurrentBounds}
-                  color="orange"
+
+                {/* Current Plot Polygon */}
+                <Polygon
+                  positions={currentPoints}
+                  pathOptions={{ color: "orange", fillOpacity: 0.2 }}
                 />
+
+                {currentPoints.map((point, idx) => (
+                  <Marker
+                    key={`pt-${idx}`}
+                    position={point}
+                    draggable={true}
+                    icon={customIcon}
+                    eventHandlers={{
+                      drag: (e) => handlePointDrag(idx, e.target.getLatLng()),
+                    }}
+                  />
+                ))}
+
                 <MapController
                   center={[
-                    currentBounds.getCenter().lat,
-                    currentBounds.getCenter().lng,
+                    getBoundsFromPoints(
+                      currentPoints.length ? currentPoints : areaPolygon,
+                    ).getCenter().lat,
+                    getBoundsFromPoints(
+                      currentPoints.length ? currentPoints : areaPolygon,
+                    ).getCenter().lng,
                   ]}
                 />
               </MapContainer>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t">
-              {/* Point 1: SW */}
-              <div className="space-y-2">
-                <Label>Góc Tây Nam (SW)</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="number"
-                    step="0.000001"
-                    placeholder="Lat"
-                    value={currentBounds.getSouth()}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val))
-                        setCurrentBounds(
-                          L.latLngBounds(
-                            [val, currentBounds.getWest()],
-                            currentBounds.getNorthEast(),
-                          ),
-                        );
-                    }}
-                  />
-                  <Input
-                    type="number"
-                    step="0.000001"
-                    placeholder="Lng"
-                    value={currentBounds.getWest()}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val))
-                        setCurrentBounds(
-                          L.latLngBounds(
-                            [currentBounds.getSouth(), val],
-                            currentBounds.getNorthEast(),
-                          ),
-                        );
-                    }}
-                  />
-                </div>
-              </div>
 
-              {/* Point 2: NW */}
-              <div className="space-y-2">
-                <Label>Góc Tây Bắc (NW)</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="number"
-                    step="0.000001"
-                    placeholder="Lat"
-                    value={currentBounds.getNorth()}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val))
-                        setCurrentBounds(
-                          L.latLngBounds(currentBounds.getSouthWest(), [
-                            val,
-                            currentBounds.getEast(),
-                          ]),
-                        );
-                    }}
-                  />
-                  <Input
-                    type="number"
-                    step="0.000001"
-                    placeholder="Lng"
-                    value={currentBounds.getWest()}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val))
-                        setCurrentBounds(
-                          L.latLngBounds(
-                            [currentBounds.getSouth(), val],
-                            currentBounds.getNorthEast(),
-                          ),
-                        );
-                    }}
-                  />
-                </div>
+            <div className="w-[300px] flex flex-col h-full bg-slate-50 border rounded-lg overflow-hidden">
+              <div className="p-3 border-b bg-white">
+                <h4 className="font-semibold text-sm">Danh sách toạ độ</h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Kéo thả hoặc click bản đồ để thêm.
+                </p>
               </div>
-
-              {/* Point 3: NE */}
-              <div className="space-y-2">
-                <Label>Góc Đông Bắc (NE)</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="number"
-                    step="0.000001"
-                    placeholder="Lat"
-                    value={currentBounds.getNorth()}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val))
-                        setCurrentBounds(
-                          L.latLngBounds(currentBounds.getSouthWest(), [
-                            val,
-                            currentBounds.getEast(),
-                          ]),
-                        );
-                    }}
-                  />
-                  <Input
-                    type="number"
-                    step="0.000001"
-                    placeholder="Lng"
-                    value={currentBounds.getEast()}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val))
-                        setCurrentBounds(
-                          L.latLngBounds(currentBounds.getSouthWest(), [
-                            currentBounds.getNorth(),
-                            val,
-                          ]),
-                        );
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Point 4: SE */}
-              <div className="space-y-2">
-                <Label>Góc Đông Nam (SE)</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="number"
-                    step="0.000001"
-                    placeholder="Lat"
-                    value={currentBounds.getSouth()}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val))
-                        setCurrentBounds(
-                          L.latLngBounds(
-                            [val, currentBounds.getWest()],
-                            currentBounds.getNorthEast(),
-                          ),
-                        );
-                    }}
-                  />
-                  <Input
-                    type="number"
-                    step="0.000001"
-                    placeholder="Lng"
-                    value={currentBounds.getEast()}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val))
-                        setCurrentBounds(
-                          L.latLngBounds(currentBounds.getSouthWest(), [
-                            currentBounds.getNorth(),
-                            val,
-                          ]),
-                        );
-                    }}
-                  />
-                </div>
+              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                {currentPoints.map((p, i) => (
+                  <div
+                    key={i}
+                    className="flex flex-col gap-2 p-2 bg-white rounded border text-xs relative"
+                  >
+                    <div className="absolute top-2 right-2 flex gap-1">
+                      {currentPoints.length > 3 && (
+                        <button
+                          onClick={() => removePoint(i)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                    <span className="font-semibold">Điểm {i + 1}</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-gray-500">Lat</label>
+                        <input
+                          className="w-full border rounded px-1 py-0.5"
+                          type="number"
+                          value={p.lat}
+                          onChange={(e) =>
+                            handlePointInputChange(i, "lat", e.target.value)
+                          }
+                          step="0.0001"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-gray-500">Lng</label>
+                        <input
+                          className="w-full border rounded px-1 py-0.5"
+                          type="number"
+                          value={p.lng}
+                          onChange={(e) =>
+                            handlePointInputChange(i, "lng", e.target.value)
+                          }
+                          step="0.0001"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-dashed"
+                  onClick={handleAddPoint}
+                >
+                  <Plus className="w-4 h-4 mr-2" /> Thêm điểm
+                </Button>
               </div>
             </div>
           </CardContent>
