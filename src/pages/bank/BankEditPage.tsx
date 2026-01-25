@@ -21,27 +21,26 @@ import {
 } from "@tankhang1/eco-shared-ui";
 import { CreditCard, Save, Trash2, X } from "lucide-react";
 
+const BANK_LOGOS: Record<string, string> = {
+  Vietcombank:
+    "https://cdn.haitrieu.com/wp-content/uploads/2022/02/Icon-Vietcombank.png",
+  VietinBank:
+    "https://cdn.haitrieu.com/wp-content/uploads/2022/01/Logo-VietinBank-CTG-Orientation-1.png",
+  BIDV: "https://play-lh.googleusercontent.com/BGXsq66VHM-uuMxFx14aFiHMuW3f9M1VnpAyrh6lRTyKpffwHjp-XqKlt2fnvp0zqpr1",
+  Agribank:
+    "https://cdn.haitrieu.com/wp-content/uploads/2022/01/Logo-Agribank-V.png",
+  MBBank:
+    "https://cdn.haitrieu.com/wp-content/uploads/2022/02/Icon-MB-Bank-MBB.png",
+  Techcombank:
+    "https://play-lh.googleusercontent.com/Ddr3ZQEu6Vef9JV9ITALeyBEXvYwQWZ3kKJXxrdncD9JR0xlsO--J6zo7uGARfuTBmk",
+  ACB: "https://cdn.haitrieu.com/wp-content/uploads/2022/01/Logo-ACB.png",
+};
+
 export default function BankEditPage() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/bank/:id/edit");
   const { toast } = useToast();
   const [deleteOpen, setDeleteOpen] = useState(false);
-
-  // Mock data fetching
-  useEffect(() => {
-    // Simulate API call using ID
-    console.log("Fetching bank account", params?.id);
-    setTimeout(() => {
-      setFormData({
-        bankName: "Vietcombank",
-        accountNumber: "0011001234567",
-        accountHolder: "ECOFARM CORP",
-        branch: "Sở Giao Dịch",
-        status: "active",
-        note: "Tài khoản chính",
-      });
-    }, 500);
-  }, []);
 
   const [formData, setFormData] = useState({
     bankName: "",
@@ -50,7 +49,34 @@ export default function BankEditPage() {
     branch: "",
     status: "active",
     note: "",
+    logo: "",
   });
+
+  // Mock data fetching
+  useEffect(() => {
+    // Simulate API call using ID
+    console.log("Fetching bank account", params?.id);
+    setTimeout(() => {
+      const bankName = "Vietcombank";
+      setFormData({
+        bankName: bankName,
+        accountNumber: "0011001234567",
+        accountHolder: "ECOFARM CORP",
+        branch: "Sở Giao Dịch",
+        status: "active",
+        note: "Tài khoản chính",
+        logo: BANK_LOGOS[bankName] || "",
+      });
+    }, 500);
+  }, []);
+
+  const handleBankChange = (val: string) => {
+    setFormData({
+      ...formData,
+      bankName: val,
+      logo: BANK_LOGOS[val] || "",
+    });
+  };
 
   const handleSubmit = () => {
     if (
@@ -117,25 +143,41 @@ export default function BankEditPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="bankName">Tên ngân hàng *</Label>
-              <Select
-                value={formData.bankName}
-                onValueChange={(val) =>
-                  setFormData({ ...formData, bankName: val })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn ngân hàng" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Vietcombank">Vietcombank</SelectItem>
-                  <SelectItem value="VietinBank">VietinBank</SelectItem>
-                  <SelectItem value="BIDV">BIDV</SelectItem>
-                  <SelectItem value="Agribank">Agribank</SelectItem>
-                  <SelectItem value="MBBank">MBBank</SelectItem>
-                  <SelectItem value="Techcombank">Techcombank</SelectItem>
-                  <SelectItem value="ACB">ACB</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <Select
+                    value={formData.bankName}
+                    onValueChange={handleBankChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn ngân hàng" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Vietcombank">Vietcombank</SelectItem>
+                      <SelectItem value="VietinBank">VietinBank</SelectItem>
+                      <SelectItem value="BIDV">BIDV</SelectItem>
+                      <SelectItem value="Agribank">Agribank</SelectItem>
+                      <SelectItem value="MBBank">MBBank</SelectItem>
+                      <SelectItem value="Techcombank">Techcombank</SelectItem>
+                      <SelectItem value="ACB">ACB</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {formData.logo && (
+                  <div className="w-10 h-10 rounded-lg border bg-white flex items-center justify-center p-1 overflow-hidden shrink-0">
+                    <img
+                      src={formData.logo}
+                      alt="Bank Logo"
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          "https://placehold.co/40x40?text=" +
+                          formData.bankName?.[0];
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

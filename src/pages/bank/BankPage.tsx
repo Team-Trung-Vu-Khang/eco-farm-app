@@ -19,6 +19,7 @@ interface BankAccount {
   branch: string;
   note: string;
   status: "active" | "inactive";
+  logo: string;
 }
 
 const initialData: BankAccount[] = [
@@ -30,6 +31,7 @@ const initialData: BankAccount[] = [
     branch: "Sở Giao Dịch",
     note: "Tài khoản chính",
     status: "active",
+    logo: "https://cdn.haitrieu.com/wp-content/uploads/2022/02/Icon-Vietcombank.png",
   },
   {
     id: 2,
@@ -39,6 +41,7 @@ const initialData: BankAccount[] = [
     branch: "Chi nhánh Cầu Giấy",
     note: "Tài khoản phụ",
     status: "active",
+    logo: "https://cdn.haitrieu.com/wp-content/uploads/2022/01/Logo-Agribank-V.png",
   },
   {
     id: 3,
@@ -48,6 +51,7 @@ const initialData: BankAccount[] = [
     branch: "Chi nhánh Hoàn Kiếm",
     note: "Tài khoản cá nhân",
     status: "inactive",
+    logo: "https://cdn.haitrieu.com/wp-content/uploads/2022/02/Icon-MB-Bank-MBB.png",
   },
 ];
 
@@ -59,7 +63,26 @@ export default function BankPage() {
   const [deleteItem, setDeleteItem] = useState<BankAccount | null>(null);
 
   const columns: Column<BankAccount>[] = [
-    { key: "bankName", label: "Ngân hàng" },
+    {
+      key: "bankName",
+      label: "Ngân hàng",
+      render: (value, item) => (
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full border bg-white flex items-center justify-center p-1 overflow-hidden shrink-0">
+            <img
+              src={item.logo}
+              alt={value as string}
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src =
+                  "https://placehold.co/40x40?text=" + (value as string)?.[0];
+              }}
+            />
+          </div>
+          <div className="font-medium">{value}</div>
+        </div>
+      ),
+    },
     { key: "accountNumber", label: "Số tài khoản" },
     { key: "accountHolder", label: "Chủ tài khoản" },
     { key: "branch", label: "Chi nhánh" },

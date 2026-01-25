@@ -32,7 +32,7 @@ const initialData: Enterprise[] = [
     code: "DN001",
     name: "Công ty TNHH Nông nghiệp Xanh",
     image:
-      "https://images.unsplash.com/photo-1595839019623-668b555776a3?w=800&q=80",
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRn_8OFT04S0wG7vHTRJMrpWD-pki8RPR_wSw&s",
     type: "enterprise",
     classification: "production",
     taxCode: "0123456789",
@@ -62,7 +62,7 @@ const initialData: Enterprise[] = [
     code: "DN002",
     name: "HTX Nông sản Sạch Bình Dương",
     image:
-      "https://images.unsplash.com/photo-1595460515152-325b302c31c9?w=800&q=80",
+      "https://ocop.langson.gov.vn/api/user-blob/82a71ab1-9a6f-6a22-c832-65949c334e71/2024/11/21/logo-trangdinh.jpg",
     type: "cooperative",
     classification: "trading",
     taxCode: "0987654321",

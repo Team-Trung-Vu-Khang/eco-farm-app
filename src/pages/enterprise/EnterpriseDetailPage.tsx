@@ -81,7 +81,7 @@ export default function EnterpriseDetailPage() {
         ward: "Dịch Vọng",
         address: "Số 123 Đường Xuân Thủy",
         image:
-          "https://images.unsplash.com/photo-1595839019623-668b555776a3?w=800&q=80",
+          "https://d1csarkz8obe9u.cloudfront.net/posterpreviews/company-logo-design-template-e089327a5c476ce5c70c74f7359c5898_screen.jpg?ts=1672291305",
         description:
           "Doanh nghiệp tiên phong trong lĩnh vực nông nghiệp công nghệ cao, chuyên sản xuất và cung ứng rau sạch chuẩn VietGAP. Chúng tôi cam kết mang đến những sản phẩm an toàn, chất lượng nhất cho người tiêu dùng.",
         branches: [
