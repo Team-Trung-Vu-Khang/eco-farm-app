@@ -15,6 +15,7 @@ interface Enterprise {
   id: number;
   code: string;
   name: string;
+  image?: string;
   type: "enterprise" | "farm" | "cooperative";
   classification: "production" | "processing" | "trading" | "service";
   taxCode: string;
@@ -30,6 +31,8 @@ const initialData: Enterprise[] = [
     id: 1,
     code: "DN001",
     name: "Công ty TNHH Nông nghiệp Xanh",
+    image:
+      "https://images.unsplash.com/photo-1595839019623-668b555776a3?w=800&q=80",
     type: "enterprise",
     classification: "production",
     taxCode: "0123456789",
@@ -43,6 +46,8 @@ const initialData: Enterprise[] = [
     id: 2,
     code: "NH001",
     name: "Nông hộ Nguyễn Văn A",
+    image:
+      "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80",
     type: "farm",
     classification: "production",
     taxCode: "",
@@ -56,6 +61,8 @@ const initialData: Enterprise[] = [
     id: 3,
     code: "DN002",
     name: "HTX Nông sản Sạch Bình Dương",
+    image:
+      "https://images.unsplash.com/photo-1595460515152-325b302c31c9?w=800&q=80",
     type: "cooperative",
     classification: "trading",
     taxCode: "0987654321",
@@ -69,6 +76,8 @@ const initialData: Enterprise[] = [
     id: 4,
     code: "NH002",
     name: "Trang trại Trần Thị B",
+    image:
+      "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&q=80",
     type: "farm",
     classification: "processing",
     taxCode: "",
@@ -82,6 +91,8 @@ const initialData: Enterprise[] = [
     id: 5,
     code: "DN003",
     name: "Công ty CP Xuất khẩu Trái cây Việt",
+    image:
+      "https://images.unsplash.com/photo-1589923188900-85dae523342b?w=800&q=80",
     type: "enterprise",
     classification: "trading",
     taxCode: "1122334455",
@@ -102,6 +113,18 @@ export default function EnterprisePage() {
 
   const columns: Column<Enterprise>[] = [
     { key: "code", label: "Mã" },
+    {
+      key: "image",
+      label: "Hình ảnh",
+      render: (value) =>
+        value ? (
+          <img
+            src={value as string}
+            alt="enterprise"
+            className="w-10 h-10 object-cover rounded-md border"
+          />
+        ) : null,
+    },
     { key: "name", label: "Tên đơn vị" },
     {
       key: "type",

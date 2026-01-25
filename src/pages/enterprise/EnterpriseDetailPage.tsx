@@ -80,6 +80,8 @@ export default function EnterpriseDetailPage() {
         district: "Cầu Giấy",
         ward: "Dịch Vọng",
         address: "Số 123 Đường Xuân Thủy",
+        image:
+          "https://images.unsplash.com/photo-1595839019623-668b555776a3?w=800&q=80",
         description:
           "Doanh nghiệp tiên phong trong lĩnh vực nông nghiệp công nghệ cao, chuyên sản xuất và cung ứng rau sạch chuẩn VietGAP. Chúng tôi cam kết mang đến những sản phẩm an toàn, chất lượng nhất cho người tiêu dùng.",
         branches: [
@@ -160,20 +162,26 @@ export default function EnterpriseDetailPage() {
         {/* Left Column: Overview & Contact - Sticky */}
         <div className="lg:col-span-1 space-y-6">
           <Card className="overflow-hidden">
-            <div className="h-32 bg-linear-to-r from-blue-500/10 to-green-500/10 flex items-center justify-center">
-              {data.type === "enterprise" ? (
-                <Building2 className="w-16 h-16 text-blue-600/50" />
-              ) : data.type === "cooperative" ? (
-                <Users className="w-16 h-16 text-orange-600/50" />
-              ) : (
-                <User className="w-16 h-16 text-green-600/50" />
-              )}
+            <div className="h-32 bg-gray-100 flex items-center justify-center relative">
+              <img
+                src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80"
+                alt="Cover"
+                className="w-full h-full object-cover"
+              />
             </div>
             <CardHeader className="text-center pb-2">
-              <div className="mx-auto w-20 h-20 -mt-12 rounded-full border-4 border-background bg-white shadow-sm flex items-center justify-center mb-2">
-                <span className="text-2xl font-bold text-primary">
-                  {data.brandName.charAt(0)}
-                </span>
+              <div className="mx-auto w-20 h-20 -mt-12 rounded-full border-4 border-background bg-white shadow-sm flex items-center justify-center mb-2 overflow-hidden relative">
+                {data.image ? (
+                  <img
+                    src={data.image}
+                    alt="Logo"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-2xl font-bold text-primary">
+                    {data.brandName.charAt(0)}
+                  </span>
+                )}
               </div>
               <CardTitle className="text-xl">{data.brandName}</CardTitle>
               <CardDescription>{data.name}</CardDescription>

@@ -91,6 +91,8 @@ export default function EnterpriseEditPage() {
         district: "cau_giay",
         ward: "dich_vong",
         address: "Số 123 Đường Xuân Thủy",
+        image:
+          "https://images.unsplash.com/photo-1595839019623-668b555776a3?w=800&q=80",
         description:
           "Doanh nghiệp tiên phong trong lĩnh vực nông nghiệp công nghệ cao, chuyên sản xuất và cung ứng rau sạch chuẩn VietGAP.",
         branches: [
@@ -137,6 +139,7 @@ export default function EnterpriseEditPage() {
     district: "",
     ward: "",
     address: "",
+    image: "",
     description: "",
     branches: [] as Branch[],
     bankAccounts: [] as BankAccount[],
@@ -160,6 +163,14 @@ export default function EnterpriseEditPage() {
     address: "",
     note: "",
   });
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setFormData((prev) => ({ ...prev, image: url }));
+    }
+  };
 
   const addBranch = () => {
     if (newBranch.name.trim()) {
@@ -352,6 +363,60 @@ export default function EnterpriseEditPage() {
       description: "Tên, thương hiệu, mã, thuế",
       content: (
         <div className="max-w-2xl mx-auto space-y-6">
+          <div className="flex flex-col items-center gap-4 mb-6">
+            <Label>Logo / Hình ảnh đại diện</Label>
+            <div className="flex items-center gap-6 w-full">
+              <div
+                className="w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 overflow-hidden relative cursor-pointer hover:border-primary transition-colors group"
+                onClick={() =>
+                  document.getElementById("avatar-edit-upload")?.click()
+                }
+              >
+                {formData.image ? (
+                  <>
+                    <img
+                      src={formData.image}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center">
+                      <Upload className="w-6 h-6 text-white" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center p-2">
+                    <Image className="w-8 h-8 text-gray-400 mx-auto mb-1" />
+                    <span className="text-xs text-gray-500">Upload</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 space-y-2">
+                <Input
+                  id="avatar-edit-upload"
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                />
+                <div className="text-sm text-muted-foreground">
+                  <p>Tải lên logo hoặc hình ảnh đại diện của đơn vị.</p>
+                  <p>Định dạng hỗ trợ: JPG, PNG. Kích thước tối đa: 5MB.</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    document.getElementById("avatar-edit-upload")?.click()
+                  }
+                  type="button"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Thay đổi hình ảnh
+                </Button>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="code">Mã đơn vị *</Label>
@@ -1176,6 +1241,19 @@ export default function EnterpriseEditPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
+              <div className="mb-4 flex justify-center">
+                {formData.image ? (
+                  <img
+                    src={formData.image}
+                    alt="Logo"
+                    className="w-24 h-24 rounded-lg object-cover border"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-lg bg-muted flex items-center justify-center border">
+                    <Image className="w-10 h-10 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <div className="flex justify-between">
