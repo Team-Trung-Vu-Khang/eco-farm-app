@@ -86,6 +86,7 @@ export interface Crop {
   diseaseHistory?: DiseaseHistoryItem[];
   harvestHistory?: HarvestHistoryItem[];
   iotData?: IoTData;
+  technicalSpecs?: TechnicalSpecs;
 }
 
 export interface CropFilter {
@@ -107,6 +108,18 @@ export interface DocumentSection {
   file: File | null;
 }
 
+// ... existing code ...
+export interface TechnicalSpecs {
+  scientificName: string;
+  family: string;
+  origin: string;
+  tempRange: string;
+  humidityRange: string;
+  phRange: string;
+  plantingDensity: string;
+  watering: string;
+}
+
 export interface CreateCropForm {
   code: string;
   name: string;
@@ -117,6 +130,7 @@ export interface CreateCropForm {
   description: string;
   selectedSeedIds: string[];
   harvestMethod: string;
+  technicalSpecs: TechnicalSpecs;
   growthCycles: GrowthCycleDetail[];
   docs: {
     farmingTechnique: DocumentSection;

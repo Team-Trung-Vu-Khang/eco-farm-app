@@ -38,6 +38,10 @@ import {
   Sprout,
   Trash,
   Upload,
+  Thermometer,
+  Droplets,
+  FlaskConical,
+  Ruler,
 } from "lucide-react";
 
 import {
@@ -65,6 +69,16 @@ export default function CropCreatePage() {
     description: "",
     selectedSeedIds: [],
     harvestMethod: "manual",
+    technicalSpecs: {
+      scientificName: "",
+      family: "",
+      origin: "",
+      tempRange: "",
+      humidityRange: "",
+      phRange: "",
+      plantingDensity: "",
+      watering: "",
+    },
     growthCycles: [
       {
         id: "1",
@@ -161,7 +175,7 @@ export default function CropCreatePage() {
       title: "Thông tin cây",
       content: (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="relative overflow-hidden rounded-xl border border-green-200 bg-gradient-to-r from-green-50 via-white to-green-50 p-6">
+          <div className="relative overflow-hidden rounded-xl border border-green-200 bg-linear-to-r from-green-50 via-white to-green-50 p-6">
             <div className="relative z-10 flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-white shadow-sm border border-green-100 flex items-center justify-center text-green-600 shrink-0">
                 <Leaf className="w-7 h-7" />
@@ -365,11 +379,152 @@ export default function CropCreatePage() {
         formData.variety.length > 0,
     },
     {
+      id: "technical",
+      title: "Thông số KT",
+      content: (
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="relative overflow-hidden rounded-xl border border-cyan-200 bg-linear-to-r from-cyan-50 via-white to-cyan-50 p-6">
+            <div className="relative z-10 flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-white shadow-sm border border-cyan-100 flex items-center justify-center text-cyan-600 shrink-0">
+                <FlaskConical className="w-7 h-7" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Thông số nông học
+                </h3>
+                <p className="text-sm text-slate-500">
+                  Thiết lập các tiêu chuẩn kỹ thuật và điều kiện canh tác lý
+                  tưởng
+                </p>
+              </div>
+            </div>
+            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl"></div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Tên khoa học</Label>
+                <Input
+                  value={formData.technicalSpecs.scientificName}
+                  onChange={(e) =>
+                    handleUpdateField("technicalSpecs", {
+                      ...formData.technicalSpecs,
+                      scientificName: e.target.value,
+                    })
+                  }
+                  placeholder="VD: Solanum lycopersicum"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Họ thực vật</Label>
+                <Input
+                  value={formData.technicalSpecs.family}
+                  onChange={(e) =>
+                    handleUpdateField("technicalSpecs", {
+                      ...formData.technicalSpecs,
+                      family: e.target.value,
+                    })
+                  }
+                  placeholder="VD: Solanaceae"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Nguồn gốc</Label>
+                <Input
+                  value={formData.technicalSpecs.origin}
+                  onChange={(e) =>
+                    handleUpdateField("technicalSpecs", {
+                      ...formData.technicalSpecs,
+                      origin: e.target.value,
+                    })
+                  }
+                  placeholder="VD: Nam Mỹ"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold flex items-center gap-2">
+                    <Thermometer className="w-4 h-4 text-rose-500" />
+                    Nhiệt độ (°C)
+                  </Label>
+                  <Input
+                    value={formData.technicalSpecs.tempRange}
+                    onChange={(e) =>
+                      handleUpdateField("technicalSpecs", {
+                        ...formData.technicalSpecs,
+                        tempRange: e.target.value,
+                      })
+                    }
+                    placeholder="VD: 20 - 30"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold flex items-center gap-2">
+                    <Droplets className="w-4 h-4 text-blue-500" />
+                    Độ ẩm (%)
+                  </Label>
+                  <Input
+                    value={formData.technicalSpecs.humidityRange}
+                    onChange={(e) =>
+                      handleUpdateField("technicalSpecs", {
+                        ...formData.technicalSpecs,
+                        humidityRange: e.target.value,
+                      })
+                    }
+                    placeholder="VD: 60 - 80"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold flex items-center gap-2">
+                  <FlaskConical className="w-4 h-4 text-purple-500" />
+                  Độ pH đất
+                </Label>
+                <Input
+                  value={formData.technicalSpecs.phRange}
+                  onChange={(e) =>
+                    handleUpdateField("technicalSpecs", {
+                      ...formData.technicalSpecs,
+                      phRange: e.target.value,
+                    })
+                  }
+                  placeholder="VD: 5.5 - 6.5"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold flex items-center gap-2">
+                  <Ruler className="w-4 h-4 text-amber-500" />
+                  Mật độ trồng
+                </Label>
+                <Input
+                  value={formData.technicalSpecs.plantingDensity}
+                  onChange={(e) =>
+                    handleUpdateField("technicalSpecs", {
+                      ...formData.technicalSpecs,
+                      plantingDensity: e.target.value,
+                    })
+                  }
+                  placeholder="VD: 30cm x 50cm"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+      isValid: true,
+    },
+    {
       id: "seeds",
       title: "Hạt giống",
       content: (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="relative overflow-hidden rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-amber-50 p-6">
+          <div className="relative overflow-hidden rounded-xl border border-amber-200 bg-linear-to-r from-amber-50 via-white to-amber-50 p-6">
             <div className="relative z-10 flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-white shadow-sm border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
                 <Bug className="w-7 h-7" />
@@ -896,6 +1051,43 @@ export default function CropCreatePage() {
               </CardContent>
             </Card>
           </div>
+
+          <Card className="border-none shadow-md shadow-zinc-200/50 ring-1 ring-zinc-200/50">
+            <CardHeader className="bg-zinc-50/50 border-b border-zinc-100/50">
+              <CardTitle className="text-base font-bold flex items-center gap-2 text-green-700">
+                <FlaskConical className="w-4 h-4" />
+                Thông số nông học
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                  {
+                    label: "Tên KH",
+                    value: formData.technicalSpecs.scientificName,
+                  },
+                  {
+                    label: "Nhiệt độ",
+                    value: formData.technicalSpecs.tempRange,
+                  },
+                  {
+                    label: "Độ ẩm",
+                    value: formData.technicalSpecs.humidityRange,
+                  },
+                  { label: "Độ pH", value: formData.technicalSpecs.phRange },
+                ].map((item) => (
+                  <div key={item.label} className="space-y-1">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase">
+                      {item.label}
+                    </p>
+                    <p className="font-bold text-slate-900">
+                      {item.value || "--"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
           <Card className="border-none shadow-md shadow-zinc-200/50 ring-1 ring-zinc-200/50 overflow-hidden">
             <CardHeader className="bg-zinc-50/50 border-b border-zinc-100/50">

@@ -42,7 +42,17 @@ export const initialData: Crop[] = [
     name: "Sầu riêng Ri6",
     cropType: "Sầu riêng",
     cropGroup: "Cây ăn trái",
-    harvestMethod: "Thu hoạch bằng tay",
+    harvestMethod: "manual",
+    technicalSpecs: {
+      scientificName: "Durio zibethinus",
+      family: "Họ Cẩm quỳ (Malvaceae)",
+      origin: "Đông Nam Á (Malaysia, Indonesia)",
+      tempRange: "24 - 30°C",
+      humidityRange: "75 - 85%",
+      phRange: "5.5 - 6.5",
+      plantingDensity: "Khoảng cách 8m x 8m (150-160 cây/ha)",
+      watering: "Trung bình 200 lít/cây/ngày (giai đoạn quả lớn)",
+    },
     seedInfo: {
       supplier: "Trung tâm Giống cây trồng Miền Tây",
       importDate: "20/12/2023",
@@ -152,7 +162,7 @@ export const initialData: Crop[] = [
     name: "Sầu riêng Dona",
     cropType: "Sầu riêng",
     cropGroup: "Cây ăn trái",
-    harvestMethod: "Thu hái từng trái, dùng kéo cắt cuống",
+    harvestMethod: "manual",
   },
   {
     id: 3,
@@ -162,7 +172,7 @@ export const initialData: Crop[] = [
     name: "Xoài Cát Chu",
     cropType: "Xoài",
     cropGroup: "Cây ăn trái",
-    harvestMethod: "Thu hoạch bằng kéo, tránh dập trái",
+    harvestMethod: "manual",
   },
   {
     id: 4,
@@ -172,7 +182,7 @@ export const initialData: Crop[] = [
     name: "Thanh long ruột đỏ",
     cropType: "Thanh long",
     cropGroup: "Cây ăn trái",
-    harvestMethod: "Thu hái bằng tay, dùng kéo cắt cuống",
+    harvestMethod: "manual",
   },
   {
     id: 5,
@@ -182,7 +192,7 @@ export const initialData: Crop[] = [
     name: "Cà phê Robusta",
     cropType: "Cà phê",
     cropGroup: "Cây công nghiệp",
-    harvestMethod: "Hái chọn quả chín, phơi hoặc sấy",
+    harvestMethod: "manual",
   },
   {
     id: 6,
@@ -191,7 +201,7 @@ export const initialData: Crop[] = [
     name: "Lúa OM5451",
     cropType: "Lúa",
     cropGroup: "Cây lương thực",
-    harvestMethod: "Gặt máy hoặc thủ công",
+    harvestMethod: "machine",
   },
 ];
 

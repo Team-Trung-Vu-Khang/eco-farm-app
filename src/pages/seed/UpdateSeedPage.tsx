@@ -20,11 +20,14 @@ import {
 } from "@tankhang1/eco-shared-ui";
 import {
   Briefcase,
+  CheckCircle2,
   CloudUpload,
   FileText,
   Hash,
+  Info,
   Phone,
   Search,
+  Sprout,
   Trash,
   User,
   X,
@@ -56,6 +59,8 @@ export default function UpdateSeedPage() {
     contentType: "pdf",
     pdfFile: null,
     editorContent: seed?.editorContent || "",
+    cropGroup: "",
+    expiryDate: undefined,
   });
 
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>(
@@ -112,308 +117,338 @@ export default function UpdateSeedPage() {
 
   const steps: Step[] = [
     {
-      id: "basic",
-      title: "Thông tin chung",
-      description: "Nhập mã, tên giống, loại cây và chọn nhà cung cấp",
+      id: "identity",
+      title: "Thông tin định danh",
+      description: "Thông tin cơ bản về giống cây trồng (Không thể thay đổi)",
       content: (
-        <div className="space-y-8 py-4">
+        <div className="space-y-8 py-6 max-w-5xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-slate-700">
-                  Mã giống cây
-                </Label>
-                <Input
-                  value={formData.varietyCode}
-                  readOnly
-                  className="bg-slate-50 border-slate-200 text-slate-500 font-medium cursor-not-allowed"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-slate-700">
-                  Tên giống <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  placeholder="VD: Giống Ri6"
-                  value={formData.varietyName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, varietyName: e.target.value })
-                  }
-                  className="focus:ring-green-500"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-slate-700">
-                  Cây trồng <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={formData.crop}
-                  onValueChange={(val) =>
-                    setFormData({ ...formData, crop: val })
-                  }
-                >
-                  <SelectTrigger className="border-slate-200 focus:ring-green-500">
-                    <SelectValue placeholder="Chọn loại cây" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Sầu riêng">Sầu riêng</SelectItem>
-                    <SelectItem value="Xoài">Xoài</SelectItem>
-                    <SelectItem value="Lúa">Lúa</SelectItem>
-                    <SelectItem value="Bắp">Bắp</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <Label className="text-sm font-semibold text-slate-700">
-                Chọn nhà cung cấp
-              </Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input
-                  placeholder="Tìm kiếm nhà cung cấp..."
-                  className="pl-10 h-10 border-slate-200 focus:ring-green-500 text-sm"
-                  value={supplierSearchQuery}
-                  onChange={(e) => setSupplierSearchQuery(e.target.value)}
-                />
-              </div>
-
-              <div className="flex gap-4 overflow-x-auto pb-4 pt-2 -mx-1 px-1 custom-scrollbar scroll-smooth">
-                {filteredSuppliers.length > 0 ? (
-                  filteredSuppliers.map((s) => (
-                    <div
-                      key={s.id}
-                      onClick={() => {
-                        setSelectedSupplierId(s.id);
-                        setFormData({ ...formData, supplier: s.name });
-                      }}
-                      className={cn(
-                        "relative flex-none w-[280px] p-4 rounded-xl border-2 transition-all cursor-pointer group",
-                        selectedSupplierId === s.id
-                          ? "border-blue-500 bg-blue-50/30"
-                          : "border-slate-100 bg-white hover:border-slate-200 shadow-sm",
-                      )}
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="h-10 w-10 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
-                          <Briefcase className="w-5 h-5 text-slate-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <h4 className="font-bold text-slate-800 text-sm truncate pr-2">
-                              {s.name}
-                            </h4>
-                            <span
-                              className={cn(
-                                "text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-tighter shrink-0",
-                                s.type === "NÔNG HỘ"
-                                  ? "bg-orange-50 text-orange-600"
-                                  : "bg-blue-50 text-blue-600",
-                              )}
-                            >
-                              {s.type}
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-1 gap-y-1">
-                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
-                              <Hash className="w-2.5 h-2.5 opacity-60" />
-                              <span className="truncate">{s.code}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
-                              <User className="w-2.5 h-2.5 opacity-60" />
-                              <span className="truncate">
-                                {s.representative}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
-                              <Phone className="w-2.5 h-2.5 opacity-60" />
-                              <span>{s.phone}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center py-10 px-4 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-                    <Search className="w-8 h-8 text-slate-300 mb-2" />
-                    <p className="text-xs font-medium text-slate-400">
-                      Không tìm thấy nhà cung cấp phù hợp
-                    </p>
+            <Card className="border-slate-200 bg-slate-50/50 shadow-sm">
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-200/60">
+                  <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                    <Hash className="w-4 h-4" />
                   </div>
-                )}
-              </div>
+                  <Label className="font-bold text-slate-700 text-base">
+                    Mã trích xuất
+                  </Label>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-2xl font-black text-slate-800 tracking-tight font-mono">
+                    {formData.varietyCode}
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Mã định danh duy nhất trên hệ thống
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 bg-slate-50/50 shadow-sm">
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-200/60">
+                  <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                    <Sprout className="w-4 h-4" />
+                  </div>
+                  <Label className="font-bold text-slate-700 text-base">
+                    Thông tin giống
+                  </Label>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Tên giống
+                    </Label>
+                    <div className="text-lg font-bold text-slate-800">
+                      {formData.varietyName}
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Loại cây
+                    </Label>
+                    <div className="text-lg font-bold text-slate-800">
+                      {formData.crop}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
+            <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-blue-700">
+                Thông tin định danh được bảo vệ
+              </p>
+              <p className="text-xs text-blue-600/80">
+                Để đảm bảo tính toàn vẹn dữ liệu, các thông tin cơ bản về giống
+                cây trồng không thể chỉnh sửa trực tiếp. Vui lòng liên hệ quản
+                trị viên nếu cần thay đổi.
+              </p>
             </div>
           </div>
         </div>
       ),
-      isValid:
-        formData.varietyName.trim() !== "" &&
-        formData.crop !== "" &&
-        selectedSupplierId !== "",
+      isValid: true,
     },
     {
-      id: "specs",
-      title: "Thông số & Media",
-      description: "Thiết lập các chỉ số kỹ thuật và hình ảnh minh họa",
+      id: "details",
+      title: "Chi tiết & Thông số",
+      description: "Cập nhật nhà cung cấp và thông số kỹ thuật",
       content: (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 py-4">
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold text-slate-700">
-                Xuất xứ
-              </Label>
-              <Select
-                value={formData.origin}
-                onValueChange={(val) =>
-                  setFormData({ ...formData, origin: val })
-                }
-              >
-                <SelectTrigger className="border-slate-200 focus:ring-green-500">
-                  <SelectValue placeholder="Chọn quốc gia" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Vietnam">Việt Nam</SelectItem>
-                  <SelectItem value="Thailand">Thái Lan</SelectItem>
-                  <SelectItem value="USA">Mỹ</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <div className="space-y-8 py-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Left Column: Supplier & Origin */}
+            <div className="lg:col-span-7 space-y-6">
+              <Card className="border-slate-200 shadow-sm">
+                <CardContent className="p-5 space-y-4">
+                  <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
+                    <Label className="font-bold text-slate-700">
+                      Nguồn gốc & Nhà cung cấp
+                    </Label>
+                  </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-slate-700">
-                  Tỷ lệ nảy mầm (%)
-                </Label>
-                <Input
-                  type="number"
-                  value={formData.germinationRate}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      germinationRate: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  className="focus:ring-green-500"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-slate-700">
-                  Độ đồng đều (%)
-                </Label>
-                <Input
-                  type="number"
-                  value={formData.uniformity}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      uniformity: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  className="focus:ring-green-500"
-                />
-              </div>
-            </div>
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-slate-600">
+                      Nhà cung cấp
+                    </Label>
+                    <div className="relative group">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-green-500 transition-colors" />
+                      <Input
+                        placeholder="Tìm kiếm nhà cung cấp..."
+                        value={supplierSearchQuery}
+                        onChange={(e) => setSupplierSearchQuery(e.target.value)}
+                        className="pl-10 h-10 bg-slate-50 border-slate-200 focus:bg-white focus:ring-green-500 transition-all"
+                      />
+                    </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold text-slate-700">
-                Năng suất
-              </Label>
-              <Input
-                placeholder="25 tấn/ha"
-                value={formData.yield}
-                onChange={(e) =>
-                  setFormData({ ...formData, yield: e.target.value })
-                }
-                className="focus:ring-green-500"
-              />
-            </div>
+                    <div className="grid grid-cols-1 gap-2 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar bg-slate-50/50 p-2 rounded-lg border border-slate-100">
+                      {filteredSuppliers.map((s) => (
+                        <div
+                          key={s.id}
+                          onClick={() => {
+                            setSelectedSupplierId(s.id);
+                            setFormData({ ...formData, supplier: s.name });
+                          }}
+                          className={cn(
+                            "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all",
+                            selectedSupplierId === s.id
+                              ? "border-blue-500 bg-blue-50/50 shadow-sm"
+                              : "border-transparent hover:bg-white hover:border-slate-200 hover:shadow-sm",
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              "w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0 shadow-sm transition-colors",
+                              selectedSupplierId === s.id
+                                ? "bg-blue-500 text-white"
+                                : "bg-white text-slate-500 border border-slate-200",
+                            )}
+                          >
+                            {s.name.charAt(0)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-start">
+                              <p
+                                className={cn(
+                                  "text-sm font-bold truncate",
+                                  selectedSupplierId === s.id
+                                    ? "text-blue-700"
+                                    : "text-slate-700",
+                                )}
+                              >
+                                {s.name}
+                              </p>
+                              {selectedSupplierId === s.id && (
+                                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 ml-2" />
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+                              <span className="flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 rounded-md">
+                                <User className="w-3 h-3 opacity-70" />
+                                {s.representative}
+                              </span>
+                              <span className="flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 rounded-md">
+                                <Phone className="w-3 h-3 opacity-70" />
+                                {s.phone}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold text-slate-700">
-                Mô tả
-              </Label>
-              <Card className="rounded-2xl border-slate-200 overflow-hidden shadow-sm">
-                <Editor
-                  maxLength={5000}
-                  initialHtml={formData.description}
-                  contentEditableClassname="h-[150px] p-4 bg-white focus:outline-none"
-                  onSerializedChange={(v) =>
-                    setFormData({ ...formData, description: v as any })
-                  }
-                />
+                  <div className="space-y-2 pt-2">
+                    <Label className="text-sm font-medium text-slate-600">
+                      Xuất xứ
+                    </Label>
+                    <Select
+                      value={formData.origin}
+                      onValueChange={(val) =>
+                        setFormData({ ...formData, origin: val })
+                      }
+                    >
+                      <SelectTrigger className="h-10 border-slate-200 bg-white focus:ring-green-500">
+                        <SelectValue placeholder="Chọn quốc gia" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Vietnam">Việt Nam</SelectItem>
+                        <SelectItem value="Thailand">Thái Lan</SelectItem>
+                        <SelectItem value="USA">Mỹ</SelectItem>
+                        <SelectItem value="China">Trung Quốc</SelectItem>
+                        <SelectItem value="Japan">Nhật Bản</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
               </Card>
             </div>
-          </div>
 
-          <div className="space-y-4">
-            <Label className="text-sm font-semibold text-slate-700">
-              Hình ảnh hạt giống
-            </Label>
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className={cn(
-                "group relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed aspect-video transition-all duration-300 cursor-pointer overflow-hidden bg-slate-50",
-                illustrationPreview
-                  ? "border-green-500/20"
-                  : "border-slate-200 hover:border-green-500/50 hover:bg-green-50/10",
-              )}
-            >
-              <input
-                type="file"
-                accept="image/*"
-                ref={fileInputRef}
-                className="hidden"
-                onChange={(e) => onPickIllustration(e.target.files?.[0])}
-              />
-
-              {!illustrationPreview ? (
-                <div className="flex flex-col items-center gap-3 text-center p-6">
-                  <CloudUpload className="h-12 w-12 text-slate-300 group-hover:text-green-500 transition-colors" />
-                  <div className="space-y-1">
-                    <p className="font-semibold text-slate-600">
-                      Kéo thả ảnh tại đây
-                    </p>
-                    <p className="text-xs text-slate-400 font-medium">
-                      JPG, PNG, WebP (Tối đa 5MB)
-                    </p>
+            {/* Right Column: Technical Specs & Image */}
+            <div className="lg:col-span-5 space-y-6">
+              <Card className="border-slate-200 shadow-sm">
+                <CardContent className="p-5 space-y-5">
+                  <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
+                    <Label className="font-bold text-slate-700">
+                      Thông số kỹ thuật
+                    </Label>
                   </div>
-                </div>
-              ) : (
-                <div className="relative h-full w-full">
-                  <img
-                    src={illustrationPreview}
-                    alt="Preview"
-                    className="h-full w-full object-cover"
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-slate-600">
+                      Năng suất (dự kiến)
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        placeholder="VD: 25-30"
+                        className="pr-16 border-slate-200 focus:ring-green-500"
+                        value={formData.yield}
+                        onChange={(e) =>
+                          setFormData({ ...formData, yield: e.target.value })
+                        }
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded">
+                        tấn/ha
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-slate-600">
+                        Độ sạch (%)
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          placeholder="99"
+                          className="pr-8 border-slate-200 focus:ring-green-500"
+                          value={formData.uniformity}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              uniformity: parseInt(e.target.value) || 0,
+                            })
+                          }
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">
+                          %
+                        </span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-slate-600">
+                        Nảy mầm (%)
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          placeholder="85"
+                          className="pr-8 border-slate-200 focus:ring-green-500"
+                          value={formData.germinationRate}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              germinationRate: parseInt(e.target.value) || 0,
+                            })
+                          }
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">
+                          %
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-slate-700">
+                  Hình ảnh bao bì / Minh họa
+                </Label>
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className={cn(
+                    "group relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed h-48 transition-all cursor-pointer overflow-hidden bg-white hover:bg-slate-50 shadow-sm",
+                    illustrationPreview
+                      ? "border-green-500/30 ring-4 ring-green-500/5"
+                      : "border-slate-200 hover:border-green-500/50",
+                  )}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={(e) => onPickIllustration(e.target.files?.[0])}
                   />
-                  <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="h-10 w-10 rounded-full shadow-xl"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFormData((p) => ({ ...p, illustration: null }));
-                      }}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {illustrationPreview ? (
+                    <div className="w-full h-full relative group/img">
+                      <img
+                        src={illustrationPreview}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="pointer-events-none"
+                        >
+                          Thay đổi ảnh
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-3 text-center p-4">
+                      <div className="h-12 w-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <CloudUpload className="h-6 w-6 text-slate-400 group-hover:text-green-500" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-slate-700">
+                          Tải ảnh lên
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          PNG, JPG, WebP (Max 5MB)
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
       ),
+      isValid: true,
     },
     {
       id: "docs",
       title: "Tài liệu kỹ thuật",
-      description: "Cung cấp tài liệu hướng dẫn trồng và chăm sóc",
+      description: "Cập nhật tài liệu hướng dẫn kỹ thuật",
       content: (
         <div className="max-w-3xl mx-auto space-y-8 py-4">
           <div className="space-y-4 flex flex-col items-center">
@@ -426,30 +461,48 @@ export default function UpdateSeedPage() {
               onValueChange={(val: "pdf" | "editor") =>
                 setFormData({ ...formData, contentType: val })
               }
-              className="flex gap-10"
+              className="flex gap-6"
             >
-              <div className="flex items-center space-x-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+              <div
+                className={cn(
+                  "flex items-center space-x-3 p-4 rounded-xl border transition-all cursor-pointer min-w-[200px]",
+                  formData.contentType === "pdf"
+                    ? "bg-green-50 border-green-200 shadow-sm"
+                    : "bg-white border-slate-200 hover:border-slate-300",
+                )}
+                onClick={() => setFormData({ ...formData, contentType: "pdf" })}
+              >
                 <RadioGroupItem
                   value="pdf"
                   id="pdf-opt-step"
-                  className="text-green-600"
+                  className="text-green-600 data-[state=checked]:border-green-600 data-[state=checked]:text-green-600"
                 />
                 <Label
                   htmlFor="pdf-opt-step"
-                  className="cursor-pointer font-bold text-sm text-slate-600"
+                  className="cursor-pointer font-bold text-sm text-slate-700"
                 >
                   Tải file PDF
                 </Label>
               </div>
-              <div className="flex items-center space-x-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+              <div
+                className={cn(
+                  "flex items-center space-x-3 p-4 rounded-xl border transition-all cursor-pointer min-w-[200px]",
+                  formData.contentType === "editor"
+                    ? "bg-green-50 border-green-200 shadow-sm"
+                    : "bg-white border-slate-200 hover:border-slate-300",
+                )}
+                onClick={() =>
+                  setFormData({ ...formData, contentType: "editor" })
+                }
+              >
                 <RadioGroupItem
                   value="editor"
                   id="editor-opt-step"
-                  className="text-green-600"
+                  className="text-green-600 data-[state=checked]:border-green-600 data-[state=checked]:text-green-600"
                 />
                 <Label
                   htmlFor="editor-opt-step"
-                  className="cursor-pointer font-bold text-sm text-slate-600"
+                  className="cursor-pointer font-bold text-sm text-slate-700"
                 >
                   Soạn thảo trực tiếp
                 </Label>
@@ -457,88 +510,97 @@ export default function UpdateSeedPage() {
             </RadioGroup>
           </div>
 
-          {formData.contentType === "pdf" ? (
-            <div
-              onClick={() => pdfInputRef.current?.click()}
-              className={cn(
-                "group flex flex-col items-center justify-center rounded-3xl border-2 border-dashed p-16 transition-all cursor-pointer bg-slate-50/50 min-h-[300px]",
-                formData.pdfFile
-                  ? "border-green-500/30 bg-green-50/5"
-                  : "border-slate-200 hover:border-green-500/50 hover:bg-green-50/10",
-              )}
-            >
-              <input
-                type="file"
-                accept=".pdf"
-                ref={pdfInputRef}
-                className="hidden"
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    pdfFile: e.target.files?.[0] || null,
-                  })
-                }
-              />
-              {formData.pdfFile ? (
-                <div className="flex items-center gap-6 w-full max-w-md bg-white p-5 rounded-2xl shadow-xl shadow-green-900/5 ring-1 ring-slate-100">
-                  <div className="h-16 w-16 rounded-2xl bg-green-100 flex items-center justify-center text-green-600 shrink-0">
-                    <FileText className="h-8 w-8" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-base font-bold text-slate-800 truncate">
-                      {formData.pdfFile.name}
-                    </p>
-                    <p className="text-sm text-slate-400 font-medium">
-                      {(formData.pdfFile.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFormData({ ...formData, pdfFile: null });
-                    }}
-                  >
-                    <X className="h-5 w-5" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-6 text-center">
-                  <div className="h-20 w-20 rounded-full bg-white shadow-lg flex items-center justify-center group-hover:scale-110 transition-transform ring-1 ring-slate-50">
-                    <CloudUpload className="h-10 w-10 text-green-500" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-lg font-bold text-slate-700">
-                      Chọn tài liệu hướng dẫn PDF
-                    </p>
-                    <p className="text-sm font-medium text-slate-400">
-                      Chấp nhận file PDF dung lượng tối đa 5MB
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <Label className="text-sm font-bold text-slate-500 mb-3 block ml-1">
-                Nội dung chi tiết tài liệu
-              </Label>
-              <Card className="rounded-3xl border-slate-200 overflow-hidden shadow-2xl shadow-slate-100">
-                <Editor
-                  maxLength={10000}
-                  initialText={formData.editorContent}
-                  contentEditableClassname="h-[400px] p-6 bg-white focus:outline-none"
-                  onSerializedChange={(v) =>
-                    setFormData({ ...formData, editorContent: v as any })
+          <div className="mt-8">
+            {formData.contentType === "pdf" ? (
+              <div
+                onClick={() => pdfInputRef.current?.click()}
+                className={cn(
+                  "group flex flex-col items-center justify-center rounded-3xl border-2 border-dashed p-10 transition-all cursor-pointer relative overflow-hidden",
+                  formData.pdfFile
+                    ? "border-green-500/30 bg-green-50/10"
+                    : "border-slate-200 bg-slate-50/30 hover:border-green-500/50 hover:bg-green-50/10",
+                )}
+              >
+                <input
+                  type="file"
+                  accept=".pdf"
+                  ref={pdfInputRef}
+                  className="hidden"
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      pdfFile: e.target.files?.[0] || null,
+                    })
                   }
                 />
-              </Card>
-            </div>
-          )}
+                {formData.pdfFile ? (
+                  <div className="relative z-10 flex flex-col items-center text-center space-y-4">
+                    <div className="h-20 w-20 rounded-2xl bg-white shadow-xl shadow-green-900/5 flex items-center justify-center text-red-500 ring-1 ring-slate-100">
+                      <FileText className="h-10 w-10" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-lg font-bold text-slate-800 break-all max-w-md">
+                        {formData.pdfFile.name}
+                      </p>
+                      <p className="text-sm font-medium text-slate-500">
+                        File PDF sẵn sàng để tải lên
+                      </p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 mt-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFormData({ ...formData, pdfFile: null });
+                        }}
+                      >
+                        <Trash className="w-4 h-4 mr-2" />
+                        Gỡ bỏ file
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-5 text-center py-6">
+                    <div className="h-20 w-20 rounded-full bg-white shadow-lg flex items-center justify-center group-hover:scale-110 transition-transform ring-1 ring-slate-100">
+                      <CloudUpload className="h-10 w-10 text-green-500" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-lg font-bold text-slate-700">
+                        Chọn tài liệu hướng dẫn PDF
+                      </p>
+                      <p className="text-xs font-medium text-slate-400">
+                        Kéo thả hoặc click để chọn file (Max 5MB)
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <Label className="text-sm font-bold text-slate-700">
+                    Nội dung chi tiết tài liệu
+                  </Label>
+                  <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-md">
+                    Trình soạn thảo văn bản
+                  </span>
+                </div>
+                <Card className="rounded-2xl border-slate-200 overflow-hidden shadow-xl shadow-slate-100/50">
+                  <Editor
+                    maxLength={10000}
+                    initialText={formData.editorContent}
+                    contentEditableClassname="min-h-[400px] p-6 bg-white focus:outline-none prose prose-slate max-w-none"
+                    onSerializedChange={(v) =>
+                      setFormData({ ...formData, editorContent: v as any })
+                    }
+                  />
+                </Card>
+              </div>
+            )}
+          </div>
         </div>
       ),
+      isValid: true,
     },
   ];
 

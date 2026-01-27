@@ -6,8 +6,6 @@ import {
   Editor,
   Input,
   Label,
-  RadioGroup,
-  RadioGroupItem,
   Select,
   SelectContent,
   SelectItem,
@@ -633,128 +631,187 @@ export default function CreateSeedPage() {
       title: "Tài liệu kỹ thuật",
       description: "Cung cấp tài liệu hướng dẫn trồng và chăm sóc",
       content: (
-        <div className="max-w-3xl mx-auto space-y-8 py-4">
-          <div className="space-y-4 flex flex-col items-center">
-            <Label className="text-sm font-bold text-slate-700 uppercase tracking-widest text-center">
-              Hình thức đính kèm
-            </Label>
-            <RadioGroup
-              defaultValue="pdf"
-              value={formData.contentType}
-              onValueChange={(val: "pdf" | "editor") =>
-                setFormData({ ...formData, contentType: val })
-              }
-              className="flex gap-10"
-            >
-              <div className="flex items-center space-x-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                <RadioGroupItem
-                  value="pdf"
-                  id="pdf-opt-step"
-                  className="text-green-600"
-                />
-                <Label
-                  htmlFor="pdf-opt-step"
-                  className="cursor-pointer font-bold text-sm text-slate-600"
-                >
-                  Tải file PDF
-                </Label>
-              </div>
-              <div className="flex items-center space-x-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                <RadioGroupItem
-                  value="editor"
-                  id="editor-opt-step"
-                  className="text-green-600"
-                />
-                <Label
-                  htmlFor="editor-opt-step"
-                  className="cursor-pointer font-bold text-sm text-slate-600"
-                >
-                  Soạn thảo trực tiếp
-                </Label>
-              </div>
-            </RadioGroup>
+        <div className="max-w-4xl mx-auto space-y-6 py-4">
+          <div className="text-center space-y-2 mb-8">
+            <h3 className="text-lg font-bold text-slate-800">
+              Phương thức cung cấp tài liệu
+            </h3>
+            <p className="text-slate-500">
+              Chọn cách bạn muốn nhập thông tin hướng dẫn kỹ thuật cho giống này
+            </p>
           </div>
 
-          {formData.contentType === "pdf" ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Option 1: Upload PDF */}
             <div
-              onClick={() => pdfInputRef.current?.click()}
+              onClick={() => setFormData({ ...formData, contentType: "pdf" })}
               className={cn(
-                "group flex flex-col items-center justify-center rounded-3xl border-2 border-dashed p-16 transition-all cursor-pointer bg-slate-50/50 min-h-[300px]",
-                formData.pdfFile
-                  ? "border-green-500/30 bg-green-50/5"
-                  : "border-slate-200 hover:border-green-500/50 hover:bg-green-50/10",
+                "relative group cursor-pointer rounded-2xl border-2 p-6 transition-all hover:shadow-md",
+                formData.contentType === "pdf"
+                  ? "border-green-500 bg-green-50/10 ring-2 ring-green-500/20"
+                  : "border-slate-100 bg-white hover:border-green-200",
               )}
             >
-              <input
-                type="file"
-                accept=".pdf"
-                ref={pdfInputRef}
-                className="hidden"
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    pdfFile: e.target.files?.[0] || null,
-                  })
-                }
-              />
-              {formData.pdfFile ? (
-                <div className="flex items-center gap-6 w-full max-w-md bg-white p-5 rounded-2xl shadow-xl shadow-green-900/5 ring-1 ring-slate-100">
-                  <div className="h-16 w-16 rounded-2xl bg-green-100 flex items-center justify-center text-green-600 shrink-0">
-                    <FileText className="h-8 w-8" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-base font-bold text-slate-800 truncate">
-                      {formData.pdfFile.name}
-                    </p>
-                    <p className="text-sm text-slate-400 font-medium">
-                      {(formData.pdfFile.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFormData({ ...formData, pdfFile: null });
-                    }}
-                  >
-                    <X className="h-5 w-5" />
-                  </Button>
+              <div className="flex items-center gap-4 mb-4">
+                <div
+                  className={cn(
+                    "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
+                    formData.contentType === "pdf"
+                      ? "bg-green-100 text-green-600"
+                      : "bg-slate-100 text-slate-400 group-hover:bg-green-50 group-hover:text-green-500",
+                  )}
+                >
+                  <CloudUpload className="w-6 h-6" />
                 </div>
-              ) : (
-                <div className="flex flex-col items-center gap-6 text-center">
-                  <div className="h-20 w-20 rounded-full bg-white shadow-lg flex items-center justify-center group-hover:scale-110 transition-transform ring-1 ring-slate-50">
-                    <CloudUpload className="h-10 w-10 text-green-500" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-lg font-bold text-slate-700">
-                      Chọn tài liệu hướng dẫn PDF
-                    </p>
-                    <p className="text-sm font-medium text-slate-400">
-                      Chấp nhận file PDF dung lượng tối đa 5MB
-                    </p>
-                  </div>
+                <div>
+                  <h4 className="font-bold text-slate-800">Tải file PDF</h4>
+                  <p className="text-sm text-slate-500">
+                    Dành cho tài liệu có sẵn
+                  </p>
                 </div>
-              )}
+                {formData.contentType === "pdf" && (
+                  <div className="absolute top-6 right-6">
+                    <CheckCircle2 className="w-6 h-6 text-green-600 fill-green-100" />
+                  </div>
+                )}
+              </div>
             </div>
-          ) : (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <Label className="text-sm font-bold text-slate-500 mb-3 block ml-1">
-                Nội dung chi tiết tài liệu
-              </Label>
-              <Card className="rounded-3xl border-slate-200 overflow-hidden shadow-2xl shadow-slate-100">
-                <Editor
-                  maxLength={10000}
-                  contentEditableClassname="h-[400px] p-6 bg-white focus:outline-none"
-                  editorSerializedState={formData.editorContent as any}
-                  onSerializedChange={(v) =>
-                    setFormData({ ...formData, editorContent: v as any })
+
+            {/* Option 2: Direct Editor */}
+            <div
+              onClick={() =>
+                setFormData({ ...formData, contentType: "editor" })
+              }
+              className={cn(
+                "relative group cursor-pointer rounded-2xl border-2 p-6 transition-all hover:shadow-md",
+                formData.contentType === "editor"
+                  ? "border-green-500 bg-green-50/10 ring-2 ring-green-500/20"
+                  : "border-slate-100 bg-white hover:border-green-200",
+              )}
+            >
+              <div className="flex items-center gap-4 mb-4">
+                <div
+                  className={cn(
+                    "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
+                    formData.contentType === "editor"
+                      ? "bg-green-100 text-green-600"
+                      : "bg-slate-100 text-slate-400 group-hover:bg-green-50 group-hover:text-green-500",
+                  )}
+                >
+                  <FileText className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-800">
+                    Soạn thảo trực tiếp
+                  </h4>
+                  <p className="text-sm text-slate-500">
+                    Nhập nội dung văn bản
+                  </p>
+                </div>
+                {formData.contentType === "editor" && (
+                  <div className="absolute top-6 right-6">
+                    <CheckCircle2 className="w-6 h-6 text-green-600 fill-green-100" />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4">
+            {formData.contentType === "pdf" ? (
+              <div
+                onClick={() => pdfInputRef.current?.click()}
+                className={cn(
+                  "group relative flex flex-col items-center justify-center rounded-3xl border-2 border-dashed p-12 transition-all cursor-pointer bg-slate-50/50 min-h-[280px]",
+                  formData.pdfFile
+                    ? "border-green-500/30 bg-green-50/5"
+                    : "border-slate-200 hover:border-green-500/50 hover:bg-green-50/10",
+                )}
+              >
+                <input
+                  type="file"
+                  accept=".pdf"
+                  ref={pdfInputRef}
+                  className="hidden"
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      pdfFile: e.target.files?.[0] || null,
+                    })
                   }
                 />
-              </Card>
-            </div>
-          )}
+                {formData.pdfFile ? (
+                  <div className="flex items-center gap-6 w-full max-w-md bg-white p-4 rounded-2xl shadow-xl shadow-green-900/5 ring-1 ring-slate-100 animate-in zoom-in-95 duration-300">
+                    <div className="h-14 w-14 rounded-xl bg-red-50 flex items-center justify-center text-red-500 shrink-0">
+                      <FileText className="h-7 w-7" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-slate-800 truncate">
+                        {formData.pdfFile.name}
+                      </p>
+                      <p className="text-xs text-slate-400 font-medium mt-0.5">
+                        {(formData.pdfFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFormData({ ...formData, pdfFile: null });
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-4 text-center">
+                    <div className="h-16 w-16 rounded-full bg-white shadow-lg flex items-center justify-center group-hover:scale-110 transition-transform ring-1 ring-slate-100">
+                      <CloudUpload className="h-8 w-8 text-green-500" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-base font-bold text-slate-700 group-hover:text-green-700 transition-colors">
+                        Tải liệu hướng dẫn PDF
+                      </p>
+                      <p className="text-sm font-medium text-slate-400 max-w-xs mx-auto">
+                        Kéo thả hoặc click để tải lên file PDF (Tối đa 5MB)
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="mt-2 bg-white border-slate-200 text-slate-600 hover:text-green-700 hover:border-green-200"
+                    >
+                      Chọn file
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <Card className="rounded-2xl border-slate-200 overflow-hidden shadow-sm ring-1 ring-slate-100">
+                  <div className="bg-slate-50 px-4 py-2 border-b border-slate-100 flex items-center gap-2">
+                    <div className="flex gap-1.5">
+                      <div className="w-3 h-3 rounded-full bg-red-400/20" />
+                      <div className="w-3 h-3 rounded-full bg-yellow-400/20" />
+                      <div className="w-3 h-3 rounded-full bg-green-400/20" />
+                    </div>
+                    <span className="text-xs font-medium text-slate-400 ml-2">
+                      Editor
+                    </span>
+                  </div>
+                  <Editor
+                    maxLength={10000}
+                    contentEditableClassname="h-[400px] p-6 bg-white focus:outline-none prose max-w-none"
+                    editorSerializedState={formData.editorContent as any}
+                    onSerializedChange={(v) =>
+                      setFormData({ ...formData, editorContent: v as any })
+                    }
+                  />
+                </Card>
+              </div>
+            )}
+          </div>
         </div>
       ),
     },
