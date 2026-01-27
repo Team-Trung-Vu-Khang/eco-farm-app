@@ -41,6 +41,15 @@ export interface Treatment {
   steps: TreatmentStep[];
   status: "active" | "inactive";
   createdAt: string;
+  images?: string[];
+  videoUrl?: string;
+  stage?: string; // Growth stage e.g. "Ra hoa", "Nuôi quả"
+  location?: {
+    lat: number;
+    lng: number;
+    address: string;
+    polygon?: { lat: number; lng: number }[];
+  };
 }
 
 export interface SearchFilters {

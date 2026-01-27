@@ -1,11 +1,7 @@
 import { useState } from "react";
-import { Search, Filter, X } from "lucide-react";
+import { Search, Filter, X, ChevronDown, ChevronUp } from "lucide-react";
 import {
   Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   Input,
   Label,
   Select,
@@ -13,6 +9,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Badge,
 } from "@tankhang1/eco-shared-ui";
 import { cropTypes, crops, varieties, diseases } from "../data/treatment.data";
 import type { SearchFilters } from "../types/treatment.types";
@@ -29,7 +26,6 @@ export function TreatmentSearchBar({
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const updateFilter = (key: keyof SearchFilters, value: string) => {
-    // Convert "all" to empty string for filtering
     const filterValue = value === "all" ? "" : value;
     onFiltersChange({ ...filters, [key]: filterValue });
   };
@@ -54,43 +50,62 @@ export function TreatmentSearchBar({
     ? varieties[filters.crop as keyof typeof varieties] || []
     : [];
 
+  const activeFilterCount =
+    Object.values(filters).filter(Boolean).length - (filters.keyword ? 1 : 0);
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Search className="w-4 h-4" />
-            Tìm kiếm phác đồ
-          </CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            {showAdvanced ? "Ẩn" : "Hiện"} tìm kiếm nâng cao
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Basic Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+    <div className="space-y-3">
+      {/* Basic Search */}
+      {/* Basic Search Row */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder="Tìm theo mã, tên phác đồ, hoặc bệnh/sâu hại..."
+            placeholder="Tìm kiếm phác đồ..."
             value={filters.keyword}
             onChange={(e) => updateFilter("keyword", e.target.value)}
-            className="pl-10"
+            className="pl-10 h-10 bg-gray-50 border-gray-200 focus:bg-white transition-colors w-full"
           />
         </div>
+        <Button
+          variant="outline"
+          size="icon"
+          className={`h-10 w-10 shrink-0 border-gray-200 ${showAdvanced || activeFilterCount > 0 ? "bg-green-50 text-green-600 border-green-200" : "bg-white text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`}
+          onClick={() => setShowAdvanced(!showAdvanced)}
+        >
+          <Filter className="w-4 h-4" />
+        </Button>
+      </div>
 
-        {/* Advanced Search */}
-        {showAdvanced && (
-          <div className="space-y-4 pt-4 border-t">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {/* Loại cây */}
-              <div className="space-y-2">
-                <Label className="text-xs">Loại cây</Label>
+      {/* Active Filters Summary (if collapsed) */}
+      {!showAdvanced && activeFilterCount > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {Object.entries(filters).map(([key, value]) => {
+            if (!value || key === "keyword") return null;
+            return (
+              <Badge
+                key={key}
+                variant="secondary"
+                className="px-2 py-0.5 text-[10px] font-normal bg-green-50 text-green-700 hover:bg-green-100 cursor-pointer"
+                onClick={() => updateFilter(key as keyof SearchFilters, "all")}
+              >
+                {value} <X className="w-3 h-3 ml-1" />
+              </Badge>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Advanced Search Panel */}
+      {showAdvanced && (
+        <div className="space-y-3 pt-2 animate-in slide-in-from-top-2 duration-200">
+          <div className="grid grid-cols-1 gap-3">
+            {/* Loại cây & Cây trồng Row */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] uppercase text-gray-500 font-bold">
+                  Loại cây
+                </Label>
                 <Select
                   value={filters.cropType || "all"}
                   onValueChange={(value) => {
@@ -99,7 +114,7 @@ export function TreatmentSearchBar({
                     updateFilter("variety", "");
                   }}
                 >
-                  <SelectTrigger className="h-9">
+                  <SelectTrigger className="h-8 text-xs">
                     <SelectValue placeholder="Tất cả" />
                   </SelectTrigger>
                   <SelectContent>
@@ -113,9 +128,10 @@ export function TreatmentSearchBar({
                 </Select>
               </div>
 
-              {/* Cây trồng */}
-              <div className="space-y-2">
-                <Label className="text-xs">Cây trồng</Label>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] uppercase text-gray-500 font-bold">
+                  Cây trồng
+                </Label>
                 <Select
                   value={filters.crop || "all"}
                   onValueChange={(value) => {
@@ -124,7 +140,7 @@ export function TreatmentSearchBar({
                   }}
                   disabled={!filters.cropType}
                 >
-                  <SelectTrigger className="h-9">
+                  <SelectTrigger className="h-8 text-xs">
                     <SelectValue placeholder="Tất cả" />
                   </SelectTrigger>
                   <SelectContent>
@@ -137,37 +153,19 @@ export function TreatmentSearchBar({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
 
-              {/* Giống */}
-              <div className="space-y-2">
-                <Label className="text-xs">Giống</Label>
-                <Select
-                  value={filters.variety || "all"}
-                  onValueChange={(value) => updateFilter("variety", value)}
-                  disabled={!filters.crop}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Tất cả" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tất cả</SelectItem>
-                    {availableVarieties.map((variety) => (
-                      <SelectItem key={variety} value={variety}>
-                        {variety}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Bệnh/Sâu hại */}
-              <div className="space-y-2">
-                <Label className="text-xs">Bệnh/Sâu hại</Label>
+            {/* Bệnh & Mức độ Row */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] uppercase text-gray-500 font-bold">
+                  Bệnh/Sâu
+                </Label>
                 <Select
                   value={filters.disease || "all"}
                   onValueChange={(value) => updateFilter("disease", value)}
                 >
-                  <SelectTrigger className="h-9">
+                  <SelectTrigger className="h-8 text-xs">
                     <SelectValue placeholder="Tất cả" />
                   </SelectTrigger>
                   <SelectContent>
@@ -181,14 +179,15 @@ export function TreatmentSearchBar({
                 </Select>
               </div>
 
-              {/* Mức độ */}
-              <div className="space-y-2">
-                <Label className="text-xs">Mức độ</Label>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] uppercase text-gray-500 font-bold">
+                  Mức độ
+                </Label>
                 <Select
                   value={filters.severity || "all"}
                   onValueChange={(value) => updateFilter("severity", value)}
                 >
-                  <SelectTrigger className="h-9">
+                  <SelectTrigger className="h-8 text-xs">
                     <SelectValue placeholder="Tất cả" />
                   </SelectTrigger>
                   <SelectContent>
@@ -199,35 +198,49 @@ export function TreatmentSearchBar({
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Trạng thái */}
-              <div className="space-y-2">
-                <Label className="text-xs">Trạng thái</Label>
-                <Select
-                  value={filters.status || "all"}
-                  onValueChange={(value) => updateFilter("status", value)}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Tất cả" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tất cả</SelectItem>
-                    <SelectItem value="active">Đang áp dụng</SelectItem>
-                    <SelectItem value="inactive">Không áp dụng</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
-            <div className="flex justify-end">
-              <Button variant="outline" size="sm" onClick={clearFilters}>
-                <X className="w-4 h-4 mr-2" />
-                Xóa bộ lọc
-              </Button>
+            {/* Trạng thái */}
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase text-gray-500 font-bold">
+                Trạng thái
+              </Label>
+              <Select
+                value={filters.status || "all"}
+                onValueChange={(value) => updateFilter("status", value)}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Tất cả" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  <SelectItem value="active">Đang áp dụng</SelectItem>
+                  <SelectItem value="inactive">Không áp dụng</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
+
+          <div className="flex justify-between pt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="text-xs h-7 text-gray-500 hover:text-red-500 px-2"
+            >
+              Xóa bộ lọc
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAdvanced(false)}
+              className="text-xs h-7 text-green-600 px-2"
+            >
+              <ChevronUp className="w-3 h-3 mr-1" /> Thu gọn
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
