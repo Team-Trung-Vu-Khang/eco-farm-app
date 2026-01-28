@@ -428,20 +428,138 @@ export function TreatmentDetail({
               </CardContent>
             </Card>
 
-            <div className="md:col-span-2">
-              <Card className="bg-gradient-to-br from-gray-900 to-gray-800 text-white border-none shadow-lg">
-                <CardContent className="p-8 text-center">
-                  <MapPin className="w-12 h-12 text-green-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-bold mb-2">Bản đồ triển khai</h3>
-                  <p className="text-gray-300 max-w-lg mx-auto mb-6">
-                    Xem chi tiết các vùng trồng đang áp dụng phác đồ này trên
-                    bản đồ số hóa.
-                  </p>
-                  <Button className="bg-green-500 hover:bg-green-600 text-white border-none">
-                    Mở bản đồ vùng trồng
-                  </Button>
-                </CardContent>
-              </Card>
+            {/* Deployment Regions Grid */}
+            <div className="md:col-span-2 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-lg text-gray-800 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-green-600" /> Vùng đang áp
+                  dụng
+                </h3>
+                <Button variant="outline" size="sm" className="h-8">
+                  Xem bản đồ tổng quát
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  {
+                    id: 1,
+                    name: "Khu vực A - Cầu Đất",
+                    area: "2.5 ha",
+                    manager: "Nguyễn Văn An",
+                    startDate: "10/01/2024",
+                    progress: 75,
+                    status: "active",
+                    image:
+                      "https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                  },
+                  {
+                    id: 2,
+                    name: "Khu vực B - Trại Mát",
+                    area: "1.8 ha",
+                    manager: "Trần Thị Bé",
+                    startDate: "15/01/2024",
+                    progress: 45,
+                    status: "active",
+                    image:
+                      "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                  },
+                  {
+                    id: 3,
+                    name: "Khu vực C - Đa Sar",
+                    area: "3.2 ha",
+                    manager: "Lê Minh Cường",
+                    startDate: "05/02/2024",
+                    progress: 20,
+                    status: "warning",
+                    image:
+                      "https://images.unsplash.com/photo-1516253593875-bd7ba052fbc5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                  },
+                  {
+                    id: 4,
+                    name: "Khu vực D - Lạc Dương",
+                    area: "1.5 ha",
+                    manager: "Phạm Văn Dũng",
+                    startDate: "20/01/2024",
+                    progress: 90,
+                    status: "active",
+                    image:
+                      "https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                  },
+                ].map((region) => (
+                  <Card
+                    key={region.id}
+                    className="overflow-hidden hover:shadow-md transition-all border-gray-200 group cursor-pointer"
+                  >
+                    <div className="flex h-full">
+                      <div className="w-1/3 relative overflow-hidden">
+                        <img
+                          src={region.image}
+                          alt={region.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
+                      </div>
+                      <div className="w-2/3 p-4 flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-start mb-1">
+                            <h4 className="font-bold text-gray-900 line-clamp-1">
+                              {region.name}
+                            </h4>
+                            <Badge
+                              className={`text-[10px] h-5 border-none ${
+                                region.status === "active"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-amber-100 text-amber-700"
+                              }`}
+                            >
+                              {region.status === "active"
+                                ? "Đang xử lý"
+                                : "Cảnh báo"}
+                            </Badge>
+                          </div>
+
+                          <div className="text-xs text-gray-500 mb-3 flex items-center gap-2">
+                            <span className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3" /> {region.area}
+                            </span>
+                            <span className="w-1 h-1 bg-gray-300 rounded-full" />
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />{" "}
+                              {region.startDate}
+                            </span>
+                          </div>
+
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs text-gray-600">
+                              <span>Tiến độ</span>
+                              <span className="font-medium">
+                                {region.progress}%
+                              </span>
+                            </div>
+                            <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full ${region.status === "active" ? "bg-green-500" : "bg-amber-500"}`}
+                                style={{ width: `${region.progress}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center text-xs">
+                          <div className="text-gray-500">
+                            Phụ trách:{" "}
+                            <span className="font-medium text-gray-700">
+                              {region.manager}
+                            </span>
+                          </div>
+                          <ArrowRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-green-600 group-hover:translate-x-1 transition-all" />
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
             </div>
           </div>
         )}
