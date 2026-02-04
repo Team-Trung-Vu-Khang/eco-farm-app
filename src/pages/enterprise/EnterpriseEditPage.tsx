@@ -1,24 +1,5 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
 import {
-  Building2,
-  User,
-  MapPin,
-  Upload,
-  FileText,
-  Image,
-  Check,
-  Users,
-  Plus,
-  Trash2,
-  CreditCard,
-} from "lucide-react";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  useToast,
+  AdminLayout,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -27,26 +8,77 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@tankhang1/eco-shared-ui";
-import { StepperForm, type Step } from "@tankhang1/eco-shared-ui";
-import { RadioGroup, RadioGroupItem } from "@tankhang1/eco-shared-ui";
-import { Input } from "@tankhang1/eco-shared-ui";
-import { Label } from "@tankhang1/eco-shared-ui";
-import { Textarea } from "@tankhang1/eco-shared-ui";
-import { Button } from "@tankhang1/eco-shared-ui";
-import { Badge } from "@tankhang1/eco-shared-ui";
-import { AdminLayout } from "@tankhang1/eco-shared-ui";
-import {
+  Badge,
+  Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
+  Combobox,
+  Input,
+  Label,
+  MultiSelect,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Separator,
+  StepperForm,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Textarea,
+  useToast,
+  type Step,
 } from "@tankhang1/eco-shared-ui";
+import { Scanner } from "@yudiel/react-qr-scanner";
+import {
+  Building2,
+  Calendar,
+  Camera,
+  Check,
+  CreditCard,
+  Download,
+  FileText,
+  Globe,
+  Image,
+  Info,
+  Mail,
+  MapPin,
+  Phone,
+  Plus,
+  QrCode,
+  Scan,
+  Search,
+  Trash2,
+  Upload,
+  User,
+  Users,
+} from "lucide-react";
+import QrScanner from "qr-scanner";
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
+import { vietQrBankData } from "../../constants/banks";
+import { parseVietQR } from "../../utils/commons";
+import readXlsxFile from "read-excel-file";
+
+interface BankAccount {
+  bankName: string;
+  accountHolder: string;
+  accountNumber: string;
+  branch: string;
+  note: string;
+  bin: string;
+}
+
+interface Contact {
+  name: string;
+  phone: string;
+  email: string;
+}
 
 interface Branch {
   name: string;
@@ -58,17 +90,47 @@ interface Branch {
   note: string;
 }
 
-interface BankAccount {
-  bankName: string;
-  accountHolder: string;
-  accountNumber: string;
-  branch: string;
-  note: string;
-}
+const bankOptions = vietQrBankData.map((bank) => ({
+  id: bank.id,
+  bin: bank.bin,
+  label: bank.name,
+  image: bank.logo,
+  value: bank.bin,
+}));
+
+const classificationOptions = [
+  { value: "production", label: "Sản xuất" },
+  { value: "processing", label: "Chế biến" },
+  { value: "trading", label: "Thương mại" },
+  { value: "service", label: "Dịch vụ" },
+  { value: "other", label: "Khác" },
+];
 
 export default function EnterpriseEditPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  const [formData, setFormData] = useState({
+    type: "enterprise" as "enterprise" | "farm" | "cooperative",
+    code: "",
+    name: "",
+    brandName: "",
+    taxCode: "",
+    taxAddress: "",
+    classification: [] as Array<string>,
+    foundedDate: "",
+    representative: "",
+    website: "",
+    province: "",
+    ward: "",
+    address: "",
+    image: "",
+    description: "",
+    contacts: [] as Contact[],
+    branches: [] as any[],
+    bankAccounts: [] as BankAccount[],
+    documents: [] as { name: string; type: string; size: string }[],
+  });
 
   // Mock data fetching
   useEffect(() => {
@@ -81,33 +143,28 @@ export default function EnterpriseEditPage() {
         brandName: "EcoFarm Vietnam",
         taxCode: "0101234567",
         taxAddress: "Tầng 5, Tòa nhà ABC, Cầu Giấy, Hà Nội",
-        classification: "production",
+        classification: ["production"],
         foundedDate: "2020-03-15",
         representative: "Nguyễn Văn Giám Đốc",
-        phone: "02438888999",
-        email: "contact@ecofarm.vn",
         website: "https://ecofarm.vn",
         province: "hn",
-        district: "cau_giay",
         ward: "dich_vong",
         address: "Số 123 Đường Xuân Thủy",
         image:
           "https://images.unsplash.com/photo-1595839019623-668b555776a3?w=800&q=80",
         description:
           "Doanh nghiệp tiên phong trong lĩnh vực nông nghiệp công nghệ cao, chuyên sản xuất và cung ứng rau sạch chuẩn VietGAP.",
-        branches: [
+        contacts: [
           {
-            name: "Chi nhánh Miền Nam",
-            taxCode: "0101234567-001",
-            phone: "02839999888",
-            taxAddress: "Quận 1, TP.HCM",
-            email: "hcm@ecofarm.vn",
-            address: "Số 456 Nguyễn Thị Minh Khai, Q1",
-            note: "Văn phòng đại diện phía Nam",
+            name: "Lê Văn Tiến",
+            phone: "0333444555",
+            email: "tien.lv@ecofarm.vn",
           },
         ],
+        branches: [],
         bankAccounts: [
           {
+            bin: "970436",
             bankName: "Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)",
             accountHolder: "ECOFARM CORP",
             accountNumber: "0011001234567",
@@ -122,36 +179,10 @@ export default function EnterpriseEditPage() {
     }, 500);
   }, []);
 
-  const [formData, setFormData] = useState({
-    type: "enterprise" as "enterprise" | "farm" | "cooperative",
-    code: "",
+  const [newContact, setNewContact] = useState<Contact>({
     name: "",
-    brandName: "",
-    taxCode: "",
-    taxAddress: "",
-    classification: "production",
-    foundedDate: "",
-    representative: "",
     phone: "",
     email: "",
-    website: "",
-    province: "",
-    district: "",
-    ward: "",
-    address: "",
-    image: "",
-    description: "",
-    branches: [] as Branch[],
-    bankAccounts: [] as BankAccount[],
-    documents: [] as { name: string; type: string; size: string }[],
-  });
-
-  const [newBankAccount, setNewBankAccount] = useState<BankAccount>({
-    bankName: "",
-    accountHolder: "",
-    accountNumber: "",
-    branch: "",
-    note: "",
   });
 
   const [newBranch, setNewBranch] = useState<Branch>({
@@ -164,12 +195,301 @@ export default function EnterpriseEditPage() {
     note: "",
   });
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  const [newBankAccount, setNewBankAccount] = useState<BankAccount>({
+    bankName: "",
+    accountHolder: "",
+    accountNumber: "",
+    branch: "",
+    note: "",
+    bin: "",
+  });
+
+  const [isDragging, setIsDragging] = useState<Record<string, boolean>>({});
+  const [bankInputMethod, setBankInputMethod] = useState<
+    "manual" | "excel" | "qr-image" | "qr-scan"
+  >("manual");
+  const [bankSearchQuery, setBankSearchQuery] = useState("");
+  const [confirmBankSearchQuery, setConfirmBankSearchQuery] = useState("");
+  const [branchInputMethod, setBranchInputMethod] = useState<
+    "create" | "excel"
+  >("create");
+  const [hasCamera, setHasCamera] = useState(false);
+
+  useEffect(() => {
+    // Check for camera
+    navigator.mediaDevices
+      .enumerateDevices()
+      .then((devices) => {
+        setHasCamera(devices.some((device) => device.kind === "videoinput"));
+      })
+      .catch(() => setHasCamera(false));
+  }, []);
+
+  const handleDrag = (id: string, e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setIsDragging((prev) => ({ ...prev, [id]: true }));
+    } else if (e.type === "dragleave" || e.type === "drop") {
+      setIsDragging((prev) => ({ ...prev, [id]: false }));
+    }
+  };
+
+  const processLogoImage = (file: File) => {
+    if (file && file.type.startsWith("image/")) {
       const url = URL.createObjectURL(file);
       setFormData((prev) => ({ ...prev, image: url }));
+      toast({
+        title: "Thành công",
+        description: "Đã tải lên logo mới",
+      });
     }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processLogoImage(file);
+  };
+
+  const handleLogoDrop = (e: React.DragEvent) => {
+    handleDrag("logo", e);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processLogoImage(file);
+  };
+
+  const processExcelFile = async (file: File) => {
+    try {
+      const rows = await readXlsxFile(file);
+      const dataRows = rows.slice(1);
+      const newAccounts: BankAccount[] = [];
+      let failCount = 0;
+      let successCount = 0;
+
+      dataRows.forEach((row) => {
+        const binOrName = String(row[0] || "").trim();
+        const accountNumber = String(row[1] || "").trim();
+        const accountHolder = String(row[2] || "")
+          .trim()
+          .toUpperCase();
+        const branch = String(row[3] || "").trim();
+        const note = String(row[4] || "").trim();
+
+        if (binOrName && accountNumber && accountHolder) {
+          const bankInfo = vietQrBankData.find(
+            (b) =>
+              b.bin === binOrName ||
+              b.shortName.toLowerCase() === binOrName.toLowerCase() ||
+              b.name.toLowerCase() === binOrName.toLowerCase(),
+          );
+
+          if (bankInfo) {
+            newAccounts.push({
+              bin: bankInfo.bin,
+              bankName: bankInfo.name,
+              accountNumber,
+              accountHolder,
+              branch,
+              note,
+            });
+            successCount++;
+          } else {
+            failCount++;
+          }
+        }
+      });
+
+      if (newAccounts.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          bankAccounts: [...newAccounts, ...prev.bankAccounts],
+        }));
+        toast({
+          title: "Nhập Excel thành công",
+          description: `Đã thêm ${successCount} tài khoản. ${failCount > 0 ? `Thất bại ${failCount} dòng do không khớp ngân hàng.` : ""}`,
+        });
+      } else {
+        toast({
+          title: "Thông báo",
+          description: "Không tìm thấy dữ liệu hợp lệ trong file Excel.",
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể đọc file Excel. Vui lòng kiểm tra định dạng.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processExcelFile(file);
+  };
+
+  const handleExcelDrop = (e: React.DragEvent) => {
+    handleDrag("excel", e);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processExcelFile(file);
+  };
+
+  const processBranchExcelFile = async (file: File) => {
+    try {
+      const rows = await readXlsxFile(file);
+      // Skip header row
+      const dataRows = rows.slice(1);
+
+      const importedBranches: Branch[] = [];
+
+      for (const row of dataRows) {
+        if (row[0]) {
+          importedBranches.push({
+            name: row[0].toString().trim(),
+            taxCode: row[1] ? row[1].toString().trim() : "",
+            phone: row[2] ? row[2].toString().trim() : "",
+            email: row[3] ? row[3].toString().trim() : "",
+            taxAddress: row[4] ? row[4].toString().trim() : "",
+            address: row[5] ? row[5].toString().trim() : "",
+            note: row[6] ? row[6].toString().trim() : "Nhập từ Excel",
+          });
+        }
+      }
+
+      if (importedBranches.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          branches: [...prev.branches, ...importedBranches],
+        }));
+        toast({
+          title: "Thành công",
+          description: `Đã nhập ${importedBranches.length} chi nhánh từ Excel`,
+        });
+        setBranchInputMethod("create");
+      } else {
+        toast({
+          title: "Lỗi",
+          description: "Không tìm thấy dữ liệu hợp lệ trong file Excel",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description:
+          "Không thể đọc file Excel. Vui lòng kiểm tra lại định dạng.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBranchExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processBranchExcelFile(file);
+  };
+
+  const handleBranchExcelDrop = (e: React.DragEvent) => {
+    handleDrag("branch-excel", e);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processBranchExcelFile(file);
+  };
+
+  const processQRImage = async (file: File) => {
+    try {
+      const result = await QrScanner.scanImage(file);
+      if (result) {
+        const parsed = parseVietQR(result);
+        if (parsed) {
+          const bankInfo = vietQrBankData.find((b) => b.bin === parsed.bin);
+          setNewBankAccount({
+            bin: parsed.bin,
+            bankName: bankInfo ? bankInfo.name : `Ngân hàng (${parsed.bin})`,
+            accountNumber: parsed.accountNumber,
+            accountHolder: (parsed.accountHolder || "").toUpperCase(),
+            branch: "",
+            note: "Quét từ mã QR",
+          });
+          setBankInputMethod("manual");
+          toast({
+            title: "Thành công",
+            description: "Đã trích xuất thông tin từ mã QR",
+          });
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể đọc mã QR từ hình ảnh này",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleQRImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processQRImage(file);
+  };
+
+  const handleQRImageDrop = (e: React.DragEvent) => {
+    handleDrag("qr-image", e);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processQRImage(file);
+  };
+
+  const handleLiveScan = (result: any) => {
+    if (result && result[0]?.rawValue) {
+      const parsed = parseVietQR(result[0].rawValue);
+      if (parsed) {
+        const bankInfo = vietQrBankData.find((b) => b.bin === parsed.bin);
+        setNewBankAccount({
+          bin: parsed.bin,
+          bankName: bankInfo ? bankInfo.name : `Ngân hàng (${parsed.bin})`,
+          accountNumber: parsed.accountNumber,
+          accountHolder: (parsed.accountHolder || "").toUpperCase(),
+          branch: "",
+          note: "Quét trực tiếp",
+        });
+        setBankInputMethod("manual");
+        toast({
+          title: "Thành công",
+          description: "Đã quét mã QR thành công",
+        });
+      }
+    }
+  };
+
+  const processDocuments = (files: FileList) => {
+    const newDocs = Array.from(files).map((file) => ({
+      name: file.name,
+      type: file.type,
+      size: (file.size / (1024 * 1024)).toFixed(2) + "MB",
+    }));
+
+    setFormData((prev) => ({
+      ...prev,
+      documents: [...prev.documents, ...newDocs],
+    }));
+
+    toast({
+      title: "Thành công",
+      description: `Đã tải lên ${newDocs.length} tài liệu`,
+    });
+  };
+
+  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) processDocuments(e.target.files);
+  };
+
+  const handleDocumentDrop = (e: React.DragEvent) => {
+    handleDrag("documents", e);
+    if (e.dataTransfer.files) processDocuments(e.dataTransfer.files);
+  };
+
+  const handleDocumentDelete = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      documents: prev.documents.filter((_, i) => i !== index),
+    }));
   };
 
   const addBranch = () => {
@@ -203,11 +523,38 @@ export default function EnterpriseEditPage() {
     });
   };
 
+  const addContact = () => {
+    if (newContact.name && newContact.phone) {
+      setFormData((prev) => ({
+        ...prev,
+        contacts: [...prev.contacts, newContact],
+      }));
+      setNewContact({ name: "", phone: "", email: "" });
+      toast({
+        title: "Thành công",
+        description: "Đã thêm liên hệ mới",
+      });
+    } else {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng nhập tên và số điện thoại",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const removeContact = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      contacts: prev.contacts.filter((_, i) => i !== index),
+    }));
+  };
+
   const addBankAccount = () => {
-    if (newBankAccount.bankName && newBankAccount.accountNumber) {
+    if (newBankAccount.bin && newBankAccount.accountNumber) {
       setFormData({
         ...formData,
-        bankAccounts: [...formData.bankAccounts, newBankAccount],
+        bankAccounts: [newBankAccount, ...formData.bankAccounts],
       });
       setNewBankAccount({
         bankName: "",
@@ -215,11 +562,17 @@ export default function EnterpriseEditPage() {
         accountNumber: "",
         branch: "",
         note: "",
+        bin: "",
+      });
+      setBankInputMethod("manual");
+      toast({
+        title: "Thành công",
+        description: "Đã thêm tài khoản ngân hàng",
       });
     } else {
       toast({
         title: "Lỗi",
-        description: "Vui lòng nhập tên ngân hàng và số tài khoản",
+        description: "Vui lòng nhập đầy đủ thông tin ngân hàng",
         variant: "destructive",
       });
     }
@@ -255,109 +608,6 @@ export default function EnterpriseEditPage() {
 
   const steps: Step[] = [
     {
-      id: "type",
-      title: "Loại hình",
-      description: "Loại hình tổ chức",
-      content: (
-        <div className="max-w-xl mx-auto space-y-6">
-          <div className="text-center mb-8">
-            <h2 className="text-xl font-display font-bold">
-              Loại hình tổ chức
-            </h2>
-            <p className="text-muted-foreground mt-1">
-              Loại hình hiện tại của đơn vị
-            </p>
-          </div>
-          {/* Disable type change in edit mode usually, or keep it enable based on requirement. 
-              Here I'll disable it to show 'Edit' context difference } */}
-          <RadioGroup
-            disabled
-            value={formData.type}
-            onValueChange={(value: "enterprise" | "farm" | "cooperative") =>
-              setFormData({ ...formData, type: value })
-            }
-            className="grid grid-cols-1 md:grid-cols-3 gap-4 opacity-80"
-          >
-            <Label
-              htmlFor="enterprise"
-              className={`flex flex-col items-center gap-4 p-6 rounded-xl border-2 transition-all ${
-                formData.type === "enterprise"
-                  ? "border-primary bg-primary/5 cursor-default"
-                  : "border-border opacity-50 cursor-not-allowed"
-              }`}
-            >
-              <RadioGroupItem
-                value="enterprise"
-                id="enterprise"
-                className="sr-only"
-              />
-              <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
-                <Building2 className="w-8 h-8 text-blue-600" />
-              </div>
-              <div className="text-center">
-                <p className="font-semibold">Doanh nghiệp</p>
-                <p className="text-sm text-muted-foreground">Công ty lớn</p>
-              </div>
-              {formData.type === "enterprise" && (
-                <Check className="w-5 h-5 text-primary" />
-              )}
-            </Label>
-
-            <Label
-              htmlFor="cooperative"
-              className={`flex flex-col items-center gap-4 p-6 rounded-xl border-2 transition-all ${
-                formData.type === "cooperative"
-                  ? "border-primary bg-primary/5 cursor-default"
-                  : "border-border opacity-50 cursor-not-allowed"
-              }`}
-            >
-              <RadioGroupItem
-                value="cooperative"
-                id="cooperative"
-                className="sr-only"
-              />
-              <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center">
-                <Users className="w-8 h-8 text-orange-600" />
-              </div>
-              <div className="text-center">
-                <p className="font-semibold">Hợp tác xã</p>
-                <p className="text-sm text-muted-foreground">HTX, tổ hợp tác</p>
-              </div>
-              {formData.type === "cooperative" && (
-                <Check className="w-5 h-5 text-primary" />
-              )}
-            </Label>
-
-            <Label
-              htmlFor="farm"
-              className={`flex flex-col items-center gap-4 p-6 rounded-xl border-2 transition-all ${
-                formData.type === "farm"
-                  ? "border-primary bg-primary/5 cursor-default"
-                  : "border-border opacity-50 cursor-not-allowed"
-              }`}
-            >
-              <RadioGroupItem value="farm" id="farm" className="sr-only" />
-              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-                <User className="w-8 h-8 text-green-600" />
-              </div>
-              <div className="text-center">
-                <p className="font-semibold">Nông hộ</p>
-                <p className="text-sm text-muted-foreground">
-                  Hộ gia đình, cá nhân
-                </p>
-              </div>
-              {formData.type === "farm" && (
-                <Check className="w-5 h-5 text-primary" />
-              )}
-            </Label>
-          </RadioGroup>
-          <p className="text-center text-sm text-muted-foreground italic">
-            * Loại hình tổ chức không thể thay đổi sau khi tạo
-          </p>
-        </div>
-      ),
-    },
-    {
       id: "basic",
       title: "Thông tin cơ bản",
       description: "Tên, thương hiệu, mã, thuế",
@@ -367,10 +617,14 @@ export default function EnterpriseEditPage() {
             <Label>Logo / Hình ảnh đại diện</Label>
             <div className="flex items-center gap-6 w-full">
               <div
-                className="w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 overflow-hidden relative cursor-pointer hover:border-primary transition-colors group"
+                className={`w-32 h-32 rounded-lg border-2 border-dashed flex items-center justify-center overflow-hidden relative cursor-pointer transition-all group ${isDragging["logo"] ? "border-primary bg-primary/5 scale-105" : "border-gray-300 bg-gray-50 hover:border-primary"}`}
                 onClick={() =>
-                  document.getElementById("avatar-edit-upload")?.click()
+                  document.getElementById("avatar-upload")?.click()
                 }
+                onDragEnter={(e) => handleDrag("logo", e)}
+                onDragOver={(e) => handleDrag("logo", e)}
+                onDragLeave={(e) => handleDrag("logo", e)}
+                onDrop={handleLogoDrop}
               >
                 {formData.image ? (
                   <>
@@ -391,27 +645,27 @@ export default function EnterpriseEditPage() {
                 )}
               </div>
               <div className="flex-1 space-y-2">
-                <Input
-                  id="avatar-edit-upload"
+                <input
+                  id="avatar-upload"
                   type="file"
                   className="hidden"
                   accept="image/*"
                   onChange={handleImageUpload}
                 />
                 <div className="text-sm text-muted-foreground">
-                  <p>Tải lên logo hoặc hình ảnh đại diện của đơn vị.</p>
+                  <p>Tải lên logo hoặc hình ảnh đại diện của doanh nghiệp.</p>
                   <p>Định dạng hỗ trợ: JPG, PNG. Kích thước tối đa: 5MB.</p>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() =>
-                    document.getElementById("avatar-edit-upload")?.click()
+                    document.getElementById("avatar-upload")?.click()
                   }
                   type="button"
                 >
                   <Upload className="w-4 h-4 mr-2" />
-                  Thay đổi hình ảnh
+                  Chọn hình ảnh
                 </Button>
               </div>
             </div>
@@ -419,64 +673,17 @@ export default function EnterpriseEditPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="code">Mã đơn vị *</Label>
+              <Label htmlFor="code">Mã doanh nghiệp *</Label>
               <Input
                 id="code"
                 value={formData.code}
                 onChange={(e) =>
                   setFormData({ ...formData, code: e.target.value })
                 }
-                placeholder="VD: DN001, HTX001..."
+                placeholder="VD: DN001, DN002..."
                 data-testid="input-code"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="classification">Phân loại</Label>
-              <Select
-                value={formData.classification}
-                onValueChange={(val) =>
-                  setFormData({ ...formData, classification: val })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn phân loại" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="production">Sản xuất</SelectItem>
-                  <SelectItem value="processing">Chế biến</SelectItem>
-                  <SelectItem value="trading">Thương mại</SelectItem>
-                  <SelectItem value="service">Dịch vụ</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="name">Tên đầy đủ *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              placeholder="VD: Công ty TNHH ABC..."
-              data-testid="input-name"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="brandName">Tên thương hiệu</Label>
-            <Input
-              id="brandName"
-              value={formData.brandName}
-              onChange={(e) =>
-                setFormData({ ...formData, brandName: e.target.value })
-              }
-              placeholder="VD: EcoFarm..."
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="taxCode">Mã số thuế</Label>
               <Input
@@ -486,6 +693,46 @@ export default function EnterpriseEditPage() {
                   setFormData({ ...formData, taxCode: e.target.value })
                 }
                 placeholder="Nhập mã số thuế"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Tên doanh nghiệp *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                placeholder="VD: Công ty TNHH ABC..."
+                data-testid="input-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="brandName">Tên thương hiệu</Label>
+              <Input
+                id="brandName"
+                value={formData.brandName}
+                onChange={(e) =>
+                  setFormData({ ...formData, brandName: e.target.value })
+                }
+                placeholder="VD: EcoFarm..."
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="classification">Phân loại</Label>
+              <MultiSelect
+                options={classificationOptions}
+                placeholder="Chọn phân loại..."
+                value={formData.classification}
+                onChange={(v) =>
+                  setFormData({ ...formData, classification: v })
+                }
               />
             </div>
             <div className="space-y-2">
@@ -503,7 +750,7 @@ export default function EnterpriseEditPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="representative">Người đại diện *</Label>
+              <Label htmlFor="representative">Người đại diện pháp luật *</Label>
               <Input
                 id="representative"
                 value={formData.representative}
@@ -526,70 +773,12 @@ export default function EnterpriseEditPage() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Mô tả</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              placeholder="Giới thiệu về doanh nghiệp/nông hộ"
-              rows={3}
-            />
-          </div>
-        </div>
-      ),
-      isValid: formData.name.length > 0 && formData.code.length > 0,
-    },
-    {
-      id: "contact",
-      title: "Liên hệ",
-      description: "Điện thoại, email, địa chỉ",
-      content: (
-        <div className="max-w-2xl mx-auto space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="phone">Số điện thoại *</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
-                placeholder="0901234567"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                placeholder="contact@example.com"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="website">Website</Label>
-            <Input
-              id="website"
-              value={formData.website}
-              onChange={(e) =>
-                setFormData({ ...formData, website: e.target.value })
-              }
-              placeholder="https://example.com"
-            />
-          </div>
           <div className="pt-4 border-t">
             <div className="flex items-center gap-2 mb-4">
               <MapPin className="w-5 h-5 text-primary" />
               <h3 className="font-semibold">Địa chỉ trụ sở</h3>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="province">Tỉnh/Thành phố *</Label>
                 <Select
@@ -611,27 +800,7 @@ export default function EnterpriseEditPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="district">Quận/Huyện *</Label>
-                <Select
-                  value={formData.district}
-                  onValueChange={(val) =>
-                    setFormData({ ...formData, district: val })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn Quận/Huyện" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="q1">Quận 1</SelectItem>
-                    <SelectItem value="q3">Quận 3</SelectItem>
-                    <SelectItem value="cu_chi">Củ Chi</SelectItem>
-                    <SelectItem value="thu_duc">Thủ Đức</SelectItem>
-                    <SelectItem value="cau_giay">Cầu Giấy</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ward">Phường/Xã</Label>
+                <Label htmlFor="ward">Phường/Xã *</Label>
                 <Select
                   value={formData.ward}
                   onValueChange={(val) =>
@@ -646,7 +815,6 @@ export default function EnterpriseEditPage() {
                     <SelectItem value="p2">Phường 2</SelectItem>
                     <SelectItem value="tan_phu">Tân Phú</SelectItem>
                     <SelectItem value="tan_phong">Tân Phong</SelectItem>
-                    <SelectItem value="dich_vong">Dịch Vọng</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -663,9 +831,144 @@ export default function EnterpriseEditPage() {
               />
             </div>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Mô tả doanh nghiệp</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              placeholder="Giới thiệu về doanh nghiệp"
+              rows={3}
+            />
+          </div>
         </div>
       ),
-      isValid: formData.phone.length > 0 && formData.email.length > 0,
+      isValid: formData.name.length > 0 && formData.code.length > 0,
+    },
+    {
+      id: "contact",
+      title: "Thông tin liên hệ",
+      description: "Danh sách liên hệ",
+      content: (
+        <div className="max-w-2xl mx-auto space-y-8">
+          <Card className="border-primary/20 bg-primary/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                Thêm liên hệ mới
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="contact-name">Họ và tên *</Label>
+                  <Input
+                    id="contact-name"
+                    value={newContact.name}
+                    onChange={(e) =>
+                      setNewContact({ ...newContact, name: e.target.value })
+                    }
+                    placeholder="VD: Nguyễn Văn A"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contact-phone">Số điện thoại *</Label>
+                  <Input
+                    id="contact-phone"
+                    value={newContact.phone}
+                    onChange={(e) =>
+                      setNewContact({ ...newContact, phone: e.target.value })
+                    }
+                    placeholder="09xx xxx xxx"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contact-email">Email</Label>
+                  <Input
+                    id="contact-email"
+                    type="email"
+                    value={newContact.email}
+                    onChange={(e) =>
+                      setNewContact({ ...newContact, email: e.target.value })
+                    }
+                    placeholder="email@example.com"
+                  />
+                </div>
+              </div>
+              <Button onClick={addContact} className="w-full">
+                <Plus className="w-4 h-4 mr-2" />
+                Thêm vào danh sách
+              </Button>
+            </CardContent>
+          </Card>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary" />
+                Danh sách liên hệ
+              </h3>
+              <Badge variant="outline">
+                {formData.contacts.length} liên hệ
+              </Badge>
+            </div>
+
+            {formData.contacts.length === 0 ? (
+              <div className="text-center py-10 border-2 border-dashed rounded-xl text-muted-foreground">
+                <p>Chưa có thông tin liên hệ nào.</p>
+                <p className="text-sm">
+                  Vui lòng thêm liên hệ ở form phía trên.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {formData.contacts.map((contact, index) => (
+                  <div
+                    key={index}
+                    className="relative group bg-card border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+                    <div className="p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <User className="w-4 h-4 text-primary" />
+                          </div>
+                          <span className="font-bold">{contact.name}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removeContact(index)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                      <div className="space-y-1 text-sm text-muted-foreground ml-10">
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-3 h-3" />
+                          <span>{contact.phone}</span>
+                        </div>
+                        {contact.email && (
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-3 h-3" />
+                            <span className="truncate">{contact.email}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      ),
+      isValid: formData.contacts.length > 0,
     },
     {
       id: "branches",
@@ -681,71 +984,101 @@ export default function EnterpriseEditPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="create" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="select">Chọn từ danh sách</TabsTrigger>
-                  <TabsTrigger value="create">Tạo mới</TabsTrigger>
+              <Tabs
+                value={branchInputMethod}
+                onValueChange={(val: any) => setBranchInputMethod(val)}
+                className="w-full"
+              >
+                <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/50 p-1">
+                  <TabsTrigger
+                    value="create"
+                    className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  >
+                    <Plus className="w-4 h-4 mr-2" /> Tạo mới
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="excel"
+                    className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  >
+                    <FileText className="w-4 h-4 mr-2" /> Nhập Excel
+                  </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="select" className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Chọn chi nhánh có sẵn</Label>
-                    <Select
-                      onValueChange={(val) => {
-                        const selected = [
-                          {
-                            name: "Chi nhánh Miền Bắc",
-                            taxCode: "0101234567-001",
-                            phone: "02412345678",
-                            email: "bac@enterprise.com",
-                            address: "Hoàn Kiếm, Hà Nội",
-                            taxAddress: "Hoàn Kiếm, Hà Nội",
-                            note: "Văn phòng đại diện",
-                          },
-                          {
-                            name: "Chi nhánh Miền Trung",
-                            taxCode: "0101234567-002",
-                            phone: "02361234567",
-                            email: "trung@enterprise.com",
-                            address: "Hải Châu, Đà Nẵng",
-                            taxAddress: "Hải Châu, Đà Nẵng",
-                            note: "Kho vận",
-                          },
-                        ].find((b) => b.name === val);
-                        if (selected) {
-                          setNewBranch(selected);
+                <TabsContent
+                  value="excel"
+                  className="space-y-4 animate-in fade-in-50 duration-300"
+                >
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-4 bg-blue-50/50 border border-blue-100 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <Download className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm text-blue-900">
+                            Mẫu file Excel
+                          </p>
+                          <p className="text-xs text-blue-700">
+                            Tải xuống file mẫu để nhập liệu chính xác
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-white border-blue-200 hover:bg-blue-50"
+                        onClick={() =>
+                          window.open(
+                            "https://static.affina.com.vn/affina/3b0bd357-e259-4ff0-9016-0c23334c5279.xlsx",
+                            "_blank",
+                          )
                         }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn chi nhánh..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Chi nhánh Miền Bắc">
-                          Chi nhánh Miền Bắc
-                        </SelectItem>
-                        <SelectItem value="Chi nhánh Miền Trung">
-                          Chi nhánh Miền Trung
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {newBranch.name && (
-                    <div className="bg-muted/50 p-4 rounded-lg border text-sm space-y-2">
-                      <p>
-                        <strong>Mã số thuế:</strong> {newBranch.taxCode}
-                      </p>
-                      <p>
-                        <strong>Địa chỉ:</strong> {newBranch.address}
-                      </p>
-                      <Button onClick={addBranch} className="w-full mt-2">
-                        Thêm chi nhánh này
+                      >
+                        <Download className="w-4 h-4 mr-2" /> Tải mẫu
                       </Button>
                     </div>
-                  )}
+
+                    <div
+                      className={`border-2 border-dashed rounded-xl p-10 text-center transition-all group cursor-pointer ${isDragging["branch-excel"] ? "border-primary bg-primary/5 scale-[1.02]" : "border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/5"}`}
+                      onClick={() =>
+                        document.getElementById("branch-excel-upload")?.click()
+                      }
+                      onDragEnter={(e) => handleDrag("branch-excel", e)}
+                      onDragOver={(e) => handleDrag("branch-excel", e)}
+                      onDragLeave={(e) => handleDrag("branch-excel", e)}
+                      onDrop={handleBranchExcelDrop}
+                    >
+                      <input
+                        id="branch-excel-upload"
+                        type="file"
+                        accept=".xlsx, .xls"
+                        className="hidden"
+                        onChange={handleBranchExcelUpload}
+                      />
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/10 group-hover:scale-110 transition-all">
+                        <Upload className="w-8 h-8 text-muted-foreground group-hover:text-primary" />
+                      </div>
+                      <h4 className="font-bold text-lg mb-2">
+                        Tải lên danh sách chi nhánh
+                      </h4>
+                      <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-6">
+                        Kéo thả file .xlsx hoặc .xls vào đây để nhập danh sách
+                        chi nhánh tự động
+                      </p>
+                      <Button
+                        variant="secondary"
+                        className="px-8 pointer-events-none"
+                      >
+                        Chọn file
+                      </Button>
+                    </div>
+                  </div>
                 </TabsContent>
 
-                <TabsContent value="create" className="space-y-4">
+                <TabsContent
+                  value="create"
+                  className="space-y-4 animate-in fade-in-50 duration-300"
+                >
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Tên chi nhánh *</Label>
@@ -830,7 +1163,7 @@ export default function EnterpriseEditPage() {
                   </div>
                   <Button onClick={addBranch} className="w-full">
                     <Plus className="w-4 h-4 mr-2" />
-                    Thêm chi nhánh mới
+                    Thêm vào danh sách
                   </Button>
                 </TabsContent>
               </Tabs>
@@ -925,110 +1258,77 @@ export default function EnterpriseEditPage() {
       description: "Tài khoản thanh toán",
       content: (
         <div className="max-w-4xl mx-auto space-y-8">
-          <Card>
+          <Card className="overflow-hidden border-primary/20 shadow-lg">
             <CardHeader>
               <CardTitle className="text-lg font-medium flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-primary" />
-                Quản lý tài khoản ngân hàng
+                <Building2 className="w-5 h-5 text-primary" />
+                Thêm tài khoản ngân hàng
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="create" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="select">Chọn từ danh sách</TabsTrigger>
-                  <TabsTrigger value="create">Tạo mới</TabsTrigger>
+            <CardContent className="p-6 pt-0">
+              <Tabs
+                value={bankInputMethod}
+                onValueChange={(val: any) => setBankInputMethod(val)}
+                className="w-full"
+              >
+                <TabsList className="grid w-full grid-cols-4 mb-8 bg-muted/50 p-1">
+                  <TabsTrigger
+                    value="manual"
+                    className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  >
+                    <Plus className="w-4 h-4 mr-2" /> Nhập tay
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="excel"
+                    className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  >
+                    <FileText className="w-4 h-4 mr-2" /> Excel
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="qr-image"
+                    className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  >
+                    <QrCode className="w-4 h-4 mr-2" /> Đọc QR
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="qr-scan"
+                    disabled={!hasCamera}
+                    className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  >
+                    <Scan className="w-4 h-4 mr-2" /> Quét mã
+                  </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="select" className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Chọn tài khoản mẫu</Label>
-                    <Select
-                      onValueChange={(val) => {
-                        const selected = [
-                          {
-                            bankName:
-                              "Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)",
-                            accountHolder: "ECOFARM CORP",
-                            accountNumber: "0011001234567",
-                            branch: "Sở Giao Dịch",
-                            note: "Tài khoản chính",
-                          },
-                          {
-                            bankName: "Ngân hàng TMCP Quân Đội (MBBank)",
-                            accountHolder: "NGUYEN VAN A",
-                            accountNumber: "88889999",
-                            branch: "Hoàn Kiếm",
-                            note: "Tài khoản cá nhân",
-                          },
-                        ].find((b) => b.bankName === val);
-                        if (selected) {
-                          setNewBankAccount(selected);
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn tài khoản..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)">
-                          Vietcombank - ECOFARM CORP
-                        </SelectItem>
-                        <SelectItem value="Ngân hàng TMCP Quân Đội (MBBank)">
-                          MBBank - NGUYEN VAN A
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {newBankAccount.bankName && (
-                    <div className="bg-muted/50 p-4 rounded-lg border text-sm space-y-2">
-                      <p>
-                        <strong>Số tài khoản:</strong>{" "}
-                        {newBankAccount.accountNumber}
-                      </p>
-                      <p>
-                        <strong>Chủ tài khoản:</strong>{" "}
-                        {newBankAccount.accountHolder}
-                      </p>
-                      <Button onClick={addBankAccount} className="w-full mt-2">
-                        Thêm tài khoản này
-                      </Button>
-                    </div>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="create" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2 col-span-2">
-                      <Label>Ngân hàng *</Label>
-                      <Select
-                        value={newBankAccount.bankName}
-                        onValueChange={(val) =>
+                <TabsContent
+                  value="manual"
+                  className="space-y-6 animate-in fade-in-50 duration-300"
+                >
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">
+                        Chọn Ngân hàng *
+                      </Label>
+                      <Combobox
+                        options={bankOptions}
+                        value={newBankAccount.bin}
+                        onChange={(val) =>
                           setNewBankAccount({
                             ...newBankAccount,
-                            bankName: val,
+                            bin: val,
+                            bankName:
+                              bankOptions.find((bank) => bank.bin === val)
+                                ?.label || "",
                           })
                         }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Chọn ngân hàng" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Vietcombank">
-                            Vietcombank
-                          </SelectItem>
-                          <SelectItem value="VietinBank">VietinBank</SelectItem>
-                          <SelectItem value="BIDV">BIDV</SelectItem>
-                          <SelectItem value="Agribank">Agribank</SelectItem>
-                          <SelectItem value="MBBank">MBBank</SelectItem>
-                          <SelectItem value="Techcombank">
-                            Techcombank
-                          </SelectItem>
-                          <SelectItem value="ACB">ACB</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        placeholder="Chọn ngân hàng..."
+                        searchPlaceholder="Tìm tên ngân hàng..."
+                        className="w-full"
+                      />
                     </div>
                     <div className="space-y-2">
-                      <Label>Số tài khoản *</Label>
+                      <Label className="text-sm font-semibold">
+                        Số tài khoản *
+                      </Label>
                       <Input
                         value={newBankAccount.accountNumber}
                         onChange={(e) =>
@@ -1038,10 +1338,13 @@ export default function EnterpriseEditPage() {
                           })
                         }
                         placeholder="Nhập số tài khoản"
+                        className="bg-muted/30 focus-visible:ring-primary"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Chủ tài khoản</Label>
+                      <Label className="text-sm font-semibold">
+                        Chủ tài khoản *
+                      </Label>
                       <Input
                         value={newBankAccount.accountHolder}
                         onChange={(e) =>
@@ -1051,10 +1354,11 @@ export default function EnterpriseEditPage() {
                           })
                         }
                         placeholder="TÊN CHỦ TÀI KHOẢN"
+                        className="bg-muted/30 focus-visible:ring-primary"
                       />
                     </div>
-                    <div className="space-y-2 col-span-2">
-                      <Label>Chi nhánh ngân hàng</Label>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Chi nhánh</Label>
                       <Input
                         value={newBankAccount.branch}
                         onChange={(e) =>
@@ -1064,10 +1368,11 @@ export default function EnterpriseEditPage() {
                           })
                         }
                         placeholder="VD: CN Hoàn Kiếm"
+                        className="bg-muted/30 focus-visible:ring-primary"
                       />
                     </div>
                     <div className="col-span-2 space-y-2">
-                      <Label>Ghi chú</Label>
+                      <Label className="text-sm font-semibold">Ghi chú</Label>
                       <Textarea
                         value={newBankAccount.note}
                         onChange={(e) =>
@@ -1076,88 +1381,280 @@ export default function EnterpriseEditPage() {
                             note: e.target.value,
                           })
                         }
-                        placeholder="Ghi chú thêm..."
+                        placeholder="Ghi chú thêm (không bắt buộc)"
                         rows={2}
+                        className="bg-muted/30 focus-visible:ring-primary resize-none"
                       />
                     </div>
                   </div>
-                  <Button onClick={addBankAccount} className="w-full">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Thêm tài khoản
+                  <Button
+                    onClick={addBankAccount}
+                    className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-12"
+                  >
+                    <Plus className="w-5 h-5 mr-2" />
+                    Thêm vào danh sách
                   </Button>
+                </TabsContent>
+
+                <TabsContent
+                  value="excel"
+                  className="animate-in fade-in-50 duration-300"
+                >
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-4 bg-blue-50/50 border border-blue-100 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <Download className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm text-blue-900">
+                            Mẫu file Excel
+                          </p>
+                          <p className="text-xs text-blue-700">
+                            Tải xuống file mẫu để nhập liệu chính xác
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-white border-blue-200 hover:bg-blue-50"
+                        onClick={() =>
+                          window.open(
+                            "https://static.affina.com.vn/affina/49cc7798-57fc-4f22-83a0-542fbf3b3c36.xlsx",
+                            "_blank",
+                          )
+                        }
+                      >
+                        <Download className="w-4 h-4 mr-2" /> Tải mẫu
+                      </Button>
+                    </div>
+
+                    <div
+                      className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all group cursor-pointer ${isDragging["excel"] ? "border-primary bg-primary/5 scale-[1.02]" : "border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/5"}`}
+                      onClick={() =>
+                        document.getElementById("excel-upload")?.click()
+                      }
+                      onDragEnter={(e) => handleDrag("excel", e)}
+                      onDragOver={(e) => handleDrag("excel", e)}
+                      onDragLeave={(e) => handleDrag("excel", e)}
+                      onDrop={handleExcelDrop}
+                    >
+                      <input
+                        id="excel-upload"
+                        type="file"
+                        accept=".xlsx, .xls"
+                        className="hidden"
+                        onChange={handleExcelUpload}
+                      />
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/10 group-hover:scale-110 transition-all">
+                        <Upload className="w-8 h-8 text-muted-foreground group-hover:text-primary" />
+                      </div>
+                      <h4 className="font-bold text-lg mb-2">
+                        Tải lên file Excel
+                      </h4>
+                      <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-6">
+                        Kéo thả file .xlsx hoặc .xls vào đây để nhập danh sách
+                        tài khoản tự động
+                      </p>
+                      <Button
+                        variant="secondary"
+                        className="px-8 pointer-events-none"
+                      >
+                        Chọn file từ máy tính
+                      </Button>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent
+                  value="qr-image"
+                  className="animate-in fade-in-50 duration-300"
+                >
+                  <div
+                    className={`flex flex-col justify-center items-center border-2 border-dashed rounded-2xl p-12 text-center transition-all group cursor-pointer ${isDragging["qr-image"] ? "border-primary bg-primary/5 scale-[1.02]" : "border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/5"}`}
+                    onClick={() =>
+                      document.getElementById("qr-image-upload")?.click()
+                    }
+                    onDragEnter={(e) => handleDrag("qr-image", e)}
+                    onDragOver={(e) => handleDrag("qr-image", e)}
+                    onDragLeave={(e) => handleDrag("qr-image", e)}
+                    onDrop={handleQRImageDrop}
+                  >
+                    <input
+                      id="qr-image-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleQRImageUpload}
+                    />
+                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/10 group-hover:scale-110 transition-all">
+                      <QrCode className="w-8 h-8 text-muted-foreground group-hover:text-primary" />
+                    </div>
+                    <h4 className="font-bold text-lg mb-2">Đọc mã QR từ ảnh</h4>
+                    <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-6">
+                      Tải lên ảnh chứa mã QR ngân hàng (VietQR) để tự động điền
+                      thông tin
+                    </p>
+                    <Button
+                      variant="secondary"
+                      className="px-8 flex items-center gap-2 pointer-events-none"
+                    >
+                      <Upload className="w-4 h-4" />
+                      Chọn ảnh QR
+                    </Button>
+                  </div>
+                </TabsContent>
+
+                <TabsContent
+                  value="qr-scan"
+                  className="animate-in fade-in-50 duration-300"
+                >
+                  <div className="bg-black/5 rounded-2xl p-4 text-center aspect-video flex flex-col items-center justify-center border border-border overflow-hidden relative min-h-[300px]">
+                    {bankInputMethod === "qr-scan" && hasCamera ? (
+                      <div className="w-full h-full max-w-sm mx-auto rounded-xl overflow-hidden shadow-2xl relative border-4 border-primary/20 bg-black">
+                        <Scanner
+                          constraints={{
+                            aspectRatio: 1,
+                            facingMode: "environment",
+                          }}
+                          allowMultiple={false}
+                          onScan={handleLiveScan}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center py-12">
+                        <Camera
+                          className={`w-12 h-12 mb-4 ${hasCamera ? "text-primary animate-bounce" : "text-muted-foreground opacity-20"}`}
+                        />
+                        <h4 className="font-bold text-lg mb-2">
+                          {hasCamera
+                            ? "Máy ảnh sẵn sàng"
+                            : "Không tìm thấy máy ảnh"}
+                        </h4>
+                        <p className="text-sm text-muted-foreground text-center max-w-xs">
+                          {hasCamera
+                            ? "Vui lòng đưa mã QR vào khung hình để quét tự động"
+                            : "Vui lòng sử dụng chức năng đọc QR từ ảnh hoặc nhập tay"}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </TabsContent>
               </Tabs>
             </CardContent>
           </Card>
 
-          <div className="space-y-4">
-            <h4 className="font-semibold text-lg flex items-center justify-between">
-              Danh sách tài khoản
-              <Badge variant="secondary">{formData.bankAccounts.length}</Badge>
-            </h4>
+          <div className="space-y-6">
+            <div className="flex flex-col md:flex-row items-center gap-4 justify-between">
+              <h4 className="font-bold text-xl flex items-center gap-3">
+                Danh sách đã thêm
+                <Badge
+                  variant="secondary"
+                  className="px-3 py-1 rounded-full text-sm"
+                >
+                  {formData.bankAccounts.length}
+                </Badge>
+              </h4>
+              {formData.bankAccounts.length > 0 && (
+                <p className="hidden md:block text-sm text-muted-foreground italic">
+                  * Nhấn vào biểu tượng thùng rác để xóa tài khoản
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-col md:flex-row items-center gap-4 justify-between">
+              {formData.bankAccounts.length > 0 && (
+                <div className="relative w-full md:w-72 group">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <Input
+                    placeholder="Tìm kiếm tài khoản..."
+                    value={bankSearchQuery}
+                    onChange={(e) => setBankSearchQuery(e.target.value)}
+                    className="pl-10 bg-muted/30 focus-visible:ring-primary border-none shadow-none"
+                  />
+                </div>
+              )}
+            </div>
 
             {formData.bankAccounts.length === 0 ? (
-              <div className="text-center py-12 border-2 border-dashed rounded-xl bg-muted/10">
-                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-                  <CreditCard className="w-6 h-6 text-muted-foreground" />
+              <div className="text-center py-16 border-2 border-dashed rounded-3xl bg-muted/5 transition-colors hover:bg-muted/10">
+                <div className="w-20 h-20 rounded-full bg-muted/40 flex items-center justify-center mx-auto mb-4 group">
+                  <CreditCard className="w-10 h-10 text-muted-foreground group-hover:scale-110 transition-transform" />
                 </div>
-                <p className="text-muted-foreground font-medium">
-                  Chưa có tài khoản nào được thêm
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Vui lòng thêm tài khoản từ form bên trên
+                <h5 className="text-lg font-bold text-muted-foreground">
+                  Chưa có tài khoản nào
+                </h5>
+                <p className="text-sm text-muted-foreground/70 mt-2 max-w-sm mx-auto">
+                  Các tài khoản ngân hàng bạn thêm sẽ hiển thị tại đây để kiểm
+                  tra trước khi lưu
                 </p>
               </div>
             ) : (
-              <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/40">
-                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">
-                        Ngân hàng
-                      </th>
-                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">
-                        Số tài khoản
-                      </th>
-                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">
-                        Chủ tài khoản
-                      </th>
-                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">
-                        Chi nhánh
-                      </th>
-                      <th className="text-right py-3 px-4 font-medium text-muted-foreground">
-                        Thao tác
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {formData.bankAccounts.map((acc, index) => (
-                      <tr
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {formData.bankAccounts
+                  .filter((acc) => {
+                    const query = bankSearchQuery.toLowerCase();
+                    return (
+                      acc.bankName.toLowerCase().includes(query) ||
+                      acc.accountNumber.includes(query) ||
+                      acc.accountHolder.toLowerCase().includes(query)
+                    );
+                  })
+                  .map((acc, index) => {
+                    const bankInfo = vietQrBankData.find(
+                      (b) => b.bin === acc.bin,
+                    );
+
+                    return (
+                      <Card
                         key={index}
-                        className="border-b last:border-0 hover:bg-muted/10 transition-colors"
+                        className="group hover:border-primary/50 transition-all hover:shadow-md cursor-default border-primary/10"
                       >
-                        <td className="py-3 px-4 font-medium">
-                          {acc.bankName}
-                        </td>
-                        <td className="py-3 px-4 font-mono">
-                          {acc.accountNumber}
-                        </td>
-                        <td className="py-3 px-4">{acc.accountHolder}</td>
-                        <td className="py-3 px-4">{acc.branch || "-"}</td>
-                        <td className="py-3 px-4 text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                            onClick={() => removeBankAccount(index)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        <CardContent className="p-4 flex items-center gap-4">
+                          <div className="w-14 h-14 rounded-xl border bg-white flex items-center justify-center p-2 shadow-sm shrink-0 group-hover:scale-105 transition-transform">
+                            <img
+                              src={
+                                bankInfo?.logo ||
+                                "https://placehold.co/40x40?text=" +
+                                  acc.bankName?.[0]
+                              }
+                              alt={acc.bankName}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-bold text-base truncate">
+                                {acc.bankName}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10"
+                                onClick={() => removeBankAccount(index)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <p className="font-mono text-lg font-bold text-primary tracking-wider">
+                              {acc.accountNumber}
+                            </p>
+                            <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
+                              <span className="uppercase font-medium">
+                                {acc.accountHolder}
+                              </span>
+                              {acc.branch && (
+                                <span className="italic truncate ml-2">
+                                  CN: {acc.branch}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
               </div>
             )}
           </div>
@@ -1173,28 +1670,43 @@ export default function EnterpriseEditPage() {
           <div className="text-center mb-4">
             <h3 className="font-semibold">Tài liệu đính kèm</h3>
             <p className="text-sm text-muted-foreground">
-              Cập nhật giấy phép kinh doanh, chứng chỉ VietGAP, GlobalGAP (nếu
-              có)
+              Upload giấy phép kinh doanh, chứng chỉ VietGAP, GlobalGAP (nếu có)
             </p>
           </div>
-          <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
-            <Upload className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+          <div
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-all cursor-pointer ${isDragging["documents"] ? "border-primary bg-primary/5 scale-[1.02]" : "border-border hover:border-primary/50"}`}
+            onClick={() => document.getElementById("document-upload")?.click()}
+            onDragEnter={(e) => handleDrag("documents", e)}
+            onDragOver={(e) => handleDrag("documents", e)}
+            onDragLeave={(e) => handleDrag("documents", e)}
+            onDrop={handleDocumentDrop}
+          >
+            <input
+              id="document-upload"
+              type="file"
+              multiple
+              className="hidden"
+              onChange={handleDocumentUpload}
+            />
+            <Upload
+              className={`w-12 h-12 mx-auto mb-4 transition-colors ${isDragging["documents"] ? "text-primary" : "text-muted-foreground"}`}
+            />
             <p className="font-medium mb-1">
               Kéo thả file hoặc click để tải lên
             </p>
             <p className="text-sm text-muted-foreground">
               Hỗ trợ PDF, Word, hình ảnh (tối đa 5MB mỗi file)
             </p>
-            <Button variant="outline" className="mt-4">
+            <Button variant="outline" className="mt-4 pointer-events-none">
               <Upload className="w-4 h-4 mr-2" />
               Chọn file
             </Button>
           </div>
           <div className="space-y-2">
-            {formData.documents.map((doc, idx) => (
+            {formData.documents.map((doc, index) => (
               <div
-                key={idx}
-                className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
+                key={index}
+                className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg group"
               >
                 {doc.type.includes("image") ? (
                   <Image className="w-5 h-5 text-green-600" />
@@ -1207,9 +1719,19 @@ export default function EnterpriseEditPage() {
                     {doc.size} • Đã tải lên
                   </p>
                 </div>
-                <Button variant="ghost" size="icon" className="h-6 w-6">
-                  <Trash2 className="w-3 h-3" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-green-600">
+                    <Check className="w-3 h-3 mr-1" /> Hoàn thành
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => handleDocumentDelete(index)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
@@ -1221,168 +1743,508 @@ export default function EnterpriseEditPage() {
       title: "Xác nhận",
       description: "Kiểm tra thông tin",
       content: (
-        <div className="max-w-2xl mx-auto space-y-6">
-          <div className="text-center mb-6">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-              <Check className="w-8 h-8 text-primary" />
+        <div className="space-y-10 max-w-6xl mx-auto">
+          <div className="text-center mb-10">
+            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+              <Check className="w-10 h-10 text-primary" />
             </div>
-            <h3 className="font-display font-bold text-xl">
+            <h3 className="font-display font-bold text-2xl mb-2">
               Kiểm tra thông tin
             </h3>
-            <p className="text-muted-foreground">
-              Xem lại thông tin trước khi cập nhật
+            <p className="text-muted-foreground text-base">
+              Vui lòng xem lại tất cả các thông tin trước khi hoàn tất cập nhật
             </p>
           </div>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Building2 className="w-4 h-4" />
-                Thông tin chung
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="mb-4 flex justify-center">
-                {formData.image ? (
-                  <img
-                    src={formData.image}
-                    alt="Logo"
-                    className="w-24 h-24 rounded-lg object-cover border"
-                  />
-                ) : (
-                  <div className="w-24 h-24 rounded-lg bg-muted flex items-center justify-center border">
-                    <Image className="w-10 h-10 text-muted-foreground" />
-                  </div>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Loại hình:</span>
-                    <Badge>
-                      {formData.type === "enterprise"
-                        ? "Doanh nghiệp"
-                        : formData.type === "cooperative"
-                          ? "Hợp tác xã"
-                          : "Nông hộ"}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Phân loại:</span>
-                    <span className="font-medium capitalize">
-                      {formData.classification}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Mã đơn vị:</span>
-                    <span className="font-medium">{formData.code || "-"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Tên đầy đủ:</span>
-                    <span className="font-medium">{formData.name || "-"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Thương hiệu:</span>
-                    <span className="font-medium">
-                      {formData.brandName || "-"}
-                    </span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Mã số thuế:</span>
-                    <span>{formData.taxCode || "-"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Địa chỉ thuế:</span>
-                    <span className="text-right max-w-[150px] truncate">
-                      {formData.taxAddress || "-"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Đại diện:</span>
-                    <span>{formData.representative || "-"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Điện thoại:</span>
-                    <span>{formData.phone || "-"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Email:</span>
-                    <span className="truncate max-w-[150px]">
-                      {formData.email || "-"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="pt-2 border-t mt-2">
-                <span className="text-muted-foreground block mb-1">
-                  Địa chỉ trụ sở:
-                </span>
-                <span className="font-medium">
-                  {formData.address}
-                  {formData.ward && `, ${formData.ward}`}
-                  {formData.district && `, ${formData.district}`}
-                  {formData.province && `, ${formData.province}`}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
 
-          {formData.bankAccounts.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <CreditCard className="w-4 h-4" />
-                  Tài khoản ngân hàng ({formData.bankAccounts.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {formData.bankAccounts.map((acc, i) => (
-                  <div
-                    key={i}
-                    className="p-3 bg-muted/30 rounded border border-border text-sm"
-                  >
-                    <div className="font-bold flex justify-between">
-                      <span>{acc.bankName}</span>
-                      <span className="font-mono">{acc.accountNumber}</span>
-                    </div>
-                    <div className="text-muted-foreground mt-1 flex justify-between">
-                      <span>Chủ TK: {acc.accountHolder}</span>
-                      {acc.branch && <span>CN: {acc.branch}</span>}
-                    </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Overview Card (Column 1) */}
+            <div className="lg:col-span-1 space-y-6">
+              <Card className="overflow-hidden border-primary/20 shadow-lg">
+                <div className="h-32 bg-muted relative">
+                  {formData.image && (
+                    <img
+                      src={formData.image}
+                      alt="Banner"
+                      className="w-full h-full object-cover opacity-40 blur-[2px]"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-linear-to-t from-background to-transparent" />
+                </div>
+                <CardHeader className="text-center pb-4">
+                  <div className="mx-auto w-24 h-24 -mt-16 rounded-full border-4 border-background bg-white shadow-xl flex items-center justify-center mb-4 overflow-hidden relative z-10 transition-transform hover:scale-105">
+                    {formData.image ? (
+                      <img
+                        src={formData.image}
+                        alt="Logo"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Image className="w-10 h-10 text-muted-foreground" />
+                    )}
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
-          {formData.branches.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  Danh sách chi nhánh ({formData.branches.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {formData.branches.map((branch, i) => (
-                  <div
-                    key={i}
-                    className="p-3 bg-muted/30 rounded border border-border text-sm"
-                  >
-                    <div className="font-bold">{branch.name}</div>
-                    <div className="grid grid-cols-2 gap-2 mt-2 text-muted-foreground">
-                      <div>MST: {branch.taxCode || "-"}</div>
-                      <div>SĐT: {branch.phone || "-"}</div>
-                      <div className="col-span-2">
-                        Đ/c: {branch.address || "-"}
+                  <CardTitle className="text-xl font-bold">
+                    {formData.brandName || "Tên thương hiệu"}
+                  </CardTitle>
+                  <CardDescription className="text-sm font-medium">
+                    {formData.name || "Tên doanh nghiệp"}
+                  </CardDescription>
+                  <div className="flex justify-center gap-2 mt-4">
+                    {formData.classification.map((item) => (
+                      <Badge
+                        key={item}
+                        variant="outline"
+                        className="capitalize px-3 py-1 text-xs font-semibold bg-primary/5 text-primary border-primary/20"
+                      >
+                        {classificationOptions.find((opt) => opt.value === item)
+                          ?.label ?? item}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6 pt-6 border-t bg-muted/5">
+                  <div className="space-y-4 text-sm">
+                    <div className="flex items-center gap-4">
+                      <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center shadow-sm border">
+                        <CreditCard className="w-4 h-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                          Mã doanh nghiệp
+                        </p>
+                        <p className="font-bold text-base">
+                          {formData.code || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center shadow-sm border">
+                        <User className="w-4 h-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                          Đại diện pháp luật
+                        </p>
+                        <p className="font-bold text-base">
+                          {formData.representative || "Chưa nhập"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center shadow-sm border">
+                        <Calendar className="w-4 h-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                          Ngày thành lập
+                        </p>
+                        <p className="font-bold text-base">
+                          {formData.foundedDate
+                            ? new Date(formData.foundedDate).toLocaleDateString(
+                                "vi-VN",
+                              )
+                            : "Chưa nhập"}
+                        </p>
                       </div>
                     </div>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+
+                  <Separator className="bg-primary/10" />
+
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-4">
+                      <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center shadow-sm border shrink-0">
+                        <MapPin className="w-4 h-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                          Địa chỉ trụ sở
+                        </p>
+                        <p className="text-sm font-medium leading-normal">
+                          {formData.address}
+                          {formData.ward && `, ${formData.ward}`}
+                          {formData.province && `, ${formData.province}`}
+                        </p>
+                      </div>
+                    </div>
+                    {formData.website && (
+                      <div className="flex items-center gap-4">
+                        <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center shadow-sm border shrink-0">
+                          <Globe className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                            Website
+                          </p>
+                          <p className="text-sm font-bold text-blue-600 truncate underline decoration-blue-200 underline-offset-4">
+                            {formData.website}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Detailed Info (Column 2-3) */}
+            <div className="lg:col-span-2 space-y-8">
+              <Tabs defaultValue="legal" className="w-full">
+                <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent gap-8 mb-6">
+                  <TabsTrigger
+                    value="legal"
+                    className="text-sm font-bold rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-4 tracking-wide"
+                  >
+                    Pháp lý
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="branches"
+                    className="text-sm font-bold rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-4 tracking-wide"
+                  >
+                    Chi nhánh ({formData.branches.length})
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="banks"
+                    className="text-sm font-bold rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-4 tracking-wide"
+                  >
+                    Ngân hàng ({formData.bankAccounts.length})
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="docs"
+                    className="text-sm font-bold rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-4 tracking-wide"
+                  >
+                    Tài liệu ({formData.documents.length})
+                  </TabsTrigger>
+                </TabsList>
+
+                <div className="pt-2">
+                  <TabsContent value="legal" className="m-0 space-y-6">
+                    <Card className="border-primary/10">
+                      <CardHeader className="py-5 px-6 border-b bg-muted/5">
+                        <CardTitle className="text-lg flex items-center gap-3">
+                          <Info className="w-5 h-5 text-primary" />
+                          Thông tin thuế & Pháp lý
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="grid md:grid-cols-2 gap-8 py-6 px-6">
+                        <div className="space-y-6">
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
+                              Mã số thuế
+                            </div>
+                            <div className="font-bold text-lg text-primary">
+                              {formData.taxCode || "-"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
+                              Địa chỉ đăng ký thuế
+                            </div>
+                            <div className="font-medium text-base leading-relaxed">
+                              {formData.taxAddress || "-"}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-6">
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
+                              Mô tả doanh nghiệp
+                            </div>
+                            <div className="font-medium text-base text-muted-foreground leading-relaxed italic">
+                              "{formData.description || "Không có mô tả."}"
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {formData.contacts.length > 0 && (
+                      <Card className="border-primary/10">
+                        <CardHeader className="py-5 px-6 border-b bg-muted/5">
+                          <CardTitle className="text-lg flex items-center gap-3">
+                            <Users className="w-5 h-5 text-primary" />
+                            Danh sách người liên hệ
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4 py-6 px-6">
+                          {formData.contacts.map((contact, i) => (
+                            <div
+                              key={i}
+                              className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-border/50 hover:bg-muted/50 transition-colors"
+                            >
+                              <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                                  <User className="w-5 h-5" />
+                                </div>
+                                <div>
+                                  <div className="font-bold text-base">
+                                    {contact.name}
+                                  </div>
+                                  <div className="text-sm font-medium text-muted-foreground flex items-center gap-2 mt-0.5">
+                                    <Phone className="w-3 h-3" />{" "}
+                                    {contact.phone}
+                                  </div>
+                                </div>
+                              </div>
+                              {contact.email && (
+                                <div className="text-sm font-medium text-muted-foreground flex items-center gap-2 bg-background/50 px-3 py-1.5 rounded-lg border">
+                                  <Mail className="w-3 h-3 text-primary" />{" "}
+                                  {contact.email}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent
+                    value="branches"
+                    className="m-0 space-y-6 animate-in fade-in duration-300"
+                  >
+                    <div className="flex items-center gap-3 bg-muted/5 p-4 rounded-xl border border-primary/10">
+                      <Building2 className="w-5 h-5 text-primary" />
+                      <h4 className="font-bold text-lg">Danh sách chi nhánh</h4>
+                      <Badge className="bg-primary/10 text-primary border-none">
+                        {formData.branches.length}
+                      </Badge>
+                    </div>
+
+                    {formData.branches.length === 0 ? (
+                      <div className="text-center py-16 border-2 border-dashed rounded-3xl bg-muted/5">
+                        <Building2 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                        <p className="text-muted-foreground font-medium">
+                          Chưa có chi nhánh nào được thêm
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-4">
+                        {formData.branches.map((branch, i) => (
+                          <Card
+                            key={i}
+                            className="hover:border-primary/40 transition-all shadow-sm"
+                          >
+                            <CardContent className="p-6">
+                              <div className="flex items-start justify-between mb-4">
+                                <div>
+                                  <h3 className="font-bold text-lg">
+                                    {branch.name}
+                                  </h3>
+                                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                                    <MapPin className="w-3 h-3 text-primary" />{" "}
+                                    {branch.address || "Chưa cập nhật địa chỉ"}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm bg-muted/30 p-4 rounded-lg">
+                                <div>
+                                  <span className="text-[10px] text-muted-foreground uppercase font-bold block mb-1">
+                                    Mã số thuế
+                                  </span>
+                                  <div className="font-medium">
+                                    {branch.taxCode || "-"}
+                                  </div>
+                                </div>
+                                <div>
+                                  <span className="text-[10px] text-muted-foreground uppercase font-bold block mb-1">
+                                    Điện thoại
+                                  </span>
+                                  <div className="font-medium">
+                                    {branch.phone || "-"}
+                                  </div>
+                                </div>
+                                <div>
+                                  <span className="text-[10px] text-muted-foreground uppercase font-bold block mb-1">
+                                    Email
+                                  </span>
+                                  <div
+                                    className="font-medium truncate"
+                                    title={branch.email}
+                                  >
+                                    {branch.email || "-"}
+                                  </div>
+                                </div>
+                                <div>
+                                  <span className="text-[10px] text-muted-foreground uppercase font-bold block mb-1">
+                                    Ghi chú
+                                  </span>
+                                  <div
+                                    title={branch.note}
+                                    className="font-medium truncate"
+                                  >
+                                    {branch.note || "-"}
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent
+                    value="banks"
+                    className="m-0 space-y-6 animate-in fade-in duration-300"
+                  >
+                    <div className="flex flex-col gap-4 justify-between bg-muted/5 p-4 rounded-xl border border-primary/10">
+                      <div className="flex items-center gap-3">
+                        <CreditCard className="w-5 h-5 text-primary" />
+                        <h4 className="font-bold text-lg">
+                          Tài khoản thanh toán
+                        </h4>
+                        <Badge className="bg-primary/10 text-primary border-none">
+                          {formData.bankAccounts.length}
+                        </Badge>
+                      </div>
+                      <div className="relative w-full md:w-80 group">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <Input
+                          placeholder="Tìm nhanh: Tên, Số tài khoản, Chủ thẻ..."
+                          value={confirmBankSearchQuery}
+                          onChange={(e) =>
+                            setConfirmBankSearchQuery(e.target.value)
+                          }
+                          className="pl-10 bg-background border-primary/20 focus:border-primary shadow-sm h-10 text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    {formData.bankAccounts.length === 0 ? (
+                      <div className="text-center py-16 border-2 border-dashed rounded-3xl bg-muted/5">
+                        <CreditCard className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                        <p className="text-muted-foreground font-medium">
+                          Chưa có tài khoản ngân hàng nào
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {formData.bankAccounts
+                          .filter((acc) => {
+                            const query = confirmBankSearchQuery.toLowerCase();
+                            return (
+                              acc.bankName.toLowerCase().includes(query) ||
+                              acc.accountNumber.includes(query) ||
+                              acc.accountHolder.toLowerCase().includes(query)
+                            );
+                          })
+                          .map((acc, i) => {
+                            const bankInfo = vietQrBankData.find(
+                              (b) => b.bin === acc.bin,
+                            );
+                            return (
+                              <Card
+                                key={i}
+                                className="hover:border-primary/40 transition-all shadow-sm hover:shadow-md group overflow-hidden"
+                              >
+                                <CardContent className="p-5">
+                                  <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-4">
+                                      <div className="w-12 h-12 rounded-xl border bg-white flex items-center justify-center p-2 shadow-sm group-hover:scale-105 transition-transform">
+                                        <img
+                                          src={
+                                            bankInfo?.logo ||
+                                            "https://placehold.co/40x40?text=" +
+                                              acc.bankName?.[0]
+                                          }
+                                          alt={acc.bankName}
+                                          className="w-full h-full object-contain"
+                                        />
+                                      </div>
+                                      <div>
+                                        <h3 className="font-bold text-sm truncate max-w-[150px]">
+                                          {acc.bankName}
+                                        </h3>
+                                        <p className="text-lg font-mono font-black text-primary tracking-tight">
+                                          {acc.accountNumber}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4 text-xs font-medium border-t pt-4">
+                                    <div>
+                                      <span className="text-muted-foreground uppercase text-[9px] font-bold block mb-0.5">
+                                        Chủ tài khoản
+                                      </span>
+                                      <div className="font-bold uppercase text-foreground">
+                                        {acc.accountHolder}
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground uppercase text-[9px] font-bold block mb-0.5">
+                                        Chi nhánh
+                                      </span>
+                                      <div className="font-bold text-foreground">
+                                        {acc.branch || "-"}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="docs" className="m-0 space-y-6">
+                    <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex items-center gap-3">
+                      <FileText className="w-5 h-5 text-blue-600" />
+                      <h4 className="font-bold text-lg text-blue-900">
+                        Hồ sơ đính kèm
+                      </h4>
+                      <Badge className="bg-blue-100 text-blue-700 border-none ml-auto">
+                        {formData.documents.length} tệp
+                      </Badge>
+                    </div>
+
+                    {formData.documents.length === 0 ? (
+                      <div className="text-center py-16 border-2 border-dashed rounded-3xl bg-muted/5">
+                        <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                        <p className="text-muted-foreground font-medium">
+                          Chưa có tài liệu đính kèm
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {formData.documents.map((doc, i) => (
+                          <Card
+                            key={i}
+                            className="group overflow-hidden hover:border-blue-300 transition-all cursor-default"
+                          >
+                            <CardContent className="p-4 flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 group-hover:bg-blue-100 transition-colors">
+                                {doc.type.includes("image") ? (
+                                  <Image className="w-6 h-6 text-blue-600" />
+                                ) : (
+                                  <FileText className="w-6 h-6 text-blue-600" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-bold text-sm truncate text-blue-900">
+                                  {doc.name}
+                                </h4>
+                                <div className="text-xs font-medium text-blue-700 mt-1 flex items-center gap-2">
+                                  <span className="bg-blue-100 px-2 py-0.5 rounded-full">
+                                    {doc.size}
+                                  </span>
+                                  <span>Tải lên thành công</span>
+                                </div>
+                              </div>
+                              <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center shrink-0 shadow-inner">
+                                <Check className="w-4 h-4 text-green-600" />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                </div>
+              </Tabs>
+            </div>
+          </div>
         </div>
       ),
     },

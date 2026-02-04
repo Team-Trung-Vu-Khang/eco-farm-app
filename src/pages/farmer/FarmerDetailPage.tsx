@@ -52,8 +52,8 @@ interface BankAccount {
   note: string;
 }
 
-export default function EnterpriseDetailPage() {
-  const [, params] = useRoute("/enterprise/:id");
+export default function FarmerDetailPage() {
+  const [, params] = useRoute("/farmer/:id");
   const [, setLocation] = useLocation();
 
   // Mock data fetching
@@ -66,9 +66,9 @@ export default function EnterpriseDetailPage() {
     setTimeout(() => {
       setData({
         id: params?.id || "DN2024001",
-        type: "enterprise",
+        type: "farmer",
         code: "DN2024001",
-        name: "Công ty Cổ phần Nông nghiệp Xanh EcoFarm",
+        name: "Nông hộ Nông nghiệp Xanh EcoFarm",
         brandName: "EcoFarm Vietnam",
         taxCode: "0101234567",
         taxAddress: "Tầng 5, Tòa nhà ABC, Cầu Giấy, Hà Nội",
@@ -85,7 +85,7 @@ export default function EnterpriseDetailPage() {
         image:
           "https://d1csarkz8obe9u.cloudfront.net/posterpreviews/company-logo-design-template-e089327a5c476ce5c70c74f7359c5898_screen.jpg?ts=1672291305",
         description:
-          "Doanh nghiệp tiên phong trong lĩnh vực nông nghiệp công nghệ cao, chuyên sản xuất và cung ứng rau sạch chuẩn VietGAP. Chúng tôi cam kết mang đến những sản phẩm an toàn, chất lượng nhất cho người tiêu dùng.",
+          "Nông hộ tiên phong trong lĩnh vực nông nghiệp công nghệ cao, chuyên sản xuất và cung ứng rau sạch chuẩn VietGAP. Chúng tôi cam kết mang đến những sản phẩm an toàn, chất lượng nhất cho người tiêu dùng.",
         branches: [
           {
             name: "Chi nhánh Miền Nam",
@@ -146,15 +146,9 @@ export default function EnterpriseDetailPage() {
   return (
     <AdminLayout
       title={data.name}
-      description={`Chi tiết thông tin ${
-        data.type === "enterprise"
-          ? "doanh nghiệp"
-          : data.type === "cooperative"
-            ? "hợp tác xã"
-            : "nông hộ"
-      }`}
+      description={`Chi tiết thông tin nông hộ`}
       actions={
-        <Button variant="outline" onClick={() => setLocation("/enterprise")}>
+        <Button variant="outline" onClick={() => setLocation("/farmer")}>
           <ChevronLeft className="w-4 h-4 mr-2" />
           Quay lại
         </Button>
@@ -239,17 +233,17 @@ export default function EnterpriseDetailPage() {
                 <div className="flex items-center gap-3">
                   <User className="w-4 h-4 text-muted-foreground" />
                   <span>
-                    Đại diện:{" "}
+                    Chủ nông hộ:{" "}
                     <span className="font-medium">{data.representative}</span>
                   </span>
                 </div>
-                <div className="flex items-center gap-3">
+                {/* <div className="flex items-center gap-3">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
                   <span>
                     Thành lập:{" "}
                     {new Date(data.foundedDate).toLocaleDateString("vi-VN")}
                   </span>
-                </div>
+                </div> */}
               </div>
               <Separator />
               <div className="space-y-3 text-sm">
@@ -297,7 +291,7 @@ export default function EnterpriseDetailPage() {
           <div className="flex gap-2">
             <Button
               className="flex-1"
-              onClick={() => setLocation(`/enterprise/${data.id}/edit`)}
+              onClick={() => setLocation(`/farmer/${data.id}/edit`)}
             >
               Chỉnh sửa
             </Button>
@@ -320,12 +314,12 @@ export default function EnterpriseDetailPage() {
               >
                 Thông tin chung
               </TabsTrigger>
-              <TabsTrigger
+              {/* <TabsTrigger
                 value="branches"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-3"
               >
                 Chi nhánh ({data.branches.length})
-              </TabsTrigger>
+              </TabsTrigger> */}
               <TabsTrigger
                 value="bankAccounts"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-3"
@@ -427,7 +421,7 @@ export default function EnterpriseDetailPage() {
                             <div>
                               <h3
                                 className="font-bold text-lg cursor-pointer hover:text-primary transition-colors"
-                                onClick={() => setLocation(`/branch/${i}/edit`)}
+                                onClick={() => setLocation(`/branch/${i}`)}
                               >
                                 {branch.name}
                               </h3>

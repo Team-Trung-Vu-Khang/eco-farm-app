@@ -106,12 +106,12 @@ const bankOptions = vietQrBankData.map((bank) => ({
   value: bank.bin,
 }));
 
-export default function EnterpriseCreatePage() {
+export default function FarmerCreatePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
-    type: "enterprise" as "enterprise" | "farm" | "cooperative",
+    type: "farm" as "enterprise" | "farm" | "cooperative",
     code: "",
     name: "",
     brandName: "",
@@ -413,7 +413,11 @@ export default function EnterpriseCreatePage() {
   };
 
   const addBankAccount = () => {
-    if (newBankAccount.bankName && newBankAccount.accountNumber) {
+    if (
+      newBankAccount.bankName &&
+      newBankAccount.accountNumber &&
+      newBankAccount.accountHolder
+    ) {
       setFormData({
         ...formData,
         bankAccounts: [newBankAccount, ...formData.bankAccounts],
@@ -429,7 +433,8 @@ export default function EnterpriseCreatePage() {
     } else {
       toast({
         title: "Lỗi",
-        description: "Vui lòng nhập tên ngân hàng và số tài khoản",
+        description:
+          "Vui lòng nhập tên ngân hàng, số tài khoản và chủ tài khoản",
         variant: "destructive",
       });
     }
@@ -452,9 +457,9 @@ export default function EnterpriseCreatePage() {
     setShowConfirmDialog(false);
     toast({
       title: "Thành công",
-      description: `Đã tạo doanh nghiệp "${formData.name}"`,
+      description: `Đã tạo nông hộ "${formData.name}"`,
     });
-    setLocation("/enterprise");
+    setLocation("/farmer");
   };
 
   const steps: Step[] = [
@@ -504,7 +509,7 @@ export default function EnterpriseCreatePage() {
                   onChange={handleImageUpload}
                 />
                 <div className="text-sm text-muted-foreground">
-                  <p>Tải lên logo hoặc hình ảnh đại diện của doanh nghiệp.</p>
+                  <p>Tải lên logo hoặc hình ảnh đại diện của nông hộ.</p>
                   <p>Định dạng hỗ trợ: JPG, PNG. Kích thước tối đa: 5MB.</p>
                 </div>
                 <Button
@@ -524,7 +529,7 @@ export default function EnterpriseCreatePage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="code">Mã doanh nghiệp *</Label>
+              <Label htmlFor="code">Mã nông hộ *</Label>
               <Input
                 id="code"
                 value={formData.code}
@@ -550,7 +555,7 @@ export default function EnterpriseCreatePage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Tên doanh nghiệp *</Label>
+              <Label htmlFor="name">Tên nông hộ *</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -627,7 +632,7 @@ export default function EnterpriseCreatePage() {
           <div className="pt-4 border-t">
             <div className="flex items-center gap-2 mb-4">
               <MapPin className="w-5 h-5 text-primary" />
-              <h3 className="font-semibold">Địa chỉ trụ sở</h3>
+              <h3 className="font-semibold">Địa chỉ nông hộ</h3>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -684,14 +689,14 @@ export default function EnterpriseCreatePage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Mô tả doanh nghiệp</Label>
+            <Label htmlFor="description">Mô tả nông hộ</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
               }
-              placeholder="Giới thiệu về doanh nghiệp"
+              placeholder="Giới thiệu về nông hộ"
               rows={3}
             />
           </div>
@@ -1357,7 +1362,7 @@ export default function EnterpriseCreatePage() {
                     {formData.brandName || "Tên thương hiệu"}
                   </CardTitle>
                   <CardDescription className="text-sm font-medium">
-                    {formData.name || "Tên doanh nghiệp"}
+                    {formData.name || "Tên nông hộ"}
                   </CardDescription>
                   <div className="px-2 flex justify-center gap-2 mt-4 flex-wrap">
                     {formData.classification.map((item) => (
@@ -1380,7 +1385,7 @@ export default function EnterpriseCreatePage() {
                       </div>
                       <div>
                         <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                          Mã doanh nghiệp
+                          Mã nông hộ
                         </p>
                         <p className="font-bold text-base">
                           {formData.code || "N/A"}
@@ -1428,7 +1433,7 @@ export default function EnterpriseCreatePage() {
                       </div>
                       <div>
                         <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                          Địa chỉ trụ sở
+                          Địa chỉ nông hộ
                         </p>
                         <p className="text-sm font-medium leading-normal">
                           {formData.address}
@@ -1467,12 +1472,12 @@ export default function EnterpriseCreatePage() {
                   >
                     Pháp lý
                   </TabsTrigger>
-                  <TabsTrigger
+                  {/* <TabsTrigger
                     value="branches"
                     className="text-sm font-bold rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-4 tracking-wide"
                   >
                     Chi nhánh ({formData.branches.length})
-                  </TabsTrigger>
+                  </TabsTrigger> */}
                   <TabsTrigger
                     value="banks"
                     className="text-sm font-bold rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-4 tracking-wide"
@@ -1518,7 +1523,7 @@ export default function EnterpriseCreatePage() {
                         <div className="space-y-6">
                           <div>
                             <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
-                              Mô tả doanh nghiệp
+                              Mô tả nông hộ
                             </div>
                             <div className="font-medium text-base text-muted-foreground leading-relaxed italic">
                               "{formData.description || "Không có mô tả."}"
@@ -1829,16 +1834,16 @@ export default function EnterpriseCreatePage() {
 
   return (
     <AdminLayout
-      title="Tạo mới Doanh nghiệp"
-      description="Điền thông tin theo từng bước để tạo mới doanh nghiệp"
+      title="Tạo mới Nông hộ"
+      description="Điền thông tin theo từng bước để tạo mới nông hộ"
     >
       <Card>
         <CardContent className="p-6">
           <StepperForm
             steps={steps}
-            onComplete={handleComplete}
-            onCancel={() => setLocation("/enterprise")}
             completeLabel="Tạo mới"
+            onComplete={handleComplete}
+            onCancel={() => setLocation("/farmer")}
           />
         </CardContent>
       </Card>
@@ -1847,8 +1852,7 @@ export default function EnterpriseCreatePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Xác nhận tạo mới</AlertDialogTitle>
             <AlertDialogDescription>
-              Bạn có chắc chắn muốn tạo mới doanh nghiệp "{formData.name}"
-              không?
+              Bạn có chắc chắn muốn tạo mới nông hộ "{formData.name}" không?
               <br />
               Thông tin đã nhập sẽ được lưu vào hệ thống.
             </AlertDialogDescription>

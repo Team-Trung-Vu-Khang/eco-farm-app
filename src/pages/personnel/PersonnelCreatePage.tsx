@@ -20,8 +20,18 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  Combobox,
 } from "@tankhang1/eco-shared-ui";
 import { CreditCard, Save, User, X } from "lucide-react";
+import { vietQrBankData } from "@/constants/banks";
+
+const bankOptions = vietQrBankData.map((bank) => ({
+  id: bank.id,
+  bin: bank.bin,
+  label: bank.name,
+  image: bank.logo,
+  value: bank.bin,
+}));
 
 export default function PersonnelCreatePage() {
   const [, setLocation] = useLocation();
@@ -130,7 +140,7 @@ export default function PersonnelCreatePage() {
                     </p>
                   </CardContent>
                 </Card>
-                <Card>
+                {/* <Card>
                   <CardContent className="pt-6">
                     <div className="space-y-2">
                       <Label htmlFor="status">Trạng thái làm việc</Label>
@@ -151,7 +161,7 @@ export default function PersonnelCreatePage() {
                       </Select>
                     </div>
                   </CardContent>
-                </Card>
+                </Card> */}
               </div>
 
               {/* Right Column: Detailed Info */}
@@ -369,25 +379,19 @@ export default function PersonnelCreatePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="bankName">Ngân hàng</Label>
-                    <Select
+                    <Combobox
+                      options={bankOptions}
                       value={formData.bankName}
-                      onValueChange={(val) =>
-                        setFormData({ ...formData, bankName: val })
+                      onChange={(val) =>
+                        setFormData({
+                          ...formData,
+                          bankName: val,
+                        })
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn ngân hàng" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Vietcombank">Vietcombank</SelectItem>
-                        <SelectItem value="VietinBank">VietinBank</SelectItem>
-                        <SelectItem value="BIDV">BIDV</SelectItem>
-                        <SelectItem value="Agribank">Agribank</SelectItem>
-                        <SelectItem value="MBBank">MBBank</SelectItem>
-                        <SelectItem value="Techcombank">Techcombank</SelectItem>
-                        <SelectItem value="ACB">ACB</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      placeholder="Chọn ngân hàng..."
+                      searchPlaceholder="Tìm tên ngân hàng..."
+                      className="w-full"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="bankBranch">Chi nhánh ngân hàng</Label>
