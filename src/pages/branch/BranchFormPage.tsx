@@ -1,0 +1,1316 @@
+import { useState, useRef, useEffect } from "react";
+import { useLocation, useRoute } from "wouter";
+import {
+  Upload,
+  MapPin,
+  Plus,
+  Trash2,
+  Building2,
+  CreditCard,
+  Users,
+  Image as ImageIcon,
+  FileText,
+} from "lucide-react";
+import {
+  AdminLayout,
+  Button,
+  Input,
+  Label,
+  Textarea,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  useToast,
+  Card,
+  CardContent,
+  Badge,
+  StepperForm,
+  type Step,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@tankhang1/eco-shared-ui";
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+
+// Fix Leaflet default icon issue
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+});
+
+interface ContactPerson {
+  id: string;
+  name: string;
+  position: string;
+  phone: string;
+  email: string;
+  isPrimary: boolean;
+}
+
+interface ContactInfo {
+  id: string;
+  phone: string;
+  email: string;
+  isPrimary: boolean;
+}
+
+interface BankAccount {
+  id: string;
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  branch: string;
+  isPrimary: boolean;
+}
+
+interface BranchFormData {
+  code: string;
+  name: string;
+  enterpriseId: string;
+  enterpriseName: string;
+  // Thông tin thuế
+  taxCode: string;
+  taxAddress: string;
+  // Website
+  website: string;
+  // Địa chỉ
+  address: string;
+  city: string;
+  district: string;
+  ward: string;
+  // Hình ảnh
+  imageUrl: string;
+  imageFile?: File;
+  // Định vị
+  latitude: number;
+  longitude: number;
+  // Trạng thái
+  status: "active" | "inactive";
+  // Danh sách
+  contactInfos: ContactInfo[];
+  contacts: ContactPerson[];
+  bankAccounts: BankAccount[];
+}
+
+// Component để xử lý click trên bản đồ
+function LocationMarker({
+  position,
+  setPosition,
+}: {
+  position: [number, number];
+  setPosition: (pos: [number, number]) => void;
+}) {
+  useMapEvents({
+    click(e) {
+      setPosition([e.latlng.lat, e.latlng.lng]);
+    },
+  });
+
+  return position ? <Marker position={position} /> : null;
+}
+
+// Component để cập nhật center của map khi vị trí thay đổi
+function MapUpdater({ center }: { center: [number, number] }) {
+  const map = useMapEvents({});
+
+  useEffect(() => {
+    map.setView(center, map.getZoom());
+  }, [center, map]);
+
+  return null;
+}
+
+export default function BranchFormPage() {
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const [, params] = useRoute("/branch/:id/edit");
+  const isEdit = !!params?.id;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [searchAddress, setSearchAddress] = useState("");
+  const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const [formData, setFormData] = useState<BranchFormData>({
+    code: isEdit ? "CN001" : "",
+    name: isEdit ? "Chi nhánh Miền Nam" : "",
+    enterpriseId: isEdit ? "DN001" : "",
+    enterpriseName: isEdit ? "Công ty CP Nông nghiệp Xanh EcoFarm" : "",
+    taxCode: isEdit ? "0123456789-001" : "",
+    taxAddress: isEdit ? "123 Nguyễn Huệ, Quận 1, TP.HCM" : "",
+    address: isEdit ? "123 Nguyễn Huệ" : "",
+    city: isEdit ? "Hồ Chí Minh" : "",
+    district: isEdit ? "Quận 1" : "",
+    ward: isEdit ? "Phường Bến Nghé" : "",
+    imageUrl: isEdit
+      ? "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800"
+      : "",
+    latitude: isEdit ? 10.7769 : 10.7769,
+    longitude: isEdit ? 106.7009 : 106.7009,
+    status: "active",
+    website: isEdit ? "https://ecofarm.vn" : "",
+    contactInfos: isEdit
+      ? [
+          {
+            id: "1",
+            phone: "02839999888",
+            email: "hcm@ecofarm.vn",
+            isPrimary: true,
+          },
+        ]
+      : [],
+    contacts: isEdit
+      ? [
+          {
+            id: "1",
+            name: "Nguyễn Văn A",
+            position: "Giám đốc chi nhánh",
+            phone: "0901234567",
+            email: "nguyenvana@ecofarm.vn",
+            isPrimary: true,
+          },
+        ]
+      : [],
+    bankAccounts: isEdit
+      ? [
+          {
+            id: "1",
+            bankName: "Vietcombank",
+            accountNumber: "0123456789",
+            accountHolder: "Chi nhánh Miền Nam - EcoFarm",
+            branch: "Chi nhánh Sài Gòn",
+            isPrimary: true,
+          },
+        ]
+      : [],
+  });
+
+  const enterprises = [
+    { id: "DN001", name: "Công ty CP Nông nghiệp Xanh EcoFarm" },
+    { id: "DN002", name: "HTX Rau sạch Thanh Hà" },
+    { id: "DN003", name: "Công ty TNHH Nông sản Organic" },
+  ];
+
+  const BANKS_LIST = [
+    "Vietcombank",
+    "Techcombank",
+    "BIDV",
+    "Agribank",
+    "VietinBank",
+    "MB Bank",
+    "ACB",
+    "Sacombank",
+    "VPBank",
+    "TPBank",
+  ];
+
+  const CITIES_LIST = [
+    "Hồ Chí Minh",
+    "Hà Nội",
+    "Đà Nẵng",
+    "Cần Thơ",
+    "Hải Phòng",
+    "Đồng Nai",
+    "Bình Dương",
+    "Bà Rịa - Vũng Tàu",
+  ];
+
+  const WARDS_LIST = [
+    "Phường Bến Nghé",
+    "Phường Bến Thành",
+    "Phường Đa Kao",
+    "Phường Tân Định",
+    "Phường Phạm Ngũ Lão",
+    "Phường Thảo Điền",
+    "Phường An Phú",
+  ];
+
+  // Debounce search address
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchAddress) {
+        handleSearchAddress(searchAddress);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchAddress]);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({
+          ...formData,
+          imageUrl: reader.result as string,
+          imageFile: file,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Xử lý tìm kiếm địa chỉ với autocomplete
+  const handleSearchAddress = async (query: string) => {
+    if (!query || query.length < 3) {
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      // Sử dụng Nominatim API (OpenStreetMap) - miễn phí
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=vn&limit=5`,
+      );
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        setAddressSuggestions(data);
+        setShowSuggestions(true);
+      } else {
+        setAddressSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } catch (error) {
+      console.error("Error searching address:", error);
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  // Xử lý chọn địa chỉ từ gợi ý
+  const handleSelectAddress = (suggestion: any) => {
+    const address = suggestion.address || {};
+
+    // Parse địa chỉ thành các trường riêng biệt
+    const road = address.road || address.street || "";
+    const houseNumber = address.house_number || "";
+    const streetAddress = houseNumber ? `${houseNumber} ${road}` : road;
+
+    setFormData({
+      ...formData,
+      latitude: parseFloat(suggestion.lat),
+      longitude: parseFloat(suggestion.lon),
+      address: streetAddress || suggestion.display_name.split(",")[0],
+      ward: address.suburb || address.neighbourhood || address.quarter || "",
+      district: address.city_district || address.county || address.town || "",
+      city: address.city || address.province || address.state || "",
+    });
+
+    setSearchAddress(suggestion.display_name);
+    setShowSuggestions(false);
+    setAddressSuggestions([]);
+
+    toast({
+      title: "Thành công",
+      description: "Đã tìm thấy địa chỉ trên bản đồ",
+    });
+  };
+
+  // Xử lý tạo người liên hệ mới
+  const handleAddNewContact = () => {
+    const newContact: ContactPerson = {
+      id: Date.now().toString(),
+      name: "",
+      position: "",
+      phone: "",
+      email: "",
+      isPrimary: formData.contacts.length === 0,
+    };
+    setFormData({
+      ...formData,
+      contacts: [...formData.contacts, newContact],
+    });
+  };
+
+  const handleRemoveContact = (id: string) => {
+    setFormData({
+      ...formData,
+      contacts: formData.contacts.filter((c) => c.id !== id),
+    });
+  };
+
+  const handleUpdateContact = (
+    id: string,
+    field: keyof ContactPerson,
+    value: any,
+  ) => {
+    setFormData({
+      ...formData,
+      contacts: formData.contacts.map((c) =>
+        c.id === id ? { ...c, [field]: value } : c,
+      ),
+    });
+  };
+
+  const handleSetPrimaryContact = (id: string) => {
+    setFormData({
+      ...formData,
+      contacts: formData.contacts.map((c) => ({
+        ...c,
+        isPrimary: c.id === id,
+      })),
+    });
+  };
+
+  // Xử lý thông tin liên hệ
+  const handleAddNewContactInfo = () => {
+    const newContactInfo: ContactInfo = {
+      id: Date.now().toString(),
+      phone: "",
+      email: "",
+      isPrimary: formData.contactInfos.length === 0,
+    };
+    setFormData({
+      ...formData,
+      contactInfos: [...formData.contactInfos, newContactInfo],
+    });
+  };
+
+  const handleRemoveContactInfo = (id: string) => {
+    setFormData({
+      ...formData,
+      contactInfos: formData.contactInfos.filter((c) => c.id !== id),
+    });
+  };
+
+  const handleUpdateContactInfo = (
+    id: string,
+    field: keyof ContactInfo,
+    value: any,
+  ) => {
+    setFormData({
+      ...formData,
+      contactInfos: formData.contactInfos.map((c) =>
+        c.id === id ? { ...c, [field]: value } : c,
+      ),
+    });
+  };
+
+  const handleSetPrimaryContactInfo = (id: string) => {
+    setFormData({
+      ...formData,
+      contactInfos: formData.contactInfos.map((c) => ({
+        ...c,
+        isPrimary: c.id === id,
+      })),
+    });
+  };
+
+  // Xử lý tạo tài khoản ngân hàng mới
+  const handleAddNewBankAccount = () => {
+    const newAccount: BankAccount = {
+      id: Date.now().toString(),
+      bankName: "",
+      accountNumber: "",
+      accountHolder: "",
+      branch: "",
+      isPrimary: formData.bankAccounts.length === 0,
+    };
+    setFormData({
+      ...formData,
+      bankAccounts: [...formData.bankAccounts, newAccount],
+    });
+  };
+
+  const handleRemoveBankAccount = (id: string) => {
+    setFormData({
+      ...formData,
+      bankAccounts: formData.bankAccounts.filter((b) => b.id !== id),
+    });
+  };
+
+  const handleUpdateBankAccount = (
+    id: string,
+    field: keyof BankAccount,
+    value: any,
+  ) => {
+    setFormData({
+      ...formData,
+      bankAccounts: formData.bankAccounts.map((b) =>
+        b.id === id ? { ...b, [field]: value } : b,
+      ),
+    });
+  };
+
+  const handleSetPrimaryBankAccount = (id: string) => {
+    setFormData({
+      ...formData,
+      bankAccounts: formData.bankAccounts.map((b) => ({
+        ...b,
+        isPrimary: b.id === id,
+      })),
+    });
+  };
+
+  const handleGetCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setFormData({
+            ...formData,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+          toast({
+            title: "Thành công",
+            description: "Đã lấy vị trí hiện tại",
+          });
+        },
+        () => {
+          toast({
+            title: "Lỗi",
+            description: "Không thể lấy vị trí hiện tại",
+            variant: "destructive",
+          });
+        },
+      );
+    }
+  };
+
+  const handleComplete = () => {
+    setShowConfirmDialog(true);
+  };
+
+  const submitForm = () => {
+    setShowConfirmDialog(false);
+    toast({
+      title: "Thành công",
+      description: isEdit ? "Đã cập nhật chi nhánh" : "Đã thêm chi nhánh mới",
+    });
+    setLocation("/branch");
+  };
+
+  const steps: Step[] = [
+    {
+      id: "basic",
+      title: "Thông tin cơ bản",
+      description: "Tên, mã, đơn vị",
+      content: (
+        <div className="max-w-2xl mx-auto space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="code">
+                Mã chi nhánh <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="code"
+                value={formData.code}
+                onChange={(e) =>
+                  setFormData({ ...formData, code: e.target.value })
+                }
+                placeholder="VD: CN001"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="name">
+                Tên chi nhánh <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                placeholder="VD: Chi nhánh Miền Nam"
+              />
+            </div>
+
+            <div className="space-y-2 col-span-2">
+              <Label htmlFor="enterprise">
+                Đơn vị chủ quản <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={formData.enterpriseId}
+                onValueChange={(value) => {
+                  const enterprise = enterprises.find((e) => e.id === value);
+                  setFormData({
+                    ...formData,
+                    enterpriseId: value,
+                    enterpriseName: enterprise?.name || "",
+                  });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn doanh nghiệp" />
+                </SelectTrigger>
+                <SelectContent>
+                  {enterprises.map((enterprise) => (
+                    <SelectItem key={enterprise.id} value={enterprise.id}>
+                      {enterprise.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {isEdit && (
+              <div className="space-y-2">
+                <Label htmlFor="status">Trạng thái</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value: "active" | "inactive") =>
+                    setFormData({ ...formData, status: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Hoạt động</SelectItem>
+                    <SelectItem value="inactive">Không hoạt động</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          <div className="pt-4 border-t">
+            <div className="flex items-center gap-2 mb-4">
+              <FileText className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold">Thông tin thuế</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="taxCode">Mã số thuế chi nhánh</Label>
+                <Input
+                  id="taxCode"
+                  value={formData.taxCode}
+                  onChange={(e) =>
+                    setFormData({ ...formData, taxCode: e.target.value })
+                  }
+                  placeholder="VD: 0123456789-001"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="taxAddress">Địa chỉ thuế</Label>
+                <Input
+                  id="taxAddress"
+                  value={formData.taxAddress}
+                  onChange={(e) =>
+                    setFormData({ ...formData, taxAddress: e.target.value })
+                  }
+                  placeholder="Địa chỉ đăng ký thuế"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+      isValid: formData.name.length > 0 && formData.code.length > 0,
+    },
+    {
+      id: "contact-info",
+      title: "Liên hệ",
+      description: "Điện thoại, email, website",
+      content: (
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="website">Website</Label>
+            <Input
+              id="website"
+              value={formData.website}
+              onChange={(e) =>
+                setFormData({ ...formData, website: e.target.value })
+              }
+              placeholder="VD: https://ecofarm.vn"
+            />
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="font-semibold text-lg flex items-center justify-between">
+              Danh sách thông tin liên hệ (Điện thoại & Email)
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">
+                  {formData.contactInfos.length}
+                </Badge>
+                <Button onClick={handleAddNewContactInfo}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Tạo thông tin liên hệ mới
+                </Button>
+              </div>
+            </h4>
+
+            {formData.contactInfos.length === 0 ? (
+              <div className="text-center py-12 border-2 border-dashed rounded-xl bg-muted/10">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                  <Users className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground font-medium">
+                  Chưa có thông tin liên hệ nào
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {formData.contactInfos.map((contactInfo, index) => (
+                  <div
+                    key={contactInfo.id}
+                    className="border rounded-lg p-4 bg-card shadow-sm"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium">
+                          Thông tin liên hệ #{index + 1}
+                        </h4>
+                        {contactInfo.isPrimary && (
+                          <Badge variant="default">Chính</Badge>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        {!contactInfo.isPrimary && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              handleSetPrimaryContactInfo(contactInfo.id)
+                            }
+                            type="button"
+                          >
+                            Đặt làm chính
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            handleRemoveContactInfo(contactInfo.id)
+                          }
+                          type="button"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Số điện thoại</Label>
+                        <Input
+                          value={contactInfo.phone}
+                          onChange={(e) =>
+                            handleUpdateContactInfo(
+                              contactInfo.id,
+                              "phone",
+                              e.target.value,
+                            )
+                          }
+                          placeholder="VD: 02839999888"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Email</Label>
+                        <Input
+                          type="email"
+                          value={contactInfo.email}
+                          onChange={(e) =>
+                            handleUpdateContactInfo(
+                              contactInfo.id,
+                              "email",
+                              e.target.value,
+                            )
+                          }
+                          placeholder="VD: hcm@ecofarm.vn"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="pt-4 border-t">
+            <div className="flex items-center gap-2 mb-4">
+              <ImageIcon className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold">Hình ảnh đại diện</h3>
+            </div>
+            <div className="flex items-center gap-6">
+              <div
+                className="w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 overflow-hidden relative cursor-pointer hover:border-primary transition-colors group"
+                onClick={() =>
+                  document.getElementById("avatar-upload")?.click()
+                }
+              >
+                {formData.imageUrl ? (
+                  <>
+                    <img
+                      src={formData.imageUrl}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center">
+                      <Upload className="w-6 h-6 text-white" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center p-2">
+                    <ImageIcon className="w-8 h-8 text-gray-400 mx-auto mb-1" />
+                    <span className="text-xs text-gray-500">Upload</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 space-y-2">
+                <Input
+                  id="avatar-upload"
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                />
+                <div className="text-sm text-muted-foreground">
+                  <p>Tải lên hình ảnh đại diện (biển hiệu, văn phòng).</p>
+                  <p>Định dạng: JPG, PNG. Kích thước tối đa: 5MB.</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    document.getElementById("avatar-upload")?.click()
+                  }
+                  type="button"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Chọn hình ảnh
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "location",
+      title: "Định vị",
+      description: "Địa chỉ, bản đồ",
+      content: (
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <MapPin className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold">Tìm kiếm địa chỉ trên bản đồ</h3>
+            </div>
+
+            <div className="relative" ref={searchContainerRef}>
+              <Input
+                value={searchAddress}
+                onChange={(e) => {
+                  setSearchAddress(e.target.value);
+                  if (!e.target.value) {
+                    setShowSuggestions(false);
+                  }
+                }}
+                placeholder="Nhập địa chỉ để tìm kiếm (VD: 123 Nguyễn Huệ, Quận 1, TP.HCM)"
+                onFocus={() => {
+                  if (addressSuggestions.length > 0) {
+                    setShowSuggestions(true);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && addressSuggestions.length > 0) {
+                    e.preventDefault();
+                    handleSelectAddress(addressSuggestions[0]);
+                  }
+                }}
+              />
+
+              {showSuggestions && addressSuggestions.length > 0 && (
+                <div className="absolute z-[99999] w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {addressSuggestions.map((suggestion, index) => (
+                    <div
+                      key={index}
+                      className="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0 transition-colors"
+                      onClick={() => handleSelectAddress(suggestion)}
+                    >
+                      <div className="flex items-start gap-2">
+                        <MapPin className="w-4 h-4 text-primary mt-1 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {suggestion.display_name}
+                          </p>
+                          {suggestion.address && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              {[
+                                suggestion.address.road,
+                                suggestion.address.suburb,
+                                suggestion.address.city_district,
+                                suggestion.address.city,
+                              ]
+                                .filter(Boolean)
+                                .join(", ")}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="h-96 rounded-lg overflow-hidden border">
+              <MapContainer
+                center={[formData.latitude, formData.longitude]}
+                zoom={15}
+                style={{ height: "100%", width: "100%", zIndex: 0 }}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <LocationMarker
+                  position={[formData.latitude, formData.longitude]}
+                  setPosition={(pos) =>
+                    setFormData({
+                      ...formData,
+                      latitude: pos[0],
+                      longitude: pos[1],
+                    })
+                  }
+                />
+                <MapUpdater center={[formData.latitude, formData.longitude]} />
+              </MapContainer>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Vĩ độ (Latitude)</Label>
+                <Input value={formData.latitude.toFixed(6)} disabled />
+              </div>
+              <div className="space-y-2">
+                <Label>Kinh độ (Longitude)</Label>
+                <Input value={formData.longitude.toFixed(6)} disabled />
+              </div>
+            </div>
+
+            <Button
+              variant="outline"
+              onClick={handleGetCurrentLocation}
+              className="w-full"
+              type="button"
+            >
+              <MapPin className="w-4 h-4 mr-2" />
+              Lấy vị trí hiện tại
+            </Button>
+          </div>
+
+          <div className="pt-4 border-t">
+            <h3 className="font-semibold mb-4">Địa chỉ chi tiết</h3>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="address">Địa chỉ</Label>
+                <Input
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                  placeholder="Số nhà, tên đường"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="ward">Phường/Xã</Label>
+                  <Select
+                    value={formData.ward}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, ward: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn Phường/Xã" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {WARDS_LIST.map((ward) => (
+                        <SelectItem key={ward} value={ward}>
+                          {ward}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="city">Tỉnh/Thành phố</Label>
+                  <Select
+                    value={formData.city}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, city: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn Tỉnh/Thành phố" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CITIES_LIST.map((city) => (
+                        <SelectItem key={city} value={city}>
+                          {city}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "contacts",
+      title: "Người liên hệ",
+      description: "Quản lý liên hệ",
+      content: (
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="space-y-4">
+            <h4 className="font-semibold text-lg flex items-center justify-between">
+              Danh sách người liên hệ
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{formData.contacts.length}</Badge>
+                <Button onClick={handleAddNewContact}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Tạo người liên hệ mới
+                </Button>
+              </div>
+            </h4>
+
+            {formData.contacts.length === 0 ? (
+              <div className="text-center py-12 border-2 border-dashed rounded-xl bg-muted/10">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                  <Users className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground font-medium">
+                  Chưa có người liên hệ nào
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {formData.contacts.map((contact, index) => (
+                  <div
+                    key={contact.id}
+                    className="border rounded-lg p-4 bg-card shadow-sm"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium">
+                          Người liên hệ #{index + 1}
+                        </h4>
+                        {contact.isPrimary && (
+                          <Badge variant="default">Chính</Badge>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        {!contact.isPrimary && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSetPrimaryContact(contact.id)}
+                            type="button"
+                          >
+                            Đặt làm chính
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveContact(contact.id)}
+                          type="button"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Họ và tên</Label>
+                        <Input
+                          value={contact.name}
+                          onChange={(e) =>
+                            handleUpdateContact(
+                              contact.id,
+                              "name",
+                              e.target.value,
+                            )
+                          }
+                          placeholder="VD: Nguyễn Văn A"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Chức vụ</Label>
+                        <Input
+                          value={contact.position}
+                          onChange={(e) =>
+                            handleUpdateContact(
+                              contact.id,
+                              "position",
+                              e.target.value,
+                            )
+                          }
+                          placeholder="VD: Giám đốc chi nhánh"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Số điện thoại</Label>
+                        <Input
+                          value={contact.phone}
+                          onChange={(e) =>
+                            handleUpdateContact(
+                              contact.id,
+                              "phone",
+                              e.target.value,
+                            )
+                          }
+                          placeholder="VD: 0901234567"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Email</Label>
+                        <Input
+                          type="email"
+                          value={contact.email}
+                          onChange={(e) =>
+                            handleUpdateContact(
+                              contact.id,
+                              "email",
+                              e.target.value,
+                            )
+                          }
+                          placeholder="VD: nguyenvana@ecofarm.vn"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "banking",
+      title: "Ngân hàng",
+      description: "Tài khoản thanh toán",
+      content: (
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="space-y-4">
+            <h4 className="font-semibold text-lg flex items-center justify-between">
+              Danh sách tài khoản ngân hàng
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">
+                  {formData.bankAccounts.length}
+                </Badge>
+                <Button onClick={handleAddNewBankAccount} className="w-full">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Tạo tài khoản ngân hàng mới
+                </Button>
+              </div>
+            </h4>
+
+            {formData.bankAccounts.length === 0 ? (
+              <div className="text-center py-12 border-2 border-dashed rounded-xl bg-muted/10">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                  <CreditCard className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground font-medium">
+                  Chưa có tài khoản ngân hàng nào
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {formData.bankAccounts.map((account, index) => (
+                  <div
+                    key={account.id}
+                    className="border rounded-lg p-4 bg-card shadow-sm"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium">Tài khoản #{index + 1}</h4>
+                        {account.isPrimary && (
+                          <Badge variant="default">Tài khoản chính</Badge>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        {!account.isPrimary && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              handleSetPrimaryBankAccount(account.id)
+                            }
+                            type="button"
+                          >
+                            Đặt làm chính
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveBankAccount(account.id)}
+                          type="button"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Tên ngân hàng</Label>
+                        <Select
+                          value={account.bankName}
+                          onValueChange={(value) =>
+                            handleUpdateBankAccount(
+                              account.id,
+                              "bankName",
+                              value,
+                            )
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Chọn ngân hàng" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {BANKS_LIST.map((bank) => (
+                              <SelectItem key={bank} value={bank}>
+                                {bank}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Số tài khoản</Label>
+                        <Input
+                          value={account.accountNumber}
+                          onChange={(e) =>
+                            handleUpdateBankAccount(
+                              account.id,
+                              "accountNumber",
+                              e.target.value,
+                            )
+                          }
+                          placeholder="VD: 0123456789"
+                        />
+                      </div>
+
+                      <div className="space-y-2 col-span-2">
+                        <Label>Tên chủ tài khoản</Label>
+                        <Input
+                          value={account.accountHolder}
+                          onChange={(e) =>
+                            handleUpdateBankAccount(
+                              account.id,
+                              "accountHolder",
+                              e.target.value,
+                            )
+                          }
+                          placeholder="VD: Chi nhánh Miền Nam - EcoFarm"
+                        />
+                      </div>
+
+                      <div className="space-y-2 col-span-2">
+                        <Label>Chi nhánh ngân hàng</Label>
+                        <Input
+                          value={account.branch}
+                          onChange={(e) =>
+                            handleUpdateBankAccount(
+                              account.id,
+                              "branch",
+                              e.target.value,
+                            )
+                          }
+                          placeholder="VD: Chi nhánh Sài Gòn"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <AdminLayout
+      title={isEdit ? "Chỉnh sửa chi nhánh" : "Thêm chi nhánh mới"}
+      description="Điền thông tin theo từng bước để tạo mới"
+    >
+      <Card>
+        <CardContent className="p-6">
+          <StepperForm
+            steps={steps}
+            onComplete={handleComplete}
+            onCancel={() => setLocation("/branch")}
+            completeLabel={isEdit ? "Cập nhật" : "Tạo mới"}
+          />
+        </CardContent>
+      </Card>
+
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isEdit ? "Xác nhận cập nhật" : "Xác nhận tạo mới"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn {isEdit ? "cập nhật" : "tạo mới"} chi nhánh
+              "{formData.name}" không?
+              <br />
+              Thông tin đã nhập sẽ được lưu vào hệ thống.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={submitForm}>Xác nhận</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </AdminLayout>
+  );
+}

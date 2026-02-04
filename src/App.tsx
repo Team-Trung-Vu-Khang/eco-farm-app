@@ -7,8 +7,7 @@ import EnterpriseCreatePage from "./pages/enterprise/EnterpriseCreatePage";
 import EnterpriseDetailPage from "./pages/enterprise/EnterpriseDetailPage";
 import EnterpriseEditPage from "./pages/enterprise/EnterpriseEditPage";
 import BranchPage from "./pages/branch/BranchPage";
-import BranchCreatePage from "./pages/branch/BranchCreatePage";
-import BranchEditPage from "./pages/branch/BranchEditPage";
+import BranchFormPage from "./pages/branch/BranchFormPage";
 import CropPage from "./pages/crop/CropPage";
 import CropCreatePage from "./pages/crop/CropCreatePage";
 import CropDetailPage from "./pages/crop/CropDetailPage";
@@ -119,8 +118,8 @@ function Router() {
       <Route path="/enterprise/:id" component={EnterpriseDetailPage} />
       <Route path="/enterprise/:id/edit" component={EnterpriseEditPage} />
       <Route path="/branch" component={BranchPage} />
-      <Route path="/branch/create" component={BranchCreatePage} />
-      <Route path="/branch/:id/edit" component={BranchEditPage} />
+      <Route path="/branch/create" component={BranchFormPage} />
+      <Route path="/branch/:id/edit" component={BranchFormPage} />
       <Route path="/bank" component={BankPage} />
       <Route path="/bank/create" component={BankCreatePage} />
       <Route path="/bank/:id/edit" component={BankEditPage} />
