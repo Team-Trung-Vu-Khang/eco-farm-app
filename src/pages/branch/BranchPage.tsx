@@ -227,7 +227,7 @@ export default function BranchPage() {
       <DataTable
         columns={columns}
         data={data}
-        onView={(item) => setLocation(`/branch/${item.id}/edit`)}
+        onView={(item) => setLocation(`/branch/${item.id}/detail`)}
         onEdit={(item) => setLocation(`/branch/${item.id}/edit`)}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm chi nhánh..."
