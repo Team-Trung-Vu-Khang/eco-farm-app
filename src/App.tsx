@@ -99,6 +99,7 @@ import UpdateSeedPage from "./pages/seed/UpdateSeedPage";
 import CreateTreatmentPage from "./pages/treatment/CreateTreatmentPage";
 import PlantDistributionListPage from "./pages/cultivation-zone/distribution-detail/PlantDistributionListPage";
 import EnterpriseTypePage from "./pages/enterprise-type/EnterpriseTypePage";
+import EnterpriseCertificatePage from "./pages/enterprise-certificate/EnterpriseCertificatePage";
 
 function Router() {
   return (
@@ -109,6 +110,10 @@ function Router() {
       <Route path="/farming-method" component={FarmingMethodPage} />
       <Route path="/certificate" component={CertificatePage} />
       <Route path="/enterprise-type" component={EnterpriseTypePage} />
+      <Route
+        path="/enterprise-certificate"
+        component={EnterpriseCertificatePage}
+      />
       <Route path="/enterprise" component={EnterprisePage} />
       <Route path="/enterprise/create" component={EnterpriseCreatePage} />
       <Route path="/enterprise/:id" component={EnterpriseDetailPage} />
