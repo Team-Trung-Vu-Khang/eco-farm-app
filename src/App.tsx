@@ -59,6 +59,9 @@ import GrowthCyclePage from "./pages/growth-cycle/GrowthCyclePage";
 import CreateGrowthCyclePage from "./pages/growth-cycle/CreateGrowthCyclePage";
 import UpdateGrowthCyclePage from "./pages/growth-cycle/UpdateGrowthCyclePage";
 import SeasonPage from "./pages/season/SeasonPage";
+import CreateSeasonPage from "./pages/season/CreateSeasonPage";
+import UpdateSeasonPage from "./pages/season/UpdateSeasonPage";
+import SeasonDetailPage from "./pages/season/SeasonDetailPage";
 import LandPage from "./pages/land/LandPage";
 import FarmingMethodPage from "./pages/farming-method/FarmingMethodPage";
 import CertificatePage from "./pages/certificate/CertificatePage";
@@ -219,6 +222,9 @@ function Router() {
       <Route path="/growth-cycle/create" component={CreateGrowthCyclePage} />
       <Route path="/growth-cycle/:id/edit" component={UpdateGrowthCyclePage} />
       <Route path="/season" component={SeasonPage} />
+      <Route path="/season/create" component={CreateSeasonPage} />
+      <Route path="/season/:id/edit" component={UpdateSeasonPage} />
+      <Route path="/season/:id" component={SeasonDetailPage} />
       <Route path="/pesticide" component={PesticidePage} />
       <Route path="/pesticide/create" component={PesticideCreatePage} />
       <Route path="/pesticide/:id/edit" component={PesticideCreatePage} />
