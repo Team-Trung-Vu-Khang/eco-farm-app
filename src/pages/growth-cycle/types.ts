@@ -12,9 +12,10 @@ export interface GrowthStage {
 export interface GrowthCycle {
   id: string;
   name: string;
+  scope: "crop" | "variety";
   cropId: string;
   cropName: string;
-  variety: string;
+  variety?: string; // Optional if scope is 'crop'
   totalDays: number;
   numStages: number;
   stages: GrowthStage[];
@@ -23,8 +24,9 @@ export interface GrowthCycle {
 }
 
 export interface CreateGrowthCycleForm {
+  scope: "crop" | "variety";
   cropId: string;
-  variety: string;
+  variety?: string;
   totalDays: number;
   stages: GrowthStage[];
 }

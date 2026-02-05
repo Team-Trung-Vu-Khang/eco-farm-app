@@ -7,6 +7,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
   {
     id: "GC001",
     name: "Chu kỳ sinh trưởng Đậu nành DT84",
+    scope: "variety",
     cropId: "crop1",
     cropName: "Đậu nành",
     variety: "DT84",
@@ -48,6 +49,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
   {
     id: "GC002",
     name: "Chu kỳ sinh trưởng Đậu nành DX11",
+    scope: "variety",
     cropId: "crop1",
     cropName: "Đậu nành",
     variety: "DX11",

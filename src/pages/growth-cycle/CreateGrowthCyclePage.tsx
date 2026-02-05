@@ -30,16 +30,19 @@ import {
   Plus,
   Sprout,
   Trash,
+  TreeDeciduous,
+  Flower2,
   Upload,
 } from "lucide-react";
 import type { CreateGrowthCycleForm, GrowthStage } from "./types";
-import { initialEditorValue, varietyOptions } from "./mocks";
+import { cropOptions, initialEditorValue, varietyOptions } from "./mocks";
 
 export default function CreateGrowthCyclePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState<CreateGrowthCycleForm>({
+    scope: "crop",
     cropId: "",
     variety: "",
     totalDays: 0,
@@ -101,25 +104,140 @@ export default function CreateGrowthCyclePage() {
       title: "Bước 1",
       description: "Thông tin chung",
       content: (
-        <div className="max-w-3xl mx-auto space-y-6 py-4">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold">Giống cây trồng</Label>
-              <Select
-                value={formData.variety}
-                onValueChange={(v) => setFormData({ ...formData, variety: v })}
+        <div className="max-w-3xl mx-auto space-y-8 py-4">
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Phạm vi áp dụng</Label>
+              <RadioGroup
+                value={formData.scope}
+                onValueChange={(v: "crop" | "variety") =>
+                  setFormData({ ...formData, scope: v, variety: "" })
+                }
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn giống cây" />
-                </SelectTrigger>
-                <SelectContent>
-                  {varietyOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <div
+                  className={`relative flex flex-row items-center space-x-4 border-2 rounded-xl p-4 cursor-pointer transition-all ${
+                    formData.scope === "crop"
+                      ? "border-primary bg-primary/5 shadow-md"
+                      : "border-muted hover:border-primary/50 hover:bg-muted/50"
+                  }`}
+                  onClick={() =>
+                    setFormData({ ...formData, scope: "crop", variety: "" })
+                  }
+                >
+                  <div
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-colors ${
+                      formData.scope === "crop"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    <TreeDeciduous className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="crop" id="scope-crop" />
+                      <Label
+                        htmlFor="scope-crop"
+                        className="font-bold cursor-pointer text-base"
+                      >
+                        Theo loại cây trồng
+                      </Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-snug">
+                      Áp dụng cho tất cả các giống thuộc loại cây trồng này.
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  className={`relative flex flex-row items-center space-x-4 border-2 rounded-xl p-4 cursor-pointer transition-all ${
+                    formData.scope === "variety"
+                      ? "border-primary bg-primary/5 shadow-md"
+                      : "border-muted hover:border-primary/50 hover:bg-muted/50"
+                  }`}
+                  onClick={() => setFormData({ ...formData, scope: "variety" })}
+                >
+                  <div
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-colors ${
+                      formData.scope === "variety"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    <Flower2 className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="variety" id="scope-variety" />
+                      <Label
+                        htmlFor="scope-variety"
+                        className="font-bold cursor-pointer text-base"
+                      >
+                        Theo giống cụ thể
+                      </Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-snug">
+                      Chỉ áp dụng cho chính xác giống cây trồng được chọn.
+                    </p>
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Loại cây trồng</Label>
+                <Select
+                  value={formData.cropId}
+                  onValueChange={(v) =>
+                    setFormData({ ...formData, cropId: v, variety: "" })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn loại cây" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cropOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        <div className="flex items-center gap-2">
+                          <Sprout className="w-4 h-4 text-green-600" />
+                          <span>{opt.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {formData.scope === "variety" && (
+                <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <Label className="text-sm font-semibold">
+                    Giống cây trồng
+                  </Label>
+                  <Select
+                    value={formData.variety}
+                    onValueChange={(v) =>
+                      setFormData({ ...formData, variety: v })
+                    }
+                    disabled={!formData.cropId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn giống cây" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {varietyOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          <div className="flex items-center gap-2">
+                            <Flower2 className="w-4 h-4 text-rose-500" />
+                            <span>{opt.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -141,7 +259,10 @@ export default function CreateGrowthCyclePage() {
           </div>
         </div>
       ),
-      isValid: formData.variety !== "" && formData.totalDays > 0,
+      isValid:
+        formData.cropId !== "" &&
+        formData.totalDays > 0 &&
+        (formData.scope === "crop" || formData.variety !== ""),
     },
     {
       id: "stages",
@@ -297,14 +418,36 @@ export default function CreateGrowthCyclePage() {
           <Card className="border-none shadow-none bg-muted/30">
             <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-12">
               <div className="flex justify-between items-center py-2 border-b border-muted">
-                <span className="text-sm text-muted-foreground">
-                  Giống cây trồng:
-                </span>
-                <div className="flex items-center gap-2">
-                  <Sprout className="w-4 h-4 text-green-600" />
-                  <span className="font-bold">{formData.variety}</span>
-                </div>
+                <span className="text-sm text-muted-foreground">Phạm vi:</span>
+                <Badge
+                  variant={formData.scope === "crop" ? "default" : "secondary"}
+                >
+                  {formData.scope === "crop" ? "Theo loại cây" : "Theo giống"}
+                </Badge>
               </div>
+              <div className="flex justify-between items-center py-2 border-b border-muted">
+                <span className="text-sm text-muted-foreground">
+                  Loại cây trồng:
+                </span>
+                <span className="font-bold">
+                  {cropOptions.find((c) => c.value === formData.cropId)
+                    ?.label || formData.cropId}
+                </span>
+              </div>
+              {formData.scope === "variety" && (
+                <div className="flex justify-between items-center py-2 border-b border-muted">
+                  <span className="text-sm text-muted-foreground">
+                    Giống cây trồng:
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Sprout className="w-4 h-4 text-green-600" />
+                    <span className="font-bold">
+                      {varietyOptions.find((v) => v.value === formData.variety)
+                        ?.label || formData.variety}
+                    </span>
+                  </div>
+                </div>
+              )}
               <div className="flex justify-between items-center py-2 border-b border-muted">
                 <span className="text-sm text-muted-foreground">
                   Tổng thời gian:

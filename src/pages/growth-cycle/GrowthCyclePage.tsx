@@ -35,6 +35,18 @@ const columns: Column<GrowthCycle>[] = [
     ),
   },
   {
+    key: "scope",
+    label: "Phạm vi",
+    render: (value) => (
+      <Badge
+        variant={value === "crop" ? "default" : "secondary"}
+        className="text-[10px] font-bold uppercase"
+      >
+        {value === "crop" ? "Theo loại" : "Theo giống"}
+      </Badge>
+    ),
+  },
+  {
     key: "totalDays",
     label: "Thời gian",
     render: (value) => (
