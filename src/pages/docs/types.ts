@@ -1,14 +1,15 @@
 type Docs = {
   id: string;
-  crop: string;
+  scope: "crop" | "variety" | "category";
+  cropId: string;
   variety: string;
+  crop: string; // Keep for backward compatibility or display name
   season: string[];
   createdAt: number;
   updatedAt: number;
   applyLevel?: number;
   keywords?: string[];
   quickSummary?: string;
-  illustration?: File | undefined | null;
   attachments?: Array<CreateDocsAttachment>;
   specifications?: Array<CreateDocsSpecification>;
 };

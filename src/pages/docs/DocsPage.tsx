@@ -36,27 +36,31 @@ const columns: Column<Docs>[] = [
     key: "id",
     label: "Mã mẫu",
     render: (value) => (
-      <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-muted-foreground bg-muted/50 px-2 py-1 rounded-md border w-fit">
-        <Hash className="w-3 h-3 opacity-60" />
-        {value}
-      </div>
+      <Link href={`/docs/${value}`}>
+        <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-muted-foreground bg-muted/50 px-2 py-1 rounded-md border w-fit cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors">
+          <Hash className="w-3 h-3 opacity-60" />
+          {value}
+        </div>
+      </Link>
     ),
   },
   {
     key: "crop",
     label: "Cây trồng",
     render: (_, rowValue) => (
-      <div className="flex flex-col">
-        <div className="flex items-center gap-1.5">
-          <Leaf className="w-3.5 h-3.5 text-green-600" />
-          <span className="font-semibold text-foreground tracking-tight">
-            {rowValue.crop}
+      <Link href={`/docs/${rowValue.id}`}>
+        <div className="flex flex-col cursor-pointer group">
+          <div className="flex items-center gap-1.5">
+            <Leaf className="w-3.5 h-3.5 text-green-600 group-hover:text-primary transition-colors" />
+            <span className="font-semibold text-foreground group-hover:text-primary transition-colors tracking-tight">
+              {rowValue.crop}
+            </span>
+          </div>
+          <span className="text-[11px] text-muted-foreground ml-5 group-hover:text-primary/70 transition-colors">
+            {rowValue.variety}
           </span>
         </div>
-        <span className="text-[11px] text-muted-foreground ml-5">
-          {rowValue.variety}
-        </span>
-      </div>
+      </Link>
     ),
   },
   {

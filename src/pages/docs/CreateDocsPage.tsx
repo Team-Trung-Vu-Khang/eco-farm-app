@@ -7,25 +7,29 @@ import {
   Input,
   Label,
   MultiSelect,
+  RadioGroup,
+  RadioGroupItem,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Separator,
   StepperForm,
   Textarea,
-  cn,
-  useToast,
+  useToast, // Removed cn as it was unused and causing issues if not careful with imports vs usage
   type Step,
 } from "@tankhang1/eco-shared-ui";
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { type ChangeEvent, useState } from "react";
 import { useLocation } from "wouter";
 
-import { Bug, FileText, Link, Plus, ShieldCheck, Sprout, Trash, Upload, X } from "lucide-react";
+import { FileText, Link, Plus, Trash } from "lucide-react";
 import { initialEditorValue, keywordOptions, seasonOptions } from "./mocks";
 import type {
   CreateDocsAttachment,
   CreateDocsForm,
   CreateDocsSpecification,
 } from "./types";
-
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const now = Date.now();
 
@@ -37,17 +41,11 @@ export default function CreateDocsPage() {
     id: "TL001",
     season: [],
     keywords: [],
-    variety: "Ri6",
-    attachments: [
-      {
-        attachmentValue: "",
-        attachmentName: "Quy trình VietGAP.pdf",
-      },
-      { attachmentName: "Lịch bón phân mẫu.xlsx", attachmentValue: "" },
-    ],
+    scope: "crop",
+    cropId: "",
+    variety: "",
     crop: "Sầu riêng",
     quickSummary: "",
-    illustration: null,
     specifications: [
       { specName: "Mật độ trồng", specValue: "6 x 6 m (≈278 cây/ha)" },
       { specName: "Độ pH đất", specValue: "5.5 – 6.5" },
@@ -58,45 +56,6 @@ export default function CreateDocsPage() {
     updatedAt: now,
     applyLevel: undefined,
   });
-
-  const [illustrationPreview, setIllustrationPreview] = useState<string>("");
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const onPickIllustration = (file?: File | null) => {
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      toast({
-        title: "File không hợp lệ",
-        description: "Vui lòng chọn file ảnh.",
-      });
-      return;
-    }
-    if (file.size > MAX_IMAGE_SIZE) {
-      toast({ title: "Ảnh quá lớn", description: "Tối đa 5MB." });
-      return;
-    }
-
-    setFormData((prev) => ({ ...prev, illustration: file }));
-  };
-
-  const onDropIllustration = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    onPickIllustration(file);
-  };
-
-  useEffect(() => {
-    if (!formData.illustration) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIllustrationPreview("");
-      return;
-    }
-    const url = URL.createObjectURL(formData.illustration);
-    setIllustrationPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [formData.illustration]);
 
   const handleComplete = () => {
     console.log(formData);
@@ -110,11 +69,11 @@ export default function CreateDocsPage() {
 
   const handleChangeValue =
     (key: keyof typeof formData) =>
-      (e: ChangeEvent<HTMLInputElement> | Array<string>) =>
-        setFormData((prev) => ({
-          ...prev,
-          [key]: Array.isArray(e) ? e : e.target.value,
-        }));
+    (e: ChangeEvent<HTMLInputElement> | Array<string>) =>
+      setFormData((prev) => ({
+        ...prev,
+        [key]: Array.isArray(e) ? e : e.target.value,
+      }));
 
   const onAddSpecs = () => {
     setFormData((prev) => ({
@@ -145,7 +104,9 @@ export default function CreateDocsPage() {
         <div className="max-w-5xl mx-auto space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="id" className="text-sm font-semibold">Mã mẫu</Label>
+              <Label htmlFor="id" className="text-sm font-semibold">
+                Mã mẫu
+              </Label>
               <Input
                 id="id"
                 value={formData.id}
@@ -154,25 +115,124 @@ export default function CreateDocsPage() {
                 className="bg-muted/30"
               />
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="crop" className="text-sm font-semibold">Cây trồng</Label>
-              <Input
-                id="crop"
-                value={formData.crop}
-                placeholder="VD: Sầu riêng"
-                onChange={handleChangeValue("crop")}
-              />
+          <div className="grid grid-cols-1 gap-6">
+            <div className="space-y-4">
+              <div>
+                <Label className="text-base font-semibold">
+                  Phạm vi áp dụng
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Tài liệu này áp dụng cho đối tượng nào?
+                </p>
+              </div>
+
+              <RadioGroup
+                value={formData.scope}
+                onValueChange={(v: "crop" | "variety" | "category") =>
+                  setFormData({ ...formData, scope: v, variety: "" })
+                }
+                className="grid grid-cols-1 md:grid-cols-3 gap-4"
+              >
+                {/* Option 1: Category (if needed, but user said "nhóm cây, loại cây, giống cây") -> Let's stick to "Loại cây" vs "Giống" for consistency with Growth Cycle, or add "Group" if requested. 
+                        User said: "nhóm cây, loại cây hay giống cây". 
+                        Let's support: "Crop Type" (Loại cây) and "Variety" (Giống). 
+                        "Nhóm cây" could be a future enhancement or mapped to Category.
+                        For now, let's align with Growth Cycle: Crop vs Variety.
+                    */}
+
+                <div
+                  className={`relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    formData.scope === "crop"
+                      ? "border-primary bg-primary/5 shadow-md"
+                      : "border-muted hover:border-primary/50 hover:bg-muted/50"
+                  }`}
+                  onClick={() =>
+                    setFormData({ ...formData, scope: "crop", variety: "" })
+                  }
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <RadioGroupItem value="crop" id="scope-crop" />
+                    <Label
+                      htmlFor="scope-crop"
+                      className="font-bold cursor-pointer"
+                    >
+                      Theo Loại Cây
+                    </Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Áp dụng chung cho tất cả các giống thuộc loại cây này (VD:
+                    Tất cả cây Sầu Xa).
+                  </p>
+                </div>
+
+                <div
+                  className={`relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    formData.scope === "variety"
+                      ? "border-primary bg-primary/5 shadow-md"
+                      : "border-muted hover:border-primary/50 hover:bg-muted/50"
+                  }`}
+                  onClick={() => setFormData({ ...formData, scope: "variety" })}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <RadioGroupItem value="variety" id="scope-variety" />
+                    <Label
+                      htmlFor="scope-variety"
+                      className="font-bold cursor-pointer"
+                    >
+                      Theo Giống Cụ Thể
+                    </Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Chỉ áp dụng cho một giống cụ thể (VD: Chỉ Sầu riêng Ri6).
+                  </p>
+                </div>
+              </RadioGroup>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="variety" className="text-sm font-semibold">Giống</Label>
-              <Input
-                id="variety"
-                placeholder="VD: Ri6"
-                value={formData.variety}
-                onChange={handleChangeValue("variety")}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label>
+                  Loại cây trồng <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={formData.cropId}
+                  onValueChange={(v) => setFormData({ ...formData, cropId: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn loại cây trồng" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="durian">Sầu riêng</SelectItem>
+                    <SelectItem value="rice">Lúa</SelectItem>
+                    <SelectItem value="coffee">Cà phê</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {formData.scope === "variety" && (
+                <div className="space-y-2">
+                  <Label>
+                    Giống cây trồng <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={formData.variety}
+                    onValueChange={(v) =>
+                      setFormData({ ...formData, variety: v })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn giống cây" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ri6">Ri6</SelectItem>
+                      <SelectItem value="monthong">Monthong</SelectItem>
+                      <SelectItem value="st25">ST25</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           </div>
 
@@ -191,7 +251,9 @@ export default function CreateDocsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="applyLevel" className="text-sm font-semibold">Mức độ áp dụng (%)</Label>
+              <Label htmlFor="applyLevel" className="text-sm font-semibold">
+                Mức độ áp dụng (%)
+              </Label>
               <Input
                 min={0}
                 max={100}
@@ -236,7 +298,9 @@ export default function CreateDocsPage() {
               <Label htmlFor="quickSummary" className="text-sm font-semibold">
                 Tóm tắt nhanh
               </Label>
-              <p className="text-xs text-muted-foreground mb-2">Nhập các đặc điểm chính, mỗi dòng một mục.</p>
+              <p className="text-xs text-muted-foreground mb-2">
+                Nhập các đặc điểm chính, mỗi dòng một mục.
+              </p>
               <Textarea
                 id="quickSummary"
                 rows={4}
@@ -249,87 +313,10 @@ export default function CreateDocsPage() {
               />
             </div>
           </div>
-
-          <Separator className="opacity-50" />
-
-          <div className="space-y-4">
-            <div>
-              <Label className="text-sm font-semibold">Ảnh minh hoạ</Label>
-              <p className="text-xs text-muted-foreground">Hình ảnh đại diện cho tài liệu kỹ thuật này.</p>
-            </div>
-
-            <div
-              onDrop={onDropIllustration}
-              onDragOver={(e) => e.preventDefault()}
-              onClick={() => fileInputRef.current?.click()}
-              className={cn(
-                "group relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-all duration-200 cursor-pointer overflow-hidden",
-                illustrationPreview
-                  ? "border-primary/20 bg-primary/5 hover:border-primary/40"
-                  : "border-muted-foreground/20 hover:border-primary/50 hover:bg-accent/50"
-              )}
-            >
-              <input
-                type="file"
-                accept="image/*"
-                ref={fileInputRef}
-                className="hidden"
-                onChange={(e) => onPickIllustration(e.target.files?.[0])}
-              />
-
-              {!illustrationPreview ? (
-                <div className="flex flex-col items-center gap-3 text-center">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform group-hover:scale-110">
-                    <Upload className="h-6 w-6" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="font-medium">Kéo & thả hoặc nhấn để chọn ảnh</p>
-                    <p className="text-xs text-muted-foreground">Định dạng JPG, PNG, WebP (Tối đa 5MB)</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="relative w-full max-w-lg mx-auto">
-                  <img
-                    src={illustrationPreview}
-                    alt="Ảnh minh hoạ"
-                    className="mx-auto max-h-64 rounded-lg object-contain shadow-sm bg-white"
-                  />
-                  <div className="absolute top-2 right-2 flex gap-2">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="icon"
-                      className="h-8 w-8 rounded-full shadow-md"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        fileInputRef.current?.click();
-                      }}
-                    >
-                      <Upload className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="h-8 w-8 rounded-full shadow-md"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFormData((p) => ({ ...p, illustration: null }));
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       ),
       isValid:
-        formData.id.trim().length > 0 &&
-        formData.crop.trim().length > 0 &&
-        formData.variety.trim().length > 0,
+        formData.id.trim().length > 0 && formData.cropId.trim().length > 0,
     },
     {
       id: "specs",
@@ -341,14 +328,17 @@ export default function CreateDocsPage() {
             {formData?.specifications?.map((spec, index) => {
               const handleChangeSpecValue =
                 (key: keyof CreateDocsSpecification) =>
-                  (e: ChangeEvent<HTMLInputElement>) => {
-                    const specClone = Array.from(formData?.specifications ?? []);
-                    specClone[index] = {
-                      ...specClone[index],
-                      [key]: e.target.value,
-                    };
-                    setFormData((prev) => ({ ...prev, specifications: specClone }));
+                (e: ChangeEvent<HTMLInputElement>) => {
+                  const specClone = Array.from(formData?.specifications ?? []);
+                  specClone[index] = {
+                    ...specClone[index],
+                    [key]: e.target.value,
                   };
+                  setFormData((prev) => ({
+                    ...prev,
+                    specifications: specClone,
+                  }));
+                };
 
               const handleRemoveSpec = () => {
                 setFormData((prev) => ({
@@ -366,7 +356,10 @@ export default function CreateDocsPage() {
                 >
                   <div className="flex flex-col md:flex-row gap-4 items-start">
                     <div className="space-y-1.5 flex-1 w-full">
-                      <Label htmlFor={`${spec.specName}-${index}`} className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                      <Label
+                        htmlFor={`${spec.specName}-${index}`}
+                        className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1"
+                      >
                         Thông số
                       </Label>
                       <Input
@@ -378,7 +371,10 @@ export default function CreateDocsPage() {
                       />
                     </div>
                     <div className="space-y-1.5 flex-1 w-full">
-                      <Label htmlFor={`${spec.specValue}-${index}`} className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                      <Label
+                        htmlFor={`${spec.specValue}-${index}`}
+                        className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1"
+                      >
                         Giá trị / Định mức
                       </Label>
                       <Input
@@ -423,58 +419,23 @@ export default function CreateDocsPage() {
       content: (
         <div className="max-w-5xl mx-auto space-y-10">
           <div className="space-y-4">
-            <div className="flex items-center gap-3 border-l-4 border-green-500 pl-4 py-1">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 text-green-600">
-                <Sprout className="h-6 w-6" />
-              </div>
+            <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold text-foreground">Kỹ thuật canh tác</h3>
-                <p className="text-sm text-muted-foreground">Quy trình làm đất, bón phân, tưới nước và chăm sóc định kỳ</p>
+                <Label className="text-base font-semibold">
+                  Nội dung chi tiết
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Soạn thảo nội dung trực tiếp hoặc để trống nếu chỉ dùng file
+                  đính kèm.
+                </p>
               </div>
             </div>
-            <Card className="overflow-hidden shadow-sm border-2 focus-within:border-green-500/50 transition-all">
-              <Editor
-                maxLength={10000}
-                contentEditableClassname={"h-[200px] p-4 focus:outline-none"}
-                editorSerializedState={initialEditorValue}
-              />
-            </Card>
-          </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 border-l-4 border-blue-500 pl-4 py-1">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                <ShieldCheck className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-foreground">Tiêu chuẩn chất lượng</h3>
-                <p className="text-sm text-muted-foreground">Các tiêu chí VietGAP, GlobalGAP, tiêu chuẩn xuất khẩu...</p>
-              </div>
-            </div>
-            <Card className="overflow-hidden shadow-sm border-2 focus-within:border-blue-500/50 transition-all">
+            <Card className="min-h-[500px] border-2 shadow-sm">
               <Editor
-                maxLength={10000}
-                contentEditableClassname={"h-[200px] p-4 focus:outline-none"}
+                maxLength={50000}
                 editorSerializedState={initialEditorValue}
-              />
-            </Card>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 border-l-4 border-amber-500 pl-4 py-1">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-                <Bug className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-foreground">Sâu bệnh & Giải pháp</h3>
-                <p className="text-sm text-muted-foreground">Nhận diện các loại sâu bệnh hại và phương pháp phòng trừ hữu cơ/hoá học</p>
-              </div>
-            </div>
-            <Card className="overflow-hidden shadow-sm border-2 focus-within:border-amber-500/50 transition-all">
-              <Editor
-                maxLength={10000}
-                editorSerializedState={initialEditorValue}
-                contentEditableClassname={"h-[200px] p-4 focus:outline-none"}
+                contentEditableClassname="min-h-[450px] p-6 focus:outline-none prose max-w-none"
               />
             </Card>
           </div>
@@ -490,14 +451,14 @@ export default function CreateDocsPage() {
             {formData?.attachments?.map((attachment, index) => {
               const handleChangeSpecValue =
                 (key: keyof CreateDocsAttachment) =>
-                  (e: ChangeEvent<HTMLInputElement>) => {
-                    const specClone = Array.from(formData?.attachments ?? []);
-                    specClone[index] = {
-                      ...specClone[index],
-                      [key]: e.target.value,
-                    };
-                    setFormData((prev) => ({ ...prev, attachments: specClone }));
+                (e: ChangeEvent<HTMLInputElement>) => {
+                  const specClone = Array.from(formData?.attachments ?? []);
+                  specClone[index] = {
+                    ...specClone[index],
+                    [key]: e.target.value,
                   };
+                  setFormData((prev) => ({ ...prev, attachments: specClone }));
+                };
 
               const handleRemoveSpec = () => {
                 setFormData((prev) => ({

@@ -97,6 +97,7 @@ import GroupCropPage from "./pages/group-crop/GroupCropPage";
 import DocsPage from "./pages/docs/DocsPage";
 import CreateDocsPage from "./pages/docs/CreateDocsPage";
 import UpdateDocsPage from "./pages/docs/UpdateDocsPage";
+import DocsDetailPage from "./pages/docs/DocsDetailPage";
 import CreateSeedPage from "./pages/seed/CreateSeedPage";
 import SeedDetailPage from "./pages/seed/SeedDetailPage";
 import UpdateSeedPage from "./pages/seed/UpdateSeedPage";
@@ -211,6 +212,7 @@ function Router() {
       <Route path="/docs" component={DocsPage} />
       <Route path="/docs/create" component={CreateDocsPage} />
       <Route path="/docs/update/:id" component={UpdateDocsPage} />
+      <Route path="/docs/:id" component={DocsDetailPage} />
       <Route path="/variety" component={VarietyPage} />
       <Route path="/variety/create" component={CreateVarietyPage} />
       <Route path="/variety/:id/edit" component={VarietyEditPage} />
