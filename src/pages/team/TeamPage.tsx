@@ -1,15 +1,20 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
-import { Plus } from "lucide-react";
+import { useLocation } from "wouter";
+import { Plus, ChevronDown, Upload, FileUser } from "lucide-react";
 import {
   AdminLayout,
   Badge,
   Button,
   DataTable,
   DeleteDialog,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   useToast,
   type Column,
 } from "@tankhang1/eco-shared-ui";
+import { ImportTeamDialog } from "../../components/team/ImportTeamDialog";
 
 interface Team {
   id: number;
@@ -61,6 +66,7 @@ export default function TeamPage() {
   const [data, setData] = useState<Team[]>(initialData);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Team | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const columns: Column<Team>[] = [
     { key: "code", label: "Mã đội" },
@@ -95,17 +101,39 @@ export default function TeamPage() {
     setDeleteOpen(false);
   };
 
+  const handleImportData = (newData: any[]) => {
+    const formattedData: Team[] = newData.map((item, index) => ({
+      ...item,
+      id: data.length + index + 1,
+      memberCount: 0, // Mặc định 0 cho dữ liệu mới nhập
+    }));
+    setData((prev) => [...prev, ...formattedData]);
+  };
+
   return (
     <AdminLayout
       title="Quản lý đội nhóm"
       description="Danh sách các đội / nhóm làm việc"
       actions={
-        <Link href="/team/create">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Thêm mới
-          </Button>
-        </Link>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Thêm mới
+              <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[200px]">
+            <DropdownMenuItem onClick={() => setLocation("/team/create")}>
+              <FileUser className="w-4 h-4 mr-2" />
+              Thêm thủ công
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setImportOpen(true)}>
+              <Upload className="w-4 h-4 mr-2" />
+              Nhập từ Excel
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       }
     >
       <DataTable
@@ -123,6 +151,12 @@ export default function TeamPage() {
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa đội nhóm này? Các nhân sự thuộc đội nhóm sẽ cần được phân bổ lại."
+      />
+
+      <ImportTeamDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImport={handleImportData}
       />
     </AdminLayout>
   );

@@ -11,7 +11,7 @@ import {
   type Column,
 } from "@tankhang1/eco-shared-ui";
 
-interface Enterprise {
+interface Farner {
   id: number;
   code: string;
   name: string;
@@ -26,30 +26,15 @@ interface Enterprise {
   createdAt: string;
 }
 
-const initialData: Enterprise[] = [
+const initialData: Farner[] = [
   {
     id: 1,
-    code: "DN001",
-    name: "Công ty TNHH Nông nghiệp Xanh",
-    image:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRn_8OFT04S0wG7vHTRJMrpWD-pki8RPR_wSw&s",
-    type: "enterprise",
-    classification: ["production", "processing"],
-    taxCode: "0123456789",
-    address: "123 Đường ABC, Quận 1, TP.HCM",
-    phone: "0901234567",
-    email: "contact@nongnghiepxanh.vn",
-    status: "active",
-    createdAt: "2024-01-10",
-  },
-  {
-    id: 2,
     code: "NH001",
     name: "Nông hộ Nguyễn Văn A",
     image:
       "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80",
     type: "farm",
-    classification: ["production"],
+    classification: ["production", "trading"],
     taxCode: "",
     address: "Ấp 1, Xã Tân Phú, Huyện Củ Chi",
     phone: "0912345678",
@@ -58,24 +43,9 @@ const initialData: Enterprise[] = [
     createdAt: "2024-01-12",
   },
   {
-    id: 3,
-    code: "DN002",
-    name: "HTX Nông sản Sạch Bình Dương",
-    image:
-      "https://ocop.langson.gov.vn/api/user-blob/82a71ab1-9a6f-6a22-c832-65949c334e71/2024/11/21/logo-trangdinh.jpg",
-    type: "cooperative",
-    classification: ["trading", "service"],
-    taxCode: "0987654321",
-    address: "456 Đường XYZ, TP. Thủ Dầu Một, Bình Dương",
-    phone: "0923456789",
-    email: "htxnongsansach@gmail.com",
-    status: "active",
-    createdAt: "2024-01-15",
-  },
-  {
-    id: 4,
+    id: 2,
     code: "NH002",
-    name: "Trang trại Trần Thị B",
+    name: "Nông hộ Trần Thị B",
     image:
       "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&q=80",
     type: "farm",
@@ -88,30 +58,30 @@ const initialData: Enterprise[] = [
     createdAt: "2024-01-18",
   },
   {
-    id: 5,
-    code: "DN003",
-    name: "Công ty CP Xuất khẩu Trái cây Việt",
+    id: 3,
+    code: "NH003",
+    name: "Nông hộ Trần Thị C",
     image:
-      "https://images.unsplash.com/photo-1589923188900-85dae523342b?w=800&q=80",
-    type: "enterprise",
-    classification: ["trading", "processing"],
-    taxCode: "1122334455",
-    address: "789 Đường DEF, Quận Bình Thạnh, TP.HCM",
-    phone: "0945678901",
-    email: "export@traicayviet.com",
+      "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&q=80",
+    type: "farm",
+    classification: ["processing", "trading"],
+    taxCode: "",
+    address: "Ấp 3, Xã Long An, Huyện Long Thành",
+    phone: "0934567890",
+    email: "tranthic@gmail.com",
     status: "inactive",
-    createdAt: "2024-01-20",
+    createdAt: "2024-01-18",
   },
 ];
 
-export default function EnterprisePage() {
+export default function FarmerPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [data, setData] = useState<Enterprise[]>(initialData);
+  const [data, setData] = useState<Farner[]>(initialData);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<Enterprise | null>(null);
+  const [deleteItem, setDeleteItem] = useState<Farner | null>(null);
 
-  const columns: Column<Enterprise>[] = [
+  const columns: Column<Farner>[] = [
     { key: "code", label: "Mã" },
     {
       key: "image",
@@ -172,7 +142,7 @@ export default function EnterprisePage() {
     },
   ];
 
-  const handleDelete = (item: Enterprise) => {
+  const handleDelete = (item: Farner) => {
     setDeleteItem(item);
     setDeleteOpen(true);
   };
@@ -190,11 +160,11 @@ export default function EnterprisePage() {
 
   return (
     <AdminLayout
-      title="Quản lý doanh nghiệp"
-      description="Quản lý thông tin các doanh nghiệp trong hệ thống"
+      title="Quản lý nông hộ"
+      description="Quản lý thông tin các nông hộ trong hệ thống"
       actions={
-        <Link href="/enterprise/create">
-          <Button data-testid="add-enterprise">
+        <Link href="/farmer/create">
+          <Button data-testid="add-farmer">
             <Plus className="w-4 h-4 mr-2" />
             Thêm mới
           </Button>
@@ -204,10 +174,10 @@ export default function EnterprisePage() {
       <DataTable
         columns={columns}
         data={data}
-        onView={(item) => setLocation(`/enterprise/${item.id}`)}
-        onEdit={(item) => setLocation(`/enterprise/${item.id}/edit`)}
+        onView={(item) => setLocation(`/farmer/${item.id}`)}
+        onEdit={(item) => setLocation(`/farmer/${item.id}/edit`)}
         onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm doanh nghiệp..."
+        searchPlaceholder="Tìm kiếm nông hộ..."
         filters={filters}
         selectable
       />
@@ -216,7 +186,7 @@ export default function EnterprisePage() {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
-        description="Bạn có chắc chắn muốn xóa doanh nghiệp này? Chỉ có thể xóa khi chưa có dữ liệu gắn kết."
+        description="Bạn có chắc chắn muốn xóa nông hộ này? Chỉ có thể xóa khi chưa có dữ liệu gắn kết."
       />
     </AdminLayout>
   );

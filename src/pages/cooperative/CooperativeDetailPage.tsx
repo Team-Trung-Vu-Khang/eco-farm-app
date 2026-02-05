@@ -52,8 +52,8 @@ interface BankAccount {
   note: string;
 }
 
-export default function EnterpriseDetailPage() {
-  const [, params] = useRoute("/enterprise/:id");
+export default function CooperativeDetailPage() {
+  const [, params] = useRoute("/cooperative/:id");
   const [, setLocation] = useLocation();
 
   // Mock data fetching
@@ -66,9 +66,9 @@ export default function EnterpriseDetailPage() {
     setTimeout(() => {
       setData({
         id: params?.id || "DN2024001",
-        type: "enterprise",
+        type: "cooperative",
         code: "DN2024001",
-        name: "Công ty Cổ phần Nông nghiệp Xanh EcoFarm",
+        name: "Hợp tác xã Nông nghiệp Xanh EcoFarm",
         brandName: "EcoFarm Vietnam",
         taxCode: "0101234567",
         taxAddress: "Tầng 5, Tòa nhà ABC, Cầu Giấy, Hà Nội",
@@ -85,7 +85,7 @@ export default function EnterpriseDetailPage() {
         image:
           "https://d1csarkz8obe9u.cloudfront.net/posterpreviews/company-logo-design-template-e089327a5c476ce5c70c74f7359c5898_screen.jpg?ts=1672291305",
         description:
-          "Doanh nghiệp tiên phong trong lĩnh vực nông nghiệp công nghệ cao, chuyên sản xuất và cung ứng rau sạch chuẩn VietGAP. Chúng tôi cam kết mang đến những sản phẩm an toàn, chất lượng nhất cho người tiêu dùng.",
+          "Hợp tác xã tiên phong trong lĩnh vực nông nghiệp công nghệ cao, chuyên sản xuất và cung ứng rau sạch chuẩn VietGAP. Chúng tôi cam kết mang đến những sản phẩm an toàn, chất lượng nhất cho người tiêu dùng.",
         branches: [
           {
             name: "Chi nhánh Miền Nam",
@@ -146,15 +146,9 @@ export default function EnterpriseDetailPage() {
   return (
     <AdminLayout
       title={data.name}
-      description={`Chi tiết thông tin ${
-        data.type === "enterprise"
-          ? "doanh nghiệp"
-          : data.type === "cooperative"
-            ? "hợp tác xã"
-            : "nông hộ"
-      }`}
+      description={"Chi tiết thông tin hợp tác xã"}
       actions={
-        <Button variant="outline" onClick={() => setLocation("/enterprise")}>
+        <Button variant="outline" onClick={() => setLocation("/cooperative")}>
           <ChevronLeft className="w-4 h-4 mr-2" />
           Quay lại
         </Button>
@@ -297,7 +291,7 @@ export default function EnterpriseDetailPage() {
           <div className="flex gap-2">
             <Button
               className="flex-1"
-              onClick={() => setLocation(`/enterprise/${data.id}/edit`)}
+              onClick={() => setLocation(`/cooperative/${data.id}/edit`)}
             >
               Chỉnh sửa
             </Button>

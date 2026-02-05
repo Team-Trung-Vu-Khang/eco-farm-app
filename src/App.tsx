@@ -30,6 +30,7 @@ import UnitCreatePage from "./pages/unit/UnitCreatePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { Toaster, TooltipProvider } from "@tankhang1/eco-shared-ui";
 import BankPage from "./pages/bank/BankPage";
+import BankDirectoryPage from "./pages/bank/BankDirectoryPage";
 import BankCreatePage from "./pages/bank/BankCreatePage";
 import BankEditPage from "./pages/bank/BankEditPage";
 import GeoZonePage from "./pages/geo-zone/GeoZonePage";
@@ -98,6 +99,14 @@ import SeedDetailPage from "./pages/seed/SeedDetailPage";
 import UpdateSeedPage from "./pages/seed/UpdateSeedPage";
 import CreateTreatmentPage from "./pages/treatment/CreateTreatmentPage";
 import PlantDistributionListPage from "./pages/cultivation-zone/distribution-detail/PlantDistributionListPage";
+import FarmerPage from "./pages/farmer/FarmerPage";
+import FarmerCreatePage from "./pages/farmer/FarmerCreatePage";
+import FarmerEditPage from "./pages/farmer/FarnerEditPage";
+import FarmerDetailPage from "./pages/farmer/FarmerDetailPage";
+import CooperativePage from "./pages/cooperative/CooperativePage";
+import CooperativeCreatePage from "./pages/cooperative/CooperativeCreatePage";
+import CooperativeEditPage from "./pages/cooperative/CooperativeEditPage";
+import CooperativeDetailPage from "./pages/cooperative/CooperativeDetailPage";
 import EnterpriseTypePage from "./pages/enterprise-type/EnterpriseTypePage";
 import EnterpriseCertificatePage from "./pages/enterprise-certificate/EnterpriseCertificatePage";
 
@@ -123,6 +132,7 @@ function Router() {
       <Route path="/branch/:id/edit" component={BranchFormPage} />
       <Route path="/branch/:id/detail" component={BranchDetailPage} />
       <Route path="/bank" component={BankPage} />
+      <Route path="/bank-directory" component={BankDirectoryPage} />
       <Route path="/bank/create" component={BankCreatePage} />
       <Route path="/bank/:id/edit" component={BankEditPage} />
       <Route path="/contact" component={ContactPage} />
@@ -239,6 +249,17 @@ function Router() {
       <Route path="/settings" component={SettingsPage} />
       <Route path="/treatment" component={TreatmentPage} />
       <Route path="/treatment/create" component={CreateTreatmentPage} />
+
+      <Route path="/farmer" component={FarmerPage} />
+      <Route path="/farmer/create" component={FarmerCreatePage} />
+      <Route path="/farmer/:id/edit" component={FarmerEditPage} />
+      <Route path="/farmer/:id" component={FarmerDetailPage} />
+
+      <Route path="/cooperative" component={CooperativePage} />
+      <Route path="/cooperative/create" component={CooperativeCreatePage} />
+      <Route path="/cooperative/:id/edit" component={CooperativeEditPage} />
+      <Route path="/cooperative/:id" component={CooperativeDetailPage} />
+
       <Route component={NotFoundPage} />
     </Switch>
   );

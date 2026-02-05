@@ -65,16 +65,6 @@ import { vietQrBankData } from "../../constants/banks";
 import { parseVietQR } from "../../utils/commons";
 import readXlsxFile from "read-excel-file";
 
-interface Branch {
-  name: string;
-  taxCode: string;
-  phone: string;
-  taxAddress: string;
-  email: string;
-  address: string;
-  note: string;
-}
-
 interface BankAccount {
   bankName: string;
   accountHolder: string;
@@ -90,13 +80,15 @@ interface Contact {
   email: string;
 }
 
-const classificationOptions = [
-  { value: "production", label: "Sản xuất" },
-  { value: "processing", label: "Chế biến" },
-  { value: "trading", label: "Thương mại" },
-  { value: "service", label: "Dịch vụ" },
-  { value: "other", label: "Khác" },
-];
+interface Branch {
+  name: string;
+  taxCode: string;
+  phone: string;
+  taxAddress: string;
+  email: string;
+  address: string;
+  note: string;
+}
 
 const bankOptions = vietQrBankData.map((bank) => ({
   id: bank.id,
@@ -106,12 +98,20 @@ const bankOptions = vietQrBankData.map((bank) => ({
   value: bank.bin,
 }));
 
-export default function EnterpriseCreatePage() {
+const classificationOptions = [
+  { value: "production", label: "Sản xuất" },
+  { value: "processing", label: "Chế biến" },
+  { value: "trading", label: "Thương mại" },
+  { value: "service", label: "Dịch vụ" },
+  { value: "other", label: "Khác" },
+];
+
+export default function FarmerEditPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
-    type: "enterprise" as "enterprise" | "farm" | "cooperative",
+    type: "farm" as "enterprise" | "farm" | "cooperative",
     code: "",
     name: "",
     brandName: "",
@@ -127,15 +127,72 @@ export default function EnterpriseCreatePage() {
     image: "",
     description: "",
     contacts: [] as Contact[],
-    branches: [] as Branch[],
+    branches: [] as any[],
     bankAccounts: [] as BankAccount[],
     documents: [] as { name: string; type: string; size: string }[],
   });
+
+  // Mock data fetching
+  useEffect(() => {
+    // Simulate API call
+    setTimeout(() => {
+      setFormData({
+        type: "farm",
+        code: "DN2024001",
+        name: "Trang trại Nông nghiệp Xanh EcoFarm",
+        brandName: "EcoFarm Vietnam",
+        taxCode: "0101234567",
+        taxAddress: "Tầng 5, Tòa nhà ABC, Cầu Giấy, Hà Nội",
+        classification: ["production"],
+        foundedDate: "2020-03-15",
+        representative: "Nguyễn Văn Giám Đốc",
+        website: "https://ecofarm.vn",
+        province: "hn",
+        ward: "dich_vong",
+        address: "Số 123 Đường Xuân Thủy",
+        image:
+          "https://images.unsplash.com/photo-1595839019623-668b555776a3?w=800&q=80",
+        description:
+          "Nông hộ tiên phong trong lĩnh vực nông nghiệp công nghệ cao, chuyên sản xuất và cung ứng rau sạch chuẩn VietGAP.",
+        contacts: [
+          {
+            name: "Lê Văn Tiến",
+            phone: "0333444555",
+            email: "tien.lv@ecofarm.vn",
+          },
+        ],
+        branches: [],
+        bankAccounts: [
+          {
+            bin: "970436",
+            bankName: "Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)",
+            accountHolder: "ECOFARM CORP",
+            accountNumber: "0011001234567",
+            branch: "Sở Giao Dịch",
+            note: "Tài khoản chính",
+          },
+        ],
+        documents: [
+          { name: "giay_phep_kd.pdf", type: "application/pdf", size: "2.5MB" },
+        ],
+      });
+    }, 500);
+  }, []);
 
   const [newContact, setNewContact] = useState<Contact>({
     name: "",
     phone: "",
     email: "",
+  });
+
+  const [newBranch, setNewBranch] = useState<Branch>({
+    name: "",
+    taxCode: "",
+    phone: "",
+    taxAddress: "",
+    email: "",
+    address: "",
+    note: "",
   });
 
   const [newBankAccount, setNewBankAccount] = useState<BankAccount>({
@@ -147,26 +204,26 @@ export default function EnterpriseCreatePage() {
     bin: "",
   });
 
+  const [isDragging, setIsDragging] = useState<Record<string, boolean>>({});
   const [bankInputMethod, setBankInputMethod] = useState<
     "manual" | "excel" | "qr-image" | "qr-scan"
   >("manual");
-  const [hasCamera, setHasCamera] = useState(false);
   const [bankSearchQuery, setBankSearchQuery] = useState("");
   const [confirmBankSearchQuery, setConfirmBankSearchQuery] = useState("");
+  const [branchInputMethod, setBranchInputMethod] = useState<
+    "create" | "excel"
+  >("create");
+  const [hasCamera, setHasCamera] = useState(false);
 
   useEffect(() => {
-    // Check for camera availability
-    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
-      navigator.mediaDevices.enumerateDevices().then((devices) => {
-        const videoDevices = devices.filter(
-          (device) => device.kind === "videoinput",
-        );
-        setHasCamera(videoDevices.length > 0);
-      });
-    }
+    // Check for camera
+    navigator.mediaDevices
+      .enumerateDevices()
+      .then((devices) => {
+        setHasCamera(devices.some((device) => device.kind === "videoinput"));
+      })
+      .catch(() => setHasCamera(false));
   }, []);
-
-  const [isDragging, setIsDragging] = useState<Record<string, boolean>>({});
 
   const handleDrag = (id: string, e: React.DragEvent) => {
     e.preventDefault();
@@ -176,6 +233,28 @@ export default function EnterpriseCreatePage() {
     } else if (e.type === "dragleave" || e.type === "drop") {
       setIsDragging((prev) => ({ ...prev, [id]: false }));
     }
+  };
+
+  const processLogoImage = (file: File) => {
+    if (file && file.type.startsWith("image/")) {
+      const url = URL.createObjectURL(file);
+      setFormData((prev) => ({ ...prev, image: url }));
+      toast({
+        title: "Thành công",
+        description: "Đã tải lên logo mới",
+      });
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processLogoImage(file);
+  };
+
+  const handleLogoDrop = (e: React.DragEvent) => {
+    handleDrag("logo", e);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processLogoImage(file);
   };
 
   const processExcelFile = async (file: File) => {
@@ -252,71 +331,97 @@ export default function EnterpriseCreatePage() {
   const handleExcelDrop = (e: React.DragEvent) => {
     handleDrag("excel", e);
     const file = e.dataTransfer.files?.[0];
-    if (file && (file.name.endsWith(".xlsx") || file.name.endsWith(".xls"))) {
-      processExcelFile(file);
-    } else if (file) {
+    if (file) processExcelFile(file);
+  };
+
+  const processBranchExcelFile = async (file: File) => {
+    try {
+      const rows = await readXlsxFile(file);
+      // Skip header row
+      const dataRows = rows.slice(1);
+
+      const importedBranches: Branch[] = [];
+
+      for (const row of dataRows) {
+        if (row[0]) {
+          importedBranches.push({
+            name: row[0].toString().trim(),
+            taxCode: row[1] ? row[1].toString().trim() : "",
+            phone: row[2] ? row[2].toString().trim() : "",
+            email: row[3] ? row[3].toString().trim() : "",
+            taxAddress: row[4] ? row[4].toString().trim() : "",
+            address: row[5] ? row[5].toString().trim() : "",
+            note: row[6] ? row[6].toString().trim() : "Nhập từ Excel",
+          });
+        }
+      }
+
+      if (importedBranches.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          branches: [...prev.branches, ...importedBranches],
+        }));
+        toast({
+          title: "Thành công",
+          description: `Đã nhập ${importedBranches.length} chi nhánh từ Excel`,
+        });
+        setBranchInputMethod("create");
+      } else {
+        toast({
+          title: "Lỗi",
+          description: "Không tìm thấy dữ liệu hợp lệ trong file Excel",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
       toast({
         title: "Lỗi",
-        description: "Vui lòng tải lên file Excel (.xlsx, .xls)",
+        description:
+          "Không thể đọc file Excel. Vui lòng kiểm tra lại định dạng.",
         variant: "destructive",
       });
     }
+  };
+
+  const handleBranchExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processBranchExcelFile(file);
+  };
+
+  const handleBranchExcelDrop = (e: React.DragEvent) => {
+    handleDrag("branch-excel", e);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processBranchExcelFile(file);
   };
 
   const processQRImage = async (file: File) => {
     try {
       const result = await QrScanner.scanImage(file);
-      const parsed = parseVietQR(result);
-
-      if (parsed) {
-        setNewBankAccount((prev) => ({
-          ...prev,
-          bin: parsed.bin || prev.bin,
-          bankName: parsed.bankName || prev.bankName,
-          accountNumber: parsed.accountNumber || prev.accountNumber,
-          accountHolder: parsed.accountHolder || prev.accountHolder,
-          note: parsed.note || prev.note,
-        }));
-        toast({
-          title: "Đã đọc mã QR",
-          description: "Thông tin ngân hàng đã được trích xuất.",
-        });
-        setBankInputMethod("manual");
-      } else {
-        toast({
-          title: "Thông báo",
-          description:
-            "Đã đọc được QR nhưng không tìm thấy thông tin tài khoản ngân hàng standard.",
-        });
+      if (result) {
+        const parsed = parseVietQR(result);
+        if (parsed) {
+          const bankInfo = vietQrBankData.find((b) => b.bin === parsed.bin);
+          setNewBankAccount({
+            bin: parsed.bin,
+            bankName: bankInfo ? bankInfo.name : `Ngân hàng (${parsed.bin})`,
+            accountNumber: parsed.accountNumber,
+            accountHolder: (parsed.accountHolder || "").toUpperCase(),
+            branch: "",
+            note: "Quét từ mã QR",
+          });
+          setBankInputMethod("manual");
+          toast({
+            title: "Thành công",
+            description: "Đã trích xuất thông tin từ mã QR",
+          });
+        }
       }
-    } catch (err) {
+    } catch (error) {
       toast({
         title: "Lỗi",
-        description: "Không tìm thấy mã QR trong ảnh này.",
+        description: "Không thể đọc mã QR từ hình ảnh này",
         variant: "destructive",
       });
-    }
-  };
-
-  const handleLiveScan = (result: any) => {
-    if (!result || result.length === 0) return;
-    const text = result[0].rawValue;
-    const parsed = parseVietQR(text);
-
-    if (parsed) {
-      setNewBankAccount((prev) => ({
-        ...prev,
-        bin: parsed.bin || prev.bin,
-        note: parsed.note || prev.note,
-        bankName: parsed.bankName || prev.bankName,
-        accountNumber: parsed.accountNumber || prev.accountNumber,
-        accountHolder: parsed.accountHolder || prev.accountHolder,
-      }));
-      toast({
-        title: "Quét thành công",
-        description: "Thông tin ngân hàng đã được trích xuất.",
-      });
-      setBankInputMethod("manual");
     }
   };
 
@@ -328,41 +433,36 @@ export default function EnterpriseCreatePage() {
   const handleQRImageDrop = (e: React.DragEvent) => {
     handleDrag("qr-image", e);
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      processQRImage(file);
+    if (file) processQRImage(file);
+  };
+
+  const handleLiveScan = (result: any) => {
+    if (result && result[0]?.rawValue) {
+      const parsed = parseVietQR(result[0].rawValue);
+      if (parsed) {
+        const bankInfo = vietQrBankData.find((b) => b.bin === parsed.bin);
+        setNewBankAccount({
+          bin: parsed.bin,
+          bankName: bankInfo ? bankInfo.name : `Ngân hàng (${parsed.bin})`,
+          accountNumber: parsed.accountNumber,
+          accountHolder: (parsed.accountHolder || "").toUpperCase(),
+          branch: "",
+          note: "Quét trực tiếp",
+        });
+        setBankInputMethod("manual");
+        toast({
+          title: "Thành công",
+          description: "Đã quét mã QR thành công",
+        });
+      }
     }
-  };
-
-  const processLogoImage = (file: File) => {
-    const url = URL.createObjectURL(file);
-    setFormData((prev) => ({ ...prev, image: url }));
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) processLogoImage(file);
-  };
-
-  const handleLogoDrop = (e: React.DragEvent) => {
-    handleDrag("logo", e);
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      processLogoImage(file);
-    }
-  };
-
-  const handleDocumentDelete = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      documents: prev.documents.filter((_, i) => i !== index),
-    }));
   };
 
   const processDocuments = (files: FileList) => {
     const newDocs = Array.from(files).map((file) => ({
       name: file.name,
       type: file.type,
-      size: (file.size / (1024 * 1024)).toFixed(1) + " MB",
+      size: (file.size / (1024 * 1024)).toFixed(2) + "MB",
     }));
 
     setFormData((prev) => ({
@@ -371,8 +471,8 @@ export default function EnterpriseCreatePage() {
     }));
 
     toast({
-      title: "Đã tải lên",
-      description: `Đã thêm ${newDocs.length} tài liệu.`,
+      title: "Thành công",
+      description: `Đã tải lên ${newDocs.length} tài liệu`,
     });
   };
 
@@ -385,35 +485,73 @@ export default function EnterpriseCreatePage() {
     if (e.dataTransfer.files) processDocuments(e.dataTransfer.files);
   };
 
-  const addContact = () => {
-    if (newContact.name.trim() && newContact.phone.trim()) {
+  const handleDocumentDelete = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      documents: prev.documents.filter((_, i) => i !== index),
+    }));
+  };
+
+  const addBranch = () => {
+    if (newBranch.name.trim()) {
       setFormData({
         ...formData,
-        contacts: [...formData.contacts, newContact],
+        branches: [...formData.branches, newBranch],
       });
-      setNewContact({
+      setNewBranch({
         name: "",
+        taxCode: "",
         phone: "",
+        taxAddress: "",
         email: "",
+        address: "",
+        note: "",
       });
     } else {
       toast({
         title: "Lỗi",
-        description: "Vui lòng nhập tên và số điện thoại liên hệ",
+        description: "Tên chi nhánh không được để trống",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const removeBranch = (index: number) => {
+    setFormData({
+      ...formData,
+      branches: formData.branches.filter((_, i) => i !== index),
+    });
+  };
+
+  const addContact = () => {
+    if (newContact.name && newContact.phone) {
+      setFormData((prev) => ({
+        ...prev,
+        contacts: [...prev.contacts, newContact],
+      }));
+      setNewContact({ name: "", phone: "", email: "" });
+      toast({
+        title: "Thành công",
+        description: "Đã thêm liên hệ mới",
+      });
+    } else {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng nhập tên và số điện thoại",
         variant: "destructive",
       });
     }
   };
 
   const removeContact = (index: number) => {
-    setFormData({
-      ...formData,
-      contacts: formData.contacts.filter((_, i) => i !== index),
-    });
+    setFormData((prev) => ({
+      ...prev,
+      contacts: prev.contacts.filter((_, i) => i !== index),
+    }));
   };
 
   const addBankAccount = () => {
-    if (newBankAccount.bankName && newBankAccount.accountNumber) {
+    if (newBankAccount.bin && newBankAccount.accountNumber) {
       setFormData({
         ...formData,
         bankAccounts: [newBankAccount, ...formData.bankAccounts],
@@ -426,10 +564,15 @@ export default function EnterpriseCreatePage() {
         note: "",
         bin: "",
       });
+      setBankInputMethod("manual");
+      toast({
+        title: "Thành công",
+        description: "Đã thêm tài khoản ngân hàng",
+      });
     } else {
       toast({
         title: "Lỗi",
-        description: "Vui lòng nhập tên ngân hàng và số tài khoản",
+        description: "Vui lòng nhập đầy đủ thông tin ngân hàng",
         variant: "destructive",
       });
     }
@@ -451,8 +594,14 @@ export default function EnterpriseCreatePage() {
   const submitForm = () => {
     setShowConfirmDialog(false);
     toast({
-      title: "Thành công",
-      description: `Đã tạo doanh nghiệp "${formData.name}"`,
+      title: "Cập nhật thành công",
+      description: `Đã cập nhật thông tin ${
+        formData.type === "enterprise"
+          ? "doanh nghiệp"
+          : formData.type === "cooperative"
+            ? "hợp tác xã"
+            : "nông hộ"
+      } "${formData.name}"`,
     });
     setLocation("/enterprise");
   };
@@ -504,7 +653,7 @@ export default function EnterpriseCreatePage() {
                   onChange={handleImageUpload}
                 />
                 <div className="text-sm text-muted-foreground">
-                  <p>Tải lên logo hoặc hình ảnh đại diện của doanh nghiệp.</p>
+                  <p>Tải lên logo hoặc hình ảnh đại diện của nông hộ.</p>
                   <p>Định dạng hỗ trợ: JPG, PNG. Kích thước tối đa: 5MB.</p>
                 </div>
                 <Button
@@ -524,7 +673,7 @@ export default function EnterpriseCreatePage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="code">Mã doanh nghiệp *</Label>
+              <Label htmlFor="code">Mã nông hộ *</Label>
               <Input
                 id="code"
                 value={formData.code}
@@ -550,7 +699,7 @@ export default function EnterpriseCreatePage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Tên doanh nghiệp *</Label>
+              <Label htmlFor="name">Tên nông hộ *</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -627,7 +776,7 @@ export default function EnterpriseCreatePage() {
           <div className="pt-4 border-t">
             <div className="flex items-center gap-2 mb-4">
               <MapPin className="w-5 h-5 text-primary" />
-              <h3 className="font-semibold">Địa chỉ trụ sở</h3>
+              <h3 className="font-semibold">Địa chỉ nông hộ</h3>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -684,14 +833,14 @@ export default function EnterpriseCreatePage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Mô tả doanh nghiệp</Label>
+            <Label htmlFor="description">Mô tả nông hộ</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
               }
-              placeholder="Giới thiệu về doanh nghiệp"
+              placeholder="Giới thiệu về nông hộ"
               rows={3}
             />
           </div>
@@ -801,14 +950,12 @@ export default function EnterpriseCreatePage() {
                       </div>
                       <div className="space-y-1 text-sm text-muted-foreground ml-10">
                         <div className="flex items-center gap-2">
-                          <CreditCard className="w-3 h-3" />
+                          <Phone className="w-3 h-3" />
                           <span>{contact.phone}</span>
                         </div>
                         {contact.email && (
                           <div className="flex items-center gap-2">
-                            <span className="w-3 h-3 flex items-center justify-center">
-                              @
-                            </span>
+                            <Mail className="w-3 h-3" />
                             <span className="truncate">{contact.email}</span>
                           </div>
                         )}
@@ -823,6 +970,288 @@ export default function EnterpriseCreatePage() {
       ),
       isValid: formData.contacts.length > 0,
     },
+    // {
+    //   id: "branches",
+    //   title: "Chi nhánh",
+    //   description: "Quản lý chi nhánh",
+    //   content: (
+    //     <div className="max-w-4xl mx-auto space-y-8">
+    //       <Card>
+    //         <CardHeader>
+    //           <CardTitle className="text-lg font-medium flex items-center gap-2">
+    //             <Building2 className="w-5 h-5 text-primary" />
+    //             Quản lý chi nhánh
+    //           </CardTitle>
+    //         </CardHeader>
+    //         <CardContent>
+    //           <Tabs
+    //             value={branchInputMethod}
+    //             onValueChange={(val: any) => setBranchInputMethod(val)}
+    //             className="w-full"
+    //           >
+    //             <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/50 p-1">
+    //               <TabsTrigger
+    //                 value="create"
+    //                 className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+    //               >
+    //                 <Plus className="w-4 h-4 mr-2" /> Tạo mới
+    //               </TabsTrigger>
+    //               <TabsTrigger
+    //                 value="excel"
+    //                 className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+    //               >
+    //                 <FileText className="w-4 h-4 mr-2" /> Nhập Excel
+    //               </TabsTrigger>
+    //             </TabsList>
+
+    //             <TabsContent
+    //               value="excel"
+    //               className="space-y-4 animate-in fade-in-50 duration-300"
+    //             >
+    //               <div className="space-y-6">
+    //                 <div className="flex items-center justify-between p-4 bg-blue-50/50 border border-blue-100 rounded-xl">
+    //                   <div className="flex items-center gap-3">
+    //                     <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+    //                       <Download className="w-5 h-5 text-blue-600" />
+    //                     </div>
+    //                     <div>
+    //                       <p className="font-bold text-sm text-blue-900">
+    //                         Mẫu file Excel
+    //                       </p>
+    //                       <p className="text-xs text-blue-700">
+    //                         Tải xuống file mẫu để nhập liệu chính xác
+    //                       </p>
+    //                     </div>
+    //                   </div>
+    //                   <Button
+    //                     variant="outline"
+    //                     size="sm"
+    //                     className="bg-white border-blue-200 hover:bg-blue-50"
+    //                     onClick={() =>
+    //                       window.open(
+    //                         "https://static.affina.com.vn/affina/3b0bd357-e259-4ff0-9016-0c23334c5279.xlsx",
+    //                         "_blank",
+    //                       )
+    //                     }
+    //                   >
+    //                     <Download className="w-4 h-4 mr-2" /> Tải mẫu
+    //                   </Button>
+    //                 </div>
+
+    //                 <div
+    //                   className={`border-2 border-dashed rounded-xl p-10 text-center transition-all group cursor-pointer ${isDragging["branch-excel"] ? "border-primary bg-primary/5 scale-[1.02]" : "border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/5"}`}
+    //                   onClick={() =>
+    //                     document.getElementById("branch-excel-upload")?.click()
+    //                   }
+    //                   onDragEnter={(e) => handleDrag("branch-excel", e)}
+    //                   onDragOver={(e) => handleDrag("branch-excel", e)}
+    //                   onDragLeave={(e) => handleDrag("branch-excel", e)}
+    //                   onDrop={handleBranchExcelDrop}
+    //                 >
+    //                   <input
+    //                     id="branch-excel-upload"
+    //                     type="file"
+    //                     accept=".xlsx, .xls"
+    //                     className="hidden"
+    //                     onChange={handleBranchExcelUpload}
+    //                   />
+    //                   <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/10 group-hover:scale-110 transition-all">
+    //                     <Upload className="w-8 h-8 text-muted-foreground group-hover:text-primary" />
+    //                   </div>
+    //                   <h4 className="font-bold text-lg mb-2">
+    //                     Tải lên danh sách chi nhánh
+    //                   </h4>
+    //                   <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-6">
+    //                     Kéo thả file .xlsx hoặc .xls vào đây để nhập danh sách
+    //                     chi nhánh tự động
+    //                   </p>
+    //                   <Button
+    //                     variant="secondary"
+    //                     className="px-8 pointer-events-none"
+    //                   >
+    //                     Chọn file
+    //                   </Button>
+    //                 </div>
+    //               </div>
+    //             </TabsContent>
+
+    //             <TabsContent
+    //               value="create"
+    //               className="space-y-4 animate-in fade-in-50 duration-300"
+    //             >
+    //               <div className="grid grid-cols-2 gap-4">
+    //                 <div className="space-y-2">
+    //                   <Label>Tên chi nhánh *</Label>
+    //                   <Input
+    //                     value={newBranch.name}
+    //                     onChange={(e) =>
+    //                       setNewBranch({ ...newBranch, name: e.target.value })
+    //                     }
+    //                     placeholder="Nhập tên chi nhánh"
+    //                   />
+    //                 </div>
+    //                 <div className="space-y-2">
+    //                   <Label>Mã số thuế</Label>
+    //                   <Input
+    //                     value={newBranch.taxCode}
+    //                     onChange={(e) =>
+    //                       setNewBranch({
+    //                         ...newBranch,
+    //                         taxCode: e.target.value,
+    //                       })
+    //                     }
+    //                     placeholder="MST chi nhánh"
+    //                   />
+    //                 </div>
+    //                 <div className="space-y-2">
+    //                   <Label>Số điện thoại</Label>
+    //                   <Input
+    //                     value={newBranch.phone}
+    //                     onChange={(e) =>
+    //                       setNewBranch({ ...newBranch, phone: e.target.value })
+    //                     }
+    //                     placeholder="SĐT chi nhánh"
+    //                   />
+    //                 </div>
+    //                 <div className="space-y-2">
+    //                   <Label>Email</Label>
+    //                   <Input
+    //                     value={newBranch.email}
+    //                     onChange={(e) =>
+    //                       setNewBranch({ ...newBranch, email: e.target.value })
+    //                     }
+    //                     placeholder="Email chi nhánh"
+    //                   />
+    //                 </div>
+    //                 <div className="space-y-2">
+    //                   <Label>Địa chỉ thuế</Label>
+    //                   <Input
+    //                     value={newBranch.taxAddress}
+    //                     onChange={(e) =>
+    //                       setNewBranch({
+    //                         ...newBranch,
+    //                         taxAddress: e.target.value,
+    //                       })
+    //                     }
+    //                     placeholder="Địa chỉ đăng ký thuế"
+    //                   />
+    //                 </div>
+    //                 <div className="space-y-2">
+    //                   <Label>Địa chỉ chi nhánh</Label>
+    //                   <Input
+    //                     value={newBranch.address}
+    //                     onChange={(e) =>
+    //                       setNewBranch({
+    //                         ...newBranch,
+    //                         address: e.target.value,
+    //                       })
+    //                     }
+    //                     placeholder="Địa chỉ hoạt động"
+    //                   />
+    //                 </div>
+    //                 <div className="col-span-2 space-y-2">
+    //                   <Label>Ghi chú</Label>
+    //                   <Textarea
+    //                     value={newBranch.note}
+    //                     onChange={(e) =>
+    //                       setNewBranch({ ...newBranch, note: e.target.value })
+    //                     }
+    //                     placeholder="Ghi chú thêm..."
+    //                     rows={2}
+    //                   />
+    //                 </div>
+    //               </div>
+    //               <Button onClick={addBranch} className="w-full">
+    //                 <Plus className="w-4 h-4 mr-2" />
+    //                 Thêm vào danh sách
+    //               </Button>
+    //             </TabsContent>
+    //           </Tabs>
+    //         </CardContent>
+    //       </Card>
+
+    //       <div className="space-y-4">
+    //         <h4 className="font-semibold text-lg flex items-center justify-between">
+    //           Danh sách chi nhánh
+    //           <Badge variant="secondary">{formData.branches.length}</Badge>
+    //         </h4>
+
+    //         {formData.branches.length === 0 ? (
+    //           <div className="text-center py-12 border-2 border-dashed rounded-xl bg-muted/10">
+    //             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+    //               <Building2 className="w-6 h-6 text-muted-foreground" />
+    //             </div>
+    //             <p className="text-muted-foreground font-medium">
+    //               Chưa có chi nhánh nào được thêm
+    //             </p>
+    //             <p className="text-sm text-muted-foreground mt-1">
+    //               Vui lòng thêm chi nhánh từ form bên trên
+    //             </p>
+    //           </div>
+    //         ) : (
+    //           <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+    //             <table className="w-full text-sm">
+    //               <thead>
+    //                 <tr className="border-b bg-muted/40">
+    //                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+    //                     Tên chi nhánh
+    //                   </th>
+    //                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+    //                     Mã số thuế
+    //                   </th>
+    //                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+    //                     Liên hệ
+    //                   </th>
+    //                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+    //                     Địa chỉ
+    //                   </th>
+    //                   <th className="text-right py-3 px-4 font-medium text-muted-foreground">
+    //                     Thao tác
+    //                   </th>
+    //                 </tr>
+    //               </thead>
+    //               <tbody>
+    //                 {formData.branches.map((branch, index) => (
+    //                   <tr
+    //                     key={index}
+    //                     className="border-b last:border-0 hover:bg-muted/10 transition-colors"
+    //                   >
+    //                     <td className="py-3 px-4 font-medium">{branch.name}</td>
+    //                     <td className="py-3 px-4">{branch.taxCode || "-"}</td>
+    //                     <td className="py-3 px-4">
+    //                       <div className="flex flex-col gap-1">
+    //                         <span className="text-xs">{branch.phone}</span>
+    //                         <span className="text-xs text-muted-foreground">
+    //                           {branch.email}
+    //                         </span>
+    //                       </div>
+    //                     </td>
+    //                     <td
+    //                       className="py-3 px-4 max-w-[200px] truncate"
+    //                       title={branch.address}
+    //                     >
+    //                       {branch.address || "-"}
+    //                     </td>
+    //                     <td className="py-3 px-4 text-right">
+    //                       <Button
+    //                         variant="ghost"
+    //                         size="icon"
+    //                         className="h-8 w-8 text-destructive hover:bg-destructive/10"
+    //                         onClick={() => removeBranch(index)}
+    //                       >
+    //                         <Trash2 className="w-4 h-4" />
+    //                       </Button>
+    //                     </td>
+    //                   </tr>
+    //                 ))}
+    //               </tbody>
+    //             </table>
+    //           </div>
+    //         )}
+    //       </div>
+    //     </div>
+    //   ),
+    // },
     {
       id: "bank",
       title: "Ngân hàng",
@@ -1323,7 +1752,7 @@ export default function EnterpriseCreatePage() {
               Kiểm tra thông tin
             </h3>
             <p className="text-muted-foreground text-base">
-              Vui lòng xem lại tất cả các thông tin trước khi hoàn tất đăng ký
+              Vui lòng xem lại tất cả các thông tin trước khi hoàn tất cập nhật
             </p>
           </div>
 
@@ -1357,9 +1786,9 @@ export default function EnterpriseCreatePage() {
                     {formData.brandName || "Tên thương hiệu"}
                   </CardTitle>
                   <CardDescription className="text-sm font-medium">
-                    {formData.name || "Tên doanh nghiệp"}
+                    {formData.name || "Tên nông hộ"}
                   </CardDescription>
-                  <div className="px-2 flex justify-center gap-2 mt-4 flex-wrap">
+                  <div className="flex justify-center gap-2 mt-4">
                     {formData.classification.map((item) => (
                       <Badge
                         key={item}
@@ -1380,7 +1809,7 @@ export default function EnterpriseCreatePage() {
                       </div>
                       <div>
                         <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                          Mã doanh nghiệp
+                          Mã nông hộ
                         </p>
                         <p className="font-bold text-base">
                           {formData.code || "N/A"}
@@ -1428,7 +1857,7 @@ export default function EnterpriseCreatePage() {
                       </div>
                       <div>
                         <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                          Địa chỉ trụ sở
+                          Địa chỉ nông hộ
                         </p>
                         <p className="text-sm font-medium leading-normal">
                           {formData.address}
@@ -1467,12 +1896,12 @@ export default function EnterpriseCreatePage() {
                   >
                     Pháp lý
                   </TabsTrigger>
-                  <TabsTrigger
+                  {/* <TabsTrigger
                     value="branches"
                     className="text-sm font-bold rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-4 tracking-wide"
                   >
                     Chi nhánh ({formData.branches.length})
-                  </TabsTrigger>
+                  </TabsTrigger> */}
                   <TabsTrigger
                     value="banks"
                     className="text-sm font-bold rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-4 tracking-wide"
@@ -1518,7 +1947,7 @@ export default function EnterpriseCreatePage() {
                         <div className="space-y-6">
                           <div>
                             <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
-                              Mô tả doanh nghiệp
+                              Mô tả nông hộ
                             </div>
                             <div className="font-medium text-base text-muted-foreground leading-relaxed italic">
                               "{formData.description || "Không có mô tả."}"
@@ -1606,14 +2035,8 @@ export default function EnterpriseCreatePage() {
                                     {branch.address || "Chưa cập nhật địa chỉ"}
                                   </p>
                                 </div>
-                                <Badge
-                                  variant="outline"
-                                  className="bg-green-50 text-green-700 border-green-200"
-                                >
-                                  Hoạt động
-                                </Badge>
                               </div>
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-muted/30 p-4 rounded-lg">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm bg-muted/30 p-4 rounded-lg">
                                 <div>
                                   <span className="text-[10px] text-muted-foreground uppercase font-bold block mb-1">
                                     Mã số thuế
@@ -1646,8 +2069,8 @@ export default function EnterpriseCreatePage() {
                                     Ghi chú
                                   </span>
                                   <div
-                                    className="font-medium truncate"
                                     title={branch.note}
+                                    className="font-medium truncate"
                                   >
                                     {branch.note || "-"}
                                   </div>
@@ -1829,8 +2252,14 @@ export default function EnterpriseCreatePage() {
 
   return (
     <AdminLayout
-      title="Tạo mới Doanh nghiệp"
-      description="Điền thông tin theo từng bước để tạo mới doanh nghiệp"
+      title={`Cập nhật ${
+        formData.type === "enterprise"
+          ? "Doanh nghiệp"
+          : formData.type === "cooperative"
+            ? "Hợp tác xã"
+            : "Nông hộ"
+      }`}
+      description="Cập nhật thông tin chi tiết"
     >
       <Card>
         <CardContent className="p-6">
@@ -1838,19 +2267,24 @@ export default function EnterpriseCreatePage() {
             steps={steps}
             onComplete={handleComplete}
             onCancel={() => setLocation("/enterprise")}
-            completeLabel="Tạo mới"
+            completeLabel="Cập nhật"
           />
         </CardContent>
       </Card>
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận tạo mới</AlertDialogTitle>
+            <AlertDialogTitle>Xác nhận cập nhật</AlertDialogTitle>
             <AlertDialogDescription>
-              Bạn có chắc chắn muốn tạo mới doanh nghiệp "{formData.name}"
-              không?
+              Bạn có chắc chắn muốn cập nhật{" "}
+              {formData.type === "enterprise"
+                ? "doanh nghiệp"
+                : formData.type === "cooperative"
+                  ? "hợp tác xã"
+                  : "nông hộ"}{" "}
+              "{formData.name}" không?
               <br />
-              Thông tin đã nhập sẽ được lưu vào hệ thống.
+              Thông tin mới sẽ được lưu vào hệ thống.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,15 +1,20 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
-import { Plus } from "lucide-react";
+import { useLocation } from "wouter";
 import {
   AdminLayout,
   Badge,
   Button,
   DataTable,
   DeleteDialog,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   useToast,
   type Column,
 } from "@tankhang1/eco-shared-ui";
+import { Plus, ChevronDown, Upload, FileUser } from "lucide-react";
+import { ImportPersonnelDialog } from "../../components/personnel/ImportPersonnelDialog";
 
 interface Personnel {
   id: number;
@@ -26,6 +31,10 @@ interface Personnel {
   taxAddress: string;
   status: "active" | "inactive";
   avatar: string; // URL ảnh đại diện (mock)
+  bankName?: string;
+  bankBranch?: string;
+  accountNumber?: string;
+  accountHolder?: string;
 }
 
 const initialData: Personnel[] = [
@@ -85,6 +94,7 @@ export default function PersonnelPage() {
   const [data, setData] = useState<Personnel[]>(initialData);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Personnel | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const columns: Column<Personnel>[] = [
     {
@@ -158,17 +168,43 @@ export default function PersonnelPage() {
     setDeleteOpen(false);
   };
 
+  const handleImportData = (newData: any[]) => {
+    const formattedData: Personnel[] = newData.map((item, index) => ({
+      ...item,
+      id: data.length + index + 1,
+      avatar: `https://i.pravatar.cc/150?u=${Math.random().toString(36).substring(7)}`,
+    }));
+    setData((prev) => [...prev, ...formattedData]);
+  };
+
   return (
     <AdminLayout
       title="Quản lý nhân sự"
       description="Danh sách nhân sự của doanh nghiệp / nông hộ"
       actions={
-        <Link href="/personnel/create">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Thêm mới
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Thêm mới
+                <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem
+                onClick={() => setLocation("/personnel/create")}
+              >
+                <FileUser className="w-4 h-4 mr-2" />
+                Thêm thủ công
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setImportOpen(true)}>
+                <Upload className="w-4 h-4 mr-2" />
+                Nhập từ Excel
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       }
     >
       <DataTable
@@ -187,6 +223,11 @@ export default function PersonnelPage() {
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa nhân sự này? Hoạt động này không thể hoàn tác."
+      />
+      <ImportPersonnelDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImport={handleImportData}
       />
     </AdminLayout>
   );
