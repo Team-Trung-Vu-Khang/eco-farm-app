@@ -45,6 +45,7 @@ import PlotDistributionPage from "./pages/region-chart/plot-distribution/PlotDis
 import PlotCreatePage from "./pages/region-chart/plot-distribution/PlotCreatePage";
 import PlotDetailPage from "./pages/region-chart/plot-distribution/PlotDetailPage";
 import MapViewPage from "./pages/region-chart/map-view/MapViewPage";
+import SoilAmendmentMapPage from "./pages/region-chart/soil-map/SoilAmendmentMapPage";
 
 // Cultivation Zone Sub-pages
 import CultivationAreaPage from "./pages/cultivation-zone/cultivation-area/CultivationAreaPage";
@@ -176,6 +177,7 @@ function Router() {
       <Route path="/plot-distribution/edit/:id" component={PlotCreatePage} />
       <Route path="/plot-distribution/detail/:id" component={PlotDetailPage} />
       <Route path="/map-view" component={MapViewPage} />
+      <Route path="/soil-amendment-map" component={SoilAmendmentMapPage} />
       {/* Cultivation Zone Sub-Routes */}
       <Route path="/cultivation-area" component={CultivationAreaPage} />
       <Route
