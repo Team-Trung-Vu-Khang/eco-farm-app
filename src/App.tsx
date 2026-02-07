@@ -113,6 +113,10 @@ import CooperativeEditPage from "./pages/cooperative/CooperativeEditPage";
 import CooperativeDetailPage from "./pages/cooperative/CooperativeDetailPage";
 import EnterpriseTypePage from "./pages/enterprise-type/EnterpriseTypePage";
 import EnterpriseCertificatePage from "./pages/enterprise-certificate/EnterpriseCertificatePage";
+import MaterialGroupPage from "./pages/material-group/MaterialGroupPage";
+import FertilizerGroupPage from "./pages/fertilizer-group/FertilizerGroupPage";
+import PesticideGroupPage from "./pages/pesticide-group/PesticideGroupPage";
+import EquipmentGroupPage from "./pages/equipment-group/EquipmentGroupPage";
 
 function Router() {
   return (
@@ -228,17 +232,21 @@ function Router() {
       <Route path="/season/:id/edit" component={UpdateSeasonPage} />
       <Route path="/season/:id" component={SeasonDetailPage} />
       <Route path="/pesticide" component={PesticidePage} />
+      <Route path="/pesticide-group" component={PesticideGroupPage} />
       <Route path="/pesticide/create" component={PesticideCreatePage} />
       <Route path="/pesticide/:id/edit" component={PesticideCreatePage} />
       <Route path="/pesticide/:id" component={PesticideDetailPage} />
       <Route path="/fertilizer" component={FertilizerPage} />
+      <Route path="/fertilizer-group" component={FertilizerGroupPage} />
       <Route path="/fertilizer/create" component={FertilizerCreatePage} />
       <Route path="/fertilizer/:id/edit" component={FertilizerCreatePage} />
       <Route path="/material" component={MaterialPage} />
+      <Route path="/material-group" component={MaterialGroupPage} />
       <Route path="/material/create" component={MaterialCreatePage} />
       <Route path="/material/:id" component={MaterialDetailPage} />
 
       <Route path="/equipment" component={EquipmentPage} />
+      <Route path="/equipment-group" component={EquipmentGroupPage} />
       <Route path="/equipment/create" component={EquipmentCreatePage} />
       <Route path="/equipment/:id/edit" component={EquipmentCreatePage} />
       <Route path="/equipment/:id" component={EquipmentDetailPage} />
