@@ -117,21 +117,21 @@ export const mockEquipment = [
 // Mock Pesticides
 export const mockPesticides = [
   {
-    id: 1,
+    id: 4,
     code: "TBVTV001",
     name: "Thuốc trừ sâu Abamectin 1.8% EC",
     group: "Thuốc trừ sâu",
     activeIngredient: "Abamectin",
   },
   {
-    id: 2,
+    id: 5,
     code: "TBVTV002",
     name: "Thuốc diệt cỏ Glyphosate 480g/l SL",
     group: "Thuốc diệt cỏ",
     activeIngredient: "Glyphosate",
   },
   {
-    id: 3,
+    id: 6,
     code: "TBVTV003",
     name: "Thuốc trừ nấm Mancozeb 80% WP",
     group: "Thuốc trừ nấm",
@@ -142,21 +142,21 @@ export const mockPesticides = [
 // Mock Fertilizers
 export const mockFertilizers = [
   {
-    id: 1,
+    id: 7,
     code: "PB001",
     name: "Phân NPK 16-16-8",
     type: "Phân hỗn hợp",
     formula: "16-16-8",
   },
   {
-    id: 2,
+    id: 8,
     code: "PB002",
     name: "Phân Urê 46%",
     type: "Phân đạm",
     formula: "46-0-0",
   },
   {
-    id: 3,
+    id: 9,
     code: "PB003",
     name: "Phân lân Super 16%",
     type: "Phân lân",
@@ -167,21 +167,21 @@ export const mockFertilizers = [
 // Mock Materials
 export const mockMaterials = [
   {
-    id: 1,
+    id: 10,
     code: "VT001",
     name: "Màng phủ nông nghiệp",
     category: "Vật tư trồng trọt",
     unit: "kg",
   },
   {
-    id: 2,
+    id: 11,
     code: "VT002",
     name: "Lưới che nắng 70%",
     category: "Vật tư che phủ",
     unit: "m²",
   },
   {
-    id: 3,
+    id: 12,
     code: "VT003",
     name: "Ống tưới nhỏ giọt",
     category: "Vật tư tưới tiêu",
@@ -210,11 +210,17 @@ export const units = [
   { id: "kg", name: "Kilogram (kg)" },
   { id: "ton", name: "Tấn (tấn)" },
   { id: "liter", name: "Lít (l)" },
-  { id: "bottle", name: "Chai" },
-  { id: "bag", name: "Bao" },
-  { id: "box", name: "Thùng" },
-  { id: "piece", name: "Cái" },
-  { id: "set", name: "Bộ" },
+  // { id: "bottle", name: "Chai" },
+  // { id: "bag", name: "Bao" },
+  // { id: "box", name: "Thùng" },
+  // { id: "piece", name: "Cái" },
+  // { id: "set", name: "Bộ" },
   { id: "meter", name: "Mét (m)" },
-  { id: "m2", name: "Mét vuông (m²)" },
+  // { id: "m2", name: "Mét vuông (m²)" },
+];
+// Currencies
+export const currencies = [
+  { id: "VND", name: "VNĐ" },
+  { id: "USD", name: "USD" },
+  { id: "EUR", name: "EUR" },
 ];
