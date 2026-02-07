@@ -158,8 +158,8 @@ export default function TreatmentPage() {
     setDeleteOpen(false);
   };
 
-  const handleViewMaterial = (pesticideId: string) => {
-    setSelectedMaterialId(pesticideId);
+  const handleViewMaterial = (materialId: string) => {
+    setSelectedMaterialId(materialId);
     setMaterialModalOpen(true);
   };
 

@@ -3,8 +3,9 @@ export interface TreatmentStep {
   step: number;
   name: string;
   description: string;
-  pesticideId: string; // Link to material system
-  pesticide: string;
+  materialId: string; // Link to material system
+  materialName: string;
+  materialType?: "pesticide" | "fertilizer" | "other";
   dosage: string;
   dosagePerArea: string;
   applicationMethod: string;

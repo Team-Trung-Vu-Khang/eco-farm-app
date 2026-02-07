@@ -240,15 +240,31 @@ export function TreatmentDetail({
                         </div>
                         <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
                           <div
-                            className="font-bold text-green-700 text-base flex items-center gap-1 cursor-pointer hover:underline mb-1"
+                            className="font-bold text-base flex items-center gap-1 cursor-pointer hover:underline mb-1"
                             onClick={() =>
-                              step.pesticideId &&
-                              onViewMaterial?.(step.pesticideId)
+                              step.materialId &&
+                              onViewMaterial?.(step.materialId)
                             }
                           >
-                            {step.pesticide}
-                            {step.pesticideId && (
-                              <ArrowRight className="w-3.5 h-3.5 opacity-50" />
+                            <span
+                              className={`
+                              px-1.5 py-0.5 rounded text-[10px] font-bold uppercase mr-1
+                              ${
+                                step.materialType === "fertilizer"
+                                  ? "bg-amber-100 text-amber-700"
+                                  : "bg-red-100 text-red-700"
+                              }
+                            `}
+                            >
+                              {step.materialType === "fertilizer"
+                                ? "Phân bón"
+                                : "Thuốc"}
+                            </span>
+                            <span className="text-gray-900">
+                              {step.materialName}
+                            </span>
+                            {step.materialId && (
+                              <ArrowRight className="w-3.5 h-3.5 opacity-50 ml-auto" />
                             )}
                           </div>
                           <div className="flex items-center gap-4 text-sm mt-2">
