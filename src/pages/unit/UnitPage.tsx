@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Plus, ArrowRightLeft } from "lucide-react";
 import { useLocation } from "wouter";
 import {
   AdminLayout,
@@ -12,12 +12,33 @@ import {
 } from "@tankhang1/eco-shared-ui";
 import { initialUnits, type Unit } from "./constants";
 
+const TYPE_LABELS: Record<string, string> = {
+  mass: "Khối lượng",
+  volume: "Thể tích",
+  length: "Độ dài",
+  area: "Diện tích",
+  quantity: "Số lượng",
+  time: "Thời gian",
+  other: "Khác",
+};
+
 export default function UnitPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [data, setData] = useState<Unit[]>(initialUnits);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Unit | null>(null);
+
+  // Create a map for quick lookup of base unit names
+  const unitMap = useMemo(() => {
+    return data.reduce(
+      (acc, unit) => {
+        acc[unit.id] = unit;
+        return acc;
+      },
+      {} as Record<number, Unit>,
+    );
+  }, [data]);
 
   const columns: Column<Unit>[] = [
     { key: "code", label: "Mã" },
@@ -33,7 +54,43 @@ export default function UnitPage() {
         </span>
       ),
     },
-    { key: "description", label: "Mô tả", render: (value) => value || "-" },
+    {
+      key: "type",
+      label: "Loại",
+      render: (value) => (
+        <Badge variant="outline" className="capitalize">
+          {TYPE_LABELS[value as string] || value}
+        </Badge>
+      ),
+    },
+    {
+      key: "conversionFactor",
+      label: "Quy đổi (Chuẩn)",
+      render: (_, row) => {
+        if (row.isBaseUnit) {
+          return (
+            <Badge className="bg-emerald-600 hover:bg-emerald-700">
+              Đơn vị chuẩn
+            </Badge>
+          );
+        }
+
+        if (row.baseUnitId && unitMap[row.baseUnitId]) {
+          const baseUnit = unitMap[row.baseUnitId];
+          return (
+            <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
+              <ArrowRightLeft className="w-3 h-3" />
+              <span>
+                1 {row.code} = {row.conversionFactor.toLocaleString("vi-VN")}{" "}
+                {baseUnit.code}
+              </span>
+            </div>
+          );
+        }
+
+        return <span className="text-muted-foreground">-</span>;
+      },
+    },
     {
       key: "status",
       label: "Trạng thái",
@@ -60,6 +117,22 @@ export default function UnitPage() {
 
   const handleConfirmDelete = () => {
     if (deleteItem) {
+      if (deleteItem.isBaseUnit) {
+        // Prevent deleting base unit if it's used by others?
+        // Simple check:
+        const hasDependents = data.some((u) => u.baseUnitId === deleteItem.id);
+        if (hasDependents) {
+          toast({
+            title: "Không thể xóa",
+            description:
+              "Đơn vị này đang là chuẩn quy đổi cho các đơn vị khác.",
+            variant: "destructive",
+          });
+          setDeleteOpen(false);
+          return;
+        }
+      }
+
       setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
       toast({ title: "Thành công", description: "Đã xóa đơn vị tính" });
     }
@@ -69,7 +142,7 @@ export default function UnitPage() {
   return (
     <AdminLayout
       title="Quản lý đơn vị"
-      description="Quản lý danh sách đơn vị tính cho vật tư, nông sản"
+      description="Quản lý danh sách đơn vị tính và quy tắc quy đổi về đơn vị chuẩn (kg, lít...)"
       actions={
         <Button onClick={handleAdd}>
           <Plus className="w-4 h-4 mr-2" />
