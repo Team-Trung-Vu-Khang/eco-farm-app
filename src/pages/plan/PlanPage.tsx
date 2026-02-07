@@ -261,6 +261,38 @@ export default function PlanPage() {
         onEdit={handleEdit}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm kế hoạch..."
+        filters={[
+          {
+            key: "status",
+            label: "Trạng thái",
+            options: [
+              { label: "Đang thực hiện", value: "active" },
+              { label: "Bản nháp", value: "draft" },
+              { label: "Hoàn thành", value: "completed" },
+            ],
+          },
+          {
+            key: "season",
+            label: "Mùa vụ",
+            options: [
+              { label: "Vụ Xuân 2025", value: "Vụ Xuân 2025" },
+              { label: "Vụ Hè 2025", value: "Vụ Hè 2025" },
+              { label: "Vụ Thu 2025", value: "Vụ Thu 2025" },
+              { label: "Vụ Đông 2025", value: "Vụ Đông 2025" },
+              { label: "Năm 2025", value: "Năm 2025" },
+            ],
+          },
+          {
+            key: "crop",
+            label: "Cây trồng",
+            options: [
+              { label: "Sầu riêng", value: "Sầu riêng" },
+              { label: "Xoài", value: "Xoài" },
+              { label: "Bưởi", value: "Bưởi" },
+              { label: "Thanh long", value: "Thanh long" },
+            ],
+          },
+        ]}
       />
 
       <FormDialog
