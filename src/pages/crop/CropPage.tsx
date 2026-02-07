@@ -10,7 +10,12 @@ import { FileDown, Image as ImageIcon, Plus } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 
-import { cropTypeOptions, harvestMethodOptions, initialData } from "./mocks";
+import {
+  categories,
+  cropTypeOptions,
+  harvestMethodOptions,
+  initialData,
+} from "./mocks";
 import type { Crop } from "./types";
 
 export default function CropPage() {
@@ -21,6 +26,11 @@ export default function CropPage() {
   const [deleteItem, setDeleteItem] = useState<Crop | null>(null);
 
   const tableFilters = [
+    {
+      key: "cropGroup",
+      label: "Nhóm cây",
+      options: categories.map((c) => ({ label: c, value: c })),
+    },
     {
       key: "cropType",
       label: "Loại cây",
@@ -74,6 +84,15 @@ export default function CropPage() {
             </span>
           )}
         </div>
+      ),
+    },
+    {
+      key: "origin",
+      label: "Nguồn gốc",
+      render: (_: any, item: Crop) => (
+        <span className="text-sm text-foreground">
+          {item.technicalSpecs?.origin || "---"}
+        </span>
       ),
     },
     {
