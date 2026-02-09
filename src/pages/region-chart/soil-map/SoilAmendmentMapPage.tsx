@@ -39,6 +39,7 @@ import "leaflet/dist/leaflet.css";
 import {
   FlaskConical,
   Maximize2,
+  Minimize2,
   ArrowRight,
   AlertCircle,
   CheckCircle2,
@@ -311,6 +312,21 @@ const SoilAmendmentMapPage = () => {
 
   // Plan Creation Modal State
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+
+  const toggleFullScreen = () => {
+    setIsFullScreen((prev) => !prev);
+  };
+
+  // Force map resize when toggling fullscreen (sidebar animation)
+  useEffect(() => {
+    const timers = [100, 300, 500].map((t) =>
+      setTimeout(() => {
+        window.dispatchEvent(new Event("resize"));
+      }, t),
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [isFullScreen]);
 
   // ... useMemo for soilDataMap ...
   const soilDataMap = useMemo(() => {
@@ -501,18 +517,26 @@ const SoilAmendmentMapPage = () => {
               <SelectItem value="compaction">Độ nén đất</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="icon">
-            <Maximize2 className="h-4 w-4" />
+          <Button variant="outline" size="icon" onClick={toggleFullScreen}>
+            {isFullScreen ? (
+              <Minimize2 className="h-4 w-4" />
+            ) : (
+              <Maximize2 className="h-4 w-4" />
+            )}
           </Button>
         </div>
       }
     >
-      <div className="flex h-[calc(100vh-140px)] gap-4 relative">
+      <div className="flex bg-background h-[calc(100vh-140px)] gap-0 relative group">
         {/* Sidebar Info */}
         <div
-          className={`w-[350px] shrink-0 flex flex-col gap-4 transition-all duration-300 ${!selectedFeature ? "opacity-50 pointer-events-none grayscale" : ""}`}
+          className={`shrink-0 border-r bg-card flex flex-col h-full transition-all duration-300 ${
+            isFullScreen ? "w-0 border-none overflow-hidden" : "w-[350px]"
+          }`}
         >
-          <Card className="h-full border-none shadow-md bg-white/80 backdrop-blur flex flex-col">
+          <Card
+            className={`h-full border-none shadow-md bg-white/80 backdrop-blur flex flex-col transition-all duration-300 ${!selectedFeature ? "opacity-50 pointer-events-none grayscale" : ""}`}
+          >
             {/* Header */}
             <div className="p-4 border-b bg-muted/30">
               {selectedFeature ? (
@@ -675,7 +699,21 @@ const SoilAmendmentMapPage = () => {
         </div>
 
         {/* Map View */}
-        <div className="flex-1 relative rounded-xl overflow-hidden border shadow-sm">
+        <div className="flex-1 relative bg-slate-100 z-0 group/map">
+          {/* Stable Overlay Container for Buttons */}
+          <div className="absolute top-4 right-16 z-[500] pointer-events-none">
+            {isFullScreen && (
+              <Button
+                variant="secondary"
+                size="icon"
+                className="shadow-md bg-white/90 backdrop-blur pointer-events-auto"
+                onClick={toggleFullScreen}
+              >
+                <Minimize2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+
           <MapContainer
             center={mapViewState.center}
             zoom={mapViewState.zoom}
