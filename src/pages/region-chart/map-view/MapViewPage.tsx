@@ -13,6 +13,7 @@ import {
   ScrollArea,
   Dialog,
   DialogContent,
+  cn,
 } from "@tankhang1/eco-shared-ui";
 import {
   MapContainer,
@@ -155,7 +156,10 @@ interface SelectedEntityStats {
   types: Record<string, number>;
 }
 
-const MapViewPage = () => {
+const MapContent = () => {
+  const isFullScreenParam =
+    new URLSearchParams(window.location.search).get("fullscreen") === "true";
+
   // State
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRegion, setFilterRegion] = useState<string>("all");
@@ -173,8 +177,6 @@ const MapViewPage = () => {
     plot: false,
     plant: false,
   });
-
-  const [isFullScreen, setIsFullScreen] = useState(false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedEntity, setSelectedEntity] = useState<{
@@ -409,17 +411,15 @@ const MapViewPage = () => {
   };
 
   return (
-    <AdminLayout
-      title="Bản đồ số nông nghiệp"
-      description="Quản lý trực quan vùng trồng và cây trồng"
-    >
-      <div className="flex h-[calc(100vh-140px)] relative group">
+    <>
+      <div
+        className={cn(
+          "flex relative group",
+          isFullScreenParam ? "h-screen w-screen" : "h-[calc(100vh-140px)]",
+        )}
+      >
         {/* Sidebar Controls */}
-        <div
-          className={`shrink-0 border-r bg-card flex flex-col h-full transition-all duration-300 ${
-            isFullScreen ? "w-0 border-none overflow-hidden" : "w-[350px]"
-          }`}
-        >
+        <div className="shrink-0 border-r bg-card flex flex-col h-full transition-all duration-300">
           {selectedEntity ? (
             // Detail / Report View
             <div className="flex flex-col h-full animate-in slide-in-from-left-5 fade-in bg-slate-50">
@@ -920,11 +920,21 @@ const MapViewPage = () => {
           {/* Full Screen Toggle Button */}
           <div className="absolute top-4 right-16 z-1000">
             <button
-              onClick={() => setIsFullScreen(!isFullScreen)}
+              onClick={() => {
+                if (isFullScreenParam) {
+                  window.close();
+                } else {
+                  const url = new URL(window.location.href);
+                  url.searchParams.set("fullscreen", "true");
+                  window.open(url.toString(), "_blank");
+                }
+              }}
               className="bg-white p-2 rounded-md shadow-md text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors border border-slate-200"
-              title={isFullScreen ? "Thoát toàn màn hình" : "Toàn màn hình"}
+              title={
+                isFullScreenParam ? "Thoát toàn màn hình" : "Toàn màn hình"
+              }
             >
-              {isFullScreen ? (
+              {isFullScreenParam ? (
                 <Minimize2 className="w-5 h-5" />
               ) : (
                 <Maximize2 className="w-5 h-5" />
@@ -934,8 +944,8 @@ const MapViewPage = () => {
         </div>
       </div>
 
-      <Dialog
-        open={isFullScreen && !!selectedEntity}
+      {/* <Dialog
+        open={isFullScreenParam && !!selectedEntity}
         onOpenChange={(open) => !open && setSelectedEntity(null)}
       >
         <DialogContent className="sm:max-w-[400px] p-0 gap-0 overflow-hidden bg-slate-50 max-h-[90vh] flex flex-col">
@@ -1089,7 +1099,25 @@ const MapViewPage = () => {
             </div>
           )}
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
+    </>
+  );
+};
+
+const MapViewPage = () => {
+  const isFullScreenParam =
+    new URLSearchParams(window.location.search).get("fullscreen") === "true";
+
+  if (isFullScreenParam) {
+    return <MapContent />;
+  }
+
+  return (
+    <AdminLayout
+      title="Bản đồ số nông nghiệp"
+      description="Quản lý trực quan vùng trồng và cây trồng"
+    >
+      <MapContent />
     </AdminLayout>
   );
 };

@@ -6,6 +6,7 @@ const FarmingMethodPage = () => {
       title="Quản lý phương thức canh tác"
       description="Các phương thức canh tác áp dụng trong sản xuất"
       entityName="phương thức"
+      withRichTextEditor
       initialData={[
         {
           id: 1,
