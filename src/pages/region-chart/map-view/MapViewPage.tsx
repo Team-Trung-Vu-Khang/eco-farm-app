@@ -11,6 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
   ScrollArea,
+  Dialog,
+  DialogContent,
 } from "@tankhang1/eco-shared-ui";
 import {
   MapContainer,
@@ -25,7 +27,13 @@ import {
 import type { GeoJsonObject, Feature } from "geojson";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Search, AlertTriangle, Sprout } from "lucide-react";
+import {
+  Search,
+  AlertTriangle,
+  Sprout,
+  Maximize2,
+  Minimize2,
+} from "lucide-react";
 
 import { MOCK_REGIONS, MOCK_AREAS } from "../constants";
 
@@ -165,6 +173,8 @@ const MapViewPage = () => {
     plot: false,
     plant: false,
   });
+
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedEntity, setSelectedEntity] = useState<{
@@ -403,9 +413,13 @@ const MapViewPage = () => {
       title="Bản đồ số nông nghiệp"
       description="Quản lý trực quan vùng trồng và cây trồng"
     >
-      <div className="flex h-[calc(100vh-140px)]">
+      <div className="flex h-[calc(100vh-140px)] relative group">
         {/* Sidebar Controls */}
-        <div className="w-[350px] shrink-0 border-r bg-card flex flex-col h-full transition-all duration-300">
+        <div
+          className={`shrink-0 border-r bg-card flex flex-col h-full transition-all duration-300 ${
+            isFullScreen ? "w-0 border-none overflow-hidden" : "w-[350px]"
+          }`}
+        >
           {selectedEntity ? (
             // Detail / Report View
             <div className="flex flex-col h-full animate-in slide-in-from-left-5 fade-in bg-slate-50">
@@ -700,7 +714,7 @@ const MapViewPage = () => {
         </div>
 
         {/* Map Area */}
-        <div className="flex-1 relative bg-slate-100">
+        <div className="flex-1 relative bg-slate-100 -z-0">
           <MapContainer
             center={mapCenter}
             zoom={mapZoom}
@@ -902,8 +916,180 @@ const MapViewPage = () => {
               </div>
             </div>
           </MapContainer>
+
+          {/* Full Screen Toggle Button */}
+          <div className="absolute top-4 right-16 z-1000">
+            <button
+              onClick={() => setIsFullScreen(!isFullScreen)}
+              className="bg-white p-2 rounded-md shadow-md text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors border border-slate-200"
+              title={isFullScreen ? "Thoát toàn màn hình" : "Toàn màn hình"}
+            >
+              {isFullScreen ? (
+                <Minimize2 className="w-5 h-5" />
+              ) : (
+                <Maximize2 className="w-5 h-5" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
+
+      <Dialog
+        open={isFullScreen && !!selectedEntity}
+        onOpenChange={(open) => !open && setSelectedEntity(null)}
+      >
+        <DialogContent className="sm:max-w-[400px] p-0 gap-0 overflow-hidden bg-slate-50 max-h-[90vh] flex flex-col">
+          {selectedEntity && (
+            <div className="flex flex-col h-full">
+              <div className="p-4 border-b bg-white flex items-center justify-between shadow-sm z-10">
+                <div className="flex items-center gap-2">
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <Search className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg leading-tight">
+                      Chi tiết kỹ thuật
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Báo cáo tổng hợp
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <ScrollArea className="flex-1 p-2">
+                <Card className="border-none shadow-sm mb-6">
+                  <CardContent className="p-4 space-y-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="text-sm text-muted-foreground">
+                          Đối tượng
+                        </div>
+                        <div className="text-xl font-bold text-primary">
+                          {selectedEntity.type}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm text-muted-foreground">
+                          Mã số
+                        </div>
+                        <div className="font-mono font-medium bg-slate-100 px-2 py-0.5 rounded text-sm inline-block">
+                          {selectedEntity.properties?.code || "N/A"}
+                        </div>
+                      </div>
+                    </div>
+
+                    {selectedEntity.properties?.area && (
+                      <div className="bg-primary/5 rounded-lg p-3 flex items-center justify-between border border-primary/10">
+                        <span className="text-sm font-medium flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4 text-primary" />{" "}
+                          Tổng diện tích
+                        </span>
+                        <span className="font-bold text-lg">
+                          {selectedEntity.properties.area}{" "}
+                          <span className="text-sm font-normal text-muted-foreground">
+                            ha
+                          </span>
+                        </span>
+                      </div>
+                    )}
+
+                    {selectedEntity.properties?.altitude && (
+                      <div className="flex justify-between text-sm py-1 border-b border-dashed">
+                        <span className="text-muted-foreground">
+                          Độ cao trung bình
+                        </span>
+                        <span>{selectedEntity.properties.altitude}m</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <div className="mb-6">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm text-slate-700">
+                    <Sprout className="w-4 h-4" />
+                    Thống kê cây trồng
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Card className="bg-white border-none shadow-sm">
+                      <CardContent className="p-4 flex flex-col items-center justify-center">
+                        <div className="text-3xl font-bold text-slate-800">
+                          {selectedEntity.stats.total}
+                        </div>
+                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mt-1">
+                          Tổng cộng
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-green-50 border-green-100 shadow-sm">
+                      <CardContent className="p-4 flex flex-col items-center justify-center">
+                        <div className="text-3xl font-bold text-green-600">
+                          {selectedEntity.stats.healthy}
+                        </div>
+                        <div className="text-xs font-medium text-green-700 uppercase tracking-wide mt-1">
+                          Khỏe mạnh
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-red-50 border-red-100 shadow-sm">
+                      <CardContent className="p-4 flex flex-col items-center justify-center">
+                        <div className="text-3xl font-bold text-red-600">
+                          {selectedEntity.stats.diseased}
+                        </div>
+                        <div className="text-xs font-medium text-red-700 uppercase tracking-wide mt-1">
+                          Sâu bệnh
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-yellow-50 border-yellow-100 shadow-sm">
+                      <CardContent className="p-4 flex flex-col items-center justify-center">
+                        <div className="text-3xl font-bold text-yellow-600">
+                          {selectedEntity.stats.harvesting}
+                        </div>
+                        <div className="text-xs font-medium text-yellow-700 uppercase tracking-wide mt-1">
+                          Thu hoạch
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm text-slate-700">
+                    <Search className="w-4 h-4" />
+                    Phân loại cây (
+                    {Object.keys(selectedEntity.stats.types).length})
+                  </h4>
+                  <Card className="border-none shadow-sm overflow-hidden">
+                    <div className="divide-y">
+                      {Object.entries(selectedEntity.stats.types).map(
+                        ([name, count]) => (
+                          <div
+                            key={name}
+                            className="p-3 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                          >
+                            <span className="text-sm font-medium text-slate-700">
+                              {name}
+                            </span>
+                            <span className="text-xs font-bold bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
+                              {count} cây
+                            </span>
+                          </div>
+                        ),
+                      )}
+                      {Object.keys(selectedEntity.stats.types).length === 0 && (
+                        <div className="p-8 text-center text-muted-foreground text-sm">
+                          Chưa có dữ liệu cây trồng trong khu vực này.
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                </div>
+              </ScrollArea>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
