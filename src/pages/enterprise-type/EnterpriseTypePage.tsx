@@ -117,7 +117,7 @@ const EnterpriseTypePage = () => {
       );
       toast({
         title: "Thành công",
-        description: "Đã cập nhật loại hình doanh nghiệp",
+        description: "Đã cập nhật danh mục tổ chức",
       });
     } else {
       const newItem: EnterpriseType = {
@@ -128,7 +128,7 @@ const EnterpriseTypePage = () => {
       setData((prev) => [...prev, newItem]);
       toast({
         title: "Thành công",
-        description: "Đã thêm loại hình doanh nghiệp mới",
+        description: "Đã thêm danh mục tổ chức mới",
       });
     }
     setFormOpen(false);
@@ -139,7 +139,7 @@ const EnterpriseTypePage = () => {
       setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
       toast({
         title: "Thành công",
-        description: "Đã xóa loại hình doanh nghiệp",
+        description: "Đã xóa danh mục tổ chức",
       });
     }
     setDeleteOpen(false);
@@ -147,12 +147,12 @@ const EnterpriseTypePage = () => {
 
   return (
     <AdminLayout
-      title="Loại hình doanh nghiệp"
-      description="Quản lý danh sách các loại hình doanh nghiệp (Master Data)"
+      title="Danh mục tổ chức"
+      description="Quản lý danh mục tổ chức"
       actions={
         <Button onClick={handleAdd} data-testid="add-enterprise-type">
           <Plus className="w-4 h-4 mr-2" />
-          Thêm loại hình
+          Thêm tổ chức
         </Button>
       }
     >
@@ -161,19 +161,21 @@ const EnterpriseTypePage = () => {
         data={data}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm loại hình..."
+        searchPlaceholder="Tìm kiếm danh mục tổ chức..."
       />
 
       <FormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
-        title={editItem ? "Chỉnh sửa loại hình" : "Thêm loại hình mới"}
+        title={
+          editItem ? "Chỉnh sửa danh mục tổ chức" : "Thêm danh mục tổ chức mới"
+        }
         onSubmit={handleSubmit}
       >
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="code">Mã loại hình</Label>
+              <Label htmlFor="code">Mã tổ chức</Label>
               <Input
                 id="code"
                 value={formData.code}
@@ -184,7 +186,7 @@ const EnterpriseTypePage = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="name">Tên loại hình</Label>
+              <Label htmlFor="name">Tên tổ chức</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -204,7 +206,7 @@ const EnterpriseTypePage = () => {
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
               }
-              placeholder="Mô tả chi tiết về loại hình doanh nghiệp..."
+              placeholder="Mô tả chi tiết về danh mục tổ chức..."
               rows={3}
             />
           </div>
@@ -215,7 +217,7 @@ const EnterpriseTypePage = () => {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
-        description="Bạn có chắc chắn muốn xóa loại hình doanh nghiệp này?"
+        description="Bạn có chắc chắn muốn xóa danh mục tổ chức này?"
       />
     </AdminLayout>
   );

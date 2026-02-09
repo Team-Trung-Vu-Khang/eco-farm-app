@@ -6,12 +6,14 @@ import {
   Button,
   DataTable,
   DeleteDialog,
+  Editor,
   FormDialog,
   Input,
   Label,
   Textarea,
   useToast,
   type Column,
+  type EditorState,
 } from "@tankhang1/eco-shared-ui";
 
 interface GenericItem {
@@ -19,8 +21,8 @@ interface GenericItem {
   code: string;
   name: string;
   image?: string;
-  description: string;
   status: "active" | "inactive";
+  description: string | EditorState;
   createdAt: string;
 }
 
@@ -30,6 +32,7 @@ interface GenericPageProps {
   entityName: string;
   initialData: GenericItem[];
   enableImage?: boolean;
+  withRichTextEditor?: boolean;
 }
 
 export function GenericPage({
@@ -38,6 +41,7 @@ export function GenericPage({
   entityName,
   initialData,
   enableImage = false,
+  withRichTextEditor = false,
 }: GenericPageProps) {
   const { toast } = useToast();
   const [data, setData] = useState<GenericItem[]>(initialData);
@@ -158,12 +162,13 @@ export function GenericPage({
       />
 
       <FormDialog
+        size="lg"
         open={formOpen}
         onOpenChange={setFormOpen}
         title={editItem ? `Chỉnh sửa ${entityName}` : `Thêm ${entityName} mới`}
         onSubmit={handleSubmit}
       >
-        <div className="space-y-4">
+        <div className="w-full space-y-4">
           <div className="space-y-2">
             <Label htmlFor="code">Mã</Label>
             <Input
@@ -234,16 +239,40 @@ export function GenericPage({
           )}
           <div className="space-y-2">
             <Label htmlFor="description">Mô tả</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              placeholder="Nhập mô tả"
-              rows={3}
-              data-testid="input-description"
-            />
+            {withRichTextEditor ? (
+              <Editor
+                contentEditableClassname="min-h-[300px] max-h-[500px] h-auto overflow-y-auto"
+                initialText={
+                  typeof formData.description === "string"
+                    ? formData.description
+                    : ""
+                }
+                onChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    description: value,
+                  })
+                }
+              />
+            ) : (
+              <Textarea
+                id="description"
+                value={
+                  typeof formData.description === "string"
+                    ? formData.description
+                    : ""
+                }
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    description: e.target.value,
+                  })
+                }
+                placeholder="Nhập mô tả"
+                rows={3}
+                data-testid="input-description"
+              />
+            )}
           </div>
         </div>
       </FormDialog>
