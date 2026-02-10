@@ -359,6 +359,10 @@ const getRandomSoilData = (): SoilData => {
 };
 
 const SoilAmendmentMapPage = () => {
+  // Check for fullscreen param
+  const isFullScreenParam =
+    new URLSearchParams(window.location.search).get("fullscreen") === "true";
+
   // ... use existing state ...
   const [activeMetric, setActiveMetric] = useState<SoilMetric>("ph");
   const [mapViewState] = useState<{ center: [number, number]; zoom: number }>({
@@ -400,13 +404,23 @@ const SoilAmendmentMapPage = () => {
 
   // Plan Creation Modal State
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
-  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  const toggleFullScreen = () => {
-    setIsFullScreen((prev) => !prev);
+  const handleFullScreen = () => {
+    if (isFullScreenParam) {
+      // If already in new tab fullscreen, maybe close it? Or just do nothing.
+      window.close();
+    } else {
+      // Open new tab
+      window.open(
+        `${window.location.pathname}?fullscreen=true`,
+        "_blank",
+        "noopener,noreferrer",
+      );
+    }
   };
 
-  // Force map resize when toggling fullscreen (sidebar animation)
+  // Force map resize when sidebar toggles
   useEffect(() => {
     const timers = [100, 300, 500].map((t) =>
       setTimeout(() => {
@@ -414,7 +428,7 @@ const SoilAmendmentMapPage = () => {
       }, t),
     );
     return () => timers.forEach(clearTimeout);
-  }, [isFullScreen]);
+  }, [isSidebarCollapsed]);
 
   // ... useMemo for soilDataMap ...
   const soilDataMap = useMemo(() => {
@@ -581,352 +595,485 @@ const SoilAmendmentMapPage = () => {
     }
   }, [isPlanModalOpen, selectedFeature]);
 
-  return (
-    <AdminLayout
-      title="Bản đồ cải tạo đất"
-      description="Phân tích chất lượng đất và kế hoạch cải tạo"
-      actions={
-        <div className="flex gap-2">
-          <Select
-            value={activeMetric}
-            onValueChange={(v) => setActiveMetric(v as SoilMetric)}
-          >
-            <SelectTrigger className="w-[180px] bg-background">
-              <SelectValue placeholder="Chọn chỉ số" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ph">Độ pH</SelectItem>
-              <SelectItem value="moisture">Độ ẩm</SelectItem>
-              <SelectItem value="nitrogen">Nitrogen (N)</SelectItem>
-              <SelectItem value="phosphorus">Phosphorus (P)</SelectItem>
-              <SelectItem value="potassium">Potassium (K)</SelectItem>
-              <SelectItem value="ec">Độ dẫn điện (EC)</SelectItem>
-              <SelectItem value="temperature">Nhiệt độ đất</SelectItem>
-              <SelectItem value="compaction">Độ nén đất</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="icon" onClick={toggleFullScreen}>
-            {isFullScreen ? (
-              <Minimize2 className="h-4 w-4" />
-            ) : (
-              <Maximize2 className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
-      }
+  // Controls Component
+  const MapControls = () => (
+    <div className="flex gap-2 bg-white/50 backdrop-blur p-1 rounded-lg border shadow-sm">
+      <Select
+        value={activeMetric}
+        onValueChange={(v) => setActiveMetric(v as SoilMetric)}
+      >
+        <SelectTrigger className="w-[180px] bg-background">
+          <SelectValue placeholder="Chọn chỉ số" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="ph">Độ pH</SelectItem>
+          <SelectItem value="moisture">Độ ẩm</SelectItem>
+          <SelectItem value="nitrogen">Nitrogen (N)</SelectItem>
+          <SelectItem value="phosphorus">Phosphorus (P)</SelectItem>
+          <SelectItem value="potassium">Potassium (K)</SelectItem>
+          <SelectItem value="ec">Độ dẫn điện (EC)</SelectItem>
+          <SelectItem value="temperature">Nhiệt độ đất</SelectItem>
+          <SelectItem value="compaction">Độ nén đất</SelectItem>
+        </SelectContent>
+      </Select>
+      <Button variant="outline" size="icon" onClick={handleFullScreen}>
+        {isFullScreenParam ? (
+          <Minimize2 className="h-4 w-4" />
+        ) : (
+          <Maximize2 className="h-4 w-4" />
+        )}
+      </Button>
+    </div>
+  );
+
+  const MainContent = (
+    <div
+      className={`flex bg-background relative group ${
+        isFullScreenParam ? "h-screen w-screen" : "h-[calc(100vh-140px)]"
+      }`}
     >
-      <div className="flex bg-background h-[calc(100vh-140px)] gap-0 relative group">
-        {/* Sidebar Info */}
-        <div
-          className={`shrink-0 border-r bg-card flex flex-col h-full transition-all duration-300 ${
-            isFullScreen ? "w-0 border-none overflow-hidden" : "w-[350px]"
-          }`}
+      {/* Sidebar Info */}
+      <div
+        className={`shrink-0 border-r bg-card flex flex-col h-full transition-all duration-300 ${
+          isSidebarCollapsed ? "w-0 border-none overflow-hidden" : "w-[350px]"
+        }`}
+      >
+        <Card
+          className={`h-full border-none shadow-md bg-white/80 backdrop-blur flex flex-col transition-all duration-300 ${!selectedFeature ? "opacity-50 pointer-events-none grayscale" : ""}`}
         >
-          <Card
-            className={`h-full border-none shadow-md bg-white/80 backdrop-blur flex flex-col transition-all duration-300 ${!selectedFeature ? "opacity-50 pointer-events-none grayscale" : ""}`}
-          >
-            {/* Header */}
-            <div className="p-4 border-b bg-muted/30">
-              {selectedFeature ? (
-                <>
-                  <div className="flex justify-between items-start mb-2">
-                    <Badge variant="outline" className="bg-background">
-                      {selectedFeature.type}
-                    </Badge>
-                    <span className="text-[10px] text-muted-foreground bg-white px-2 py-1 rounded-full border">
-                      ID: {selectedFeature.id}
-                    </span>
-                  </div>
-                  <h2 className="text-xl font-bold text-foreground leading-tight">
-                    {selectedFeature.name}
-                  </h2>
-                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                    <ClipboardList className="w-3 h-3" />
-                    Cập nhật: {selectedFeature.data.lastUpdated}
-                  </p>
-                </>
-              ) : (
-                <div className="h-16 flex items-center justify-center text-muted-foreground">
-                  Select a region
+          {/* Header */}
+          <div className="p-4 border-b bg-muted/30">
+            {selectedFeature ? (
+              <>
+                <div className="flex justify-between items-start mb-2">
+                  <Badge variant="outline" className="bg-background">
+                    {selectedFeature.type}
+                  </Badge>
+                  <span className="text-[10px] text-muted-foreground bg-white px-2 py-1 rounded-full border">
+                    ID: {selectedFeature.id}
+                  </span>
                 </div>
-              )}
-            </div>
+                <h2 className="text-xl font-bold text-foreground leading-tight">
+                  {selectedFeature.name}
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <ClipboardList className="w-3 h-3" />
+                  Cập nhật: {selectedFeature.data.lastUpdated}
+                </p>
+              </>
+            ) : (
+              <div className="h-16 flex items-center justify-center text-muted-foreground">
+                Select a region
+              </div>
+            )}
+          </div>
 
-            <ScrollArea className="flex-1 p-4">
-              {selectedFeature && (
-                <div className="space-y-6">
-                  {/* Active Metric Analysis */}
-                  <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                    <div className="flex items-center justify-between mb-2">
-                      <Label className="text-sm font-medium text-muted-foreground">
-                        Chỉ số đang xem
-                      </Label>
-                      {/* @ts-ignore */}
-                      <StatusBadge
-                        analysis={getMetricAnalysis(
-                          activeMetric,
-                          selectedFeature.data[activeMetric],
-                        )}
-                      />
+          <ScrollArea className="flex-1 p-4">
+            {selectedFeature && (
+              <div className="space-y-6">
+                {/* Active Metric Analysis */}
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-sm font-medium text-muted-foreground">
+                      Chỉ số đang xem
+                    </Label>
+                    {/* @ts-ignore */}
+                    <StatusBadge
+                      analysis={getMetricAnalysis(
+                        activeMetric,
+                        selectedFeature.data[activeMetric],
+                      )}
+                    />
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                      <FlaskConical className="w-16 h-16" />
                     </div>
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 relative overflow-hidden group">
-                      <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <FlaskConical className="w-16 h-16" />
-                      </div>
-                      <div className="relative z-10">
-                        <div className="text-3xl font-black text-slate-800">
-                          {/* @ts-ignore */}
-                          {selectedFeature.data[activeMetric]}
-                          <span className="text-sm font-normal text-muted-foreground ml-1">
-                            {METRIC_CONFIG[activeMetric].unit}
-                          </span>
-                        </div>
-                        <div className="text-sm font-medium text-slate-600 mb-1">
-                          {METRIC_CONFIG[activeMetric].label}
-                        </div>
-                        {/* Analysis Text */}
+                    <div className="relative z-10">
+                      <div className="text-3xl font-black text-slate-800">
                         {/* @ts-ignore */}
-                        <p className="text-xs text-slate-500 mt-2 p-2 bg-white/50 rounded-lg border border-slate-100">
-                          {/* @ts-ignore */}
-                          {
-                            getMetricAnalysis(
-                              activeMetric,
-                              selectedFeature.data[activeMetric],
-                            ).message
-                          }
-                        </p>
+                        {selectedFeature.data[activeMetric]}
+                        <span className="text-sm font-normal text-muted-foreground ml-1">
+                          {METRIC_CONFIG[activeMetric].unit}
+                        </span>
                       </div>
-                    </div>
-
-                    {/* Research Details Block */}
-                    <div className="mt-3 p-3 bg-blue-50/50 rounded-lg border border-blue-100/50 text-xs text-slate-600">
-                      <div className="font-semibold text-blue-700 mb-2 flex items-center gap-1.5 border-b border-blue-100 pb-1">
-                        <ClipboardList className="w-3.5 h-3.5" /> Tham chiếu
-                        chuẩn (Research)
+                      <div className="text-sm font-medium text-slate-600 mb-1">
+                        {METRIC_CONFIG[activeMetric].label}
                       </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">
-                            Ngưỡng tối ưu:
-                          </span>
-                          <span className="font-medium text-slate-800 bg-white px-2 py-0.5 rounded border border-blue-100">
-                            {METRIC_CONFIG[activeMetric].details.ideal}
-                          </span>
-                        </div>
-                        <div className="grid gap-1.5 pt-1">
-                          <div className="flex gap-2 items-start">
-                            <span className="text-amber-600 font-medium whitespace-nowrap w-12 shrink-0">
-                              Thấp:
-                            </span>
-                            <span className="leading-tight">
-                              {METRIC_CONFIG[activeMetric].details.lowEffect}
-                            </span>
-                          </div>
-                          <div className="flex gap-2 items-start">
-                            <span className="text-red-500 font-medium whitespace-nowrap w-12 shrink-0">
-                              Cao:
-                            </span>
-                            <span className="leading-tight">
-                              {METRIC_CONFIG[activeMetric].details.highEffect}
-                            </span>
-                          </div>
-                        </div>
-                        {METRIC_CONFIG[activeMetric].details.source && (
-                          <div className="text-[10px] text-right text-muted-foreground mt-1 italic">
-                            Nguồn: {METRIC_CONFIG[activeMetric].details.source}
-                          </div>
-                        )}
-                      </div>
+                      {/* Analysis Text */}
+                      {/* @ts-ignore */}
+                      <p className="text-xs text-slate-500 mt-2 p-2 bg-white/50 rounded-lg border border-slate-100">
+                        {/* @ts-ignore */}
+                        {
+                          getMetricAnalysis(
+                            activeMetric,
+                            selectedFeature.data[activeMetric],
+                          ).message
+                        }
+                      </p>
                     </div>
                   </div>
 
-                  {/* Detailed Suggestions */}
-                  <div>
-                    <h3 className="font-semibold text-sm flex items-center gap-2 mb-3">
-                      <Sprout className="w-4 h-4 text-green-600" />
-                      Đề xuất cải tạo
-                    </h3>
+                  {/* Research Details Block */}
+                  <div className="mt-3 p-3 bg-blue-50/50 rounded-lg border border-blue-100/50 text-xs text-slate-600">
+                    <div className="font-semibold text-blue-700 mb-2 flex items-center gap-1.5 border-b border-blue-100 pb-1">
+                      <ClipboardList className="w-3.5 h-3.5" /> Tham chiếu chuẩn
+                      (Research)
+                    </div>
                     <div className="space-y-2">
-                      {(
-                        [
-                          "ph",
-                          "nitrogen",
-                          "phosphorus",
-                          "potassium",
-                          "moisture",
-                          "compaction",
-                        ] as SoilMetric[]
-                      ).map((metric) => {
-                        // @ts-ignore
-                        const analysis = getMetricAnalysis(
-                          metric,
-                          selectedFeature.data[metric],
-                        );
-                        if (analysis.status === "good") return null;
-                        return (
-                          <div
-                            key={metric}
-                            className="flex gap-3 items-start p-3 rounded-lg border bg-amber-50/50 border-amber-100"
-                          >
-                            <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-                            <div className="flex-1">
-                              <div className="text-xs font-bold text-slate-700 flex justify-between">
-                                {METRIC_CONFIG[metric].label}
-                                {/* @ts-ignore */}
-                                <span className="font-normal text-slate-500">
-                                  ({selectedFeature.data[metric]})
-                                </span>
-                              </div>
-                              <div className="text-xs text-slate-600 mt-1">
-                                {analysis.message}
-                              </div>
-                              {analysis.action && (
-                                <div className="mt-2 text-xs font-medium text-amber-700 bg-amber-100/50 px-2 py-1 rounded inline-flex items-center gap-1">
-                                  <ArrowRight className="w-3 h-3" />
-                                  {analysis.action}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      {/* Fallback if everything is good */}
-                      {/* @ts-ignore */}
-                      {Object.keys(selectedFeature.data).every((k) => {
-                        const metricKey = k as SoilMetric;
-                        if (!METRIC_CONFIG[metricKey]) return true;
-                        return (
-                          getMetricAnalysis(
-                            metricKey,
-                            selectedFeature.data[metricKey] as number,
-                          ).status === "good"
-                        );
-                      }) && (
-                        <div className="p-4 bg-green-50 text-green-700 rounded-lg text-sm flex items-center gap-2">
-                          <CheckCircle2 className="w-5 h-5" />
-                          Chất lượng đất rất tốt! Không cần cải tạo.
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">
+                          Ngưỡng tối ưu:
+                        </span>
+                        <span className="font-medium text-slate-800 bg-white px-2 py-0.5 rounded border border-blue-100">
+                          {METRIC_CONFIG[activeMetric].details.ideal}
+                        </span>
+                      </div>
+                      <div className="grid gap-1.5 pt-1">
+                        <div className="flex gap-2 items-start">
+                          <span className="text-amber-600 font-medium whitespace-nowrap w-12 shrink-0">
+                            Thấp:
+                          </span>
+                          <span className="leading-tight">
+                            {METRIC_CONFIG[activeMetric].details.lowEffect}
+                          </span>
+                        </div>
+                        <div className="flex gap-2 items-start">
+                          <span className="text-red-500 font-medium whitespace-nowrap w-12 shrink-0">
+                            Cao:
+                          </span>
+                          <span className="leading-tight">
+                            {METRIC_CONFIG[activeMetric].details.highEffect}
+                          </span>
+                        </div>
+                      </div>
+                      {METRIC_CONFIG[activeMetric].details.source && (
+                        <div className="text-[10px] text-right text-muted-foreground mt-1 italic">
+                          Nguồn: {METRIC_CONFIG[activeMetric].details.source}
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
-              )}
-            </ScrollArea>
 
-            {/* Footer Actions */}
-            <div className="p-4 border-t bg-slate-50">
-              <Button
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200 shadow-lg transition-all hover:scale-[1.02]"
-                onClick={() => setIsPlanModalOpen(true)}
-              >
-                <Sprout className="w-4 h-4 mr-2" />
-                Tạo kế hoạch cải tạo
-              </Button>
-            </div>
-          </Card>
-        </div>
+                {/* Detailed Suggestions */}
+                <div>
+                  <h3 className="font-semibold text-sm flex items-center gap-2 mb-3">
+                    <Sprout className="w-4 h-4 text-green-600" />
+                    Đề xuất cải tạo
+                  </h3>
+                  <div className="space-y-2">
+                    {(
+                      [
+                        "ph",
+                        "nitrogen",
+                        "phosphorus",
+                        "potassium",
+                        "moisture",
+                        "compaction",
+                      ] as SoilMetric[]
+                    ).map((metric) => {
+                      // @ts-ignore
+                      const analysis = getMetricAnalysis(
+                        metric,
+                        selectedFeature.data[metric],
+                      );
+                      if (analysis.status === "good") return null;
+                      return (
+                        <div
+                          key={metric}
+                          className="flex gap-3 items-start p-3 rounded-lg border bg-amber-50/50 border-amber-100"
+                        >
+                          <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                          <div className="flex-1">
+                            <div className="text-xs font-bold text-slate-700 flex justify-between">
+                              {METRIC_CONFIG[metric].label}
+                              {/* @ts-ignore */}
+                              <span className="font-normal text-slate-500">
+                                ({selectedFeature.data[metric]})
+                              </span>
+                            </div>
+                            <div className="text-xs text-slate-600 mt-1">
+                              {analysis.message}
+                            </div>
+                            {analysis.action && (
+                              <div className="mt-2 text-xs font-medium text-amber-700 bg-amber-100/50 px-2 py-1 rounded inline-flex items-center gap-1">
+                                <ArrowRight className="w-3 h-3" />
+                                {analysis.action}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
 
-        {/* Map View */}
-        <div className="flex-1 relative bg-slate-100 z-0 group/map">
-          {/* Stable Overlay Container for Buttons */}
+                    {/* Fallback if everything is good */}
+                    {/* @ts-ignore */}
+                    {Object.keys(selectedFeature.data).every((k) => {
+                      const metricKey = k as SoilMetric;
+                      if (!METRIC_CONFIG[metricKey]) return true;
+                      return (
+                        getMetricAnalysis(
+                          metricKey,
+                          selectedFeature.data[metricKey] as number,
+                        ).status === "good"
+                      );
+                    }) && (
+                      <div className="p-4 bg-green-50 text-green-700 rounded-lg text-sm flex items-center gap-2">
+                        <CheckCircle2 className="w-5 h-5" />
+                        Chất lượng đất rất tốt! Không cần cải tạo.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </ScrollArea>
+
+          {/* Footer Actions */}
+          <div className="p-4 border-t bg-slate-50">
+            <Button
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200 shadow-lg transition-all hover:scale-[1.02]"
+              onClick={() => setIsPlanModalOpen(true)}
+            >
+              <Sprout className="w-4 h-4 mr-2" />
+              Tạo kế hoạch cải tạo
+            </Button>
+          </div>
+        </Card>
+      </div>
+
+      {/* Map View */}
+      <div className="flex-1 relative bg-slate-100 z-0 group/map">
+        {/* Fullscreen Param: Overlay Controls */}
+        {isFullScreenParam && (
+          <div className="absolute top-3 right-22 z-[500]">
+            <MapControls />
+          </div>
+        )}
+
+        {/* Stable Overlay Container for Toggle Sidebar Button when Fullscreen (Collapsible) */}
+        {!isFullScreenParam && (
           <div className="absolute top-4 right-16 z-[500] pointer-events-none">
-            {isFullScreen && (
+            {isSidebarCollapsed && (
               <Button
                 variant="secondary"
                 size="icon"
                 className="shadow-md bg-white/90 backdrop-blur pointer-events-auto"
-                onClick={toggleFullScreen}
+                onClick={() => setIsSidebarCollapsed(false)}
               >
                 <Minimize2 className="h-4 w-4" />
               </Button>
             )}
           </div>
+        )}
 
-          <MapContainer
-            center={mapViewState.center}
-            zoom={mapViewState.zoom}
-            className="h-full w-full bg-slate-100 z-0"
-          >
-            <MapUpdater center={mapViewState.center} zoom={mapViewState.zoom} />
-            <ZoomListener onChange={onZoomChange} />
-            <LayersControl position="topright">
-              <LayersControl.BaseLayer checked name="Bản đồ chuẩn">
-                <TileLayer
-                  attribution="&copy; Check"
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        {/* Collapsible Sidebar Toggle (Optional enhancement) */}
+        {isFullScreenParam && isSidebarCollapsed && (
+          <div className="absolute top-4 left-4 z-[500]">
+            <Button
+              variant="secondary"
+              onClick={() => setIsSidebarCollapsed(false)}
+            >
+              Show Sidebar
+            </Button>
+          </div>
+        )}
+
+        <MapContainer
+          center={mapViewState.center}
+          zoom={mapViewState.zoom}
+          className="h-full w-full bg-slate-100 z-0"
+        >
+          <MapUpdater center={mapViewState.center} zoom={mapViewState.zoom} />
+          <ZoomListener onChange={onZoomChange} />
+          <LayersControl position="topright">
+            <LayersControl.BaseLayer checked name="Bản đồ chuẩn">
+              <TileLayer
+                attribution="&copy; Check"
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Vệ tinh">
+              <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
+            </LayersControl.BaseLayer>
+            {/* Dynamic Data Layers */}
+            {visibleLayers.zone && (
+              <LayersControl.Overlay checked name="Vùng (Zone)">
+                {/* @ts-ignore */}
+                <GeoJSON
+                  key={`zone-${activeMetric}`}
+                  data={zoneData as any}
+                  style={getStyle}
+                  onEachFeature={onEachFeature}
                 />
-              </LayersControl.BaseLayer>
-              <LayersControl.BaseLayer name="Vệ tinh">
-                <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-              </LayersControl.BaseLayer>
-              {/* Dynamic Data Layers */}
-              {visibleLayers.zone && (
-                <LayersControl.Overlay checked name="Vùng (Zone)">
-                  {/* @ts-ignore */}
-                  <GeoJSON
-                    key={`zone-${activeMetric}`}
-                    data={zoneData as any}
-                    style={getStyle}
-                    onEachFeature={onEachFeature}
-                  />
-                </LayersControl.Overlay>
-              )}
-              {visibleLayers.area && (
-                <LayersControl.Overlay checked name="Khu vực (Area)">
-                  {/* @ts-ignore */}
-                  <GeoJSON
-                    key={`area-${activeMetric}`}
-                    data={areaData as any}
-                    style={getStyle}
-                    onEachFeature={onEachFeature}
-                  />
-                </LayersControl.Overlay>
-              )}
-              {visibleLayers.plot && (
-                <LayersControl.Overlay checked name="Lô (Plot)">
-                  {/* @ts-ignore */}
-                  <GeoJSON
-                    key={`plot-${activeMetric}`}
-                    data={plotData as any}
-                    style={getStyle}
-                    onEachFeature={onEachFeature}
-                  />
-                </LayersControl.Overlay>
-              )}
-            </LayersControl>
-            {/* Legend Overlay - Kept simple from previous steps */}
-            <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur p-3 rounded-lg shadow-lg z-50 border border-border w-48">
-              <h4 className="font-bold text-xs mb-1 uppercase tracking-wider text-muted-foreground">
-                {METRIC_CONFIG[activeMetric].label}
-              </h4>
-              <p className="text-[10px] text-muted-foreground mb-2 leading-tight">
-                {METRIC_CONFIG[activeMetric].description}
-              </p>
-              <div className="flex justify-between text-[10px] font-medium mb-1">
-                <span>{METRIC_CONFIG[activeMetric].range[0]}</span>
-                <span>
-                  {METRIC_CONFIG[activeMetric].range[1]}{" "}
-                  {METRIC_CONFIG[activeMetric].unit}
-                </span>
-              </div>
-              <div className="h-3 w-full rounded-full border border-black/5 relative overflow-hidden">
-                <div
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    background: `linear-gradient(to right, ${METRIC_CONFIG[activeMetric].colorScale(METRIC_CONFIG[activeMetric].range[0])}, ${METRIC_CONFIG[activeMetric].colorScale((METRIC_CONFIG[activeMetric].range[0] + METRIC_CONFIG[activeMetric].range[1]) / 2)}, ${METRIC_CONFIG[activeMetric].colorScale(METRIC_CONFIG[activeMetric].range[1])})`,
-                  }}
-                ></div>
-              </div>
+              </LayersControl.Overlay>
+            )}
+            {visibleLayers.area && (
+              <LayersControl.Overlay checked name="Khu vực (Area)">
+                {/* @ts-ignore */}
+                <GeoJSON
+                  key={`area-${activeMetric}`}
+                  data={areaData as any}
+                  style={getStyle}
+                  onEachFeature={onEachFeature}
+                />
+              </LayersControl.Overlay>
+            )}
+            {visibleLayers.plot && (
+              <LayersControl.Overlay checked name="Lô (Plot)">
+                {/* @ts-ignore */}
+                <GeoJSON
+                  key={`plot-${activeMetric}`}
+                  data={plotData as any}
+                  style={getStyle}
+                  onEachFeature={onEachFeature}
+                />
+              </LayersControl.Overlay>
+            )}
+          </LayersControl>
+          {/* Legend Overlay - Kept simple from previous steps */}
+          <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur p-3 rounded-lg shadow-lg z-50 border border-border w-48">
+            <h4 className="font-bold text-xs mb-1 uppercase tracking-wider text-muted-foreground">
+              {METRIC_CONFIG[activeMetric].label}
+            </h4>
+            <p className="text-[10px] text-muted-foreground mb-2 leading-tight">
+              {METRIC_CONFIG[activeMetric].description}
+            </p>
+            <div className="flex justify-between text-[10px] font-medium mb-1">
+              <span>{METRIC_CONFIG[activeMetric].range[0]}</span>
+              <span>
+                {METRIC_CONFIG[activeMetric].range[1]}{" "}
+                {METRIC_CONFIG[activeMetric].unit}
+              </span>
             </div>
-          </MapContainer>
-        </div>
+            <div className="h-3 w-full rounded-full border border-black/5 relative overflow-hidden">
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  background: `linear-gradient(to right, ${METRIC_CONFIG[activeMetric].colorScale(METRIC_CONFIG[activeMetric].range[0])}, ${METRIC_CONFIG[activeMetric].colorScale((METRIC_CONFIG[activeMetric].range[0] + METRIC_CONFIG[activeMetric].range[1]) / 2)}, ${METRIC_CONFIG[activeMetric].colorScale(METRIC_CONFIG[activeMetric].range[1])})`,
+                }}
+              ></div>
+            </div>
+          </div>
+        </MapContainer>
       </div>
+    </div>
+  );
+
+  // If FullScreen Param is set, render without Admin Layout
+  if (isFullScreenParam) {
+    return (
+      <div className="h-screen w-screen overflow-hidden bg-background">
+        {MainContent}
+
+        {/* Plan Creation Dialog (Copy from below or extract) */}
+        {/* We need to render the dialog here too */}
+        <Dialog open={isPlanModalOpen} onOpenChange={setIsPlanModalOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            {/* Same content as below */}
+            <DialogHeader>
+              <DialogTitle>Tạo kế hoạch cải tạo đất</DialogTitle>
+              <DialogDescription>
+                Lập kế hoạch dựa trên phân tích số liệu của khu vực{" "}
+                <strong>{selectedFeature?.name}</strong>.
+              </DialogDescription>
+            </DialogHeader>
+            {selectedFeature && (
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label>Vấn đề chính</Label>
+                  <div className="p-3 bg-amber-50 border border-amber-100 rounded-md text-sm text-amber-800">
+                    <ul className="list-disc pl-4 space-y-1">
+                      {(
+                        [
+                          "ph",
+                          "nitrogen",
+                          "phosphorus",
+                          "moisture",
+                        ] as SoilMetric[]
+                      ).map((m) => {
+                        // @ts-ignore
+                        const a = getMetricAnalysis(m, selectedFeature.data[m]);
+                        if (a.status !== "good")
+                          return (
+                            <li key={m}>
+                              <strong>{METRIC_CONFIG[m].label}:</strong>{" "}
+                              {a.message}
+                            </li>
+                          );
+                        return null;
+                      })}
+                    </ul>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Hành động đề xuất</Label>
+                  <Textarea
+                    className="h-24"
+                    value={planForm.customAction}
+                    onChange={(e) =>
+                      setPlanForm({ ...planForm, customAction: e.target.value })
+                    }
+                    placeholder="Nhập các hành động cải tạo..."
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Ngày bắt đầu dự kiến</Label>
+                    <Input
+                      type="date"
+                      value={planForm.startDate}
+                      onChange={(e) =>
+                        setPlanForm({ ...planForm, startDate: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Người phụ trách</Label>
+                    <Select
+                      value={planForm.assignedTo}
+                      onValueChange={(v) =>
+                        setPlanForm({ ...planForm, assignedTo: v })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn nhân sự" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Nguyễn Văn A</SelectItem>
+                        <SelectItem value="2">Trần Thị B</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsPlanModalOpen(false)}
+              >
+                Hủy
+              </Button>
+              <Button onClick={handleCreatePlan}>Xác nhận tạo</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  return (
+    <AdminLayout
+      title="Bản đồ cải tạo đất"
+      description="Phân tích chất lượng đất và kế hoạch cải tạo"
+      actions={<MapControls />}
+    >
+      {MainContent}
 
       {/* Plan Creation Dialog */}
-      {/* If Dialog components are missing in shared-ui, this might fail. But user asked for detail. I'm assuming standard Radix/Shadcn structure often found in their shared-ui. If not, I'll assume I have to mock it or use simple Modal if available. 
-           Since I cannot verify shared-ui content fully (I saw Select/Input/Button), I'll stick to standard Shadcn names. */}
       <Dialog open={isPlanModalOpen} onOpenChange={setIsPlanModalOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
