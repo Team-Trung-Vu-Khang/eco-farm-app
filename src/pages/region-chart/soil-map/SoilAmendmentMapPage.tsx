@@ -847,14 +847,14 @@ const SoilAmendmentMapPage = () => {
       <div className="flex-1 relative bg-slate-100 z-0 group/map">
         {/* Fullscreen Param: Overlay Controls */}
         {isFullScreenParam && (
-          <div className="absolute top-3 right-22 z-[500]">
+          <div className="absolute top-3 right-22 z-500">
             <MapControls />
           </div>
         )}
 
         {/* Stable Overlay Container for Toggle Sidebar Button when Fullscreen (Collapsible) */}
         {!isFullScreenParam && (
-          <div className="absolute top-4 right-16 z-[500] pointer-events-none">
+          <div className="absolute top-4 right-16 z-500 pointer-events-none">
             {isSidebarCollapsed && (
               <Button
                 variant="secondary"
@@ -870,7 +870,7 @@ const SoilAmendmentMapPage = () => {
 
         {/* Collapsible Sidebar Toggle (Optional enhancement) */}
         {isFullScreenParam && isSidebarCollapsed && (
-          <div className="absolute top-4 left-4 z-[500]">
+          <div className="absolute top-4 left-4 z-500">
             <Button
               variant="secondary"
               onClick={() => setIsSidebarCollapsed(false)}
