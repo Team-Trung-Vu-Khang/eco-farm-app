@@ -156,38 +156,20 @@ export default function BankCreatePage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="status">Trạng thái</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(val) =>
-                    setFormData({ ...formData, status: val })
+                <Label htmlFor="accountHolder">Chủ tài khoản *</Label>
+                <Input
+                  id="accountHolder"
+                  placeholder="NHAP TEN CHU TAI KHOAN"
+                  className="uppercase"
+                  value={formData.accountHolder}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      accountHolder: e.target.value.toUpperCase(),
+                    })
                   }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn trạng thái" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Hoạt động</SelectItem>
-                    <SelectItem value="inactive">Ngừng hoạt động</SelectItem>
-                  </SelectContent>
-                </Select>
+                />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="accountHolder">Chủ tài khoản *</Label>
-              <Input
-                id="accountHolder"
-                placeholder="NHAP TEN CHU TAI KHOAN"
-                className="uppercase"
-                value={formData.accountHolder}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    accountHolder: e.target.value.toUpperCase(),
-                  })
-                }
-              />
             </div>
 
             <div className="space-y-2">

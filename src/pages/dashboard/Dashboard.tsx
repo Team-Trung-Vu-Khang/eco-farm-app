@@ -20,6 +20,7 @@ import {
   Activity,
   User,
   Users,
+  ExternalLink,
 } from "lucide-react";
 import {
   XAxis,
@@ -34,34 +35,35 @@ import {
   Line,
   Legend,
 } from "recharts";
+import { Link } from "wouter";
 
+// Dữ liệu sản lượng sầu riêng Thaco - 3 giống chính
 const yieldData = [
-  { month: "T2/23", durian: 45, mango: 30, grapefruit: 25 },
-  { month: "T3/23", durian: 52, mango: 35, grapefruit: 28 },
-  { month: "T4/23", durian: 48, mango: 40, grapefruit: 32 },
-  { month: "T5/23", durian: 61, mango: 45, grapefruit: 35 },
-  { month: "T6/23", durian: 55, mango: 50, grapefruit: 38 },
-  { month: "T7/23", durian: 67, mango: 55, grapefruit: 42 },
-  { month: "T8/23", durian: 72, mango: 60, grapefruit: 45 },
-  { month: "T9/23", durian: 68, mango: 65, grapefruit: 48 },
-  { month: "T10/23", durian: 75, mango: 70, grapefruit: 50 },
-  { month: "T11/23", durian: 82, mango: 75, grapefruit: 55 },
-  { month: "T12/23", durian: 78, mango: 80, grapefruit: 58 },
-  { month: "T1/24", durian: 85, mango: 85, grapefruit: 62 },
+  { month: "T2/23", monthon: 45, ri6: 38, dona: 32 },
+  { month: "T3/23", monthon: 52, ri6: 42, dona: 35 },
+  { month: "T4/23", monthon: 48, ri6: 45, dona: 38 },
+  { month: "T5/23", monthon: 61, ri6: 50, dona: 42 },
+  { month: "T6/23", monthon: 55, ri6: 48, dona: 45 },
+  { month: "T7/23", monthon: 67, ri6: 55, dona: 48 },
+  { month: "T8/23", monthon: 72, ri6: 60, dona: 52 },
+  { month: "T9/23", monthon: 68, ri6: 58, dona: 50 },
+  { month: "T10/23", monthon: 75, ri6: 65, dona: 55 },
+  { month: "T11/23", monthon: 82, ri6: 70, dona: 60 },
+  { month: "T12/23", monthon: 78, ri6: 68, dona: 58 },
+  { month: "T1/24", monthon: 85, ri6: 75, dona: 65 },
 ];
 
+// Phân bổ diện tích cây trồng Thaco
 const cropAreaDistribution = [
-  { name: "Sầu riêng", value: 40, area: 500 },
-  { name: "Xoài", value: 30, area: 375 },
-  { name: "Bưởi", value: 20, area: 250 },
-  { name: "Khác", value: 10, area: 125 },
+  { name: "Sầu riêng Monthon", value: 45, area: 562.5 },
+  { name: "Sầu riêng Ri6", value: 35, area: 437.5 },
+  { name: "Sầu riêng Dona", value: 20, area: 250 },
 ];
 
 const COLORS = [
-  "hsl(142, 50%, 45%)",
-  "hsl(35, 90%, 55%)",
-  "hsl(200, 70%, 50%)",
-  "hsl(280, 60%, 55%)",
+  "hsl(142, 70%, 45%)", // Monthon - Xanh lá đậm
+  "hsl(142, 60%, 25%)", // Ri6 - Xanh lá vừa
+  "hsl(142, 50%, 95%)", // Dona - Xanh lá nhạt
 ];
 
 const recentActivities = [
@@ -105,27 +107,31 @@ const recentActivities = [
 const upcomingTasks = [
   {
     id: 1,
-    title: "Bón phân đợt 2 - Vùng A1",
+    title: "Bón phân đợt 2 - Vùng sầu riêng Monthon A1",
     dueDate: "Hôm nay",
     priority: "high",
+    link: "/cultivation-plan",
   },
   {
     id: 2,
-    title: "Kiểm tra sâu bệnh - Vùng B3",
+    title: "Kiểm tra sâu bệnh - Vùng Ri6 B3",
     dueDate: "Ngày mai",
     priority: "medium",
+    link: "/cultivation-plan",
   },
   {
     id: 3,
-    title: "Thu hoạch sầu riêng - Vùng C2",
-    dueDate: "15/01/2026",
+    title: "Thu hoạch sầu riêng Dona - Vùng C2",
+    dueDate: "15/02/2026",
     priority: "high",
+    link: "/cultivation-plan",
   },
   {
     id: 4,
-    title: "Tưới nước định kỳ - Tất cả vùng",
-    dueDate: "16/01/2026",
+    title: "Tưới nước định kỳ - Tất cả vùng sầu riêng",
+    dueDate: "16/02/2026",
     priority: "low",
+    link: "/cultivation-plan",
   },
 ];
 
@@ -177,16 +183,16 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <StatsCard
               title="Tổng diện tích đang canh tác"
-              value="2,350 ha"
-              change="124 vùng trồng"
+              value="1,250 ha"
+              change="Sầu riêng Thaco - 85 vùng trồng"
               changeType="positive"
               icon={MapPin}
               iconColor="bg-green-100 text-green-600"
             />
             <StatsCard
               title="Tổng diện tích đang cải tạo"
-              value="150 ha"
-              change="12 vùng - 30 khu vực"
+              value="80 ha"
+              change="Cải tạo đất lúa - 8 vùng - 25 khu vực"
               changeType="neutral"
               icon={TrendingUp}
               iconColor="bg-orange-100 text-orange-600"
@@ -315,27 +321,27 @@ export default function Dashboard() {
                     />
                     <Line
                       type="monotone"
-                      dataKey="durian"
-                      name="Sầu riêng"
-                      stroke="hsl(142, 50%, 45%)"
+                      dataKey="monthon"
+                      name="Monthon"
+                      stroke="hsl(142, 70%, 45%)"
                       strokeWidth={2}
                       dot={{ r: 3, fill: "white", strokeWidth: 2 }}
                       activeDot={{ r: 5 }}
                     />
                     <Line
                       type="monotone"
-                      dataKey="mango"
-                      name="Xoài"
-                      stroke="hsl(35, 90%, 55%)"
+                      dataKey="ri6"
+                      name="Ri6"
+                      stroke="hsl(142, 60%, 25%)"
                       strokeWidth={2}
                       dot={{ r: 3, fill: "white", strokeWidth: 2 }}
                       activeDot={{ r: 5 }}
                     />
                     <Line
                       type="monotone"
-                      dataKey="grapefruit"
-                      name="Bưởi"
-                      stroke="hsl(200, 70%, 50%)"
+                      dataKey="dona"
+                      name="Dona"
+                      stroke="hsl(142, 50%, 95%)"
                       strokeWidth={2}
                       dot={{ r: 3, fill: "white", strokeWidth: 2 }}
                       activeDot={{ r: 5 }}
@@ -453,12 +459,16 @@ export default function Dashboard() {
             <CardContent>
               <div className="space-y-4">
                 {upcomingTasks.map((task) => (
-                  <div
+                  <Link
                     key={task.id}
-                    className="flex items-start gap-3 pb-4 border-b border-border last:border-0 last:pb-0"
+                    to={task.link}
+                    className="flex items-start gap-3 pb-4 border-b border-border last:border-0 last:pb-0 hover:bg-muted/50 -mx-2 px-2 py-2 rounded-lg transition-colors group"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{task.title}</p>
+                      <p className="text-sm font-medium group-hover:text-primary flex items-center gap-1">
+                        {task.title}
+                        <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {task.dueDate}
                       </p>
@@ -478,7 +488,7 @@ export default function Dashboard() {
                           ? "Trung bình"
                           : "Thấp"}
                     </Badge>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </CardContent>
@@ -494,28 +504,42 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 rounded-lg bg-red-50 border border-red-200">
-                <p className="font-medium text-red-800">
+              <Link
+                to="/certificate"
+                className="p-4 rounded-lg bg-red-50 border border-red-200 hover:bg-red-100 transition-colors group"
+              >
+                <p className="font-medium text-red-800 flex items-center gap-1">
                   Chứng chỉ sắp hết hạn
+                  <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </p>
                 <p className="text-sm text-red-600 mt-1">
                   3 chứng chỉ VietGAP hết hạn trong 30 ngày
                 </p>
-              </div>
-              <div className="p-4 rounded-lg bg-amber-50 border border-amber-200">
-                <p className="font-medium text-amber-800">Vật tư sắp hết</p>
+              </Link>
+              <Link
+                to="/material"
+                className="p-4 rounded-lg bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors group"
+              >
+                <p className="font-medium text-amber-800 flex items-center gap-1">
+                  Vật tư sắp hết
+                  <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </p>
                 <p className="text-sm text-amber-600 mt-1">
                   5 loại phân bón cần bổ sung
                 </p>
-              </div>
-              <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
-                <p className="font-medium text-blue-800">
+              </Link>
+              <Link
+                to="/contract"
+                className="p-4 rounded-lg bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors group"
+              >
+                <p className="font-medium text-blue-800 flex items-center gap-1">
                   Hợp đồng cần gia hạn
+                  <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </p>
                 <p className="text-sm text-blue-600 mt-1">
                   2 hợp đồng hết hạn trong tuần này
                 </p>
-              </div>
+              </Link>
             </div>
           </CardContent>
         </Card>
