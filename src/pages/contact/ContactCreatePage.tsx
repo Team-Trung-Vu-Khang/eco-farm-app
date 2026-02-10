@@ -31,6 +31,7 @@ export default function ContactCreatePage() {
     position: "",
     department: "",
     entityName: "",
+    groupId: "",
     note: "",
     status: "active",
   });
@@ -78,50 +79,7 @@ export default function ContactCreatePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="entityName">Doanh nghiệp / Nông hộ *</Label>
-                <Select
-                  value={formData.entityName}
-                  onValueChange={(val) =>
-                    setFormData({ ...formData, entityName: val })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn đơn vị" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Công ty CP Nông nghiệp Xanh">
-                      Công ty CP Nông nghiệp Xanh
-                    </SelectItem>
-                    <SelectItem value="HTX Rau sạch Thanh Hà">
-                      HTX Rau sạch Thanh Hà
-                    </SelectItem>
-                    <SelectItem value="Nông hộ Nguyễn Văn A">
-                      Nông hộ Nguyễn Văn A
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Trạng thái</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(val) =>
-                    setFormData({ ...formData, status: val })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn trạng thái" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Đang làm việc</SelectItem>
-                    <SelectItem value="inactive">Đã nghỉ việc</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
+            {/* Thông tin cá nhân */}
             <div className="space-y-2">
               <Label htmlFor="fullName">Họ và tên *</Label>
               <Input
@@ -160,6 +118,53 @@ export default function ContactCreatePage() {
               </div>
             </div>
 
+            {/* Thông tin công việc */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="entityName">Doanh nghiệp / Nông hộ *</Label>
+                <Select
+                  value={formData.entityName}
+                  onValueChange={(val) =>
+                    setFormData({ ...formData, entityName: val })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn đơn vị" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Công ty CP Nông nghiệp Xanh">
+                      Công ty CP Nông nghiệp Xanh
+                    </SelectItem>
+                    <SelectItem value="HTX Rau sạch Thanh Hà">
+                      HTX Rau sạch Thanh Hà
+                    </SelectItem>
+                    <SelectItem value="Nông hộ Nguyễn Văn A">
+                      Nông hộ Nguyễn Văn A
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="groupId">Nhóm danh bạ</Label>
+                <Select
+                  value={formData.groupId}
+                  onValueChange={(val) =>
+                    setFormData({ ...formData, groupId: val })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn nhóm danh bạ" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Khách hàng</SelectItem>
+                    <SelectItem value="2">Đối tác</SelectItem>
+                    <SelectItem value="3">Nhà cung cấp</SelectItem>
+                    <SelectItem value="4">Cơ quan nhà nước</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="department">Phòng ban</Label>
@@ -191,6 +196,24 @@ export default function ContactCreatePage() {
                   }
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Trạng thái</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(val) =>
+                  setFormData({ ...formData, status: val })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Đang làm việc</SelectItem>
+                  <SelectItem value="inactive">Đã nghỉ việc</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

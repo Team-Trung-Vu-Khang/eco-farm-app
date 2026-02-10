@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Upload, X } from "lucide-react";
 import {
   AdminLayout,
   Badge,
@@ -44,6 +44,8 @@ interface Certificate {
 const CertificatePage = () => {
   const { toast } = useToast();
   const editorStateRef = useRef<any>(null);
+  const [stampFile, setStampFile] = useState<File | null>(null);
+  const [stampPreview, setStampPreview] = useState<string>("");
 
   const [data, setData] = useState<Certificate[]>([
     {
@@ -133,6 +135,8 @@ const CertificatePage = () => {
       status: "active",
     });
     editorStateRef.current = null;
+    setStampFile(null);
+    setStampPreview("");
     setFormOpen(true);
   };
 
@@ -152,12 +156,34 @@ const CertificatePage = () => {
       status: item.status,
     });
     editorStateRef.current = null;
+    setStampFile(null);
+    setStampPreview(item.stampUrl || "");
     setFormOpen(true);
   };
 
   const handleDelete = (item: Certificate) => {
     setDeleteItem(item);
     setDeleteOpen(true);
+  };
+
+  const handleStampUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setStampFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setStampPreview(result);
+        setFormData({ ...formData, stampUrl: result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveStamp = () => {
+    setStampFile(null);
+    setStampPreview("");
+    setFormData({ ...formData, stampUrl: "" });
   };
 
   const handleSubmit = async () => {
@@ -231,77 +257,48 @@ const CertificatePage = () => {
           {/* Left Column: Stamp/Logo */}
           <div className="w-full md:w-1/3 flex flex-col gap-4">
             <Label>Dấu mộc</Label>
-            <Tabs
-              defaultValue={formData.stampType}
-              onValueChange={(value) =>
-                setFormData({
-                  ...formData,
-                  stampType: value as "url" | "file",
-                })
-              }
-              className="w-full"
-            >
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="url">URL</TabsTrigger>
-                <TabsTrigger value="file">File</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="url" className="space-y-4">
-                <div className="border rounded-lg p-4 flex items-center justify-center bg-muted/20 min-h-[200px] relative overflow-hidden">
-                  {formData.stampUrl ? (
-                    <img
-                      src={formData.stampUrl}
-                      alt="Stamp Preview"
-                      className="max-w-full max-h-[180px] object-contain"
-                    />
-                  ) : (
-                    <div className="text-center text-muted-foreground text-sm flex flex-col items-center gap-2">
-                      <span>Chưa có hình ảnh</span>
-                    </div>
-                  )}
+            {stampPreview ? (
+              <div className="relative">
+                <div className="border-2 border-dashed rounded-lg p-4 flex items-center justify-center bg-muted/20 min-h-[200px]">
+                  <img
+                    src={stampPreview}
+                    alt="Stamp Preview"
+                    className="max-w-full max-h-[180px] object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        "https://placehold.co/200x200?text=Logo";
+                    }}
+                  />
                 </div>
-                <Input
-                  id="stampUrl"
-                  value={formData.stampUrl}
-                  onChange={(e) =>
-                    setFormData({ ...formData, stampUrl: e.target.value })
-                  }
-                  placeholder="URL hình ảnh..."
+                <button
+                  type="button"
+                  onClick={handleRemoveStamp}
+                  className="absolute -top-2 -right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors shadow-md"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <label
+                htmlFor="stamp-upload"
+                className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors min-h-[200px]"
+              >
+                <Upload className="w-10 h-10 text-muted-foreground mb-3" />
+                <span className="text-sm font-medium text-muted-foreground">
+                  Click để tải ảnh dấu mộc lên
+                </span>
+                <span className="text-xs text-muted-foreground mt-1">
+                  PNG, JPG, SVG (tối đa 2MB)
+                </span>
+                <input
+                  id="stamp-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleStampUpload}
+                  className="hidden"
                 />
-              </TabsContent>
-
-              <TabsContent value="file" className="space-y-4">
-                <div className="border rounded-lg p-4 flex items-center justify-center bg-muted/20 min-h-[200px]">
-                  {formData.stampFileUrl ? (
-                    <div className="text-center space-y-2">
-                      <div className="text-sm text-muted-foreground">
-                        File đã chọn
-                      </div>
-                      <a
-                        href={formData.stampFileUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-blue-600 underline text-sm"
-                      >
-                        Xem file
-                      </a>
-                    </div>
-                  ) : (
-                    <div className="text-center text-muted-foreground text-sm">
-                      <span>Chưa có file</span>
-                    </div>
-                  )}
-                </div>
-                <Input
-                  id="stampFileUrl"
-                  value={formData.stampFileUrl}
-                  onChange={(e) =>
-                    setFormData({ ...formData, stampFileUrl: e.target.value })
-                  }
-                  placeholder="Đường dẫn file..."
-                />
-              </TabsContent>
-            </Tabs>
+              </label>
+            )}
           </div>
 
           {/* Right Column: Content */}
