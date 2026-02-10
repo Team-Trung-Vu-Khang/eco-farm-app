@@ -50,6 +50,7 @@ import AmendmentCyclePage from "./pages/soil-amendment/AmendmentCyclePage";
 import AmendmentMethodPage from "./pages/soil-amendment/AmendmentMethodPage";
 import AmendmentPlanPage from "./pages/soil-amendment/AmendmentPlanPage";
 import AmendmentTaskPage from "./pages/soil-amendment/AmendmentTaskPage";
+import SoilAmendmentTreatmentPage from "./pages/soil-amendment/SoilAmendmentTreatmentPage";
 
 // Cultivation Zone Sub-pages
 import CultivationAreaPage from "./pages/cultivation-zone/cultivation-area/CultivationAreaPage";
@@ -182,6 +183,10 @@ function Router() {
       <Route path="/plot-distribution/detail/:id" component={PlotDetailPage} />
       <Route path="/map-view" component={MapViewPage} />
       <Route path="/soil-amendment-map" component={SoilAmendmentMapPage} />
+      <Route
+        path="/soil-amendment-treatment"
+        component={SoilAmendmentTreatmentPage}
+      />
       <Route path="/amendment-cycle" component={AmendmentCyclePage} />
       <Route path="/amendment-method" component={AmendmentMethodPage} />
       <Route path="/amendment-plan" component={AmendmentPlanPage} />
