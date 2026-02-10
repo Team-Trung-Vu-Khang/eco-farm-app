@@ -54,25 +54,40 @@ const EnterpriseCertificatePage = () => {
     {
       code: "VietGAP",
       name: "VietGAP",
-      organization: "Bộ Nông nghiệp và Phát triển Nông thôn",
+      organizations: [
+        "Bộ Nông nghiệp và Phát triển Nông thôn",
+        "Cục Trồng trọt",
+      ],
     },
     {
       code: "GlobalGAP",
       name: "Global GAP",
-      organization: "Tổ chức GlobalGAP",
+      organizations: ["Tổ chức GlobalGAP", "FoodPLUS GmbH"],
     },
     {
       code: "Organic",
       name: "Organic",
-      organization: "Cục Quản lý Chất lượng",
+      organizations: [
+        "Bộ Nông nghiệp và Phát triển Nông thôn",
+        "Cục Quản lý Chất lượng Nông lâm sản và Thủy sản",
+      ],
     },
-    { code: "HACCP", name: "HACCP", organization: "Bộ Y tế" },
+    {
+      code: "HACCP",
+      name: "HACCP",
+      organizations: ["Cục Quản lý Chất lượng Nông lâm sản và Thủy sản"],
+    },
     {
       code: "ISO22000",
       name: "ISO 22000",
-      organization: "Tổ chức Tiêu chuẩn Quốc tế (ISO)",
+      organizations: ["Tổ chức Tiêu chuẩn Quốc tế (ISO)"],
     },
   ];
+
+  // State để lưu danh sách tổ chức có thể cấp cho tiêu chuẩn đã chọn
+  const [availableOrganizations, setAvailableOrganizations] = useState<
+    string[]
+  >([]);
 
   // Danh sách doanh nghiệp (mock data)
   const enterprises = [
@@ -231,10 +246,12 @@ const EnterpriseCertificatePage = () => {
   // Hàm xử lý khi chọn loại tiêu chuẩn
   const handleStandardTypeChange = (value: string) => {
     const selectedStandard = standards.find((s) => s.code === value);
+    const orgs = selectedStandard?.organizations || [];
+    setAvailableOrganizations(orgs);
     setFormData({
       ...formData,
       standardType: value,
-      organization: selectedStandard?.organization || "",
+      organization: orgs.length === 1 ? orgs[0] : "", // Auto-fill nếu chỉ có 1 tổ chức
     });
   };
 
@@ -360,12 +377,17 @@ const EnterpriseCertificatePage = () => {
       fileUrl: "",
       attachments: [],
     });
+    setAvailableOrganizations([]);
     editorContentRef.current = "";
     setFormOpen(true);
   };
 
   const handleEdit = (item: EnterpriseCertificate) => {
     setEditItem(item);
+    const selectedStandard = standards.find(
+      (s) => s.code === item.standardType,
+    );
+    setAvailableOrganizations(selectedStandard?.organizations || []);
     setFormData({
       code: item.code,
       name: item.name,
@@ -463,7 +485,7 @@ const EnterpriseCertificatePage = () => {
 
   return (
     <AdminLayout
-      title="Quản lý chứng nhận"
+      title="Chứng nhận - Chứng chỉ"
       description="Quản lý chứng nhận cho doanh nghiệp và vùng trồng"
       actions={
         <Button onClick={handleAdd} data-testid="add-certificate">
@@ -536,13 +558,30 @@ const EnterpriseCertificatePage = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="organization">Tổ chức cấp *</Label>
-              <Input
-                id="organization"
+              <Select
                 value={formData.organization}
-                readOnly
-                className="bg-muted cursor-not-allowed"
-                placeholder="Tự động điền khi chọn tiêu chuẩn"
-              />
+                onValueChange={(val) =>
+                  setFormData({ ...formData, organization: val })
+                }
+                disabled={availableOrganizations.length === 0}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      availableOrganizations.length === 0
+                        ? "Chọn tiêu chuẩn trước"
+                        : "Chọn tổ chức cấp..."
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableOrganizations.map((org, index) => (
+                    <SelectItem key={index} value={org}>
+                      {org}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
