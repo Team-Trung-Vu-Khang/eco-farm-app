@@ -248,7 +248,7 @@ function Router() {
       <Route path="/material/:id" component={MaterialDetailPage} />
 
       <Route path="/equipment" component={EquipmentPage} />
-      <Route path="/equipment-group" component={EquipmentGroupPage} />
+      <Route path="/vehicle-group" component={EquipmentGroupPage} />
       <Route path="/equipment/create" component={EquipmentCreatePage} />
       <Route path="/equipment/:id/edit" component={EquipmentCreatePage} />
       <Route path="/equipment/:id" component={EquipmentDetailPage} />
