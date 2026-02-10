@@ -47,6 +47,9 @@ import PlotDetailPage from "./pages/region-chart/plot-distribution/PlotDetailPag
 import MapViewPage from "./pages/region-chart/map-view/MapViewPage";
 import SoilAmendmentMapPage from "./pages/region-chart/soil-map/SoilAmendmentMapPage";
 import AmendmentCyclePage from "./pages/soil-amendment/AmendmentCyclePage";
+import AmendmentMethodPage from "./pages/soil-amendment/AmendmentMethodPage";
+import AmendmentPlanPage from "./pages/soil-amendment/AmendmentPlanPage";
+import AmendmentTaskPage from "./pages/soil-amendment/AmendmentTaskPage";
 
 // Cultivation Zone Sub-pages
 import CultivationAreaPage from "./pages/cultivation-zone/cultivation-area/CultivationAreaPage";
@@ -180,6 +183,9 @@ function Router() {
       <Route path="/map-view" component={MapViewPage} />
       <Route path="/soil-amendment-map" component={SoilAmendmentMapPage} />
       <Route path="/amendment-cycle" component={AmendmentCyclePage} />
+      <Route path="/amendment-method" component={AmendmentMethodPage} />
+      <Route path="/amendment-plan" component={AmendmentPlanPage} />
+      <Route path="/amendment-task" component={AmendmentTaskPage} />
       {/* Cultivation Zone Sub-Routes */}
       <Route path="/cultivation-area" component={CultivationAreaPage} />
       <Route
