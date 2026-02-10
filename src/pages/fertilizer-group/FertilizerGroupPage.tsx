@@ -45,18 +45,10 @@ const FertilizerGroupPage = () => {
     {
       id: 3,
       code: "MICROBIAL",
-      name: "Phân vi sinh",
+      name: "Phân sinh học",
       description: "Chế phẩm sinh học, nấm đối kháng...",
       status: "active",
       createdAt: "2024-01-12",
-    },
-    {
-      id: 4,
-      code: "FOLIAR",
-      name: "Phân bón lá",
-      description: "Dinh dưỡng phun qua lá...",
-      status: "active",
-      createdAt: "2024-01-13",
     },
   ]);
 
