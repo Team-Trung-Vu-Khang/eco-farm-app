@@ -134,4 +134,90 @@ export const initialUnits: Unit[] = [
     isBaseUnit: true,
     conversionFactor: 1,
   },
+  // Area
+  {
+    id: 40,
+    code: "U040",
+    name: "Mét vuông (m²)",
+    description: "Đơn vị đo diện tích chuẩn",
+    status: "active",
+    createdAt: "2024-01-01",
+    type: "area",
+    isBaseUnit: true,
+    conversionFactor: 1,
+  },
+  // Time
+  {
+    id: 50,
+    code: "U050",
+    name: "Giây (s)",
+    description: "Đơn vị đo thời gian chuẩn",
+    status: "active",
+    createdAt: "2024-01-01",
+    type: "time",
+    isBaseUnit: true,
+    conversionFactor: 1,
+  },
+  // Quantity
+  {
+    id: 60,
+    code: "U060",
+    name: "Cái/Chiếc",
+    description: "Đơn vị đo số lượng chuẩn",
+    status: "active",
+    createdAt: "2024-01-01",
+    type: "quantity",
+    isBaseUnit: true,
+    conversionFactor: 1,
+  },
+  // Other
+  {
+    id: 70,
+    code: "U070",
+    name: "Khác",
+    description: "Đơn vị khác",
+    status: "active",
+    createdAt: "2024-01-01",
+    type: "other",
+    isBaseUnit: true,
+    conversionFactor: 1,
+  },
 ];
+
+export interface UnitStandard {
+  value: string;
+  label: string;
+  factor: number; // Factor relative to the Canonical Base (e.g. kg, l, m)
+}
+
+export const UNIT_STANDARDS: Record<string, UnitStandard[]> = {
+  mass: [
+    { value: "ton", label: "Tấn (Ton)", factor: 1000 },
+    { value: "kg", label: "Kilogam (kg)", factor: 1 },
+    { value: "g", label: "Gam (g)", factor: 0.001 },
+    { value: "mg", label: "Miligam (mg)", factor: 0.000001 },
+  ],
+  volume: [
+    { value: "m3", label: "Mét khối (m³)", factor: 1000 },
+    { value: "l", label: "Lít (l)", factor: 1 },
+    { value: "ml", label: "Mililit (ml)", factor: 0.001 },
+  ],
+  length: [
+    { value: "km", label: "Kilomet (km)", factor: 1000 },
+    { value: "m", label: "Mét (m)", factor: 1 },
+    { value: "cm", label: "Centimet (cm)", factor: 0.01 },
+    { value: "mm", label: "Milimet (mm)", factor: 0.001 },
+  ],
+  area: [
+    { value: "ha", label: "Hecta (ha)", factor: 10000 },
+    { value: "m2", label: "Mét vuông (m²)", factor: 1 },
+  ],
+  time: [
+    { value: "day", label: "Ngày", factor: 86400 },
+    { value: "hour", label: "Giờ", factor: 3600 },
+    { value: "minute", label: "Phút", factor: 60 },
+    { value: "second", label: "Giây", factor: 1 },
+  ],
+  quantity: [{ value: "unit", label: "Cái/Chiếc", factor: 1 }],
+  other: [{ value: "other", label: "Khác", factor: 1 }],
+};

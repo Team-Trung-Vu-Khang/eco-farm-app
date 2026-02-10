@@ -14,9 +14,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Switch,
 } from "@tankhang1/eco-shared-ui";
-import { initialUnits, type Unit } from "./constants";
+import { initialUnits, type Unit, UNIT_STANDARDS } from "./constants";
 import { ChevronLeft, Save, Scale, ArrowRightLeft } from "lucide-react";
 
 const UNIT_TYPES = [
@@ -53,6 +52,11 @@ const UnitCreatePage = () => {
     baseUnitId: undefined,
   });
 
+  // Local state for the selected "Display Standard" (e.g. "ton", "kg", "g")
+  // This helps user calculate the factor comfortable.
+  // When saving, we convert everything to the System Base (kg, l, m...)
+  const [selectedStandard, setSelectedStandard] = useState<string>("");
+
   // Load initial data for Edit
   useEffect(() => {
     if (isEdit && params?.id) {
@@ -66,11 +70,31 @@ const UnitCreatePage = () => {
           type: item.type,
           isBaseUnit: item.isBaseUnit,
           conversionFactor: item.conversionFactor,
-          baseUnitId: item.baseUnitId,
+          baseUnitId: item.baseUnitId, // This might point to 'kg' (id 1)
         });
+
+        // Try to reverse-engineer which standard was used?
+        // For now, default to the base standard (factor 1)
+        const standards = UNIT_STANDARDS[item.type] || [];
+        const baseStd = standards.find((s) => s.factor === 1);
+        if (baseStd) setSelectedStandard(baseStd.value);
       }
+    } else {
+      // Initialize standard for new item
+      const standards = UNIT_STANDARDS[formData.type] || [];
+      const baseStd = standards.find((s) => s.factor === 1);
+      if (baseStd) setSelectedStandard(baseStd.value);
     }
   }, [isEdit, params?.id]);
+
+  // When type changes, reset standard
+  useEffect(() => {
+    if (!isEdit) {
+      const standards = UNIT_STANDARDS[formData.type] || [];
+      const baseStd = standards.find((s) => s.factor === 1);
+      if (baseStd) setSelectedStandard(baseStd.value);
+    }
+  }, [formData.type, isEdit]);
 
   const updateField = (field: keyof UnitFormState, value: any) => {
     setFormData((prev) => {
@@ -79,13 +103,8 @@ const UnitCreatePage = () => {
       // Reset conversion fields if type changes
       if (field === "type") {
         newData.baseUnitId = undefined;
-        newData.isBaseUnit = false; // Reset to false to force user choice
-      }
-
-      // If set to base unit, force conversion factor to 1 and remove base unit ref
-      if (field === "isBaseUnit" && value === true) {
+        newData.isBaseUnit = false;
         newData.conversionFactor = 1;
-        newData.baseUnitId = undefined;
       }
 
       return newData;
@@ -95,20 +114,55 @@ const UnitCreatePage = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
-    if (!formData.isBaseUnit && !formData.baseUnitId) {
+    // 1. Find the System Base Unit for this type (e.g. Unit for 'kg')
+    // In a real app, we look up by type + isBaseUnit.
+    // Here we use initialUnits.
+    const systemBaseUnit = initialUnits.find(
+      (u) => u.type === formData.type && u.isBaseUnit,
+    );
+
+    if (!systemBaseUnit && !formData.isBaseUnit) {
+      // Fallback or Error?
+      // If no system base exists, maybe this IS the system base?
+      // For now, show error
       toast({
-        title: "Lỗi validation",
-        description: "Vui lòng chọn đơn vị chuẩn để quy đổi",
+        title: "Lỗi cấu hình",
+        description: `Không tìm thấy đơn vị chuẩn hệ thống cho loại ${formData.type}`,
         variant: "destructive",
       });
       return;
     }
 
+    // 2. Calculate the True Factor relative to System Base
+    // Formula: 1 Unit = [Input] * [StandardFactor] (SystemBase)
+    const standards = UNIT_STANDARDS[formData.type] || [];
+    const standard = standards.find((s) => s.value === selectedStandard);
+
+    if (!standard && !formData.isBaseUnit) {
+      toast({
+        title: "Thiếu thông tin",
+        description: "Vui lòng chọn đơn vị quy đổi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    let finalFactor = Number(formData.conversionFactor);
+
+    // If we have a standard selected, multiply by its factor
+    if (standard) {
+      finalFactor = finalFactor * standard.factor;
+    }
+
     const finalData = {
       ...formData,
-      conversionFactor: Number(formData.conversionFactor),
+      isBaseUnit: false, // Always false for user created units in this new flow?
+      baseUnitId: systemBaseUnit?.id,
+      conversionFactor: finalFactor,
     };
+
+    // Edge case: If user is editing the Base Unit itself?
+    // We didn't expose UI for that, assuming user creates derived units.
 
     console.log("Submit:", finalData);
     toast({
@@ -120,10 +174,11 @@ const UnitCreatePage = () => {
     setLocation("/unit");
   };
 
-  // Get available base units for the selected type
-  const availableBaseUnits = initialUnits.filter(
-    (u) => u.type === formData.type && u.isBaseUnit,
-  );
+  const getStandardLabel = () => {
+    const standards = UNIT_STANDARDS[formData.type] || [];
+    const std = standards.find((s) => s.value === selectedStandard);
+    return std ? std.label : "...";
+  };
 
   return (
     <AdminLayout
@@ -131,7 +186,7 @@ const UnitCreatePage = () => {
       description={
         isEdit
           ? `Chỉnh sửa thông tin ${formData.name}`
-          : "Khai báo các đơn vị đo lường, đóng gói và quy đổi"
+          : "Định nghĩa đơn vị tính và quy tắc quy đổi"
       }
     >
       <div className="mb-4">
@@ -176,7 +231,7 @@ const UnitCreatePage = () => {
                     <Input
                       value={formData.name}
                       onChange={(e) => updateField("name", e.target.value)}
-                      placeholder="VD: Bao 25kg, Kilogam..."
+                      placeholder="VD: Bao 25kg, Thùng 20L..."
                       required
                     />
                   </div>
@@ -240,81 +295,63 @@ const UnitCreatePage = () => {
                   <h3 className="font-semibold text-lg">Quy đổi đơn vị</h3>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border">
-                  <div className="space-y-0.5">
-                    <Label className="text-base">Đây là đơn vị chuẩn?</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Đơn vị chuẩn dùng để tính toán tồn kho và tiêu hao (VD:
-                      kg, lít)
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.isBaseUnit}
-                    onCheckedChange={(checked) =>
-                      updateField("isBaseUnit", checked)
-                    }
-                  />
-                </div>
-
-                {!formData.isBaseUnit && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 animation-fade-in">
-                    <div className="space-y-2">
-                      <Label>
-                        Quy đổi về đơn vị chuẩn{" "}
-                        <span className="text-red-500">*</span>
-                      </Label>
-                      <Select
-                        value={formData.baseUnitId?.toString()}
-                        onValueChange={(v) =>
-                          updateField("baseUnitId", Number(v))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Chọn đơn vị chuẩn..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableBaseUnits.map((u) => (
-                            <SelectItem key={u.id} value={u.id.toString()}>
-                              {u.name}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-2">
+                    <Label>
+                      Đơn vị quy đổi (Quy về){" "}
+                      <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={selectedStandard}
+                      onValueChange={(v) => setSelectedStandard(v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn đơn vị..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {UNIT_TYPES.find((t) => t.value === formData.type)
+                          ?.label &&
+                          (UNIT_STANDARDS[formData.type] || []).map((u) => (
+                            <SelectItem key={u.value} value={u.value}>
+                              {u.label}
                             </SelectItem>
                           ))}
-                        </SelectContent>
-                      </Select>
-                      {availableBaseUnits.length === 0 && (
-                        <p className="text-xs text-amber-500">
-                          Chưa có đơn vị chuẩn nào cho loại này. Hãy tạo đơn vị
-                          chuẩn trước.
-                        </p>
-                      )}
-                    </div>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label>
-                        Hệ số quy đổi <span className="text-red-500">*</span>
-                      </Label>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium whitespace-nowrap">
-                          1 {formData.name || "..."} =
-                        </span>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.0001"
-                          value={formData.conversionFactor}
-                          onChange={(e) =>
-                            updateField("conversionFactor", e.target.value)
-                          }
-                          required
-                        />
-                        <span className="text-sm font-medium whitespace-nowrap">
-                          {availableBaseUnits.find(
-                            (u) => u.id === formData.baseUnitId,
-                          )?.name || "..."}
-                        </span>
-                      </div>
+                  <div className="space-y-2">
+                    <Label>
+                      Hệ số quy đổi <span className="text-red-500">*</span>
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium whitespace-nowrap">
+                        1 {formData.name || "..."} =
+                      </span>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.000001"
+                        value={formData.conversionFactor}
+                        onChange={(e) =>
+                          updateField("conversionFactor", e.target.value)
+                        }
+                        required
+                      />
+                      <span className="text-sm font-medium whitespace-nowrap text-muted-foreground w-20">
+                        {getStandardLabel()}
+                      </span>
                     </div>
                   </div>
-                )}
+                </div>
+
+                <div className="bg-blue-50 text-blue-700 p-3 rounded-md text-sm">
+                  Ví dụ: Nếu 1 Thùng = 100 Bao 5kg (Tổng 500kg). <br />
+                  Bạn chọn đơn vị quy đổi là <b>Kilogam (kg)</b> và nhập hệ số
+                  là <b>500</b>. <br />
+                  Hoặc chọn đơn vị quy đổi là <b>Tấn (Ton)</b> và nhập hệ số là{" "}
+                  <b>0.5</b>.
+                </div>
               </CardContent>
             </Card>
 
