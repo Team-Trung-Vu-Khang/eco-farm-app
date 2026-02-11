@@ -119,6 +119,7 @@ import CooperativeCreatePage from "./pages/cooperative/CooperativeCreatePage";
 import CooperativeEditPage from "./pages/cooperative/CooperativeEditPage";
 import CooperativeDetailPage from "./pages/cooperative/CooperativeDetailPage";
 import EnterpriseTypePage from "./pages/enterprise-type/EnterpriseTypePage";
+import EnterpriseFormPage from "./pages/enterprise-form/EnterpriseFormPage";
 import EnterpriseCertificatePage from "./pages/enterprise-certificate/EnterpriseCertificatePage";
 import MaterialGroupPage from "./pages/material-group/MaterialGroupPage";
 import FertilizerGroupPage from "./pages/fertilizer-group/FertilizerGroupPage";
@@ -134,6 +135,7 @@ function Router() {
       <Route path="/farming-method" component={FarmingMethodPage} />
       <Route path="/certificate" component={CertificatePage} />
       <Route path="/enterprise-type" component={EnterpriseTypePage} />
+      <Route path="/enterprise-form" component={EnterpriseFormPage} />
       <Route
         path="/enterprise-certificate"
         component={EnterpriseCertificatePage}

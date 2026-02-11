@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Building2, Briefcase } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import {
   AdminLayout,
   Badge,
@@ -12,13 +12,9 @@ import {
   Textarea,
   useToast,
   type Column,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
 } from "@tankhang1/eco-shared-ui";
 
-interface EnterpriseType {
+interface EnterpriseGroup {
   id: number;
   code: string;
   name: string;
@@ -27,195 +23,76 @@ interface EnterpriseType {
   createdAt: string;
 }
 
-type CategoryType = "organization" | "business";
-
 const EnterpriseTypePage = () => {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<CategoryType>("organization");
 
-  // Dữ liệu Loại hình tổ chức
-  const [organizationData, setOrganizationData] = useState<EnterpriseType[]>([
+  // Dữ liệu Nhóm tổ chức
+  const [data, setData] = useState<EnterpriseGroup[]>([
     {
       id: 1,
+      code: "DN",
+      name: "Nhóm Doanh nghiệp",
+      description: "Bao gồm các loại hình doanh nghiệp (TNHH, CP, DNTN...)",
+      status: "active",
+      createdAt: "2024-01-10",
+    },
+    {
+      id: 2,
       code: "HTX",
-      name: "Hợp tác xã",
-      description:
-        "Tổ chức kinh tế tập thể do các thành viên tự nguyện thành lập",
+      name: "Nhóm Hợp tác xã",
+      description: "Bao gồm các Hợp tác xã và Liên hiệp hợp tác xã",
       status: "active",
       createdAt: "2024-01-10",
     },
     {
-      id: 2,
-      code: "DNTN",
-      name: "Doanh nghiệp tư nhân",
-      description:
-        "Doanh nghiệp do một cá nhân làm chủ và chịu trách nhiệm bằng toàn bộ tài sản",
+      id: 3,
+      code: "THT",
+      name: "Nhóm Tổ hợp tác",
+      description: "Các tổ hợp tác được chứng thực bởi UBND xã/phường",
       status: "active",
       createdAt: "2024-01-11",
     },
     {
-      id: 3,
-      code: "TNHH",
-      name: "Công ty TNHH",
-      description:
-        "Công ty trách nhiệm hữu hạn, thành viên chịu trách nhiệm trong phạm vi vốn góp",
+      id: 4,
+      code: "HKD",
+      name: "Nhóm Hộ kinh doanh",
+      description: "Hộ kinh doanh cá thể, hộ gia đình sản xuất",
       status: "active",
       createdAt: "2024-01-12",
     },
     {
-      id: 4,
-      code: "CP",
-      name: "Công ty cổ phần",
-      description:
-        "Công ty có vốn điều lệ chia thành nhiều phần bằng nhau gọi là cổ phần",
+      id: 5,
+      code: "CQNN",
+      name: "Cơ quan nhà nước",
+      description: "Các sở, ban, ngành và đơn vị hành chính sự nghiệp",
       status: "active",
       createdAt: "2024-01-13",
     },
     {
-      id: 5,
-      code: "DNNN",
-      name: "Doanh nghiệp nhà nước",
-      description: "Doanh nghiệp do Nhà nước nắm giữ 100% vốn điều lệ",
+      id: 6,
+      code: "HIEPHOI",
+      name: "Hiệp hội / Tổ chức phi chính phủ",
+      description: "Các hiệp hội ngành hàng, tổ chức NGO",
       status: "active",
       createdAt: "2024-01-14",
     },
     {
-      id: 6,
-      code: "NH",
-      name: "Nông hộ",
-      description: "Hộ gia đình sản xuất nông nghiệp, lâm nghiệp, ngư nghiệp",
+      id: 7,
+      code: "KHAC",
+      name: "Nhóm khác",
+      description: "Các đối tượng tổ chức khác",
       status: "active",
       createdAt: "2024-01-15",
-    },
-    {
-      id: 7,
-      code: "HTXLN",
-      name: "Hợp tác xã liên hiệp",
-      description: "Liên hiệp của các hợp tác xã cùng ngành nghề hoặc lãnh thổ",
-      status: "active",
-      createdAt: "2024-01-16",
-    },
-    {
-      id: 8,
-      code: "TCKT",
-      name: "Tổ hợp tác",
-      description: "Tổ chức kinh tế hợp tác nhỏ hơn hợp tác xã",
-      status: "active",
-      createdAt: "2024-01-17",
-    },
-  ]);
-
-  // Dữ liệu Lĩnh vực hoạt động
-  const [businessData, setBusinessData] = useState<EnterpriseType[]>([
-    {
-      id: 1,
-      code: "SX",
-      name: "Sản xuất",
-      description:
-        "Hoạt động sản xuất nông nghiệp, trồng trọt, chăn nuôi, nuôi trồng thủy sản",
-      status: "active",
-      createdAt: "2024-01-10",
-    },
-    {
-      id: 2,
-      code: "CB",
-      name: "Chế biến",
-      description: "Chế biến nông sản, thực phẩm, đóng gói và bảo quản",
-      status: "active",
-      createdAt: "2024-01-11",
-    },
-    {
-      id: 3,
-      code: "TM",
-      name: "Thương mại",
-      description: "Mua bán, phân phối nông sản, vật tư nông nghiệp",
-      status: "active",
-      createdAt: "2024-01-12",
-    },
-    {
-      id: 4,
-      code: "DV",
-      name: "Dịch vụ",
-      description:
-        "Dịch vụ hỗ trợ sản xuất: tưới tiêu, cơ giới hóa, tư vấn kỹ thuật",
-      status: "active",
-      createdAt: "2024-01-13",
-    },
-    {
-      id: 5,
-      code: "XK",
-      name: "Xuất khẩu",
-      description: "Xuất khẩu nông sản, thủy sản ra thị trường quốc tế",
-      status: "active",
-      createdAt: "2024-01-14",
-    },
-    {
-      id: 6,
-      code: "DVTC",
-      name: "Dịch vụ tài chính",
-      description: "Tín dụng, bảo hiểm, cho vay vốn sản xuất nông nghiệp",
-      status: "active",
-      createdAt: "2024-01-15",
-    },
-    {
-      id: 7,
-      code: "CNSH",
-      name: "Công nghệ sau thu hoạch",
-      description: "Bảo quản, sơ chế, đóng gói, vận chuyển nông sản",
-      status: "active",
-      createdAt: "2024-01-16",
-    },
-    {
-      id: 8,
-      code: "DVKT",
-      name: "Dịch vụ khoa học kỹ thuật",
-      description:
-        "Nghiên cứu, chuyển giao công nghệ, tư vấn kỹ thuật canh tác",
-      status: "active",
-      createdAt: "2024-01-17",
-    },
-    {
-      id: 9,
-      code: "DVVT",
-      name: "Dịch vụ vật tư",
-      description:
-        "Cung cấp giống, phân bón, thuốc bảo vệ thực vật, thức ăn chăn nuôi",
-      status: "active",
-      createdAt: "2024-01-18",
-    },
-    {
-      id: 10,
-      code: "DVLH",
-      name: "Dịch vụ logistics",
-      description: "Vận chuyển, kho bãi, phân phối nông sản",
-      status: "active",
-      createdAt: "2024-01-19",
-    },
-    {
-      id: 11,
-      code: "DVTV",
-      name: "Dịch vụ tư vấn",
-      description: "Tư vấn quản lý, marketing, chứng nhận tiêu chuẩn",
-      status: "active",
-      createdAt: "2024-01-20",
-    },
-    {
-      id: 12,
-      code: "NNCS",
-      name: "Nông nghiệp công nghệ cao",
-      description: "Ứng dụng công nghệ cao trong sản xuất nông nghiệp",
-      status: "active",
-      createdAt: "2024-01-21",
     },
   ]);
 
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [editItem, setEditItem] = useState<EnterpriseType | null>(null);
-  const [deleteItem, setDeleteItem] = useState<EnterpriseType | null>(null);
+  const [editItem, setEditItem] = useState<EnterpriseGroup | null>(null);
+  const [deleteItem, setDeleteItem] = useState<EnterpriseGroup | null>(null);
 
   const [formData, setFormData] = useState<
-    Omit<EnterpriseType, "id" | "createdAt">
+    Omit<EnterpriseGroup, "id" | "createdAt">
   >({
     code: "",
     name: "",
@@ -223,25 +100,20 @@ const EnterpriseTypePage = () => {
     status: "active",
   });
 
-  const columns: Column<EnterpriseType>[] = [
-    { key: "code", label: "Mã" },
-    { key: "name", label: "Tên" },
+  const columns: Column<EnterpriseGroup>[] = [
+    { key: "code", label: "Mã nhóm", sortable: true },
+    { key: "name", label: "Tên nhóm tổ chức", sortable: true },
     { key: "description", label: "Mô tả" },
+    {
+      key: "status",
+      label: "Trạng thái",
+      render: (row) => (
+        <Badge variant={row.status === "active" ? "default" : "secondary"}>
+          {row.status === "active" ? "Đang sử dụng" : "Ngưng sử dụng"}
+        </Badge>
+      ),
+    },
   ];
-
-  const getCurrentData = () => {
-    return activeTab === "organization" ? organizationData : businessData;
-  };
-
-  const setCurrentData = (
-    updater: (prev: EnterpriseType[]) => EnterpriseType[],
-  ) => {
-    if (activeTab === "organization") {
-      setOrganizationData(updater);
-    } else {
-      setBusinessData(updater);
-    }
-  };
 
   const handleAdd = () => {
     setEditItem(null);
@@ -254,7 +126,7 @@ const EnterpriseTypePage = () => {
     setFormOpen(true);
   };
 
-  const handleEdit = (item: EnterpriseType) => {
+  const handleEdit = (item: EnterpriseGroup) => {
     setEditItem(item);
     setFormData({
       code: item.code,
@@ -265,162 +137,108 @@ const EnterpriseTypePage = () => {
     setFormOpen(true);
   };
 
-  const handleDelete = (item: EnterpriseType) => {
+  const handleDelete = (item: EnterpriseGroup) => {
     setDeleteItem(item);
     setDeleteOpen(true);
   };
 
   const handleSubmit = () => {
-    const categoryName =
-      activeTab === "organization" ? "loại hình tổ chức" : "lĩnh vực hoạt động";
-
     if (editItem) {
-      setCurrentData((prev) =>
+      setData((prev) =>
         prev.map((item) =>
           item.id === editItem.id ? { ...item, ...formData } : item,
         ),
       );
       toast({
         title: "Thành công",
-        description: `Đã cập nhật ${categoryName}`,
+        description: "Đã cập nhật nhóm tổ chức",
       });
     } else {
-      const newItem: EnterpriseType = {
+      const newItem: EnterpriseGroup = {
         id: Date.now(),
         ...formData,
         createdAt: new Date().toISOString().split("T")[0],
       };
-      setCurrentData((prev) => [...prev, newItem]);
+      setData((prev) => [...prev, newItem]);
       toast({
         title: "Thành công",
-        description: `Đã thêm ${categoryName} mới`,
+        description: "Đã thêm nhóm tổ chức mới",
       });
     }
     setFormOpen(false);
   };
 
   const handleConfirmDelete = () => {
-    const categoryName =
-      activeTab === "organization" ? "loại hình tổ chức" : "lĩnh vực hoạt động";
-
     if (deleteItem) {
-      setCurrentData((prev) =>
-        prev.filter((item) => item.id !== deleteItem.id),
-      );
+      setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
       toast({
         title: "Thành công",
-        description: `Đã xóa ${categoryName}`,
+        description: "Đã xóa nhóm tổ chức",
       });
     }
     setDeleteOpen(false);
   };
 
-  const getTitle = () => {
-    return activeTab === "organization"
-      ? "Thêm loại hình tổ chức"
-      : "Thêm lĩnh vực hoạt động";
-  };
-
-  const getEditTitle = () => {
-    return activeTab === "organization"
-      ? "Chỉnh sửa loại hình tổ chức"
-      : "Chỉnh sửa lĩnh vực hoạt động";
-  };
-
   return (
     <AdminLayout
-      title="Danh mục tổ chức"
-      description="Quản lý loại hình tổ chức và lĩnh vực hoạt động"
+      title="Nhóm tổ chức"
+      description="Quản lý các nhóm đối tượng tổ chức/doanh nghiệp"
     >
-      <Tabs
-        value={activeTab}
-        onValueChange={(value) => setActiveTab(value as CategoryType)}
-        className="w-full"
-      >
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="organization" className="gap-2">
-            <Building2 className="w-4 h-4" />
-            Loại hình tổ chức
-          </TabsTrigger>
-          <TabsTrigger value="business" className="gap-2">
-            <Briefcase className="w-4 h-4" />
-            Lĩnh vực hoạt động
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="organization" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h3 className="text-lg font-semibold">Loại hình tổ chức</h3>
-              <p className="text-sm text-muted-foreground">
-                Phân loại các loại hình tổ chức kinh tế trong nông nghiệp
-              </p>
-            </div>
-            <Button onClick={handleAdd} data-testid="add-organization-type">
-              <Plus className="w-4 h-4 mr-2" />
-              Thêm loại hình
-            </Button>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h3 className="text-lg font-semibold">Danh sách nhóm tổ chức</h3>
+            <p className="text-sm text-muted-foreground">
+              Phân nhóm các đơn vị theo tính chất hoạt động
+            </p>
           </div>
-          <DataTable
-            columns={columns}
-            data={organizationData}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            searchPlaceholder="Tìm kiếm loại hình tổ chức..."
-          />
-        </TabsContent>
+          <Button onClick={handleAdd}>
+            <Plus className="w-4 h-4 mr-2" />
+            Thêm mới
+          </Button>
+        </div>
 
-        <TabsContent value="business" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h3 className="text-lg font-semibold">Lĩnh vực hoạt động</h3>
-              <p className="text-sm text-muted-foreground">
-                Phân loại các lĩnh vực hoạt động kinh doanh trong nông nghiệp
-              </p>
-            </div>
-            <Button onClick={handleAdd} data-testid="add-business-field">
-              <Plus className="w-4 h-4 mr-2" />
-              Thêm lĩnh vực
-            </Button>
-          </div>
-          <DataTable
-            columns={columns}
-            data={businessData}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            searchPlaceholder="Tìm kiếm lĩnh vực hoạt động..."
-          />
-        </TabsContent>
-      </Tabs>
+        <DataTable
+          columns={columns}
+          data={data}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          searchPlaceholder="Tìm kiếm nhóm tổ chức..."
+        />
+      </div>
 
       <FormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
-        title={editItem ? getEditTitle() : getTitle()}
+        title={editItem ? "Chỉnh sửa nhóm tổ chức" : "Thêm nhóm tổ chức mới"}
         onSubmit={handleSubmit}
       >
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="code">Mã</Label>
+              <Label htmlFor="code">
+                Mã nhóm <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="code"
                 value={formData.code}
                 onChange={(e) =>
                   setFormData({ ...formData, code: e.target.value })
                 }
-                placeholder="VD: HTX, SX, CB..."
+                placeholder="VD: DN, HTX..."
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="name">Tên</Label>
+              <Label htmlFor="name">
+                Tên nhóm <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                placeholder="VD: Hợp tác xã, Sản xuất..."
+                placeholder="VD: Nhóm Doanh nghiệp..."
               />
             </div>
           </div>
@@ -437,6 +255,23 @@ const EnterpriseTypePage = () => {
               rows={3}
             />
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="status">Trạng thái</Label>
+            <select
+              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              value={formData.status}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  status: e.target.value as "active" | "inactive",
+                })
+              }
+            >
+              <option value="active">Đang sử dụng</option>
+              <option value="inactive">Ngưng sử dụng</option>
+            </select>
+          </div>
         </div>
       </FormDialog>
 
@@ -444,7 +279,7 @@ const EnterpriseTypePage = () => {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
-        description={`Bạn có chắc chắn muốn xóa ${activeTab === "organization" ? "loại hình tổ chức" : "lĩnh vực hoạt động"} này?`}
+        description="Bạn có chắc chắn muốn xóa nhóm tổ chức này? Hành động này không thể hoàn tác."
       />
     </AdminLayout>
   );
