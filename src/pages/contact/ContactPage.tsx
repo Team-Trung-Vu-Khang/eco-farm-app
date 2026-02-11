@@ -18,129 +18,25 @@ import {
   TabsList,
   TabsTrigger,
 } from "@tankhang1/eco-shared-ui";
-
-interface Contact {
-  id: number;
-  fullName: string;
-  phone: string;
-  email: string;
-  position: string;
-  department: string;
-  entityName: string;
-  groupId?: number;
-  note: string;
-  status: "active" | "inactive";
-}
-
-interface ContactGroup {
-  id: number;
-  code: string;
-  name: string;
-  description: string;
-  contactCount: number;
-  status: "active" | "inactive";
-  createdAt: string;
-}
+import useContactStore, {
+  type Contact,
+  type ContactGroup,
+} from "../../stores/useContactStore";
 
 type CategoryType = "contacts" | "groups";
-
-const initialContacts: Contact[] = [
-  {
-    id: 1,
-    fullName: "Nguyễn Văn A",
-    phone: "0901234567",
-    email: "nguyenvana@example.com",
-    position: "Trưởng phòng",
-    department: "Kinh doanh",
-    entityName: "Công ty CP Nông nghiệp Xanh",
-    groupId: 1,
-    note: "Liên hệ chính",
-    status: "active",
-  },
-  {
-    id: 2,
-    fullName: "Trần Thị B",
-    phone: "0909876543",
-    email: "tranthib@example.com",
-    position: "Kế toán trưởng",
-    department: "Kế toán",
-    entityName: "HTX Rau sạch Thanh Hà",
-    groupId: 1,
-    note: "Phụ trách thanh toán",
-    status: "active",
-  },
-  {
-    id: 3,
-    fullName: "Lê Văn C",
-    phone: "0912345678",
-    email: "levanc@example.com",
-    position: "Kỹ thuật viên",
-    department: "Kỹ thuật",
-    entityName: "Nông hộ Nguyễn Văn A",
-    groupId: 2,
-    note: "",
-    status: "inactive",
-  },
-  {
-    id: 4,
-    fullName: "Phạm Thị D",
-    phone: "0923456789",
-    email: "phamthid@example.com",
-    position: "Giám đốc",
-    department: "Ban giám đốc",
-    entityName: "Công ty TNHH Thủy sản Miền Tây",
-    groupId: 2,
-    note: "VIP - Khách hàng lớn",
-    status: "active",
-  },
-];
-
-const initialGroups: ContactGroup[] = [
-  {
-    id: 1,
-    code: "KH",
-    name: "Khách hàng",
-    description: "Nhóm khách hàng mua sản phẩm",
-    contactCount: 2,
-    status: "active",
-    createdAt: "2024-01-10",
-  },
-  {
-    id: 2,
-    code: "DT",
-    name: "Đối tác",
-    description: "Nhóm đối tác kinh doanh, hợp tác",
-    contactCount: 2,
-    status: "active",
-    createdAt: "2024-01-11",
-  },
-  {
-    id: 3,
-    code: "NCC",
-    name: "Nhà cung cấp",
-    description: "Nhóm nhà cung cấp vật tư, nguyên liệu",
-    contactCount: 0,
-    status: "active",
-    createdAt: "2024-01-12",
-  },
-  {
-    id: 4,
-    code: "CQNN",
-    name: "Cơ quan nhà nước",
-    description: "Nhóm liên hệ cơ quan quản lý nhà nước",
-    contactCount: 0,
-    status: "active",
-    createdAt: "2024-01-13",
-  },
-];
 
 export default function ContactPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<CategoryType>("contacts");
 
-  const [contacts, setContacts] = useState<Contact[]>(initialContacts);
-  const [groups, setGroups] = useState<ContactGroup[]>(initialGroups);
+  // Zustand store
+  const contacts = useContactStore((state) => state.contacts);
+  const groups = useContactStore((state) => state.groups);
+  const deleteContact = useContactStore((state) => state.deleteContact);
+  const deleteGroup = useContactStore((state) => state.deleteGroup);
+  const addGroup = useContactStore((state) => state.addGroup);
+  const updateGroup = useContactStore((state) => state.updateGroup);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Contact | ContactGroup | null>(
@@ -241,13 +137,13 @@ export default function ContactPage() {
   const handleConfirmDelete = () => {
     if (deleteItem) {
       if (activeTab === "contacts") {
-        setContacts((prev) => prev.filter((item) => item.id !== deleteItem.id));
+        deleteContact(deleteItem.id);
         toast({
           title: "Thành công",
           description: "Đã xóa liên hệ khỏi hệ thống",
         });
       } else {
-        setGroups((prev) => prev.filter((item) => item.id !== deleteItem.id));
+        deleteGroup(deleteItem.id);
         toast({
           title: "Thành công",
           description: "Đã xóa nhóm danh bạ",
@@ -281,23 +177,21 @@ export default function ContactPage() {
 
   const handleSubmitGroup = () => {
     if (editGroup) {
-      setGroups((prev) =>
-        prev.map((item) =>
-          item.id === editGroup.id ? { ...item, ...groupFormData } : item,
-        ),
-      );
+      updateGroup(editGroup.id, groupFormData);
       toast({
         title: "Thành công",
         description: "Đã cập nhật nhóm danh bạ",
       });
     } else {
+      const newId =
+        groups.length > 0 ? Math.max(...groups.map((g) => g.id)) + 1 : 1;
       const newGroup: ContactGroup = {
-        id: Date.now(),
+        id: newId,
         ...groupFormData,
         contactCount: 0,
         createdAt: new Date().toISOString().split("T")[0],
       };
-      setGroups((prev) => [...prev, newGroup]);
+      addGroup(newGroup);
       toast({
         title: "Thành công",
         description: "Đã thêm nhóm danh bạ mới",

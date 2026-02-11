@@ -20,6 +20,7 @@ import {
   DeleteDialog,
 } from "@tankhang1/eco-shared-ui";
 import { Save, Trash2, X } from "lucide-react";
+import useContactStore from "../../stores/useContactStore";
 
 export default function ContactEditPage() {
   const [, setLocation] = useLocation();
@@ -27,24 +28,13 @@ export default function ContactEditPage() {
   const { toast } = useToast();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  // Mock data fetching
-  useEffect(() => {
-    // Simulate API call using ID
-    console.log("Fetching contact", params?.id);
-    setTimeout(() => {
-      setFormData({
-        fullName: "Nguyễn Văn A",
-        phone: "0901234567",
-        email: "nguyenvana@example.com",
-        position: "Trưởng phòng",
-        department: "Kinh doanh",
-        entityName: "Công ty CP Nông nghiệp Xanh",
-        groupId: "1",
-        note: "Liên hệ chính",
-        status: "active",
-      });
-    }, 500);
-  }, []);
+  // Zustand store
+  const contactId = params?.id ? parseInt(params.id) : undefined;
+  const getContactById = useContactStore((state) => state.getContactById);
+  const groups = useContactStore((state) => state.groups);
+  const updateContact = useContactStore((state) => state.updateContact);
+  const deleteContact = useContactStore((state) => state.deleteContact);
+  const contact = contactId ? getContactById(contactId) : undefined;
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -55,11 +45,33 @@ export default function ContactEditPage() {
     entityName: "",
     groupId: "",
     note: "",
-    status: "active",
+    status: "active" as "active" | "inactive",
   });
 
+  // Load contact data
+  useEffect(() => {
+    if (contact) {
+      setFormData({
+        fullName: contact.fullName,
+        phone: contact.phone,
+        email: contact.email,
+        position: contact.position,
+        department: contact.department,
+        entityName: contact.entityName,
+        groupId: contact.groupId ? contact.groupId.toString() : "",
+        note: contact.note,
+        status: contact.status,
+      });
+    }
+  }, [contact]);
+
   const handleSubmit = () => {
-    if (!formData.fullName || !formData.phone || !formData.entityName) {
+    if (
+      !formData.fullName ||
+      !formData.phone ||
+      !formData.entityName ||
+      !contactId
+    ) {
       toast({
         title: "Thiếu thông tin",
         description: "Vui lòng nhập đầy đủ các trường bắt buộc",
@@ -67,6 +79,18 @@ export default function ContactEditPage() {
       });
       return;
     }
+
+    updateContact(contactId, {
+      fullName: formData.fullName,
+      phone: formData.phone,
+      email: formData.email,
+      position: formData.position,
+      department: formData.department,
+      entityName: formData.entityName,
+      groupId: formData.groupId ? parseInt(formData.groupId) : undefined,
+      note: formData.note,
+      status: formData.status,
+    });
 
     toast({
       title: "Cập nhật thành công",
@@ -76,12 +100,30 @@ export default function ContactEditPage() {
   };
 
   const handleDelete = () => {
-    toast({
-      title: "Thành công",
-      description: "Đã xóa liên hệ",
-    });
-    setLocation("/contact");
+    if (contactId) {
+      deleteContact(contactId);
+      toast({
+        title: "Thành công",
+        description: "Đã xóa liên hệ",
+      });
+      setLocation("/contact");
+    }
   };
+
+  // Show not found if contact doesn't exist
+  if (contactId && !contact) {
+    return (
+      <AdminLayout title="Không tìm thấy" description="Liên hệ không tồn tại">
+        <div className="flex flex-col items-center justify-center h-96">
+          <h2 className="text-2xl font-bold mb-4">Không tìm thấy liên hệ</h2>
+          <Button onClick={() => setLocation("/contact")}>
+            <X className="w-4 h-4 mr-2" />
+            Quay lại danh sách
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout
@@ -194,10 +236,11 @@ export default function ContactEditPage() {
                     <SelectValue placeholder="Chọn nhóm danh bạ" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Khách hàng</SelectItem>
-                    <SelectItem value="2">Đối tác</SelectItem>
-                    <SelectItem value="3">Nhà cung cấp</SelectItem>
-                    <SelectItem value="4">Cơ quan nhà nước</SelectItem>
+                    {groups.map((group) => (
+                      <SelectItem key={group.id} value={group.id.toString()}>
+                        {group.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -240,7 +283,7 @@ export default function ContactEditPage() {
               <Label htmlFor="status">Trạng thái</Label>
               <Select
                 value={formData.status}
-                onValueChange={(val) =>
+                onValueChange={(val: "active" | "inactive") =>
                   setFormData({ ...formData, status: val })
                 }
               >
