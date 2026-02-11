@@ -28,17 +28,26 @@ import {
   AlertDialogTrigger,
 } from "@tankhang1/eco-shared-ui";
 import { Save, X, Trash2 } from "lucide-react";
+import useBranchStore from "../../stores/useBranchStore";
 
 export default function BranchEditPage() {
   const [, params] = useRoute("/branch/:id/edit");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
+  const branchId = params?.id ? parseInt(params.id) : undefined;
+  const getBranchById = useBranchStore((state) => state.getBranchById);
+  const updateBranch = useBranchStore((state) => state.updateBranch);
+  const deleteBranch = useBranchStore((state) => state.deleteBranch);
+  const branch = branchId ? getBranchById(branchId) : undefined;
+
   const [formData, setFormData] = useState({
     enterpriseId: "",
     code: "",
     name: "",
     taxCode: "",
+    taxAddress: "",
+    website: "",
     phone: "",
     email: "",
     address: "",
@@ -49,29 +58,57 @@ export default function BranchEditPage() {
   });
 
   useEffect(() => {
-    // Mock fetch data
-    if (params?.id) {
-      setTimeout(() => {
-        setFormData({
-          enterpriseId: "1",
-          code: "CN001",
-          name: "Chi nhánh Miền Nam",
-          taxCode: "0101234567-001",
-          phone: "02839999888",
-          email: "hcm@ecofarm.vn",
-          address: "Số 456 Nguyễn Thị Minh Khai",
-          province: "hcm",
-          district: "q1",
-          ward: "p1",
-          description:
-            "Văn phòng đại diện phía Nam, chịu trách nhiệm phân phối sản phẩm khu vực TP.HCM và các tỉnh lân cận.",
-        });
-      }, 500);
+    if (branch) {
+      // Parse location data from branch
+      const getLocationCode = (
+        value: string | undefined,
+        type: "province" | "district" | "ward",
+      ) => {
+        if (!value) return "";
+        const maps = {
+          province: { "TP.HCM": "hcm", "Hà Nội": "hn", "Đà Nẵng": "dn" },
+          district: { "Quận 1": "q1", "Quận 3": "q3", "Ba Đình": "badinh" },
+          ward: { "Phường 1": "p1", "Phường 2": "p2", "Kim Mã": "kimma" },
+        };
+        const map = maps[type] as Record<string, string>;
+        return map[value] || "";
+      };
+
+      // Extract street address (remove ward, district, city)
+      let streetAddress = branch.address;
+      if (branch.ward)
+        streetAddress = streetAddress
+          .replace(`, ${branch.ward}`, "")
+          .replace(`${branch.ward}, `, "");
+      if (branch.district)
+        streetAddress = streetAddress
+          .replace(`, ${branch.district}`, "")
+          .replace(`${branch.district}, `, "");
+      if (branch.city)
+        streetAddress = streetAddress
+          .replace(`, ${branch.city}`, "")
+          .replace(`${branch.city}`, "");
+
+      setFormData({
+        enterpriseId: "1", // Default to first enterprise for now
+        code: branch.code,
+        name: branch.name,
+        taxCode: branch.taxCode || "",
+        taxAddress: branch.taxAddress || "",
+        website: branch.website || "",
+        phone: branch.phone,
+        email: branch.email,
+        address: streetAddress.trim(),
+        province: getLocationCode(branch.city, "province"),
+        district: getLocationCode(branch.district, "district"),
+        ward: getLocationCode(branch.ward, "ward"),
+        description: "",
+      });
     }
-  }, [params?.id]);
+  }, [branch]);
 
   const handleSubmit = () => {
-    if (!formData.name || !formData.enterpriseId) {
+    if (!formData.name || !branchId) {
       toast({
         title: "Thiếu thông tin",
         description: "Vui lòng nhập đầy đủ các trường bắt buộc",
@@ -79,6 +116,43 @@ export default function BranchEditPage() {
       });
       return;
     }
+
+    // Map location codes to names
+    const getLocationName = (
+      code: string,
+      type: "province" | "district" | "ward",
+    ) => {
+      const maps = {
+        province: { hcm: "TP.HCM", hn: "Hà Nội", dn: "Đà Nẵng" },
+        district: { q1: "Quận 1", q3: "Quận 3", badinh: "Ba Đình" },
+        ward: { p1: "Phường 1", p2: "Phường 2", kimma: "Kim Mã" },
+      };
+      return maps[type][code as keyof (typeof maps)[typeof type]] || "";
+    };
+
+    // Construct full address
+    const fullAddress = [
+      formData.address,
+      getLocationName(formData.ward, "ward"),
+      getLocationName(formData.district, "district"),
+      getLocationName(formData.province, "province"),
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    updateBranch(branchId, {
+      code: formData.code,
+      name: formData.name,
+      taxCode: formData.taxCode,
+      taxAddress: formData.taxAddress,
+      website: formData.website,
+      phone: formData.phone,
+      email: formData.email,
+      address: fullAddress || formData.address,
+      city: getLocationName(formData.province, "province"),
+      district: getLocationName(formData.district, "district"),
+      ward: getLocationName(formData.ward, "ward"),
+    });
 
     toast({
       title: "Cập nhật thành công",
@@ -88,12 +162,32 @@ export default function BranchEditPage() {
   };
 
   const handleDelete = () => {
-    toast({
-      title: "Đã xóa",
-      description: "Đã xóa chi nhánh khỏi hệ thống",
-    });
-    setLocation("/branch");
+    if (branchId) {
+      deleteBranch(branchId);
+      toast({
+        title: "Đã xóa",
+        description: "Đã xóa chi nhánh khỏi hệ thống",
+      });
+      setLocation("/branch");
+    }
   };
+
+  // Show not found if branch doesn't exist
+  if (branchId && !branch) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center h-96">
+          <h2 className="text-2xl font-bold mb-4">
+            Không tìm thấy thông tin chi nhánh
+          </h2>
+          <Button onClick={() => setLocation("/branch")}>
+            <X className="w-4 h-4 mr-2" />
+            Quay lại danh sách
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout
@@ -164,6 +258,30 @@ export default function BranchEditPage() {
                     }
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="taxAddress">Địa chỉ thuế</Label>
+                <Input
+                  id="taxAddress"
+                  placeholder="Địa chỉ đăng ký thuế (nếu khác địa chỉ chi nhánh)"
+                  value={formData.taxAddress}
+                  onChange={(e) =>
+                    setFormData({ ...formData, taxAddress: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="website">Website</Label>
+                <Input
+                  id="website"
+                  placeholder="VD: https://ecofarm.vn"
+                  value={formData.website}
+                  onChange={(e) =>
+                    setFormData({ ...formData, website: e.target.value })
+                  }
+                />
               </div>
 
               <div className="space-y-2">
