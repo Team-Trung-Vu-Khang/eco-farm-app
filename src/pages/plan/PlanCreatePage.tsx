@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { useLocation } from "wouter";
-
 import {
   ClipboardList,
   Calendar,
@@ -14,6 +13,13 @@ import {
   Leaf,
   Droplet,
   FileCheck,
+  Filter,
+  X,
+  Sprout,
+  Users,
+  Wrench,
+  StickyNote,
+  Clock,
 } from "lucide-react";
 import {
   AdminLayout,
@@ -35,6 +41,11 @@ import {
   Textarea,
   useToast,
   type Step,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
   Tabs,
   TabsContent,
   TabsList,
@@ -49,18 +60,641 @@ import {
   type GrowthCycle,
 } from "./constants";
 
+// --- Mock Data for Location Hierarchy (Enhanced) ---
+const LOCATIONS = [
+  {
+    id: "region-1",
+    name: "Vùng A - Bình Phước",
+    zones: [
+      {
+        id: "zone-1-1",
+        name: "Khu vực A1",
+        plots: [
+          {
+            id: "plot-1-1-1",
+            name: "Lô A1-01",
+            area: 1.5,
+            status: "ready",
+            soilType: "Đất đỏ Bazan",
+            slope: "3-5%",
+          },
+          {
+            id: "plot-1-1-2",
+            name: "Lô A1-02",
+            area: 2.0,
+            status: "active",
+            soilType: "Đất thịt nhẹ",
+            slope: "<3%",
+          },
+        ],
+      },
+      {
+        id: "zone-1-2",
+        name: "Khu vực A2",
+        plots: [
+          {
+            id: "plot-1-2-1",
+            name: "Lô A2-01",
+            area: 1.2,
+            status: "resting",
+            soilType: "Đất đỏ Bazan",
+            slope: "5-8%",
+          },
+          {
+            id: "plot-1-2-2",
+            name: "Lô A2-02",
+            area: 1.8,
+            status: "ready",
+            soilType: "Đất đỏ Bazan",
+            slope: "3-5%",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "region-2",
+    name: "Vùng B - Đồng Nai",
+    zones: [
+      {
+        id: "zone-2-1",
+        name: "Khu vực B1",
+        plots: [
+          {
+            id: "plot-2-1-1",
+            name: "Lô B1-01",
+            area: 2.5,
+            status: "active",
+            soilType: "Đất xám",
+            slope: "<3%",
+          },
+          {
+            id: "plot-2-1-2",
+            name: "Lô B1-02",
+            area: 3.0,
+            status: "ready",
+            soilType: "Đất phù sa cổ",
+            slope: "<3%",
+          },
+        ],
+      },
+    ],
+  },
+];
+
+// --- Mock Data for Select Options ---
+const MATERIAL_OPTIONS = [
+  { value: "NPK 20-20-15", label: "NPK 20-20-15 (Phân bón)" },
+  { value: "Urea", label: "Urea (Phân bón)" },
+  { value: "Kali Clorua", label: "Kali Clorua (Phân bón)" },
+  { value: "Lân Super", label: "Lân Super (Phân bón)" },
+  { value: "Abamectin", label: "Abamectin (Thuốc BVTV)" },
+  { value: "Mancozeb", label: "Mancozeb (Thuốc BVTV)" },
+  { value: "Glyphosate", label: "Glyphosate (Thuốc cỏ)" },
+  { value: "Vôi bộ", label: "Vôi bột (Cải tạo đất)" },
+  { value: "Hữu cơ vi sinh", label: "Hữu cơ vi sinh (Phân bón)" },
+];
+
+const TASK_OPTIONS = [
+  { value: "Cày xới đất", label: "Cày xới đất" },
+  { value: "Bón lót", label: "Bón lót" },
+  { value: "Gieo hạt/Trồng cây", label: "Gieo hạt/Trồng cây" },
+  { value: "Tưới nước", label: "Tưới nước" },
+  { value: "Bón thúc lần 1", label: "Bón thúc lần 1" },
+  { value: "Phun thuốc phòng bệnh", label: "Phun thuốc phòng bệnh" },
+  { value: "Tỉa cành/tạo tán", label: "Tỉa cành/tạo tán" },
+  { value: "Làm cỏ", label: "Làm cỏ" },
+  { value: "Thu hoạch", label: "Thu hoạch" },
+  { value: "Vệ sinh đồng ruộng", label: "Vệ sinh đồng ruộng" },
+];
+
+const LABOR_OPTIONS = [
+  { value: "1 người", label: "1 người" },
+  { value: "2 người", label: "2 người" },
+  { value: "3-5 người", label: "3-5 người" },
+  { value: "5-10 người", label: "5-10 người" },
+  { value: "Cơ giới hóa", label: "Cơ giới hóa (Máy móc)" },
+  { value: "Khoán trọn gói", label: "Khoán trọn gói" },
+];
+
 // Interface cho vật tư chi tiết
 interface MaterialAllocation {
   id: number;
-  cycle: string; // Chu kỳ (VD: "Chu kỳ 1", "Chu kỳ 2")
-  stage: string; // Giai đoạn
-  materialCategory: string; // Loại vật tư (pesticide, fertilizer, other)
-  materialType: string; // Loại vật tư cụ thể (VD: "Phân NPK", "Thuốc trừ sâu")
+  stageId: string; // Linked to a specific stage
+  materialCategory: string; // Loại vật tư
+  materialType: string; // Loại vật tư cụ thể
   materialName: string; // Tên vật tư cụ thể
   quantity: string;
   unit: string;
-  packaging: string; // Quy cách đóng gói
 }
+
+interface TaskAllocation {
+  id: number;
+  stageId: string;
+  name: string; // Tên hoạt động (e.g. Cày đất)
+  description: string; // Chi tiết kỹ thuật
+  labor: string; // Số lượng nhân sự/công
+  duration: string; // Thời gian ước tính (giờ/ngày)
+}
+
+// 1. Location Selection Dialog (Filtered for Cultivation)
+const LocationFilterDialog = ({
+  open,
+  onOpenChange,
+  selectedIds,
+  onApply,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  selectedIds: string[]; // List of selected Plot IDs
+  onApply: (ids: string[]) => void;
+}) => {
+  const [tempSelected, setTempSelected] = useState<string[]>(selectedIds);
+
+  useEffect(() => {
+    if (open) setTempSelected(selectedIds);
+  }, [open, selectedIds]);
+
+  const toggleSelection = (id: string) => {
+    setTempSelected((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+    );
+  };
+
+  const isSelected = (id: string) => tempSelected.includes(id);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Chọn khu vực canh tác</DialogTitle>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto py-4 pr-2">
+          <div className="space-y-6">
+            {LOCATIONS.map((region) => (
+              <div key={region.id} className="space-y-3">
+                <div className="flex items-center gap-2 font-semibold text-slate-800 bg-slate-50 p-2 rounded">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  {region.name}
+                </div>
+
+                <div className="pl-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {region.zones.map((zone) => (
+                    <div
+                      key={zone.id}
+                      className="border p-3 rounded-md space-y-2"
+                    >
+                      <div className="flex items-center gap-2 font-medium text-sm text-slate-700">
+                        {zone.name}
+                      </div>
+
+                      <div className="pl-4 space-y-2">
+                        {zone.plots.map((plot) => (
+                          <div
+                            key={plot.id}
+                            className="flex items-center gap-2 text-sm"
+                          >
+                            <Checkbox
+                              checked={isSelected(plot.id)}
+                              onCheckedChange={() => toggleSelection(plot.id)}
+                            />
+                            <span className="flex-1">{plot.name}</span>
+                            <Badge variant="outline" className="text-xs">
+                              {plot.area} ha
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Hủy
+          </Button>
+          <Button
+            onClick={() => {
+              onApply(tempSelected);
+              onOpenChange(false);
+            }}
+          >
+            Áp dụng
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// 2. Stage Selection Item
+const StageItem = ({
+  stage,
+  index,
+  checked,
+  onChange,
+}: {
+  stage: string;
+  index: number;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) => (
+  <div
+    className={`flex items-center gap-3 p-3 border rounded-lg transition-colors ${checked ? "bg-primary/5 border-primary/20" : "bg-white hover:bg-slate-50"}`}
+  >
+    <div className="flex items-center justify-center">
+      <Checkbox checked={checked} onCheckedChange={(c) => onChange(!!c)} />
+    </div>
+    <div
+      className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${checked ? "bg-primary text-white" : "bg-slate-100 text-slate-500"}`}
+    >
+      {index + 1}
+    </div>
+    <div
+      className={`flex-1 font-medium ${checked ? "text-slate-900" : "text-slate-500"}`}
+    >
+      {stage}
+    </div>
+  </div>
+);
+
+// 3. Stage Allocation Component
+const StageAllocation = memo(
+  ({
+    stageName,
+    index,
+    allocations,
+    tasks,
+    onAddMaterial,
+    onRemoveMaterial,
+    onAddTask,
+    onRemoveTask,
+  }: {
+    stageName: string;
+    index: number;
+    allocations: MaterialAllocation[];
+    tasks: TaskAllocation[];
+    onAddMaterial: (item: any) => void;
+    onRemoveMaterial: (id: number) => void;
+    onAddTask: (item: any) => void;
+    onRemoveTask: (id: number) => void;
+  }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [newItem, setNewItem] = useState({
+      name: "",
+      qty: "",
+      unit: "kg",
+      type: "Phân bón",
+    });
+
+    const [newTask, setNewTask] = useState({
+      name: "",
+      desc: "",
+      labor: "",
+      duration: "",
+    });
+
+    const handleAddMaterial = () => {
+      if (!newItem.name || !newItem.qty) return;
+      onAddMaterial({
+        stageId: stageName,
+        materialCategory: newItem.type,
+        materialType: newItem.type,
+        materialName: newItem.name,
+        quantity: newItem.qty,
+        unit: newItem.unit,
+      });
+      setNewItem({ name: "", qty: "", unit: "kg", type: "Phân bón" });
+    };
+
+    const handleAddTask = () => {
+      if (!newTask.name) return;
+      onAddTask({
+        stageId: stageName,
+        name: newTask.name,
+        description: newTask.desc,
+        labor: newTask.labor,
+        duration: newTask.duration,
+      });
+      setNewTask({ name: "", desc: "", labor: "", duration: "" });
+    };
+
+    return (
+      <div className="bg-white border rounded-xl shadow-sm overflow-hidden flex flex-col transition-all duration-200">
+        {/* Header - Click to Toggle */}
+        <div
+          className="bg-slate-50 px-4 py-3 border-b flex justify-between items-center cursor-pointer hover:bg-slate-100"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shadow-sm transition-colors ${isExpanded ? "bg-blue-600 text-white" : "bg-white border text-slate-500"}`}
+            >
+              {index + 1}
+            </div>
+            <div>
+              <h4 className="font-semibold text-slate-800">{stageName}</h4>
+              <div className="flex gap-2 text-xs text-muted-foreground mt-0.5">
+                <span className="flex items-center gap-1">
+                  <Leaf className="w-3 h-3" /> {allocations.length} vật tư
+                </span>
+                <span className="text-slate-300">|</span>
+                <span className="flex items-center gap-1">
+                  <Users className="w-3 h-3" /> {tasks.length} công việc
+                </span>
+              </div>
+            </div>
+          </div>
+          <div
+            className={`transform transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-slate-400"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Content Tabs - Collapsible */}
+        {isExpanded && (
+          <div className="p-4 flex-1 flex flex-col animation-fade-in border-t border-slate-100">
+            <Tabs defaultValue="materials" className="flex-1 flex flex-col">
+              <TabsList className="grid w-full grid-cols-2 mb-4 bg-slate-100 p-1 rounded-lg">
+                <TabsTrigger
+                  value="materials"
+                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                >
+                  <Leaf className="w-3.5 h-3.5 mr-2 text-green-600" />
+                  Vật tư & Thiết bị
+                </TabsTrigger>
+                <TabsTrigger
+                  value="tasks"
+                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                >
+                  <Users className="w-3.5 h-3.5 mr-2 text-blue-600" />
+                  Nhân sự & Cách thức
+                </TabsTrigger>
+              </TabsList>
+
+              {/* TAB: MATERIALS */}
+              <TabsContent value="materials" className="flex-1 space-y-4">
+                <div className="space-y-2 min-h-[120px]">
+                  {allocations.length === 0 ? (
+                    <div className="text-center py-6 border border-dashed rounded-lg bg-slate-50/50">
+                      <Package className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p className="text-sm text-slate-500">
+                        Chưa có vật tư phân bổ
+                      </p>
+                    </div>
+                  ) : (
+                    allocations.map((a) => (
+                      <div
+                        key={a.id}
+                        className="flex justify-between items-center bg-slate-50 p-2.5 rounded-md text-sm group hover:bg-slate-100 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className="bg-white text-xs font-normal"
+                          >
+                            {a.materialType}
+                          </Badge>
+                          <span className="font-medium text-slate-700">
+                            {a.materialName}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-semibold text-slate-900 bg-white px-2 py-0.5 rounded border">
+                            {a.quantity} {a.unit}
+                          </span>
+                          <button
+                            className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => onRemoveMaterial(a.id)}
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Add Material Form */}
+                <div className="flex gap-2 pt-3 border-t mt-auto">
+                  <Select
+                    value={newItem.type}
+                    onValueChange={(v) => setNewItem({ ...newItem, type: v })}
+                  >
+                    <SelectTrigger className="w-[110px] h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Phân bón">Phân bón</SelectItem>
+                      <SelectItem value="Thuốc BVTV">Thuốc BVTV</SelectItem>
+                      <SelectItem value="Giống">Giống</SelectItem>
+                      <SelectItem value="Nông cụ">Nông cụ</SelectItem>
+                      <SelectItem value="Khác">Khác</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={newItem.name}
+                    onValueChange={(v) => setNewItem({ ...newItem, name: v })}
+                  >
+                    <SelectTrigger className="h-9 text-xs flex-1">
+                      <SelectValue placeholder="Chọn vật tư..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MATERIAL_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex gap-1">
+                    <Input
+                      placeholder="SL"
+                      type="number"
+                      className="h-9 text-sm w-28"
+                      value={newItem.qty}
+                      onChange={(e) =>
+                        setNewItem({ ...newItem, qty: e.target.value })
+                      }
+                    />
+                    <Select
+                      value={newItem.unit}
+                      onValueChange={(v) => setNewItem({ ...newItem, unit: v })}
+                    >
+                      <SelectTrigger className="h-9 text-xs px-2 flex-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="kg">kg</SelectItem>
+                        <SelectItem value="lít">lít</SelectItem>
+                        <SelectItem value="chai">chai</SelectItem>
+                        <SelectItem value="bao">bao</SelectItem>
+                        <SelectItem value="cái">cái</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="h-9 w-9 p-0 bg-slate-900 hover:bg-slate-800"
+                    onClick={handleAddMaterial}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </TabsContent>
+
+              {/* TAB: TASKS */}
+              <TabsContent value="tasks" className="flex-1 space-y-4">
+                <div className="space-y-2 min-h-[120px]">
+                  {tasks.length === 0 ? (
+                    <div className="text-center py-6 border border-dashed rounded-lg bg-slate-50/50">
+                      <Wrench className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p className="text-sm text-slate-500">
+                        Chưa thiết lập công việc
+                      </p>
+                    </div>
+                  ) : (
+                    tasks.map((t) => (
+                      <div
+                        key={t.id}
+                        className="bg-slate-50 p-3 rounded-md text-sm space-y-1 group hover:bg-slate-100 transition-colors"
+                      >
+                        <div className="flex justify-between items-start">
+                          <span className="font-semibold text-slate-800">
+                            {t.name}
+                          </span>
+                          <button
+                            className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => onRemoveTask(t.id)}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        {t.description && (
+                          <p className="text-slate-600 text-xs italic flex items-start gap-1">
+                            <StickyNote className="w-3 h-3 mt-0.5" />
+                            {t.description}
+                          </p>
+                        )}
+                        <div className="flex gap-3 mt-1 pt-1 border-t border-slate-200/50">
+                          {t.labor && (
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] h-5 bg-blue-50 text-blue-700 border-blue-100 px-1.5"
+                            >
+                              <Users className="w-3 h-3 mr-1" /> {t.labor}
+                            </Badge>
+                          )}
+                          {t.duration && (
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] h-5 bg-amber-50 text-amber-700 border-amber-100 px-1.5"
+                            >
+                              <Clock className="w-3 h-3 mr-1" /> {t.duration}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Add Task Form */}
+                <div className="space-y-2 pt-3 border-t mt-auto text-sm">
+                  <div className="flex gap-2">
+                    <Select
+                      value={newTask.name}
+                      onValueChange={(v) => setNewTask({ ...newTask, name: v })}
+                    >
+                      <SelectTrigger className="h-9 flex-1 font-medium">
+                        <SelectValue placeholder="Chọn công việc..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TASK_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      className="h-9 px-3 bg-slate-900 hover:bg-slate-800"
+                      onClick={handleAddTask}
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1.5" /> Thêm
+                    </Button>
+                  </div>
+                  <Input
+                    placeholder="Mô tả kỹ thuật (VD: Cày sâu 30cm, phơi đất 5 ngày)..."
+                    className="h-9 text-muted-foreground"
+                    value={newTask.desc}
+                    onChange={(e) =>
+                      setNewTask({ ...newTask, desc: e.target.value })
+                    }
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="relative">
+                      <Users className="w-3.5 h-3.5 absolute left-2.5 top-3 z-10 text-slate-400" />
+                      <Select
+                        value={newTask.labor}
+                        onValueChange={(v) =>
+                          setNewTask({ ...newTask, labor: v })
+                        }
+                      >
+                        <SelectTrigger className="h-9 pl-8">
+                          <SelectValue placeholder="Nhân sự" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {LABOR_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="relative">
+                      <Clock className="w-3.5 h-3.5 absolute left-2.5 top-3 text-slate-400" />
+                      <Input
+                        placeholder="Thời gian (ngày/giờ)"
+                        className="h-9 pl-8"
+                        type="datetime-local"
+                        value={newTask.duration}
+                        onChange={(e) =>
+                          setNewTask({ ...newTask, duration: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        )}
+      </div>
+    );
+  },
+);
 
 export default function PlanCreatePage() {
   const [, setLocation] = useLocation();
@@ -69,109 +703,33 @@ export default function PlanCreatePage() {
   const [formData, setFormData] = useState({
     code: "",
     name: "",
-    seasonId: "", // ID of the selected season
+    description: "",
+    seasonId: "",
     seasonName: "",
     startDate: "",
     endDate: "",
-    zone: "",
-    cultivationArea: "", // Khu vực canh tác
-    plot: "", // Lô
+
+    // Location & Crop
+    selectedRegionId: "",
+    selectedZoneId: "",
+    selectedPlotIds: [] as string[],
     crop: "",
     variety: "",
-    growthCycleId: "", // ID of the selected growth cycle
-    area: "",
-    expectedYield: "",
-    description: "",
-    stages: [] as string[],
+
+    // Process
+    growthCycleId: "",
+    selectedStages: [] as string[],
+
+    // Resources
     materialAllocations: [] as MaterialAllocation[],
+    taskAllocations: [] as TaskAllocation[],
   });
 
-  // Derived state for validations
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [dateWarning, setDateWarning] = useState<string | null>(null);
 
-  // State cho form thêm vật tư
-  const [newMaterial, setNewMaterial] = useState({
-    cycle: "",
-    stage: "",
-    materialCategory: "fertilizer",
-    materialType: "",
-    materialName: "",
-    quantity: "",
-    unit: "kg",
-    packaging: "",
-  });
+  // --- Helpers & Handlers ---
 
-  // Default stages if no cycle selected
-  const defaultStages = [
-    "Chuẩn bị đất",
-    "Gieo trồng",
-    "Chăm sóc giai đoạn 1",
-    "Bón phân lần 1",
-    "Phun thuốc BVTV",
-    "Chăm sóc giai đoạn 2",
-    "Bón phân lần 2",
-    "Ra hoa",
-    "Đậu quả",
-    "Thu hoạch",
-  ];
-
-  // Danh sách chu kỳ (Logic business: Có thể sinh động từ Growth Cycle, tạm hardcode)
-  const cycles = ["Chu kỳ 1", "Chu kỳ 2", "Chu kỳ 3", "Chu kỳ 4"];
-
-  // Danh sách giống cây
-  const cropVarieties: Record<string, string[]> = {
-    "Sầu riêng": ["Ri6", "Monthong (Thái)", "Musang King", "Dona", "Sáu Hữu"],
-    Xoài: ["Cát Hòa Lộc", "Cát Chu", "Tượng da xanh", "Úc", "Keo"],
-    Bưởi: ["Da Xanh", "Năm Roi", "Tân Triều", "Diễn", "Phúc Trạch"],
-    "Thanh long": ["Ruột trắng", "Ruột đỏ", "Vỏ vàng", "Tím hồng"],
-  };
-
-  // Danh sách loại vật tư theo category
-  const materialTypes: Record<string, string[]> = {
-    fertilizer: [
-      "Phân NPK",
-      "Phân hữu cơ",
-      "Phân lân",
-      "Phân kali",
-      "Phân đạm",
-    ],
-    pesticide: [
-      "Thuốc trừ sâu",
-      "Thuốc trừ bệnh",
-      "Thuốc diệt cỏ",
-      "Thuốc kích thích sinh trưởng",
-    ],
-    other: ["Giống cây", "Vật tư khác"],
-  };
-
-  // Danh sách vật tư cụ thể theo loại
-  const specificMaterials: Record<string, string[]> = {
-    "Phân NPK": ["NPK 16-16-8", "NPK 20-20-15", "NPK 30-10-10"],
-    "Phân hữu cơ": ["Phân chuồng", "Phân compost", "Phân vi sinh"],
-    "Phân lân": ["Super lân", "Lân nung chảy"],
-    "Phân kali": ["KCl", "K2SO4"],
-    "Phân đạm": ["Urê", "Đạm amoni"],
-    "Thuốc trừ sâu": ["Abamectin", "Cypermethrin", "Imidacloprid"],
-    "Thuốc trừ bệnh": ["Mancozeb", "Carbendazim", "Copper oxychloride"],
-    "Thuốc diệt cỏ": ["Glyphosate", "Paraquat"],
-    "Thuốc kích thích sinh trưởng": ["GA3", "NAA", "Cytokinin"],
-    "Giống cây": ["Giống F1", "Giống lai"],
-    "Vật tư khác": ["Khác"],
-  };
-
-  const packagingOptions = [
-    "Bao 50kg",
-    "Bao 25kg",
-    "Bao 10kg",
-    "Chai 1 lít",
-    "Chai 500ml",
-    "Gói 100g",
-    "Thùng 20 lít",
-  ];
-
-  // LOGIC HANDLERS
-
-  // Handle Season Change
   const handleSeasonChange = (seasonId: string) => {
     const season = SEASONS.find((s) => s.id === seasonId);
     if (season) {
@@ -186,126 +744,150 @@ export default function PlanCreatePage() {
     }
   };
 
-  // Validate Dates against Season
-  useEffect(() => {
-    if (formData.seasonId && formData.startDate && formData.endDate) {
-      const season = SEASONS.find((s) => s.id === formData.seasonId);
-      if (season) {
-        if (
-          formData.startDate < season.startDate ||
-          formData.endDate > season.endDate
-        ) {
-          setDateWarning(
-            `Cảnh báo: Thời gian kế hoạch nằm ngoài phạm vi mùa vụ (${season.startDate} - ${season.endDate})`,
-          );
-        } else {
-          setDateWarning(null);
-        }
-      }
-    }
-  }, [formData.seasonId, formData.startDate, formData.endDate]);
-
-  // Handle Growth Cycle Change
-  const handleCompChange = (cycleId: string) => {
-    const cycle = GROWTH_CYCLES.find((c) => c.id === cycleId);
+  const handleGrowthCycleChange = (id: string) => {
+    const cycle = GROWTH_CYCLES.find((c) => c.id === id);
     if (cycle) {
       setFormData((prev) => ({
         ...prev,
-        growthCycleId: cycle.id,
-        stages: cycle.stages, // Auto-populate stages
-      }));
-      toast({
-        title: "Đã áp dụng quy trình",
-        description: `Đã cập nhật các giai đoạn theo ${cycle.name}`,
-      });
-    }
-  };
-
-  const addMaterial = () => {
-    if (
-      newMaterial.cycle &&
-      newMaterial.stage &&
-      newMaterial.materialType &&
-      newMaterial.materialName &&
-      newMaterial.quantity &&
-      newMaterial.packaging
-    ) {
-      setFormData({
-        ...formData,
-        materialAllocations: [
-          ...formData.materialAllocations,
-          { id: Date.now(), ...newMaterial },
-        ],
-      });
-      // Reset form
-      setNewMaterial((prev) => ({
-        ...prev,
-        materialName: "",
-        quantity: "",
+        growthCycleId: id,
+        selectedStages: cycle.stages,
       }));
     }
   };
 
-  const removeMaterial = (id: number) => {
-    setFormData({
-      ...formData,
-      materialAllocations: formData.materialAllocations.filter(
-        (m) => m.id !== id,
+  const calculateArea = () => {
+    let area = 0;
+    LOCATIONS.forEach((region) => {
+      region.zones.forEach((zone) => {
+        zone.plots.forEach((plot) => {
+          if (formData.selectedPlotIds.includes(plot.id)) {
+            area += plot.area;
+          }
+        });
+      });
+    });
+    return area.toFixed(1);
+  };
+
+  const groupedLocations = useMemo(() => {
+    const groups: {
+      region: string;
+      zones: {
+        id: string;
+        name: string;
+        plots: { id: string; name: string }[];
+      }[];
+    }[] = [];
+
+    LOCATIONS.forEach((region) => {
+      const activeZones: {
+        id: string;
+        name: string;
+        plots: { id: string; name: string }[];
+      }[] = [];
+
+      region.zones.forEach((zone) => {
+        const activePlots = zone.plots.filter((p) =>
+          formData.selectedPlotIds.includes(p.id),
+        );
+        if (activePlots.length > 0) {
+          activeZones.push({
+            id: zone.id,
+            name: zone.name,
+            plots: activePlots.map((p) => ({ id: p.id, name: p.name })),
+          });
+        }
+      });
+
+      if (activeZones.length > 0) {
+        groups.push({ region: region.name, zones: activeZones });
+      }
+    });
+
+    return groups;
+  }, [formData.selectedPlotIds]);
+
+  const removeLocationGroup = (plotIds: string[]) => {
+    setFormData((prev) => ({
+      ...prev,
+      selectedPlotIds: prev.selectedPlotIds.filter(
+        (id) => !plotIds.includes(id),
       ),
+    }));
+  };
+
+  const toggleStage = (stage: string, checked: boolean) => {
+    setFormData((prev) => {
+      const current = prev.selectedStages;
+      if (checked && !current.includes(stage))
+        return { ...prev, selectedStages: [...current, stage] };
+      if (!checked && current.includes(stage))
+        return { ...prev, selectedStages: current.filter((s) => s !== stage) };
+      return prev;
     });
   };
 
-  const handleComplete = () => {
-    toast({
-      title: "Thành công",
-      description: `Đã kích hoạt kế hoạch "${formData.name}" thành công!`,
-    });
-    setLocation("/plan");
-  };
+  const handleAddMaterial = useCallback((item: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      materialAllocations: [
+        ...prev.materialAllocations,
+        { id: Date.now(), ...item },
+      ],
+    }));
+  }, []);
 
-  // PREPARE LISTS
-  const availableCycles = getCyclesByCrop(formData.crop);
-  const currentStages =
-    formData.stages.length > 0 ? formData.stages : defaultStages;
+  const handleRemoveMaterial = useCallback((id: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      materialAllocations: prev.materialAllocations.filter((m) => m.id !== id),
+    }));
+  }, []);
 
-  // Calculate totals
-  const totalFertilizers = formData.materialAllocations.filter((m) =>
-    materialTypes.fertilizer.includes(m.materialType),
-  ).length;
-  const totalPesticides = formData.materialAllocations.filter((m) =>
-    materialTypes.pesticide.includes(m.materialType),
-  ).length;
+  const handleAddTask = useCallback((item: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      taskAllocations: [...prev.taskAllocations, { id: Date.now(), ...item }],
+    }));
+  }, []);
+
+  const handleRemoveTask = useCallback((id: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      taskAllocations: prev.taskAllocations.filter((t) => t.id !== id),
+    }));
+  }, []);
 
   const steps: Step[] = [
     {
-      id: "basic",
-      title: "Thông tin mùa vụ",
-      description: "Chọn mùa và thời gian",
+      id: "general",
+      title: "Thông tin chung",
+      description: "Mùa vụ và thời gian",
       content: (
         <div className="max-w-2xl mx-auto space-y-6">
-          <div className="text-center mb-6">
-            <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
-              <ClipboardList className="w-8 h-8 text-blue-600" />
+          <div className="flex items-center gap-4 p-4 bg-blue-50 text-blue-900 rounded-lg border border-blue-100">
+            <div className="bg-white p-2 rounded-full shadow-sm">
+              <Sprout className="w-6 h-6 text-blue-600" />
             </div>
-            <h3 className="font-display font-bold text-xl">
-              Thiết lập kế hoạch
-            </h3>
-            <p className="text-muted-foreground">
-              Bắt đầu từ việc chọn Mùa vụ để định hình khung thời gian
-            </p>
+            <div>
+              <h3 className="font-semibold">Thiết lập kế hoạch canh tác</h3>
+              <p className="text-sm text-blue-700">
+                Bắt đầu bằng việc chọn mùa vụ và đặt tên cho kế hoạch của bạn.
+              </p>
+            </div>
           </div>
 
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>
-                Chọn Mùa vụ <span className="text-red-500">*</span>
+                Mùa vụ <span className="text-red-500">*</span>
               </Label>
               <Select
                 value={formData.seasonId}
                 onValueChange={handleSeasonChange}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="-- Chọn mùa vụ --" />
+                  <SelectValue placeholder="Chọn mùa vụ..." />
                 </SelectTrigger>
                 <SelectContent>
                   {SEASONS.map((s) => (
@@ -316,16 +898,12 @@ export default function PlanCreatePage() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                Thời gian sẽ được tự động điền theo mùa vụ đã chọn.
-              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="startDate">Ngày bắt đầu</Label>
+                <Label>Ngày bắt đầu</Label>
                 <Input
-                  id="startDate"
                   type="date"
                   value={formData.startDate}
                   onChange={(e) =>
@@ -334,9 +912,8 @@ export default function PlanCreatePage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="endDate">Ngày kết thúc</Label>
+                <Label>Ngày kết thúc</Label>
                 <Input
-                  id="endDate"
                   type="date"
                   value={formData.endDate}
                   onChange={(e) =>
@@ -347,107 +924,252 @@ export default function PlanCreatePage() {
             </div>
 
             {dateWarning && (
-              <div className="flex items-start gap-2 p-3 bg-amber-50 text-amber-700 rounded-md text-sm border border-amber-200">
-                <AlertTriangle className="w-4 h-4 mt-0.5" />
-                <span>{dateWarning}</span>
+              <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-3 rounded border border-amber-200">
+                <AlertTriangle className="w-4 h-4" />
+                {dateWarning}
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="code">Mã kế hoạch *</Label>
-              <Input
-                id="code"
-                value={formData.code}
-                onChange={(e) =>
-                  setFormData({ ...formData, code: e.target.value })
-                }
-                placeholder="VD: KH-SR-XUAN25"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Mã kế hoạch *</Label>
+                <Input
+                  value={formData.code}
+                  onChange={(e) =>
+                    setFormData({ ...formData, code: e.target.value })
+                  }
+                  placeholder="VD: 2024-KH-DX"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Tên kế hoạch *</Label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  placeholder="VD: Kế hoạch canh tác Đông Xuân"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="name">Tên kế hoạch *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="VD: Canh tác Sầu riêng Vụ Xuân 2025"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Mô tả</Label>
+              <Label>Mô tả</Label>
               <Textarea
                 value={formData.description}
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
-                rows={2}
+                rows={3}
               />
             </div>
           </div>
         </div>
       ),
-      isValid:
-        formData.seasonId.length > 0 &&
-        formData.code.length > 0 &&
-        formData.name.length > 0 &&
-        formData.startDate.length > 0,
+      isValid: !!formData.seasonId && !!formData.code && !!formData.name,
     },
     {
-      id: "cultivation",
-      title: "Thông tin canh tác",
-      description: "Vùng, cây trồng, quy trình",
+      id: "scope",
+      title: "Phạm vi & Cây trồng",
+      description: "Chọn đất và giống cây",
       content: (
         <div className="max-w-2xl mx-auto space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Vùng canh tác *</Label>
-              <Select
-                value={formData.zone}
-                onValueChange={(value) =>
-                  setFormData({
-                    ...formData,
-                    zone: value,
-                    cultivationArea: "",
-                    plot: "",
-                  })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn vùng" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Vùng A1 - Bình Phước">
-                    Vùng A1 - Bình Phước
-                  </SelectItem>
-                  <SelectItem value="Vùng B3 - Đồng Nai">
-                    Vùng B3 - Đồng Nai
-                  </SelectItem>
-                  <SelectItem value="Vùng C2 - Bến Tre">
-                    Vùng C2 - Bến Tre
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-base">
+                  Vùng canh tác <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={formData.selectedRegionId}
+                  onValueChange={(v) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      selectedRegionId: v,
+                      selectedZoneId: "",
+                      selectedPlotIds: [],
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn vùng..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LOCATIONS.map((region) => (
+                      <SelectItem key={region.id} value={region.id}>
+                        {region.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-base">
+                  Khu vực <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={formData.selectedZoneId}
+                  onValueChange={(v) =>
+                    setFormData((prev) => ({ ...prev, selectedZoneId: v }))
+                  }
+                  disabled={!formData.selectedRegionId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn khu vực..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LOCATIONS.find(
+                      (r) => r.id === formData.selectedRegionId,
+                    )?.zones.map((zone) => (
+                      <SelectItem key={zone.id} value={zone.id}>
+                        {zone.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            {/* ... Area/Plot Selects omitted for brevity but logic is same as before ... */}
+
+            {formData.selectedZoneId && (
+              <div className="space-y-3 animation-fade-in">
+                <Label className="text-base font-semibold text-slate-800">
+                  Chọn Lô đất canh tác <span className="text-red-500">*</span>
+                </Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {LOCATIONS.find((r) => r.id === formData.selectedRegionId)
+                    ?.zones.find((z) => z.id === formData.selectedZoneId)
+                    ?.plots.map((plot) => {
+                      const isSelected = formData.selectedPlotIds.includes(
+                        plot.id,
+                      );
+                      return (
+                        <div
+                          key={plot.id}
+                          className={`relative flex items-start p-4 rounded-xl border transition-all cursor-pointer group hover:shadow-md ${
+                            isSelected
+                              ? "bg-blue-50/50 border-blue-200 shadow-sm ring-1 ring-blue-100"
+                              : "bg-white border-slate-200 hover:border-blue-100"
+                          }`}
+                          onClick={() => {
+                            setFormData((prev) => {
+                              const current = prev.selectedPlotIds;
+                              return {
+                                ...prev,
+                                selectedPlotIds: isSelected
+                                  ? current.filter((id) => id !== plot.id)
+                                  : [...current, plot.id],
+                              };
+                            });
+                          }}
+                        >
+                          <div className="flex items-center h-5 mt-0.5">
+                            <Checkbox
+                              id={plot.id}
+                              checked={isSelected}
+                              className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                              onCheckedChange={() => {}} // Handled by div onClick
+                            />
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <Label
+                                htmlFor={plot.id}
+                                className="text-sm font-bold text-slate-800 cursor-pointer"
+                              >
+                                {plot.name}
+                              </Label>
+                              <Badge
+                                variant={
+                                  plot.status === "active"
+                                    ? "default"
+                                    : plot.status === "ready"
+                                      ? "outline"
+                                      : "secondary"
+                                }
+                                className={`text-[10px] px-1.5 h-5 font-normal ${
+                                  plot.status === "ready"
+                                    ? "bg-green-50 text-green-700 border-green-200"
+                                    : plot.status === "active"
+                                      ? "bg-blue-50 text-blue-700 border-blue-200"
+                                      : "bg-slate-100 text-slate-600 border-slate-200"
+                                }`}
+                              >
+                                {plot.status === "ready"
+                                  ? "Sẵn sàng"
+                                  : plot.status === "active"
+                                    ? "Đang canh tác"
+                                    : "Đang nghỉ"}
+                              </Badge>
+                            </div>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-500 mt-2">
+                              <div className="flex items-center gap-1.5">
+                                <MapPin className="w-3 h-3 text-slate-400" />
+                                <span>
+                                  Diện tích:{" "}
+                                  <b className="text-slate-700">
+                                    {plot.area} ha
+                                  </b>
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <Leaf className="w-3 h-3 text-slate-400" />
+                                <span>{plot.soilType}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 col-span-2">
+                                <AlertTriangle className="w-3 h-3 text-slate-400" />
+                                <span>Độ dốc: {plot.slope}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+
+            {/* Selected Summary */}
+            {formData.selectedPlotIds.length > 0 && (
+              <div className="flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100 shadow-sm animation-fade-in">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-blue-600">
+                    <Check className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">
+                      Đã chọn canh tác
+                    </p>
+                    <p className="text-lg font-bold text-slate-900 leading-none mt-0.5">
+                      {formData.selectedPlotIds.length} lô đất
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-slate-600">
+                    Tổng diện tích
+                  </p>
+                  <p className="text-xl font-bold text-blue-700 leading-none mt-0.5">
+                    {calculateArea()} ha
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
+          <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label>Cây trồng *</Label>
+              <Label>Loại cây trồng</Label>
               <Select
                 value={formData.crop}
-                onValueChange={(value) =>
-                  setFormData({
-                    ...formData,
-                    crop: value,
-                    growthCycleId: "",
-                    variety: "",
-                  })
+                onValueChange={(v) =>
+                  setFormData({ ...formData, crop: v, variety: "" })
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Chọn cây trồng" />
+                  <SelectValue placeholder="Chọn cây..." />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Sầu riêng">Sầu riêng</SelectItem>
@@ -457,479 +1179,327 @@ export default function PlanCreatePage() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          {formData.crop && (
-            <div className="p-4 bg-blue-50/50 rounded-lg border border-blue-100 space-y-3 animation-fade-in">
-              <div className="flex items-center gap-2">
-                <Package className="w-5 h-5 text-blue-600" />
-                <h4 className="font-semibold text-blue-900">
-                  Chuẩn hóa quy trình
-                </h4>
-              </div>
-              <p className="text-sm text-blue-700">
-                Hệ thống đề xuất các quy trình canh tác chuẩn dựa trên cây trồng{" "}
-                <strong>{formData.crop}</strong> của bạn.
-              </p>
-
-              <div className="space-y-2">
-                <Label>Chọn Quy trình canh tác (Growth Cycle)</Label>
-                <Select
-                  value={formData.growthCycleId}
-                  onValueChange={handleCompChange}
-                >
-                  <SelectTrigger className="bg-white">
-                    <SelectValue placeholder="-- Chọn quy trình chuẩn --" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableCycles.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name} (Khoảng {c.durationDays} ngày)
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="custom">Tùy chỉnh (Thủ công)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {formData.growthCycleId &&
-                formData.growthCycleId !== "custom" && (
-                  <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Check className="w-3.5 h-3.5 text-green-500" />
-                    Đã tự động tải{" "}
-                    {
-                      GROWTH_CYCLES.find((c) => c.id === formData.growthCycleId)
-                        ?.stages.length
-                    }{" "}
-                    giai đoạn mẫu.
-                  </div>
-                )}
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Giống cây</Label>
+              <Label>Giống (Variety)</Label>
               <Select
                 value={formData.variety}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, variety: value })
-                }
+                onValueChange={(v) => setFormData({ ...formData, variety: v })}
                 disabled={!formData.crop}
               >
                 <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      formData.crop ? "Chọn giống" : "Chọn cây trồng trước"
-                    }
-                  />
+                  <SelectValue placeholder="Chọn giống..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {(cropVarieties[formData.crop] || []).map((v) => (
-                    <SelectItem key={v} value={v}>
-                      {v}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="other">Khác</SelectItem>
+                  <SelectItem value="Ri6">Ri6</SelectItem>
+                  <SelectItem value="Monthong">Monthong</SelectItem>
+                  <SelectItem value="Musang King">Musang King</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Diện tích (ha)</Label>
-              <Input
-                value={formData.area}
-                onChange={(e) =>
-                  setFormData({ ...formData, area: e.target.value })
-                }
-              />
-            </div>
           </div>
+
+          <LocationFilterDialog
+            open={locationDialogOpen}
+            onOpenChange={setLocationDialogOpen}
+            selectedIds={formData.selectedPlotIds}
+            onApply={(ids) =>
+              setFormData({ ...formData, selectedPlotIds: ids })
+            }
+          />
         </div>
       ),
-      isValid: formData.zone.length > 0 && formData.crop.length > 0,
+      isValid: formData.selectedPlotIds.length > 0 && !!formData.crop,
     },
     {
-      id: "stages",
-      title: "Giai đoạn & Nhiệm vụ",
-      description: "Chi tiết các mốc thời gian",
+      id: "process",
+      title: "Quy trình & Giai đoạn",
+      description: "Lộ trình canh tác",
+      content: (
+        <div className="max-w-2xl mx-auto space-y-6">
+          <div className="space-y-4">
+            <Label className="text-base">Quy trình áp dụng</Label>
+            <Select
+              value={formData.growthCycleId}
+              onValueChange={handleGrowthCycleChange}
+            >
+              <SelectTrigger className="h-12">
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-muted-foreground" />
+                  <SelectValue placeholder="Chọn quy trình mẫu..." />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {getCyclesByCrop(formData.crop).map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name} ({c.durationDays} ngày)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {formData.growthCycleId && (
+            <div className="space-y-4 animation-fade-in">
+              <div className="flex items-center justify-between">
+                <Label>Các giai đoạn triển khai</Label>
+                <Badge variant="outline">
+                  {formData.selectedStages.length} được chọn
+                </Badge>
+              </div>
+
+              <div className="grid gap-2 max-h-[400px] overflow-y-auto pr-2">
+                {GROWTH_CYCLES.find(
+                  (c) => c.id === formData.growthCycleId,
+                )?.stages.map((stage, idx) => (
+                  <StageItem
+                    key={idx}
+                    index={idx}
+                    stage={stage}
+                    checked={formData.selectedStages.includes(stage)}
+                    onChange={(c) => toggleStage(stage, c)}
+                  />
+                ))}
+              </div>
+
+              <div className="flex gap-2 text-sm text-muted-foreground bg-slate-50 p-3 rounded">
+                <Info className="w-4 h-4 mt-0.5 text-blue-500" />
+                <p>
+                  Bạn có thể bỏ chọn các giai đoạn không cần thiết cho mùa vụ
+                  này (ví dụ: bỏ qua giai đoạn làm đất nếu trồng gối vụ).
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      ),
+      isValid: !!formData.growthCycleId && formData.selectedStages.length > 0,
+    },
+    {
+      title: "Phân bổ & Công việc",
+      description: "Hoạch định nguồn lực chi tiết",
       content: (
         <div className="max-w-3xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-primary" />
-              <h3 className="font-semibold">Các giai đoạn triển khai</h3>
-            </div>
-            {formData.growthCycleId && formData.growthCycleId !== "custom" && (
-              <Badge variant="secondary">
-                Theo quy trình:{" "}
-                {
-                  GROWTH_CYCLES.find((c) => c.id === formData.growthCycleId)
-                    ?.name
-                }
-              </Badge>
-            )}
-          </div>
-
-          <div className="grid gap-3">
-            {currentStages.map((stage, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-3 p-3 bg-card border rounded-lg shadow-sm"
-              >
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
-                  {index + 1}
-                </div>
-                <div className="flex-1 font-medium">{stage}</div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground"
-                >
-                  Chi tiết
-                </Button>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-start gap-2 text-sm text-muted-foreground bg-muted p-3 rounded-md">
-            <Info className="w-4 h-4 mt-0.5" />
-            <p>
-              Các giai đoạn này sẽ được sử dụng để tạo lịch công việc tự động
-              cho nhân viên sau khi kế hoạch được kích hoạt.
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-slate-900">
+              Định mức Vật tư & Công việc
+            </h3>
+            <p className="text-slate-500 text-sm mt-1 max-w-lg mx-auto">
+              Thiết lập chi tiết các hạng mục đầu tư và quy trình kỹ thuật cho
+              từng giai đoạn của mùa vụ.
             </p>
           </div>
-        </div>
-      ),
-    },
-    {
-      id: "materials",
-      title: "Vật tư dự kiến",
-      description: "Hoạch định vật tư cần thiết",
-      content: (
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Package className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold">
-              Phân bổ vật tư theo chu kỳ và giai đoạn
-            </h3>
-          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Thêm vật tư dự trù</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                {/* Cycles */}
-                <div className="space-y-2">
-                  <Label>Chu kỳ/Lần bón</Label>
-                  <Select
-                    value={newMaterial.cycle}
-                    onValueChange={(v) =>
-                      setNewMaterial({ ...newMaterial, cycle: v })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn lần..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cycles.map((c) => (
-                        <SelectItem key={c} value={c}>
-                          {c}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {/* Stages based on current stages list */}
-                <div className="space-y-2">
-                  <Label>Giai đoạn áp dụng</Label>
-                  <Select
-                    value={newMaterial.stage}
-                    onValueChange={(v) =>
-                      setNewMaterial({ ...newMaterial, stage: v })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn giai đoạn..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {currentStages.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Material Selection (Simplified for Demo) */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Loại vật tư</Label>
-                  <Select
-                    value={newMaterial.materialType}
-                    onValueChange={(v) =>
-                      setNewMaterial({ ...newMaterial, materialType: v })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn loại..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.keys(specificMaterials).map((k) => (
-                        <SelectItem key={k} value={k}>
-                          {k}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Tên vật tư</Label>
-                  <Select
-                    value={newMaterial.materialName}
-                    onValueChange={(v) =>
-                      setNewMaterial({ ...newMaterial, materialName: v })
-                    }
-                    disabled={!newMaterial.materialType}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn tên..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(specificMaterials[newMaterial.materialType] || []).map(
-                        (n) => (
-                          <SelectItem key={n} value={n}>
-                            {n}
-                          </SelectItem>
-                        ),
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Số lượng</Label>
-                  <Input
-                    type="number"
-                    value={newMaterial.quantity}
-                    onChange={(e) =>
-                      setNewMaterial({
-                        ...newMaterial,
-                        quantity: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Đơn vị</Label>
-                  <Select
-                    value={newMaterial.unit}
-                    onValueChange={(v) =>
-                      setNewMaterial({ ...newMaterial, unit: v })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="kg">kg</SelectItem>
-                      <SelectItem value="lít">lít</SelectItem>
-                      <SelectItem value="bao">bao</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button className="mt-8" onClick={addMaterial}>
-                  {" "}
-                  <Plus className="w-4 h-4 mr-2" /> Thêm{" "}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* List of allocations */}
-          <div className="space-y-2">
-            <h4 className="font-medium text-sm text-muted-foreground">
-              Danh sách đã thêm
-            </h4>
-            {formData.materialAllocations.length === 0 && (
-              <p className="text-sm italic text-muted-foreground">
-                Chưa có dữ liệu.
-              </p>
-            )}
-            {formData.materialAllocations.map((m) => (
-              <div
-                key={m.id}
-                className="flex justify-between items-center p-3 bg-muted/20 rounded border"
-              >
-                <div>
-                  <p className="font-medium">{m.materialName}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {m.cycle} - {m.stage}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge variant="outline">
-                    {m.quantity} {m.unit}
-                  </Badge>
-                  <Trash2
-                    className="w-4 h-4 text-destructive cursor-pointer"
-                    onClick={() => removeMaterial(m.id)}
-                  />
-                </div>
-              </div>
+          <div className="space-y-4">
+            {formData.selectedStages.map((stage, idx) => (
+              <StageAllocation
+                key={idx}
+                stageName={stage}
+                index={idx}
+                allocations={formData.materialAllocations.filter(
+                  (m) => m.stageId === stage,
+                )}
+                tasks={formData.taskAllocations.filter(
+                  (t) => t.stageId === stage,
+                )}
+                onAddMaterial={handleAddMaterial}
+                onRemoveMaterial={handleRemoveMaterial}
+                onAddTask={handleAddTask}
+                onRemoveTask={handleRemoveTask}
+              />
             ))}
           </div>
         </div>
       ),
+      id: "resources",
     },
     {
       id: "confirmation",
       title: "Xác nhận & Kích hoạt",
-      description: "Kiểm tra tổng quan",
+      description: "Kiểm tra lại toàn bộ thông tin",
       content: (
-        <div className="max-w-3xl mx-auto space-y-8">
+        <div className="max-w-3xl mx-auto space-y-8 animation-fade-in">
           <div className="text-center">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-              <FileCheck className="w-8 h-8 text-green-600" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-600 mb-4">
+              <FileCheck className="w-8 h-8" />
             </div>
-            <h3 className="font-display font-bold text-xl">
-              Xác nhận kế hoạch
-            </h3>
-            <p className="text-muted-foreground">
-              Vui lòng kiểm tra kỹ các thông tin trước khi kích hoạt
+            <h2 className="text-2xl font-bold text-slate-900">
+              Xác nhận Kế hoạch Canh tác
+            </h2>
+            <p className="text-slate-500 mt-2">
+              Vui lòng kiểm tra lại thông tin trước khi kích hoạt
             </p>
           </div>
 
-          <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="p-6 grid grid-cols-2 gap-6">
-              <div>
-                <h4 className="text-sm font-semibold text-muted-foreground uppercase mb-2">
+          <div className="grid gap-6">
+            {/* 1. General Info Card */}
+            <Card>
+              <CardHeader className="pb-3 border-b bg-slate-50/50">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <Sprout className="w-4 h-4 text-blue-600" />
                   Thông tin chung
-                </h4>
-                <ul className="space-y-2 text-sm">
-                  <li>
-                    <span className="font-medium">Mã kế hoạch:</span>{" "}
-                    {formData.code}
-                  </li>
-                  <li>
-                    <span className="font-medium">Tên kế hoạch:</span>{" "}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-slate-500 block mb-1">
+                    Tên kế hoạch
+                  </span>
+                  <span className="font-medium text-slate-900">
                     {formData.name}
-                  </li>
-                  <li>
-                    <span className="font-medium">Mùa vụ:</span>{" "}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block mb-1">Mã kế hoạch</span>
+                  <span className="font-mono text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
+                    {formData.code}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block mb-1">Mùa vụ</span>
+                  <span className="font-medium text-slate-900">
                     {formData.seasonName}
-                  </li>
-                  <li>
-                    <span className="font-medium">Thời gian:</span>{" "}
-                    {formData.startDate} đến {formData.endDate}
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold text-muted-foreground uppercase mb-2">
-                  Canh tác
-                </h4>
-                <ul className="space-y-2 text-sm">
-                  <li>
-                    <span className="font-medium">Vùng:</span> {formData.zone}
-                  </li>
-                  <li>
-                    <span className="font-medium">Cây trồng:</span>{" "}
-                    {formData.crop} ({formData.variety || "Chưa rõ giống"})
-                  </li>
-                  <li>
-                    <span className="font-medium">Quy trình:</span>{" "}
-                    {formData.growthCycleId
-                      ? GROWTH_CYCLES.find(
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block mb-1">Thời gian</span>
+                  <span className="font-medium text-slate-900">
+                    {formData.startDate} - {formData.endDate}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 2. Scope & Crop Card */}
+            <Card>
+              <CardHeader className="pb-3 border-b bg-slate-50/50">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-green-600" />
+                  Phạm vi & Cây trồng
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 grid grid-cols-2 gap-4 text-sm">
+                <div className="col-span-2 flex items-start gap-4 p-3 bg-green-50/50 rounded-lg border border-green-100">
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-2 w-full">
+                    <div>
+                      <span className="text-slate-500 block text-xs uppercase font-semibold">
+                        Cây trồng
+                      </span>
+                      <span className="text-lg font-bold text-green-800">
+                        {formData.crop} - {formData.variety}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-slate-500 block text-xs uppercase font-semibold">
+                        Tổng diện tích
+                      </span>
+                      <span className="text-lg font-bold text-green-800">
+                        {calculateArea()} ha
+                      </span>
+                    </div>
+                    <div className="col-span-2 pt-2 border-t border-green-200/50 mt-1">
+                      <span className="text-slate-500 text-xs mr-2">
+                        Các lô đã chọn:
+                      </span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {groupedLocations.map((g) =>
+                          g.zones.map((z) =>
+                            z.plots.map((p) => (
+                              <Badge
+                                key={p.id}
+                                variant="secondary"
+                                className="bg-white text-slate-700 border-slate-200 font-normal"
+                              >
+                                {p.name}
+                              </Badge>
+                            )),
+                          ),
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 3. Process & Resources Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader className="pb-3 border-b bg-slate-50/50">
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <ClipboardList className="w-4 h-4 text-amber-600" />
+                    Quy trình
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Quy trình mẫu</span>
+                    <span className="font-medium text-slate-900">
+                      {
+                        GROWTH_CYCLES.find(
                           (c) => c.id === formData.growthCycleId,
                         )?.name
-                      : "Tự chọn"}
-                  </li>
-                  <li>
-                    <span className="font-medium">Quy mô:</span>{" "}
-                    {formData.area ? `${formData.area} ha` : "Chưa nhập"}
-                  </li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
+                      }
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Số giai đoạn</span>
+                    <Badge variant="outline" className="font-bold">
+                      {formData.selectedStages.length} giai đoạn
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
 
-          <div className="grid grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="p-4 flex flex-col items-center text-center gap-2">
-                <Calendar className="w-8 h-8 text-blue-500 mb-2" />
-                <span className="text-2xl font-bold">
-                  {formData.stages.length}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  Giai đoạn triển khai
-                </span>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex flex-col items-center text-center gap-2">
-                <Leaf className="w-8 h-8 text-green-500 mb-2" />
-                <span className="text-2xl font-bold">{totalFertilizers}</span>
-                <span className="text-xs text-muted-foreground">
-                  Hạng mục Phân bón
-                </span>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex flex-col items-center text-center gap-2">
-                <Droplet className="w-8 h-8 text-amber-500 mb-2" />
-                <span className="text-2xl font-bold">{totalPesticides}</span>
-                <span className="text-xs text-muted-foreground">
-                  Hạng mục Thuốc BVTV
-                </span>
-              </CardContent>
-            </Card>
-          </div>
-
-          {currentStages.length > 0 && (
-            <div className="bg-white rounded-lg border p-4">
-              <h4 className="font-semibold text-sm mb-3">
-                Tóm tắt các giai đoạn chính
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {currentStages.map((s, i) => (
-                  <Badge key={i} variant="outline" className="bg-secondary/20">
-                    {i + 1}. {s}
-                  </Badge>
-                ))}
-              </div>
+              <Card>
+                <CardHeader className="pb-3 border-b bg-slate-50/50">
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <Package className="w-4 h-4 text-purple-600" />
+                    Nguồn lực dự kiến
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Tổng vật tư</span>
+                    <span className="font-medium text-slate-900">
+                      {formData.materialAllocations.length} hạng mục
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Tổng công việc</span>
+                    <span className="font-medium text-slate-900">
+                      {formData.taskAllocations.length} đầu việc
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          )}
-
-          <div className="flex items-start gap-2 p-4 bg-muted rounded-lg text-sm">
-            <Info className="w-5 h-5 text-primary shrink-0" />
-            <p>
-              Sau khi kích hoạt, hệ thống sẽ tự động tạo ra{" "}
-              <strong>bảng công việc (Task Board)</strong> cho từng giai đoạn và
-              gửi thông báo đến các bộ phận liên quan. Bạn có thể điều chỉnh chi
-              tiết công việc sau đó.
-            </p>
           </div>
         </div>
       ),
     },
   ];
 
+  const handleComplete = () => {
+    toast({
+      title: "Thành công",
+      description: `Đã tạo kế hoạch ${formData.name}`,
+    });
+    setLocation("/plan");
+  };
+
   return (
     <AdminLayout
-      title="Tạo kế hoạch canh tác mới"
-      description="Thiết lập kế hoạch theo mùa vụ và quy trình chuẩn"
+      title="Lập kế hoạch canh tác"
+      description="Xây dựng lộ trình trồng trọt, phân bổ nguồn lực và giám sát"
     >
-      <StepperForm
-        steps={steps}
-        onComplete={handleComplete}
-        onCancel={() => setLocation("/plan")}
-      />
+      <div className="max-w-5xl mx-auto">
+        <StepperForm
+          steps={steps}
+          onComplete={handleComplete}
+          onCancel={() => setLocation("/plan")}
+          completeLabel="Kích hoạt Kế hoạch"
+        />
+      </div>
     </AdminLayout>
   );
 }
