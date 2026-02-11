@@ -17,6 +17,12 @@ import {
   SelectValue,
   Textarea,
   useToast,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@tankhang1/eco-shared-ui";
 import { Building2, Save, X } from "lucide-react";
 
@@ -37,6 +43,7 @@ export default function BranchCreatePage() {
     ward: "",
     description: "",
   });
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleSubmit = () => {
     if (!formData.name || !formData.enterpriseId) {
@@ -47,7 +54,10 @@ export default function BranchCreatePage() {
       });
       return;
     }
+    setShowConfirm(true);
+  };
 
+  const handleConfirmSubmit = () => {
     toast({
       title: "Thành công",
       description: `Đã tạo chi nhánh "${formData.name}"`,
@@ -72,6 +82,80 @@ export default function BranchCreatePage() {
         </div>
       }
     >
+      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Xác nhận tạo chi nhánh</DialogTitle>
+            <DialogDescription>
+              Vui lòng kiểm tra lại thông tin trước khi tạo mới.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2 text-sm">
+            <div className="grid grid-cols-3 gap-2">
+              <span className="font-medium text-muted-foreground">Đơn vị:</span>
+              <span className="col-span-2">
+                {formData.enterpriseId === "1"
+                  ? "Công ty CP Nông nghiệp Xanh EcoFarm"
+                  : formData.enterpriseId === "2"
+                    ? "HTX Rau sạch Thanh Hà"
+                    : "Nông hộ Nguyễn Văn A"}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <span className="font-medium text-muted-foreground">
+                Tên chi nhánh:
+              </span>
+              <span className="col-span-2">{formData.name}</span>
+            </div>
+            {formData.code && (
+              <div className="grid grid-cols-3 gap-2">
+                <span className="font-medium text-muted-foreground">Mã:</span>
+                <span className="col-span-2">{formData.code}</span>
+              </div>
+            )}
+            <div className="grid grid-cols-3 gap-2">
+              <span className="font-medium text-muted-foreground">
+                Địa chỉ:
+              </span>
+              <span className="col-span-2">
+                {[
+                  formData.address,
+                  formData.ward === "p1"
+                    ? "Phường 1"
+                    : formData.ward === "p2"
+                      ? "Phường 2"
+                      : formData.ward === "kimma"
+                        ? "Kim Mã"
+                        : "",
+                  formData.district === "q1"
+                    ? "Quận 1"
+                    : formData.district === "q3"
+                      ? "Quận 3"
+                      : formData.district === "badinh"
+                        ? "Ba Đình"
+                        : "",
+                  formData.province === "hcm"
+                    ? "TP. Hồ Chí Minh"
+                    : formData.province === "hn"
+                      ? "Hà Nội"
+                      : formData.province === "dn"
+                        ? "Đà Nẵng"
+                        : "",
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
+              </span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConfirm(false)}>
+              Hủy
+            </Button>
+            <Button onClick={handleConfirmSubmit}>Xác nhận</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <Card>
