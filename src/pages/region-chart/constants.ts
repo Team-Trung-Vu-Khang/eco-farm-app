@@ -45,11 +45,17 @@ export interface Coordinate {
 }
 
 export interface SubArea {
-  id: string;
+  id: string; // Keep as string for nested IDs
+  code: string;
   name: string;
+  regionId: number;
   area: number;
   landType: string;
-  coordinates: Coordinate[]; // Rectangle corners
+  terrain: string;
+  coordinates: Coordinate[];
+  plots: Plot[];
+  createdAt: string;
+  status: "active" | "inactive";
 }
 
 export interface Region {
@@ -95,9 +101,15 @@ export const MOCK_REGIONS: Region[] = [
     subAreas: [
       {
         id: "sub-1-1",
+        code: "AREA-001",
         name: "Khu A - Sầu riêng Dona",
+        regionId: 1,
         area: 20.0,
         landType: "red-soil",
+        terrain: "flat",
+        status: "active",
+        createdAt: "2024-01-15",
+        plots: [],
         coordinates: [
           { lat: 11.546, lng: 106.892 },
           { lat: 11.552, lng: 106.905 },
@@ -107,9 +119,15 @@ export const MOCK_REGIONS: Region[] = [
       },
       {
         id: "sub-1-2",
+        code: "AREA-002",
         name: "Khu B - Sầu riêng Musang King",
+        regionId: 1,
         area: 15.5,
         landType: "red-soil",
+        terrain: "flat",
+        status: "active",
+        createdAt: "2024-01-15",
+        plots: [],
         coordinates: [
           { lat: 11.545, lng: 106.905 },
           { lat: 11.549, lng: 106.918 },
@@ -143,9 +161,15 @@ export const MOCK_REGIONS: Region[] = [
     subAreas: [
       {
         id: "sub-2-1",
+        code: "AREA-003",
         name: "Vườn rau thủy canh",
+        regionId: 2,
         area: 40,
         landType: "alluvial",
+        terrain: "flat",
+        status: "active",
+        createdAt: "2024-02-10",
+        plots: [],
         coordinates: [
           { lat: 10.957, lng: 107.22 },
           { lat: 10.97, lng: 107.225 },

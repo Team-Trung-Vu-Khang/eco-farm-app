@@ -7,15 +7,13 @@ import {
   type Column,
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "@tankhang1/eco-shared-ui";
 import { FileText, Hash, Leaf, Sprout } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { initialData } from "./mocks";
 import type { Variety } from "./types";
 import VarietyDetailPage from "./VarietyDetailPage";
+import useVarietyStore from "../../stores/useVarietyStore";
 
 const columns: Column<Variety>[] = [
   {
@@ -73,33 +71,55 @@ const columns: Column<Variety>[] = [
   {
     key: "documents",
     label: "Tài liệu",
-    render: (value: Variety["documents"]) => (
-      <div className="flex flex-col gap-1">
-        {value.length > 0 ? (
-          value.map((doc, idx) => (
-            <a
-              key={idx}
-              href={doc.url}
-              className="text-[11px] text-blue-600 hover:underline flex items-center gap-1 w-fit"
-            >
-              <FileText className="w-3 h-3" />
-              {doc.name}
-            </a>
-          ))
-        ) : (
-          <span className="text-[11px] text-muted-foreground/50">
-            Chưa có tài liệu
-          </span>
-        )}
-      </div>
-    ),
+    render: (value: Variety["documents"], item: Variety) => {
+      if (item.contentType === "editor" && item.editorContent) {
+        // Strip HTML tags to get plain text snippet
+        const snippet = item.editorContent
+          .replace(/<[^>]*>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .substring(0, 60);
+
+        return (
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-bold text-amber-600 uppercase tracking-tight">
+              Bản thảo nội dung
+            </span>
+            <p className="text-[11px] text-muted-foreground line-clamp-2 italic leading-relaxed">
+              "{snippet}..."
+            </p>
+          </div>
+        );
+      }
+
+      return (
+        <div className="flex flex-col gap-1">
+          {value.length > 0 ? (
+            value.map((doc, idx) => (
+              <a
+                key={idx}
+                href={doc.url}
+                className="text-[11px] text-blue-600 hover:underline flex items-center gap-1 w-fit"
+              >
+                <FileText className="w-3 h-3" />
+                {doc.name}
+              </a>
+            ))
+          ) : (
+            <span className="text-[11px] text-muted-foreground/50">
+              Chưa có tài liệu
+            </span>
+          )}
+        </div>
+      );
+    },
   },
 ];
 
 const VarietyPage = () => {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [data, setData] = useState<Variety[]>(initialData);
+  const { varieties, deleteVariety } = useVarietyStore();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Variety | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -134,7 +154,7 @@ const VarietyPage = () => {
 
   const handleConfirmDelete = () => {
     if (deleteItem) {
-      setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
+      deleteVariety(deleteItem.id);
       toast({ title: "Thành công", description: "Đã xóa giống cây trồng" });
     }
     setDeleteOpen(false);
@@ -161,7 +181,7 @@ const VarietyPage = () => {
     >
       <DataTable
         columns={columns}
-        data={data}
+        data={varieties}
         selectable
         onView={handleView}
         onEdit={(item) => setLocation(`/variety/${item.id}/edit`)}

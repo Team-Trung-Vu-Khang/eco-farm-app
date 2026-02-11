@@ -11,7 +11,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Hash, Layers, Plus, Sprout } from "lucide-react";
 import type { GrowthCycle } from "./types";
-import { initialGrowthCycles } from "./mocks";
+import useGrowthCycleStore from "../../stores/useGrowthCycleStore";
 
 const columns: Column<GrowthCycle>[] = [
   {
@@ -73,7 +73,7 @@ const columns: Column<GrowthCycle>[] = [
 const GrowthCyclePage = () => {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [data, setData] = useState<GrowthCycle[]>(initialGrowthCycles);
+  const { growthCycles, deleteGrowthCycle } = useGrowthCycleStore();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<GrowthCycle | null>(null);
 
@@ -88,7 +88,7 @@ const GrowthCyclePage = () => {
 
   const handleConfirmDelete = () => {
     if (deleteItem) {
-      setData((prev) => prev.filter((i) => i.id !== deleteItem.id));
+      deleteGrowthCycle(deleteItem.id);
       toast({ title: "Thành công", description: "Đã xóa chu kỳ sinh trưởng" });
     }
     setDeleteOpen(false);
@@ -117,7 +117,7 @@ const GrowthCyclePage = () => {
       }
     >
       <DataTable
-        data={data}
+        data={growthCycles}
         selectable
         columns={columns}
         onEdit={handleEdit}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
 import {
   AdminLayout,
@@ -12,6 +12,14 @@ import {
   StepperForm,
   type Step,
   useToast,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  MultiSelect,
+  Combobox,
+  type ComboboxOption,
 } from "@tankhang1/eco-shared-ui";
 import {
   MapContainer,
@@ -19,6 +27,7 @@ import {
   Polygon,
   Marker,
   useMapEvents,
+  Tooltip,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -40,14 +49,13 @@ const customIcon = new L.Icon({
 });
 
 import {
-  MOCK_REGIONS,
-  MOCK_AREAS,
-  type Area,
+  type SubArea as Area,
   type Plot,
   LAND_TYPES,
   TERRAIN_TYPES,
 } from "../constants";
 import { MapController } from "../components/DraggableRectangle";
+import useRegionStore from "../../../stores/useRegionStore";
 
 const MapClickHandler = ({
   onClick,
@@ -95,25 +103,38 @@ const AreaCreatePage = () => {
   const [plotPoints, setPlotPoints] = useState<L.LatLng[]>([]);
   const [editingPlot, setEditingPlot] = useState<Partial<Plot> | null>(null);
 
+  const { regions, upsertSubArea, getAreaById } = useRegionStore();
+
+  const currentRegion = React.useMemo(() => {
+    return regions.find((r) => r.id === selectedRegionId);
+  }, [regions, selectedRegionId]);
+
+  const regionOptions: ComboboxOption[] = React.useMemo(() => {
+    return regions.map((region) => ({
+      label: region.name,
+      value: region.id?.toString(),
+    }));
+  }, [regions]);
+
   useEffect(() => {
     if (isEditMode && params?.id) {
-      const id = parseInt(params.id);
-      const found = MOCK_AREAS.find((a) => a.id === id);
+      const found = getAreaById(String(params.id));
       if (found) {
         setFormData(found);
         setSelectedRegionId(found.regionId);
         if (found.coordinates && found.coordinates.length >= 3) {
-          setAreaPoints(found.coordinates.map((c) => L.latLng(c.lat, c.lng)));
+          setAreaPoints(
+            found.coordinates.map((c: any) => L.latLng(c.lat, c.lng)),
+          );
         }
       }
     }
-  }, [isEditMode, params?.id]);
+  }, [isEditMode, params?.id, getAreaById]);
 
   // When region changes, update bounds and auto-fill details
-  // When region changes, update map center if we don't have points yet
   useEffect(() => {
     if (selectedRegionId) {
-      const region = MOCK_REGIONS.find((r) => r.id === selectedRegionId);
+      const region = regions.find((r) => r.id === selectedRegionId);
       if (region) {
         setFormData((prev) => ({
           ...prev,
@@ -128,7 +149,9 @@ const AreaCreatePage = () => {
           region.coordinates &&
           region.coordinates.length > 0
         ) {
-          const points = region.coordinates.map((c) => L.latLng(c.lat, c.lng));
+          const points = region.coordinates.map((c: any) =>
+            L.latLng(c.lat, c.lng),
+          );
           const center = L.latLngBounds(points).getCenter();
           // Default triangle at center
           setAreaPoints([
@@ -139,7 +162,7 @@ const AreaCreatePage = () => {
         }
       }
     }
-  }, [selectedRegionId]);
+  }, [selectedRegionId, regions, isEditMode]);
 
   // --- Handlers ---
 
@@ -201,9 +224,42 @@ const AreaCreatePage = () => {
       return;
     }
 
-    const newCoords = areaPoints.map((p) => ({ lat: p.lat, lng: p.lng }));
+    if (!selectedRegionId) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng chọn vùng trồng",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    console.log("Submitting Area:", { ...formData, coordinates: newCoords });
+    const areaData: Omit<Area, "id"> = {
+      code: formData.code || "",
+      name: formData.name || "",
+      regionId: selectedRegionId,
+      area: formData.area || 0,
+      landType: formData.landType || "",
+      terrain: formData.terrain || "",
+      status: (formData.status as "active" | "inactive") || "active",
+      plots: (formData.plots as Plot[]) || [],
+      coordinates: areaPoints.map((p) => ({ lat: p.lat, lng: p.lng })),
+      createdAt:
+        isEditMode && formData.createdAt
+          ? formData.createdAt
+          : new Date().toISOString(),
+    };
+
+    let finalAreaId =
+      isEditMode && params?.id
+        ? String(params.id)
+        : `sub-${selectedRegionId}-${Date.now()}`;
+
+    // Upsert only the current area to the selected region in Region Store
+    upsertSubArea(selectedRegionId, {
+      ...areaData,
+      id: finalAreaId,
+    });
+
     toast({
       title: "Thành công",
       description: isEditMode
@@ -336,8 +392,16 @@ const AreaCreatePage = () => {
               <Label>
                 Chọn vùng trồng <span className="text-red-500">*</span>
               </Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[300px] overflow-y-auto p-1">
-                {MOCK_REGIONS.map((region) => (
+
+              <Combobox
+                options={regionOptions}
+                placeholder="Chọn vùng trồng"
+                value={selectedRegionId?.toString() ?? ""}
+                onChange={(value) => setSelectedRegionId(Number(value))}
+              />
+
+              {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[300px] overflow-y-auto p-1">
+                {regions.map((region) => (
                   <div
                     key={region.id}
                     onClick={() => setSelectedRegionId(region.id)}
@@ -361,7 +425,7 @@ const AreaCreatePage = () => {
                     </p>
                   </div>
                 ))}
-              </div>
+              </div> */}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -406,31 +470,44 @@ const AreaCreatePage = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Loại đất (Tự động)</Label>
-                <Input
-                  readOnly
-                  disabled
-                  value={
-                    LAND_TYPES.find((l) => l.id === formData.landType)?.name ||
-                    formData.landType ||
-                    ""
+                <Label>Loại đất</Label>
+                <Select
+                  value={formData.landType || ""}
+                  onValueChange={(v) =>
+                    setFormData({ ...formData, landType: v })
                   }
-                  className="bg-muted"
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn loại đất" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LAND_TYPES.map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        {l.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
-                <Label>Địa hình (Tự động)</Label>
-                <Input
-                  readOnly
-                  disabled
-                  value={
-                    TERRAIN_TYPES.find((t) => t.id === formData.terrain)
-                      ?.name ||
-                    formData.terrain ||
-                    ""
+                <Label>Địa hình</Label>
+                <Select
+                  value={formData.terrain || ""}
+                  onValueChange={(v) =>
+                    setFormData({ ...formData, terrain: v })
                   }
-                  className="bg-muted"
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn địa hình" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TERRAIN_TYPES.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardContent>
@@ -462,6 +539,46 @@ const AreaCreatePage = () => {
                 />
 
                 <MapClickHandler onClick={handleMapClick} />
+
+                {/* Region Boundary */}
+                {selectedRegionId && (
+                  <Polygon
+                    positions={
+                      regions
+                        .find((r) => r.id === selectedRegionId)
+                        ?.coordinates.map((c: any) => [c.lat, c.lng]) || []
+                    }
+                    pathOptions={{
+                      color: "green",
+                      fill: false,
+                      dashArray: "5, 5",
+                      weight: 2,
+                    }}
+                  />
+                )}
+
+                {/* Existing Areas from Region Store (Read-only) */}
+                {currentRegion?.subAreas
+                  .filter((a) => !isEditMode || a.id !== String(params?.id))
+                  .map((area) => (
+                    <Polygon
+                      key={`existing-${area.id}`}
+                      positions={area.coordinates.map((c: any) => [
+                        c.lat,
+                        c.lng,
+                      ])}
+                      pathOptions={{
+                        color: "gray",
+                        fillColor: "gray",
+                        fillOpacity: 0.1,
+                        weight: 1,
+                      }}
+                    >
+                      <Tooltip sticky direction="top">
+                        {area.name} (Sẵn có)
+                      </Tooltip>
+                    </Polygon>
+                  ))}
 
                 <Polygon
                   positions={areaPoints}
@@ -572,7 +689,7 @@ const AreaCreatePage = () => {
                     getBoundsFromPoints(areaPoints).getCenter().lat,
                     getBoundsFromPoints(areaPoints).getCenter().lng,
                   ]}
-                  zoom={15}
+                  zoom={14}
                   className="h-full w-full"
                 >
                   <TileLayer
@@ -914,7 +1031,7 @@ const AreaCreatePage = () => {
               <div className="space-y-2">
                 <Label className="text-muted-foreground">Vùng trồng:</Label>
                 <div className="font-medium">
-                  {MOCK_REGIONS.find((r) => r.id === selectedRegionId)?.name ||
+                  {regions.find((r) => r.id === selectedRegionId)?.name ||
                     "Chưa chọn"}
                 </div>
               </div>

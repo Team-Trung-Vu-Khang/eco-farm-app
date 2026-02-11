@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation, Link } from "wouter";
 import {
   AdminLayout,
@@ -11,45 +11,17 @@ import {
 import { Plus } from "lucide-react";
 
 // Mock Data for List
-interface CultivationArea {
-  id: string;
-  name: string;
-  scope: string; // region, area, plot
-  targetName: string;
-  certificate: string;
-  status: "active" | "inactive";
-}
+import { type CultivationArea } from "../../../stores/useCultivationAreaStore";
+import { MOCK_CERTIFICATES } from "./constants";
 
-const MOCK_DATA: CultivationArea[] = [
-  {
-    id: "ca-1",
-    name: "Canh tác Sầu riêng Công nghệ cao",
-    scope: "region",
-    targetName: "Vùng Bình Phước Alpha",
-    certificate: "VietGAP",
-    status: "active",
-  },
-  {
-    id: "ca-2",
-    name: "Khu vực trồng Bơ 034",
-    scope: "area",
-    targetName: "Khu vực B - Bơ sáp",
-    certificate: "Organic USDA",
-    status: "active",
-  },
-];
+import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
 
 const CultivationAreaPage = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [data, setData] = useState<CultivationArea[]>([]);
+  const { areas: data, deleteArea } = useCultivationAreaStore();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  // Initial Data Load
-  useEffect(() => {
-    setData(MOCK_DATA);
-  }, []);
 
   const handleAdd = () => {
     setLocation("/cultivation-area/create");
@@ -66,7 +38,7 @@ const CultivationAreaPage = () => {
 
   const confirmDelete = () => {
     if (deletingId) {
-      setData((prev) => prev.filter((i) => i.id !== deletingId));
+      deleteArea(deletingId);
       toast({ title: "Thành công", description: "Đã xóa vùng canh tác" });
       setDeleteOpen(false);
       setDeletingId(null);
@@ -105,16 +77,19 @@ const CultivationAreaPage = () => {
       label: "Đối tượng áp dụng",
     },
     {
-      key: "certificate",
+      key: "certificateId",
       label: "Chứng nhận",
-      render: (value: string) => (
-        <Badge
-          variant="secondary"
-          className="bg-blue-50 text-blue-700 hover:bg-blue-100"
-        >
-          {value}
-        </Badge>
-      ),
+      render: (value: string) => {
+        const cert = MOCK_CERTIFICATES.find((c) => c.id === value);
+        return (
+          <Badge
+            variant="secondary"
+            className="bg-blue-50 text-blue-700 hover:bg-blue-100"
+          >
+            {cert?.name || value}
+          </Badge>
+        );
+      },
     },
     {
       key: "status",

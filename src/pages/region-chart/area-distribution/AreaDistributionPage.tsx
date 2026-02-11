@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useLocation } from "wouter";
 import { Plus } from "lucide-react";
 import {
@@ -10,35 +10,36 @@ import {
   useToast,
 } from "@tankhang1/eco-shared-ui";
 
-import { type Area, MOCK_AREAS, MOCK_REGIONS } from "../constants";
+import { type SubArea } from "../constants";
+import useRegionStore from "../../../stores/useRegionStore";
 
 const AreaDistributionPage = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [data, setData] = useState<Area[]>([]);
+  const { regions, removeSubArea } = useRegionStore();
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    setData(MOCK_AREAS);
-  }, []);
+  const areas = React.useMemo(() => {
+    return regions.flatMap((r) => r.subAreas || []);
+  }, [regions]);
 
   const handleAdd = () => {
     setLocation("/area-distribution/create");
   };
 
-  const handleEdit = (item: Area) => {
+  const handleEdit = (item: SubArea) => {
     setLocation(`/area-distribution/edit/${item.id}`);
   };
 
-  const handleDelete = (item: Area) => {
+  const handleDelete = (item: SubArea) => {
     setDeletingId(item.id);
     setDeleteOpen(true);
   };
 
   const confirmDelete = () => {
     if (deletingId) {
-      setData((prev) => prev.filter((i) => i.id !== deletingId));
+      removeSubArea(deletingId);
       toast({ title: "Thành công", description: "Đã xóa khu vực" });
       setDeleteOpen(false);
     }
@@ -58,7 +59,7 @@ const AreaDistributionPage = () => {
       <DataTable
         columns={[
           {
-            key: "code",
+            key: "id",
             label: "Mã khu vực",
             render: (value, row) => (
               <span
@@ -75,7 +76,7 @@ const AreaDistributionPage = () => {
           {
             key: "regionId",
             label: "Thuộc vùng",
-            render: (v) => MOCK_REGIONS.find((r) => r.id === v)?.name || v,
+            render: (v) => regions.find((r) => r.id === v)?.name || v,
           },
           { key: "area", label: "Diện tích (ha)" },
           {
@@ -88,7 +89,7 @@ const AreaDistributionPage = () => {
             ),
           },
         ]}
-        data={data}
+        data={areas}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />

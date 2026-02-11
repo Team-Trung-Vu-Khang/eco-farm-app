@@ -13,7 +13,9 @@ import {
   StepperForm,
   Textarea,
   cn,
+  convertHtmlToLexical,
   useToast,
+  type SerializedEditorState,
   type Step,
 } from "@tankhang1/eco-shared-ui";
 import {
@@ -32,54 +34,21 @@ import {
   Sprout,
   Trash,
   Upload,
-  X,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useLocation } from "wouter";
 import type { CreateVarietyForm } from "./types";
+import useVarietyStore from "../../stores/useVarietyStore";
+import { initialEditorValue } from "../docs/mocks";
+import { CROP_OPTIONS } from "../../constants/crops";
+import { safeConvertLexicalToHtml } from "@/utils/commons";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
-
-const CROP_OPTIONS = [
-  {
-    id: "Sầu riêng",
-    name: "Sầu riêng",
-    image:
-      "https://traicayvuongtron.vn/resources/cache/original_xxxxx/WEBSITE%202023/tim%20hieu%20them/blog/kinh%20nghiem%2Cmeo%20vat/trai%20cay/trai%20cay%20dac%20san/sauriengri6/sauriengri62.jpg.webp",
-    group: "Cây ăn trái",
-  },
-  {
-    id: "Xoài",
-    name: "Xoài",
-    image:
-      "https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&q=80&w=200",
-    group: "Cây ăn trái",
-  },
-  {
-    id: "Cà phê",
-    name: "Cà phê",
-    image:
-      "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=200",
-    group: "Cây công nghiệp",
-  },
-  {
-    id: "Thanh long",
-    name: "Thanh long",
-    image:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSj3D221UbqA5WhiVpyqe8pZWwNpCfrTDSS5kJDrKERG4k3qIAf95vosUl8R_rWKD2bMyWRmTz7psbp4n8J4mFcFefz4v7dVhFRh7hhm9SagIA6PYUf&s=10&ec=121507562",
-    group: "Cây ăn trái",
-  },
-  {
-    id: "Lúa",
-    name: "Lúa",
-    image: "https://giongcamau.vn/uploads/shops/2017_03/om5451-copy.jpg",
-    group: "Cây lương thực",
-  },
-];
 
 export default function CreateVarietyPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { addVariety } = useVarietyStore();
 
   const [formData, setFormData] = useState<CreateVarietyForm>({
     varietyCode: "",
@@ -95,6 +64,31 @@ export default function CreateVarietyPage() {
     pdfFile: null,
     editorContent: "",
   });
+
+  React.useEffect(() => {
+    if (formData.contentType === "editor") {
+      if (
+        typeof formData.editorContent === "string" &&
+        formData.editorContent?.length > 0
+      ) {
+        const handleContent = async () => {
+          const content = await convertHtmlToLexical(formData.editorContent);
+
+          setFormData((prev) => ({
+            ...prev,
+            editorContent: content as unknown as string,
+          }));
+        };
+
+        handleContent();
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          editorContent: initialEditorValue as unknown as string,
+        }));
+      }
+    }
+  }, [formData.contentType]);
 
   const [illustrationPreview, setIllustrationPreview] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -119,7 +113,26 @@ export default function CreateVarietyPage() {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
+    const editorContent = await safeConvertLexicalToHtml(
+      formData.editorContent,
+    );
+
+    addVariety({
+      varietyCode: formData.varietyCode,
+      varietyName: formData.varietyName,
+      scientificName: formData.scientificName,
+      crop: formData.crop,
+      origin: formData.origin,
+      growthDuration: formData.growthDuration,
+      averageYield: formData.averageYield,
+      description: formData.description,
+      illustration: formData.illustration,
+      contentType: formData.contentType,
+      pdfFile: formData.pdfFile,
+      editorContent,
+    });
+
     toast({
       title: "Thành công",
       description: `Đã tạo giống cây "${formData.varietyName}"`,
@@ -136,7 +149,7 @@ export default function CreateVarietyPage() {
       description: "Chọn cây trồng và thiết lập thông tin định danh cho giống",
       content: (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="relative overflow-hidden rounded-xl border border-green-200 bg-gradient-to-r from-green-50 via-white to-green-50 p-6 shadow-sm">
+          <div className="relative overflow-hidden rounded-xl border border-green-200 bg-linear-to-r from-green-50 via-white to-green-50 p-6 shadow-sm">
             <div className="relative z-10 flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-white shadow-sm border border-green-100 flex items-center justify-center text-green-600 shrink-0">
                 <Leaf className="w-7 h-7" />
@@ -155,7 +168,7 @@ export default function CreateVarietyPage() {
 
           <div className="space-y-4">
             <Label className="text-sm font-bold text-slate-700 flex items-center gap-2">
-              loài cây trồng <span className="text-red-500">*</span>
+              Loại cây trồng <span className="text-red-500">*</span>
             </Label>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {CROP_OPTIONS.map((crop) => (
@@ -175,7 +188,7 @@ export default function CreateVarietyPage() {
                       alt={crop.name}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
                     {formData.crop === crop.name && (
                       <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-green-600 flex items-center justify-center shadow-lg animate-in zoom-in">
                         <Check className="w-3.5 h-3.5 text-white" />
@@ -266,7 +279,7 @@ export default function CreateVarietyPage() {
       description: "Mô tả đặc điểm sinh trưởng và hình ảnh nhận diện",
       content: (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="relative overflow-hidden rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-amber-50 p-6 shadow-sm">
+          <div className="relative overflow-hidden rounded-xl border border-amber-200 bg-linear-to-r from-amber-50 via-white to-amber-50 p-6 shadow-sm">
             <div className="relative z-10 flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-white shadow-sm border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
                 <BookOpen className="w-7 h-7" />
@@ -415,7 +428,7 @@ export default function CreateVarietyPage() {
       description: "Tải lên quy trình canh tác và tiêu chuẩn kỹ thuật",
       content: (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="relative overflow-hidden rounded-xl border border-purple-200 bg-gradient-to-r from-purple-50 via-white to-purple-50 p-6 shadow-sm">
+          <div className="relative overflow-hidden rounded-xl border border-purple-200 bg-linear-to-r from-purple-50 via-white to-purple-50 p-6 shadow-sm">
             <div className="relative z-10 flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-white shadow-sm border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
                 <FileText className="w-7 h-7" />
@@ -508,7 +521,7 @@ export default function CreateVarietyPage() {
                           updateField("pdfFile", e.target.files?.[0] || null)
                         }
                       />
-                      <div className="absolute inset-0 bg-gradient-to-br from-transparent to-purple-50/30 pointer-events-none" />
+                      <div className="absolute inset-0 bg-linear-to-br from-transparent to-purple-50/30 pointer-events-none" />
 
                       {formData.pdfFile ? (
                         <div className="flex flex-col items-center text-center p-8 z-10 w-full max-w-sm mx-auto animate-in zoom-in duration-300">
@@ -590,14 +603,18 @@ export default function CreateVarietyPage() {
               ) : (
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
                   <div className="relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-purple-100 to-pink-100 rounded-[20px] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200" />
+                    <div className="absolute -inset-1 bg-linear-to-r from-purple-100 to-pink-100 rounded-[20px] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200" />
                     <Card className="relative overflow-hidden border-2 border-slate-100 shadow-sm focus-within:border-purple-500/50 focus-within:ring-4 focus-within:ring-purple-500/10 transition-all rounded-2xl bg-white">
                       <Editor
-                        maxLength={20000}
+                        maxLength={2000000}
                         contentEditableClassname={
                           "h-[500px] p-8 focus:outline-none bg-white font-serif text-base leading-loose text-slate-700"
                         }
-                        editorSerializedState={formData.editorContent as any}
+                        editorSerializedState={
+                          typeof formData.editorContent === "string"
+                            ? initialEditorValue
+                            : (formData.editorContent as unknown as SerializedEditorState)
+                        }
                         onSerializedChange={(content) =>
                           updateField("editorContent", content)
                         }
