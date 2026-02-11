@@ -20,6 +20,7 @@ import PlanPage from "./pages/plan/PlanPage";
 import PlanCreatePage from "./pages/plan/PlanCreatePage";
 import PlanDetailPage from "./pages/plan/PlanDetailPage";
 import PlanEditPage from "./pages/plan/PlanEditPage";
+import PlanTypePage from "./pages/plan-type/PlanTypePage";
 import FertilizerCreatePage from "./pages/fertilizer/FertilizerCreatePage";
 import MaterialCreatePage from "./pages/material/MaterialCreatePage";
 import MaterialDetailPage from "./pages/material/MaterialDetailPage";
@@ -283,6 +284,7 @@ function Router() {
       <Route path="/unit" component={UnitPage} />
       <Route path="/unit/create" component={UnitCreatePage} />
       <Route path="/unit/:id/edit" component={UnitCreatePage} />
+      <Route path="/plan-type" component={PlanTypePage} />
       <Route path="/plan" component={PlanPage} />
       <Route path="/plan/create" component={PlanCreatePage} />
       <Route path="/plan/:id/edit" component={PlanEditPage} />

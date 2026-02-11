@@ -892,8 +892,7 @@ export default function PlanCreatePage() {
                 <SelectContent>
                   {SEASONS.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
-                      {s.name} (
-                      {s.status === "active" ? "Đang diễn ra" : "Sắp tới"})
+                      {s.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -975,183 +974,101 @@ export default function PlanCreatePage() {
       content: (
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-base">
-                  Vùng canh tác <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={formData.selectedRegionId}
-                  onValueChange={(v) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      selectedRegionId: v,
-                      selectedZoneId: "",
-                      selectedPlotIds: [],
-                    }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn vùng..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LOCATIONS.map((region) => (
-                      <SelectItem key={region.id} value={region.id}>
-                        {region.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-base">
-                  Khu vực <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={formData.selectedZoneId}
-                  onValueChange={(v) =>
-                    setFormData((prev) => ({ ...prev, selectedZoneId: v }))
-                  }
-                  disabled={!formData.selectedRegionId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn khu vực..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LOCATIONS.find(
-                      (r) => r.id === formData.selectedRegionId,
-                    )?.zones.map((zone) => (
-                      <SelectItem key={zone.id} value={zone.id}>
-                        {zone.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="flex items-center justify-between">
+              <Label className="text-base font-semibold">
+                Khu vực & Lô đất canh tác{" "}
+                <span className="text-red-500">*</span>
+              </Label>
+              <Button
+                variant="outline"
+                onClick={() => setLocationDialogOpen(true)}
+                className="gap-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+              >
+                <MapPin className="w-4 h-4" />
+                Chọn khu vực & Lô đất
+              </Button>
             </div>
 
-            {formData.selectedZoneId && (
-              <div className="space-y-3 animation-fade-in">
-                <Label className="text-base font-semibold text-slate-800">
-                  Chọn Lô đất canh tác <span className="text-red-500">*</span>
-                </Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {LOCATIONS.find((r) => r.id === formData.selectedRegionId)
-                    ?.zones.find((z) => z.id === formData.selectedZoneId)
-                    ?.plots.map((plot) => {
-                      const isSelected = formData.selectedPlotIds.includes(
-                        plot.id,
-                      );
-                      return (
-                        <div
-                          key={plot.id}
-                          className={`relative flex items-start p-4 rounded-xl border transition-all cursor-pointer group hover:shadow-md ${
-                            isSelected
-                              ? "bg-blue-50/50 border-blue-200 shadow-sm ring-1 ring-blue-100"
-                              : "bg-white border-slate-200 hover:border-blue-100"
-                          }`}
-                          onClick={() => {
-                            setFormData((prev) => {
-                              const current = prev.selectedPlotIds;
-                              return {
-                                ...prev,
-                                selectedPlotIds: isSelected
-                                  ? current.filter((id) => id !== plot.id)
-                                  : [...current, plot.id],
-                              };
-                            });
-                          }}
-                        >
-                          <div className="flex items-center h-5 mt-0.5">
-                            <Checkbox
-                              id={plot.id}
-                              checked={isSelected}
-                              className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                              onCheckedChange={() => {}} // Handled by div onClick
-                            />
-                          </div>
-                          <div className="ml-3 flex-1">
-                            <div className="flex items-center justify-between mb-1">
-                              <Label
-                                htmlFor={plot.id}
-                                className="text-sm font-bold text-slate-800 cursor-pointer"
-                              >
-                                {plot.name}
-                              </Label>
-                              <Badge
-                                variant={
-                                  plot.status === "active"
-                                    ? "default"
-                                    : plot.status === "ready"
-                                      ? "outline"
-                                      : "secondary"
-                                }
-                                className={`text-[10px] px-1.5 h-5 font-normal ${
-                                  plot.status === "ready"
-                                    ? "bg-green-50 text-green-700 border-green-200"
-                                    : plot.status === "active"
-                                      ? "bg-blue-50 text-blue-700 border-blue-200"
-                                      : "bg-slate-100 text-slate-600 border-slate-200"
-                                }`}
-                              >
-                                {plot.status === "ready"
-                                  ? "Sẵn sàng"
-                                  : plot.status === "active"
-                                    ? "Đang canh tác"
-                                    : "Đang nghỉ"}
-                              </Badge>
-                            </div>
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-500 mt-2">
-                              <div className="flex items-center gap-1.5">
-                                <MapPin className="w-3 h-3 text-slate-400" />
-                                <span>
-                                  Diện tích:{" "}
-                                  <b className="text-slate-700">
-                                    {plot.area} ha
-                                  </b>
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <Leaf className="w-3 h-3 text-slate-400" />
-                                <span>{plot.soilType}</span>
-                              </div>
-                              <div className="flex items-center gap-1.5 col-span-2">
-                                <AlertTriangle className="w-3 h-3 text-slate-400" />
-                                <span>Độ dốc: {plot.slope}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
+            {formData.selectedPlotIds.length === 0 ? (
+              <div
+                className="text-center py-8 border-2 border-dashed rounded-xl bg-slate-50/50 cursor-pointer hover:bg-slate-50 border-slate-200 hover:border-blue-300 transition-all"
+                onClick={() => setLocationDialogOpen(true)}
+              >
+                <MapPin className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                <p className="text-slate-500 font-medium">
+                  Chưa chọn lô đất nào
+                </p>
+                <p className="text-slate-400 text-sm mt-1">
+                  Nhấn để chọn các lô đất tham gia kế hoạch
+                </p>
               </div>
-            )}
-
-            {/* Selected Summary */}
-            {formData.selectedPlotIds.length > 0 && (
-              <div className="flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100 shadow-sm animation-fade-in">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-blue-600">
-                    <Check className="w-5 h-5" />
+            ) : (
+              <div className="space-y-4">
+                {/* Summary Box */}
+                <div className="flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100 shadow-sm animation-fade-in">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-blue-600">
+                      <Check className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-600">
+                        Đã chọn canh tác
+                      </p>
+                      <p className="text-lg font-bold text-slate-900 leading-none mt-0.5">
+                        {formData.selectedPlotIds.length} lô đất
+                      </p>
+                    </div>
                   </div>
-                  <div>
+                  <div className="text-right">
                     <p className="text-sm font-medium text-slate-600">
-                      Đã chọn canh tác
+                      Tổng diện tích
                     </p>
-                    <p className="text-lg font-bold text-slate-900 leading-none mt-0.5">
-                      {formData.selectedPlotIds.length} lô đất
+                    <p className="text-xl font-bold text-blue-700 leading-none mt-0.5">
+                      {calculateArea()} ha
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-slate-600">
-                    Tổng diện tích
-                  </p>
-                  <p className="text-xl font-bold text-blue-700 leading-none mt-0.5">
-                    {calculateArea()} ha
-                  </p>
+
+                {/* Detailed List */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium text-slate-700">
+                    Chi tiết khu vực đã chọn:
+                  </Label>
+                  <div className="grid grid-cols-1 gap-3">
+                    {groupedLocations.map((region) => (
+                      <div
+                        key={region.region}
+                        className="border rounded-lg p-3 bg-white"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <MapPin className="w-4 h-4 text-slate-400" />
+                          <span className="font-semibold text-sm text-slate-800">
+                            {region.region}
+                          </span>
+                        </div>
+                        <div className="pl-6 space-y-2">
+                          {region.zones.map((zone) => (
+                            <div key={zone.id} className="text-sm">
+                              <span className="text-slate-600 font-medium mr-2">
+                                {zone.name}:
+                              </span>
+                              <div className="inline-flex flex-wrap gap-1">
+                                {zone.plots.map((plot) => (
+                                  <Badge
+                                    key={plot.id}
+                                    variant="secondary"
+                                    className="bg-slate-100 text-slate-600 border-slate-200 font-normal"
+                                  >
+                                    {plot.name}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
