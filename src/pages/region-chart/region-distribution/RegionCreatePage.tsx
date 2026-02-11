@@ -51,9 +51,9 @@ import {
   ENTERPRISES,
   LAND_TYPES,
   TERRAIN_TYPES,
-  MOCK_REGIONS,
 } from "../constants";
 import { MapController } from "../components/DraggableRectangle";
+import useRegionStore from "../../../stores/useRegionStore";
 
 const MapClickHandler = ({
   onClick,
@@ -100,10 +100,12 @@ const RegionCreatePage = () => {
 
   const [regionPoints, setRegionPoints] = useState<L.LatLng[]>(defaultPoints);
 
+  const { addRegion, updateRegion, getRegionById } = useRegionStore();
+
   useEffect(() => {
     if (isEditMode && params?.id) {
       const regionId = parseInt(params.id);
-      const found = MOCK_REGIONS.find((r) => r.id === regionId);
+      const found = getRegionById(regionId);
       if (found) {
         setFormData(found);
         if (found.coordinates && found.coordinates.length >= 3) {
@@ -111,7 +113,7 @@ const RegionCreatePage = () => {
         }
       }
     }
-  }, [isEditMode, params?.id]);
+  }, [isEditMode, params?.id, getRegionById]);
 
   // Sub-area State
   const [editingSubArea, setEditingSubArea] = useState<Partial<SubArea> | null>(
@@ -235,13 +237,32 @@ const RegionCreatePage = () => {
       return;
     }
 
-    const finalData = {
-      ...formData,
+    const regionData: Omit<Region, "id"> = {
+      code: formData.code || "",
+      name: formData.name || "",
+      provinceId: formData.provinceId || "",
+      districtId: formData.districtId || "",
+      address: formData.address || "",
+      enterpriseId: formData.enterpriseId || "",
+      area: formData.area || 0,
+      landType: formData.landType || "",
+      terrain: formData.terrain || "",
+      note: formData.note || "",
+      status: (formData.status as "active" | "inactive") || "active",
+      subAreas: (formData.subAreas as SubArea[]) || [],
       coordinates: regionPoints.map((p) => ({ lat: p.lat, lng: p.lng })),
-      createdAt: new Date().toISOString(),
+      createdAt:
+        isEditMode && formData.createdAt
+          ? formData.createdAt
+          : new Date().toISOString(),
     };
 
-    console.log("Submitting:", finalData);
+    if (isEditMode && params?.id) {
+      updateRegion(parseInt(params.id), regionData);
+    } else {
+      addRegion(regionData);
+    }
+
     toast({
       title: "Thành công",
       description: isEditMode
@@ -253,11 +274,17 @@ const RegionCreatePage = () => {
 
   const addSubArea = () => {
     const newSub: SubArea = {
-      id: `sub-${Date.now()}`,
-      name: "Khu vực mới",
       area: 0,
+      code: "",
+      plots: [],
       landType: "",
       coordinates: [],
+      status: "active",
+      name: "Khu vực mới",
+      id: `sub-${Date.now()}`,
+      regionId: formData.id!,
+      terrain: formData.terrain || "",
+      createdAt: new Date().toISOString(),
     };
     setEditingSubArea(newSub);
     const center = getBoundsFromPoints(regionPoints).getCenter();
@@ -782,7 +809,7 @@ const RegionCreatePage = () => {
                       <div className="col-span-2 space-y-1">
                         <Label>Loại đất</Label>
                         <Select
-                          value={editingSubArea.landType}
+                          value={editingSubArea.landType || formData.landType}
                           onValueChange={(v) =>
                             setEditingSubArea({
                               ...editingSubArea,

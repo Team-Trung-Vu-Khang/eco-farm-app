@@ -13,6 +13,9 @@ export interface Variety {
     name: string;
     url: string;
   }[];
+  contentType?: "pdf" | "editor";
+  pdfFile?: File | null;
+  editorContent?: string;
   status: "active" | "inactive";
   updatedAt: string;
 }

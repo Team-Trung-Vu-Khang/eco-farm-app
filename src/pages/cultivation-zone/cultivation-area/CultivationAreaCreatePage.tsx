@@ -22,12 +22,10 @@ import {
   DialogTitle,
   Badge,
   ScrollArea,
+  cn,
 } from "@tankhang1/eco-shared-ui";
-import {
-  MOCK_REGIONS,
-  MOCK_AREAS,
-  MOCK_PLOTS,
-} from "../../region-chart/constants";
+import useRegionStore from "../../../stores/useRegionStore";
+import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
 import {
   MOCK_CERTIFICATES,
   MOCK_MANAGERS,
@@ -269,6 +267,8 @@ const ManagerSelector = ({
 
 const CultivationAreaCreatePage = () => {
   const [, setLocation] = useLocation();
+  const { regions } = useRegionStore();
+  const { addArea } = useCultivationAreaStore();
 
   // State
   const [scope, setScope] = useState<ScopeType>("region");
@@ -283,7 +283,7 @@ const CultivationAreaCreatePage = () => {
   const [selectedManagerId, setSelectedManagerId] = useState<string>("");
 
   /* Per-entity configuration state */
-  const [activeConfigId, setActiveConfigId] = useState<string>("default");
+  const [activeConfigId, setActiveConfigId] = useState<string>("region-main");
   const [configs, setConfigs] = useState<
     Record<
       string,
@@ -295,21 +295,52 @@ const CultivationAreaCreatePage = () => {
     >
   >({});
 
+  // Get current region's areas and plots from store
+  const currentRegion = useMemo(() => {
+    return regions.find((r) => r.id.toString() === selectedRegionId);
+  }, [regions, selectedRegionId]);
+
+  const availableAreas = useMemo(() => {
+    return currentRegion?.subAreas || [];
+  }, [currentRegion]);
+
+  const availablePlots = useMemo(() => {
+    // Filter plots based on SELECTED areas if area scope or plot scope is used
+    const filteredAreas = availableAreas.filter((a) =>
+      selectedAreaIds.includes(a.id.toString()),
+    );
+    return filteredAreas.flatMap((a) => a.plots || []);
+  }, [availableAreas, selectedAreaIds]);
+
   // Computed values
-  const selectedRegion = MOCK_REGIONS.find(
-    (r) => r.id.toString() === selectedRegionId,
-  );
-  const selectedAreas = MOCK_AREAS.filter((a) =>
-    selectedAreaIds.includes(a.id.toString()),
-  );
-  const selectedPlots = MOCK_PLOTS.filter((p) =>
-    selectedPlotIds.includes(p.id),
-  );
+  const selectedRegion = currentRegion;
+  const selectedAreas = useMemo(() => {
+    return availableAreas.filter((a) =>
+      selectedAreaIds.includes(a.id.toString()),
+    );
+  }, [availableAreas, selectedAreaIds]);
+
+  const selectedPlots = useMemo(() => {
+    return availablePlots.filter((p) => selectedPlotIds.includes(p.id));
+  }, [availablePlots, selectedPlotIds]);
 
   const toggleArea = (id: string) => {
-    setSelectedAreaIds((prev) =>
-      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id],
-    );
+    setSelectedAreaIds((prev) => {
+      const isSelected = prev.includes(id);
+      if (isSelected) {
+        // Remove plots associated with this area from selectedPlotIds
+        const area = availableAreas.find((a) => a.id.toString() === id);
+        if (area?.plots) {
+          const plotIdsToRemove = area.plots.map((p) => p.id);
+          setSelectedPlotIds((plots) =>
+            plots.filter((pid) => !plotIdsToRemove.includes(pid)),
+          );
+        }
+        return prev.filter((a) => a !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
   };
 
   const togglePlot = (id: string) => {
@@ -413,13 +444,17 @@ const CultivationAreaCreatePage = () => {
                 </Label>
                 <Select
                   value={selectedRegionId}
-                  onValueChange={setSelectedRegionId}
+                  onValueChange={(val) => {
+                    setSelectedRegionId(val);
+                    setSelectedAreaIds([]);
+                    setSelectedPlotIds([]);
+                  }}
                 >
                   <SelectTrigger className="bg-white border-slate-200">
                     <SelectValue placeholder="Chọn vùng..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {MOCK_REGIONS.map((r) => (
+                    {regions.map((r) => (
                       <SelectItem key={r.id} value={r.id.toString()}>
                         {r.name}
                       </SelectItem>
@@ -428,7 +463,7 @@ const CultivationAreaCreatePage = () => {
                 </Select>
               </div>
 
-              {(scope === "area" || scope === "plot") && (
+              {(scope === "area" || scope === "plot") && selectedRegionId && (
                 <div className="space-y-2 animate-in slide-in-from-top-2">
                   <Label className="text-xs text-muted-foreground">
                     Khu vực (Area) <span className="text-red-500">*</span>
@@ -440,9 +475,7 @@ const CultivationAreaCreatePage = () => {
                   </Label>
                   <ScrollArea className="max-h-[200px] border rounded-lg p-2 bg-white">
                     <div className="space-y-1">
-                      {MOCK_AREAS.filter(
-                        (a) => a.regionId.toString() === selectedRegionId,
-                      ).map((a) => (
+                      {availableAreas.map((a) => (
                         <div
                           key={a.id}
                           onClick={() => toggleArea(a.id.toString())}
@@ -463,7 +496,7 @@ const CultivationAreaCreatePage = () => {
                 </div>
               )}
 
-              {scope === "plot" && (
+              {scope === "plot" && selectedAreaIds.length > 0 && (
                 <div className="space-y-2 animate-in slide-in-from-top-2">
                   <Label className="text-xs text-muted-foreground">
                     Lô trồng (Plot) <span className="text-red-500">*</span>
@@ -475,22 +508,41 @@ const CultivationAreaCreatePage = () => {
                   </Label>
                   <ScrollArea className="max-h-[200px] border rounded-lg p-2 bg-white">
                     <div className="space-y-1">
-                      {MOCK_PLOTS.map((p) => (
-                        <div
-                          key={p.id}
-                          onClick={() => togglePlot(p.id)}
-                          className={`flex items-center justify-between p-2 rounded cursor-pointer transition-all ${
-                            selectedPlotIds.includes(p.id)
-                              ? "bg-primary/10 border border-primary/30"
-                              : "hover:bg-slate-50"
-                          }`}
-                        >
-                          <span className="text-sm">{p.name}</span>
-                          {selectedPlotIds.includes(p.id) && (
-                            <CheckCircle2 className="w-4 h-4 text-primary" />
-                          )}
+                      {availablePlots.map((p) => {
+                        const parentArea = availableAreas.find((a) =>
+                          a.plots?.some((pp) => pp.id === p.id),
+                        );
+                        return (
+                          <div
+                            key={p.id}
+                            onClick={() => togglePlot(p.id)}
+                            className={`flex items-center justify-between p-2 rounded cursor-pointer transition-all ${
+                              selectedPlotIds.includes(p.id)
+                                ? "bg-primary/10 border border-primary/30"
+                                : "hover:bg-slate-50"
+                            }`}
+                          >
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium">
+                                {p.name}
+                              </span>
+                              {parentArea && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  Thuộc: {parentArea.name}
+                                </span>
+                              )}
+                            </div>
+                            {selectedPlotIds.includes(p.id) && (
+                              <CheckCircle2 className="w-4 h-4 text-primary" />
+                            )}
+                          </div>
+                        );
+                      })}
+                      {availablePlots.length === 0 && (
+                        <div className="text-center py-4 text-xs text-muted-foreground italic">
+                          Không có lô nào trong khu vực đã chọn
                         </div>
-                      ))}
+                      )}
                     </div>
                   </ScrollArea>
                 </div>
@@ -590,6 +642,8 @@ const CultivationAreaCreatePage = () => {
       entities.find((e) => e.id === activeConfigId)?.id ||
       entities[0]?.id ||
       "region-main";
+
+    // Initialize config if it doesn't exist for this entity
     const effectiveConfig = configs[effectiveId] || {
       farmingMethodId: "",
       irrigationMethodId: "",
@@ -673,7 +727,12 @@ const CultivationAreaCreatePage = () => {
         </div>
 
         {/* Main Content Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_3fr] gap-6">
+        <div
+          className={cn(
+            "grid grid-cols-1 gap-6",
+            entities.length > 1 ? "lg:grid-cols-[1fr_3fr]" : "grid-cols-1",
+          )}
+        >
           {/* Sidebar for multiple entities */}
           {entities.length > 1 && (
             <div className="w-full lg:w-72 shrink-0">
@@ -1260,18 +1319,31 @@ const CultivationAreaCreatePage = () => {
               steps={steps}
               completeLabel="Khởi tạo Vùng canh tác"
               onComplete={() => {
+                // Determine target labels
+                let targetName = "";
+                let targetIds: string[] = [];
+                if (scope === "region") {
+                  targetName = selectedRegion?.name || "";
+                  targetIds = [selectedRegionId];
+                } else if (scope === "area") {
+                  targetName = selectedAreas.map((a) => a.name).join(", ");
+                  targetIds = selectedAreaIds;
+                } else if (scope === "plot") {
+                  targetName = selectedPlots.map((p) => p.name).join(", ");
+                  targetIds = selectedPlotIds;
+                }
+
                 // Handle submission
-                console.log("Submit:", {
+                addArea({
                   name,
                   scope,
-                  selectedRegionId,
-                  selectedAreaIds,
-                  selectedPlotIds,
+                  targetIds,
+                  targetName,
                   configs,
-                  selectedCertId,
-                  selectedManagerId,
+                  certificateId: selectedCertId,
+                  managerId: selectedManagerId,
+                  note,
                 });
-                // Add toast here in real app
                 setLocation("/cultivation-area");
               }}
               onCancel={() => setLocation("/cultivation-area")}

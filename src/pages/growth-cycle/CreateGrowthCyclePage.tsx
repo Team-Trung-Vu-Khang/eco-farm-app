@@ -4,8 +4,6 @@ import {
   Button,
   Card,
   CardContent,
-  Editor,
-  Input,
   Label,
   StepperForm,
   Select,
@@ -17,29 +15,35 @@ import {
   RadioGroupItem,
   useToast,
   type Step,
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
 } from "@tankhang1/eco-shared-ui";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import {
   ArrowLeft,
   Calendar,
   ChevronRight,
-  FileText,
   Layers,
   Layout,
   Plus,
   Sprout,
-  Trash,
   TreeDeciduous,
   Flower2,
-  Upload,
 } from "lucide-react";
 import type { CreateGrowthCycleForm, GrowthStage } from "./types";
-import { cropOptions, initialEditorValue, varietyOptions } from "./mocks";
+import { initialEditorValue } from "./mocks";
+import { CROP_OPTIONS } from "../../constants/crops";
+import useGrowthCycleStore from "../../stores/useGrowthCycleStore";
+import useVarietyStore from "../../stores/useVarietyStore";
+import { GrowthStageCard } from "./components/GrowthStageCard";
 
 export default function CreateGrowthCyclePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { addGrowthCycle } = useGrowthCycleStore();
+  const { varieties } = useVarietyStore();
 
   const [formData, setFormData] = useState<CreateGrowthCycleForm>({
     scope: "crop",
@@ -57,8 +61,42 @@ export default function CreateGrowthCyclePage() {
     ],
   });
 
+  // Auto-calculate total days whenever stages change
+  useEffect(() => {
+    const total = formData.stages.reduce(
+      (sum, stage) => sum + (Number(stage.duration) || 0),
+      0,
+    );
+    setFormData((prev) => ({ ...prev, totalDays: total }));
+  }, [formData.stages]);
+
+  // Filtered varieties based on selected crop
+  const filteredVarieties = useMemo(() => {
+    if (!formData.cropId) return [];
+    return varieties.filter((v) => v.crop === formData.cropId);
+  }, [formData.cropId, varieties]);
+
   const handleComplete = () => {
-    console.log(formData);
+    const cropName =
+      CROP_OPTIONS.find((c) => c.name === formData.cropId)?.name ||
+      formData.cropId;
+
+    addGrowthCycle({
+      name: `Chu kỳ sinh trưởng ${cropName}${formData.variety ? ` - ${formData.variety}` : ""}`,
+      scope: formData.scope,
+      cropId: formData.cropId,
+      cropName: cropName,
+      variety: formData.variety,
+      totalDays: formData.totalDays,
+      stages: formData.stages.map((s) => ({
+        ...s,
+        pdfFile:
+          s.pdfFile instanceof File
+            ? { name: s.pdfFile.name, size: s.pdfFile.size }
+            : s.pdfFile,
+      })),
+    });
+
     toast({
       title: "Thành công",
       description: "Đã tạo chu kỳ sinh trưởng mới",
@@ -198,11 +236,16 @@ export default function CreateGrowthCyclePage() {
                     <SelectValue placeholder="Chọn loại cây" />
                   </SelectTrigger>
                   <SelectContent>
-                    {cropOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
+                    {CROP_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.id} value={opt.name}>
                         <div className="flex items-center gap-2">
-                          <Sprout className="w-4 h-4 text-green-600" />
-                          <span>{opt.label}</span>
+                          <Avatar className="w-6 h-6">
+                            <AvatarFallback>
+                              {opt.name.charAt(0)}
+                            </AvatarFallback>
+                            <AvatarImage src={opt.image} />
+                          </Avatar>
+                          <span>{opt.name}</span>
                         </div>
                       </SelectItem>
                     ))}
@@ -223,45 +266,39 @@ export default function CreateGrowthCyclePage() {
                     disabled={!formData.cropId}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Chọn giống cây" />
+                      <SelectValue
+                        placeholder={
+                          formData.cropId
+                            ? "Chọn giống cây"
+                            : "Vui lòng chọn loại cây trước"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      {varietyOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          <div className="flex items-center gap-2">
-                            <Flower2 className="w-4 h-4 text-rose-500" />
-                            <span>{opt.label}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
+                      {filteredVarieties.length > 0 ? (
+                        filteredVarieties.map((v) => (
+                          <SelectItem key={v.id} value={v.varietyName}>
+                            <div className="flex items-center gap-2">
+                              <Flower2 className="w-4 h-4 text-rose-500" />
+                              <span>{v.varietyName}</span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-2 text-center text-xs text-muted-foreground">
+                          Không có giống cây nào cho loại này
+                        </div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
               )}
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold">
-                Tổng thời gian chu kỳ (ngày)
-              </Label>
-              <Input
-                type="number"
-                placeholder="0"
-                value={formData.totalDays || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    totalDays: Number(e.target.value),
-                  })
-                }
-              />
             </div>
           </div>
         </div>
       ),
       isValid:
         formData.cropId !== "" &&
-        formData.totalDays > 0 &&
         (formData.scope === "crop" || formData.variety !== ""),
     },
     {
@@ -272,121 +309,13 @@ export default function CreateGrowthCyclePage() {
         <div className="max-w-5xl mx-auto space-y-8 py-4">
           <div className="space-y-6">
             {formData.stages.map((stage, index) => (
-              <Card
+              <GrowthStageCard
                 key={stage.id}
-                className="relative overflow-hidden border-2 focus-within:border-primary/50 transition-all"
-              >
-                <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
-                <CardContent className="p-6 space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-sm">
-                        {index + 1}
-                      </div>
-                      <h3 className="font-bold text-lg">
-                        Giai đoạn {index + 1}
-                      </h3>
-                    </div>
-                    {formData.stages.length > 1 && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => onRemoveStage(stage.id)}
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold">
-                        Tên giai đoạn
-                      </Label>
-                      <Input
-                        value={stage.name}
-                        onChange={(e) =>
-                          updateStage(stage.id, { name: e.target.value })
-                        }
-                        placeholder="VD: Giai đoạn 1"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold">
-                        Thời gian (ngày)
-                      </Label>
-                      <Input
-                        type="number"
-                        value={stage.duration || ""}
-                        onChange={(e) =>
-                          updateStage(stage.id, {
-                            duration: Number(e.target.value),
-                          })
-                        }
-                        placeholder="0"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <Label className="text-sm font-semibold">
-                      Tài liệu kỹ thuật
-                    </Label>
-                    <RadioGroup
-                      value={stage.usePdf ? "pdf" : "editor"}
-                      onValueChange={(v) =>
-                        updateStage(stage.id, { usePdf: v === "pdf" })
-                      }
-                      className="flex items-center gap-6"
-                    >
-                      <div className="flex items-center gap-2">
-                        <RadioGroupItem value="pdf" id={`pdf-${stage.id}`} />
-                        <Label
-                          htmlFor={`pdf-${stage.id}`}
-                          className="text-sm font-medium cursor-pointer flex items-center gap-1.5"
-                        >
-                          <Upload className="w-3.5 h-3.5" />
-                          Tải lên PDF
-                        </Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <RadioGroupItem
-                          value="editor"
-                          id={`editor-${stage.id}`}
-                        />
-                        <Label
-                          htmlFor={`editor-${stage.id}`}
-                          className="text-sm font-medium cursor-pointer flex items-center gap-1.5"
-                        >
-                          <FileText className="w-3.5 h-3.5" />
-                          Soạn thảo
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  {!stage.usePdf ? (
-                    <div className="border rounded-lg overflow-hidden bg-muted/5">
-                      <Editor
-                        maxLength={10000}
-                        contentEditableClassname="h-[200px] p-4 focus:outline-none bg-white"
-                        editorSerializedState={stage.content}
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-8 bg-muted/20 hover:bg-muted/30 transition-all cursor-pointer">
-                      <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                      <p className="text-sm font-medium">
-                        Kéo thả hoặc nhấn để tải lên tệp PDF
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Dung lượng tối đa 10MB
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                stage={stage}
+                index={index}
+                onRemove={onRemoveStage}
+                onUpdate={updateStage}
+              />
             ))}
 
             <Button
@@ -430,8 +359,8 @@ export default function CreateGrowthCyclePage() {
                   Loại cây trồng:
                 </span>
                 <span className="font-bold">
-                  {cropOptions.find((c) => c.value === formData.cropId)
-                    ?.label || formData.cropId}
+                  {CROP_OPTIONS.find((c) => c.name === formData.cropId)?.name ||
+                    formData.cropId}
                 </span>
               </div>
               {formData.scope === "variety" && (
@@ -441,10 +370,7 @@ export default function CreateGrowthCyclePage() {
                   </span>
                   <div className="flex items-center gap-2">
                     <Sprout className="w-4 h-4 text-green-600" />
-                    <span className="font-bold">
-                      {varietyOptions.find((v) => v.value === formData.variety)
-                        ?.label || formData.variety}
-                    </span>
+                    <span className="font-bold">{formData.variety}</span>
                   </div>
                 </div>
               )}
@@ -453,7 +379,11 @@ export default function CreateGrowthCyclePage() {
                   Tổng thời gian:
                 </span>
                 <Badge className="bg-blue-50 text-blue-700 border-blue-100 font-bold">
-                  {formData.totalDays} NGÀY
+                  {formData.stages.reduce(
+                    (sum, s) => sum + (Number(s.duration) || 0),
+                    0,
+                  )}{" "}
+                  NGÀY
                 </Badge>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-muted">

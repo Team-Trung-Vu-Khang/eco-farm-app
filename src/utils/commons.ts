@@ -1,4 +1,5 @@
 import { vietQrBankData } from "@/constants/banks";
+import { convertLexicalToHtml } from "@tankhang1/eco-shared-ui";
 
 export const dateFormat = (date: string | number | Date) => {
   return new Intl.DateTimeFormat("vi", {
@@ -81,4 +82,17 @@ export const parseVietQR = (text: string) => {
     console.error("QR Parse Error", e);
   }
   return null;
+};
+
+export const isContaintHtmlTag = (text: string) => {
+  return text.startsWith("<") && text.endsWith(">");
+};
+
+export const safeConvertLexicalToHtml = async (editorContent: string) => {
+  try {
+    return await convertLexicalToHtml(editorContent);
+  } catch (error) {
+    console.error("Error converting Lexical to HTML:", error);
+    return "";
+  }
 };

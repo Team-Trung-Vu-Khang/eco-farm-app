@@ -1,4 +1,4 @@
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import {
   AdminLayout,
   Card,
@@ -21,77 +21,138 @@ import {
   Sprout,
   Droplets,
   Leaf,
-  Calendar,
   FileText,
   Layers,
   Target,
   CheckCircle,
 } from "lucide-react";
-
-// Mock data - in real app, fetch from API based on ID
-const mockCultivationArea = {
-  id: "CA-001",
-  name: "Vùng trồng Sầu riêng chất lượng cao",
-  scope: "area" as "region" | "area" | "plot",
-  status: "active",
-  createdAt: "2024-01-15",
-  updatedAt: "2024-01-20",
-  region: {
-    id: "1",
-    name: "Vùng Đồng Tháp Mười",
-    code: "DTM-001",
-    address: "Xã Tân Thành, Huyện Tân Phước, Tỉnh Tiền Giang",
-    enterpriseId: "Hợp tác xã Nông nghiệp Tân Thành",
-  },
-  areas: [
-    { id: "1", name: "Khu vực A1", code: "A1-001" },
-    { id: "2", name: "Khu vực A2", code: "A2-001" },
-  ],
-  certificate: {
-    id: "cert-1",
-    name: "VietGAP",
-    code: "VG-2024-001",
-    organization: "Bộ Nông nghiệp và Phát triển nông thôn",
-    validUntil: "2025-12-31",
-  },
-  manager: {
-    id: "mgr-1",
-    name: "Nguyễn Văn An",
-    role: "Trưởng phòng Kỹ thuật",
-    department: "Phòng Kỹ thuật Canh tác",
-    phone: "0901234567",
-    email: "nva@example.com",
-  },
-  farmingMethod: {
-    id: "organic",
-    name: "Canh tác hữu cơ",
-    description: "Sử dụng phân bón hữu cơ, không sử dụng hóa chất",
-  },
-  irrigationMethod: {
-    id: "drip",
-    name: "Tưới nhỏ giọt",
-    description: "Hệ thống tưới tiết kiệm nước",
-  },
-  crops: [
-    { id: "durian-1", name: "Sầu riêng Monthong", type: "Cây ăn trái" },
-    { id: "durian-2", name: "Sầu riêng Ri6", type: "Cây ăn trái" },
-  ],
-  note: "Khu vực thí điểm áp dụng công nghệ cao trong canh tác sầu riêng",
-  statistics: {
-    totalArea: "25.5 ha",
-    plantCount: 1250,
-    harvestCycles: 2,
-    avgYield: "18 tấn/ha",
-  },
-};
+import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
+import useRegionStore from "../../../stores/useRegionStore";
+import { useMemo } from "react";
+import {
+  MOCK_CERTIFICATES,
+  MOCK_MANAGERS,
+  FARMING_METHODS,
+  IRRIGATION_METHODS,
+  CROP_VARIETIES,
+} from "./constants";
 
 const CultivationAreaDetailPage = () => {
+  const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
+  const { getAreaById } = useCultivationAreaStore();
+  const { getRegionById, regions } = useRegionStore();
+
+  const area = useMemo(() => {
+    if (!id) return null;
+    return getAreaById(id);
+  }, [id, getAreaById]);
+
+  // Derive related data
+  const details = useMemo(() => {
+    if (!area) return null;
+
+    const manager = MOCK_MANAGERS.find((m) => m.id === area.managerId);
+    const certificate = MOCK_CERTIFICATES.find(
+      (c) => c.id === area.certificateId,
+    );
+
+    // Get the first target's region to show region info
+    let region = null;
+    let selectedEntities: any[] = [];
+    let totalAreaValue = 0;
+
+    if (area.scope === "region") {
+      region = getRegionById(Number(area.targetIds[0]));
+      totalAreaValue = region?.area || 0;
+    } else if (area.scope === "area") {
+      const allSubAreas = regions.flatMap((r) => r.subAreas || []);
+      selectedEntities = allSubAreas.filter((sa) =>
+        area.targetIds.includes(sa.id.toString()),
+      );
+      if (selectedEntities.length > 0) {
+        region = getRegionById(selectedEntities[0].regionId);
+        totalAreaValue = selectedEntities.reduce(
+          (sum, e) => sum + (e.area || 0),
+          0,
+        );
+      }
+    } else if (area.scope === "plot") {
+      const allPlots = regions
+        .flatMap((r) => r.subAreas || [])
+        .flatMap((sa) => sa.plots || []);
+      selectedEntities = allPlots.filter((p) =>
+        area.targetIds.includes(p.id.toString()),
+      );
+      // Find parent area to get region
+      const firstPlot = selectedEntities[0];
+      if (firstPlot) {
+        const parentArea = regions
+          .flatMap((r) => r.subAreas || [])
+          .find((sa) => sa.plots?.some((p) => p.id === firstPlot.id));
+        if (parentArea) {
+          region = getRegionById(parentArea.regionId);
+          totalAreaValue = selectedEntities.reduce(
+            (sum, e) => sum + (e.area || 0),
+            0,
+          );
+        }
+      }
+    }
+
+    // Combine configs
+    const configValues = Object.values(area.configs || {});
+    const firstConfig = configValues[0];
+    const farmingMethod = FARMING_METHODS.find(
+      (m) => m.id === (firstConfig?.farmingMethodId || ""),
+    );
+    const irrigationMethod = IRRIGATION_METHODS.find(
+      (m) => m.id === (firstConfig?.irrigationMethodId || ""),
+    );
+    const cropIds = Array.from(
+      new Set(configValues.flatMap((c) => c.selectedCrops || [])),
+    );
+    const crops = CROP_VARIETIES.filter((c) => cropIds.includes(c.id));
+
+    return {
+      manager,
+      certificate,
+      region,
+      selectedEntities,
+      totalArea: totalAreaValue,
+      farmingMethod,
+      irrigationMethod,
+      crops,
+    };
+  }, [area, getRegionById, regions]);
+
+  if (!area || !details) {
+    return (
+      <AdminLayout
+        title="Không tìm thấy"
+        description="Vùng canh tác không tồn tại"
+      >
+        <div className="flex flex-col items-center justify-center py-20">
+          <Target className="w-16 h-16 text-slate-300 mb-4" />
+          <h2 className="text-xl font-bold text-slate-900">
+            Không tìm thấy vùng canh tác
+          </h2>
+          <Button
+            variant="ghost"
+            className="mt-4"
+            onClick={() => setLocation("/cultivation-area")}
+          >
+            Quay lại danh sách
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout
-      title={mockCultivationArea.name}
-      description={`Mã: ${mockCultivationArea.id} • Tạo: ${new Date(mockCultivationArea.createdAt).toLocaleDateString("vi-VN")}`}
+      title={area.name}
+      description={`Mã: ${area.id} • Tạo: ${new Date(area.createdAt).toLocaleDateString("vi-VN")}`}
     >
       {/* Header Actions */}
       <div className="flex items-center justify-between mb-6">
@@ -107,20 +168,14 @@ const CultivationAreaDetailPage = () => {
 
         <div className="flex gap-2">
           <Badge
-            variant={
-              mockCultivationArea.status === "active" ? "default" : "secondary"
-            }
+            variant={area.status === "active" ? "default" : "secondary"}
             className="px-3 py-1"
           >
             <CheckCircle className="w-3 h-3 mr-1" />
-            {mockCultivationArea.status === "active"
-              ? "Đang hoạt động"
-              : "Tạm ngưng"}
+            {area.status === "active" ? "Đang hoạt động" : "Tạm ngưng"}
           </Badge>
           <Button
-            onClick={() =>
-              setLocation(`/cultivation-area/${mockCultivationArea.id}/edit`)
-            }
+            onClick={() => setLocation(`/cultivation-area/${area.id}/edit`)}
             className="gap-2"
           >
             <Edit className="w-4 h-4" />
@@ -154,9 +209,9 @@ const CultivationAreaDetailPage = () => {
                       Phạm vi
                     </div>
                     <Badge variant="outline" className="capitalize">
-                      {mockCultivationArea.scope === "region"
+                      {area.scope === "region"
                         ? "Vùng trồng"
-                        : mockCultivationArea.scope === "area"
+                        : area.scope === "area"
                           ? "Khu vực"
                           : "Lô đất"}
                     </Badge>
@@ -166,42 +221,45 @@ const CultivationAreaDetailPage = () => {
                       Diện tích
                     </div>
                     <div className="font-semibold text-slate-900">
-                      {mockCultivationArea.statistics.totalArea}
+                      {details.totalArea} ha
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t">
-                  <div className="text-sm font-medium mb-2">Vùng trồng</div>
-                  <div className="bg-slate-50 p-3 rounded-lg">
-                    <div className="font-semibold text-slate-900">
-                      {mockCultivationArea.region.name}
-                    </div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      {mockCultivationArea.region.code}
-                    </div>
-                    <div className="text-sm text-slate-600 mt-2">
-                      {mockCultivationArea.region.address}
-                    </div>
-                    <div className="text-sm font-medium text-primary mt-1">
-                      {mockCultivationArea.region.enterpriseId}
+                {details.region && (
+                  <div className="pt-4 border-t">
+                    <div className="text-sm font-medium mb-2">Vùng trồng</div>
+                    <div className="bg-slate-50 p-3 rounded-lg">
+                      <div className="font-semibold text-slate-900">
+                        {details.region.name}
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {details.region.code}
+                      </div>
+                      <div className="text-sm text-slate-600 mt-2">
+                        {details.region.address}
+                      </div>
+                      <div className="text-sm font-medium text-primary mt-1">
+                        {details.region.enterpriseId}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
-                {mockCultivationArea.areas.length > 0 && (
+                {details.selectedEntities.length > 0 && (
                   <div className="pt-4 border-t">
                     <div className="text-sm font-medium mb-2">
-                      Khu vực ({mockCultivationArea.areas.length})
+                      {area.scope === "area" ? "Khu vực" : "Lô đất"} (
+                      {details.selectedEntities.length})
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {mockCultivationArea.areas.map((area) => (
+                      {details.selectedEntities.map((entity) => (
                         <Badge
-                          key={area.id}
+                          key={entity.id}
                           variant="secondary"
                           className="px-3 py-1"
                         >
-                          {area.name}
+                          {entity.name}
                         </Badge>
                       ))}
                     </div>
@@ -220,30 +278,25 @@ const CultivationAreaDetailPage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
-                  <div className="space-y-3">
-                    <div>
-                      <div className="font-semibold text-slate-900">
-                        {mockCultivationArea.certificate.name}
+                  {details.certificate ? (
+                    <div className="space-y-3">
+                      <div>
+                        <div className="font-semibold text-slate-900">
+                          {details.certificate.name}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {details.certificate.code}
+                        </div>
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {mockCultivationArea.certificate.code}
+                      <div className="text-sm text-slate-600">
+                        {details.certificate.organization}
                       </div>
                     </div>
-                    <div className="text-sm text-slate-600">
-                      {mockCultivationArea.certificate.organization}
+                  ) : (
+                    <div className="text-sm text-muted-foreground italic">
+                      Chưa có chứng nhận
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">
-                        Hiệu lực đến:
-                      </span>
-                      <span className="font-medium">
-                        {new Date(
-                          mockCultivationArea.certificate.validUntil,
-                        ).toLocaleDateString("vi-VN")}
-                      </span>
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -255,37 +308,39 @@ const CultivationAreaDetailPage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                        {mockCultivationArea.manager.name.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="font-semibold text-slate-900">
-                          {mockCultivationArea.manager.name}
+                  {details.manager ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                          {details.manager.name.charAt(0)}
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          {mockCultivationArea.manager.role}
+                        <div>
+                          <div className="font-semibold text-slate-900">
+                            {details.manager.name}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {details.manager.role}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-sm space-y-1 pt-2 border-t">
+                        <div className="text-muted-foreground">
+                          {details.manager.department}
                         </div>
                       </div>
                     </div>
-                    <div className="text-sm space-y-1 pt-2 border-t">
-                      <div className="text-muted-foreground">
-                        {mockCultivationArea.manager.department}
-                      </div>
-                      <div>{mockCultivationArea.manager.phone}</div>
-                      <div className="text-primary">
-                        {mockCultivationArea.manager.email}
-                      </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground italic">
+                      Chưa phân công quản lý
                     </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
           </div>
 
           {/* Notes */}
-          {mockCultivationArea.note && (
+          {area.note && (
             <Card>
               <CardHeader className="border-b bg-slate-50">
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -294,7 +349,7 @@ const CultivationAreaDetailPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
-                <p className="text-slate-700">{mockCultivationArea.note}</p>
+                <p className="text-slate-700">{area.note}</p>
               </CardContent>
             </Card>
           )}
@@ -311,14 +366,17 @@ const CultivationAreaDetailPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6 space-y-4">
-                <div>
-                  <div className="text-2xl font-bold text-primary mb-2">
-                    {mockCultivationArea.farmingMethod.name}
+                {details.farmingMethod ? (
+                  <div>
+                    <div className="text-2xl font-bold text-primary mb-2">
+                      {details.farmingMethod.name}
+                    </div>
                   </div>
-                  <p className="text-slate-600">
-                    {mockCultivationArea.farmingMethod.description}
-                  </p>
-                </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground italic">
+                    Chưa thiết lập phương pháp
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -330,14 +388,17 @@ const CultivationAreaDetailPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6 space-y-4">
-                <div>
-                  <div className="text-2xl font-bold text-blue-600 mb-2">
-                    {mockCultivationArea.irrigationMethod.name}
+                {details.irrigationMethod ? (
+                  <div>
+                    <div className="text-2xl font-bold text-blue-600 mb-2">
+                      {details.irrigationMethod.name}
+                    </div>
                   </div>
-                  <p className="text-slate-600">
-                    {mockCultivationArea.irrigationMethod.description}
-                  </p>
-                </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground italic">
+                    Chưa thiết lập hệ thống tưới
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -346,12 +407,12 @@ const CultivationAreaDetailPage = () => {
             <CardHeader className="border-b bg-slate-50">
               <CardTitle className="flex items-center gap-2">
                 <Leaf className="w-5 h-5 text-green-600" />
-                Giống cây trồng ({mockCultivationArea.crops.length})
+                Giống cây trồng ({details.crops.length})
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {mockCultivationArea.crops.map((crop) => (
+                {details.crops.map((crop) => (
                   <div
                     key={crop.id}
                     className="flex items-center gap-3 p-4 border rounded-lg bg-green-50/50 border-green-200"
@@ -369,6 +430,11 @@ const CultivationAreaDetailPage = () => {
                     </div>
                   </div>
                 ))}
+                {details.crops.length === 0 && (
+                  <div className="col-span-full py-10 text-center text-muted-foreground italic border-2 border-dashed rounded-xl">
+                    Chưa chọn giống cây trồng
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -381,30 +447,29 @@ const CultivationAreaDetailPage = () => {
             {[
               {
                 label: "Tổng diện tích",
-                value: mockCultivationArea.statistics.totalArea,
+                value: `${details.totalArea} ha`,
                 icon: Layers,
                 color: "text-blue-600",
                 bg: "bg-blue-50",
               },
               {
-                label: "Số lượng cây",
-                value:
-                  mockCultivationArea.statistics.plantCount.toLocaleString(),
-                icon: Sprout,
-                color: "text-green-600",
-                bg: "bg-green-50",
-              },
-              {
-                label: "Chu kỳ thu hoạch/năm",
-                value: mockCultivationArea.statistics.harvestCycles,
+                label: "Số lượng thực thể",
+                value: details.selectedEntities.length || 1,
                 icon: Target,
                 color: "text-orange-600",
                 bg: "bg-orange-50",
               },
               {
-                label: "Năng suất TB",
-                value: mockCultivationArea.statistics.avgYield,
-                icon: Award,
+                label: "Giống cây trồng",
+                value: details.crops.length,
+                icon: Sprout,
+                color: "text-green-600",
+                bg: "bg-green-50",
+              },
+              {
+                label: "Cấu hình riêng",
+                value: Object.keys(area.configs).length,
+                icon: FileText,
                 color: "text-purple-600",
                 bg: "bg-purple-50",
               },
@@ -429,29 +494,24 @@ const CultivationAreaDetailPage = () => {
             ))}
           </div>
 
-          {/* Filters & Chart */}
+          {/* Filters & Chart placeholder */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-3 space-y-4">
               <Card>
                 <CardHeader className="pb-3 border-b">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <CardTitle>Biểu đồ năng suất thu hoạch</CardTitle>
+                    <CardTitle>
+                      Biểu đồ năng suất thu hoạch (Dữ liệu mẫu)
+                    </CardTitle>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" className="h-8">
-                        Last 7 days
-                      </Button>
                       <Button variant="secondary" size="sm" className="h-8">
                         Last 30 days
-                      </Button>
-                      <Button variant="outline" size="sm" className="h-8">
-                        This Year
                       </Button>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-6">
                   <div className="h-[350px] flex items-end justify-between gap-2 px-2">
-                    {/* Mock Chart Bars */}
                     {[45, 60, 30, 75, 50, 80, 65, 90, 70, 55, 60, 40].map(
                       (h, i) => (
                         <div
@@ -461,11 +521,7 @@ const CultivationAreaDetailPage = () => {
                           <div
                             className="w-full bg-primary/20 hover:bg-primary/40 transition-all rounded-t relative group-hover:bg-primary/60"
                             style={{ height: `${h}%` }}
-                          >
-                            <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
-                              {h} tấn
-                            </div>
-                          </div>
+                          ></div>
                           <span className="text-xs text-muted-foreground">
                             T{i + 1}
                           </span>
@@ -474,7 +530,7 @@ const CultivationAreaDetailPage = () => {
                     )}
                   </div>
                   <div className="text-center text-sm text-muted-foreground mt-4">
-                    Năng suất theo tháng (Năm 2024)
+                    Dữ liệu thống kê đang được cập nhật cho {area.name}
                   </div>
                 </CardContent>
               </Card>

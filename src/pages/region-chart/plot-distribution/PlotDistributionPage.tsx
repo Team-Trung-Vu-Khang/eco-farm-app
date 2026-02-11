@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { Plus } from "lucide-react";
 import {
@@ -9,18 +9,21 @@ import {
   useToast,
 } from "@tankhang1/eco-shared-ui";
 
-import { type Plot, MOCK_PLOTS } from "../constants";
+import { type Plot } from "../constants";
+import useRegionStore from "../../../stores/useRegionStore";
 
 const PlotDistributionPage = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [data, setData] = useState<Plot[]>([]);
+  const { regions, removePlot } = useRegionStore();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    setData(MOCK_PLOTS);
-  }, []);
+  const data = useMemo(() => {
+    return regions.flatMap((r) =>
+      (r.subAreas || []).flatMap((s) => s.plots || []),
+    );
+  }, [regions]);
 
   const handleAdd = () => {
     setLocation("/plot-distribution/create");
@@ -37,7 +40,7 @@ const PlotDistributionPage = () => {
 
   const confirmDelete = () => {
     if (deletingId) {
-      setData((prev) => prev.filter((i) => i.id !== deletingId));
+      removePlot(deletingId);
       toast({ title: "Thành công", description: "Đã xóa lô" });
       setDeleteOpen(false);
     }

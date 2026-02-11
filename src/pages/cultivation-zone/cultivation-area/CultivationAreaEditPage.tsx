@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useLocation, useParams } from "wouter";
 import {
   AdminLayout,
@@ -22,6 +22,8 @@ import {
   DialogTitle,
   Badge,
   ScrollArea,
+  useToast,
+  cn,
 } from "@tankhang1/eco-shared-ui";
 import {
   MOCK_REGIONS,
@@ -50,33 +52,12 @@ import {
   Briefcase,
   Layers,
 } from "lucide-react";
+import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
+import useRegionStore from "../../../stores/useRegionStore";
 
 type ScopeType = "region" | "area" | "plot";
 
-// Mock existing data for edit mode
-const mockExistingData = {
-  id: "CA-001",
-  name: "Vùng trồng Sầu riêng chất lượng cao",
-  scope: "area" as ScopeType,
-  selectedRegionId: "1",
-  selectedAreaIds: ["1", "2"],
-  selectedPlotIds: [] as string[],
-  selectedCertId: "cert-1",
-  selectedManagerId: "mgr-1",
-  note: "Khu vực thí điểm áp dụng công nghệ cao trong canh tác sầu riêng",
-  configs: {
-    "1": {
-      farmingMethodId: "organic",
-      irrigationMethodId: "drip",
-      selectedCrops: ["durian-1", "durian-2"],
-    },
-    "2": {
-      farmingMethodId: "organic",
-      irrigationMethodId: "sprinkler",
-      selectedCrops: ["durian-1"],
-    },
-  },
-};
+// (Removed mockExistingData and switched to store)
 
 // --- Enhanced Helper Components ---
 
@@ -293,33 +274,30 @@ const ManagerSelector = ({
 // --- Main Page Component ---
 
 const CultivationAreaEditPage = () => {
-  const params = useParams();
+  const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const { getAreaById, updateArea } = useCultivationAreaStore();
+  const { regions } = useRegionStore();
 
-  // State - Initialize with existing data
-  const [scope] = useState<ScopeType>(mockExistingData.scope);
-  const [name, setName] = useState(mockExistingData.name);
-  const [note, setNote] = useState(mockExistingData.note);
+  const existingArea = useMemo(() => {
+    if (!id) return null;
+    return getAreaById(id);
+  }, [id, getAreaById]);
 
-  const [selectedRegionId] = useState<string>(
-    mockExistingData.selectedRegionId,
-  );
-  const [selectedAreaIds, setSelectedAreaIds] = useState<string[]>(
-    mockExistingData.selectedAreaIds,
-  );
-  const [selectedPlotIds, setSelectedPlotIds] = useState<string[]>(
-    mockExistingData.selectedPlotIds,
-  );
+  // State
+  const [scope, setScope] = useState<ScopeType>("region");
+  const [name, setName] = useState("");
+  const [note, setNote] = useState("");
 
-  const [selectedCertId, setSelectedCertId] = useState<string>(
-    mockExistingData.selectedCertId,
-  );
-  const [selectedManagerId, setSelectedManagerId] = useState<string>(
-    mockExistingData.selectedManagerId,
-  );
+  const [selectedRegionId, setSelectedRegionId] = useState<string>("");
+  const [selectedAreaIds, setSelectedAreaIds] = useState<string[]>([]);
+  const [selectedPlotIds, setSelectedPlotIds] = useState<string[]>([]);
 
-  /* Per-entity configuration state - Initialize with existing configs */
-  const [activeConfigId, setActiveConfigId] = useState<string>("default");
+  const [selectedCertId, setSelectedCertId] = useState<string>("");
+  const [selectedManagerId, setSelectedManagerId] = useState<string>("");
+
+  const [activeConfigId, setActiveConfigId] = useState<string>("region-main");
   const [configs, setConfigs] = useState<
     Record<
       string,
@@ -329,23 +307,90 @@ const CultivationAreaEditPage = () => {
         selectedCrops: string[];
       }
     >
-  >(mockExistingData.configs);
+  >({});
+
+  // Initialize state with existing area data
+  useEffect(() => {
+    if (existingArea) {
+      setScope(existingArea.scope);
+      setName(existingArea.name);
+      setNote(existingArea.note || "");
+      setSelectedCertId(existingArea.certificateId || "");
+      setSelectedManagerId(existingArea.managerId || "");
+      setConfigs(existingArea.configs || {});
+
+      // Locate IDs based on scope
+      if (existingArea.scope === "region") {
+        setSelectedRegionId(existingArea.targetIds[0] || "");
+      } else if (existingArea.scope === "area") {
+        const areaIds = existingArea.targetIds;
+        setSelectedAreaIds(areaIds);
+        // Find region of first area
+        const allAreas = regions.flatMap((r) => r.subAreas || []);
+        const firstArea = allAreas.find((a) => a.id.toString() === areaIds[0]);
+        if (firstArea) {
+          setSelectedRegionId(firstArea.regionId.toString());
+        }
+      } else if (existingArea.scope === "plot") {
+        const plotIds = existingArea.targetIds;
+        setSelectedPlotIds(plotIds);
+        // Find areas of these plots
+        const allAreas = regions.flatMap((r) => r.subAreas || []);
+        const areasWithPlots = allAreas.filter((a) =>
+          a.plots?.some((p) => plotIds.includes(p.id)),
+        );
+        setSelectedAreaIds(areasWithPlots.map((a) => a.id.toString()));
+        if (areasWithPlots[0]) {
+          setSelectedRegionId(areasWithPlots[0].regionId.toString());
+        }
+      }
+    }
+  }, [existingArea, regions]);
 
   // Computed values
-  const selectedRegion = MOCK_REGIONS.find(
-    (r) => r.id.toString() === selectedRegionId,
+  const currentRegion = useMemo(
+    () => regions.find((r) => r.id.toString() === selectedRegionId),
+    [regions, selectedRegionId],
   );
-  const selectedAreas = MOCK_AREAS.filter((a) =>
-    selectedAreaIds.includes(a.id.toString()),
+  const availableAreas = useMemo(
+    () => currentRegion?.subAreas || [],
+    [currentRegion],
   );
-  const selectedPlots = MOCK_PLOTS.filter((p) =>
-    selectedPlotIds.includes(p.id),
+  const availablePlots = useMemo(() => {
+    const filteredAreas = availableAreas.filter((a) =>
+      selectedAreaIds.includes(a.id.toString()),
+    );
+    return filteredAreas.flatMap((a) => a.plots || []);
+  }, [availableAreas, selectedAreaIds]);
+
+  const selectedRegion = currentRegion;
+  const selectedAreas = useMemo(
+    () =>
+      availableAreas.filter((a) => selectedAreaIds.includes(a.id.toString())),
+    [availableAreas, selectedAreaIds],
+  );
+  const selectedPlots = useMemo(
+    () => availablePlots.filter((p) => selectedPlotIds.includes(p.id)),
+    [availablePlots, selectedPlotIds],
   );
 
   const toggleArea = (id: string) => {
-    setSelectedAreaIds((prev) =>
-      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id],
-    );
+    setSelectedAreaIds((prev) => {
+      const isSelected = prev.includes(id);
+      if (isSelected) {
+        // Remove plots associated with this area
+        const area = availableAreas.find((a) => a.id.toString() === id);
+        if (area?.plots) {
+          const plotIdsToRemove = area.plots.map((p) => p.id);
+          setSelectedPlotIds((plots) =>
+            plots.filter((pid) => !plotIdsToRemove.includes(pid)),
+          );
+        }
+        return prev.filter((a) => a !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
   };
 
   const togglePlot = (id: string) => {
@@ -353,6 +398,29 @@ const CultivationAreaEditPage = () => {
       prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
     );
   };
+
+  if (!existingArea) {
+    return (
+      <AdminLayout
+        title="Không tìm thấy"
+        description="Vùng canh tác không tồn tại"
+      >
+        <div className="flex flex-col items-center justify-center py-20">
+          <Target className="w-16 h-16 text-slate-300 mb-4" />
+          <h2 className="text-xl font-bold text-slate-900">
+            Không tìm thấy vùng canh tác
+          </h2>
+          <Button
+            variant="ghost"
+            className="mt-4"
+            onClick={() => setLocation("/cultivation-area")}
+          >
+            Quay lại danh sách
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   // Steps Rendering
   const renderGeneralInfo = () => (
@@ -365,9 +433,8 @@ const CultivationAreaEditPage = () => {
         <div className="text-sm text-blue-800">
           <div className="font-semibold mb-1">Chế độ chỉnh sửa</div>
           <div>
-            Bạn đang chỉnh sửa vùng canh tác{" "}
-            <strong>{mockExistingData.id}</strong>. Các thay đổi sẽ được lưu sau
-            khi hoàn tất.
+            Bạn đang chỉnh sửa vùng canh tác <strong>{existingArea.id}</strong>.
+            Các thay đổi sẽ được lưu sau khi hoàn tất.
           </div>
         </div>
       </div>
@@ -420,17 +487,30 @@ const CultivationAreaEditPage = () => {
 
               <div className="grid gap-2">
                 <Label className="text-xs text-muted-foreground">
-                  Vùng trồng (Region)
+                  Vùng trồng (Region) <span className="text-red-500">*</span>
                 </Label>
-                <div className="bg-white p-3 rounded border text-sm font-medium">
-                  {selectedRegion?.name}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Vùng trồng không thể thay đổi
-                </p>
+                <Select
+                  value={selectedRegionId}
+                  onValueChange={(val) => {
+                    setSelectedRegionId(val);
+                    setSelectedAreaIds([]);
+                    setSelectedPlotIds([]);
+                  }}
+                >
+                  <SelectTrigger className="bg-white border-slate-200">
+                    <SelectValue placeholder="Chọn vùng..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {regions.map((r) => (
+                      <SelectItem key={r.id} value={r.id.toString()}>
+                        {r.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              {(scope === "area" || scope === "plot") && (
+              {(scope === "area" || scope === "plot") && selectedRegionId && (
                 <div className="space-y-2 animate-in slide-in-from-top-2">
                   <Label className="text-xs text-muted-foreground">
                     Khu vực (Area) <span className="text-red-500">*</span>
@@ -442,9 +522,7 @@ const CultivationAreaEditPage = () => {
                   </Label>
                   <ScrollArea className="max-h-[200px] border rounded-lg p-2 bg-white">
                     <div className="space-y-1">
-                      {MOCK_AREAS.filter(
-                        (a) => a.regionId.toString() === selectedRegionId,
-                      ).map((a) => (
+                      {availableAreas.map((a) => (
                         <div
                           key={a.id}
                           onClick={() => toggleArea(a.id.toString())}
@@ -465,7 +543,7 @@ const CultivationAreaEditPage = () => {
                 </div>
               )}
 
-              {scope === "plot" && (
+              {scope === "plot" && selectedAreaIds.length > 0 && (
                 <div className="space-y-2 animate-in slide-in-from-top-2">
                   <Label className="text-xs text-muted-foreground">
                     Lô trồng (Plot) <span className="text-red-500">*</span>
@@ -477,22 +555,41 @@ const CultivationAreaEditPage = () => {
                   </Label>
                   <ScrollArea className="max-h-[200px] border rounded-lg p-2 bg-white">
                     <div className="space-y-1">
-                      {MOCK_PLOTS.map((p) => (
-                        <div
-                          key={p.id}
-                          onClick={() => togglePlot(p.id)}
-                          className={`flex items-center justify-between p-2 rounded cursor-pointer transition-all ${
-                            selectedPlotIds.includes(p.id)
-                              ? "bg-primary/10 border border-primary/30"
-                              : "hover:bg-slate-50"
-                          }`}
-                        >
-                          <span className="text-sm">{p.name}</span>
-                          {selectedPlotIds.includes(p.id) && (
-                            <CheckCircle2 className="w-4 h-4 text-primary" />
-                          )}
+                      {availablePlots.map((p) => {
+                        const parentArea = availableAreas.find((a) =>
+                          a.plots?.some((pp) => pp.id === p.id),
+                        );
+                        return (
+                          <div
+                            key={p.id}
+                            onClick={() => togglePlot(p.id)}
+                            className={`flex items-center justify-between p-2 rounded cursor-pointer transition-all ${
+                              selectedPlotIds.includes(p.id)
+                                ? "bg-primary/10 border border-primary/30"
+                                : "hover:bg-slate-50"
+                            }`}
+                          >
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium">
+                                {p.name}
+                              </span>
+                              {parentArea && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  Thuộc: {parentArea.name}
+                                </span>
+                              )}
+                            </div>
+                            {selectedPlotIds.includes(p.id) && (
+                              <CheckCircle2 className="w-4 h-4 text-primary" />
+                            )}
+                          </div>
+                        );
+                      })}
+                      {availablePlots.length === 0 && (
+                        <div className="text-center py-4 text-xs text-muted-foreground italic">
+                          Không có lô nào trong khu vực đã chọn
                         </div>
-                      ))}
+                      )}
                     </div>
                   </ScrollArea>
                 </div>
@@ -609,7 +706,7 @@ const CultivationAreaEditPage = () => {
     return (
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         {/* Scope Summary Banner - Full Width at Top */}
-        <div className="relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 via-white to-primary/5 p-6">
+        <div className="relative overflow-hidden rounded-xl border border-green-200 bg-linear-to-r from-green-50 via-white to-green-50 p-6 shadow-sm">
           <div className="relative z-10 flex items-center gap-4">
             <div className="w-14 h-14 rounded-xl bg-white shadow-sm border flex items-center justify-center text-primary shrink-0">
               {scope === "plot" ? (
@@ -675,7 +772,12 @@ const CultivationAreaEditPage = () => {
         </div>
 
         {/* Main Content Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_3fr] gap-6">
+        <div
+          className={cn(
+            "grid grid-cols-1 gap-6",
+            entities.length > 1 ? "lg:grid-cols-[1fr_3fr]" : "grid-cols-1",
+          )}
+        >
           {/* Sidebar for multiple entities */}
           {entities.length > 1 && (
             <div className="w-full lg:w-72 shrink-0">
@@ -1262,22 +1364,39 @@ const CultivationAreaEditPage = () => {
               steps={steps}
               completeLabel="Lưu thay đổi"
               onComplete={() => {
+                // Determine target labels
+                let targetName = "";
+                let targetIds: string[] = [];
+                if (scope === "region") {
+                  targetName = selectedRegion?.name || "";
+                  targetIds = [selectedRegionId];
+                } else if (scope === "area") {
+                  targetName = selectedAreas.map((a) => a.name).join(", ");
+                  targetIds = selectedAreaIds;
+                } else if (scope === "plot") {
+                  targetName = selectedPlots.map((p) => p.name).join(", ");
+                  targetIds = selectedPlotIds;
+                }
+
                 // Handle update
-                console.log("Update:", {
-                  id: params.id,
+                updateArea(id!, {
                   name,
                   scope,
-                  selectedRegionId,
-                  selectedAreaIds,
-                  selectedPlotIds,
+                  targetIds,
+                  targetName,
                   configs,
-                  selectedCertId,
-                  selectedManagerId,
+                  certificateId: selectedCertId,
+                  managerId: selectedManagerId,
+                  note,
                 });
-                // Add toast here in real app
-                setLocation(`/cultivation-area/${params.id}`);
+
+                toast({
+                  title: "Thành công",
+                  description: "Đã cập nhật vùng canh tác",
+                });
+                setLocation(`/cultivation-area/${id}`);
               }}
-              onCancel={() => setLocation(`/cultivation-area/${params.id}`)}
+              onCancel={() => setLocation(`/cultivation-area/${id}`)}
             />
           </div>
         </CardContent>

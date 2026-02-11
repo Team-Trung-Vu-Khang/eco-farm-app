@@ -11,7 +11,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Calendar, FileText, Hash, Plus, Sprout } from "lucide-react";
 import type { Season } from "./types";
-import { initialSeasons } from "./mocks";
+import useSeasonStore from "../../stores/useSeasonStore";
 
 const statusMap: Record<
   string,
@@ -112,7 +112,7 @@ const columns: Column<Season>[] = [
 const SeasonPage = () => {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [data, setData] = useState<Season[]>(initialSeasons);
+  const { seasons, deleteSeason } = useSeasonStore();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Season | null>(null);
 
@@ -127,7 +127,7 @@ const SeasonPage = () => {
 
   const handleConfirmDelete = () => {
     if (deleteItem) {
-      setData((prev) => prev.filter((i) => i.id !== deleteItem.id));
+      deleteSeason(deleteItem.id);
       toast({ title: "Thành công", description: "Đã xóa mùa vụ" });
     }
     setDeleteOpen(false);
@@ -150,7 +150,7 @@ const SeasonPage = () => {
       }
     >
       <DataTable
-        data={data}
+        data={seasons}
         selectable
         columns={columns}
         onEdit={handleEdit}
