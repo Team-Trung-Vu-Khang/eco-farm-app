@@ -19,6 +19,7 @@ import {
   useToast,
 } from "@tankhang1/eco-shared-ui";
 import { CreditCard, Save, X } from "lucide-react";
+import useBankStore from "../../stores/useBankStore";
 
 const BANK_LOGOS: Record<string, string> = {
   Vietcombank:
@@ -39,12 +40,16 @@ export default function BankCreatePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
+  // Zustand store
+  const bankAccounts = useBankStore((state) => state.bankAccounts);
+  const addBankAccount = useBankStore((state) => state.addBankAccount);
+
   const [formData, setFormData] = useState({
     bankName: "",
     accountNumber: "",
     accountHolder: "",
     branch: "",
-    status: "active",
+    status: "active" as "active" | "inactive",
     note: "",
     logo: "",
   });
@@ -70,6 +75,25 @@ export default function BankCreatePage() {
       });
       return;
     }
+
+    // Generate new ID
+    const newId =
+      bankAccounts.length > 0
+        ? Math.max(...bankAccounts.map((b) => b.id)) + 1
+        : 1;
+
+    // Add to store
+    addBankAccount({
+      id: newId,
+      bankName: formData.bankName,
+      accountNumber: formData.accountNumber,
+      accountHolder: formData.accountHolder,
+      branch: formData.branch,
+      status: formData.status,
+      note: formData.note,
+      logo: formData.logo,
+      createdAt: new Date().toISOString(),
+    });
 
     toast({
       title: "Thành công",

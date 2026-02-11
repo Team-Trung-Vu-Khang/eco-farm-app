@@ -10,55 +10,16 @@ import {
   useToast,
   type Column,
 } from "@tankhang1/eco-shared-ui";
-
-interface BankAccount {
-  id: number;
-  bankName: string;
-  accountNumber: string;
-  accountHolder: string;
-  branch: string;
-  note: string;
-  status: "active" | "inactive";
-  logo: string;
-}
-
-const initialData: BankAccount[] = [
-  {
-    id: 1,
-    bankName: "Vietcombank",
-    accountNumber: "0011001234567",
-    accountHolder: "ECOFARM CORP",
-    branch: "Sở Giao Dịch",
-    note: "Tài khoản chính",
-    status: "active",
-    logo: "https://cdn.haitrieu.com/wp-content/uploads/2022/02/Icon-Vietcombank.png",
-  },
-  {
-    id: 2,
-    bankName: "Agribank",
-    accountNumber: "9876543210",
-    accountHolder: "ECOFARM CORP",
-    branch: "Chi nhánh Cầu Giấy",
-    note: "Tài khoản phụ",
-    status: "active",
-    logo: "https://cdn.haitrieu.com/wp-content/uploads/2022/01/Logo-Agribank-V.png",
-  },
-  {
-    id: 3,
-    bankName: "MBBank",
-    accountNumber: "88889999",
-    accountHolder: "NGUYEN VAN A",
-    branch: "Chi nhánh Hoàn Kiếm",
-    note: "Tài khoản cá nhân",
-    status: "inactive",
-    logo: "https://cdn.haitrieu.com/wp-content/uploads/2022/02/Icon-MB-Bank-MBB.png",
-  },
-];
+import useBankStore, { type BankAccount } from "../../stores/useBankStore";
 
 export default function BankPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [data, setData] = useState<BankAccount[]>(initialData);
+
+  // Zustand store
+  const bankAccounts = useBankStore((state) => state.bankAccounts);
+  const deleteBankAccount = useBankStore((state) => state.deleteBankAccount);
+
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<BankAccount | null>(null);
 
@@ -127,7 +88,7 @@ export default function BankPage() {
 
   const handleConfirmDelete = () => {
     if (deleteItem) {
-      setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
+      deleteBankAccount(deleteItem.id);
       toast({
         title: "Thành công",
         description: "Đã xóa tài khoản ngân hàng",
@@ -151,7 +112,7 @@ export default function BankPage() {
     >
       <DataTable
         columns={columns}
-        data={data}
+        data={bankAccounts}
         onView={(item) => setLocation(`/bank/${item.id}/edit`)}
         onEdit={(item) => setLocation(`/bank/${item.id}/edit`)}
         onDelete={handleDelete}

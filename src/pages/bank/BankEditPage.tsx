@@ -20,6 +20,7 @@ import {
   DeleteDialog,
 } from "@tankhang1/eco-shared-ui";
 import { CreditCard, Save, Trash2, X } from "lucide-react";
+import useBankStore from "../../stores/useBankStore";
 
 const BANK_LOGOS: Record<string, string> = {
   Vietcombank:
@@ -42,33 +43,39 @@ export default function BankEditPage() {
   const { toast } = useToast();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  // Zustand store
+  const bankAccountId = params?.id ? parseInt(params.id) : undefined;
+  const getBankAccountById = useBankStore((state) => state.getBankAccountById);
+  const updateBankAccount = useBankStore((state) => state.updateBankAccount);
+  const deleteBankAccount = useBankStore((state) => state.deleteBankAccount);
+  const bankAccount = bankAccountId
+    ? getBankAccountById(bankAccountId)
+    : undefined;
+
   const [formData, setFormData] = useState({
     bankName: "",
     accountNumber: "",
     accountHolder: "",
     branch: "",
-    status: "active",
+    status: "active" as "active" | "inactive",
     note: "",
     logo: "",
   });
 
-  // Mock data fetching
+  // Load bank account data
   useEffect(() => {
-    // Simulate API call using ID
-    console.log("Fetching bank account", params?.id);
-    setTimeout(() => {
-      const bankName = "Vietcombank";
+    if (bankAccount) {
       setFormData({
-        bankName: bankName,
-        accountNumber: "0011001234567",
-        accountHolder: "ECOFARM CORP",
-        branch: "Sở Giao Dịch",
-        status: "active",
-        note: "Tài khoản chính",
-        logo: BANK_LOGOS[bankName] || "",
+        bankName: bankAccount.bankName,
+        accountNumber: bankAccount.accountNumber,
+        accountHolder: bankAccount.accountHolder,
+        branch: bankAccount.branch,
+        status: bankAccount.status,
+        note: bankAccount.note,
+        logo: bankAccount.logo,
       });
-    }, 500);
-  }, []);
+    }
+  }, [bankAccount]);
 
   const handleBankChange = (val: string) => {
     setFormData({
@@ -82,7 +89,8 @@ export default function BankEditPage() {
     if (
       !formData.bankName ||
       !formData.accountNumber ||
-      !formData.accountHolder
+      !formData.accountHolder ||
+      !bankAccountId
     ) {
       toast({
         title: "Thiếu thông tin",
@@ -92,6 +100,16 @@ export default function BankEditPage() {
       return;
     }
 
+    updateBankAccount(bankAccountId, {
+      bankName: formData.bankName,
+      accountNumber: formData.accountNumber,
+      accountHolder: formData.accountHolder,
+      branch: formData.branch,
+      status: formData.status,
+      note: formData.note,
+      logo: formData.logo,
+    });
+
     toast({
       title: "Cập nhật thành công",
       description: `Đã cập nhật tài khoản "${formData.bankName} - ${formData.accountNumber}"`,
@@ -100,12 +118,35 @@ export default function BankEditPage() {
   };
 
   const handleDelete = () => {
-    toast({
-      title: "Thành công",
-      description: "Đã xóa tài khoản ngân hàng",
-    });
-    setLocation("/bank");
+    if (bankAccountId) {
+      deleteBankAccount(bankAccountId);
+      toast({
+        title: "Thành công",
+        description: "Đã xóa tài khoản ngân hàng",
+      });
+      setLocation("/bank");
+    }
   };
+
+  // Show not found if bank account doesn't exist
+  if (bankAccountId && !bankAccount) {
+    return (
+      <AdminLayout
+        title="Không tìm thấy"
+        description="Tài khoản ngân hàng không tồn tại"
+      >
+        <div className="flex flex-col items-center justify-center h-96">
+          <h2 className="text-2xl font-bold mb-4">
+            Không tìm thấy tài khoản ngân hàng
+          </h2>
+          <Button onClick={() => setLocation("/bank")}>
+            <X className="w-4 h-4 mr-2" />
+            Quay lại danh sách
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout
@@ -196,7 +237,7 @@ export default function BankEditPage() {
                 <Label htmlFor="status">Trạng thái</Label>
                 <Select
                   value={formData.status}
-                  onValueChange={(val) =>
+                  onValueChange={(val: "active" | "inactive") =>
                     setFormData({ ...formData, status: val })
                   }
                 >
