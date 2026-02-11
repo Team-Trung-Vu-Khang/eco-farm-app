@@ -60,35 +60,12 @@ import {
 } from "lucide-react";
 import QrScanner from "qr-scanner";
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { vietQrBankData } from "../../constants/banks";
 import { parseVietQR } from "../../utils/commons";
 import readXlsxFile from "read-excel-file";
-
-interface BankAccount {
-  bankName: string;
-  accountHolder: string;
-  accountNumber: string;
-  branch: string;
-  note: string;
-  bin: string;
-}
-
-interface Contact {
-  name: string;
-  phone: string;
-  email: string;
-}
-
-interface Branch {
-  name: string;
-  taxCode: string;
-  phone: string;
-  taxAddress: string;
-  email: string;
-  address: string;
-  note: string;
-}
+import useEnterpriseStore from "../../stores/useEnterpriseStore";
+import { type Branch, type BankAccount } from "./constants";
 
 const bankOptions = vietQrBankData.map((bank) => ({
   id: bank.id,
@@ -107,8 +84,21 @@ const classificationOptions = [
 ];
 
 export default function EnterpriseEditPage() {
+  const [, params] = useRoute("/enterprise/:id/edit");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  const getEnterpriseById = useEnterpriseStore(
+    (state) => state.getEnterpriseById,
+  );
+  const updateEnterprise = useEnterpriseStore(
+    (state) => state.updateEnterprise,
+  );
+
+  const enterpriseId = params?.id ? Number(params.id) : null;
+  const enterpriseData = enterpriseId
+    ? getEnterpriseById(enterpriseId)
+    : undefined;
 
   const [formData, setFormData] = useState({
     type: "enterprise" as "enterprise" | "farm" | "cooperative",
@@ -117,6 +107,8 @@ export default function EnterpriseEditPage() {
     brandName: "",
     taxCode: "",
     taxAddress: "",
+    taxAuthority: "",
+    issueDate: "",
     classification: [] as Array<string>,
     foundedDate: "",
     representative: "",
@@ -126,64 +118,49 @@ export default function EnterpriseEditPage() {
     address: "",
     image: "",
     description: "",
-    contacts: [] as Contact[],
-    branches: [] as any[],
-    bankAccounts: [] as BankAccount[],
-    documents: [] as { name: string; type: string; size: string }[],
-  });
-
-  // Mock data fetching
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setFormData({
-        type: "enterprise",
-        code: "DN2024001",
-        name: "Công ty Cổ phần Nông nghiệp Xanh EcoFarm",
-        brandName: "EcoFarm Vietnam",
-        taxCode: "0101234567",
-        taxAddress: "Tầng 5, Tòa nhà ABC, Cầu Giấy, Hà Nội",
-        classification: ["production"],
-        foundedDate: "2020-03-15",
-        representative: "Nguyễn Văn Giám Đốc",
-        website: "https://ecofarm.vn",
-        province: "hn",
-        ward: "dich_vong",
-        address: "Số 123 Đường Xuân Thủy",
-        image:
-          "https://images.unsplash.com/photo-1595839019623-668b555776a3?w=800&q=80",
-        description:
-          "Doanh nghiệp tiên phong trong lĩnh vực nông nghiệp công nghệ cao, chuyên sản xuất và cung ứng rau sạch chuẩn VietGAP.",
-        contacts: [
-          {
-            name: "Lê Văn Tiến",
-            phone: "0333444555",
-            email: "tien.lv@ecofarm.vn",
-          },
-        ],
-        branches: [],
-        bankAccounts: [
-          {
-            bin: "970436",
-            bankName: "Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)",
-            accountHolder: "ECOFARM CORP",
-            accountNumber: "0011001234567",
-            branch: "Sở Giao Dịch",
-            note: "Tài khoản chính",
-          },
-        ],
-        documents: [
-          { name: "giay_phep_kd.pdf", type: "application/pdf", size: "2.5MB" },
-        ],
-      });
-    }, 500);
-  }, []);
-
-  const [newContact, setNewContact] = useState<Contact>({
-    name: "",
     phone: "",
     email: "",
+    branches: [] as Branch[],
+    bankAccounts: [] as BankAccount[],
+    documents: [] as {
+      name: string;
+      type: string;
+      size: string;
+      url?: string;
+    }[],
   });
+
+  useEffect(() => {
+    if (enterpriseData) {
+      setFormData({
+        type: enterpriseData.type,
+        code: enterpriseData.code,
+        name: enterpriseData.name,
+        brandName: enterpriseData.brandName || "",
+        taxCode: enterpriseData.taxCode,
+        taxAddress: enterpriseData.taxAddress || "",
+        taxAuthority: enterpriseData.taxAuthority || "",
+        issueDate: enterpriseData.issueDate || "",
+        classification: enterpriseData.classification,
+        foundedDate: enterpriseData.foundedDate || "",
+        representative: enterpriseData.representative || "",
+        website: enterpriseData.website || "",
+        province: enterpriseData.province || "",
+        ward: enterpriseData.ward || "",
+        address: enterpriseData.address,
+        image: enterpriseData.image || "",
+        description: enterpriseData.description || "",
+        phone: enterpriseData.phone || "",
+        email: enterpriseData.email || "",
+        branches: enterpriseData.branches || [],
+        bankAccounts: enterpriseData.bankAccounts || [],
+        documents: enterpriseData.documents || [],
+      });
+    } else if (enterpriseId) {
+      // Handle not found if needed, or redirect
+      // setLocation("/enterprise");
+    }
+  }, [enterpriseData, enterpriseId]);
 
   const [newBranch, setNewBranch] = useState<Branch>({
     name: "",
@@ -523,33 +500,6 @@ export default function EnterpriseEditPage() {
     });
   };
 
-  const addContact = () => {
-    if (newContact.name && newContact.phone) {
-      setFormData((prev) => ({
-        ...prev,
-        contacts: [...prev.contacts, newContact],
-      }));
-      setNewContact({ name: "", phone: "", email: "" });
-      toast({
-        title: "Thành công",
-        description: "Đã thêm liên hệ mới",
-      });
-    } else {
-      toast({
-        title: "Lỗi",
-        description: "Vui lòng nhập tên và số điện thoại",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const removeContact = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      contacts: prev.contacts.filter((_, i) => i !== index),
-    }));
-  };
-
   const addBankAccount = () => {
     if (newBankAccount.bin && newBankAccount.accountNumber) {
       setFormData({
@@ -592,6 +542,42 @@ export default function EnterpriseEditPage() {
   };
 
   const submitForm = () => {
+    if (!enterpriseId) return;
+
+    const updatedEnterprise: any = {
+      id: enterpriseId,
+      code: formData.code,
+      name: formData.name,
+      image: formData.image,
+      type: formData.type,
+      classification: formData.classification as any,
+      taxCode: formData.taxCode,
+      address: formData.address, // Mapping only address as per current store structure, ideally should store components too if needed
+      phone: formData.phone,
+      email: formData.email,
+      status: enterpriseData?.status || "active",
+      createdAt: enterpriseData?.createdAt || new Date().toISOString(),
+
+      // Extended fields
+      brandName: formData.brandName,
+      representative: formData.representative,
+      foundedDate: formData.foundedDate,
+      website: formData.website,
+      province: formData.province,
+      district: "", // District currently missing in form state, would need to be added
+      ward: formData.ward,
+      taxAddress: formData.taxAddress,
+      taxAuthority: formData.taxAuthority,
+      issueDate: formData.issueDate,
+      description: formData.description,
+      branches: formData.branches,
+      bankAccounts: formData.bankAccounts,
+      documents: formData.documents,
+    };
+
+    // Exclude ID from the update object as it is passed separately
+    const { id, ...updateData } = updatedEnterprise;
+    updateEnterprise(enterpriseId, updateData);
     setShowConfirmDialog(false);
     toast({
       title: "Cập nhật thành công",
@@ -736,6 +722,31 @@ export default function EnterpriseEditPage() {
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="issueDate">Ngày cấp</Label>
+              <Input
+                id="issueDate"
+                type="date"
+                value={formData.issueDate}
+                onChange={(e) =>
+                  setFormData({ ...formData, issueDate: e.target.value })
+                }
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="taxAuthority">Cơ quan thuế</Label>
+              <Input
+                id="taxAuthority"
+                value={formData.taxAuthority}
+                onChange={(e) =>
+                  setFormData({ ...formData, taxAuthority: e.target.value })
+                }
+                placeholder="Cục thuế / Chi cục thuế..."
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="taxAddress">Địa chỉ thuế</Label>
               <Input
                 id="taxAddress"
@@ -753,7 +764,7 @@ export default function EnterpriseEditPage() {
               <Label htmlFor="representative">Người đại diện pháp luật *</Label>
               <Input
                 id="representative"
-                value={formData.representative}
+                value={formData.representative || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, representative: e.target.value })
                 }
@@ -830,6 +841,31 @@ export default function EnterpriseEditPage() {
                 placeholder="Số nhà, đường, ấp..."
               />
             </div>
+
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Hotline</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                  placeholder="09xx xxx xxx"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  placeholder="email@example.com"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -848,128 +884,7 @@ export default function EnterpriseEditPage() {
       ),
       isValid: formData.name.length > 0 && formData.code.length > 0,
     },
-    {
-      id: "contact",
-      title: "Thông tin liên hệ",
-      description: "Danh sách liên hệ",
-      content: (
-        <div className="max-w-2xl mx-auto space-y-8">
-          <Card className="border-primary/20 bg-primary/5">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Thêm liên hệ mới
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2 col-span-2">
-                  <Label htmlFor="contact-name">Họ và tên *</Label>
-                  <Input
-                    id="contact-name"
-                    value={newContact.name}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, name: e.target.value })
-                    }
-                    placeholder="VD: Nguyễn Văn A"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="contact-phone">Số điện thoại *</Label>
-                  <Input
-                    id="contact-phone"
-                    value={newContact.phone}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, phone: e.target.value })
-                    }
-                    placeholder="09xx xxx xxx"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="contact-email">Email</Label>
-                  <Input
-                    id="contact-email"
-                    type="email"
-                    value={newContact.email}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, email: e.target.value })
-                    }
-                    placeholder="email@example.com"
-                  />
-                </div>
-              </div>
-              <Button onClick={addContact} className="w-full">
-                <Plus className="w-4 h-4 mr-2" />
-                Thêm vào danh sách
-              </Button>
-            </CardContent>
-          </Card>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold flex items-center gap-2">
-                <Users className="w-5 h-5 text-primary" />
-                Danh sách liên hệ
-              </h3>
-              <Badge variant="outline">
-                {formData.contacts.length} liên hệ
-              </Badge>
-            </div>
-
-            {formData.contacts.length === 0 ? (
-              <div className="text-center py-10 border-2 border-dashed rounded-xl text-muted-foreground">
-                <p>Chưa có thông tin liên hệ nào.</p>
-                <p className="text-sm">
-                  Vui lòng thêm liên hệ ở form phía trên.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {formData.contacts.map((contact, index) => (
-                  <div
-                    key={index}
-                    className="relative group bg-card border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
-                    <div className="p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                            <User className="w-4 h-4 text-primary" />
-                          </div>
-                          <span className="font-bold">{contact.name}</span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => removeContact(index)}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                      <div className="space-y-1 text-sm text-muted-foreground ml-10">
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-3 h-3" />
-                          <span>{contact.phone}</span>
-                        </div>
-                        {contact.email && (
-                          <div className="flex items-center gap-2">
-                            <Mail className="w-3 h-3" />
-                            <span className="truncate">{contact.email}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      ),
-      isValid: formData.contacts.length > 0,
-    },
     {
       id: "branches",
       title: "Chi nhánh",
@@ -1310,7 +1225,7 @@ export default function EnterpriseEditPage() {
                       </Label>
                       <Combobox
                         options={bankOptions}
-                        value={newBankAccount.bin}
+                        value={newBankAccount.bin || ""}
                         onChange={(val) =>
                           setNewBankAccount({
                             ...newBankAccount,
@@ -1937,6 +1852,28 @@ export default function EnterpriseEditPage() {
                           </div>
                           <div>
                             <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
+                              Ngày cấp
+                            </div>
+                            <div className="font-medium text-base leading-relaxed">
+                              {formData.issueDate
+                                ? new Date(
+                                    formData.issueDate,
+                                  ).toLocaleDateString("vi-VN")
+                                : "-"}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-6">
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
+                              Cơ quan thuế
+                            </div>
+                            <div className="font-medium text-base leading-relaxed">
+                              {formData.taxAuthority || "-"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
                               Địa chỉ đăng ký thuế
                             </div>
                             <div className="font-medium text-base leading-relaxed">
@@ -1944,58 +1881,49 @@ export default function EnterpriseEditPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="space-y-6">
-                          <div>
-                            <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
-                              Mô tả doanh nghiệp
-                            </div>
-                            <div className="font-medium text-base text-muted-foreground leading-relaxed italic">
-                              "{formData.description || "Không có mô tả."}"
-                            </div>
+                        <div className="col-span-2">
+                          <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
+                            Mô tả doanh nghiệp
+                          </div>
+                          <div className="font-medium text-base text-muted-foreground leading-relaxed italic">
+                            "{formData.description || "Không có mô tả."}"
                           </div>
                         </div>
                       </CardContent>
                     </Card>
 
-                    {formData.contacts.length > 0 && (
-                      <Card className="border-primary/10">
-                        <CardHeader className="py-5 px-6 border-b bg-muted/5">
-                          <CardTitle className="text-lg flex items-center gap-3">
-                            <Users className="w-5 h-5 text-primary" />
-                            Danh sách người liên hệ
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4 py-6 px-6">
-                          {formData.contacts.map((contact, i) => (
-                            <div
-                              key={i}
-                              className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-border/50 hover:bg-muted/50 transition-colors"
-                            >
-                              <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
-                                  <User className="w-5 h-5" />
-                                </div>
-                                <div>
-                                  <div className="font-bold text-base">
-                                    {contact.name}
-                                  </div>
-                                  <div className="text-sm font-medium text-muted-foreground flex items-center gap-2 mt-0.5">
-                                    <Phone className="w-3 h-3" />{" "}
-                                    {contact.phone}
-                                  </div>
-                                </div>
-                              </div>
-                              {contact.email && (
-                                <div className="text-sm font-medium text-muted-foreground flex items-center gap-2 bg-background/50 px-3 py-1.5 rounded-lg border">
-                                  <Mail className="w-3 h-3 text-primary" />{" "}
-                                  {contact.email}
-                                </div>
-                              )}
+                    <Card className="border-primary/10">
+                      <CardHeader className="py-5 px-6 border-b bg-muted/5">
+                        <CardTitle className="text-lg flex items-center gap-3">
+                          <Users className="w-5 h-5 text-primary" />
+                          Thông tin liên hệ
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="grid md:grid-cols-2 gap-8 py-6 px-6">
+                        <div className="space-y-6">
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
+                              Hotline
                             </div>
-                          ))}
-                        </CardContent>
-                      </Card>
-                    )}
+                            <div className="font-bold text-lg text-primary flex items-center gap-2">
+                              <Phone className="w-5 h-5" />
+                              {formData.phone || "-"}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-6">
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
+                              Email
+                            </div>
+                            <div className="font-medium text-base leading-relaxed flex items-center gap-2">
+                              <Mail className="w-5 h-5" />
+                              {formData.email || "-"}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </TabsContent>
 
                   <TabsContent

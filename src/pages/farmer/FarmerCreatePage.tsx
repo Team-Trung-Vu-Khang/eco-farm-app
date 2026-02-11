@@ -64,6 +64,7 @@ import { useLocation } from "wouter";
 import { vietQrBankData } from "../../constants/banks";
 import { parseVietQR } from "../../utils/commons";
 import readXlsxFile from "read-excel-file";
+import useEnterpriseStore from "../../stores/useEnterpriseStore";
 
 interface Branch {
   name: string;
@@ -82,12 +83,6 @@ interface BankAccount {
   branch: string;
   note: string;
   bin: string;
-}
-
-interface Contact {
-  name: string;
-  phone: string;
-  email: string;
 }
 
 const classificationOptions = [
@@ -117,25 +112,28 @@ export default function FarmerCreatePage() {
     brandName: "",
     taxCode: "",
     taxAddress: "",
+    taxAuthority: "",
+    issueDate: "",
     classification: [] as Array<string>,
     foundedDate: "",
     representative: "",
     website: "",
+    phone: "",
+    email: "",
     province: "",
     ward: "",
     address: "",
     image: "",
     description: "",
-    contacts: [] as Contact[],
+
     branches: [] as Branch[],
     bankAccounts: [] as BankAccount[],
-    documents: [] as { name: string; type: string; size: string }[],
-  });
-
-  const [newContact, setNewContact] = useState<Contact>({
-    name: "",
-    phone: "",
-    email: "",
+    documents: [] as {
+      name: string;
+      type: string;
+      size: string;
+      url?: string;
+    }[],
   });
 
   const [newBankAccount, setNewBankAccount] = useState<BankAccount>({
@@ -385,33 +383,6 @@ export default function FarmerCreatePage() {
     if (e.dataTransfer.files) processDocuments(e.dataTransfer.files);
   };
 
-  const addContact = () => {
-    if (newContact.name.trim() && newContact.phone.trim()) {
-      setFormData({
-        ...formData,
-        contacts: [...formData.contacts, newContact],
-      });
-      setNewContact({
-        name: "",
-        phone: "",
-        email: "",
-      });
-    } else {
-      toast({
-        title: "Lỗi",
-        description: "Vui lòng nhập tên và số điện thoại liên hệ",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const removeContact = (index: number) => {
-    setFormData({
-      ...formData,
-      contacts: formData.contacts.filter((_, i) => i !== index),
-    });
-  };
-
   const addBankAccount = () => {
     if (
       newBankAccount.bankName &&
@@ -453,7 +424,41 @@ export default function FarmerCreatePage() {
     setShowConfirmDialog(true);
   };
 
+  const addEnterprise = useEnterpriseStore((state) => state.addEnterprise);
+
   const submitForm = () => {
+    const newFarmer = {
+      code: formData.code,
+      name: formData.name,
+      brandName: formData.brandName,
+      image: formData.image,
+      type: formData.type,
+      classification: formData.classification as (
+        | "production"
+        | "processing"
+        | "trading"
+        | "service"
+      )[],
+      taxCode: formData.taxCode,
+      taxAddress: formData.taxAddress,
+      taxAuthority: formData.taxAuthority,
+      issueDate: formData.issueDate,
+      address: formData.address,
+      ward: formData.ward,
+      province: formData.province,
+      foundedDate: formData.foundedDate,
+      representative: formData.representative,
+      website: formData.website,
+      description: formData.description,
+      phone: formData.phone,
+      email: formData.email,
+      status: "active" as const,
+      documents: formData.documents,
+      branches: formData.branches,
+      bankAccounts: formData.bankAccounts,
+    };
+
+    addEnterprise(newFarmer);
     setShowConfirmDialog(false);
     toast({
       title: "Thành công",
@@ -541,20 +546,6 @@ export default function FarmerCreatePage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="taxCode">Mã số thuế</Label>
-              <Input
-                id="taxCode"
-                value={formData.taxCode}
-                onChange={(e) =>
-                  setFormData({ ...formData, taxCode: e.target.value })
-                }
-                placeholder="Nhập mã số thuế"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
               <Label htmlFor="name">Tên nông hộ *</Label>
               <Input
                 id="name"
@@ -575,6 +566,42 @@ export default function FarmerCreatePage() {
                   setFormData({ ...formData, brandName: e.target.value })
                 }
                 placeholder="VD: EcoFarm..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="taxCode">Mã số thuế</Label>
+              <Input
+                id="taxCode"
+                value={formData.taxCode}
+                onChange={(e) =>
+                  setFormData({ ...formData, taxCode: e.target.value })
+                }
+                placeholder="Nhập mã số thuế"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="taxAuthority">Cơ quan thuế</Label>
+              <Input
+                id="taxAuthority"
+                value={formData.taxAuthority}
+                onChange={(e) =>
+                  setFormData({ ...formData, taxAuthority: e.target.value })
+                }
+                placeholder="Cục thuế / Chi cục thuế..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="issueDate">Ngày cấp</Label>
+              <Input
+                id="issueDate"
+                type="date"
+                value={formData.issueDate}
+                onChange={(e) =>
+                  setFormData({ ...formData, issueDate: e.target.value })
+                }
               />
             </div>
           </div>
@@ -686,6 +713,31 @@ export default function FarmerCreatePage() {
                 placeholder="Số nhà, đường, ấp..."
               />
             </div>
+
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Hotline</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                  placeholder="09xx xxx xxx"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  placeholder="email@example.com"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -704,130 +756,7 @@ export default function FarmerCreatePage() {
       ),
       isValid: formData.name.length > 0 && formData.code.length > 0,
     },
-    {
-      id: "contact",
-      title: "Thông tin liên hệ",
-      description: "Danh sách liên hệ",
-      content: (
-        <div className="max-w-2xl mx-auto space-y-8">
-          <Card className="border-primary/20 bg-primary/5">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Thêm liên hệ mới
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2 col-span-2">
-                  <Label htmlFor="contact-name">Họ và tên *</Label>
-                  <Input
-                    id="contact-name"
-                    value={newContact.name}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, name: e.target.value })
-                    }
-                    placeholder="VD: Nguyễn Văn A"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="contact-phone">Số điện thoại *</Label>
-                  <Input
-                    id="contact-phone"
-                    value={newContact.phone}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, phone: e.target.value })
-                    }
-                    placeholder="09xx xxx xxx"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="contact-email">Email</Label>
-                  <Input
-                    id="contact-email"
-                    type="email"
-                    value={newContact.email}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, email: e.target.value })
-                    }
-                    placeholder="email@example.com"
-                  />
-                </div>
-              </div>
-              <Button onClick={addContact} className="w-full">
-                <Plus className="w-4 h-4 mr-2" />
-                Thêm vào danh sách
-              </Button>
-            </CardContent>
-          </Card>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold flex items-center gap-2">
-                <Users className="w-5 h-5 text-primary" />
-                Danh sách liên hệ
-              </h3>
-              <Badge variant="outline">
-                {formData.contacts.length} liên hệ
-              </Badge>
-            </div>
-
-            {formData.contacts.length === 0 ? (
-              <div className="text-center py-10 border-2 border-dashed rounded-xl text-muted-foreground">
-                <p>Chưa có thông tin liên hệ nào.</p>
-                <p className="text-sm">
-                  Vui lòng thêm liên hệ ở form phía trên.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {formData.contacts.map((contact, index) => (
-                  <div
-                    key={index}
-                    className="relative group bg-card border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
-                    <div className="p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                            <User className="w-4 h-4 text-primary" />
-                          </div>
-                          <span className="font-bold">{contact.name}</span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => removeContact(index)}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                      <div className="space-y-1 text-sm text-muted-foreground ml-10">
-                        <div className="flex items-center gap-2">
-                          <CreditCard className="w-3 h-3" />
-                          <span>{contact.phone}</span>
-                        </div>
-                        {contact.email && (
-                          <div className="flex items-center gap-2">
-                            <span className="w-3 h-3 flex items-center justify-center">
-                              @
-                            </span>
-                            <span className="truncate">{contact.email}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      ),
-      isValid: formData.contacts.length > 0,
-    },
     {
       id: "bank",
       title: "Ngân hàng",
@@ -1513,6 +1442,28 @@ export default function FarmerCreatePage() {
                           </div>
                           <div>
                             <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
+                              Ngày cấp
+                            </div>
+                            <div className="font-medium text-base leading-relaxed">
+                              {formData.issueDate
+                                ? new Date(
+                                    formData.issueDate,
+                                  ).toLocaleDateString("vi-VN")
+                                : "-"}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-6">
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
+                              Cơ quan thuế
+                            </div>
+                            <div className="font-medium text-base leading-relaxed">
+                              {formData.taxAuthority || "-"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
                               Địa chỉ đăng ký thuế
                             </div>
                             <div className="font-medium text-base leading-relaxed">
@@ -1520,58 +1471,47 @@ export default function FarmerCreatePage() {
                             </div>
                           </div>
                         </div>
-                        <div className="space-y-6">
-                          <div>
-                            <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
-                              Mô tả nông hộ
-                            </div>
-                            <div className="font-medium text-base text-muted-foreground leading-relaxed italic">
-                              "{formData.description || "Không có mô tả."}"
-                            </div>
+                        <div className="col-span-2">
+                          <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
+                            Mô tả nông hộ
+                          </div>
+                          <div className="font-medium text-base text-muted-foreground leading-relaxed italic">
+                            "{formData.description || "Không có mô tả."}"
                           </div>
                         </div>
                       </CardContent>
                     </Card>
 
-                    {formData.contacts.length > 0 && (
-                      <Card className="border-primary/10">
-                        <CardHeader className="py-5 px-6 border-b bg-muted/5">
-                          <CardTitle className="text-lg flex items-center gap-3">
-                            <Users className="w-5 h-5 text-primary" />
-                            Danh sách người liên hệ
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4 py-6 px-6">
-                          {formData.contacts.map((contact, i) => (
-                            <div
-                              key={i}
-                              className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-border/50 hover:bg-muted/50 transition-colors"
-                            >
-                              <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
-                                  <User className="w-5 h-5" />
-                                </div>
-                                <div>
-                                  <div className="font-bold text-base">
-                                    {contact.name}
-                                  </div>
-                                  <div className="text-sm font-medium text-muted-foreground flex items-center gap-2 mt-0.5">
-                                    <Phone className="w-3 h-3" />{" "}
-                                    {contact.phone}
-                                  </div>
-                                </div>
-                              </div>
-                              {contact.email && (
-                                <div className="text-sm font-medium text-muted-foreground flex items-center gap-2 bg-background/50 px-3 py-1.5 rounded-lg border">
-                                  <Mail className="w-3 h-3 text-primary" />{" "}
-                                  {contact.email}
-                                </div>
-                              )}
+                    <Card className="border-primary/10">
+                      <CardHeader className="py-5 px-6 border-b bg-muted/5">
+                        <CardTitle className="text-lg flex items-center gap-3">
+                          <Users className="w-5 h-5 text-primary" />
+                          Thông tin liên hệ
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4 py-6 px-6">
+                        <div className="grid md:grid-cols-2 gap-8">
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
+                              Hotline
                             </div>
-                          ))}
-                        </CardContent>
-                      </Card>
-                    )}
+                            <div className="font-bold text-lg text-primary flex items-center gap-2">
+                              <Phone className="w-4 h-4" />
+                              {formData.phone || "-"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
+                              Email
+                            </div>
+                            <div className="font-medium text-base leading-relaxed flex items-center gap-2">
+                              <Mail className="w-4 h-4" />
+                              {formData.email || "-"}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </TabsContent>
 
                   <TabsContent
