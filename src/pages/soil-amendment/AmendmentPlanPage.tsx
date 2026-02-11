@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
 import {
   Plus,
   Calendar as CalendarIcon,
@@ -9,7 +9,8 @@ import {
   ArrowUpRight,
   Eye,
   List,
-  LayoutGrid,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import {
   AdminLayout,
@@ -19,14 +20,6 @@ import {
   CardContent,
   DataTable,
   DeleteDialog,
-  FormDialog,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   useToast,
   Dialog,
   DialogContent,
@@ -132,29 +125,16 @@ const getStatusConfig = (status: string) => {
 
 export default function AmendmentPlanPage() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [data, setData] = useState<AmendmentPlan[]>(initialData);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
 
   // Dialog States
-  const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
 
   // Selection States
   const [selectedItem, setSelectedItem] = useState<AmendmentPlan | null>(null);
-
-  const [formData, setFormData] = useState<Partial<AmendmentPlan>>({
-    code: "",
-    name: "",
-    zone: "",
-    target_issue: "",
-    technician: "",
-    startDate: "",
-    endDate: "",
-    status: "planning",
-    area: 0,
-    budget: 0,
-  });
 
   const columns: Column<AmendmentPlan>[] = [
     {
@@ -226,38 +206,45 @@ export default function AmendmentPlanPage() {
     },
     {
       key: "id",
-      label: "Chi tiết",
+      label: "Hành động",
       render: (_, item) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0 text-slate-400 hover:text-slate-600"
-          onClick={() => handleViewDetail(item as AmendmentPlan)}
-        >
-          <Eye className="w-4 h-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-slate-500 hover:text-slate-700"
+            onClick={() => handleViewDetail(item as AmendmentPlan)}
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800"
+            onClick={() => handleEdit(item as AmendmentPlan)}
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+            onClick={() => handleDelete(item as AmendmentPlan)}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
       ),
     },
   ];
 
   // Handlers
   const handleAdd = () => {
-    setSelectedItem(null);
-    setFormData({
-      status: "planning",
-      area: 0,
-      budget: 0,
-      zone: "",
-      target_issue: "",
-      technician: "",
-    });
-    setFormOpen(true);
+    setLocation("/amendment-plan/create");
   };
 
   const handleEdit = (item: AmendmentPlan) => {
-    setSelectedItem(item);
-    setFormData({ ...item });
-    setFormOpen(true);
+    setLocation(`/amendment-plan/${item.id}/edit`);
   };
 
   const handleDelete = (item: AmendmentPlan) => {
@@ -268,36 +255,6 @@ export default function AmendmentPlanPage() {
   const handleViewDetail = (item: AmendmentPlan) => {
     setSelectedItem(item);
     setDetailOpen(true);
-  };
-
-  const handleSubmit = () => {
-    if (selectedItem) {
-      // Edit
-      setData((prev) =>
-        prev.map((item) =>
-          item.id === selectedItem.id
-            ? ({ ...item, ...formData } as AmendmentPlan)
-            : item,
-        ),
-      );
-      toast({
-        title: "Thành công",
-        description: "Đã cập nhật kế hoạch cải tạo",
-      });
-    } else {
-      // Create
-      const newItem: AmendmentPlan = {
-        ...formData,
-        id: Math.random(),
-        methodCount: 0,
-      } as AmendmentPlan;
-      setData((prev) => [...prev, newItem]);
-      toast({
-        title: "Thành công",
-        description: "Đã tạo kế hoạch mới",
-      });
-    }
-    setFormOpen(false);
   };
 
   const handleConfirmDelete = () => {
@@ -613,186 +570,6 @@ export default function AmendmentPlanPage() {
       )}
 
       {/* Create / Edit Form */}
-      <FormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        title={selectedItem ? "Cập nhật kế hoạch" : "Lập kế hoạch mới"}
-        onSubmit={handleSubmit}
-        size="xl"
-      >
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h4 className="text-sm font-semibold text-slate-900 border-b pb-1">
-                Thông tin chung
-              </h4>
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label>
-                    Mã kế hoạch <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    value={formData.code}
-                    onChange={(e) =>
-                      setFormData({ ...formData, code: e.target.value })
-                    }
-                    placeholder="VD: CT001"
-                    className="font-mono bg-slate-50"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>
-                    Tên kế hoạch <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    placeholder="VD: Cải tạo đất nhiễm mặn..."
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Phụ trách kỹ thuật</Label>
-                  <Select
-                    value={formData.technician}
-                    onValueChange={(v) =>
-                      setFormData({ ...formData, technician: v })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn người phụ trách" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Nguyễn Văn A">Nguyễn Văn A</SelectItem>
-                      <SelectItem value="Trần Thị B">Trần Thị B</SelectItem>
-                      <SelectItem value="Lê Văn C">Lê Văn C</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="text-sm font-semibold text-slate-900 border-b pb-1">
-                Phạm vi & Mục tiêu
-              </h4>
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label>Khu vực / Lô đất</Label>
-                  <Select
-                    value={formData.zone}
-                    onValueChange={(v) => setFormData({ ...formData, zone: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn khu vực" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Vùng A - Cà Mau">
-                        Vùng A - Cà Mau
-                      </SelectItem>
-                      <SelectItem value="Vùng B - Long An">
-                        Vùng B - Long An
-                      </SelectItem>
-                      <SelectItem value="Vùng C - Đồng Nai">
-                        Vùng C - Đồng Nai
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Vấn đề cần xử lý</Label>
-                  <Input
-                    value={formData.target_issue}
-                    onChange={(e) =>
-                      setFormData({ ...formData, target_issue: e.target.value })
-                    }
-                    placeholder="VD: Nhiễm mặn, chua phèn..."
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label>Diện tích (ha)</Label>
-                    <Input
-                      type="number"
-                      value={formData.area}
-                      min={0}
-                      step={0.1}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          area: Number(e.target.value),
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Ngân sách (tr.đ)</Label>
-                    <Input
-                      type="number"
-                      value={formData.budget}
-                      min={0}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          budget: Number(e.target.value),
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <h4 className="text-sm font-semibold text-slate-900 border-b pb-1">
-              Tiến độ & Trạng thái
-            </h4>
-            <div className="grid grid-cols-3 gap-6">
-              <div className="space-y-1.5">
-                <Label>Ngày bắt đầu</Label>
-                <Input
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, startDate: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Ngày kết thúc (DK)</Label>
-                <Input
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, endDate: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Trạng thái</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(v: any) =>
-                    setFormData({ ...formData, status: v })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="planning">Đang lập kế hoạch</SelectItem>
-                    <SelectItem value="in_progress">Đang thực hiện</SelectItem>
-                    <SelectItem value="completed">Hoàn thành</SelectItem>
-                    <SelectItem value="cancelled">Hủy bỏ</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-        </div>
-      </FormDialog>
 
       <DeleteDialog
         open={deleteOpen}
