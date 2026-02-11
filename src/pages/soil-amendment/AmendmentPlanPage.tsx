@@ -27,66 +27,9 @@ import {
   DialogTitle,
   type Column,
 } from "@tankhang1/eco-shared-ui";
-
-interface AmendmentPlan {
-  id: number;
-  code: string;
-  name: string;
-  zone: string;
-  target_issue: string; // Vấn đề cần xử lý
-  technician: string; // Người phụ trách
-  startDate: string;
-  endDate: string;
-  status: "planning" | "in_progress" | "completed" | "cancelled";
-  area: number; // Diện tích cải tạo (ha)
-  budget: number; // Ngân sách dự kiến (triệu VNĐ)
-  methodCount: number; // Số lượng phương pháp áp dụng
-}
-
-const initialData: AmendmentPlan[] = [
-  {
-    id: 1,
-    code: "CT001",
-    name: "Cải tạo đất nhiễm mặn Vùng A",
-    zone: "Vùng A - Cà Mau",
-    target_issue: "Nhiễm mặn (EC > 4dS/m)",
-    technician: "Nguyễn Văn A",
-    startDate: "2025-02-15",
-    endDate: "2025-04-30",
-    status: "in_progress",
-    area: 5.2,
-    budget: 150,
-    methodCount: 3,
-  },
-  {
-    id: 2,
-    code: "CT002",
-    name: "Xử lý đất chua phèn Vùng B",
-    zone: "Vùng B - Long An",
-    target_issue: "Chua phèn (pH < 4.0)",
-    technician: "Trần Thị B",
-    startDate: "2025-03-01",
-    endDate: "2025-05-15",
-    status: "planning",
-    area: 3.5,
-    budget: 85,
-    methodCount: 2,
-  },
-  {
-    id: 3,
-    code: "CT003",
-    name: "Phục hồi đất bạc màu Vùng C",
-    zone: "Vùng C - Đồng Nai",
-    target_issue: "Bạc màu, nghèo dinh dưỡng",
-    technician: "Lê Văn C",
-    startDate: "2024-11-01",
-    endDate: "2025-01-30",
-    status: "completed",
-    area: 4.0,
-    budget: 120,
-    methodCount: 4,
-  },
-];
+import useAmendmentPlanStore, {
+  type AmendmentPlan,
+} from "../../stores/useAmendmentPlanStore";
 
 const getStatusConfig = (status: string) => {
   switch (status) {
@@ -126,7 +69,12 @@ const getStatusConfig = (status: string) => {
 export default function AmendmentPlanPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [data, setData] = useState<AmendmentPlan[]>(initialData);
+
+  // Zustand store
+  const plans = useAmendmentPlanStore((state) => state.plans);
+  const deletePlan = useAmendmentPlanStore((state) => state.deletePlan);
+  const getStatistics = useAmendmentPlanStore((state) => state.getStatistics);
+
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
 
   // Dialog States
@@ -259,19 +207,14 @@ export default function AmendmentPlanPage() {
 
   const handleConfirmDelete = () => {
     if (selectedItem) {
-      setData((prev) => prev.filter((i) => i.id !== selectedItem.id));
+      deletePlan(selectedItem.id);
       toast({ title: "Thành công", description: "Đã xóa kế hoạch" });
     }
     setDeleteOpen(false);
   };
 
   // Dashboard Stats
-  const stats = {
-    planning: data.filter((i) => i.status === "planning").length,
-    inProgress: data.filter((i) => i.status === "in_progress").length,
-    completed: data.filter((i) => i.status === "completed").length,
-    totalArea: data.reduce((acc, curr) => acc + curr.area, 0).toFixed(1),
-  };
+  const stats = getStatistics();
 
   return (
     <AdminLayout
@@ -372,7 +315,7 @@ export default function AmendmentPlanPage() {
       {viewMode === "list" ? (
         <DataTable
           columns={columns}
-          data={data}
+          data={plans}
           onEdit={handleEdit}
           onDelete={handleDelete}
           searchPlaceholder="Tìm kiếm kế hoạch, khu vực, vấn đề..."
@@ -470,7 +413,7 @@ export default function AmendmentPlanPage() {
 
               {/* Timeline Rows */}
               <div className="space-y-3">
-                {data.map((plan) => {
+                {plans.map((plan) => {
                   const startDate = new Date(plan.startDate);
                   const endDate = new Date(plan.endDate);
                   const startMonth = startDate.getMonth();
@@ -550,7 +493,7 @@ export default function AmendmentPlanPage() {
                 })}
               </div>
 
-              {data.length === 0 && (
+              {plans.length === 0 && (
                 <div className="text-center py-12 text-slate-400">
                   <CalendarIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
                   <p className="text-sm">Chưa có kế hoạch nào</p>
@@ -562,7 +505,7 @@ export default function AmendmentPlanPage() {
           {/* Timeline Footer */}
           <div className="border-t bg-slate-50 px-6 py-3">
             <div className="flex items-center justify-between text-xs text-slate-500">
-              <span>Hiển thị {data.length} kế hoạch</span>
+              <span>Hiển thị {plans.length} kế hoạch</span>
               <span>Năm 2025</span>
             </div>
           </div>

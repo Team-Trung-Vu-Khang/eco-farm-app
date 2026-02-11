@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import {
   AdminLayout,
@@ -15,16 +15,7 @@ import {
   Label,
 } from "@tankhang1/eco-shared-ui";
 import { ArrowLeft, Edit, Trash2, Users } from "lucide-react";
-
-interface TeamMember {
-  id: number;
-  fullName: string;
-  position: string;
-  phone: string;
-  email: string;
-  status: "active" | "inactive";
-  avatar: string;
-}
+import useTeamStore, { type TeamMember } from "../../stores/useTeamStore";
 
 export default function TeamDetailPage() {
   const [, setLocation] = useLocation();
@@ -32,51 +23,14 @@ export default function TeamDetailPage() {
   const { toast } = useToast();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  // Mock team info
-  const [teamInfo, setTeamInfo] = useState({
-    code: "TEAM-KD-MB",
-    name: "Đội kinh doanh miền Bắc",
-    leader: "Nguyễn Văn A",
-    department: "Kinh doanh",
-    description: "Phụ trách thị trường từ Đà Nẵng trở ra.",
-    status: "active",
-  });
+  // Zustand store
+  const getTeamById = useTeamStore((state) => state.getTeamById);
+  const getMembersByTeamId = useTeamStore((state) => state.getMembersByTeamId);
+  const deleteTeam = useTeamStore((state) => state.deleteTeam);
 
-  // Mock members
-  const [members, setMembers] = useState<TeamMember[]>([
-    {
-      id: 1,
-      fullName: "Nguyễn Văn A",
-      position: "Trưởng phòng",
-      phone: "0901234567",
-      email: "nam.nguyen@ecofarm.vn",
-      status: "active",
-      avatar: "https://i.pravatar.cc/150?u=a042581f4e29026024d",
-    },
-    {
-      id: 2,
-      fullName: "Trần Thị B",
-      position: "Nhân viên kinh doanh",
-      phone: "0909876543",
-      email: "b.tran@ecofarm.vn",
-      status: "active",
-      avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704d",
-    },
-    {
-      id: 3,
-      fullName: "Phạm Văn D",
-      position: "Nhân viên kinh doanh",
-      phone: "0918273645",
-      email: "d.pham@ecofarm.vn",
-      status: "inactive",
-      avatar: "https://i.pravatar.cc/150?u=a042581f4e29026024f",
-    },
-  ]);
-
-  useEffect(() => {
-    // Simulate fetching data based on params.id
-    console.log("Fetching team detail for ID:", params?.id);
-  }, [params?.id]);
+  const id = params?.id ? Number(params.id) : 0;
+  const team = getTeamById(id);
+  const members = getMembersByTeamId(id);
 
   const columns: Column<TeamMember>[] = [
     {
@@ -112,17 +66,36 @@ export default function TeamDetailPage() {
   ];
 
   const handleDeleteTeam = () => {
-    toast({
-      title: "Thành công",
-      description: "Đã xóa đội nhóm",
-    });
-    setLocation("/team");
+    if (id) {
+      deleteTeam(id);
+      toast({
+        title: "Thành công",
+        description: "Đã xóa đội nhóm",
+      });
+      setLocation("/team");
+    }
+    setDeleteOpen(false);
   };
+
+  if (!team) {
+    return (
+      <AdminLayout title="Chi tiết đội nhóm">
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-muted-foreground mb-4">
+            Không tìm thấy thông tin đội nhóm.
+          </p>
+          <Button onClick={() => setLocation("/team")}>
+            Quay lại danh sách
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout
       title="Chi tiết đội nhóm"
-      description={`Thông tin và danh sách thành viên của ${teamInfo.name}`}
+      description={`Thông tin và danh sách thành viên của ${team.name}`}
       actions={
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setLocation("/team")}>
@@ -154,39 +127,33 @@ export default function TeamDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div>
                 <Label className="text-muted-foreground">Mã đội nhóm</Label>
-                <div className="font-medium font-mono">{teamInfo.code}</div>
+                <div className="font-medium font-mono">{team.code}</div>
               </div>
               <div>
                 <Label className="text-muted-foreground">Tên đội nhóm</Label>
-                <div className="font-medium">{teamInfo.name}</div>
+                <div className="font-medium">{team.name}</div>
               </div>
               <div>
                 <Label className="text-muted-foreground">Trưởng nhóm</Label>
-                <div className="font-medium text-primary">
-                  {teamInfo.leader}
-                </div>
+                <div className="font-medium text-primary">{team.leader}</div>
               </div>
               <div>
                 <Label className="text-muted-foreground">Phòng ban</Label>
-                <div className="font-medium">{teamInfo.department}</div>
+                <div className="font-medium">{team.department}</div>
               </div>
               <div>
                 <Label className="text-muted-foreground">Trạng thái</Label>
                 <div className="mt-1">
                   <Badge
-                    variant={
-                      teamInfo.status === "active" ? "default" : "outline"
-                    }
+                    variant={team.status === "active" ? "default" : "outline"}
                   >
-                    {teamInfo.status === "active"
-                      ? "Hoạt động"
-                      : "Ngừng hoạt động"}
+                    {team.status === "active" ? "Hoạt động" : "Ngừng hoạt động"}
                   </Badge>
                 </div>
               </div>
               <div className="md:col-span-2 lg:col-span-3">
                 <Label className="text-muted-foreground">Mô tả</Label>
-                <div className="text-sm">{teamInfo.description}</div>
+                <div className="text-sm">{team.description}</div>
               </div>
             </div>
           </CardContent>

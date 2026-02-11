@@ -23,6 +23,7 @@ import {
   DeleteDialog,
 } from "@tankhang1/eco-shared-ui";
 import { CreditCard, Save, User, Trash2, X } from "lucide-react";
+import usePersonnelStore from "../../stores/usePersonnelStore";
 
 export default function PersonnelEditPage() {
   const [, setLocation] = useLocation();
@@ -30,32 +31,13 @@ export default function PersonnelEditPage() {
   const { toast } = useToast();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  // Mock data fetching
-  useEffect(() => {
-    console.log("Fetching personnel", params?.id);
-    // Simulate API call
-    setTimeout(() => {
-      setFormData({
-        fullName: "Nguyễn Văn A",
-        phone: "0901234567",
-        email: "nguyenvana@ecofarm.vn",
-        province: "hn",
-        district: "caugiay",
-        address: "Số 123 Đường Xuân Thủy",
-        taxCode: "1234567890",
-        taxAddress: "Hà Nội",
-        avatar: "https://i.pravatar.cc/150?u=a042581f4e29026024d",
-        department: "Kinh doanh",
-        position: "TruongPhong",
-        team: "Đội kinh doanh miền Bắc",
-        status: "active",
-        bankName: "Vietcombank",
-        accountNumber: "0011001234567",
-        accountHolder: "HUMAN A",
-        bankBranch: "Sở Giao Dịch",
-      });
-    }, 500);
-  }, []);
+  // Zustand store
+  const getPersonnelById = usePersonnelStore((state) => state.getPersonnelById);
+  const updatePersonnel = usePersonnelStore((state) => state.updatePersonnel);
+  const deletePersonnel = usePersonnelStore((state) => state.deletePersonnel);
+
+  const id = params?.id ? Number(params.id) : 0;
+  const personnel = getPersonnelById(id);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -70,12 +52,37 @@ export default function PersonnelEditPage() {
     department: "",
     position: "",
     team: "",
-    status: "active",
+    status: "active" as "active" | "inactive",
     bankName: "",
     accountNumber: "",
     accountHolder: "",
     bankBranch: "",
   });
+
+  // Load personnel data
+  useEffect(() => {
+    if (personnel) {
+      setFormData({
+        fullName: personnel.fullName,
+        phone: personnel.phone,
+        email: personnel.email,
+        province: personnel.province,
+        district: personnel.district,
+        address: personnel.address,
+        taxCode: personnel.taxCode,
+        taxAddress: personnel.taxAddress,
+        avatar: personnel.avatar,
+        department: personnel.department,
+        position: personnel.position,
+        team: personnel.team,
+        status: personnel.status,
+        bankName: personnel.bankName || "",
+        accountNumber: personnel.accountNumber || "",
+        accountHolder: personnel.accountHolder || "",
+        bankBranch: personnel.bankBranch || "",
+      });
+    }
+  }, [personnel]);
 
   const handleSubmit = () => {
     if (!formData.fullName || !formData.phone) {
@@ -87,20 +94,42 @@ export default function PersonnelEditPage() {
       return;
     }
 
-    toast({
-      title: "Cập nhật thành công",
-      description: `Đã cập nhật nhân sự "${formData.fullName}"`,
-    });
-    setLocation("/personnel");
+    if (id) {
+      updatePersonnel(id, formData);
+      toast({
+        title: "Cập nhật thành công",
+        description: `Đã cập nhật nhân sự "${formData.fullName}"`,
+      });
+      setLocation("/personnel");
+    }
   };
 
   const handleDelete = () => {
-    toast({
-      title: "Thành công",
-      description: "Đã xóa nhân sự khỏi hệ thống",
-    });
-    setLocation("/personnel");
+    if (id) {
+      deletePersonnel(id);
+      toast({
+        title: "Thành công",
+        description: "Đã xóa nhân sự khỏi hệ thống",
+      });
+      setLocation("/personnel");
+    }
+    setDeleteOpen(false);
   };
+
+  if (!personnel) {
+    return (
+      <AdminLayout title="Cập nhật nhân sự">
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-muted-foreground mb-4">
+            Không tìm thấy thông tin nhân sự.
+          </p>
+          <Button onClick={() => setLocation("/personnel")}>
+            Quay lại danh sách
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout
@@ -183,7 +212,10 @@ export default function PersonnelEditPage() {
                       <Select
                         value={formData.status}
                         onValueChange={(val) =>
-                          setFormData({ ...formData, status: val })
+                          setFormData({
+                            ...formData,
+                            status: val as "active" | "inactive",
+                          })
                         }
                       >
                         <SelectTrigger>

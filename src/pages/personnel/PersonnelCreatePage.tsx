@@ -24,6 +24,7 @@ import {
 } from "@tankhang1/eco-shared-ui";
 import { CreditCard, Save, User, X } from "lucide-react";
 import { vietQrBankData } from "@/constants/banks";
+import usePersonnelStore from "../../stores/usePersonnelStore";
 
 const bankOptions = vietQrBankData.map((bank) => ({
   id: bank.id,
@@ -36,6 +37,9 @@ const bankOptions = vietQrBankData.map((bank) => ({
 export default function PersonnelCreatePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  // Zustand store
+  const addPersonnel = usePersonnelStore((state) => state.addPersonnel);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -50,7 +54,7 @@ export default function PersonnelCreatePage() {
     department: "",
     position: "",
     team: "",
-    status: "active",
+    status: "active" as "active" | "inactive",
     bankName: "",
     accountNumber: "",
     accountHolder: "",
@@ -67,6 +71,7 @@ export default function PersonnelCreatePage() {
       return;
     }
 
+    addPersonnel(formData);
     toast({
       title: "Thành công",
       description: `Đã thêm nhân sự "${formData.fullName}"`,

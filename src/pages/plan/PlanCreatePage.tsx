@@ -44,6 +44,7 @@ import {
 import { memo, useCallback, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { GROWTH_CYCLES, SEASONS, getCyclesByCrop } from "./constants";
+import usePlanStore from "../../stores/usePlanStore";
 
 // --- Mock Data for Location Hierarchy (Enhanced) ---
 const LOCATIONS = [
@@ -603,6 +604,9 @@ const StageAllocation = memo(
 export default function PlanCreatePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  // Zustand store
+  const addPlan = usePlanStore((state) => state.addPlan);
 
   const [formData, setFormData] = useState({
     code: "",
@@ -1376,6 +1380,29 @@ export default function PlanCreatePage() {
   ];
 
   const handleComplete = () => {
+    // Create plan data from formData
+    const planData = {
+      code: formData.code,
+      name: formData.name,
+      description: formData.description,
+      seasonId: formData.seasonId,
+      seasonName: formData.seasonName,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      selectedRegionId: formData.selectedRegionId,
+      selectedZoneIds: formData.selectedZoneIds,
+      selectedPlotIds: formData.selectedPlotIds,
+      crop: formData.crop,
+      variety: formData.variety,
+      growthCycleId: formData.growthCycleId,
+      selectedStages: formData.selectedStages,
+      status: "active" as const,
+      materialAllocations: formData.materialAllocations,
+      taskAllocations: formData.taskAllocations,
+    };
+
+    addPlan(planData);
+
     toast({
       title: "Thành công",
       description: `Đã tạo kế hoạch ${formData.name}`,
