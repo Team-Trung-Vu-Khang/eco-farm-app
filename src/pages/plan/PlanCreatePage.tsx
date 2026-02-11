@@ -1,26 +1,3 @@
-import { useState, useEffect, useMemo, useCallback, memo } from "react";
-import { useLocation } from "wouter";
-import {
-  ClipboardList,
-  Calendar,
-  MapPin,
-  Package,
-  Plus,
-  Trash2,
-  AlertTriangle,
-  Info,
-  Check,
-  Leaf,
-  Droplet,
-  FileCheck,
-  Filter,
-  X,
-  Sprout,
-  Users,
-  Wrench,
-  StickyNote,
-  Clock,
-} from "lucide-react";
 import {
   AdminLayout,
   Badge,
@@ -38,33 +15,43 @@ import {
   SelectTrigger,
   SelectValue,
   StepperForm,
-  Textarea,
-  useToast,
-  type Step,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-  Separator,
+  Textarea,
+  useToast,
+  type Step,
 } from "@tankhang1/eco-shared-ui";
 import {
-  SEASONS,
-  GROWTH_CYCLES,
-  getCyclesByCrop,
-  type Season,
-  type GrowthCycle,
-} from "./constants";
+  AlertTriangle,
+  Check,
+  ClipboardList,
+  Clock,
+  FileCheck,
+  Info,
+  Layers,
+  Leaf,
+  MapPin,
+  Package,
+  Plus,
+  Sprout,
+  StickyNote,
+  Users,
+  Wrench,
+  X,
+} from "lucide-react";
+import { memo, useCallback, useMemo, useState } from "react";
+import { useLocation } from "wouter";
+import { GROWTH_CYCLES, SEASONS, getCyclesByCrop } from "./constants";
 
 // --- Mock Data for Location Hierarchy (Enhanced) ---
 const LOCATIONS = [
   {
-    id: "region-1",
-    name: "Vùng A - Bình Phước",
+    id: "pr-1",
+    name: "Vùng canh tác Sầu riêng Ri6 - Bình Phước",
+    crop: "Sầu riêng",
+    variety: "Ri6",
     zones: [
       {
         id: "zone-1-1",
@@ -88,6 +75,14 @@ const LOCATIONS = [
           },
         ],
       },
+    ],
+  },
+  {
+    id: "pr-2",
+    name: "Vùng canh tác Sầu riêng Monthong - Bình Phước",
+    crop: "Sầu riêng",
+    variety: "Monthong",
+    zones: [
       {
         id: "zone-1-2",
         name: "Khu vực A2",
@@ -113,8 +108,10 @@ const LOCATIONS = [
     ],
   },
   {
-    id: "region-2",
-    name: "Vùng B - Đồng Nai",
+    id: "pr-3",
+    name: "Vùng canh tác Xoài Cát Hòa Lộc - Đồng Nai",
+    crop: "Xoài",
+    variety: "Xoài Cát Hòa Lộc", // Assuming Monthong for now per previous mock
     zones: [
       {
         id: "zone-2-1",
@@ -198,99 +195,6 @@ interface TaskAllocation {
 }
 
 // 1. Location Selection Dialog (Filtered for Cultivation)
-const LocationFilterDialog = ({
-  open,
-  onOpenChange,
-  selectedIds,
-  onApply,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  selectedIds: string[]; // List of selected Plot IDs
-  onApply: (ids: string[]) => void;
-}) => {
-  const [tempSelected, setTempSelected] = useState<string[]>(selectedIds);
-
-  useEffect(() => {
-    if (open) setTempSelected(selectedIds);
-  }, [open, selectedIds]);
-
-  const toggleSelection = (id: string) => {
-    setTempSelected((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
-    );
-  };
-
-  const isSelected = (id: string) => tempSelected.includes(id);
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Chọn khu vực canh tác</DialogTitle>
-        </DialogHeader>
-
-        <div className="flex-1 overflow-y-auto py-4 pr-2">
-          <div className="space-y-6">
-            {LOCATIONS.map((region) => (
-              <div key={region.id} className="space-y-3">
-                <div className="flex items-center gap-2 font-semibold text-slate-800 bg-slate-50 p-2 rounded">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  {region.name}
-                </div>
-
-                <div className="pl-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {region.zones.map((zone) => (
-                    <div
-                      key={zone.id}
-                      className="border p-3 rounded-md space-y-2"
-                    >
-                      <div className="flex items-center gap-2 font-medium text-sm text-slate-700">
-                        {zone.name}
-                      </div>
-
-                      <div className="pl-4 space-y-2">
-                        {zone.plots.map((plot) => (
-                          <div
-                            key={plot.id}
-                            className="flex items-center gap-2 text-sm"
-                          >
-                            <Checkbox
-                              checked={isSelected(plot.id)}
-                              onCheckedChange={() => toggleSelection(plot.id)}
-                            />
-                            <span className="flex-1">{plot.name}</span>
-                            <Badge variant="outline" className="text-xs">
-                              {plot.area} ha
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Hủy
-          </Button>
-          <Button
-            onClick={() => {
-              onApply(tempSelected);
-              onOpenChange(false);
-            }}
-          >
-            Áp dụng
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
 
 // 2. Stage Selection Item
 const StageItem = ({
@@ -711,7 +615,7 @@ export default function PlanCreatePage() {
 
     // Location & Crop
     selectedRegionId: "",
-    selectedZoneId: "",
+    selectedZoneIds: [] as string[],
     selectedPlotIds: [] as string[],
     crop: "",
     variety: "",
@@ -725,7 +629,6 @@ export default function PlanCreatePage() {
     taskAllocations: [] as TaskAllocation[],
   });
 
-  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [dateWarning, setDateWarning] = useState<string | null>(null);
 
   // --- Helpers & Handlers ---
@@ -741,6 +644,28 @@ export default function PlanCreatePage() {
         endDate: season.endDate,
       }));
       setDateWarning(null);
+    }
+  };
+
+  const handleRegionChange = (id: string) => {
+    const region = LOCATIONS.find((loc) => loc.id === id);
+    if (region) {
+      const zoneIds: string[] = [];
+      const plotIds: string[] = [];
+      region.zones.forEach((zone) => {
+        zoneIds.push(zone.id);
+        zone.plots.forEach((plot) => {
+          plotIds.push(plot.id);
+        });
+      });
+      setFormData((prev) => ({
+        ...prev,
+        selectedRegionId: id,
+        selectedZoneIds: zoneIds,
+        selectedPlotIds: plotIds,
+        crop: region.crop,
+        variety: region.variety,
+      }));
     }
   };
 
@@ -972,157 +897,190 @@ export default function PlanCreatePage() {
       title: "Phạm vi & Cây trồng",
       description: "Chọn đất và giống cây",
       content: (
-        <div className="max-w-2xl mx-auto space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label className="text-base font-semibold">
-                Khu vực & Lô đất canh tác{" "}
-                <span className="text-red-500">*</span>
-              </Label>
-              <Button
-                variant="outline"
-                onClick={() => setLocationDialogOpen(true)}
-                className="gap-2 text-blue-600 border-blue-200 hover:bg-blue-50"
-              >
-                <MapPin className="w-4 h-4" />
-                Chọn khu vực & Lô đất
-              </Button>
+        <div className="max-w-4xl mx-auto space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              {/* Vùng canh tác Selection */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 text-xs font-bold">
+                    1
+                  </span>
+                  Chọn vùng canh tác
+                </h3>
+                <div className="p-5 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Vùng canh tác <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={formData.selectedRegionId}
+                      onValueChange={handleRegionChange}
+                    >
+                      <SelectTrigger className="bg-white border-emerald-200 h-12 text-base font-medium">
+                        <SelectValue placeholder="Chọn vùng canh tác..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LOCATIONS.map((loc) => (
+                          <SelectItem key={loc.id} value={loc.id}>
+                            {loc.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chi tiết phạm vi - Read Only Hierarchy */}
+              {formData.selectedRegionId && (
+                <div className="space-y-4 animation-fade-in">
+                  <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-emerald-600" />
+                    Chi tiết phạm vi canh tác
+                  </h3>
+                  <div className="p-5 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-6">
+                    {/* Zone & Plot Hierarchy List */}
+                    <div className="space-y-4">
+                      {LOCATIONS.find(
+                        (r) => r.id === formData.selectedRegionId,
+                      )?.zones.map((zone) => (
+                        <div key={zone.id} className="space-y-2">
+                          <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-100 shadow-sm">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                <Layers className="w-4 h-4" />
+                              </div>
+                              <span className="font-bold text-slate-900">
+                                {zone.name}
+                              </span>
+                            </div>
+                            <Check className="w-4 h-4 text-emerald-500" />
+                          </div>
+
+                          {/* Plots within Zone */}
+                          <div className="grid grid-cols-2 gap-2 pl-4">
+                            {zone.plots.map((plot) => (
+                              <div
+                                key={plot.id}
+                                className="flex items-center justify-between p-2 rounded-lg bg-slate-100/50 border border-slate-200/50"
+                              >
+                                <span className="text-sm text-slate-600 truncate mr-2">
+                                  {plot.name}
+                                </span>
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] h-4 px-1.5 bg-white font-normal border-slate-200"
+                                >
+                                  {plot.area} ha
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Ghi chú Section */}
+              <div className="space-y-2">
+                <Label className="text-slate-700 font-bold">Ghi chú</Label>
+                <Textarea
+                  placeholder="Nhập thông tin ghi chú thêm..."
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  className="bg-white border-slate-200 min-h-[100px]"
+                />
+              </div>
             </div>
 
-            {formData.selectedPlotIds.length === 0 ? (
-              <div
-                className="text-center py-8 border-2 border-dashed rounded-xl bg-slate-50/50 cursor-pointer hover:bg-slate-50 border-slate-200 hover:border-blue-300 transition-all"
-                onClick={() => setLocationDialogOpen(true)}
-              >
-                <MapPin className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-500 font-medium">
-                  Chưa chọn lô đất nào
-                </p>
-                <p className="text-slate-400 text-sm mt-1">
-                  Nhấn để chọn các lô đất tham gia kế hoạch
-                </p>
-              </div>
-            ) : (
+            <div className="space-y-6">
+              {/* Crop & Variety Selection */}
               <div className="space-y-4">
-                {/* Summary Box */}
-                <div className="flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100 shadow-sm animation-fade-in">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-blue-600">
-                      <Check className="w-5 h-5" />
+                <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <Leaf className="w-4 h-4 text-emerald-600" />
+                  Thông tin cây trồng
+                </h3>
+                <div className="grid grid-cols-1 gap-4 p-5 rounded-2xl border border-slate-100 bg-white shadow-sm">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Loại cây trồng
+                    </Label>
+                    <div className="h-11 px-3 flex items-center border border-slate-200 rounded-md bg-slate-50 text-slate-600 font-medium">
+                      {formData.crop || "Chưa xác định"}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Giống (Variety)
+                    </Label>
+                    <div className="h-11 px-3 flex items-center border border-slate-200 rounded-md bg-slate-50 text-slate-600 font-medium">
+                      {formData.variety || "Chưa xác định"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Summary Section */}
+              <div className="space-y-4">
+                <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <Package className="w-4 h-4 text-emerald-600" />
+                  Tóm tắt phạm vi đã chọn
+                </h3>
+                <div className="bg-linear-to-br from-emerald-600 to-teal-700 p-6 rounded-2xl text-white shadow-lg space-y-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-inner">
+                      <MapPin className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-slate-600">
-                        Đã chọn canh tác
+                      <p className="text-emerald-100 text-xs font-semibold uppercase tracking-widest">
+                        Đang chọn canh tác
                       </p>
-                      <p className="text-lg font-bold text-slate-900 leading-none mt-0.5">
-                        {formData.selectedPlotIds.length} lô đất
+                      <h4 className="text-xl font-bold leading-tight">
+                        {LOCATIONS.find(
+                          (r) => r.id === formData.selectedRegionId,
+                        )?.name || "Chưa chọn vùng"}
+                      </h4>
+                      <p className="text-xs text-emerald-200 mt-0.5">
+                        {formData.selectedPlotIds.length} lô đất •{" "}
+                        {calculateArea()} ha
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-slate-600">
-                      Tổng diện tích
-                    </p>
-                    <p className="text-xl font-bold text-blue-700 leading-none mt-0.5">
-                      {calculateArea()} ha
-                    </p>
-                  </div>
-                </div>
 
-                {/* Detailed List */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-slate-700">
-                    Chi tiết khu vực đã chọn:
-                  </Label>
-                  <div className="grid grid-cols-1 gap-3">
-                    {groupedLocations.map((region) => (
-                      <div
-                        key={region.region}
-                        className="border rounded-lg p-3 bg-white"
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          <MapPin className="w-4 h-4 text-slate-400" />
-                          <span className="font-semibold text-sm text-slate-800">
-                            {region.region}
-                          </span>
-                        </div>
-                        <div className="pl-6 space-y-2">
-                          {region.zones.map((zone) => (
-                            <div key={zone.id} className="text-sm">
-                              <span className="text-slate-600 font-medium mr-2">
-                                {zone.name}:
-                              </span>
-                              <div className="inline-flex flex-wrap gap-1">
-                                {zone.plots.map((plot) => (
-                                  <Badge
-                                    key={plot.id}
-                                    variant="secondary"
-                                    className="bg-slate-100 text-slate-600 border-slate-200 font-normal"
-                                  >
-                                    {plot.name}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                  <div className="space-y-2 pt-2 border-t border-white/10">
+                    <div className="flex justify-between items-center text-sm font-medium">
+                      <span className="text-emerald-200">Khu vực đã chọn</span>
+                      <span>{formData.selectedZoneIds.length} khu vực</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm font-medium">
+                      <span className="text-emerald-200">Giống cây trồng</span>
+                      <span className="bg-white/10 px-2 py-0.5 rounded text-xs uppercase">
+                        {formData.variety || "Trống"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/10 p-4 rounded-xl backdrop-blur-sm border border-white/10">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Info className="w-3.5 h-3.5 text-emerald-200" />
+                      <span className="text-xs font-bold text-emerald-100 uppercase tracking-wide">
+                        Thông báo phạm vi
+                      </span>
+                    </div>
+                    <p className="text-sm text-white leading-relaxed font-medium">
+                      Kế hoạch này sẽ áp dụng cho tất cả các lô đất thuộc vùng
+                      đã chọn.
+                    </p>
                   </div>
                 </div>
               </div>
-            )}
-          </div>
-
-          <Separator />
-
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label>Loại cây trồng</Label>
-              <Select
-                value={formData.crop}
-                onValueChange={(v) =>
-                  setFormData({ ...formData, crop: v, variety: "" })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn cây..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Sầu riêng">Sầu riêng</SelectItem>
-                  <SelectItem value="Xoài">Xoài</SelectItem>
-                  <SelectItem value="Bưởi">Bưởi</SelectItem>
-                  <SelectItem value="Thanh long">Thanh long</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Giống (Variety)</Label>
-              <Select
-                value={formData.variety}
-                onValueChange={(v) => setFormData({ ...formData, variety: v })}
-                disabled={!formData.crop}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn giống..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Ri6">Ri6</SelectItem>
-                  <SelectItem value="Monthong">Monthong</SelectItem>
-                  <SelectItem value="Musang King">Musang King</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
-
-          <LocationFilterDialog
-            open={locationDialogOpen}
-            onOpenChange={setLocationDialogOpen}
-            selectedIds={formData.selectedPlotIds}
-            onApply={(ids) =>
-              setFormData({ ...formData, selectedPlotIds: ids })
-            }
-          />
         </div>
       ),
       isValid: formData.selectedPlotIds.length > 0 && !!formData.crop,
@@ -1287,51 +1245,72 @@ export default function PlanCreatePage() {
             </Card>
 
             {/* 2. Scope & Crop Card */}
-            <Card>
+            <Card className="overflow-hidden">
               <CardHeader className="pb-3 border-b bg-slate-50/50">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-green-600" />
+                  <MapPin className="w-4 h-4 text-emerald-600" />
                   Phạm vi & Cây trồng
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-4 grid grid-cols-2 gap-4 text-sm">
-                <div className="col-span-2 flex items-start gap-4 p-3 bg-green-50/50 rounded-lg border border-green-100">
-                  <div className="grid grid-cols-2 gap-x-8 gap-y-2 w-full">
-                    <div>
-                      <span className="text-slate-500 block text-xs uppercase font-semibold">
-                        Cây trồng
+              <CardContent className="p-0">
+                <div className="p-6 space-y-6">
+                  <div className="flex items-start justify-between gap-4 p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                    <div className="space-y-1">
+                      <span className="text-slate-500 block text-xs uppercase font-bold tracking-wider">
+                        Cây trồng & Giống
                       </span>
-                      <span className="text-lg font-bold text-green-800">
+                      <span className="text-xl font-extrabold text-emerald-800">
                         {formData.crop} - {formData.variety}
                       </span>
                     </div>
-                    <div className="text-right">
-                      <span className="text-slate-500 block text-xs uppercase font-semibold">
-                        Tổng diện tích
+                    <div className="text-right space-y-1">
+                      <span className="text-slate-500 block text-xs uppercase font-bold tracking-wider">
+                        Diện tích
                       </span>
-                      <span className="text-lg font-bold text-green-800">
+                      <span className="text-xl font-extrabold text-emerald-800">
                         {calculateArea()} ha
                       </span>
                     </div>
-                    <div className="col-span-2 pt-2 border-t border-green-200/50 mt-1">
-                      <span className="text-slate-500 text-xs mr-2">
-                        Các lô đã chọn:
-                      </span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {groupedLocations.map((g) =>
-                          g.zones.map((z) =>
-                            z.plots.map((p) => (
-                              <Badge
-                                key={p.id}
-                                variant="secondary"
-                                className="bg-white text-slate-700 border-slate-200 font-normal"
-                              >
-                                {p.name}
-                              </Badge>
-                            )),
-                          ),
-                        )}
-                      </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                      <Layers className="w-4 h-4 text-emerald-500" />
+                      Chi tiết phạm vi canh tác
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {groupedLocations.map((group) => (
+                        <div
+                          key={group.region}
+                          className="space-y-3 p-4 rounded-xl border border-slate-100 bg-slate-50/30"
+                        >
+                          <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wide">
+                            <MapPin className="w-3 h-3" />
+                            {group.region}
+                          </div>
+                          <div className="space-y-3">
+                            {group.zones.map((zone) => (
+                              <div key={zone.id} className="space-y-1.5">
+                                <div className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                  {zone.name}
+                                </div>
+                                <div className="flex flex-wrap gap-1.5 pl-3.5">
+                                  {zone.plots.map((plot) => (
+                                    <Badge
+                                      key={plot.id}
+                                      variant="outline"
+                                      className="bg-white text-slate-600 border-slate-200 font-medium text-[11px] py-0 px-2 h-5"
+                                    >
+                                      {plot.name}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
