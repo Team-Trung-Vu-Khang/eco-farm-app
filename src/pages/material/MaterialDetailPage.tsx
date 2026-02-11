@@ -19,13 +19,16 @@ import {
   CheckCircle2,
   Info,
 } from "lucide-react";
-import { initialMaterials } from "./constants";
+import useMaterialStore from "../../stores/useMaterialStore";
 
 const MaterialDetailPage = () => {
   const [, params] = useRoute("/material/:id");
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
-  const item = initialMaterials.find((p) => p.id === id);
+
+  // Zustand store
+  const getMaterialById = useMaterialStore((state) => state.getMaterialById);
+  const item = getMaterialById(id);
 
   if (!item) {
     return (

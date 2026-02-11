@@ -10,7 +10,8 @@ import {
   useToast,
   type Column,
 } from "@tankhang1/eco-shared-ui";
-import { initialUnits, type Unit } from "./constants";
+import type { Unit } from "./constants";
+import useUnitStore from "../../stores/useUnitStore";
 
 const TYPE_LABELS: Record<string, string> = {
   mass: "Khối lượng",
@@ -25,20 +26,24 @@ const TYPE_LABELS: Record<string, string> = {
 export default function UnitPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [data, setData] = useState<Unit[]>(initialUnits);
+
+  // Zustand store
+  const units = useUnitStore((state) => state.units);
+  const deleteUnit = useUnitStore((state) => state.deleteUnit);
+
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Unit | null>(null);
 
   // Create a map for quick lookup of base unit names
   const unitMap = useMemo(() => {
-    return data.reduce(
+    return units.reduce(
       (acc, unit) => {
         acc[unit.id] = unit;
         return acc;
       },
       {} as Record<number, Unit>,
     );
-  }, [data]);
+  }, [units]);
 
   const columns: Column<Unit>[] = [
     { key: "code", label: "Mã" },
@@ -118,9 +123,8 @@ export default function UnitPage() {
   const handleConfirmDelete = () => {
     if (deleteItem) {
       if (deleteItem.isBaseUnit) {
-        // Prevent deleting base unit if it's used by others?
-        // Simple check:
-        const hasDependents = data.some((u) => u.baseUnitId === deleteItem.id);
+        // Prevent deleting base unit if it's used by others
+        const hasDependents = units.some((u) => u.baseUnitId === deleteItem.id);
         if (hasDependents) {
           toast({
             title: "Không thể xóa",
@@ -133,7 +137,7 @@ export default function UnitPage() {
         }
       }
 
-      setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
+      deleteUnit(deleteItem.id);
       toast({ title: "Thành công", description: "Đã xóa đơn vị tính" });
     }
     setDeleteOpen(false);
@@ -152,7 +156,7 @@ export default function UnitPage() {
     >
       <DataTable
         columns={columns}
-        data={data}
+        data={units}
         onView={(item) =>
           toast({ title: "Xem chi tiết", description: item.name })
         }

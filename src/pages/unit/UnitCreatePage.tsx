@@ -14,8 +14,17 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@tankhang1/eco-shared-ui";
-import { initialUnits, type Unit, UNIT_STANDARDS } from "./constants";
+import { type Unit, UNIT_STANDARDS } from "./constants";
+import useUnitStore from "../../stores/useUnitStore";
 import { ChevronLeft, Save, Scale, ArrowRightLeft } from "lucide-react";
 
 const UNIT_TYPES = [
@@ -41,6 +50,12 @@ const UnitCreatePage = () => {
   const isEdit = match && !!params?.id;
   const { toast } = useToast();
 
+  // Zustand store
+  const getUnitById = useUnitStore((state) => state.getUnitById);
+  const addUnit = useUnitStore((state) => state.addUnit);
+  const updateUnit = useUnitStore((state) => state.updateUnit);
+  const getBaseUnitByType = useUnitStore((state) => state.getBaseUnitByType);
+
   const [formData, setFormData] = useState<UnitFormState>({
     code: "",
     name: "",
@@ -52,15 +67,14 @@ const UnitCreatePage = () => {
     baseUnitId: undefined,
   });
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
   // Local state for the selected "Display Standard" (e.g. "ton", "kg", "g")
-  // This helps user calculate the factor comfortable.
-  // When saving, we convert everything to the System Base (kg, l, m...)
   const [selectedStandard, setSelectedStandard] = useState<string>("");
 
   // Load initial data for Edit
   useEffect(() => {
     if (isEdit && params?.id) {
-      const item = initialUnits.find((p) => p.id === Number(params.id));
+      const item = getUnitById(Number(params.id));
       if (item) {
         setFormData({
           code: item.code,
@@ -70,11 +84,10 @@ const UnitCreatePage = () => {
           type: item.type,
           isBaseUnit: item.isBaseUnit,
           conversionFactor: item.conversionFactor,
-          baseUnitId: item.baseUnitId, // This might point to 'kg' (id 1)
+          baseUnitId: item.baseUnitId,
         });
 
-        // Try to reverse-engineer which standard was used?
-        // For now, default to the base standard (factor 1)
+        // Try to reverse-engineer which standard was used
         const standards = UNIT_STANDARDS[item.type] || [];
         const baseStd = standards.find((s) => s.factor === 1);
         if (baseStd) setSelectedStandard(baseStd.value);
@@ -85,7 +98,7 @@ const UnitCreatePage = () => {
       const baseStd = standards.find((s) => s.factor === 1);
       if (baseStd) setSelectedStandard(baseStd.value);
     }
-  }, [isEdit, params?.id]);
+  }, [isEdit, params?.id, getUnitById, formData.type]);
 
   // When type changes, reset standard
   useEffect(() => {
@@ -113,28 +126,24 @@ const UnitCreatePage = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setConfirmOpen(true);
+  };
 
-    // 1. Find the System Base Unit for this type (e.g. Unit for 'kg')
-    // In a real app, we look up by type + isBaseUnit.
-    // Here we use initialUnits.
-    const systemBaseUnit = initialUnits.find(
-      (u) => u.type === formData.type && u.isBaseUnit,
-    );
+  const handleConfirmSubmit = () => {
+    // 1. Find the System Base Unit for this type
+    const systemBaseUnit = getBaseUnitByType(formData.type);
 
     if (!systemBaseUnit && !formData.isBaseUnit) {
-      // Fallback or Error?
-      // If no system base exists, maybe this IS the system base?
-      // For now, show error
       toast({
         title: "Lỗi cấu hình",
         description: `Không tìm thấy đơn vị chuẩn hệ thống cho loại ${formData.type}`,
         variant: "destructive",
       });
+      setConfirmOpen(false);
       return;
     }
 
     // 2. Calculate the True Factor relative to System Base
-    // Formula: 1 Unit = [Input] * [StandardFactor] (SystemBase)
     const standards = UNIT_STANDARDS[formData.type] || [];
     const standard = standards.find((s) => s.value === selectedStandard);
 
@@ -144,6 +153,7 @@ const UnitCreatePage = () => {
         description: "Vui lòng chọn đơn vị quy đổi",
         variant: "destructive",
       });
+      setConfirmOpen(false);
       return;
     }
 
@@ -155,22 +165,31 @@ const UnitCreatePage = () => {
     }
 
     const finalData = {
-      ...formData,
-      isBaseUnit: false, // Always false for user created units in this new flow?
+      code: formData.code,
+      name: formData.name,
+      description: formData.description,
+      status: formData.status,
+      type: formData.type,
+      isBaseUnit: false,
       baseUnitId: systemBaseUnit?.id,
       conversionFactor: finalFactor,
     };
 
-    // Edge case: If user is editing the Base Unit itself?
-    // We didn't expose UI for that, assuming user creates derived units.
+    if (isEdit && params?.id) {
+      updateUnit(Number(params.id), finalData);
+      toast({
+        title: "Thành công",
+        description: "Đã cập nhật đơn vị tính",
+      });
+    } else {
+      addUnit(finalData);
+      toast({
+        title: "Thành công",
+        description: "Đã thêm mới đơn vị tính",
+      });
+    }
 
-    console.log("Submit:", finalData);
-    toast({
-      title: "Thành công",
-      description: isEdit
-        ? "Đã cập nhật đơn vị tính"
-        : "Đã thêm mới đơn vị tính",
-    });
+    setConfirmOpen(false);
     setLocation("/unit");
   };
 
@@ -371,6 +390,53 @@ const UnitCreatePage = () => {
           </div>
         </form>
       </div>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isEdit ? "Xác nhận cập nhật" : "Xác nhận thêm mới"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                {isEdit
+                  ? "Bạn có chắc chắn muốn cập nhật đơn vị tính này?"
+                  : "Bạn có chắc chắn muốn thêm đơn vị tính mới vào hệ thống?"}
+              </p>
+              <div className="bg-slate-50 p-4 rounded-lg space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Mã đơn vị:</span>
+                  <span className="font-medium">{formData.code}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tên đơn vị:</span>
+                  <span className="font-medium">{formData.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Loại:</span>
+                  <span className="font-medium">
+                    {UNIT_TYPES.find((t) => t.value === formData.type)?.label}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Quy đổi:</span>
+                  <span className="font-medium">
+                    1 {formData.name} = {formData.conversionFactor}{" "}
+                    {getStandardLabel()}
+                  </span>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSubmit}>
+              {isEdit ? "Xác nhận cập nhật" : "Xác nhận thêm mới"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };

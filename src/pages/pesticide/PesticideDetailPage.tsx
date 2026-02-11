@@ -23,13 +23,16 @@ import {
   FlaskConical,
   Info,
 } from "lucide-react";
-import { initialPesticides } from "./constants";
+import usePesticideStore from "../../stores/usePesticideStore";
 
 const PesticideDetailPage = () => {
   const [, params] = useRoute("/pesticide/:id");
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
-  const item = initialPesticides.find((p) => p.id === id);
+
+  // Zustand store
+  const getPesticideById = usePesticideStore((state) => state.getPesticideById);
+  const item = getPesticideById(id);
 
   if (!item) {
     return (

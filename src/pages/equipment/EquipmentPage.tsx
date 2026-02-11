@@ -10,12 +10,17 @@ import {
   useToast,
   type Column,
 } from "@tankhang1/eco-shared-ui";
-import { initialEquipments, type Equipment } from "./constants";
+import type { Equipment } from "./constants";
+import useEquipmentStore from "../../stores/useEquipmentStore";
 
 export default function EquipmentPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [data, setData] = useState<Equipment[]>(initialEquipments);
+
+  // Zustand store
+  const equipments = useEquipmentStore((state) => state.equipments);
+  const deleteEquipment = useEquipmentStore((state) => state.deleteEquipment);
+
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Equipment | null>(null);
 
@@ -77,7 +82,7 @@ export default function EquipmentPage() {
 
   const handleConfirmDelete = () => {
     if (deleteItem) {
-      setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
+      deleteEquipment(deleteItem.id);
       toast({ title: "Thành công", description: "Đã xóa thiết bị" });
     }
     setDeleteOpen(false);
@@ -96,7 +101,7 @@ export default function EquipmentPage() {
     >
       <DataTable
         columns={columns}
-        data={data}
+        data={equipments}
         onView={(item) =>
           toast({ title: "Xem chi tiết", description: item.name })
         }

@@ -26,13 +26,16 @@ import {
   Info,
   Activity,
 } from "lucide-react";
-import { initialEquipments } from "./constants";
+import useEquipmentStore from "../../stores/useEquipmentStore";
 
 const EquipmentDetailPage = () => {
   const [, params] = useRoute("/equipment/:id");
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
-  const item = initialEquipments.find((p) => p.id === id);
+
+  // Zustand store
+  const getEquipmentById = useEquipmentStore((state) => state.getEquipmentById);
+  const item = getEquipmentById(id);
 
   if (!item) {
     return (

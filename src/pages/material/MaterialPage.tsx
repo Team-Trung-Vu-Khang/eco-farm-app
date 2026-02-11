@@ -10,12 +10,17 @@ import {
   useToast,
   type Column,
 } from "@tankhang1/eco-shared-ui";
-import { initialMaterials, type Material } from "./constants";
+import type { Material } from "./constants";
+import useMaterialStore from "../../stores/useMaterialStore";
 
 export default function MaterialPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [data, setData] = useState<Material[]>(initialMaterials);
+
+  // Zustand store
+  const materials = useMaterialStore((state) => state.materials);
+  const deleteMaterial = useMaterialStore((state) => state.deleteMaterial);
+
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Material | null>(null);
 
@@ -73,7 +78,7 @@ export default function MaterialPage() {
 
   const handleConfirmDelete = () => {
     if (deleteItem) {
-      setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
+      deleteMaterial(deleteItem.id);
       toast({ title: "Thành công", description: "Đã xóa vật tư" });
     }
     setDeleteOpen(false);
@@ -92,7 +97,7 @@ export default function MaterialPage() {
     >
       <DataTable
         columns={columns}
-        data={data}
+        data={materials}
         onView={(item) =>
           toast({ title: "Xem chi tiết", description: item.name })
         }

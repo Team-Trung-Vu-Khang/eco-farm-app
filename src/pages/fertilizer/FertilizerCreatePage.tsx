@@ -16,14 +16,17 @@ import {
   Button,
   Badge,
   useToast,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@tankhang1/eco-shared-ui";
-import {
-  fertilizerTypes,
-  commonHashtags,
-  suppliers,
-  units,
-  initialFertilizers,
-} from "./constants";
+import { fertilizerTypes, commonHashtags, suppliers, units } from "./constants";
+import useFertilizerStore from "../../stores/useFertilizerStore";
 import {
   ChevronLeft,
   Upload,
@@ -64,6 +67,15 @@ const FertilizerCreatePage = () => {
   const isEdit = match && !!params?.id;
   const { toast } = useToast();
 
+  // Zustand store
+  const getFertilizerById = useFertilizerStore(
+    (state) => state.getFertilizerById,
+  );
+  const addFertilizer = useFertilizerStore((state) => state.addFertilizer);
+  const updateFertilizer = useFertilizerStore(
+    (state) => state.updateFertilizer,
+  );
+
   const [formData, setFormData] = useState<FertilizerFormData>({
     code: "",
     name: "",
@@ -75,6 +87,7 @@ const FertilizerCreatePage = () => {
   });
 
   const [paramHashtag, setParamHashtag] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
   // Temporary state for adding a supplier line item
   const [tempSupplier, setTempSupplier] = useState({
     supplierId: "",
@@ -86,7 +99,7 @@ const FertilizerCreatePage = () => {
   // Load initial data for Edit
   useEffect(() => {
     if (isEdit && params?.id) {
-      const item = initialFertilizers.find((p) => p.id === Number(params.id));
+      const item = getFertilizerById(Number(params.id));
       if (item) {
         setFormData({
           code: item.code,
@@ -106,7 +119,7 @@ const FertilizerCreatePage = () => {
         });
       }
     }
-  }, [isEdit, params?.id]);
+  }, [isEdit, params?.id, getFertilizerById]);
 
   const updateField = (field: keyof FertilizerFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -147,6 +160,40 @@ const FertilizerCreatePage = () => {
     const newDetails = [...formData.supplierDetails];
     newDetails.splice(index, 1);
     updateField("supplierDetails", newDetails);
+  };
+
+  const handleConfirmSubmit = () => {
+    if (isEdit && params?.id) {
+      // Update existing fertilizer
+      updateFertilizer(Number(params.id), {
+        code: formData.code,
+        name: formData.name,
+        type: formData.type,
+        nutrientContent: formData.nutrientContent,
+        description: formData.description,
+        status: "active",
+      });
+      toast({
+        title: "Thành công",
+        description: "Đã cập nhật thông tin phân bón",
+      });
+    } else {
+      // Add new fertilizer
+      addFertilizer({
+        code: formData.code,
+        name: formData.name,
+        type: formData.type,
+        nutrientContent: formData.nutrientContent,
+        description: formData.description,
+        status: "active",
+      });
+      toast({
+        title: "Thành công",
+        description: "Đã thêm mới phân bón",
+      });
+    }
+    setConfirmOpen(false);
+    setLocation("/fertilizer");
   };
 
   // --- Step 1: Basic Information ---
@@ -583,18 +630,56 @@ const FertilizerCreatePage = () => {
           steps={steps}
           completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
           onComplete={() => {
-            console.log("Submit:", formData);
-            toast({
-              title: "Thành công",
-              description: isEdit
-                ? "Đã cập nhật thông tin phân bón"
-                : "Đã thêm mới phân bón",
-            });
-            setLocation("/fertilizer");
+            // Mở confirm dialog thay vì submit trực tiếp
+            setConfirmOpen(true);
           }}
           onCancel={() => setLocation("/fertilizer")}
         />
       </div>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isEdit ? "Xác nhận cập nhật" : "Xác nhận thêm mới"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                {isEdit
+                  ? "Bạn có chắc chắn muốn cập nhật thông tin phân bón này?"
+                  : "Bạn có chắc chắn muốn thêm phân bón mới vào hệ thống?"}
+              </p>
+              <div className="bg-slate-50 p-4 rounded-lg space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Mã phân bón:</span>
+                  <span className="font-medium">{formData.code}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tên phân bón:</span>
+                  <span className="font-medium">{formData.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Loại:</span>
+                  <span className="font-medium">{formData.type}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Hàm lượng:</span>
+                  <span className="font-medium">
+                    {formData.nutrientContent}
+                  </span>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSubmit}>
+              {isEdit ? "Xác nhận cập nhật" : "Xác nhận thêm mới"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };

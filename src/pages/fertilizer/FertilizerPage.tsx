@@ -10,12 +10,19 @@ import {
   useToast,
   type Column,
 } from "@tankhang1/eco-shared-ui";
-import { initialFertilizers, type Fertilizer } from "./constants";
+import type { Fertilizer } from "./constants";
+import useFertilizerStore from "../../stores/useFertilizerStore";
 
 export default function FertilizerPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [data, setData] = useState<Fertilizer[]>(initialFertilizers);
+
+  // Zustand store
+  const fertilizers = useFertilizerStore((state) => state.fertilizers);
+  const deleteFertilizer = useFertilizerStore(
+    (state) => state.deleteFertilizer,
+  );
+
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Fertilizer | null>(null);
 
@@ -65,7 +72,7 @@ export default function FertilizerPage() {
 
   const handleConfirmDelete = () => {
     if (deleteItem) {
-      setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
+      deleteFertilizer(deleteItem.id);
       toast({ title: "Thành công", description: "Đã xóa phân bón" });
     }
     setDeleteOpen(false);
@@ -84,7 +91,7 @@ export default function FertilizerPage() {
     >
       <DataTable
         columns={columns}
-        data={data}
+        data={fertilizers}
         onView={(item) =>
           toast({ title: "Xem chi tiết", description: item.name })
         }

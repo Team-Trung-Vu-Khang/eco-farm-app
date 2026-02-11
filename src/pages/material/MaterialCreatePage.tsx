@@ -16,14 +16,17 @@ import {
   Button,
   Badge,
   useToast,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@tankhang1/eco-shared-ui";
-import {
-  materialTypes,
-  commonHashtags,
-  suppliers,
-  units,
-  initialMaterials,
-} from "./constants";
+import { materialTypes, commonHashtags, suppliers, units } from "./constants";
+import useMaterialStore from "../../stores/useMaterialStore";
 import {
   ChevronLeft,
   Upload,
@@ -60,6 +63,11 @@ const MaterialCreatePage = () => {
   const isEdit = match && !!params?.id;
   const { toast } = useToast();
 
+  // Zustand store
+  const getMaterialById = useMaterialStore((state) => state.getMaterialById);
+  const addMaterial = useMaterialStore((state) => state.addMaterial);
+  const updateMaterial = useMaterialStore((state) => state.updateMaterial);
+
   const [formData, setFormData] = useState<MaterialFormData>({
     code: "",
     name: "",
@@ -70,6 +78,7 @@ const MaterialCreatePage = () => {
   });
 
   const [paramHashtag, setParamHashtag] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [tempSupplier, setTempSupplier] = useState({
     supplierId: "",
     quantity: "",
@@ -80,7 +89,7 @@ const MaterialCreatePage = () => {
   // Load initial data for Edit
   useEffect(() => {
     if (isEdit && params?.id) {
-      const item = initialMaterials.find((p) => p.id === Number(params.id));
+      const item = getMaterialById(Number(params.id));
       if (item) {
         setFormData({
           code: item.code,
@@ -99,7 +108,7 @@ const MaterialCreatePage = () => {
         });
       }
     }
-  }, [isEdit, params?.id]);
+  }, [isEdit, params?.id, getMaterialById]);
 
   const updateField = (field: keyof MaterialFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -140,6 +149,38 @@ const MaterialCreatePage = () => {
     const newDetails = [...formData.supplierDetails];
     newDetails.splice(index, 1);
     updateField("supplierDetails", newDetails);
+  };
+
+  const handleConfirmSubmit = () => {
+    if (isEdit && params?.id) {
+      // Update existing material
+      updateMaterial(Number(params.id), {
+        code: formData.code,
+        name: formData.name,
+        type: formData.type,
+        description: formData.description,
+        status: "active",
+      });
+      toast({
+        title: "Thành công",
+        description: "Đã cập nhật thông tin vật tư",
+      });
+    } else {
+      // Add new material
+      addMaterial({
+        code: formData.code,
+        name: formData.name,
+        type: formData.type,
+        description: formData.description,
+        status: "active",
+      });
+      toast({
+        title: "Thành công",
+        description: "Đã thêm mới vật tư",
+      });
+    }
+    setConfirmOpen(false);
+    setLocation("/material");
   };
 
   // --- Step 1: Basic Information ---
@@ -556,18 +597,50 @@ const MaterialCreatePage = () => {
           steps={steps}
           completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
           onComplete={() => {
-            console.log("Submit:", formData);
-            toast({
-              title: "Thành công",
-              description: isEdit
-                ? "Đã cập nhật thông tin vật tư"
-                : "Đã thêm mới vật tư",
-            });
-            setLocation("/material");
+            // Mở confirm dialog thay vì submit trực tiếp
+            setConfirmOpen(true);
           }}
           onCancel={() => setLocation("/material")}
         />
       </div>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isEdit ? "Xác nhận cập nhật" : "Xác nhận thêm mới"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                {isEdit
+                  ? "Bạn có chắc chắn muốn cập nhật thông tin vật tư này?"
+                  : "Bạn có chắc chắn muốn thêm vật tư mới vào hệ thống?"}
+              </p>
+              <div className="bg-slate-50 p-4 rounded-lg space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Mã vật tư:</span>
+                  <span className="font-medium">{formData.code}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tên vật tư:</span>
+                  <span className="font-medium">{formData.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Loại:</span>
+                  <span className="font-medium">{formData.type}</span>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSubmit}>
+              {isEdit ? "Xác nhận cập nhật" : "Xác nhận thêm mới"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };

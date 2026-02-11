@@ -10,12 +10,17 @@ import {
   useToast,
   type Column,
 } from "@tankhang1/eco-shared-ui";
-import { initialPesticides, type Pesticide } from "./constants";
+import type { Pesticide } from "./constants";
+import usePesticideStore from "../../stores/usePesticideStore";
 
 export default function PesticidePage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [data, setData] = useState<Pesticide[]>(initialPesticides);
+
+  // Zustand store
+  const pesticides = usePesticideStore((state) => state.pesticides);
+  const deletePesticide = usePesticideStore((state) => state.deletePesticide);
+
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Pesticide | null>(null);
 
@@ -63,10 +68,12 @@ export default function PesticidePage() {
     setDeleteItem(item);
     setDeleteOpen(true);
   };
-
+  const handleViewDetail = (item: Pesticide) => {
+    setLocation(`/pesticide/${item.id}`);
+  };
   const handleConfirmDelete = () => {
     if (deleteItem) {
-      setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
+      deletePesticide(deleteItem.id);
       toast({ title: "Thành công", description: "Đã xóa thuốc BVTV" });
     }
     setDeleteOpen(false);
@@ -85,10 +92,8 @@ export default function PesticidePage() {
     >
       <DataTable
         columns={columns}
-        data={data}
-        onView={(item) =>
-          toast({ title: "Xem chi tiết", description: item.name })
-        }
+        data={pesticides}
+        onView={handleViewDetail}
         onEdit={handleEdit}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm thuốc BVTV..."

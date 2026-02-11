@@ -17,6 +17,14 @@ import {
   Badge,
   ScrollArea,
   useToast,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@tankhang1/eco-shared-ui";
 import {
   pesticideGroups,
@@ -26,8 +34,8 @@ import {
   commonHashtags,
   suppliers,
   units,
-  initialPesticides,
 } from "./constants";
+import usePesticideStore from "../../stores/usePesticideStore";
 import {
   ChevronLeft,
   Upload,
@@ -74,6 +82,11 @@ const PesticideCreatePage = () => {
   const isEdit = match && !!params?.id;
   const { toast } = useToast();
 
+  // Zustand store
+  const getPesticideById = usePesticideStore((state) => state.getPesticideById);
+  const addPesticide = usePesticideStore((state) => state.addPesticide);
+  const updatePesticide = usePesticideStore((state) => state.updatePesticide);
+
   const [formData, setFormData] = useState<PesticideFormData>({
     code: "",
     name: "",
@@ -95,11 +108,12 @@ const PesticideCreatePage = () => {
   });
 
   const [paramHashtag, setParamHashtag] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // Load initial data for Edit
   useEffect(() => {
     if (isEdit && params?.id) {
-      const item = initialPesticides.find((p) => p.id === Number(params.id));
+      const item = getPesticideById(Number(params.id));
       if (item) {
         // Map details to form data
         setFormData({
@@ -122,7 +136,7 @@ const PesticideCreatePage = () => {
         });
       }
     }
-  }, [isEdit, params?.id]);
+  }, [isEdit, params?.id, getPesticideById]);
 
   const updateField = (field: keyof PesticideFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -140,6 +154,44 @@ const PesticideCreatePage = () => {
       "hashtags",
       formData.hashtags.filter((t) => t !== tag),
     );
+  };
+
+  const handleConfirmSubmit = () => {
+    if (isEdit && params?.id) {
+      // Update existing pesticide
+      updatePesticide(Number(params.id), {
+        code: formData.code,
+        name: formData.name,
+        group: formData.group,
+        form: formData.form,
+        actionType: formData.actionType,
+        origin: formData.origin,
+        activeIngredient: formData.activeIngredient,
+        status: "active",
+      });
+      toast({
+        title: "Thành công",
+        description: "Đã cập nhật thông tin thành công",
+      });
+    } else {
+      // Add new pesticide
+      addPesticide({
+        code: formData.code,
+        name: formData.name,
+        group: formData.group,
+        form: formData.form,
+        actionType: formData.actionType,
+        origin: formData.origin,
+        activeIngredient: formData.activeIngredient,
+        status: "active",
+      });
+      toast({
+        title: "Thành công",
+        description: "Đã thêm mới thuốc bảo vệ thực vật",
+      });
+    }
+    setConfirmOpen(false);
+    setLocation("/pesticide");
   };
 
   // --- Step 1: Basic Information ---
@@ -675,18 +727,54 @@ const PesticideCreatePage = () => {
           steps={steps}
           completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
           onComplete={() => {
-            console.log("Submit:", formData);
-            toast({
-              title: "Thành công",
-              description: isEdit
-                ? "Đã cập nhật thông tin thành công"
-                : "Đã thêm mới thuốc bảo vệ thực vật",
-            });
-            setLocation("/pesticide");
+            // Mở confirm dialog thay vì submit trực tiếp
+            setConfirmOpen(true);
           }}
           onCancel={() => setLocation("/pesticide")}
         />
       </div>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isEdit ? "Xác nhận cập nhật" : "Xác nhận thêm mới"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                {isEdit
+                  ? "Bạn có chắc chắn muốn cập nhật thông tin thuốc BVTV này?"
+                  : "Bạn có chắc chắn muốn thêm thuốc BVTV mới vào hệ thống?"}
+              </p>
+              <div className="bg-slate-50 p-4 rounded-lg space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Mã thuốc:</span>
+                  <span className="font-medium">{formData.code}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tên thuốc:</span>
+                  <span className="font-medium">{formData.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Nhóm:</span>
+                  <span className="font-medium">{formData.group}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Nguồn gốc:</span>
+                  <span className="font-medium">{formData.origin}</span>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSubmit}>
+              {isEdit ? "Xác nhận cập nhật" : "Xác nhận thêm mới"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };

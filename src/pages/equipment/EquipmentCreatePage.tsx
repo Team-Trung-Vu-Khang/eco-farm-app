@@ -15,14 +15,22 @@ import {
   Textarea,
   Button,
   useToast,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@tankhang1/eco-shared-ui";
 import {
   equipmentTypes,
   maintenanceIntervals,
   suppliers,
   units,
-  initialEquipments,
 } from "./constants";
+import useEquipmentStore from "../../stores/useEquipmentStore";
 import {
   ChevronLeft,
   Upload,
@@ -64,6 +72,11 @@ const EquipmentCreatePage = () => {
   const isEdit = match && !!params?.id;
   const { toast } = useToast();
 
+  // Zustand store
+  const getEquipmentById = useEquipmentStore((state) => state.getEquipmentById);
+  const addEquipment = useEquipmentStore((state) => state.addEquipment);
+  const updateEquipment = useEquipmentStore((state) => state.updateEquipment);
+
   const [formData, setFormData] = useState<EquipmentFormData>({
     code: "",
     name: "",
@@ -76,6 +89,7 @@ const EquipmentCreatePage = () => {
     supplierDetails: [],
   });
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [tempSupplier, setTempSupplier] = useState({
     supplierId: "",
     quantity: "",
@@ -86,7 +100,7 @@ const EquipmentCreatePage = () => {
   // Load initial data for Edit
   useEffect(() => {
     if (isEdit && params?.id) {
-      const item = initialEquipments.find((p) => p.id === Number(params.id));
+      const item = getEquipmentById(Number(params.id));
       if (item) {
         setFormData({
           code: item.code,
@@ -108,7 +122,7 @@ const EquipmentCreatePage = () => {
         });
       }
     }
-  }, [isEdit, params?.id]);
+  }, [isEdit, params?.id, getEquipmentById]);
 
   const updateField = (field: keyof EquipmentFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -135,6 +149,40 @@ const EquipmentCreatePage = () => {
     const newDetails = [...formData.supplierDetails];
     newDetails.splice(index, 1);
     updateField("supplierDetails", newDetails);
+  };
+
+  const handleConfirmSubmit = () => {
+    if (isEdit && params?.id) {
+      // Update existing equipment
+      updateEquipment(Number(params.id), {
+        code: formData.code,
+        name: formData.name,
+        type: formData.type,
+        status: formData.status as "active" | "maintenance" | "inactive",
+        description: formData.description,
+        maintainanceInterval: formData.maintainanceInterval,
+      });
+      toast({
+        title: "Thành công",
+        description: "Đã cập nhật thông tin thiết bị",
+      });
+    } else {
+      // Add new equipment
+      addEquipment({
+        code: formData.code,
+        name: formData.name,
+        type: formData.type,
+        status: formData.status as "active" | "maintenance" | "inactive",
+        description: formData.description,
+        maintainanceInterval: formData.maintainanceInterval,
+      });
+      toast({
+        title: "Thành công",
+        description: "Đã thêm mới thiết bị",
+      });
+    }
+    setConfirmOpen(false);
+    setLocation("/equipment");
   };
 
   // --- Step 1: Basic Information ---
@@ -576,18 +624,56 @@ const EquipmentCreatePage = () => {
           steps={steps}
           completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
           onComplete={() => {
-            console.log("Submit:", formData);
-            toast({
-              title: "Thành công",
-              description: isEdit
-                ? "Đã cập nhật thông tin thiết bị"
-                : "Đã thêm mới thiết bị",
-            });
-            setLocation("/equipment");
+            // Mở confirm dialog thay vì submit trực tiếp
+            setConfirmOpen(true);
           }}
           onCancel={() => setLocation("/equipment")}
         />
       </div>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isEdit ? "Xác nhận cập nhật" : "Xác nhận thêm mới"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                {isEdit
+                  ? "Bạn có chắc chắn muốn cập nhật thông tin thiết bị này?"
+                  : "Bạn có chắc chắn muốn thêm thiết bị mới vào hệ thống?"}
+              </p>
+              <div className="bg-slate-50 p-4 rounded-lg space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Mã thiết bị:</span>
+                  <span className="font-medium">{formData.code}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tên thiết bị:</span>
+                  <span className="font-medium">{formData.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Loại:</span>
+                  <span className="font-medium">{formData.type}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Bảo dưỡng:</span>
+                  <span className="font-medium">
+                    {formData.maintainanceInterval}
+                  </span>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSubmit}>
+              {isEdit ? "Xác nhận cập nhật" : "Xác nhận thêm mới"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };
