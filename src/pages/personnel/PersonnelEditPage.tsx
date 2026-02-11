@@ -24,6 +24,7 @@ import {
 } from "@tankhang1/eco-shared-ui";
 import { CreditCard, Save, User, Trash2, X } from "lucide-react";
 import usePersonnelStore from "../../stores/usePersonnelStore";
+import useTeamStore from "../../stores/useTeamStore";
 
 export default function PersonnelEditPage() {
   const [, setLocation] = useLocation();
@@ -35,6 +36,7 @@ export default function PersonnelEditPage() {
   const getPersonnelById = usePersonnelStore((state) => state.getPersonnelById);
   const updatePersonnel = usePersonnelStore((state) => state.updatePersonnel);
   const deletePersonnel = usePersonnelStore((state) => state.deletePersonnel);
+  const teams = useTeamStore((state) => state.teams);
 
   const id = params?.id ? Number(params.id) : 0;
   const personnel = getPersonnelById(id);
@@ -417,14 +419,23 @@ export default function PersonnelEditPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="team">Đội / Nhóm</Label>
-                      <Input
-                        id="team"
-                        placeholder="VD: Đội kinh doanh miền Bắc, Tổ kỹ thuật 1..."
+                      <Select
                         value={formData.team}
-                        onChange={(e) =>
-                          setFormData({ ...formData, team: e.target.value })
+                        onValueChange={(val) =>
+                          setFormData({ ...formData, team: val })
                         }
-                      />
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Chọn Đội / Nhóm" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {teams.map((team) => (
+                            <SelectItem key={team.id} value={team.name}>
+                              {team.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </CardContent>
                 </Card>

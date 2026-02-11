@@ -25,6 +25,7 @@ import {
 import { CreditCard, Save, User, X } from "lucide-react";
 import { vietQrBankData } from "@/constants/banks";
 import usePersonnelStore from "../../stores/usePersonnelStore";
+import useTeamStore from "../../stores/useTeamStore";
 
 const bankOptions = vietQrBankData.map((bank) => ({
   id: bank.id,
@@ -40,6 +41,7 @@ export default function PersonnelCreatePage() {
 
   // Zustand store
   const addPersonnel = usePersonnelStore((state) => state.addPersonnel);
+  const teams = useTeamStore((state) => state.teams);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -354,14 +356,23 @@ export default function PersonnelCreatePage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="team">Đội / Nhóm</Label>
-                      <Input
-                        id="team"
-                        placeholder="VD: Đội kinh doanh miền Bắc, Tổ kỹ thuật 1..."
+                      <Select
                         value={formData.team}
-                        onChange={(e) =>
-                          setFormData({ ...formData, team: e.target.value })
+                        onValueChange={(val) =>
+                          setFormData({ ...formData, team: val })
                         }
-                      />
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Chọn Đội / Nhóm" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {teams.map((team) => (
+                            <SelectItem key={team.id} value={team.name}>
+                              {team.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </CardContent>
                 </Card>
