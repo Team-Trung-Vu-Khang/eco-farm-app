@@ -631,6 +631,153 @@ const initialData: TreatmentPlan[] = [
     soilIssue: "Nhiễm mặn (EC > 4dS/m)",
     cropType: "Tôm - Lúa",
   },
+  {
+    id: 4,
+    code: "PD-SOIL-HCDF-2026",
+    name: "Phác đồ Phục hồi Hệ nền Đất & Kích kháng rễ Sầu riêng (ICU)",
+    zone: "Khu vực thực nghiệm - Hàm Rồng, Gia Lai",
+    objectives: [
+      "Cứu rễ - Cứu oxy",
+      "Điều chỉnh cấu trúc - pH nền",
+      "Thiết lập quần thể vi sinh đối kháng",
+    ],
+    duration: "12 tháng",
+    startDate: "2026-01-01",
+    endDate: "2026-12-31",
+    intensity: "deep",
+    priority: "high",
+    selectedMethods: [1, 2, 3],
+    coverImage:
+      "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?w=800",
+    soilAnalysis: {
+      pH: { current: 4.8, target: 6.0 },
+      organicMatter: { current: 1.5, target: 4.0, unit: "%" },
+      nitrogen: { current: 0.05, target: 0.15, unit: "%" },
+      phosphorus: { current: 10, target: 25, unit: "ppm" },
+      potassium: { current: 70, target: 150, unit: "ppm" },
+      ec: { current: 0.2, target: 0.8, unit: "dS/m" },
+      texture: "Đất đỏ Bazan nén chặt",
+      color: "Nâu đỏ xám (yếm khí)",
+      drainage: "poor",
+    },
+    expectedResults: [
+      {
+        metric: "Độ pH đất vùng rễ",
+        before: "4.8",
+        after: "5.5 - 6.0",
+        timeframe: "1.5 - 3 tháng",
+      },
+      {
+        metric: "Mật độ vi sinh có lợi (Bacillus)",
+        before: "Thấp",
+        after: "10^7 CFU/g đất",
+        timeframe: "6 tuần",
+      },
+    ],
+    riskFactors: [
+      "Sử dụng thuốc bảo vệ thực vật gốc Đồng làm chết vi sinh HCDF",
+      "Mưa lớn gây tái úng cục bộ tại các điểm trũng",
+    ],
+    successIndicators: [
+      "Vết xì mủ trên thân khô hoàn toàn, không chảy dịch mới",
+      "Hệ rễ tơ bắt đầu nhú mầm trắng, lá ngừng rụng",
+    ],
+    videoTutorials: [
+      {
+        id: 1,
+        title: "Kỹ thuật khơi rãnh thoát nước và xới nhẹ cứu oxy",
+        duration: "08:30",
+        thumbnail:
+          "https://images.unsplash.com/photo-1589923188900-85dae523342b?w=400",
+        url: "#",
+        description:
+          "Hướng dẫn phá váng bề mặt và tạo hành lang thoát nước rút trong 6-12h",
+      },
+    ],
+    relatedDocuments: [
+      {
+        id: 1,
+        name: "Phác đồ ICU sầu riêng Hàm Rồng.pdf",
+        type: "pdf",
+        url: "#",
+        size: "3.5 MB",
+      },
+    ],
+    procedures: [
+      {
+        id: 1,
+        stepNumber: 1,
+        name: "Cấp tốc (0–7 ngày) – “Cứu rễ, cứu oxy”",
+        description:
+          "Thoát nước khẩn cấp và đưa đất từ trạng thái yếm khí sang hiếu khí",
+        detailedInstructions:
+          "Khơi mương, rãnh phụ tại các điểm đọng nước; ưu tiên nước rút trong 6–12h sau mưa. Ngừng mọi hoạt động tưới dư và bón đạm mạnh. Xới nhẹ lớp mặt (tránh phạm rễ lớn) để tăng thông thoáng. Thu gom toàn bộ tàn dư thối, quả rụng đem tiêu hủy để dọn nguồn bệnh.",
+        dosage: "N/A",
+        timing: "Ngay khi phát hiện úng/vàng lá",
+        technique: "Khơi rãnh thủ công + Xới nhẹ mặt đất",
+        materials: ["Vật liệu phủ thoáng (Rơm/Mùn)"],
+        equipment: ["Cuốc, xẻng khơi rãnh"],
+        estimatedDays: 7,
+        images: [],
+        videoUrl: "#",
+        warnings: [
+          "Không dùng xe cơ giới nặng đi vào vườn khi đất đang ướt",
+          "Tuyệt đối không bón thêm phân hóa học giai đoạn này",
+        ],
+        tips: [
+          "Nên xới đất vào buổi sáng khi đất bắt đầu se mặt",
+          "Ưu tiên xử lý các cây Cấp 3 và Cấp 4 trước",
+        ],
+        expectedOutcome: "Đất vùng rễ khô ráo, không còn mùi chua yếm khí",
+        qualityCheckpoints: [
+          "Nước thoát sạch sau mưa 12h",
+          "Lớp bề mặt đất tơi xốp, không bị đóng váng",
+        ],
+        weatherRequirements: "Trời tạnh ráo hoặc sau mưa lớn",
+        laborRequired: 10,
+        estimatedCost: 20.0,
+      },
+      {
+        id: 2,
+        stepNumber: 2,
+        name: "Ngắn hạn (2–6 tuần) – “Điều chỉnh cấu trúc - pH nền”",
+        description: "Sửa cấu trúc vật lý đất và cân bằng lại độ pH vùng rễ",
+        detailedInstructions:
+          "Tiến hành bón vôi hoặc Dolomite để khử chua dựa trên kết quả test pH thực tế. Rải Ozym (100g/gốc) kết hợp với phân hữu cơ hoai mục để phân hủy tàn dư rễ thối. Đưa Bzym+ (10^15 CFU/mL) nồng độ cao vào đất để thiết lập quần thể vi sinh ưu thế bảo vệ rễ.",
+        dosage: "100g Ozym + 500ml Bzym+/gốc",
+        timing: "Tuần thứ 2 đến tuần thứ 6",
+        technique: "Bón lấp nông vùng tán",
+        materials: ["Ozym", "Bzym+", "Vôi", "Phân hữu cơ hoai"],
+        equipment: ["Hệ thống tưới tự động (đã lọc cặn)", "Ca đong"],
+        estimatedDays: 30,
+        images: [],
+        videoUrl: "#",
+        warnings: [
+          "Tách thời điểm bón vôi với phân vi sinh ít nhất 5 ngày",
+          "Cách ly hoàn toàn thuốc gốc Đồng ít nhất 7 ngày",
+        ],
+        tips: [
+          "Vi sinh Bacillus hoạt động tốt nhất khi đất đủ ẩm",
+          "Nâng pH đất từ từ sẽ giúp rễ không bị sốc nhiệt",
+        ],
+        expectedOutcome: "pH đất tăng 0.5 - 1.0 độ, mật độ nấm hại giảm rõ rệt",
+        qualityCheckpoints: [
+          "Vết xì mủ trên thân bắt đầu se lại và khô",
+          "Kiểm tra mật độ Bacillus đạt ngưỡng an toàn",
+        ],
+        weatherRequirements: "Trời mát, đất đủ độ ẩm",
+        laborRequired: 8,
+        estimatedCost: 45.0,
+      },
+    ],
+    seasonalPhases: [],
+    status: "in_progress",
+    area: 380.0,
+    budget: 5000,
+    technician: "Lê Thanh Hà",
+    soilIssue: "Đất nén chặt, úng bí, nhiễm nấm Phytophthora cấp tính",
+    cropType: "Sầu riêng kinh doanh",
+  },
 ];
 
 export default function SoilAmendmentTreatmentPage() {
