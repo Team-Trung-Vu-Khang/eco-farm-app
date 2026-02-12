@@ -100,149 +100,13 @@ const ZoomListener = ({ onChange }: { onChange: (zoom: number) => void }) => {
   return null;
 };
 
-const METRIC_CONFIG: Record<
-  SoilMetric,
-  {
-    label: string;
-    unit: string;
-    range: [number, number];
-    colorScale: (val: number) => string;
-    description: string;
-    thresholds?: number[]; // [low, high]
-    // Research-based details
-    details: {
-      ideal: string;
-      lowEffect: string;
-      highEffect: string;
-      source?: string;
-    };
-  }
-> = {
-  ph: {
-    label: "Độ pH",
-    unit: "",
-    range: [3, 9],
-    description: "Chỉ số độ chua/kiềm ảnh hưởng mức độ hấp thu dinh dưỡng.",
-    thresholds: [5.5, 7.0],
-    colorScale: (val) => {
-      // < 5.5 (Acidic/Bad) -> Red/Orange
-      // 5.5 - 7.0 (Ideal) -> Green
-      // > 7.0 (Alkaline) -> Blue/Purple
-      if (val < 5.5) return `hsl(${0 + (val - 3) * 20}, 90%, 60%)`;
-      if (val <= 7.0) return `hsl(${100 + (val - 5.5) * 40}, 80%, 45%)`;
-      return `hsl(${180 + (val - 7.0) * 30}, 70%, 50%)`;
-    },
-    details: {
-      ideal: "6.0 - 7.0 (Trung tính)",
-      lowEffect:
-        "Ngộ độc Nhôm (Al), Mangan (Mn); thiếu Lân (P), Canxi (Ca), Magie (Mg).",
-      highEffect: "Thiếu vi lượng (Fe, Mn, Zn, Cu, B); đất bị kiềm hóa.",
-      source: "USDA/Agricultural Ext.",
-    },
-  },
-  moisture: {
-    label: "Độ ẩm",
-    unit: "%",
-    range: [0, 100],
-    description: "Tỷ lệ nước trong đất (so với dung tích ruộng).",
-    thresholds: [50, 80],
-    colorScale: (val) => `hsl(200, ${val}%, ${95 - val * 0.5}%)`,
-    details: {
-      ideal: "60% - 80% dung tích ruộng",
-      lowEffect: "Cây héo, giảm quang hợp, rối loạn vận chuyển dinh dưỡng.",
-      highEffect: "Ngạt rễ, thối rễ, phát sinh nấm bệnh.",
-    },
-  },
-  nitrogen: {
-    label: "Nitrogen (N)",
-    unit: "ppm",
-    range: [0, 100],
-    description: "Hàm lượng Đạm dễ tiêu (NO3- + NH4+).",
-    thresholds: [20, 50],
-    colorScale: (val) => `hsl(140, ${30 + val * 0.7}%, ${90 - val * 0.6}%)`,
-    details: {
-      ideal: "20 - 50 ppm",
-      lowEffect: "Cây còi cọc, lá vàng (chlorosis), giảm năng suất.",
-      highEffect: "Cây phát triển vống, yếu, dễ đổ, chậm ra hoa/quả.",
-    },
-  },
-  phosphorus: {
-    label: "Phosphorus (P)",
-    unit: "ppm",
-    range: [0, 100],
-    description: "Hàm lượng Lân dễ tiêu (Bray P1/Olsen).",
-    thresholds: [20, 50],
-    colorScale: (val) => `hsl(35, ${40 + val * 0.6}%, ${90 - val * 0.7}%)`,
-    details: {
-      ideal: "20 - 50 ppm",
-      lowEffect: "Rễ kém phát triển, lá tím/đỏ, chậm trưởng thành.",
-      highEffect: "Cản trở hấp thu Kẽm (Zn), Sắt (Fe).",
-    },
-  },
-  potassium: {
-    label: "Potassium (K)",
-    unit: "ppm",
-    range: [0, 400],
-    description: "Hàm lượng Kali dễ tiêu.",
-    thresholds: [100, 200],
-    colorScale: (val) =>
-      `hsl(270, ${30 + (val / 400) * 70}%, ${90 - (val / 400) * 50}%)`,
-    details: {
-      ideal: "100 - 200 ppm",
-      lowEffect: "Mép lá cháy, cây yếu, dễ nhiễm bệnh/sâu hại.",
-      highEffect: "Cản trở hấp thu Magie (Mg), Canxi (Ca).",
-    },
-  },
-  ec: {
-    label: "Độ dẫn điện (EC)",
-    unit: "dS/m",
-    range: [0, 4],
-    description: "Độ mặn/Tổng muối tan trong đất.",
-    thresholds: [0, 1.2],
-    colorScale: (val) => {
-      // 0-1.2 ideal (greenish)
-      // >1.2 warning (yellow)
-      // >2.5 bad (red/brown)
-      if (val < 1.2) return `hsl(100, 70%, ${90 - val * 20}%)`;
-      return `hsl(40, ${Math.min(100, val * 30)}%, ${80 - val * 10}%)`;
-    },
-    details: {
-      ideal: "< 1.2 dS/m (không mặn)",
-      lowEffect: "Thường không hại (trừ khi thiếu dinh dưỡng khoáng).",
-      highEffect:
-        "Gây áp suất thẩm thấu cao, cây không hút được nước (hạn sinh lý).",
-    },
-  },
-  temperature: {
-    label: "Nhiệt độ đất",
-    unit: "°C",
-    range: [10, 50],
-    description: "Nhiệt độ tầng đất mặt (0-10cm).",
-    thresholds: [20, 32],
-    colorScale: (val) => {
-      const t = (val - 15) / 30; // normalize roughly
-      return `hsl(${220 - t * 220}, 80%, 50%)`;
-    },
-    details: {
-      ideal: "20°C - 30°C",
-      lowEffect: "Giảm hoạt động vi sinh vật, rễ kém hấp thu P.",
-      highEffect: "Phân hủy hữu cơ quá nhanh, chết rễ non.",
-    },
-  },
-  compaction: {
-    label: "Độ nén",
-    unit: "psi",
-    range: [0, 500],
-    description: "Độ cứng của đất (Cone Index).",
-    thresholds: [0, 200],
-    colorScale: (val) => `hsl(0, 0%, ${95 - (val / 500) * 80}%)`,
-    details: {
-      ideal: "< 200 psi",
-      lowEffect: "Đất quá tơi (hiếm khi là vấn đề, trừ khi xói mòn).",
-      highEffect: "Nén chặt >300psi ngăn cản rễ phát triển, kém thoát nước.",
-    },
-  },
-};
+// Colors based on User Request
+// Tốt: Xanh (Green)
+// Xấu: Cam (Orange)
+// Cảnh báo: Cam đỏ (Red-Orange)
+const COLOR_GOOD = "#22c55e"; // Green-500
+const COLOR_BAD = "#f97316"; // Orange-500
+const COLOR_WARNING = "#ef4444"; // Red-500 (Cam đỏ - Red)
 
 const getMetricAnalysis = (metric: SoilMetric, value: number) => {
   switch (metric) {
@@ -306,6 +170,20 @@ const getMetricAnalysis = (metric: SoilMetric, value: number) => {
           action: "Bón Super Lân hoặc DAP. Bón lót sâu.",
         };
       return { status: "good", message: "Mức Lân ổn định", action: null }; // P toxicity rare
+    case "potassium":
+      if (value < 100)
+        return {
+          status: "warning",
+          message: "Thiếu Kali (Mép lá cháy)",
+          action: "Bón bổ sung Kali (KCI/K2SO4).",
+        };
+      if (value > 300)
+        return {
+          status: "bad",
+          message: "Thừa Kali (Đối kháng Mg, Ca)",
+          action: "Ngưng bón Kali, rửa đất nếu cần.",
+        };
+      return { status: "good", message: "Mức Kali ổn định", action: null };
     case "compaction":
       if (value > 300)
         return {
@@ -334,9 +212,169 @@ const getMetricAnalysis = (metric: SoilMetric, value: number) => {
           action: "Rửa mặn tích cực. Chọn giống chịu mặn.",
         };
       return { status: "good", message: "Không nhiễm mặn", action: null };
+    case "temperature":
+      if (value < 20)
+        return {
+          status: "warning",
+          message: "Nhiệt độ thấp (Kém hoạt động vi sinh)",
+          action: "Phủ màng phủ nông nghiệp, ủ gốc.",
+        };
+      if (value > 35)
+        return {
+          status: "bad",
+          message: "Nhiệt độ cao (Hại rễ)",
+          action: "Tưới mát, trồng cây che bóng, phủ rơm rạ.",
+        };
+      return { status: "good", message: "Nhiệt độ đất tối ưu", action: null };
     default:
       return { status: "good", message: "Chỉ số ổn định", action: null };
   }
+};
+
+const getColorByStatus = (status: string) => {
+  switch (status) {
+    case "good":
+      return COLOR_GOOD;
+    case "bad":
+      return COLOR_BAD;
+    case "warning":
+      return COLOR_WARNING;
+    default:
+      return COLOR_GOOD;
+  }
+};
+
+const METRIC_CONFIG: Record<
+  SoilMetric,
+  {
+    label: string;
+    unit: string;
+    range: [number, number];
+    colorScale: (val: number) => string;
+    description: string;
+    thresholds?: number[]; // [low, high]
+    // Research-based details
+    details: {
+      ideal: string;
+      lowEffect: string;
+      highEffect: string;
+      source?: string;
+    };
+  }
+> = {
+  ph: {
+    label: "Độ pH",
+    unit: "",
+    range: [3, 9],
+    description: "Chỉ số độ chua/kiềm ảnh hưởng mức độ hấp thu dinh dưỡng.",
+    thresholds: [5.5, 7.0],
+    colorScale: (val) => getColorByStatus(getMetricAnalysis("ph", val).status),
+    details: {
+      ideal: "6.0 - 7.0 (Trung tính)",
+      lowEffect:
+        "Ngộ độc Nhôm (Al), Mangan (Mn); thiếu Lân (P), Canxi (Ca), Magie (Mg).",
+      highEffect: "Thiếu vi lượng (Fe, Mn, Zn, Cu, B); đất bị kiềm hóa.",
+      source: "USDA/Agricultural Ext.",
+    },
+  },
+  moisture: {
+    label: "Độ ẩm",
+    unit: "%",
+    range: [0, 100],
+    description: "Tỷ lệ nước trong đất (so với dung tích ruộng).",
+    thresholds: [50, 80],
+    colorScale: (val) =>
+      getColorByStatus(getMetricAnalysis("moisture", val).status),
+    details: {
+      ideal: "60% - 80% dung tích ruộng",
+      lowEffect: "Cây héo, giảm quang hợp, rối loạn vận chuyển dinh dưỡng.",
+      highEffect: "Ngạt rễ, thối rễ, phát sinh nấm bệnh.",
+    },
+  },
+  nitrogen: {
+    label: "Nitrogen (N)",
+    unit: "ppm",
+    range: [0, 100],
+    description: "Hàm lượng Đạm dễ tiêu (NO3- + NH4+).",
+    thresholds: [20, 50],
+    colorScale: (val) =>
+      getColorByStatus(getMetricAnalysis("nitrogen", val).status),
+    details: {
+      ideal: "20 - 50 ppm",
+      lowEffect: "Cây còi cọc, lá vàng (chlorosis), giảm năng suất.",
+      highEffect: "Cây phát triển vống, yếu, dễ đổ, chậm ra hoa/quả.",
+    },
+  },
+  phosphorus: {
+    label: "Phosphorus (P)",
+    unit: "ppm",
+    range: [0, 100],
+    description: "Hàm lượng Lân dễ tiêu (Bray P1/Olsen).",
+    thresholds: [20, 50],
+    colorScale: (val) =>
+      getColorByStatus(getMetricAnalysis("phosphorus", val).status),
+    details: {
+      ideal: "20 - 50 ppm",
+      lowEffect: "Rễ kém phát triển, lá tím/đỏ, chậm trưởng thành.",
+      highEffect: "Cản trở hấp thu Kẽm (Zn), Sắt (Fe).",
+    },
+  },
+  potassium: {
+    label: "Potassium (K)",
+    unit: "ppm",
+    range: [0, 400],
+    description: "Hàm lượng Kali dễ tiêu.",
+    thresholds: [100, 200],
+    colorScale: (val) =>
+      getColorByStatus(getMetricAnalysis("potassium", val).status),
+    details: {
+      ideal: "100 - 200 ppm",
+      lowEffect: "Mép lá cháy, cây yếu, dễ nhiễm bệnh/sâu hại.",
+      highEffect: "Cản trở hấp thu Magie (Mg), Canxi (Ca).",
+    },
+  },
+  ec: {
+    label: "Độ dẫn điện (EC)",
+    unit: "dS/m",
+    range: [0, 4],
+    description: "Độ mặn/Tổng muối tan trong đất.",
+    thresholds: [0, 1.2],
+    colorScale: (val) => getColorByStatus(getMetricAnalysis("ec", val).status),
+    details: {
+      ideal: "< 1.2 dS/m (không mặn)",
+      lowEffect: "Thường không hại (trừ khi thiếu dinh dưỡng khoáng).",
+      highEffect:
+        "Gây áp suất thẩm thấu cao, cây không hút được nước (hạn sinh lý).",
+    },
+  },
+  temperature: {
+    label: "Nhiệt độ đất",
+    unit: "°C",
+    range: [10, 50],
+    description: "Nhiệt độ tầng đất mặt (0-10cm).",
+    thresholds: [20, 32],
+    colorScale: (val) =>
+      getColorByStatus(getMetricAnalysis("temperature", val).status),
+    details: {
+      ideal: "20°C - 30°C",
+      lowEffect: "Giảm hoạt động vi sinh vật, rễ kém hấp thu P.",
+      highEffect: "Phân hủy hữu cơ quá nhanh, chết rễ non.",
+    },
+  },
+  compaction: {
+    label: "Độ nén",
+    unit: "psi",
+    range: [0, 500],
+    description: "Độ cứng của đất (Cone Index).",
+    thresholds: [0, 200],
+    colorScale: (val) =>
+      getColorByStatus(getMetricAnalysis("compaction", val).status),
+    details: {
+      ideal: "< 200 psi",
+      lowEffect: "Đất quá tơi (hiếm khi là vấn đề, trừ khi xói mòn).",
+      highEffect: "Nén chặt >300psi ngăn cản rễ phát triển, kém thoát nước.",
+    },
+  },
 };
 
 const getRandomSoilData = (): SoilData => {
@@ -689,7 +727,7 @@ const SoilAmendmentMapPage = () => {
                     <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
                       <FlaskConical className="w-16 h-16" />
                     </div>
-                    <div className="relative z-10">
+                    <div className="relative z-10000">
                       <div className="text-3xl font-black text-slate-800">
                         {/* @ts-ignore */}
                         {selectedFeature.data[activeMetric]}
@@ -933,7 +971,7 @@ const SoilAmendmentMapPage = () => {
             )}
           </LayersControl>
           {/* Legend Overlay - Kept simple from previous steps */}
-          <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur p-3 rounded-lg shadow-lg z-50 border border-border w-48">
+          <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur p-3 rounded-lg shadow-lg z-100000 border border-border w-48">
             <h4 className="font-bold text-xs mb-1 uppercase tracking-wider text-muted-foreground">
               {METRIC_CONFIG[activeMetric].label}
             </h4>
@@ -1184,7 +1222,7 @@ const StatusBadge = ({
     return (
       <Badge
         variant="outline"
-        className="bg-yellow-50 text-yellow-700 border-yellow-200 gap-1"
+        className="bg-red-50 text-red-700 border-red-200 gap-1"
       >
         <AlertCircle className="w-3 h-3" /> Cảnh báo
       </Badge>
@@ -1192,7 +1230,7 @@ const StatusBadge = ({
   return (
     <Badge
       variant="outline"
-      className="bg-red-50 text-red-700 border-red-200 gap-1"
+      className="bg-amber-50 text-amber-700 border-amber-200 gap-1"
     >
       <AlertCircle className="w-3 h-3" /> Xấu
     </Badge>
