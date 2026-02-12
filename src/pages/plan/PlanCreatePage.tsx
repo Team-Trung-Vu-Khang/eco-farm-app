@@ -198,6 +198,29 @@ interface TaskAllocation {
 
 // 1. Location Selection Dialog (Filtered for Cultivation)
 
+const TREATMENT_REGIMENS = [
+  {
+    id: "reg-phen-cap-toc",
+    name: "Phác đồ khử phèn cấp tốc",
+    description: "Sử dụng vôi nóng và bơm xả liên tục",
+  },
+  {
+    id: "reg-phen-ben-vung",
+    name: "Phác đồ khử phèn bền vững",
+    description: "Kết hợp vôi, lân và hữu cơ vi sinh",
+  },
+  {
+    id: "reg-man-rua-troi",
+    name: "Phác đồ rửa mặn 3 bước",
+    description: "Rửa trôi - Bón vôi - Trồng cây chịu mặn",
+  },
+  {
+    id: "reg-phong-ngua-sau-benh",
+    name: "Phác đồ phòng ngừa sâu bệnh tổng hợp (IPM)",
+    description: "Kết hợp biện pháp sinh học, hóa học và canh tác",
+  },
+];
+
 // 2. Stage Selection Item
 const StageItem = ({
   stage,
@@ -628,6 +651,7 @@ export default function PlanCreatePage() {
 
     // Process
     growthCycleId: "",
+    regimenId: "", // New State for Treatment Regimen
     selectedStages: [] as string[],
 
     // Resources
@@ -1119,6 +1143,30 @@ export default function PlanCreatePage() {
             </Select>
           </div>
 
+          <div className="space-y-4">
+            <Label className="text-base">Phác đồ điều trị (nếu có)</Label>
+            <Select
+              value={formData.regimenId}
+              onValueChange={(v) =>
+                setFormData((prev) => ({ ...prev, regimenId: v }))
+              }
+            >
+              <SelectTrigger className="h-12">
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-muted-foreground" />
+                  <SelectValue placeholder="Chọn phác đồ..." />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {TREATMENT_REGIMENS.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {formData.growthCycleId && (
             <div className="space-y-4 animation-fade-in">
               <div className="flex items-center justify-between">
@@ -1397,6 +1445,7 @@ export default function PlanCreatePage() {
       crop: formData.crop,
       variety: formData.variety,
       growthCycleId: formData.growthCycleId,
+      regimenId: formData.regimenId,
       selectedStages: formData.selectedStages,
       status: "active" as const,
       materialAllocations: formData.materialAllocations,

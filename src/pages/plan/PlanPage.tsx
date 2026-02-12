@@ -32,29 +32,31 @@ export default function PlanPage() {
   const columns: Column<any>[] = [
     { key: "code", label: "Mã" },
     { key: "name", label: "Tên kế hoạch" },
-    { key: "season", label: "Mùa vụ" },
-    { key: "zone", label: "Vùng canh tác" },
-    { key: "crop", label: "Cây trồng" },
+    { key: "seasonName", label: "Mùa vụ" },
+    {
+      key: "crop",
+      label: "Cây trồng",
+      render: (item: any) => (
+        <span>
+          {item.crop} - {item.variety}
+        </span>
+      ),
+    },
     {
       key: "status",
       label: "Trạng thái",
-      render: (value) => (
-        <Badge
-          variant={
-            value === "active"
-              ? "default"
-              : value === "completed"
-                ? "secondary"
-                : "outline"
-          }
-        >
-          {value === "active"
-            ? "Đang thực hiện"
-            : value === "completed"
-              ? "Hoàn thành"
-              : "Bản nháp"}
-        </Badge>
-      ),
+      render: (item: any) => {
+        const statusConfig = {
+          active: { label: "Đang thực hiện", variant: "default" as const },
+          completed: { label: "Hoàn thành", variant: "secondary" as const },
+          draft: { label: "Bản nháp", variant: "outline" as const },
+          cancelled: { label: "Đã hủy", variant: "destructive" as const },
+        };
+        const config =
+          statusConfig[item.status as keyof typeof statusConfig] ||
+          statusConfig.draft;
+        return <Badge variant={config.variant}>{config.label}</Badge>;
+      },
     },
     { key: "startDate", label: "Bắt đầu" },
     { key: "endDate", label: "Kết thúc" },
@@ -148,17 +150,16 @@ export default function PlanPage() {
               { label: "Đang thực hiện", value: "active" },
               { label: "Bản nháp", value: "draft" },
               { label: "Hoàn thành", value: "completed" },
+              { label: "Đã hủy", value: "cancelled" },
             ],
           },
           {
-            key: "season",
+            key: "seasonName",
             label: "Mùa vụ",
             options: [
               { label: "Vụ Xuân 2025", value: "Vụ Xuân 2025" },
               { label: "Vụ Hè 2025", value: "Vụ Hè 2025" },
               { label: "Vụ Thu 2025", value: "Vụ Thu 2025" },
-              { label: "Vụ Đông 2025", value: "Vụ Đông 2025" },
-              { label: "Năm 2025", value: "Năm 2025" },
             ],
           },
           {
@@ -168,7 +169,6 @@ export default function PlanPage() {
               { label: "Sầu riêng", value: "Sầu riêng" },
               { label: "Xoài", value: "Xoài" },
               { label: "Bưởi", value: "Bưởi" },
-              { label: "Thanh long", value: "Thanh long" },
             ],
           },
         ]}

@@ -855,7 +855,7 @@ export default function AmendmentTaskPage() {
             <h4 className="text-sm font-semibold text-slate-900 border-b pb-1">
               Tiến độ & Ưu tiên
             </h4>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Ngày bắt đầu</Label>
                 <Input
@@ -875,6 +875,28 @@ export default function AmendmentTaskPage() {
                     setFormData({ ...formData, endDate: e.target.value })
                   }
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Trạng thái</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(v: any) =>
+                    setFormData({ ...formData, status: v })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Chờ thực hiện</SelectItem>
+                    <SelectItem value="in_progress">Đang thực hiện</SelectItem>
+                    <SelectItem value="completed">Hoàn thành</SelectItem>
+                    <SelectItem value="cancelled">Đã hủy</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1.5">
                 <Label>Độ ưu tiên</Label>

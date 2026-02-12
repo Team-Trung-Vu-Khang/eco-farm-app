@@ -18,6 +18,7 @@ export interface AmendmentPlan {
   currentPH?: string;
   targetPH?: string;
   processId?: string;
+  regimenId?: string;
   selectedPlotIds?: string[];
   allocations?: AllocationItem[];
   createdAt: string;

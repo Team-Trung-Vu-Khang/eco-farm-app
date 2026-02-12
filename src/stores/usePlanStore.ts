@@ -49,6 +49,7 @@ export interface Plan {
 
   // Process
   growthCycleId: string;
+  regimenId?: string;
   selectedStages: string[];
 
   // Resources

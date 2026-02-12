@@ -148,6 +148,24 @@ const AMENDMENT_PROCESSES = [
   },
 ];
 
+const TREATMENT_REGIMENS = [
+  {
+    id: "reg-phen-cap-toc",
+    name: "Phác đồ khử phèn cấp tốc",
+    description: "Sử dụng vôi nóng và bơm xả liên tục",
+  },
+  {
+    id: "reg-phen-ben-vung",
+    name: "Phác đồ khử phèn bền vững",
+    description: "Kết hợp vôi, lân và hữu cơ vi sinh",
+  },
+  {
+    id: "reg-man-rua-troi",
+    name: "Phác đồ rửa mặn 3 bước",
+    description: "Rửa trôi - Bón vôi - Trồng cây chịu mặn",
+  },
+];
+
 const MATERIAL_OPTIONS = [
   { value: "Vôi bột", label: "Vôi bột (Xử lý pH)" },
   { value: "Lân nung chảy", label: "Lân nung chảy (Khử phèn)" },
@@ -435,6 +453,7 @@ export default function AmendmentPlanCreatePage() {
 
     // Process
     processId: "",
+    regimenId: "", // New State for Treatment Regimen
     selectedStages: [] as string[],
     allocations: [] as AllocationItem[],
 
@@ -462,6 +481,7 @@ export default function AmendmentPlanCreatePage() {
           targetPH: existingPlan.targetPH || "",
           targetIssue: existingPlan.target_issue,
           processId: existingPlan.processId || "",
+          regimenId: existingPlan.regimenId || "",
           selectedStages: [],
           allocations: existingPlan.allocations || [],
           startDate: existingPlan.startDate,
@@ -537,6 +557,7 @@ export default function AmendmentPlanCreatePage() {
       currentPH: formData.currentPH,
       targetPH: formData.targetPH,
       processId: formData.processId,
+      regimenId: formData.regimenId,
       selectedPlotIds: formData.selectedPlotIds,
       allocations: formData.allocations,
     };
@@ -866,6 +887,26 @@ export default function AmendmentPlanCreatePage() {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label className="text-base">Phác đồ điều trị (nếu có)</Label>
+              <Select
+                value={formData.regimenId}
+                onValueChange={(v) =>
+                  setFormData((prev) => ({ ...prev, regimenId: v }))
+                }
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Chọn phác đồ..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {TREATMENT_REGIMENS.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
               <div className="flex gap-4">
                 <div className="flex-1 space-y-2">
                   <Label>Bắt đầu</Label>

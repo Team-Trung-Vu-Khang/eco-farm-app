@@ -32,6 +32,7 @@ import {
   useToast,
 } from "@tankhang1/eco-shared-ui";
 import usePlanStore from "../../stores/usePlanStore";
+import { GROWTH_CYCLES, TREATMENT_REGIMENS } from "./constants";
 
 // Mock Data to match Create Page logic for display lookup
 const LOCATIONS = [
@@ -271,6 +272,36 @@ export default function PlanDetailPage() {
                   </label>
                   <p className="font-medium mt-1 text-slate-800">
                     {plan.crop} - {plan.variety}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                    Quy trình
+                  </label>
+                  <p
+                    className="font-medium mt-1 text-slate-800 truncate"
+                    title={
+                      GROWTH_CYCLES.find((c) => c.id === plan.growthCycleId)
+                        ?.name || "Tùy chỉnh"
+                    }
+                  >
+                    {GROWTH_CYCLES.find((c) => c.id === plan.growthCycleId)
+                      ?.name || "Tùy chỉnh"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                    Phác đồ điều trị
+                  </label>
+                  <p
+                    className="font-medium mt-1 text-slate-800 truncate"
+                    title={
+                      TREATMENT_REGIMENS.find((r) => r.id === plan.regimenId)
+                        ?.name || "Không áp dụng"
+                    }
+                  >
+                    {TREATMENT_REGIMENS.find((r) => r.id === plan.regimenId)
+                      ?.name || "Không áp dụng"}
                   </p>
                 </div>
               </div>

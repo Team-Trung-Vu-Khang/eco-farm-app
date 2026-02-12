@@ -48,7 +48,12 @@ import usePlanStore, {
   type Plan,
   type TaskAllocation,
 } from "../../stores/usePlanStore";
-import { GROWTH_CYCLES, SEASONS, getCyclesByCrop } from "./constants";
+import {
+  GROWTH_CYCLES,
+  SEASONS,
+  TREATMENT_REGIMENS,
+  getCyclesByCrop,
+} from "./constants";
 
 // --- Mock Data for Location Hierarchy (Same as Create Page) ---
 const LOCATIONS = [
@@ -605,6 +610,7 @@ export default function PlanEditPage() {
     crop: "",
     variety: "",
     growthCycleId: "",
+    regimenId: "",
     selectedStages: [] as string[],
     status: "active" as const,
     materialAllocations: [] as MaterialAllocation[],
@@ -630,6 +636,7 @@ export default function PlanEditPage() {
         crop: plan.crop,
         variety: plan.variety,
         growthCycleId: plan.growthCycleId,
+        regimenId: plan.regimenId || "",
         selectedStages: plan.selectedStages,
         status: plan.status as "active",
         materialAllocations: plan.materialAllocations,
@@ -807,6 +814,7 @@ export default function PlanEditPage() {
       crop: formData.crop,
       variety: formData.variety,
       growthCycleId: formData.growthCycleId,
+      regimenId: formData.regimenId,
       selectedStages: formData.selectedStages,
       materialAllocations: formData.materialAllocations,
       taskAllocations: formData.taskAllocations,
@@ -1119,6 +1127,30 @@ export default function PlanEditPage() {
                 {getCyclesByCrop(formData.crop).map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name} ({c.durationDays} ngày)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-4">
+            <Label className="text-base">Phác đồ điều trị (nếu có)</Label>
+            <Select
+              value={formData.regimenId}
+              onValueChange={(v) =>
+                setFormData((prev) => ({ ...prev, regimenId: v }))
+              }
+            >
+              <SelectTrigger className="h-12">
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-muted-foreground" />
+                  <SelectValue placeholder="Chọn phác đồ..." />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {TREATMENT_REGIMENS.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.name}
                   </SelectItem>
                 ))}
               </SelectContent>
