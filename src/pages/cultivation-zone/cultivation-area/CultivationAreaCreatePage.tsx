@@ -27,6 +27,7 @@ import {
 import useRegionStore from "../../../stores/useRegionStore";
 import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
 import useDepartmentStore from "../../../stores/useDepartmentStore";
+import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 import useEnterpriseCertificateStore from "../../../stores/useEnterpriseCertificateStore";
 import usePersonnelStore from "../../../stores/usePersonnelStore";
 import useVarietyStore from "../../../stores/useVarietyStore";
@@ -286,6 +287,7 @@ const ManagerSelector = ({
 const CultivationAreaCreatePage = () => {
   const [, setLocation] = useLocation();
   const { regions } = useRegionStore();
+  const { enterprises } = useEnterpriseStore();
   const { addArea } = useCultivationAreaStore();
   const { standards } = useEnterpriseCertificateStore();
   const { personnel } = usePersonnelStore();
@@ -298,6 +300,7 @@ const CultivationAreaCreatePage = () => {
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
 
+  const [selectedEnterpriseId, setSelectedEnterpriseId] = useState<string>("");
   const [selectedRegionId, setSelectedRegionId] = useState<string>("");
   const [selectedAreaIds, setSelectedAreaIds] = useState<string[]>([]);
   const [selectedPlotIds, setSelectedPlotIds] = useState<string[]>([]);
@@ -463,6 +466,33 @@ const CultivationAreaCreatePage = () => {
 
               <div className="grid gap-2">
                 <Label className="text-xs text-muted-foreground">
+                  Doanh nghiệp (Enterprise){" "}
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={selectedEnterpriseId}
+                  onValueChange={(val) => {
+                    setSelectedEnterpriseId(val);
+                    setSelectedRegionId("");
+                    setSelectedAreaIds([]);
+                    setSelectedPlotIds([]);
+                  }}
+                >
+                  <SelectTrigger className="bg-white border-slate-200">
+                    <SelectValue placeholder="Chọn doanh nghiệp..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {enterprises.map((ent) => (
+                      <SelectItem key={ent.id} value={ent.id.toString()}>
+                        {ent.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label className="text-xs text-muted-foreground">
                   Vùng trồng (Region) <span className="text-red-500">*</span>
                 </Label>
                 <Select
@@ -472,16 +502,24 @@ const CultivationAreaCreatePage = () => {
                     setSelectedAreaIds([]);
                     setSelectedPlotIds([]);
                   }}
+                  disabled={!selectedEnterpriseId}
                 >
                   <SelectTrigger className="bg-white border-slate-200">
                     <SelectValue placeholder="Chọn vùng..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {regions.map((r) => (
-                      <SelectItem key={r.id} value={r.id.toString()}>
-                        {r.name}
-                      </SelectItem>
-                    ))}
+                    {regions
+                      .filter(
+                        (r) =>
+                          !selectedEnterpriseId ||
+                          r.enterpriseId === `ent-${selectedEnterpriseId}` ||
+                          r.enterpriseId === selectedEnterpriseId,
+                      )
+                      .map((r) => (
+                        <SelectItem key={r.id} value={r.id.toString()}>
+                          {r.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -1370,6 +1408,7 @@ const CultivationAreaCreatePage = () => {
                   scope,
                   targetIds,
                   targetName,
+                  enterpriseId: selectedEnterpriseId,
                   configs,
                   certificateId: selectedCertId,
                   managerId: selectedManagerId,

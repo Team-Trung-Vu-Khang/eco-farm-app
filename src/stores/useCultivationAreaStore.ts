@@ -13,6 +13,7 @@ export interface CultivationArea {
   scope: "region" | "area" | "plot";
   targetIds: string[]; // IDs of the selected regions, areas, or plots
   targetName: string;
+  enterpriseId?: string;
   certificateId: string;
   managerId: string;
   note: string;

@@ -10,16 +10,15 @@ import {
 } from "@tankhang1/eco-shared-ui";
 import { Plus } from "lucide-react";
 
-// Mock Data for List
 import { type CultivationArea } from "../../../stores/useCultivationAreaStore";
-import { MOCK_CERTIFICATES } from "./constants";
-
 import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
+import useEnterpriseCertificateStore from "../../../stores/useEnterpriseCertificateStore";
 
 const CultivationAreaPage = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { areas: data, deleteArea } = useCultivationAreaStore();
+  const { standards } = useEnterpriseCertificateStore();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -80,13 +79,15 @@ const CultivationAreaPage = () => {
       key: "certificateId",
       label: "Chứng nhận",
       render: (value: string) => {
-        const cert = MOCK_CERTIFICATES.find((c) => c.id === value);
+        const cert = standards.find((c) => c.code === value);
+        if (!cert) return null;
+
         return (
           <Badge
             variant="secondary"
             className="bg-blue-50 text-blue-700 hover:bg-blue-100"
           >
-            {cert?.name || value}
+            {cert.name}
           </Badge>
         );
       },

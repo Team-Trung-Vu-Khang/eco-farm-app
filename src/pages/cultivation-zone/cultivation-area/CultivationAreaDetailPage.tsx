@@ -34,6 +34,7 @@ import usePersonnelStore from "../../../stores/usePersonnelStore";
 import useFarmingMethodStore from "../../../stores/useFarmingMethodStore";
 import useIrrigationSystemStore from "../../../stores/useIrrigationSystemStore";
 import useVarietyStore from "../../../stores/useVarietyStore";
+import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 
 const CultivationAreaDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -43,8 +44,10 @@ const CultivationAreaDetailPage = () => {
   const { standards } = useEnterpriseCertificateStore();
   const { personnel } = usePersonnelStore();
   const { farmingMethods } = useFarmingMethodStore();
+
   const { irrigationSystems } = useIrrigationSystemStore();
   const { varieties } = useVarietyStore();
+  const { enterprises } = useEnterpriseStore();
 
   const area = useMemo(() => {
     if (!id) return null;
@@ -141,6 +144,10 @@ const CultivationAreaDetailPage = () => {
 
     const crops = varieties.filter((c) => cropIds.includes(c.id));
 
+    const enterprise = enterprises.find(
+      (e) => e.id.toString() === area.enterpriseId,
+    );
+
     return {
       manager,
       certificate,
@@ -150,6 +157,7 @@ const CultivationAreaDetailPage = () => {
       farmingMethod,
       irrigationMethod,
       crops,
+      enterprise,
     };
   }, [
     area,
@@ -160,6 +168,7 @@ const CultivationAreaDetailPage = () => {
     farmingMethods,
     irrigationSystems,
     varieties,
+    enterprises,
   ]);
 
   if (!area || !details) {
@@ -261,6 +270,23 @@ const CultivationAreaDetailPage = () => {
                     </div>
                   </div>
                 </div>
+
+                {details.enterprise && (
+                  <div className="pt-4 border-t">
+                    <div className="text-sm font-medium mb-2">Doanh nghiệp</div>
+                    <div className="bg-slate-50 p-3 rounded-lg">
+                      <div className="font-semibold text-slate-900">
+                        {details.enterprise.name}
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {details.enterprise.code}
+                      </div>
+                      <div className="text-sm text-slate-600 mt-2">
+                        {details.enterprise.address}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {details.region && (
                   <div className="pt-4 border-t">

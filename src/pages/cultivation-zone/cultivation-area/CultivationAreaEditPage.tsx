@@ -882,7 +882,7 @@ const CultivationAreaEditPage = () => {
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               {/* Farming & Irrigation Card */}
               <Card className="border-none shadow-md bg-white">
-                <CardHeader className="pb-3 border-b bg-gradient-to-r from-green-50/50 to-white">
+                <CardHeader className="pb-3 border-b bg-linear-to-r from-green-50/50 to-white">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
                       <Sprout className="w-4 h-4 text-green-600" />
@@ -981,7 +981,7 @@ const CultivationAreaEditPage = () => {
 
               {/* Crop Selection Card */}
               <Card className="border-none shadow-md bg-white flex flex-col xl:row-span-1">
-                <CardHeader className="pb-3 border-b bg-gradient-to-r from-green-50/50 to-white">
+                <CardHeader className="pb-3 border-b bg-linear-to-r from-green-50/50 to-white">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
                       <Leaf className="w-4 h-4 text-green-600" />
