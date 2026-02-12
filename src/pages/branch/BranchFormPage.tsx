@@ -40,6 +40,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import useBranchStore from "../../stores/useBranchStore";
+import useEnterpriseStore from "../../stores/useEnterpriseStore";
 
 // Fix Leaflet default icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -229,11 +230,12 @@ export default function BranchFormPage() {
     }
   }, [branch]);
 
-  const enterprises = [
-    { id: "DN001", name: "Công ty CP Nông nghiệp Xanh EcoFarm" },
-    { id: "DN002", name: "HTX Rau sạch Thanh Hà" },
-    { id: "DN003", name: "Công ty TNHH Nông sản Organic" },
-  ];
+  // Get enterprises from store
+  const enterprisesFromStore = useEnterpriseStore((state) => state.enterprises);
+  const enterprises = enterprisesFromStore.map((e) => ({
+    id: e.id.toString(),
+    name: e.name,
+  }));
 
   const BANKS_LIST = [
     "Vietcombank",

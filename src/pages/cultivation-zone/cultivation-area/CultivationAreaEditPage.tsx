@@ -54,6 +54,7 @@ import {
 } from "lucide-react";
 import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
 import useRegionStore from "../../../stores/useRegionStore";
+import useDepartmentStore from "../../../stores/useDepartmentStore";
 
 type ScopeType = "region" | "area" | "plot";
 
@@ -130,9 +131,10 @@ const ManagerSelector = ({
   const [departmentFilter, setDepartmentFilter] = useState("all");
 
   const selectedManager = MOCK_MANAGERS.find((m) => m.id === selectedId);
-  const departments = useMemo(() => {
-    return Array.from(new Set(MOCK_MANAGERS.map((m) => m.department)));
-  }, []);
+  const departmentsFromStore = useDepartmentStore((state) => state.departments);
+  const departments = departmentsFromStore
+    .filter((d) => d.status === "active")
+    .map((d) => d.name);
 
   const filteredManagers = useMemo(() => {
     return MOCK_MANAGERS.filter((m) => {

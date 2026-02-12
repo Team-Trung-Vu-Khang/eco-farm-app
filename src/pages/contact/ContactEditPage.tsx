@@ -21,6 +21,8 @@ import {
 } from "@tankhang1/eco-shared-ui";
 import { Save, Trash2, X } from "lucide-react";
 import useContactStore from "../../stores/useContactStore";
+import useEnterpriseStore from "../../stores/useEnterpriseStore";
+import useDepartmentStore from "../../stores/useDepartmentStore";
 
 export default function ContactEditPage() {
   const [, setLocation] = useLocation();
@@ -35,6 +37,8 @@ export default function ContactEditPage() {
   const updateContact = useContactStore((state) => state.updateContact);
   const deleteContact = useContactStore((state) => state.deleteContact);
   const contact = contactId ? getContactById(contactId) : undefined;
+  const enterprises = useEnterpriseStore((state) => state.enterprises);
+  const departments = useDepartmentStore((state) => state.departments);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -212,15 +216,11 @@ export default function ContactEditPage() {
                     <SelectValue placeholder="Chọn đơn vị" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Công ty CP Nông nghiệp Xanh">
-                      Công ty CP Nông nghiệp Xanh
-                    </SelectItem>
-                    <SelectItem value="HTX Rau sạch Thanh Hà">
-                      HTX Rau sạch Thanh Hà
-                    </SelectItem>
-                    <SelectItem value="Nông hộ Nguyễn Văn A">
-                      Nông hộ Nguyễn Văn A
-                    </SelectItem>
+                    {enterprises.map((enterprise) => (
+                      <SelectItem key={enterprise.id} value={enterprise.name}>
+                        {enterprise.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -259,10 +259,13 @@ export default function ContactEditPage() {
                     <SelectValue placeholder="Chọn phòng ban" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Kinh doanh">Kinh doanh</SelectItem>
-                    <SelectItem value="Kỹ thuật">Kỹ thuật</SelectItem>
-                    <SelectItem value="Kế toán">Kế toán</SelectItem>
-                    <SelectItem value="Hành chính">Hành chính</SelectItem>
+                    {departments
+                      .filter((dept) => dept.status === "active")
+                      .map((dept) => (
+                        <SelectItem key={dept.id} value={dept.name}>
+                          {dept.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
