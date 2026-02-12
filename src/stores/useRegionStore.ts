@@ -4,9 +4,8 @@ import {
   type Region,
   LAND_TYPES,
   TERRAIN_TYPES,
+  MOCK_REGIONS,
 } from "../pages/region-chart/constants";
-
-import MOCK_REGIONS from "../assets/map/zone-full.json" with { type: "json" };
 
 interface RegionState {
   // State

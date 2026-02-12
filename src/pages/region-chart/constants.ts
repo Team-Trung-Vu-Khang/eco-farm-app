@@ -58,6 +58,15 @@ export interface SubArea {
   status: "active" | "inactive";
 }
 
+export interface RegionCrop {
+  id: string;
+  name: string;
+  variety: string;
+  status: string;
+  plantedDate?: string;
+  seedType?: string;
+}
+
 export interface Region {
   id: number;
   code: string;
@@ -74,6 +83,7 @@ export interface Region {
   coordinates: Coordinate[]; // Rectangle corners
   subAreas: SubArea[];
   createdAt: string;
+  cropVarieties?: RegionCrop[];
 }
 
 export const MOCK_REGIONS: Region[] = [
@@ -97,6 +107,24 @@ export const MOCK_REGIONS: Region[] = [
       { lat: 11.549, lng: 106.918 },
       { lat: 11.538, lng: 106.912 },
       { lat: 11.535, lng: 106.898 },
+    ],
+    cropVarieties: [
+      {
+        id: "cv-001",
+        name: "Sầu riêng",
+        variety: "Dona Malaysia",
+        status: "flowering",
+        plantedDate: "2020-05-15",
+        seedType: "Hạt giống F1",
+      },
+      {
+        id: "cv-002",
+        name: "Sầu riêng",
+        variety: "Ri6 Thái Lan",
+        status: "harvesting",
+        plantedDate: "2019-11-20",
+        seedType: "Cây giống ghép",
+      },
     ],
     subAreas: [
       {

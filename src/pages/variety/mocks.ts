@@ -31,6 +31,7 @@ export const initialData: Variety[] = [
     averageYield: "20-25 tấn/ha",
     description:
       "Giống ngắn ngày, chịu hạn tốt, độ ngọt cao, cơm vàng dày, thơm đặc trưng.",
+    seedType: "Cây giống ghép",
     documents: [{ name: "ky-thuat-cham-soc-saurieng.pdf", url: "#" }],
     status: "active",
     updatedAt: "2024-01-21",
@@ -48,6 +49,7 @@ export const initialData: Variety[] = [
     averageYield: "10-14 tấn/ha",
     description:
       "Vỏ xanh, cơm vàng đậm, vị béo ngậy như bơ. Hạt lép hoàn toàn.",
+    seedType: "Cây giống ghép cao cấp",
     documents: [],
     status: "active",
     updatedAt: "2024-01-22",
@@ -64,6 +66,7 @@ export const initialData: Variety[] = [
     growthDuration: "4-5 năm",
     averageYield: "12-16 tấn/ha",
     description: "Năng suất cao, kháng bệnh tốt, chất lượng trái thượng hạng.",
+    seedType: "Hạt giống F1",
     documents: [{ name: "quy-trinh-canh-tac-saurieng.pdf", url: "#" }],
     status: "active",
     updatedAt: "2024-01-23",

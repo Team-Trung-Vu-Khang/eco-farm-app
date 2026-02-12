@@ -668,6 +668,36 @@ const CultivationAreaCreatePage = () => {
                 </div>
               </div>
             )}
+
+            {selectedRegion?.cropVarieties &&
+              selectedRegion.cropVarieties.length > 0 && (
+                <div className="bg-green-50 p-4 rounded-xl border border-green-100 flex gap-3 text-sm text-green-800 animate-in fade-in slide-in-from-top-2">
+                  <div className="bg-green-100 p-1.5 rounded-full h-fit">
+                    <Sprout className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div>
+                    <div className="font-semibold mb-1">
+                      Cây trồng chủ lực của vùng
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {selectedRegion.cropVarieties.map((crop) => (
+                        <Badge
+                          key={crop.id}
+                          variant="outline"
+                          className="bg-white text-green-700 border-green-200"
+                        >
+                          {crop.name} - {crop.variety}
+                          {crop.seedType && (
+                            <span className="ml-1 text-[10px] text-green-600/70 font-normal">
+                              ({crop.seedType})
+                            </span>
+                          )}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
           </div>
         </div>
       </div>
@@ -976,6 +1006,47 @@ const CultivationAreaCreatePage = () => {
                       </Button>
                     </div>
                   )}
+
+                  {!effectiveConfig.selectedCrops?.length &&
+                    selectedRegion?.cropVarieties?.length && (
+                      <div className="pt-2 border-t mt-4">
+                        <div className="text-xs font-medium text-muted-foreground mb-2">
+                          Gợi ý từ vùng trồng:
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedRegion.cropVarieties.map((rc) => (
+                            <Badge
+                              key={rc.id}
+                              variant="secondary"
+                              className="cursor-pointer hover:bg-primary/20 transition-colors"
+                              onClick={() => {
+                                // Find matching crop in available list
+                                const match = availableCropsForConfig.find(
+                                  (c) =>
+                                    c.crop === rc.name &&
+                                    c.varietyName === rc.variety,
+                                );
+                                if (match) {
+                                  const current =
+                                    effectiveConfig.selectedCrops || [];
+                                  if (!current.includes(match.id)) {
+                                    setConfigs((prev) => ({
+                                      ...prev,
+                                      [effectiveId]: {
+                                        ...prev[effectiveId],
+                                        selectedCrops: [...current, match.id],
+                                      },
+                                    }));
+                                  }
+                                }
+                              }}
+                            >
+                              + {rc.name} {rc.variety}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                 </CardContent>
               </Card>
 
@@ -1058,6 +1129,11 @@ const CultivationAreaCreatePage = () => {
                                   </div>
                                   <div className="text-xs text-muted-foreground mt-0.5">
                                     {crop.crop}
+                                    {crop.seedType && (
+                                      <span className="ml-1 text-slate-500">
+                                        • {crop.seedType}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                                 <div
@@ -1327,6 +1403,11 @@ const CultivationAreaCreatePage = () => {
                                   <Leaf className="w-2.5 h-2.5" />
                                 </span>
                                 {crop?.varietyName}
+                                {crop?.seedType && (
+                                  <span className="ml-1 text-[10px] text-green-800/80">
+                                    ({crop.seedType})
+                                  </span>
+                                )}
                               </Badge>
                             );
                           })
