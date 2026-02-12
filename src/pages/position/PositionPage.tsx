@@ -147,6 +147,24 @@ const PositionPage = () => {
         onEdit={handleEdit}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm chức vụ..."
+        filters={[
+          {
+            key: "group",
+            label: "Nhóm chức vụ",
+            options: POSITION_GROUPS.map((group) => ({
+              label: group,
+              value: group,
+            })),
+          },
+          {
+            key: "status",
+            label: "Trạng thái",
+            options: [
+              { label: "Hoạt động", value: "active" },
+              { label: "Ngừng hoạt động", value: "inactive" },
+            ],
+          },
+        ]}
       />
 
       <FormDialog
