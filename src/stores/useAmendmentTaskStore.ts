@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { type MaterialAllocation } from "./useTaskStore";
 
 export interface AmendmentTask {
   id: number;
@@ -13,7 +14,7 @@ export interface AmendmentTask {
   endDate: string;
   priority: "low" | "medium" | "high" | "urgent";
   status: "pending" | "in_progress" | "completed" | "cancelled";
-  materials: string[]; // Vật tư sử dụng
+  materials: MaterialAllocation[]; // Vật tư sử dụng
   equipment: string[]; // Thiết bị cần thiết
   targetArea: number; // Diện tích mục tiêu (ha)
   actualArea?: number; // Diện tích thực tế (ha)
@@ -58,7 +59,22 @@ const useAmendmentTaskStore = create<AmendmentTaskStore>((set, get) => ({
       endDate: "2025-02-18",
       priority: "high",
       status: "in_progress",
-      materials: ["Vôi bột CaCO3", "Phân hữu cơ"],
+      materials: [
+        {
+          id: 1,
+          name: "Vôi bột CaCO3",
+          quantity: 2000,
+          unit: "kg",
+          type: "fertilizer",
+        },
+        {
+          id: 2,
+          name: "Phân hữu cơ",
+          quantity: 5000,
+          unit: "kg",
+          type: "fertilizer",
+        },
+      ],
       equipment: ["Máy rải vôi", "Xe vận chuyển"],
       targetArea: 3.5,
       actualArea: 2.0,
@@ -78,7 +94,7 @@ const useAmendmentTaskStore = create<AmendmentTaskStore>((set, get) => ({
       endDate: "2025-02-25",
       priority: "urgent",
       status: "pending",
-      materials: ["Nước ngọt"],
+      materials: [],
       equipment: ["Máy bơm nước", "Hệ thống tưới"],
       targetArea: 5.2,
       notes: "Tưới ngập 15-20cm, duy trì 3-5 ngày",
@@ -117,7 +133,22 @@ const useAmendmentTaskStore = create<AmendmentTaskStore>((set, get) => ({
       endDate: "2025-02-24",
       priority: "medium",
       status: "pending",
-      materials: ["Phân hữu cơ vi sinh", "Phân chuồng ủ"],
+      materials: [
+        {
+          id: 3,
+          name: "Phân hữu cơ vi sinh",
+          quantity: 200,
+          unit: "kg",
+          type: "fertilizer",
+        },
+        {
+          id: 4,
+          name: "Phân chuồng ủ",
+          quantity: 5000,
+          unit: "kg",
+          type: "fertilizer",
+        },
+      ],
       equipment: ["Xe vận chuyển"],
       targetArea: 4.0,
       notes: "Liều lượng: 5 tấn/ha phân chuồng + 200kg/ha phân vi sinh",
@@ -136,7 +167,7 @@ const useAmendmentTaskStore = create<AmendmentTaskStore>((set, get) => ({
       endDate: "2025-03-05",
       priority: "low",
       status: "pending",
-      materials: ["Hạt đậu phụng", "Phân lót"],
+      materials: [],
       equipment: ["Máy gieo hạt"],
       targetArea: 2.0,
       notes: "Gieo hạt mật độ 100kg/ha, sau 45 ngày cày vùi",

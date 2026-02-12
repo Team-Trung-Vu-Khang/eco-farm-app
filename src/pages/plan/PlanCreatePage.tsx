@@ -142,17 +142,96 @@ const LOCATIONS = [
 ];
 
 // --- Mock Data for Select Options ---
-const MATERIAL_OPTIONS = [
-  { value: "NPK 20-20-15", label: "NPK 20-20-15 (Phân bón)" },
-  { value: "Urea", label: "Urea (Phân bón)" },
-  { value: "Kali Clorua", label: "Kali Clorua (Phân bón)" },
-  { value: "Lân Super", label: "Lân Super (Phân bón)" },
-  { value: "Abamectin", label: "Abamectin (Thuốc BVTV)" },
-  { value: "Mancozeb", label: "Mancozeb (Thuốc BVTV)" },
-  { value: "Glyphosate", label: "Glyphosate (Thuốc cỏ)" },
-  { value: "Vôi bộ", label: "Vôi bột (Cải tạo đất)" },
-  { value: "Hữu cơ vi sinh", label: "Hữu cơ vi sinh (Phân bón)" },
+// --- Mock Data for Select Options (Enhanced) ---
+const MATERIAL_TYPES = [
+  { value: "Phân bón", label: "Phân bón" },
+  { value: "Thuốc BVTV", label: "Thuốc BVTV" },
+  { value: "Giống", label: "Giống cây trồng" },
+  { value: "Nông cụ", label: "Nông cụ & Thiết bị" },
+  { value: "Vật tư khác", label: "Vật tư khác" },
 ];
+
+const MATERIAL_OPTIONS: Record<
+  string,
+  { value: string; label: string; unit: string }[]
+> = {
+  "Phân bón": [
+    { value: "NPK 20-20-15", label: "NPK 20-20-15", unit: "kg" },
+    { value: "Uure", label: "Phân Ure (Đạm)", unit: "kg" },
+    { value: "Kali Clorua", label: "Kali Clorua (Kali đỏ)", unit: "kg" },
+    { value: "Lân Super", label: "Lân Super (Lân Long Thành)", unit: "kg" },
+    { value: "DAP", label: "Phân DAP 18-46-0", unit: "kg" },
+    { value: "Hữu cơ vi sinh", label: "Phân hữu cơ vi sinh", unit: "kg" },
+    { value: "Phân chuồng", label: "Phân chuồng hoai mục", unit: "tấn" },
+    { value: "Humic Acid", label: "Humic Acid (Kích rễ)", unit: "lít" },
+    { value: "Canxi Bo", label: "Phân bón lá Canxi Bo", unit: "chai" },
+    { value: "MKP", label: "MKP (0-52-34)", unit: "kg" },
+  ],
+  "Thuốc BVTV": [
+    { value: "Abamectin", label: "Abamectin (Trừ sâu/nhện)", unit: "chai" },
+    { value: "Mancozeb", label: "Mancozeb (Trừ nấm)", unit: "kg" },
+    { value: "Glyphosate", label: "Glyphosate (Trừ cỏ)", unit: "lít" },
+    { value: "Imidacloprid", label: "Imidacloprid (Rầy rệp)", unit: "gói" },
+    {
+      value: "Azoxystrobin",
+      label: "Azoxystrobin (Lem lép hạt)",
+      unit: "chai",
+    },
+    { value: "Chlorpyrifos", label: "Chlorpyrifos Ethyl", unit: "chai" },
+    { value: "Hexaconazole", label: "Hexaconazole (Anvil)", unit: "lít" },
+    { value: "Metalaxyl", label: "Metalaxyl (Trừ nấm đất)", unit: "gói" },
+    { value: "Emamectin", label: "Emamectin Benzoate", unit: "chai" },
+    { value: "Trichoderma", label: "Nấm Trichoderma", unit: "kg" },
+  ],
+  Giống: [
+    { value: "Sầu riêng Ri6", label: "Giống Sầu riêng Ri6", unit: "cây" },
+    {
+      value: "Sầu riêng Monthong",
+      label: "Giống Sầu riêng Monthong",
+      unit: "cây",
+    },
+    { value: "Xoài Cát Hòa Lộc", label: "Giống Xoài Cát Hòa Lộc", unit: "cây" },
+    { value: "Xoài Đài Loan", label: "Giống Xoài Đài Loan", unit: "cây" },
+    { value: "Bưởi Da Xanh", label: "Giống Bưởi Da Xanh", unit: "cây" },
+    { value: "Cam Sành", label: "Giống Cam Sành", unit: "cây" },
+    { value: "Mít Thái", label: "Giống Mít Thái", unit: "cây" },
+    { value: "Vú Sữa", label: "Giống Vú Sữa Lò Rèn", unit: "cây" },
+    { value: "Chanh Không Hạt", label: "Giống Chanh Không Hạt", unit: "cây" },
+    { value: "Na Thái", label: "Giống Na Thái", unit: "cây" },
+  ],
+  "Nông cụ": [
+    { value: "Cuốc", label: "Cuốc làm đất", unit: "cái" },
+    { value: "Xẻng", label: "Xẻng xúc đất", unit: "cái" },
+    { value: "Kéo cắt cành", label: "Kéo cắt cành chuyên dụng", unit: "cái" },
+    { value: "Cưa cầm tay", label: "Cưa cành cầm tay", unit: "cái" },
+    { value: "Bình xịt điện", label: "Bình xịt thuốc chạy điện", unit: "cái" },
+    { value: "Máy cắt cỏ", label: "Máy cắt cỏ cầm tay", unit: "cái" },
+    { value: "Ủng bảo hộ", label: "Ủng cao su bảo hộ", unit: "đôi" },
+    { value: "Găng tay", label: "Găng tay làm vườn", unit: "đôi" },
+    { value: "Thang nhôm", label: "Thang nhôm rút", unit: "cái" },
+    { value: "Xe rùa", label: "Xe rùa đẩy tay", unit: "cái" },
+  ],
+  "Vật tư khác": [
+    { value: "Bao bì", label: "Bao bì đóng gói", unit: "kg" },
+    { value: "Dây buộc", label: "Dây nilon buộc cành", unit: "cuộn" },
+    { value: "Túi bao trái", label: "Túi vải bao trái", unit: "cái" },
+    { value: "Màng phủ", label: "Màng phủ nông nghiệp", unit: "cuộn" },
+    { value: "Cọc tre", label: "Cọc tre chống cây", unit: "cây" },
+    { value: "Lưới che nắng", label: "Lưới lan che nắng", unit: "m2" },
+    { value: "Khay ươm", label: "Khay nhựa ươm hạt", unit: "cái" },
+    { value: "Chậu nhựa", label: "Chậu nhựa trồng cây", unit: "cái" },
+    { value: "Xơ dừa", label: "Giá thể xơ dừa", unit: "bao" },
+    { value: "Tro trấu", label: "Tro trấu hun", unit: "bao" },
+  ],
+};
+
+const MATERIAL_UNITS: Record<string, string[]> = {
+  "Phân bón": ["kg", "tấn", "bao", "lít", "can", "chai"],
+  "Thuốc BVTV": ["lít", "ml", "chai", "gói", "can", "phi"],
+  Giống: ["cây", "hạt", "kg", "hom"],
+  "Nông cụ": ["cái", "bộ", "hộp", "đôi"],
+  "Vật tư khác": ["kg", "cái", "cuộn", "m", "m2", "thùng", "bao"],
+};
 
 const TASK_OPTIONS = [
   { value: "Cày xới đất", label: "Cày xới đất" },
@@ -160,11 +239,19 @@ const TASK_OPTIONS = [
   { value: "Gieo hạt/Trồng cây", label: "Gieo hạt/Trồng cây" },
   { value: "Tưới nước", label: "Tưới nước" },
   { value: "Bón thúc lần 1", label: "Bón thúc lần 1" },
+  { value: "Bón thúc lần 2", label: "Bón thúc lần 2" },
+  { value: "Bón thúc lần 3", label: "Bón thúc lần 3" },
   { value: "Phun thuốc phòng bệnh", label: "Phun thuốc phòng bệnh" },
+  { value: "Phun thuốc trừ sâu", label: "Phun thuốc trừ sâu" },
   { value: "Tỉa cành/tạo tán", label: "Tỉa cành/tạo tán" },
   { value: "Làm cỏ", label: "Làm cỏ" },
-  { value: "Thu hoạch", label: "Thu hoạch" },
+  { value: "Tủ gốc giữ ẩm", label: "Tủ gốc giữ ẩm" },
+  { value: "Bao trái", label: "Bao trái" },
+  { value: "Thu hoạch đợt 1", label: "Thu hoạch đợt 1" },
+  { value: "Thu hoạch đợt 2", label: "Thu hoạch đợt 2" },
   { value: "Vệ sinh đồng ruộng", label: "Vệ sinh đồng ruộng" },
+  { value: "Kiểm tra sâu bệnh", label: "Kiểm tra sâu bệnh" },
+  { value: "Bảo dưỡng hệ thống tưới", label: "Bảo dưỡng hệ thống tưới" },
 ];
 
 const LABOR_OPTIONS = [
@@ -427,28 +514,53 @@ const StageAllocation = memo(
                 <div className="flex gap-2 pt-3 border-t mt-auto">
                   <Select
                     value={newItem.type}
-                    onValueChange={(v) => setNewItem({ ...newItem, type: v })}
+                    onValueChange={(v) => {
+                      const defaultUnit =
+                        MATERIAL_UNITS[v as keyof typeof MATERIAL_UNITS]?.[0] ||
+                        "kg";
+                      setNewItem({
+                        ...newItem,
+                        type: v,
+                        name: "",
+                        unit: defaultUnit,
+                      });
+                    }}
                   >
-                    <SelectTrigger className="w-[110px] h-9 text-xs">
+                    <SelectTrigger className="w-[120px] h-9 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Phân bón">Phân bón</SelectItem>
-                      <SelectItem value="Thuốc BVTV">Thuốc BVTV</SelectItem>
-                      <SelectItem value="Giống">Giống</SelectItem>
-                      <SelectItem value="Nông cụ">Nông cụ</SelectItem>
-                      <SelectItem value="Khác">Khác</SelectItem>
+                      {MATERIAL_TYPES.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <Select
                     value={newItem.name}
-                    onValueChange={(v) => setNewItem({ ...newItem, name: v })}
+                    onValueChange={(v) => {
+                      const category =
+                        MATERIAL_OPTIONS[
+                          newItem.type as keyof typeof MATERIAL_OPTIONS
+                        ] || [];
+                      const item = category.find((i) => i.value === v);
+                      setNewItem({
+                        ...newItem,
+                        name: v,
+                        unit: item?.unit || newItem.unit,
+                      });
+                    }}
                   >
                     <SelectTrigger className="h-9 text-xs flex-1">
                       <SelectValue placeholder="Chọn vật tư..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {MATERIAL_OPTIONS.map((opt) => (
+                      {(
+                        MATERIAL_OPTIONS[
+                          newItem.type as keyof typeof MATERIAL_OPTIONS
+                        ] || []
+                      ).map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>
                           {opt.label}
                         </SelectItem>
@@ -459,7 +571,7 @@ const StageAllocation = memo(
                     <Input
                       placeholder="SL"
                       type="number"
-                      className="h-9 text-sm w-28"
+                      className="h-9 text-sm"
                       value={newItem.qty}
                       onChange={(e) =>
                         setNewItem({ ...newItem, qty: e.target.value })
@@ -469,15 +581,19 @@ const StageAllocation = memo(
                       value={newItem.unit}
                       onValueChange={(v) => setNewItem({ ...newItem, unit: v })}
                     >
-                      <SelectTrigger className="h-9 text-xs px-2 flex-1">
+                      <SelectTrigger className="h-9 text-xs px-2 w-20">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="kg">kg</SelectItem>
-                        <SelectItem value="lít">lít</SelectItem>
-                        <SelectItem value="chai">chai</SelectItem>
-                        <SelectItem value="bao">bao</SelectItem>
-                        <SelectItem value="cái">cái</SelectItem>
+                        {(
+                          MATERIAL_UNITS[
+                            newItem.type as keyof typeof MATERIAL_UNITS
+                          ] || ["kg"]
+                        ).map((u) => (
+                          <SelectItem key={u} value={u}>
+                            {u}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

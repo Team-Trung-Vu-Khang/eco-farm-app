@@ -15,6 +15,8 @@ import {
   Plus,
   X,
   Info,
+  Users,
+  Clock,
 } from "lucide-react";
 import {
   AdminLayout,
@@ -162,14 +164,67 @@ const TREATMENT_REGIMENS = [
   },
 ];
 
-const MATERIAL_OPTIONS = [
-  { value: "Vôi bột", label: "Vôi bột (Xử lý pH)" },
-  { value: "Lân nung chảy", label: "Lân nung chảy (Khử phèn)" },
-  { value: "Phân chuồng hoai mục", label: "Phân chuồng hoai mục (Hữu cơ)" },
-  { value: "Trichoderma", label: "Trichoderma (Nấm đối kháng)" },
-  { value: "Humic Acid", label: "Humic Acid (Kích rễ)" },
-  { value: "Kali Humate", label: "Kali Humate (Giảm mặn)" },
+const MATERIAL_TYPES = [
+  { value: "Phân bón", label: "Phân bón" },
+  { value: "Thuốc BVTV", label: "Thuốc BVTV" },
+  { value: "Giống", label: "Giống cây trồng" },
+  { value: "Nông cụ", label: "Nông cụ & Thiết bị" },
+  { value: "Vật tư khác", label: "Vật tư khác" },
 ];
+
+const MATERIAL_OPTIONS: Record<
+  string,
+  { value: string; label: string; unit: string }[]
+> = {
+  "Phân bón": [
+    { value: "Vôi bột", label: "Vôi bột (Xử lý pH)", unit: "kg" },
+    { value: "Lân nung chảy", label: "Lân nung chảy (Khử phèn)", unit: "kg" },
+    {
+      value: "Phân chuồng hoai mục",
+      label: "Phân chuồng hoai mục (Hữu cơ)",
+      unit: "tấn",
+    },
+    { value: "Trichoderma", label: "Trichoderma (Nấm đối kháng)", unit: "kg" },
+    { value: "Humic Acid", label: "Humic Acid (Kích rễ)", unit: "lít" },
+    { value: "Kali Humate", label: "Kali Humate (Giảm mặn)", unit: "lít" },
+    { value: "Ure", label: "Phân Ure", unit: "kg" },
+    { value: "DAP", label: "Phân DAP", unit: "kg" },
+  ],
+  "Thuốc BVTV": [
+    { value: "Mancozeb", label: "Mancozeb (Trừ nấm)", unit: "kg" },
+    { value: "Metalaxyl", label: "Metalaxyl (Trừ nấm đất)", unit: "gói" },
+    { value: "Glyphosate", label: "Glyphosate (Trừ cỏ)", unit: "lít" },
+    { value: "Abamectin", label: "Abamectin (Trừ sâu)", unit: "chai" },
+  ],
+  Giống: [
+    { value: "Cây giống chịu mặn", label: "Cây giống chịu mặn", unit: "cây" },
+    {
+      value: "Cây phân xanh",
+      label: "Cây phân xanh (Cải tạo đất)",
+      unit: "kg",
+    },
+  ],
+  "Nông cụ": [
+    { value: "Máy bơm nước", label: "Máy bơm nước", unit: "cái" },
+    { value: "Máy cày", label: "Máy cày", unit: "cái" },
+    { value: "Cuốc", label: "Cuốc", unit: "cái" },
+    { value: "Xẻng", label: "Xẻng", unit: "cái" },
+    { value: "Bình xịt", label: "Bình xịt thuốc", unit: "cái" },
+  ],
+  "Vật tư khác": [
+    { value: "Bạt ngăn mặn", label: "Bạt ngăn mặn", unit: "m2" },
+    { value: "Ống nước", label: "Ống dẫn nước", unit: "m" },
+    { value: "Lưới lọc", label: "Lưới lọc nước", unit: "m2" },
+  ],
+};
+
+const MATERIAL_UNITS: Record<string, string[]> = {
+  "Phân bón": ["kg", "tấn", "bao", "lít", "can"],
+  "Thuốc BVTV": ["lít", "ml", "chai", "gói"],
+  Giống: ["cây", "kg", "hom"],
+  "Nông cụ": ["cái", "bộ"],
+  "Vật tư khác": ["kg", "cái", "cuộn", "m", "m2"],
+};
 
 const TASK_OPTIONS = [
   { value: "Cày sâu 30cm", label: "Cày sâu 30cm" },
@@ -178,6 +233,21 @@ const TASK_OPTIONS = [
   { value: "Đánh rãnh thoát phèn", label: "Đánh rãnh thoát phèn" },
   { value: "Trồng cây che phủ", label: "Trồng cây che phủ" },
   { value: "Kiểm tra pH đất", label: "Kiểm tra pH đất (Định kỳ)" },
+  { value: "Cày xới đất", label: "Cày xới đất" },
+  { value: "Bón lót", label: "Bón lót" },
+  { value: "Tưới xả phèn", label: "Tưới xả phèn" },
+  { value: "Rải vôi", label: "Rải vôi" },
+  { value: "Phun chế phẩm sinh học", label: "Phun chế phẩm sinh học" },
+  { value: "Vệ sinh đồng ruộng", label: "Vệ sinh đồng ruộng" },
+];
+
+const LABOR_OPTIONS = [
+  { value: "1 người", label: "1 người" },
+  { value: "2 người", label: "2 người" },
+  { value: "3-5 người", label: "3-5 người" },
+  { value: "5-10 người", label: "5-10 người" },
+  { value: "Cơ giới hóa", label: "Cơ giới hóa (Máy móc)" },
+  { value: "Khoán trọn gói", label: "Khoán trọn gói" },
 ];
 
 // --- Components ---
@@ -199,37 +269,44 @@ const StageAllocation = memo(
     const [isExpanded, setIsExpanded] = useState(false);
 
     // Form States
-    const [matName, setMatName] = useState("");
-    const [matQty, setMatQty] = useState("");
-    const [matUnit, setMatUnit] = useState("kg");
+    const [newItem, setNewItem] = useState({
+      name: "",
+      qty: "",
+      unit: "kg",
+      type: "Phân bón",
+    });
 
-    const [taskName, setTaskName] = useState("");
-    const [taskLabor, setTaskLabor] = useState("2 người");
-    const [taskTime, setTaskTime] = useState("");
+    const [newTask, setNewTask] = useState({
+      name: "",
+      desc: "",
+      labor: "",
+      duration: "",
+    });
 
     const handleAddMat = () => {
-      if (!matName || !matQty) return;
+      if (!newItem.name || !newItem.qty) return;
       onAdd({
         stage: stageName,
         type: "material",
-        name: matName,
-        detail: `${matQty} ${matUnit}`,
+        name: newItem.name,
+        detail: `${newItem.qty} ${newItem.unit}`,
+        // Note: For full consistency with PlanCreatePage, we might want to store more fields,
+        // but sticking to existing AllocationItem structure for now:
+        // type, name, detail, subDetail
       });
-      setMatName("");
-      setMatQty("");
+      setNewItem({ name: "", qty: "", unit: "kg", type: "Phân bón" });
     };
 
     const handleAddTask = () => {
-      if (!taskName) return;
+      if (!newTask.name) return;
       onAdd({
         stage: stageName,
         type: "task",
-        name: taskName,
-        detail: taskLabor,
-        subDetail: taskTime,
+        name: newTask.name,
+        detail: newTask.labor || "1 người",
+        subDetail: newTask.duration || "1 ngày",
       });
-      setTaskName("");
-      setTaskTime("");
+      setNewTask({ name: "", desc: "", labor: "", duration: "" });
     };
 
     const materials = items.filter((i) => i.type === "material");
@@ -271,8 +348,14 @@ const StageAllocation = memo(
           <div className="p-4 border-t border-slate-100 animation-fade-in">
             <Tabs defaultValue="materials">
               <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="materials">Vật tư xử lý</TabsTrigger>
-                <TabsTrigger value="tasks">Hoạt động thi công</TabsTrigger>
+                <TabsTrigger value="materials">
+                  <Leaf className="w-3.5 h-3.5 mr-2 text-green-600" />
+                  Vật tư xử lý
+                </TabsTrigger>
+                <TabsTrigger value="tasks">
+                  <Wrench className="w-3.5 h-3.5 mr-2 text-blue-600" />
+                  Hoạt động thi công
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="materials" className="space-y-3">
@@ -300,36 +383,96 @@ const StageAllocation = memo(
                     </div>
                   </div>
                 ))}
+
+                {/* Add Material Form */}
                 <div className="flex flex-1 gap-2 pt-2 border-t mt-2">
-                  <Select value={matName} onValueChange={setMatName}>
+                  <Select
+                    value={newItem.type}
+                    onValueChange={(v) => {
+                      const defaultUnit =
+                        MATERIAL_UNITS[v as keyof typeof MATERIAL_UNITS]?.[0] ||
+                        "kg";
+                      setNewItem({
+                        ...newItem,
+                        type: v,
+                        name: "",
+                        unit: defaultUnit,
+                      });
+                    }}
+                  >
+                    <SelectTrigger className="w-[120px] h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MATERIAL_TYPES.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={newItem.name}
+                    onValueChange={(v) => {
+                      const category =
+                        MATERIAL_OPTIONS[
+                          newItem.type as keyof typeof MATERIAL_OPTIONS
+                        ] || [];
+                      const item = category.find((i) => i.value === v);
+                      setNewItem({
+                        ...newItem,
+                        name: v,
+                        unit: item?.unit || newItem.unit,
+                      });
+                    }}
+                  >
                     <SelectTrigger className="w-full h-9 text-xs">
                       <SelectValue placeholder="Chọn vật tư..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {MATERIAL_OPTIONS.map((o) => (
+                      {(
+                        MATERIAL_OPTIONS[
+                          newItem.type as keyof typeof MATERIAL_OPTIONS
+                        ] || []
+                      ).map((o) => (
                         <SelectItem key={o.value} value={o.value}>
                           {o.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+
                   <Input
-                    className="w-full h-9 text-xs"
+                    className="h-9 text-xs"
                     placeholder="SL"
-                    value={matQty}
-                    onChange={(e) => setMatQty(e.target.value)}
+                    value={newItem.qty}
+                    onChange={(e) =>
+                      setNewItem({ ...newItem, qty: e.target.value })
+                    }
                     type="number"
                   />
-                  <Select value={matUnit} onValueChange={setMatUnit}>
-                    <SelectTrigger className="w-20 h-9 text-xs">
+
+                  <Select
+                    value={newItem.unit}
+                    onValueChange={(v) => setNewItem({ ...newItem, unit: v })}
+                  >
+                    <SelectTrigger className="w-24 h-9 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="kg">kg</SelectItem>
-                      <SelectItem value="lít">lít</SelectItem>
-                      <SelectItem value="bao">bao</SelectItem>
+                      {(
+                        MATERIAL_UNITS[
+                          newItem.type as keyof typeof MATERIAL_UNITS
+                        ] || ["kg"]
+                      ).map((u) => (
+                        <SelectItem key={u} value={u}>
+                          {u}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+
                   <Button
                     size="sm"
                     className="h-9 px-2 bg-slate-800"
@@ -373,9 +516,14 @@ const StageAllocation = memo(
                     </div>
                   </div>
                 ))}
+
+                {/* Add Task Form */}
                 <div className="space-y-2 pt-2 border-t mt-2">
                   <div className="flex gap-2">
-                    <Select value={taskName} onValueChange={setTaskName}>
+                    <Select
+                      value={newTask.name}
+                      onValueChange={(v) => setNewTask({ ...newTask, name: v })}
+                    >
                       <SelectTrigger className="flex-1 h-9 text-xs">
                         <SelectValue placeholder="Chọn hoạt động..." />
                       </SelectTrigger>
@@ -395,19 +543,49 @@ const StageAllocation = memo(
                       <Plus className="w-4 h-4" /> Thêm
                     </Button>
                   </div>
+
+                  <Input
+                    placeholder="Mô tả kỹ thuật..."
+                    className="h-9 text-muted-foreground text-xs"
+                    value={newTask.desc}
+                    onChange={(e) =>
+                      setNewTask({ ...newTask, desc: e.target.value })
+                    }
+                  />
+
                   <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      className="h-9 text-xs"
-                      placeholder="Nhân sự (VD: 2 người)"
-                      value={taskLabor}
-                      onChange={(e) => setTaskLabor(e.target.value)}
-                    />
-                    <Input
-                      className="h-9 text-xs"
-                      placeholder="Thời gian (VD: 2 ngày)"
-                      value={taskTime}
-                      onChange={(e) => setTaskTime(e.target.value)}
-                    />
+                    <div className="relative">
+                      <Users className="w-3.5 h-3.5 absolute left-2.5 top-3 z-10 text-slate-400" />
+                      <Select
+                        value={newTask.labor}
+                        onValueChange={(v) =>
+                          setNewTask({ ...newTask, labor: v })
+                        }
+                      >
+                        <SelectTrigger className="h-9 pl-8 text-xs">
+                          <SelectValue placeholder="Nhân sự" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {LABOR_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="relative">
+                      <Clock className="w-3.5 h-3.5 absolute left-2.5 top-3 text-slate-400" />
+                      <Input
+                        placeholder="Thời gian"
+                        className="h-9 pl-8 text-xs"
+                        value={newTask.duration}
+                        onChange={(e) =>
+                          setNewTask({ ...newTask, duration: e.target.value })
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
               </TabsContent>

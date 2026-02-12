@@ -1,6 +1,14 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 
+export interface MaterialAllocation {
+  id: number;
+  name: string;
+  quantity: number;
+  unit: string;
+  type: "fertilizer" | "pesticide" | "other" | "tool";
+}
+
 export interface Task {
   id: number;
   code: string;
@@ -15,6 +23,7 @@ export interface Task {
   status: "pending" | "in-progress" | "completed" | "overdue";
   description: string;
   createdAt: string;
+  materials?: MaterialAllocation[];
 }
 
 interface TaskStore {
