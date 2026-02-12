@@ -1,5 +1,6 @@
 import { Sprout, Clock } from "lucide-react";
 import type { Treatment } from "../types/treatment.types";
+import { severityConfig } from "../data/treatment.data";
 
 interface TreatmentListItemProps {
   treatment: Treatment;
@@ -12,17 +13,11 @@ export function TreatmentListItem({
   isSelected,
   onClick,
 }: TreatmentListItemProps) {
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case "severe":
-        return "text-red-700 bg-red-50 border-red-200";
-      case "moderate":
-        return "text-amber-700 bg-amber-50 border-amber-200";
-      case "mild":
-        return "text-green-700 bg-green-50 border-green-200";
-      default:
-        return "text-gray-700 bg-gray-50 border-gray-200";
-    }
+  const getSeverityStyle = (severity: keyof typeof severityConfig) => {
+    return (
+      severityConfig[severity]?.color ||
+      "text-gray-700 bg-gray-50 border-gray-200"
+    );
   };
 
   return (
@@ -54,14 +49,10 @@ export function TreatmentListItem({
           <div
             className={`
                 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border
-                ${getSeverityColor(treatment.severity)}
+                ${getSeverityStyle(treatment.severity)}
             `}
           >
-            {treatment.severity === "severe"
-              ? "Nghiêm trọng"
-              : treatment.severity === "moderate"
-                ? "Trung bình"
-                : "Nhẹ"}
+            {severityConfig[treatment.severity]?.label || treatment.severity}
           </div>
           <span className="text-[10px] font-mono text-gray-400">
             {treatment.code}

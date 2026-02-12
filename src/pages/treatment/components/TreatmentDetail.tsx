@@ -15,12 +15,13 @@ import {
   Image as ImageIcon,
   Play,
   Layers,
-  Printer,
-  Share2,
   AlertOctagon,
+  Building2,
+  ShieldCheck,
 } from "lucide-react";
 import { Badge, Card, CardContent, Button } from "@tankhang1/eco-shared-ui";
 import type { Treatment } from "../types/treatment.types";
+import { severityConfig } from "../data/treatment.data";
 
 interface TreatmentDetailProps {
   treatment: Treatment;
@@ -28,6 +29,13 @@ interface TreatmentDetailProps {
   onDelete: (t: Treatment) => void;
   onViewMaterial?: (id: string) => void;
 }
+
+const getSeverityStyle = (severity: keyof typeof severityConfig) => {
+  return (
+    severityConfig[severity]?.color ||
+    "text-gray-700 bg-gray-50 border-gray-200"
+  );
+};
 
 export function TreatmentDetail({
   treatment,
@@ -63,17 +71,15 @@ export function TreatmentDetail({
               <Badge className="bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-md">
                 {treatment.code}
               </Badge>
-              <Badge
-                className={`${
-                  treatment.severity === "severe"
-                    ? "bg-red-500/80"
-                    : "bg-amber-500/80"
-                } text-white border-none backdrop-blur-md`}
+              <div
+                className={`
+                text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border
+                ${getSeverityStyle(treatment.severity)}
+            `}
               >
-                {treatment.severity === "severe"
-                  ? "Nghiêm trọng"
-                  : "Trung bình"}
-              </Badge>
+                {severityConfig[treatment.severity]?.label ||
+                  treatment.severity}
+              </div>
             </div>
             <div className="flex gap-2">
               <Button
@@ -129,14 +135,14 @@ export function TreatmentDetail({
               {treatment.totalDuration}
             </div>
           </div>
-          <div className="p-3 text-center transition-colors hover:bg-white/5">
+          {/* <div className="p-3 text-center transition-colors hover:bg-white/5">
             <div className="text-white/60 text-[10px] uppercase font-bold tracking-wider mb-1">
               Chi phí ước tính
             </div>
             <div className="text-white font-semibold font-mono text-lg">
               {treatment.totalCost}
             </div>
-          </div>
+          </div> */}
           {/* <div className="p-3 text-center hidden md:block transition-colors hover:bg-white/5">
             <div className="text-white/60 text-[10px] uppercase font-bold tracking-wider mb-1">
               Hiệu quả bệnh
@@ -401,7 +407,35 @@ export function TreatmentDetail({
               </CardContent>
             </Card>
 
-            <Card className="shadow-sm border-gray-200">
+            <Card className="shadow-sm border-gray-200 bg-gradient-to-br from-white to-gray-50/50">
+              <CardContent className="p-6">
+                <h3 className="font-bold text-lg mb-4 text-gray-800 flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-indigo-600" /> Đơn vị cung
+                  cấp phác đồ
+                </h3>
+                <div className="flex items-start gap-4 p-4 rounded-xl bg-white border border-gray-100 shadow-sm">
+                  <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
+                    <Building2 className="w-6 h-6" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-bold text-gray-900 leading-tight">
+                      {treatment.author}
+                    </h4>
+                    <p className="text-sm text-indigo-600 font-medium">
+                      {treatment.authorTitle}
+                    </p>
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 pt-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-green-600" />
+                      <span className="text-gray-400 font-medium italic">
+                        Đơn vị tư vấn kỹ thuật chuyên sâu
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* <Card className="shadow-sm border-gray-200">
               <CardContent className="p-6">
                 <h3 className="font-bold text-lg mb-4 text-gray-800 flex items-center gap-2">
                   <Activity className="w-5 h-5 text-green-600" /> Chỉ số hiệu
@@ -442,7 +476,7 @@ export function TreatmentDetail({
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
 
             {/* Deployment Regions Grid */}
             <div className="md:col-span-2 space-y-4">

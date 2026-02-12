@@ -55,7 +55,52 @@ export const ppeOptions = [
   "Mũ bảo hộ",
 ];
 
+export const severityConfig = {
+  M0: {
+    label: "M0 - Phòng",
+    strategy: "Ngăn xuất hiện",
+    description: "Chưa có bệnh / rất ít",
+    color: "text-green-700 bg-green-50 border-green-200 ring-green-500/20",
+    iconColor: "text-green-600 bg-green-100/50 ring-green-200",
+    gradient: "from-green-50 to-white border-green-100",
+  },
+  M1: {
+    label: "M1 - Chớm",
+    strategy: "Khoanh vùng nhanh",
+    description: "1-2 cây/điểm",
+    color:
+      "text-emerald-700 bg-emerald-50 border-emerald-200 ring-emerald-500/20",
+    iconColor: "text-emerald-600 bg-emerald-100/50 ring-emerald-200",
+    gradient: "from-emerald-50 to-white border-emerald-100",
+  },
+  M2: {
+    label: "M2 - Vừa",
+    strategy: "Dập triệu chứng",
+    description: "Nhiều điểm rải rác",
+    color: "text-amber-700 bg-amber-50 border-amber-200 ring-amber-500/20",
+    iconColor: "text-amber-600 bg-amber-100/50 ring-amber-200",
+    gradient: "from-amber-50 to-white border-amber-100",
+  },
+  M3: {
+    label: "M3 - Nặng",
+    strategy: "Chặn lan + giảm thiệt hại",
+    description: "Lan nhanh, ảnh hưởng đọt/hoa/trái",
+    color: "text-orange-700 bg-orange-50 border-orange-200 ring-orange-500/20",
+    iconColor: "text-orange-600 bg-orange-100/50 ring-orange-200",
+    gradient: "from-orange-50 to-white border-orange-100",
+  },
+  M4: {
+    label: "M4 - Khủng hoảng",
+    strategy: "Cứu vườn",
+    description: "Nguy cơ chết cây/thiệt hại lớn",
+    color: "text-red-700 bg-red-50 border-red-200 ring-red-500/20",
+    iconColor: "text-red-600 bg-red-100/50 ring-red-200",
+    gradient: "from-red-50 to-white border-red-100",
+  },
+} as const;
+
 // Mock materials database
+
 export const materialsDatabase: Record<string, Material> = {
   PEST001: {
     id: "PEST001",
@@ -251,7 +296,7 @@ export const initialTreatments: Treatment[] = [
     variety: "Monthon",
     seed: "Giống F1",
     disease: "Bệnh thán thư",
-    severity: "moderate",
+    severity: "M2",
     author: "TS. Nguyễn Văn A",
     authorTitle: "Chuyên gia bảo vệ thực vật",
     approvedBy: "PGS.TS Trần Văn B",
@@ -357,7 +402,7 @@ export const initialTreatments: Treatment[] = [
     variety: "Sầu riêng 5 năm tuổi",
     seed: "N/A",
     disease: "Xì mủ (Phytophthora)",
-    severity: "severe",
+    severity: "M4",
     author: "CÔNG TY TNHH TANBAOARGRI_PROBIOTICSVN",
     authorTitle: "Đơn vị tư vấn kỹ thuật",
     approvedBy: "THACOAGRI",
@@ -497,7 +542,7 @@ export const initialTreatments: Treatment[] = [
   //   variety: "Cát Hòa Lộc",
   //   seed: "Giống F1",
   //   disease: "Sâu đục thân",
-  //   severity: "severe",
+  //   severity: "M3",
   //   author: "ThS. Lê Thị C",
   //   authorTitle: "Kỹ sư nông nghiệp",
   //   approvedBy: "TS. Phạm Văn D",

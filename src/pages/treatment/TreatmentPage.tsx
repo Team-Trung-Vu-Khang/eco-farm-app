@@ -1,12 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
 import {
   Plus,
-  Heart,
   Bug,
-  Droplets,
   Search,
   SlidersHorizontal,
   ArrowUpDown,
+  Folder,
 } from "lucide-react";
 import {
   AdminLayout,
@@ -20,7 +19,11 @@ import { TreatmentListItem } from "./components/TreatmentListItem";
 import { TreatmentDetail } from "./components/TreatmentDetail";
 import { TreatmentSearchBar } from "./components/TreatmentSearchBar";
 import { MaterialDetailModal } from "./components/MaterialDetailModal";
-import { initialTreatments, materialsDatabase } from "./data/treatment.data";
+import {
+  initialTreatments,
+  materialsDatabase,
+  severityConfig,
+} from "./data/treatment.data";
 import type { Treatment, SearchFilters } from "./types/treatment.types";
 import { TreatmentForm } from "./components/TreatmentForm";
 
@@ -164,8 +167,14 @@ export default function TreatmentPage() {
   };
 
   const activeCount = data.filter((t) => t.status === "active").length;
-  const severeCount = data.filter((t) => t.severity === "severe").length;
-  const moderateCount = data.filter((t) => t.severity === "moderate").length;
+
+  const severityCounts = {
+    M0: data.filter((t) => t.severity === "M0").length,
+    M1: data.filter((t) => t.severity === "M1").length,
+    M2: data.filter((t) => t.severity === "M2").length,
+    M3: data.filter((t) => t.severity === "M3").length,
+    M4: data.filter((t) => t.severity === "M4").length,
+  };
 
   const selectedMaterial = selectedMaterialId
     ? materialsDatabase[selectedMaterialId]
@@ -187,54 +196,39 @@ export default function TreatmentPage() {
     >
       <div className="space-y-6">
         {/* Statistics - Compact Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-gradient-to-r from-green-50 to-white border-green-100 shadow-sm">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-full bg-green-100/50 text-green-600 ring-1 ring-green-200">
-                <Heart className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold font-display text-gray-900">
-                  {activeCount}
-                </p>
-                <p className="text-xs font-medium text-green-700 uppercase tracking-wide">
-                  Đang áp dụng
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-red-50 to-white border-red-100 shadow-sm">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-full bg-red-100/50 text-red-600 ring-1 ring-red-200">
-                <Bug className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold font-display text-gray-900">
-                  {severeCount}
-                </p>
-                <p className="text-xs font-medium text-red-700 uppercase tracking-wide">
-                  Nghiêm trọng
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-amber-50 to-white border-amber-100 shadow-sm">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-full bg-amber-100/50 text-amber-600 ring-1 ring-amber-200">
-                <Droplets className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold font-display text-gray-900">
-                  {moderateCount}
-                </p>
-                <p className="text-xs font-medium text-amber-700 uppercase tracking-wide">
-                  Mức độ trung bình
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {(
+            Object.entries(severityConfig) as [
+              keyof typeof severityConfig,
+              any,
+            ][]
+          ).map(([key, config]) => (
+            <Card
+              key={key}
+              className={`bg-gradient-to-r ${config.gradient} shadow-sm overflow-hidden border-2`}
+            >
+              <CardContent className="p-4 flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`p-2.5 rounded-xl ${config.iconColor} ring-1`}
+                  >
+                    <Folder className="w-5 h-5" />
+                  </div>
+                  <p className="text-2xl font-bold font-display text-gray-900 leading-none">
+                    {severityCounts[key]}
+                  </p>
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-xs font-bold text-gray-800 tracking-tight">
+                    Mức độ: {config.label.split(" - ")[1]}
+                  </p>
+                  <p className="text-[10px] font-medium text-gray-500 uppercase leading-none">
+                    ({config.strategy})
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden">
@@ -281,46 +275,36 @@ export default function TreatmentPage() {
                 >
                   Tất cả
                 </button>
-                <button
-                  onClick={() =>
-                    setSearchFilters((prev) => ({ ...prev, status: "active" }))
-                  }
-                  className={`
-                    whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5
-                    ${
-                      searchFilters.status === "active"
-                        ? "bg-green-600 border-green-600 text-white shadow-sm"
-                        : "bg-white border-gray-200 text-gray-600 hover:border-green-200 hover:text-green-600 hover:bg-green-50"
+                {(
+                  Object.entries(severityConfig) as [
+                    keyof typeof severityConfig,
+                    any,
+                  ][]
+                ).map(([key, config]) => (
+                  <button
+                    key={key}
+                    onClick={() =>
+                      setSearchFilters((prev) => ({
+                        ...prev,
+                        severity: key,
+                        status: "",
+                      }))
                     }
-                  `}
-                >
-                  <div
-                    className={`w-1.5 h-1.5 rounded-full ${searchFilters.status === "active" ? "bg-white" : "bg-green-500"}`}
-                  />
-                  Đang chạy
-                </button>
-                <button
-                  onClick={() =>
-                    setSearchFilters((prev) => ({
-                      ...prev,
-                      severity: "severe",
-                      status: "",
-                    }))
-                  }
-                  className={`
-                    whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5
-                    ${
-                      searchFilters.severity === "severe"
-                        ? "bg-red-600 border-red-600 text-white shadow-sm"
-                        : "bg-white border-gray-200 text-gray-600 hover:border-red-200 hover:text-red-600 hover:bg-red-50"
-                    }
-                  `}
-                >
-                  <div
-                    className={`w-1.5 h-1.5 rounded-full ${searchFilters.severity === "severe" ? "bg-white" : "bg-red-500"}`}
-                  />
-                  Khẩn cấp
-                </button>
+                    className={`
+                        whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5
+                        ${
+                          searchFilters.severity === key
+                            ? "bg-gray-900 border-gray-900 text-white shadow-sm"
+                            : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                        }
+                      `}
+                  >
+                    <div
+                      className={`w-1.5 h-1.5 rounded-full ${searchFilters.severity === key ? "bg-white" : severityConfig[key].iconColor.split(" ")[0].replace("text-", "bg-")}`}
+                    />
+                    {config.label}
+                  </button>
+                ))}
               </div>
             </div>
 

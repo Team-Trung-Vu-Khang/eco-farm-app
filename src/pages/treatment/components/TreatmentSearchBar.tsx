@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Filter, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Filter, X, ChevronUp } from "lucide-react";
 import {
   Button,
   Input,
@@ -11,7 +11,7 @@ import {
   SelectValue,
   Badge,
 } from "@tankhang1/eco-shared-ui";
-import { cropTypes, crops, varieties, diseases } from "../data/treatment.data";
+import { cropTypes, crops, diseases } from "../data/treatment.data";
 import type { SearchFilters } from "../types/treatment.types";
 
 interface TreatmentSearchBarProps {
@@ -45,9 +45,6 @@ export function TreatmentSearchBar({
   // Get cascading options
   const availableCrops = filters.cropType
     ? crops[filters.cropType as keyof typeof crops] || []
-    : [];
-  const availableVarieties = filters.crop
-    ? varieties[filters.crop as keyof typeof varieties] || []
     : [];
 
   const activeFilterCount =
@@ -192,16 +189,18 @@ export function TreatmentSearchBar({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tất cả</SelectItem>
-                    <SelectItem value="mild">Nhẹ</SelectItem>
-                    <SelectItem value="moderate">Trung bình</SelectItem>
-                    <SelectItem value="severe">Nghiêm trọng</SelectItem>
+                    <SelectItem value="M0">M0 - Phòng</SelectItem>
+                    <SelectItem value="M1">M1 - Chớm</SelectItem>
+                    <SelectItem value="M2">M2 - Vừa</SelectItem>
+                    <SelectItem value="M3">M3 - Nặng</SelectItem>
+                    <SelectItem value="M4">M4 - Khủng hoảng</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             {/* Trạng thái */}
-            <div className="space-y-1.5">
+            {/* <div className="space-y-1.5">
               <Label className="text-[10px] uppercase text-gray-500 font-bold">
                 Trạng thái
               </Label>
@@ -218,7 +217,7 @@ export function TreatmentSearchBar({
                   <SelectItem value="inactive">Không áp dụng</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
           </div>
 
           <div className="flex justify-between pt-2">

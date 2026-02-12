@@ -39,8 +39,7 @@ export function TreatmentForm({
       } else {
         // Reset for create mode
         setFormData({
-          status: "active",
-          severity: "moderate",
+          severity: "M2",
           steps: [],
           images: [],
           videoUrl: "",
@@ -138,9 +137,11 @@ export function TreatmentForm({
                     <SelectValue placeholder="Chọn mức độ" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="mild">Nhẹ</SelectItem>
-                    <SelectItem value="moderate">Trung bình</SelectItem>
-                    <SelectItem value="severe">Nghiêm trọng</SelectItem>
+                    <SelectItem value="M0">M0 - Phòng</SelectItem>
+                    <SelectItem value="M1">M1 - Chớm</SelectItem>
+                    <SelectItem value="M2">M2 - Vừa</SelectItem>
+                    <SelectItem value="M3">M3 - Nặng</SelectItem>
+                    <SelectItem value="M4">M4 - Khủng hoảng</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
