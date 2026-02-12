@@ -81,9 +81,33 @@ export default function PersonnelPage() {
       key: "department",
       label: "Phòng ban",
       options: [
+        { label: "Phòng Kỹ Thuật", value: "Phòng Kỹ Thuật" },
+        { label: "Phòng Sản Xuất", value: "Phòng Sản Xuất" },
+        { label: "Phòng Nghiên Cứu", value: "Phòng Nghiên Cứu" },
         { label: "Kinh doanh", value: "Kinh doanh" },
         { label: "Kế toán", value: "Kế toán" },
-        { label: "Kỹ thuật", value: "Kỹ thuật" },
+      ],
+    },
+    {
+      key: "position",
+      label: "Chức vụ",
+      options: [
+        { label: "Kỹ sư nông nghiệp", value: "Kỹ sư nông nghiệp" },
+        { label: "Kỹ sư trồng trọt", value: "Kỹ sư trồng trọt" },
+        { label: "Kỹ thuật viên canh tác", value: "Kỹ thuật viên canh tác" },
+        { label: "Kỹ sư bảo vệ thực vật", value: "Kỹ sư bảo vệ thực vật" },
+        {
+          label: "Chuyên viên dinh dưỡng cây trồng",
+          value: "Chuyên viên dinh dưỡng cây trồng",
+        },
+        { label: "Kỹ sư thổ nhưỡng", value: "Kỹ sư thổ nhưỡng" },
+        { label: "Kỹ thuật viên phân bón", value: "Kỹ thuật viên phân bón" },
+        {
+          label: "Kỹ thuật viên cơ điện nông nghiệp",
+          value: "Kỹ thuật viên cơ điện nông nghiệp",
+        },
+        { label: "Thợ máy nông nghiệp", value: "Thợ máy nông nghiệp" },
+        { label: "Công nhân thời vụ", value: "Công nhân thời vụ" },
       ],
     },
   ];
