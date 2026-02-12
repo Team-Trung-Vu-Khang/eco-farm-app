@@ -37,6 +37,12 @@ const useVarietyStore = create<VarietyState>()(
                 ) + 1
               ).toString();
 
+              // Convert illustration File to URL if needed
+              const illustrationUrl =
+                data.illustration instanceof File
+                  ? URL.createObjectURL(data.illustration)
+                  : data.illustration;
+
               const newVariety: Variety = {
                 id: newId,
                 varietyCode: data.varietyCode,
@@ -47,7 +53,7 @@ const useVarietyStore = create<VarietyState>()(
                 growthDuration: data.growthDuration,
                 averageYield: data.averageYield,
                 description: data.description,
-                illustration: data.illustration,
+                illustration: illustrationUrl,
                 contentType: data.contentType,
                 pdfFile: data.pdfFile,
                 editorContent: data.editorContent,
@@ -78,9 +84,16 @@ const useVarietyStore = create<VarietyState>()(
             (state) => ({
               varieties: state.varieties.map((v) => {
                 if (v.id === id) {
+                  // Convert illustration File to URL if needed
+                  const illustrationUrl =
+                    data.illustration instanceof File
+                      ? URL.createObjectURL(data.illustration)
+                      : data.illustration;
+
                   const updatedVariety = {
                     ...v,
                     ...data,
+                    illustration: illustrationUrl ?? v.illustration,
                     updatedAt: new Date().toISOString().split("T")[0],
                   };
 

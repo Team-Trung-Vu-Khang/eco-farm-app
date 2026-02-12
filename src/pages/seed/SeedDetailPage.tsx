@@ -23,13 +23,59 @@ import {
   User,
 } from "lucide-react";
 import { Link, useParams } from "wouter";
-import { initialData } from "./mocks";
+import useSeedStore from "../../stores/useSeedStore";
+import type { Variety } from "./types";
+
+// Utility functions to generate random data for missing fields
+const generateRepresentative = (): string => {
+  const firstNames = [
+    "Nguyễn Văn",
+    "Trần Thị",
+    "Lê Minh",
+    "Phạm Hồng",
+    "Hoàng Thị",
+    "Võ Văn",
+    "Đặng Minh",
+    "Bùi Thị",
+  ];
+  const lastNames = [
+    "An",
+    "Bình",
+    "Châu",
+    "Dũng",
+    "Hà",
+    "Khoa",
+    "Linh",
+    "Mai",
+    "Nam",
+    "Phương",
+  ];
+  const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+  const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+  return `${firstName} ${lastName}`;
+};
+
+const generatePhone = (): string => {
+  const prefixes = ["090", "091", "093", "094", "097", "098", "099"];
+  const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+  const number = Math.floor(Math.random() * 10000000)
+    .toString()
+    .padStart(7, "0");
+  return `${prefix}${number}`;
+};
+
+const generateYield = (): string => {
+  const min = Math.floor(Math.random() * 10) + 15; // 15-25
+  const max = min + Math.floor(Math.random() * 10) + 5; // +5-15
+  return `${min}-${max} tấn/ha`;
+};
 
 export default function SeedDetailPage() {
   const { id } = useParams();
-  const seed = initialData.find((s) => s.id === id);
+  const { getSeedById } = useSeedStore();
+  const baseSeed = getSeedById(id || "");
 
-  if (!seed) {
+  if (!baseSeed) {
     return (
       <AdminLayout
         title="Chi tiết hạt giống"
@@ -51,6 +97,14 @@ export default function SeedDetailPage() {
       </AdminLayout>
     );
   }
+
+  // Enrich seed data with random values for missing fields
+  const seed: Variety = {
+    ...baseSeed,
+    representative: baseSeed.representative || generateRepresentative(),
+    phone: baseSeed.phone || generatePhone(),
+    yield: baseSeed.yield || generateYield(),
+  };
 
   return (
     <AdminLayout

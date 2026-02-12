@@ -14,12 +14,13 @@ import {
 import { Hash, Leaf, Plus } from "lucide-react";
 import { useState } from "react";
 
-import { initialData } from "./mocks";
 import type { GroupCrop } from "./types";
+import useGroupCropStore from "../../stores/useGroupCropStore";
 
 export default function GroupCropPage() {
   const { toast } = useToast();
-  const [data, setData] = useState<GroupCrop[]>(initialData);
+  const { groupCrops, addGroupCrop, updateGroupCrop, deleteGroupCrop } =
+    useGroupCropStore();
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editItem, setEditItem] = useState<GroupCrop | null>(null);
@@ -95,22 +96,13 @@ export default function GroupCropPage() {
 
   const handleSubmit = () => {
     if (editItem) {
-      setData((prev) =>
-        prev.map((item) =>
-          item.id === editItem.id ? { ...item, ...formData } : item,
-        ),
-      );
+      updateGroupCrop(editItem.id, formData);
       toast({
         title: "Thành công",
         description: "Đã cập nhật thông tin cây trồng",
       });
     } else {
-      const newItem: GroupCrop = {
-        id: Date.now(),
-        ...formData,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setData((prev) => [...prev, newItem]);
+      addGroupCrop(formData);
       toast({ title: "Thành công", description: "Đã thêm cây trồng mới" });
     }
     setFormOpen(false);
@@ -118,7 +110,7 @@ export default function GroupCropPage() {
 
   const handleConfirmDelete = () => {
     if (deleteItem) {
-      setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
+      deleteGroupCrop(deleteItem.id);
       toast({ title: "Thành công", description: "Đã xóa cây trồng" });
     }
     setDeleteOpen(false);
@@ -139,7 +131,7 @@ export default function GroupCropPage() {
       }
     >
       <DataTable
-        data={data}
+        data={groupCrops}
         columns={columns}
         onEdit={handleEdit}
         onDelete={handleDelete}
