@@ -738,7 +738,7 @@ export default function AmendmentPlanCreatePage() {
             </div>
           )}
 
-          {formData.selectedPlotIds.length > 0 && (
+          {/* {formData.selectedPlotIds.length > 0 && (
             <div className="bg-slate-50 border rounded-lg p-4 space-y-4">
               <h4 className="font-semibold text-sm flex items-center gap-2">
                 <Target className="w-4 h-4 text-primary" /> Thiết lập mục tiêu
@@ -778,7 +778,7 @@ export default function AmendmentPlanCreatePage() {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
         </div>
       ),
       isValid: formData.selectedPlotIds.length > 0,

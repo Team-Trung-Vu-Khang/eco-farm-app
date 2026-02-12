@@ -137,14 +137,14 @@ export function TreatmentDetail({
               {treatment.totalCost}
             </div>
           </div>
-          <div className="p-3 text-center hidden md:block transition-colors hover:bg-white/5">
+          {/* <div className="p-3 text-center hidden md:block transition-colors hover:bg-white/5">
             <div className="text-white/60 text-[10px] uppercase font-bold tracking-wider mb-1">
               Hiệu quả bệnh
             </div>
             <div className="text-green-400 font-bold text-lg">
               {treatment.efficacyRate}
             </div>
-          </div>
+          </div> */}
           <div className="p-3 text-center hidden md:block transition-colors hover:bg-white/5">
             <div className="text-white/60 text-[10px] uppercase font-bold tracking-wider mb-1">
               An toàn sinh học
