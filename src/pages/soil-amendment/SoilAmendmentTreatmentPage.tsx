@@ -1038,37 +1038,11 @@ export default function SoilAmendmentTreatmentPage() {
                   </div>
                 </div>
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-4 gap-4 p-6 border-b">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900">
-                      {selectedPlan.area} ha
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">Diện tích</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900">
-                      {selectedPlan.budget} tr.đ
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">Ngân sách</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900">
-                      {selectedPlan.procedures.length}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">Số bước</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900">
-                      {selectedPlan.selectedMethods.length}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">Phương pháp</p>
-                  </div>
-                </div>
+                {/* Stats Grid - Hidden as per user request */}
 
                 {/* Tabs */}
                 <Tabs defaultValue="procedures" className="p-6">
-                  <TabsList className="grid w-full grid-cols-3 mb-6">
+                  <TabsList className="grid w-full grid-cols-2 mb-6">
                     <TabsTrigger value="procedures">
                       <ListChecks className="w-4 h-4 mr-2" />
                       Quy trình & Các bước
@@ -1076,10 +1050,6 @@ export default function SoilAmendmentTreatmentPage() {
                     <TabsTrigger value="methods">
                       <Beaker className="w-4 h-4 mr-2" />
                       Phương pháp
-                    </TabsTrigger>
-                    <TabsTrigger value="details">
-                      <Target className="w-4 h-4 mr-2" />
-                      Chi tiết kỹ thuật
                     </TabsTrigger>
                   </TabsList>
 
@@ -1440,47 +1410,6 @@ export default function SoilAmendmentTreatmentPage() {
                             </CardContent>
                           </Card>
                         ))}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="details" className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs text-gray-500">
-                          Vấn đề đất
-                        </Label>
-                        <p className="font-medium">{selectedPlan.soilIssue}</p>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs text-gray-500">
-                          Người phụ trách
-                        </Label>
-                        <p className="font-medium">{selectedPlan.technician}</p>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs text-gray-500">
-                          Ngày bắt đầu
-                        </Label>
-                        <p className="font-medium">{selectedPlan.startDate}</p>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs text-gray-500">
-                          Ngày kết thúc
-                        </Label>
-                        <p className="font-medium">{selectedPlan.endDate}</p>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs text-gray-500">
-                        Mục tiêu cải tạo
-                      </Label>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedPlan.objectives.map((obj, idx) => (
-                          <Badge key={idx} variant="secondary">
-                            {obj}
-                          </Badge>
-                        ))}
-                      </div>
                     </div>
                   </TabsContent>
                 </Tabs>
