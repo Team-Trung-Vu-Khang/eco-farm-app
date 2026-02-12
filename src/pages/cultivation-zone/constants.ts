@@ -1174,6 +1174,7 @@ export interface CultivationZone {
   id: string;
   code: string;
   name: string;
+  enterpriseId?: number; // ID doanh nghiệp
   location: string; // Địa chỉ
   province: string;
   district: string;
@@ -1209,6 +1210,7 @@ export const MOCK_CULTIVATION_ZONES: CultivationZone[] = [
     id: "zone-001",
     code: "ZONE-BP-001",
     name: "Vùng Sầu riêng Bình Phước",
+    enterpriseId: 1,
     location: "Khu phố 3, Phường Tân Đồng, TP Đồng Xoài",
     province: "Bình Phước",
     district: "Đồng Xoài",
@@ -1394,6 +1396,7 @@ export const MOCK_CULTIVATION_ZONES: CultivationZone[] = [
     id: "zone-002",
     code: "ZONE-DN-001",
     name: "Nông trại Hữu cơ Đồng Nai",
+    enterpriseId: 2,
     location: "Xã Gia Kiệm, Huyện Thống Nhất",
     province: "Đồng Nai",
     district: "Thống Nhất",
@@ -1548,6 +1551,7 @@ export const MOCK_CULTIVATION_ZONES: CultivationZone[] = [
     id: "zone-003",
     code: "ZONE-DL-001",
     name: "Đồi Cà phê Buôn Ma Thuột",
+    enterpriseId: 4,
     location: "Km 15, Quốc lộ 14, TP Buôn Ma Thuột",
     province: "Đắk Lắk",
     district: "Buôn Ma Thuột",

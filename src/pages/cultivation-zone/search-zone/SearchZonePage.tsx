@@ -40,6 +40,7 @@ import {
 import { MOCK_CULTIVATION_ZONES, type CultivationZone } from "../constants";
 import { MapContainer, TileLayer, Polygon } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 
 interface AdvancedFilters {
   status?: string;
@@ -49,6 +50,7 @@ interface AdvancedFilters {
   mainCrop?: string;
   hasCertification?: boolean;
   hasActivePlan?: boolean;
+  enterpriseId?: string;
 }
 
 const SearchZonePage = () => {
@@ -59,6 +61,8 @@ const SearchZonePage = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({});
+
+  const { enterprises } = useEnterpriseStore();
 
   // Get unique values for filters
   const uniqueProvinces = Array.from(
@@ -96,6 +100,9 @@ const SearchZonePage = () => {
     const matchesPlan = advancedFilters.hasActivePlan
       ? zone.cultivationPlans.some((p) => p.status === "in-progress")
       : true;
+    const matchesEnterprise = advancedFilters.enterpriseId
+      ? zone.enterpriseId?.toString() === advancedFilters.enterpriseId
+      : true;
 
     return (
       matchesSearch &&
@@ -105,7 +112,8 @@ const SearchZonePage = () => {
       matchesMaxArea &&
       matchesCrop &&
       matchesCert &&
-      matchesPlan
+      matchesPlan &&
+      matchesEnterprise
     );
   });
 
@@ -196,6 +204,34 @@ const SearchZonePage = () => {
               <div className="mt-6 pt-6 border-t space-y-4">
                 <h3 className="font-semibold text-lg mb-4">Bộ lọc nâng cao</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Status Filter */}
+                  <div className="space-y-2">
+                    <Label>Doanh nghiệp</Label>
+                    <Select
+                      value={advancedFilters.enterpriseId}
+                      onValueChange={(value) =>
+                        setAdvancedFilters({
+                          ...advancedFilters,
+                          enterpriseId: value,
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Tất cả" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {enterprises.map((enterprise) => (
+                          <SelectItem
+                            key={enterprise.id}
+                            value={enterprise.id.toString()}
+                          >
+                            {enterprise.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   {/* Status Filter */}
                   <div className="space-y-2">
                     <Label>Trạng thái</Label>
@@ -453,6 +489,19 @@ const SearchZonePage = () => {
                   </div>
                   {getStatusBadge(zone.status)}
                 </div>
+                {zone.enterpriseId && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge
+                      variant="outline"
+                      className="text-blue-600 bg-blue-50 border-blue-200"
+                    >
+                      {
+                        enterprises.find((e) => e.id === zone.enterpriseId)
+                          ?.name
+                      }
+                    </Badge>
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-2 text-sm">
