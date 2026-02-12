@@ -2,20 +2,14 @@ import { useState, useMemo, useCallback, memo, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
 import {
   ClipboardList,
-  Calendar,
   FileCheck,
-  AlertTriangle,
   Target,
   Banknote,
-  Ruler,
-  Sprout,
-  FlaskConical,
   MapPin,
   Check,
   Leaf,
-  Users,
-  Clock,
   Package,
+  Layers,
   Wrench,
   StickyNote,
   Plus,
@@ -40,13 +34,11 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Checkbox,
   Button,
   Tabs,
   TabsList,
   TabsTrigger,
   TabsContent,
-  Separator,
 } from "@tankhang1/eco-shared-ui";
 import useAmendmentPlanStore, {
   type AllocationItem,
@@ -58,6 +50,8 @@ const LOCATIONS = [
   {
     id: "region-1",
     name: "Vùng A - Bình Phước",
+    crop: "Sầu riêng",
+    variety: "Ri6",
     zones: [
       {
         id: "zone-1-1",
@@ -100,6 +94,8 @@ const LOCATIONS = [
   {
     id: "region-2",
     name: "Vùng B - Đồng Nai",
+    crop: "Xoài",
+    variety: "Cát Hòa Lộc",
     zones: [
       {
         id: "zone-2-1",
@@ -444,6 +440,9 @@ export default function AmendmentPlanCreatePage() {
     // Scope
     selectedRegionId: "",
     selectedZoneId: "",
+    selectedZoneIds: [] as string[],
+    crop: "",
+    variety: "",
     selectedPlotIds: [] as string[],
 
     // Analysis
@@ -474,8 +473,11 @@ export default function AmendmentPlanCreatePage() {
           technician: existingPlan.technician,
           priority: existingPlan.priority || "medium",
           description: existingPlan.description || "",
-          selectedRegionId: "",
+          selectedRegionId: existingPlan.selectedRegionId || "", // Assuming this might be stored or derived
           selectedZoneId: "",
+          selectedZoneIds: existingPlan.selectedZoneIds || [],
+          crop: existingPlan.crop || "",
+          variety: existingPlan.variety || "",
           selectedPlotIds: existingPlan.selectedPlotIds || [],
           currentPH: existingPlan.currentPH || "",
           targetPH: existingPlan.targetPH || "",
@@ -521,6 +523,25 @@ export default function AmendmentPlanCreatePage() {
     }
   };
 
+  const handleRegionChange = (regionId: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const region = LOCATIONS.find((r) => r.id === regionId) as any;
+    if (region) {
+      const allZoneIds = region.zones.map((z: any) => z.id);
+      const allPlotIds = region.zones.flatMap((z: any) =>
+        z.plots.map((p: any) => p.id),
+      );
+      setFormData((prev) => ({
+        ...prev,
+        selectedRegionId: regionId,
+        selectedZoneIds: allZoneIds,
+        selectedPlotIds: allPlotIds,
+        crop: region.crop || "",
+        variety: region.variety || "",
+      }));
+    }
+  };
+
   const handleAddAllocation = useCallback(
     (item: Omit<AllocationItem, "id">) => {
       setFormData((prev) => ({
@@ -539,6 +560,14 @@ export default function AmendmentPlanCreatePage() {
   }, []);
 
   const handleComplete = () => {
+    let currentStatus: "planning" | "in_progress" | "completed" | "cancelled" =
+      "planning";
+
+    if (isEdit && params?.id) {
+      const existing = getPlanById(Number(params.id));
+      if (existing) currentStatus = existing.status;
+    }
+
     const planData = {
       code: formData.code,
       name: formData.name,
@@ -548,7 +577,7 @@ export default function AmendmentPlanCreatePage() {
       technician: formData.technician,
       startDate: formData.startDate,
       endDate: formData.endDate,
-      status: "planning" as const,
+      status: currentStatus,
       area: Number(calculateArea()),
       budget: Number(formData.budget) || 0,
       methodCount: formData.allocations.length,
@@ -558,7 +587,11 @@ export default function AmendmentPlanCreatePage() {
       targetPH: formData.targetPH,
       processId: formData.processId,
       regimenId: formData.regimenId,
+      selectedRegionId: formData.selectedRegionId,
+      selectedZoneIds: formData.selectedZoneIds,
       selectedPlotIds: formData.selectedPlotIds,
+      crop: formData.crop,
+      variety: formData.variety,
       allocations: formData.allocations,
     };
 
@@ -688,178 +721,206 @@ export default function AmendmentPlanCreatePage() {
     },
     {
       id: "scope",
-      title: "Phạm vi & Chỉ số",
-      description: "Chọn khu vực và phân tích",
+      title: "Phạm vi & Cây trồng",
+      description: "Chọn đất và giống cây",
       content: (
-        <div className="max-w-3xl mx-auto space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-base">
-                Vùng canh tác <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={formData.selectedRegionId}
-                onValueChange={(v) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    selectedRegionId: v,
-                    selectedZoneId: "",
-                    selectedPlotIds: [],
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn vùng..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {LOCATIONS.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>
-                      {r.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <div className="max-w-4xl mx-auto space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              {/* Vùng canh tác Selection */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 text-xs font-bold">
+                    1
+                  </span>
+                  Chọn vùng canh tác
+                </h3>
+                <div className="p-5 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Vùng canh tác <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={formData.selectedRegionId}
+                      onValueChange={handleRegionChange}
+                    >
+                      <SelectTrigger className="bg-white border-emerald-200 h-12 text-base font-medium">
+                        <SelectValue placeholder="Chọn vùng canh tác..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LOCATIONS.map((loc) => (
+                          <SelectItem key={loc.id} value={loc.id}>
+                            {loc.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chi tiết phạm vi - Read Only Hierarchy */}
+              {formData.selectedRegionId && (
+                <div className="space-y-4 animation-fade-in">
+                  <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-emerald-600" />
+                    Chi tiết phạm vi canh tác
+                  </h3>
+                  <div className="p-5 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-6">
+                    {/* Zone & Plot Hierarchy List */}
+                    <div className="space-y-4">
+                      {LOCATIONS.find(
+                        (r) => r.id === formData.selectedRegionId,
+                      )?.zones.map((zone) => (
+                        <div key={zone.id} className="space-y-2">
+                          <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-100 shadow-sm">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                <Layers className="w-4 h-4" />
+                              </div>
+                              <span className="font-bold text-slate-900">
+                                {zone.name}
+                              </span>
+                            </div>
+                            <Check className="w-4 h-4 text-emerald-500" />
+                          </div>
+
+                          {/* Plots within Zone */}
+                          <div className="grid grid-cols-2 gap-2 pl-4">
+                            {zone.plots.map((plot) => (
+                              <div
+                                key={plot.id}
+                                className="flex items-center justify-between p-2 rounded-lg bg-slate-100/50 border border-slate-200/50"
+                              >
+                                <span className="text-sm text-slate-600 truncate mr-2">
+                                  {plot.name}
+                                </span>
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] h-4 px-1.5 bg-white font-normal border-slate-200"
+                                >
+                                  {plot.area} ha
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Ghi chú Section */}
+              <div className="space-y-2">
+                <Label className="text-slate-700 font-bold">Ghi chú</Label>
+                <Textarea
+                  placeholder="Nhập thông tin ghi chú thêm..."
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  className="bg-white border-slate-200 min-h-[100px]"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-base">
-                Khu vực <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={formData.selectedZoneId}
-                onValueChange={(v) =>
-                  setFormData((prev) => ({ ...prev, selectedZoneId: v }))
-                }
-                disabled={!formData.selectedRegionId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn khu vực..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {LOCATIONS.find(
-                    (r) => r.id === formData.selectedRegionId,
-                  )?.zones.map((z) => (
-                    <SelectItem key={z.id} value={z.id}>
-                      {z.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+            <div className="space-y-6">
+              {/* Crop & Variety Selection */}
+              <div className="space-y-4">
+                <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <Leaf className="w-4 h-4 text-emerald-600" />
+                  Thông tin cây trồng
+                </h3>
+                <div className="grid grid-cols-1 gap-4 p-5 rounded-2xl border border-slate-100 bg-white shadow-sm">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Loại cây trồng <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      className="h-11 px-3 flex items-center border border-slate-200 rounded-md bg-slate-50 text-slate-600 font-medium"
+                      value={formData.crop}
+                      onChange={(e) =>
+                        setFormData({ ...formData, crop: e.target.value })
+                      }
+                      placeholder="Nhập loại cây trồng..."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Giống (Variety)
+                    </Label>
+                    <Input
+                      className="h-11 px-3 flex items-center border border-slate-200 rounded-md bg-slate-50 text-slate-600 font-medium"
+                      value={formData.variety}
+                      onChange={(e) =>
+                        setFormData({ ...formData, variety: e.target.value })
+                      }
+                      placeholder="Nhập giống cây..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Summary Section */}
+              <div className="space-y-4">
+                <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <Package className="w-4 h-4 text-emerald-600" />
+                  Tóm tắt phạm vi đã chọn
+                </h3>
+                <div className="bg-linear-to-br from-emerald-600 to-teal-700 p-6 rounded-2xl text-white shadow-lg space-y-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-inner">
+                      <MapPin className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-emerald-100 text-xs font-semibold uppercase tracking-widest">
+                        Đang chọn canh tác
+                      </p>
+                      <h4 className="text-xl font-bold leading-tight">
+                        {LOCATIONS.find(
+                          (r) => r.id === formData.selectedRegionId,
+                        )?.name || "Chưa chọn vùng"}
+                      </h4>
+                      <p className="text-xs text-emerald-200 mt-0.5">
+                        {formData.selectedPlotIds.length} lô đất •{" "}
+                        {calculateArea()} ha
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t border-white/10">
+                    <div className="flex justify-between items-center text-sm font-medium">
+                      <span className="text-emerald-200">Khu vực đã chọn</span>
+                      <span>{formData.selectedZoneIds.length} khu vực</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm font-medium">
+                      <span className="text-emerald-200">Giống cây trồng</span>
+                      <span className="bg-white/10 px-2 py-0.5 rounded text-xs uppercase">
+                        {formData.variety || "Trống"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/10 p-4 rounded-xl backdrop-blur-sm border border-white/10">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Info className="w-3.5 h-3.5 text-emerald-200" />
+                      <span className="text-xs font-bold text-emerald-100 uppercase tracking-wide">
+                        Thông báo phạm vi
+                      </span>
+                    </div>
+                    <p className="text-sm text-white leading-relaxed font-medium">
+                      Kế hoạch này sẽ áp dụng cho tất cả các lô đất thuộc vùng
+                      đã chọn.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-
-          {formData.selectedZoneId && (
-            <div className="space-y-3 animation-fade-in">
-              <Label className="text-base font-semibold">
-                Chọn Lô cần cải tạo
-              </Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {LOCATIONS.find((r) => r.id === formData.selectedRegionId)
-                  ?.zones.find((z) => z.id === formData.selectedZoneId)
-                  ?.plots.map((plot) => {
-                    const isSelected = formData.selectedPlotIds.includes(
-                      plot.id,
-                    );
-                    return (
-                      <div
-                        key={plot.id}
-                        onClick={() => {
-                          setFormData((prev) => {
-                            const current = prev.selectedPlotIds;
-                            return {
-                              ...prev,
-                              selectedPlotIds: isSelected
-                                ? current.filter((id) => id !== plot.id)
-                                : [...current, plot.id],
-                            };
-                          });
-                        }}
-                        className={`p-4 border rounded-xl cursor-pointer transition-all hover:shadow-md ${isSelected ? "border-amber-200 bg-amber-50 ring-1 ring-amber-100" : "bg-white border-slate-200"}`}
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              checked={isSelected}
-                              className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600"
-                            />
-                            <span className="font-bold text-slate-800">
-                              {plot.name}
-                            </span>
-                          </div>
-                          <Badge
-                            variant={
-                              plot.status === "problem"
-                                ? "destructive"
-                                : "outline"
-                            }
-                            className={
-                              plot.status === "problem"
-                                ? "bg-red-50 text-red-600 border-red-200"
-                                : ""
-                            }
-                          >
-                            {plot.issue}
-                          </Badge>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 pl-6">
-                          <span className="flex items-center gap-1">
-                            <FlaskConical className="w-3 h-3" /> pH:{" "}
-                            <b>{plot.ph}</b>
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Ruler className="w-3 h-3" /> {plot.area} ha
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
-          )}
-
-          {/* {formData.selectedPlotIds.length > 0 && (
-            <div className="bg-slate-50 border rounded-lg p-4 space-y-4">
-              <h4 className="font-semibold text-sm flex items-center gap-2">
-                <Target className="w-4 h-4 text-primary" /> Thiết lập mục tiêu
-                kỹ thuật
-              </h4>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>pH Hiện tại (TB)</Label>
-                  <Input
-                    placeholder="4.5"
-                    value={formData.currentPH}
-                    onChange={(e) =>
-                      setFormData({ ...formData, currentPH: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>pH Mục tiêu</Label>
-                  <Input
-                    placeholder="6.5"
-                    value={formData.targetPH}
-                    onChange={(e) =>
-                      setFormData({ ...formData, targetPH: e.target.value })
-                    }
-                    className="border-green-200 bg-green-50"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Vấn đề chính</Label>
-                  <Input
-                    placeholder="Nhiễm mặn/Phèn..."
-                    value={formData.targetIssue}
-                    onChange={(e) =>
-                      setFormData({ ...formData, targetIssue: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-          )} */}
         </div>
       ),
-      isValid: formData.selectedPlotIds.length > 0,
+      isValid: formData.selectedPlotIds.length > 0 && !!formData.crop,
     },
     {
       id: "process",
@@ -966,7 +1027,7 @@ export default function AmendmentPlanCreatePage() {
       title: "Xác nhận & Kích hoạt",
       description: "Tổng quan kế hoạch",
       content: (
-        <div className="max-w-3xl mx-auto space-y-8 animation-fade-in">
+        <div className="max-w-6xl mx-auto space-y-8 animation-fade-in">
           <div className="text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-600 mb-4">
               <FileCheck className="w-8 h-8" />
@@ -979,96 +1040,174 @@ export default function AmendmentPlanCreatePage() {
             </p>
           </div>
 
-          <div className="grid gap-6">
-            <Card>
-              <CardHeader className="pb-3 border-b bg-slate-50/50">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <ClipboardList className="w-4 h-4 text-blue-600" /> Thông tin
-                  chung
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Step 1: Thông tin chung */}
+            <Card className="h-full">
+              <CardHeader className="pb-3 border-b bg-amber-50/50">
+                <CardTitle className="text-base font-semibold flex items-center gap-2 text-amber-900">
+                  <div className="w-6 h-6 rounded bg-amber-100 flex items-center justify-center text-xs">
+                    1
+                  </div>
+                  Thông tin chung
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-4 grid grid-cols-2 gap-4 text-sm">
+              <CardContent className="pt-4 space-y-4 text-sm">
+                <div>
+                  <span className="text-slate-500 block mb-1">Mã & Tên</span>
+                  <div className="font-medium text-slate-900">
+                    <span className="text-amber-600 font-bold mr-2">
+                      [{formData.code}]
+                    </span>
+                    {formData.name}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-slate-500 block mb-1">Ưu tiên</span>
+                    <Badge
+                      variant="outline"
+                      className={
+                        formData.priority === "urgent"
+                          ? "text-red-600 bg-red-50 border-red-200"
+                          : formData.priority === "high"
+                            ? "text-orange-600 bg-orange-50 border-orange-200"
+                            : "text-slate-600 bg-slate-50"
+                      }
+                    >
+                      {formData.priority === "urgent"
+                        ? "Khẩn cấp"
+                        : formData.priority === "high"
+                          ? "Cao"
+                          : formData.priority === "medium"
+                            ? "Trung bình"
+                            : "Thấp"}
+                    </Badge>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block mb-1">Phụ trách</span>
+                    <div className="font-medium">
+                      {formData.technician || "N/A"}
+                    </div>
+                  </div>
+                </div>
                 <div>
                   <span className="text-slate-500 block mb-1">
-                    Tên kế hoạch
+                    Kinh phí dự trù
                   </span>
-                  <span className="font-medium text-slate-900">
-                    {formData.name}
-                  </span>
+                  <div className="font-bold text-slate-900">
+                    {formData.budget
+                      ? `${Number(formData.budget).toLocaleString()} đ`
+                      : "0 đ"}
+                  </div>
                 </div>
+                {formData.description && (
+                  <div className="bg-slate-50 p-3 rounded-lg text-slate-600 text-xs italic border border-slate-100">
+                    "{formData.description}"
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Step 2: Phạm vi & Cây trồng */}
+            <Card className="h-full">
+              <CardHeader className="pb-3 border-b bg-emerald-50/50">
+                <CardTitle className="text-base font-semibold flex items-center gap-2 text-emerald-900">
+                  <div className="w-6 h-6 rounded bg-emerald-100 flex items-center justify-center text-xs">
+                    2
+                  </div>
+                  Phạm vi & Cây trồng
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-4 text-sm">
                 <div>
-                  <span className="text-slate-500 block mb-1">Mã số</span>
-                  <Badge variant="outline">{formData.code}</Badge>
-                </div>
-                <div>
-                  <span className="text-slate-500 block mb-1">Phụ trách</span>
-                  <span className="font-medium text-slate-900">
-                    {formData.technician || "Chưa phân công"}
+                  <span className="text-slate-500 block mb-1">
+                    Vùng canh tác
                   </span>
+                  <div className="font-bold text-emerald-700 text-base">
+                    {LOCATIONS.find((r) => r.id === formData.selectedRegionId)
+                      ?.name || "N/A"}
+                  </div>
                 </div>
-                <div>
-                  <span className="text-slate-500 block mb-1">Thời gian</span>
-                  <span className="font-medium text-slate-900">
-                    {formData.startDate} - {formData.endDate}
-                  </span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-slate-500 block mb-1">Quy mô</span>
+                    <div className="font-medium">
+                      {formData.selectedZoneIds.length} khu •{" "}
+                      {formData.selectedPlotIds.length} lô
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block mb-1">Diện tích</span>
+                    <div className="font-medium">{calculateArea()} ha</div>
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-emerald-700">Cây trồng:</span>
+                    <span className="font-bold text-emerald-900">
+                      {formData.crop || "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-t border-emerald-200 pt-2">
+                    <span className="text-emerald-700">Giống:</span>
+                    <span className="font-medium text-emerald-900">
+                      {formData.variety || "N/A"}
+                    </span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader className="pb-3 border-b bg-slate-50/50">
-                  <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <Target className="w-4 h-4 text-red-600" /> Phạm vi & Mục
-                    tiêu
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4 space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Số lô xử lý</span>
-                    <Badge variant="secondary">
-                      {formData.selectedPlotIds.length} lô
-                    </Badge>
+            {/* Step 3: Quy trình & Nguồn lực */}
+            <Card className="h-full">
+              <CardHeader className="pb-3 border-b bg-blue-50/50">
+                <CardTitle className="text-base font-semibold flex items-center gap-2 text-blue-900">
+                  <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center text-xs">
+                    3
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Tổng diện tích</span>
-                    <span className="font-bold text-slate-900">
-                      {calculateArea()} ha
+                  Quy trình & Nguồn lực
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-4 text-sm">
+                <div>
+                  <span className="text-slate-500 block mb-1">
+                    Quy trình áp dụng
+                  </span>
+                  <div className="font-medium text-blue-900">
+                    {selectedProcess?.name || "Tùy chỉnh"}
+                  </div>
+                </div>
+                {formData.regimenId && (
+                  <div>
+                    <span className="text-slate-500 block mb-1">
+                      Phác đồ điều trị
                     </span>
-                  </div>
-                  <div className="p-2 bg-slate-50 rounded border text-xs text-slate-600 mt-2">
-                    <div>
-                      Mục tiêu pH: <b>{formData.targetPH || "?"}</b>
+                    <div className="font-medium">
+                      {TREATMENT_REGIMENS.find(
+                        (r) => r.id === formData.regimenId,
+                      )?.name || "N/A"}
                     </div>
-                    <div>Vấn đề: {formData.targetIssue || "N/A"}</div>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-3 border-b bg-slate-50/50">
-                  <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <Banknote className="w-4 h-4 text-green-600" /> Nguồn lực
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4 space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Kinh phí dự trù</span>
-                    <span className="font-bold text-green-700">
-                      {formData.budget
-                        ? `${Number(formData.budget).toLocaleString()} đ`
-                        : "Chưa nhập"}
+                )}
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-2">
+                  <div className="flex items-center gap-2 text-slate-700">
+                    {/* Replaced Calendar with Clock for better semantic if needed, but keeping simple */}
+                    <span className="text-xs">📅</span>
+                    <span>
+                      {formData.startDate} - {formData.endDate}
                     </span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Tổng hạng mục</span>
-                    <span className="font-medium">
-                      {formData.allocations.length} items
-                    </span>
+                  <div className="flex items-center gap-2 text-slate-700">
+                    <Layers className="w-4 h-4 text-slate-400" />
+                    <span>{formData.selectedStages.length} giai đoạn</span>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                  <div className="flex items-center gap-2 text-slate-700">
+                    <Package className="w-4 h-4 text-slate-400" />
+                    <span>{formData.allocations.length} hạng mục phân bổ</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       ),

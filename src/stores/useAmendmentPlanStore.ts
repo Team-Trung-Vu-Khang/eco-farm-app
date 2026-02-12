@@ -19,7 +19,11 @@ export interface AmendmentPlan {
   targetPH?: string;
   processId?: string;
   regimenId?: string;
+  selectedRegionId?: string;
+  selectedZoneIds?: string[];
   selectedPlotIds?: string[];
+  crop?: string;
+  variety?: string;
   allocations?: AllocationItem[];
   createdAt: string;
 }
