@@ -105,8 +105,8 @@ const ZoomListener = ({ onChange }: { onChange: (zoom: number) => void }) => {
 // Xấu: Cam (Orange)
 // Cảnh báo: Cam đỏ (Red-Orange)
 const COLOR_GOOD = "#22c55e"; // Green-500
-const COLOR_BAD = "#f97316"; // Orange-500
-const COLOR_WARNING = "#ef4444"; // Red-500 (Cam đỏ - Red)
+const COLOR_BAD = "#ef4444"; // Orange-500
+const COLOR_WARNING = "#f97316"; // Red-500 (Cam đỏ - Red)
 
 const getMetricAnalysis = (metric: SoilMetric, value: number) => {
   switch (metric) {
@@ -1222,7 +1222,7 @@ const StatusBadge = ({
     return (
       <Badge
         variant="outline"
-        className="bg-red-50 text-red-700 border-red-200 gap-1"
+        className="bg-red-50 text-amber-700 border-red-200 gap-1"
       >
         <AlertCircle className="w-3 h-3" /> Cảnh báo
       </Badge>
@@ -1230,7 +1230,7 @@ const StatusBadge = ({
   return (
     <Badge
       variant="outline"
-      className="bg-amber-50 text-amber-700 border-amber-200 gap-1"
+      className="bg-amber-50 text-red-700 border-amber-200 gap-1"
     >
       <AlertCircle className="w-3 h-3" /> Xấu
     </Badge>
