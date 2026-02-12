@@ -222,12 +222,12 @@ function Router() {
         component={PlantDistributionListPage}
       />
       <Route
-        path="/distribution-detail/:id"
-        component={DistributionDetailPage}
-      />
-      <Route
         path="/distribution-detail/create"
         component={PlantDistributionCreatePage}
+      />
+      <Route
+        path="/distribution-detail/:id"
+        component={DistributionDetailPage}
       />
       <Route
         path="/distribution-detail/:id/edit"

@@ -41,6 +41,7 @@ const MOCK_DATA: CultivationArea[] = [
     targetIds: ["1"],
     targetName: "Vùng Bình Phước Alpha",
     certificateId: "VietGAP",
+    enterpriseId: "DN001",
     managerId: "1",
     note: "Dự án thử nghiệm công nghệ 4.0",
     configs: {
@@ -60,6 +61,7 @@ const MOCK_DATA: CultivationArea[] = [
     targetIds: ["sub-1-2"],
     targetName: "Khu vực B - Đồi thấp",
     certificateId: "Organic",
+    enterpriseId: "DN001",
     managerId: "2",
     note: "Canh tác theo tiêu chuẩn hữu cơ EU",
     configs: {
@@ -79,6 +81,7 @@ const MOCK_DATA: CultivationArea[] = [
     targetIds: ["plot-1-1-1"],
     targetName: "Lô A1 - Cánh đồng mẫu lớn",
     certificateId: "GlobalGAP",
+    enterpriseId: "DN002",
     managerId: "3",
     note: "Mô hình lúa tôm kết hợp",
     configs: {
@@ -98,6 +101,7 @@ const MOCK_DATA: CultivationArea[] = [
     targetIds: ["sub-1-3"],
     targetName: "Khu vực C - Vườn ươm",
     certificateId: "HACCP",
+    enterpriseId: "DN003",
     managerId: "1",
     note: "Khu vực nhân giống và bảo tồn gen",
     configs: {
