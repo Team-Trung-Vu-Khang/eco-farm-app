@@ -9,11 +9,30 @@ import {
   FormDialog,
   Input,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Textarea,
   useToast,
   type Column,
 } from "@tankhang1/eco-shared-ui";
 import usePositionStore, { type Position } from "../../stores/usePositionStore";
+
+const POSITION_GROUPS = [
+  "Nhóm quản lý – điều hành",
+  "Nhóm kỹ thuật trồng trọt",
+  "Nhóm bảo vệ thực vật",
+  "Nhóm đất – phân bón – dinh dưỡng",
+  "Nhóm tưới – hệ thống – nhà màng",
+  "Nhóm giống – vườn ươm",
+  "Nhóm thu hoạch – sơ chế – chất lượng",
+  "Nhóm tiêu chuẩn – chứng nhận – truy xuất",
+  "Nhóm kho – vật tư – logistics",
+  "Nhóm cơ giới – bảo trì",
+  "Nhóm lao động trực tiếp",
+];
 
 const PositionPage = () => {
   const { toast } = useToast();
@@ -32,6 +51,7 @@ const PositionPage = () => {
   const [formData, setFormData] = useState({
     code: "",
     name: "",
+    group: "",
     description: "",
     status: "active" as "active" | "inactive",
   });
@@ -39,6 +59,7 @@ const PositionPage = () => {
   const columns: Column<Position>[] = [
     { key: "code", label: "Mã chức vụ" },
     { key: "name", label: "Tên chức vụ" },
+    { key: "group", label: "Nhóm chức vụ" },
     { key: "description", label: "Mô tả" },
     {
       key: "status",
@@ -57,6 +78,7 @@ const PositionPage = () => {
     setFormData({
       code: "",
       name: "",
+      group: "",
       description: "",
       status: "active",
     });
@@ -68,6 +90,7 @@ const PositionPage = () => {
     setFormData({
       code: item.code,
       name: item.name,
+      group: item.group,
       description: item.description,
       status: item.status,
     });
@@ -133,27 +156,49 @@ const PositionPage = () => {
         onSubmit={handleSubmit}
       >
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="code">Mã chức vụ *</Label>
-            <Input
-              id="code"
-              value={formData.code}
-              onChange={(e) =>
-                setFormData({ ...formData, code: e.target.value })
-              }
-              placeholder="VD: POS-GD"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="code">Mã chức vụ *</Label>
+              <Input
+                id="code"
+                value={formData.code}
+                onChange={(e) =>
+                  setFormData({ ...formData, code: e.target.value })
+                }
+                placeholder="VD: POS-GD"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="name">Tên chức vụ *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                placeholder="VD: Giám Đốc"
+              />
+            </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="name">Tên chức vụ *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
+            <Label htmlFor="group">Nhóm chức vụ *</Label>
+            <Select
+              value={formData.group}
+              onValueChange={(value) =>
+                setFormData({ ...formData, group: value })
               }
-              placeholder="VD: Giám Đốc"
-            />
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn nhóm chức vụ" />
+              </SelectTrigger>
+              <SelectContent>
+                {POSITION_GROUPS.map((group) => (
+                  <SelectItem key={group} value={group}>
+                    {group}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="description">Mô tả</Label>

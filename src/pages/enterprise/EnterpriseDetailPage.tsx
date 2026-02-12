@@ -440,7 +440,7 @@ export default function EnterpriseDetailPage() {
                     onChange={(e) => setBankSearchQuery(e.target.value)}
                   />
                 </div>
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="w-full space-y-4">
                   {data.bankAccounts?.length === 0 && (
                     <div className="col-span-2 text-center py-8 text-muted-foreground">
                       Chưa có tài khoản ngân hàng nào.
