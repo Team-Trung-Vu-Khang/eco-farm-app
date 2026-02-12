@@ -6,7 +6,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Label,
   Badge,
 } from "@tankhang1/eco-shared-ui";
 import { MapContainer, TileLayer, Polygon } from "react-leaflet";
@@ -15,7 +14,6 @@ import "leaflet/dist/leaflet.css";
 import { ChevronLeft, Edit } from "lucide-react";
 
 import {
-  MOCK_REGIONS,
   PROVINCES,
   DISTRICTS,
   ENTERPRISES,
@@ -23,6 +21,7 @@ import {
   TERRAIN_TYPES,
 } from "../constants";
 import { MapController } from "../components/DraggableRectangle";
+import useRegionStore from "../../../stores/useRegionStore";
 
 const RegionDetailPage = () => {
   const [, setLocation] = useLocation();
@@ -32,8 +31,9 @@ const RegionDetailPage = () => {
     return <div>Không tìm thấy trang</div>;
   }
 
+  const { getRegionById } = useRegionStore();
   const regionId = parseInt(params.id);
-  const region = MOCK_REGIONS.find((r) => r.id === regionId);
+  const region = getRegionById(regionId);
 
   if (!region) {
     return (

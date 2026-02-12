@@ -15,83 +15,19 @@ import {
 } from "@tankhang1/eco-shared-ui";
 import { Plus, ChevronDown, Upload, FileUser } from "lucide-react";
 import { ImportPersonnelDialog } from "../../components/personnel/ImportPersonnelDialog";
-
-interface Personnel {
-  id: number;
-  fullName: string;
-  phone: string;
-  email: string;
-  position: string;
-  department: string;
-  team: string; // Đội nhóm
-  province: string;
-  district: string;
-  address: string;
-  taxCode: string;
-  taxAddress: string;
-  status: "active" | "inactive";
-  avatar: string; // URL ảnh đại diện (mock)
-  bankName?: string;
-  bankBranch?: string;
-  accountNumber?: string;
-  accountHolder?: string;
-}
-
-const initialData: Personnel[] = [
-  {
-    id: 1,
-    fullName: "Nguyễn Văn A",
-    phone: "0901234567",
-    email: "nguyenvana@ecofarm.vn",
-    position: "Trưởng phòng",
-    department: "Kinh doanh",
-    team: "Đội kinh doanh miền Bắc",
-    province: "Hà Nội",
-    district: "Cầu Giấy",
-    address: "Số 123 Đường Xuân Thủy",
-    taxCode: "1234567890",
-    taxAddress: "Hà Nội",
-    status: "active",
-    avatar: "https://i.pravatar.cc/150?u=a042581f4e29026024d",
-  },
-  {
-    id: 2,
-    fullName: "Trần Thị B",
-    phone: "0909876543",
-    email: "tranthib@ecofarm.vn",
-    position: "Kế toán trưởng",
-    department: "Kế toán",
-    team: "Tổ kế toán tổng hợp",
-    province: "TP.HCM",
-    district: "Quận 1",
-    address: "Số 456 Nguyễn Thị Minh Khai",
-    taxCode: "0987654321",
-    taxAddress: "TP.HCM",
-    status: "active",
-    avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704d",
-  },
-  {
-    id: 3,
-    fullName: "Lê Văn C",
-    phone: "0912345678",
-    email: "levanc@ecofarm.vn",
-    position: "Kỹ sư nông nghiệp",
-    department: "Kỹ thuật",
-    team: "Đội kỹ thuật trại 1",
-    province: "Đà Nẵng",
-    district: "Hải Châu",
-    address: "Số 789 Nguyễn Văn Linh",
-    taxCode: "5678901234",
-    taxAddress: "Đà Nẵng",
-    status: "inactive",
-    avatar: "https://i.pravatar.cc/150?u=a042581f4e29026024e",
-  },
-];
+import usePersonnelStore, {
+  type Personnel,
+} from "../../stores/usePersonnelStore";
 
 export default function PersonnelPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [data, setData] = useState<Personnel[]>(initialData);
+
+  // Zustand store
+  const personnel = usePersonnelStore((state) => state.personnel);
+  const deletePersonnel = usePersonnelStore((state) => state.deletePersonnel);
+  const bulkAddPersonnel = usePersonnelStore((state) => state.bulkAddPersonnel);
+
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Personnel | null>(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -145,9 +81,33 @@ export default function PersonnelPage() {
       key: "department",
       label: "Phòng ban",
       options: [
+        { label: "Phòng Kỹ Thuật", value: "Phòng Kỹ Thuật" },
+        { label: "Phòng Sản Xuất", value: "Phòng Sản Xuất" },
+        { label: "Phòng Nghiên Cứu", value: "Phòng Nghiên Cứu" },
         { label: "Kinh doanh", value: "Kinh doanh" },
         { label: "Kế toán", value: "Kế toán" },
-        { label: "Kỹ thuật", value: "Kỹ thuật" },
+      ],
+    },
+    {
+      key: "position",
+      label: "Chức vụ",
+      options: [
+        { label: "Kỹ sư nông nghiệp", value: "Kỹ sư nông nghiệp" },
+        { label: "Kỹ sư trồng trọt", value: "Kỹ sư trồng trọt" },
+        { label: "Kỹ thuật viên canh tác", value: "Kỹ thuật viên canh tác" },
+        { label: "Kỹ sư bảo vệ thực vật", value: "Kỹ sư bảo vệ thực vật" },
+        {
+          label: "Chuyên viên dinh dưỡng cây trồng",
+          value: "Chuyên viên dinh dưỡng cây trồng",
+        },
+        { label: "Kỹ sư thổ nhưỡng", value: "Kỹ sư thổ nhưỡng" },
+        { label: "Kỹ thuật viên phân bón", value: "Kỹ thuật viên phân bón" },
+        {
+          label: "Kỹ thuật viên cơ điện nông nghiệp",
+          value: "Kỹ thuật viên cơ điện nông nghiệp",
+        },
+        { label: "Thợ máy nông nghiệp", value: "Thợ máy nông nghiệp" },
+        { label: "Công nhân thời vụ", value: "Công nhân thời vụ" },
       ],
     },
   ];
@@ -159,7 +119,7 @@ export default function PersonnelPage() {
 
   const handleConfirmDelete = () => {
     if (deleteItem) {
-      setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
+      deletePersonnel(deleteItem.id);
       toast({
         title: "Thành công",
         description: "Đã xóa nhân sự khỏi hệ thống",
@@ -169,12 +129,11 @@ export default function PersonnelPage() {
   };
 
   const handleImportData = (newData: any[]) => {
-    const formattedData: Personnel[] = newData.map((item, index) => ({
-      ...item,
-      id: data.length + index + 1,
-      avatar: `https://i.pravatar.cc/150?u=${Math.random().toString(36).substring(7)}`,
-    }));
-    setData((prev) => [...prev, ...formattedData]);
+    bulkAddPersonnel(newData);
+    toast({
+      title: "Thành công",
+      description: `Đã nhập ${newData.length} nhân sự mới`,
+    });
   };
 
   return (
@@ -209,7 +168,7 @@ export default function PersonnelPage() {
     >
       <DataTable
         columns={columns}
-        data={data}
+        data={personnel}
         onView={(item) => setLocation(`/personnel/${item.id}/edit`)}
         onEdit={(item) => setLocation(`/personnel/${item.id}/edit`)}
         onDelete={handleDelete}

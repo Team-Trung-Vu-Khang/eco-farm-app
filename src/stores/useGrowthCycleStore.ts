@@ -1,0 +1,111 @@
+import { create } from "zustand";
+import { devtools, persist } from "zustand/middleware";
+import type { GrowthCycle } from "../pages/growth-cycle/types";
+import { initialGrowthCycles } from "../pages/growth-cycle/mocks";
+
+interface GrowthCycleState {
+  growthCycles: GrowthCycle[];
+  isLoading: boolean;
+  error: string | null;
+
+  // Actions
+  addGrowthCycle: (
+    growthCycle: Omit<
+      GrowthCycle,
+      "id" | "createdAt" | "updatedAt" | "numStages"
+    >,
+  ) => void;
+  updateGrowthCycle: (id: string, growthCycle: Partial<GrowthCycle>) => void;
+  deleteGrowthCycle: (id: string) => void;
+  getGrowthCycleById: (id: string) => GrowthCycle | undefined;
+  setLoading: (isLoading: boolean) => void;
+  setError: (error: string | null) => void;
+}
+
+const useGrowthCycleStore = create<GrowthCycleState>()(
+  devtools(
+    persist(
+      (set, get) => ({
+        growthCycles: initialGrowthCycles,
+        isLoading: false,
+        error: null,
+
+        addGrowthCycle: (data) => {
+          set(
+            (state) => {
+              const newId = (
+                Math.max(
+                  0,
+                  ...state.growthCycles.map(
+                    (g) => parseInt(g.id.replace("GC", "")) || 0,
+                  ),
+                ) + 1
+              )
+                .toString()
+                .padStart(3, "0");
+
+              const newCycle: GrowthCycle = {
+                ...data,
+                id: `GC${newId}`,
+                numStages: data.stages.length,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+              };
+
+              return {
+                growthCycles: [newCycle, ...state.growthCycles],
+              };
+            },
+            false,
+            "addGrowthCycle",
+          );
+        },
+
+        updateGrowthCycle: (id, data) => {
+          set(
+            (state) => ({
+              growthCycles: state.growthCycles.map((g) => {
+                if (g.id === id) {
+                  return {
+                    ...g,
+                    ...data,
+                    numStages: data.stages ? data.stages.length : g.numStages,
+                    updatedAt: Date.now(),
+                  };
+                }
+                return g;
+              }),
+            }),
+            false,
+            "updateGrowthCycle",
+          );
+        },
+
+        deleteGrowthCycle: (id) => {
+          set(
+            (state) => ({
+              growthCycles: state.growthCycles.filter((g) => g.id !== id),
+            }),
+            false,
+            "deleteGrowthCycle",
+          );
+        },
+
+        getGrowthCycleById: (id) => {
+          return get().growthCycles.find((g) => g.id === id);
+        },
+
+        setLoading: (isLoading) => set({ isLoading }, false, "setLoading"),
+
+        setError: (error) => set({ error }, false, "setError"),
+      }),
+      {
+        name: "growth-cycle-storage",
+        partialize: (state) => ({ growthCycles: state.growthCycles }),
+      },
+    ),
+    { name: "GrowthCycleStore" },
+  ),
+);
+
+export default useGrowthCycleStore;

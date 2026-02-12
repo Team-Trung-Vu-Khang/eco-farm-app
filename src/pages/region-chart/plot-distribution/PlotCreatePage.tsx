@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation, useRoute } from "wouter";
 import {
   AdminLayout,
@@ -12,6 +12,8 @@ import {
   StepperForm,
   type Step,
   useToast,
+  Combobox,
+  type ComboboxOption,
 } from "@tankhang1/eco-shared-ui";
 import {
   MapContainer,
@@ -19,10 +21,11 @@ import {
   Polygon,
   Marker,
   useMapEvents,
+  Tooltip,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Check, ChevronLeft, Plus, X } from "lucide-react";
+import { ChevronLeft, Plus, X } from "lucide-react";
 
 // Fix Leaflet Default Icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -39,14 +42,9 @@ const customIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-import {
-  MOCK_REGIONS,
-  MOCK_AREAS,
-  MOCK_PLOTS,
-  type Plot,
-  ENTERPRISES,
-} from "../constants";
+import { type Plot } from "../constants";
 import { MapController } from "../components/DraggableRectangle";
+import useRegionStore from "../../../stores/useRegionStore";
 
 const MapClickHandler = ({
   onClick,
@@ -73,8 +71,9 @@ const PlotCreatePage = () => {
   const isEditMode = match && !!params?.id;
 
   // Form State
+  const { regions, getAreaById, upsertPlot } = useRegionStore();
   const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
-  const [selectedAreaId, setSelectedAreaId] = useState<number | null>(null);
+  const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<Partial<Plot>>({
     name: "",
@@ -87,29 +86,43 @@ const PlotCreatePage = () => {
   const [currentPoints, setCurrentPoints] = useState<L.LatLng[]>([]);
   const [areaPolygon, setAreaPolygon] = useState<L.LatLng[]>([]);
 
-  // Filtered Areas
-  const filteredAreas = MOCK_AREAS.filter(
-    (a) => a.regionId === selectedRegionId,
-  );
+  const currentRegion = useMemo(() => {
+    return regions.find((r) => r.id === selectedRegionId);
+  }, [regions, selectedRegionId]);
+
+  const regionOptions: ComboboxOption[] = useMemo(() => {
+    return regions.map((r) => ({
+      label: r.name,
+      value: r.id.toString(),
+    }));
+  }, [regions]);
+
+  const areaOptions: ComboboxOption[] = useMemo(() => {
+    if (!currentRegion) return [];
+    return (currentRegion.subAreas || []).map((a: any) => ({
+      label: a.name,
+      value: String(a.id),
+    }));
+  }, [currentRegion]);
 
   // Handle Edit Mode Data Loading
   useEffect(() => {
     if (isEditMode && params?.id) {
-      // In a real app, fetch from API. Here find in MOCK_PLOTS.
-      // However, MOCK_PLOTS is in constants.ts.
-      // We need to import it first.
-      const plot = MOCK_PLOTS.find((p) => p.id === params.id);
-      if (plot) {
-        // Find parent area
-        const parentArea = MOCK_AREAS.find((a) =>
-          a.plots?.some((p) => p.id === plot.id),
-        );
-        const parentRegion = parentArea
-          ? MOCK_REGIONS.find((r) => r.id === parentArea.regionId)
-          : null;
+      const plot = regions
+        .flatMap((r) => r.subAreas || [])
+        .flatMap((a) => a.plots || [])
+        .find((p) => String(p.id) === String(params.id));
 
-        if (parentRegion) setSelectedRegionId(parentRegion.id);
-        if (parentArea) setSelectedAreaId(parentArea.id);
+      if (plot) {
+        // Find parent area and region
+        const parentArea = regions
+          .flatMap((r) => r.subAreas || [])
+          .find((a) => a.plots?.some((p) => String(p.id) === String(plot.id)));
+
+        if (parentArea) {
+          setSelectedRegionId(parentArea.regionId);
+          setSelectedAreaId(String(parentArea.id));
+        }
 
         setFormData({
           name: plot.name,
@@ -120,11 +133,13 @@ const PlotCreatePage = () => {
         });
 
         if (plot.coordinates && plot.coordinates.length >= 3) {
-          setCurrentPoints(plot.coordinates.map((c) => L.latLng(c.lat, c.lng)));
+          setCurrentPoints(
+            plot.coordinates.map((c: any) => L.latLng(c.lat, c.lng)),
+          );
         }
       }
     }
-  }, [isEditMode, params?.id]);
+  }, [isEditMode, params?.id, regions]);
 
   // Handle Region/Area Selection to set bounds (Only if NOT in edit mode initial load, or if user changes area)
   // We need to be careful not to overwrite bounds when loading edit data.
@@ -138,9 +153,9 @@ const PlotCreatePage = () => {
 
   useEffect(() => {
     if (selectedAreaId) {
-      const area = MOCK_AREAS.find((a) => a.id === selectedAreaId);
+      const area = getAreaById(selectedAreaId);
       if (area && area.coordinates && area.coordinates.length >= 2) {
-        const points = area.coordinates.map((c) => L.latLng(c.lat, c.lng));
+        const points = area.coordinates.map((c: any) => L.latLng(c.lat, c.lng));
         setAreaPolygon(points);
         const bounds = L.latLngBounds(points);
 
@@ -217,13 +232,18 @@ const PlotCreatePage = () => {
     }
 
     const coords = currentPoints.map((p) => ({ lat: p.lat, lng: p.lng }));
+    const finalPlotId =
+      isEditMode && params?.id
+        ? String(params.id)
+        : `plot-${selectedAreaId}-${Date.now()}`;
 
-    console.log("Submitting Plot:", {
-      ...formData,
-      coordinates: coords,
-      regionId: selectedRegionId,
-      areaId: selectedAreaId,
-    });
+    if (selectedRegionId && selectedAreaId) {
+      upsertPlot(selectedRegionId, selectedAreaId, {
+        ...formData,
+        id: finalPlotId,
+        coordinates: coords,
+      });
+    }
 
     toast({
       title: "Thành công",
@@ -249,38 +269,15 @@ const PlotCreatePage = () => {
               <Label>
                 Chọn vùng trồng <span className="text-red-500">*</span>
               </Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[250px] overflow-y-auto p-1">
-                {MOCK_REGIONS.map((region) => (
-                  <div
-                    key={region.id}
-                    onClick={() => {
-                      setSelectedRegionId(region.id);
-                      setSelectedAreaId(null); // Reset area
-                    }}
-                    className={`cursor-pointer rounded-lg border p-4 transition-all hover:border-primary ${
-                      selectedRegionId === region.id
-                        ? "border-primary ring-2 ring-primary/20 bg-primary/5"
-                        : "bg-card"
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="font-semibold text-sm">
-                        {region.code}
-                      </span>
-                      {selectedRegionId === region.id && (
-                        <Check className="w-4 h-4 text-primary" />
-                      )}
-                    </div>
-                    <p className="font-medium truncate">{region.name}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {
-                        ENTERPRISES.find((e) => e.id === region.enterpriseId)
-                          ?.name
-                      }
-                    </p>
-                  </div>
-                ))}
-              </div>
+              <Combobox
+                options={regionOptions}
+                placeholder="Chọn vùng trồng"
+                value={selectedRegionId?.toString() ?? ""}
+                onChange={(v) => {
+                  setSelectedRegionId(v ? Number(v) : null);
+                  setSelectedAreaId(null);
+                }}
+              />
             </div>
 
             {/* Area Selection */}
@@ -289,38 +286,12 @@ const PlotCreatePage = () => {
                 <Label>
                   Chọn khu vực <span className="text-red-500">*</span>
                 </Label>
-                {filteredAreas.length === 0 ? (
-                  <p className="text-sm text-muted-foreground italic">
-                    Không có khu vực nào trong vùng này.
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[250px] overflow-y-auto p-1">
-                    {filteredAreas.map((area) => (
-                      <div
-                        key={area.id}
-                        onClick={() => setSelectedAreaId(area.id)}
-                        className={`cursor-pointer rounded-lg border p-4 transition-all hover:border-primary ${
-                          selectedAreaId === area.id
-                            ? "border-primary ring-2 ring-primary/20 bg-primary/5"
-                            : "bg-card"
-                        }`}
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="font-semibold text-sm">
-                            {area.code}
-                          </span>
-                          {selectedAreaId === area.id && (
-                            <Check className="w-4 h-4 text-primary" />
-                          )}
-                        </div>
-                        <p className="font-medium truncate">{area.name}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {area.area} ha
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <Combobox
+                  options={areaOptions}
+                  placeholder="Chọn khu vực"
+                  value={selectedAreaId ?? ""}
+                  onChange={(v) => setSelectedAreaId(v)}
+                />
               </div>
             )}
           </CardContent>
@@ -414,7 +385,7 @@ const PlotCreatePage = () => {
                     areaPolygon.length ? areaPolygon : currentPoints,
                   ).getCenter().lng,
                 ]}
-                zoom={16}
+                zoom={17}
                 className="h-full w-full"
               >
                 <TileLayer
@@ -433,7 +404,11 @@ const PlotCreatePage = () => {
                       fill: false,
                       dashArray: "5, 5",
                     }}
-                  />
+                  >
+                    <Tooltip sticky direction="top">
+                      {getAreaById(selectedAreaId!)?.name} (Khu vực)
+                    </Tooltip>
+                  </Polygon>
                 )}
 
                 {/* Current Plot Polygon */}
@@ -547,13 +522,13 @@ const PlotCreatePage = () => {
               <div>
                 <Label className="text-muted-foreground">Vùng trồng</Label>
                 <p className="font-medium">
-                  {MOCK_REGIONS.find((r) => r.id === selectedRegionId)?.name}
+                  {regions.find((r) => r.id === selectedRegionId)?.name}
                 </p>
               </div>
               <div>
                 <Label className="text-muted-foreground">Khu vực</Label>
                 <p className="font-medium">
-                  {MOCK_AREAS.find((a) => a.id === selectedAreaId)?.name}
+                  {getAreaById(selectedAreaId!)?.name}
                 </p>
               </div>
               <div>

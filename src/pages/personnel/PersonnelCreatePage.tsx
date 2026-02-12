@@ -24,6 +24,10 @@ import {
 } from "@tankhang1/eco-shared-ui";
 import { CreditCard, Save, User, X } from "lucide-react";
 import { vietQrBankData } from "@/constants/banks";
+import usePersonnelStore from "../../stores/usePersonnelStore";
+import useTeamStore from "../../stores/useTeamStore";
+import useDepartmentStore from "../../stores/useDepartmentStore";
+import usePositionStore from "../../stores/usePositionStore";
 
 const bankOptions = vietQrBankData.map((bank) => ({
   id: bank.id,
@@ -36,6 +40,12 @@ const bankOptions = vietQrBankData.map((bank) => ({
 export default function PersonnelCreatePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  // Zustand store
+  const addPersonnel = usePersonnelStore((state) => state.addPersonnel);
+  const teams = useTeamStore((state) => state.teams);
+  const departments = useDepartmentStore((state) => state.departments);
+  const positions = usePositionStore((state) => state.positions);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -50,7 +60,7 @@ export default function PersonnelCreatePage() {
     department: "",
     position: "",
     team: "",
-    status: "active",
+    status: "active" as "active" | "inactive",
     bankName: "",
     accountNumber: "",
     accountHolder: "",
@@ -67,6 +77,7 @@ export default function PersonnelCreatePage() {
       return;
     }
 
+    addPersonnel(formData);
     toast({
       title: "Thành công",
       description: `Đã thêm nhân sự "${formData.fullName}"`,
@@ -315,14 +326,11 @@ export default function PersonnelCreatePage() {
                             <SelectValue placeholder="Chọn phòng ban" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Kinh doanh">
-                              Kinh doanh
-                            </SelectItem>
-                            <SelectItem value="Kỹ thuật">Kỹ thuật</SelectItem>
-                            <SelectItem value="Kế toán">Kế toán</SelectItem>
-                            <SelectItem value="Hành chính">
-                              Hành chính
-                            </SelectItem>
+                            {departments.map((dep) => (
+                              <SelectItem key={dep.id} value={dep.name}>
+                                {dep.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -338,25 +346,34 @@ export default function PersonnelCreatePage() {
                             <SelectValue placeholder="Chọn chức vụ" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="GiamDoc">Giám Đốc</SelectItem>
-                            <SelectItem value="TruongPhong">
-                              Trưởng Phòng
-                            </SelectItem>
-                            <SelectItem value="NhanVien">Nhân Viên</SelectItem>
+                            {positions.map((pos) => (
+                              <SelectItem key={pos.id} value={pos.name}>
+                                {pos.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="team">Đội / Nhóm</Label>
-                      <Input
-                        id="team"
-                        placeholder="VD: Đội kinh doanh miền Bắc, Tổ kỹ thuật 1..."
+                      <Select
                         value={formData.team}
-                        onChange={(e) =>
-                          setFormData({ ...formData, team: e.target.value })
+                        onValueChange={(val) =>
+                          setFormData({ ...formData, team: val })
                         }
-                      />
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Chọn Đội / Nhóm" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {teams.map((team) => (
+                            <SelectItem key={team.id} value={team.name}>
+                              {team.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </CardContent>
                 </Card>

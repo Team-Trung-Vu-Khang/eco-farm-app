@@ -19,10 +19,14 @@ import {
   useToast,
 } from "@tankhang1/eco-shared-ui";
 import { Save, X } from "lucide-react";
+import useTeamStore from "../../stores/useTeamStore";
 
 export default function TeamCreatePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  // Zustand store
+  const addTeam = useTeamStore((state) => state.addTeam);
 
   const [formData, setFormData] = useState({
     code: "",
@@ -30,7 +34,7 @@ export default function TeamCreatePage() {
     leader: "",
     department: "",
     description: "",
-    status: "active",
+    status: "active" as "active" | "inactive",
   });
 
   const handleSubmit = () => {
@@ -43,6 +47,7 @@ export default function TeamCreatePage() {
       return;
     }
 
+    addTeam(formData);
     toast({
       title: "Thành công",
       description: `Đã tạo đội nhóm "${formData.name}"`,
@@ -147,7 +152,10 @@ export default function TeamCreatePage() {
               <Select
                 value={formData.status}
                 onValueChange={(val) =>
-                  setFormData({ ...formData, status: val })
+                  setFormData({
+                    ...formData,
+                    status: val as "active" | "inactive",
+                  })
                 }
               >
                 <SelectTrigger>

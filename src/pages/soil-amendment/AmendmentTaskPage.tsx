@@ -39,27 +39,9 @@ import {
   DialogTitle,
   type Column,
 } from "@tankhang1/eco-shared-ui";
-
-interface AmendmentTask {
-  id: number;
-  code: string;
-  name: string;
-  plan: string; // Kế hoạch cải tạo
-  zone: string; // Khu vực thực hiện
-  method: string; // Phương pháp cải tạo
-  assignedTo: string;
-  assignedType: "individual" | "team";
-  startDate: string;
-  endDate: string;
-  priority: "low" | "medium" | "high" | "urgent";
-  status: "pending" | "in_progress" | "completed" | "cancelled";
-  materials: string[]; // Vật tư sử dụng
-  equipment: string[]; // Thiết bị cần thiết
-  targetArea: number; // Diện tích mục tiêu (ha)
-  actualArea?: number; // Diện tích thực tế (ha)
-  notes: string;
-  createdAt: string;
-}
+import useAmendmentTaskStore, {
+  type AmendmentTask,
+} from "../../stores/useAmendmentTaskStore";
 
 // Mock data for amendment plans
 const mockAmendmentPlans = [
@@ -110,103 +92,35 @@ const mockTeams = [
   { id: 3, name: "Đội Vận hành", code: "TEAM-VH" },
 ];
 
-const initialData: AmendmentTask[] = [
+// Mock data for regions and zones (hierarchical)
+const mockRegions = [
   {
     id: 1,
-    code: "NVCT-001",
-    name: "Rải vôi bột khử chua đất",
-    plan: "Xử lý đất chua phèn Vùng B",
-    zone: "Vùng B - Long An",
-    method: "Bón vôi khử chua",
-    assignedTo: "Đội Cải tạo đất",
-    assignedType: "team",
-    startDate: "2025-02-15",
-    endDate: "2025-02-18",
-    priority: "high",
-    status: "in_progress",
-    materials: ["Vôi bột CaCO3", "Phân hữu cơ"],
-    equipment: ["Máy rải vôi", "Xe vận chuyển"],
-    targetArea: 3.5,
-    actualArea: 2.0,
-    notes: "Liều lượng: 2 tấn/ha, rải đều trên bề mặt",
-    createdAt: "2025-02-10",
+    name: "Miền Nam",
+    zones: [
+      { id: 1, name: "Vùng A - Cà Mau", code: "ZONE-A" },
+      { id: 2, name: "Vùng B - Long An", code: "ZONE-B" },
+      { id: 3, name: "Vùng C - Đồng Nai", code: "ZONE-C" },
+      { id: 4, name: "Vùng D - Tiền Giang", code: "ZONE-D" },
+    ],
   },
   {
     id: 2,
-    code: "NVCT-002",
-    name: "Tưới ngập rửa mặn lần 1",
-    plan: "Cải tạo đất nhiễm mặn Vùng A",
-    zone: "Vùng A - Cà Mau",
-    method: "Rửa mặn",
-    assignedTo: "Nguyễn Văn A",
-    assignedType: "individual",
-    startDate: "2025-02-20",
-    endDate: "2025-02-25",
-    priority: "urgent",
-    status: "pending",
-    materials: ["Nước ngọt"],
-    equipment: ["Máy bơm nước", "Hệ thống tưới"],
-    targetArea: 5.2,
-    notes: "Tưới ngập 15-20cm, duy trì 3-5 ngày",
-    createdAt: "2025-02-08",
+    name: "Miền Trung",
+    zones: [
+      { id: 5, name: "Vùng E - Quảng Nam", code: "ZONE-E" },
+      { id: 6, name: "Vùng F - Đà Nẵng", code: "ZONE-F" },
+      { id: 7, name: "Vùng G - Huế", code: "ZONE-G" },
+    ],
   },
   {
     id: 3,
-    code: "NVCT-003",
-    name: "Cày xới sâu cải tạo cấu trúc đất",
-    plan: "Phục hồi đất bạc màu Vùng C",
-    zone: "Vùng C - Đồng Nai",
-    method: "Cày xới sâu",
-    assignedTo: "Đội Vận hành",
-    assignedType: "team",
-    startDate: "2025-01-10",
-    endDate: "2025-01-15",
-    priority: "medium",
-    status: "completed",
-    materials: [],
-    equipment: ["Máy cày sâu", "Máy xới đất"],
-    targetArea: 4.0,
-    actualArea: 4.0,
-    notes: "Cày sâu 40-50cm, phơi đất 7-10 ngày",
-    createdAt: "2025-01-05",
-  },
-  {
-    id: 4,
-    code: "NVCT-004",
-    name: "Bón phân hữu cơ cải thiện độ phì",
-    plan: "Phục hồi đất bạc màu Vùng C",
-    zone: "Vùng C - Đồng Nai",
-    method: "Bón phân hữu cơ",
-    assignedTo: "Trần Thị B",
-    assignedType: "individual",
-    startDate: "2025-02-22",
-    endDate: "2025-02-24",
-    priority: "medium",
-    status: "pending",
-    materials: ["Phân hữu cơ vi sinh", "Phân chuồng ủ"],
-    equipment: ["Xe vận chuyển"],
-    targetArea: 4.0,
-    notes: "Liều lượng: 5 tấn/ha phân chuồng + 200kg/ha phân vi sinh",
-    createdAt: "2025-02-12",
-  },
-  {
-    id: 5,
-    code: "NVCT-005",
-    name: "Trồng đậu phụng phân xanh",
-    plan: "Xử lý đất chua phèn Vùng B",
-    zone: "Vùng B - Long An",
-    method: "Trồng cây phân xanh",
-    assignedTo: "Đội Kỹ thuật",
-    assignedType: "team",
-    startDate: "2025-03-01",
-    endDate: "2025-03-05",
-    priority: "low",
-    status: "pending",
-    materials: ["Hạt đậu phụng", "Phân lót"],
-    equipment: ["Máy gieo hạt"],
-    targetArea: 2.0,
-    notes: "Gieo hạt mật độ 100kg/ha, sau 45 ngày cày vùi",
-    createdAt: "2025-02-15",
+    name: "Miền Bắc",
+    zones: [
+      { id: 8, name: "Vùng H - Hà Nội", code: "ZONE-H" },
+      { id: 9, name: "Vùng I - Hải Phòng", code: "ZONE-I" },
+      { id: 10, name: "Vùng K - Thái Bình", code: "ZONE-K" },
+    ],
   },
 ];
 
@@ -282,7 +196,14 @@ const getStatusConfig = (status: string) => {
 
 export default function AmendmentTaskPage() {
   const { toast } = useToast();
-  const [data, setData] = useState<AmendmentTask[]>(initialData);
+
+  // Zustand store
+  const tasks = useAmendmentTaskStore((state) => state.tasks);
+  const addTask = useAmendmentTaskStore((state) => state.addTask);
+  const updateTask = useAmendmentTaskStore((state) => state.updateTask);
+  const deleteTask = useAmendmentTaskStore((state) => state.deleteTask);
+  const getStatistics = useAmendmentTaskStore((state) => state.getStatistics);
+
   const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
 
   // Dialog States
@@ -292,6 +213,7 @@ export default function AmendmentTaskPage() {
 
   // Selection States
   const [selectedItem, setSelectedItem] = useState<AmendmentTask | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState<string>("");
 
   const [formData, setFormData] = useState<Partial<AmendmentTask>>({
     code: "",
@@ -410,6 +332,7 @@ export default function AmendmentTaskPage() {
   // Handlers
   const handleAdd = () => {
     setSelectedItem(null);
+    setSelectedRegion("");
     setFormData({
       code: "",
       name: "",
@@ -432,6 +355,11 @@ export default function AmendmentTaskPage() {
   const handleEdit = (item: AmendmentTask) => {
     setSelectedItem(item);
     setFormData({ ...item });
+    // Find and set the region based on the zone
+    const region = mockRegions.find((r) =>
+      r.zones.some((z) => z.name === item.zone),
+    );
+    setSelectedRegion(region?.name || "");
     setFormOpen(true);
   };
 
@@ -448,24 +376,14 @@ export default function AmendmentTaskPage() {
   const handleSubmit = () => {
     if (selectedItem) {
       // Edit
-      setData((prev) =>
-        prev.map((item) =>
-          item.id === selectedItem.id ? { ...item, ...formData } : item,
-        ),
-      );
+      updateTask(selectedItem.id, formData);
       toast({
         title: "Thành công",
         description: "Đã cập nhật công việc cải tạo",
       });
     } else {
       // Create
-      const newItem: AmendmentTask = {
-        ...formData,
-        id: Math.random(),
-        status: "pending",
-        createdAt: new Date().toISOString().split("T")[0],
-      } as AmendmentTask;
-      setData((prev) => [...prev, newItem]);
+      addTask(formData as Omit<AmendmentTask, "id" | "createdAt">);
       toast({
         title: "Thành công",
         description: "Đã tạo công việc mới",
@@ -476,19 +394,14 @@ export default function AmendmentTaskPage() {
 
   const handleConfirmDelete = () => {
     if (selectedItem) {
-      setData((prev) => prev.filter((i) => i.id !== selectedItem.id));
+      deleteTask(selectedItem.id);
       toast({ title: "Thành công", description: "Đã xóa công việc" });
     }
     setDeleteOpen(false);
   };
 
   // Dashboard Stats
-  const stats = {
-    pending: data.filter((i) => i.status === "pending").length,
-    inProgress: data.filter((i) => i.status === "in_progress").length,
-    completed: data.filter((i) => i.status === "completed").length,
-    totalArea: data.reduce((acc, curr) => acc + curr.targetArea, 0).toFixed(1),
-  };
+  const stats = getStatistics();
 
   // Kanban columns
   const kanbanColumns = [
@@ -596,7 +509,7 @@ export default function AmendmentTaskPage() {
       {viewMode === "list" ? (
         <DataTable
           columns={columns}
-          data={data}
+          data={tasks}
           onEdit={handleEdit}
           onDelete={handleDelete}
           searchPlaceholder="Tìm kiếm công việc, phương pháp..."
@@ -643,7 +556,7 @@ export default function AmendmentTaskPage() {
         <div className="bg-white rounded-lg border shadow-sm p-6">
           <div className="grid grid-cols-3 gap-4">
             {kanbanColumns.map((column) => {
-              const columnTasks = data.filter(
+              const columnTasks = tasks.filter(
                 (t) => t.status === column.status,
               );
               const statusConfig = getStatusConfig(column.status);
@@ -814,34 +727,73 @@ export default function AmendmentTaskPage() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Khu vực thực hiện</Label>
-                <Input
-                  value={formData.zone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, zone: e.target.value })
-                  }
-                  placeholder="Tự động điền từ kế hoạch"
-                />
+                <Label>Phương pháp cải tạo</Label>
+                <Select
+                  value={formData.method}
+                  onValueChange={(v) => setFormData({ ...formData, method: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn phương pháp" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockAmendmentMethods.map((method) => (
+                      <SelectItem key={method} value={method}>
+                        {method}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label>Phương pháp cải tạo</Label>
-              <Select
-                value={formData.method}
-                onValueChange={(v) => setFormData({ ...formData, method: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn phương pháp" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockAmendmentMethods.map((method) => (
-                    <SelectItem key={method} value={method}>
-                      {method}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Vùng</Label>
+                <Select
+                  value={selectedRegion}
+                  onValueChange={(v) => {
+                    setSelectedRegion(v);
+                    setFormData({ ...formData, zone: "" });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn vùng" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockRegions.map((region) => (
+                      <SelectItem key={region.id} value={region.name}>
+                        {region.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Khu vực thực hiện</Label>
+                <Select
+                  value={formData.zone}
+                  onValueChange={(v) => setFormData({ ...formData, zone: v })}
+                  disabled={!selectedRegion}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        selectedRegion ? "Chọn khu vực" : "Chọn vùng trước"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedRegion &&
+                      mockRegions
+                        .find((r) => r.name === selectedRegion)
+                        ?.zones.map((zone) => (
+                          <SelectItem key={zone.id} value={zone.name}>
+                            {zone.name}
+                          </SelectItem>
+                        ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
@@ -903,7 +855,7 @@ export default function AmendmentTaskPage() {
             <h4 className="text-sm font-semibold text-slate-900 border-b pb-1">
               Tiến độ & Ưu tiên
             </h4>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Ngày bắt đầu</Label>
                 <Input
@@ -923,6 +875,28 @@ export default function AmendmentTaskPage() {
                     setFormData({ ...formData, endDate: e.target.value })
                   }
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Trạng thái</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(v: any) =>
+                    setFormData({ ...formData, status: v })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Chờ thực hiện</SelectItem>
+                    <SelectItem value="in_progress">Đang thực hiện</SelectItem>
+                    <SelectItem value="completed">Hoàn thành</SelectItem>
+                    <SelectItem value="cancelled">Đã hủy</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1.5">
                 <Label>Độ ưu tiên</Label>

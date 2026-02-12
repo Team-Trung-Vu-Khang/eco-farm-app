@@ -1,5 +1,8 @@
 import {
   AdminLayout,
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
   Badge,
   Button,
   Card,
@@ -16,28 +19,38 @@ import {
   Textarea,
   useToast,
 } from "@tankhang1/eco-shared-ui";
-import { useEffect, useState } from "react";
-import { useLocation, useRoute } from "wouter";
 import {
   ArrowLeft,
   Calendar,
   FileText,
   Info,
-  Leaf,
   Plus,
   Save,
+  Search,
   Sprout,
+  Trash2,
 } from "lucide-react";
-import type { CreateSeasonForm } from "./types";
-import { initialSeasons } from "./mocks";
-import { initialGrowthCycles } from "../growth-cycle/mocks";
+import { useEffect, useState } from "react";
+import { useLocation, useRoute } from "wouter";
+import { CROP_OPTIONS } from "../../constants/crops";
+import useGrowthCycleStore from "../../stores/useGrowthCycleStore";
+import useSeasonStore from "../../stores/useSeasonStore";
+import { FileUploader } from "./components/FileUploader";
+import { GrowthCycleSelectDialog } from "./components/GrowthCycleSelectDialog";
+import type { CreateSeasonForm, SeasonDocument } from "./types";
 
 export default function UpdateSeasonPage() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/season/:id/edit");
   const { toast } = useToast();
+  const { growthCycles } = useGrowthCycleStore();
+  const { getSeasonById, updateSeason } = useSeasonStore();
 
-  const [formData, setFormData] = useState<CreateSeasonForm>({
+  const [formData, setFormData] = useState<
+    Omit<CreateSeasonForm, "documents"> & {
+      documents: (SeasonDocument | File)[];
+    }
+  >({
     code: "",
     name: "",
     description: "",
@@ -48,9 +61,11 @@ export default function UpdateSeasonPage() {
     documents: [],
   });
 
+  const [dialogOpen, setDialogOpen] = useState(false);
+
   useEffect(() => {
     if (params?.id) {
-      const existing = initialSeasons.find((s) => s.id === params.id);
+      const existing = getSeasonById(params.id);
       if (existing) {
         setFormData({
           code: existing.code,
@@ -60,13 +75,19 @@ export default function UpdateSeasonPage() {
           endDate: existing.endDate,
           status: existing.status,
           growthCycleIds: existing.growthCycleIds,
-          documents: [], // Handle file inputs differently if needed
+          documents: existing.documents,
         });
       }
     }
-  }, [params?.id]);
+  }, [params?.id, getSeasonById]);
+
+  const selectedCycles = growthCycles.filter((c) =>
+    formData.growthCycleIds.includes(c.id),
+  );
 
   const handleSave = () => {
+    if (!params?.id) return;
+
     // Validation
     if (!formData.code || !formData.name || !formData.startDate) {
       toast({
@@ -77,7 +98,28 @@ export default function UpdateSeasonPage() {
       return;
     }
 
-    console.log("Updating Season:", formData);
+    updateSeason(params.id, {
+      code: formData.code,
+      name: formData.name,
+      description: formData.description,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      status: formData.status,
+      documents: formData.documents.map((doc) => {
+        if (doc instanceof File) {
+          return {
+            name: doc.name,
+            type: "technical",
+            id: Date.now().toString(),
+            url: URL.createObjectURL(doc),
+            uploadedAt: new Date().toISOString(),
+          };
+        }
+        return doc;
+      }),
+      growthCycleIds: formData.growthCycleIds,
+    });
+
     toast({
       title: "Thành công",
       description: "Đã cập nhật mùa vụ",
@@ -85,16 +127,15 @@ export default function UpdateSeasonPage() {
     setLocation("/season");
   };
 
-  const toggleGrowthCycle = (id: string) => {
-    setFormData((prev) => {
-      const current = prev.growthCycleIds;
-      const exists = current.includes(id);
-      if (exists) {
-        return { ...prev, growthCycleIds: current.filter((c) => c !== id) };
-      } else {
-        return { ...prev, growthCycleIds: [...current, id] };
-      }
-    });
+  const removeCycle = (id: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      growthCycleIds: prev.growthCycleIds.filter((c) => c !== id),
+    }));
+  };
+
+  const getCropImage = (cropName: string) => {
+    return CROP_OPTIONS.find((c) => c.name === cropName)?.image;
   };
 
   if (!params?.id) return null;
@@ -231,56 +272,72 @@ export default function UpdateSeasonPage() {
                   </div>
                   <CardTitle>Chu kỳ sinh trưởng áp dụng</CardTitle>
                 </div>
-                <Badge variant="outline" className="ml-auto">
-                  Đã chọn: {formData.growthCycleIds.length}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="ml-auto">
+                    Đã chọn: {formData.growthCycleIds.length}
+                  </Badge>
+                  <Button
+                    size="sm"
+                    className="h-8 font-bold"
+                    onClick={() => setDialogOpen(true)}
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    Thêm
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 gap-4">
-                {initialGrowthCycles.map((cycle) => (
-                  <div
-                    key={cycle.id}
-                    className={`
-                        relative flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all
-                        ${
-                          formData.growthCycleIds.includes(cycle.id)
-                            ? "border-green-600 bg-green-50 shadow-md"
-                            : "border-muted hover:border-green-200 hover:bg-muted/50"
-                        }
-                    `}
-                    onClick={() => toggleGrowthCycle(cycle.id)}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div
-                        className={`
-                            w-10 h-10 rounded-full flex items-center justify-center
-                            ${formData.growthCycleIds.includes(cycle.id) ? "bg-green-600 text-white" : "bg-muted text-muted-foreground"}
-                        `}
-                      >
-                        <Leaf className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-foreground">
-                          {cycle.name}
-                        </h4>
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-                          <span className="flex items-center gap-1">
-                            <Sprout className="w-3 h-3" />
-                            {cycle.cropName} - {cycle.variety}
-                          </span>
-                          <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
-                          <span>{cycle.totalDays} ngày</span>
+              <div className="grid grid-cols-1 gap-3">
+                {selectedCycles.length > 0 ? (
+                  selectedCycles.map((cycle) => (
+                    <div
+                      key={cycle.id}
+                      className="flex items-center justify-between p-4 rounded-xl border bg-white shadow-sm hover:border-green-200 transition-all group"
+                    >
+                      <div className="flex items-center gap-4">
+                        <Avatar className="w-10 h-10 border shadow-sm">
+                          <AvatarImage src={getCropImage(cycle.cropName)} />
+                          <AvatarFallback>
+                            {cycle.cropName.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h4 className="font-bold text-sm leading-tight text-slate-800">
+                            {cycle.name}
+                          </h4>
+                          <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-1">
+                            <span>{cycle.cropName}</span>
+                            <span className="w-1 h-1 rounded-full bg-slate-300" />
+                            <span>{cycle.totalDays} ngày</span>
+                          </div>
                         </div>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="opacity-0 group-hover:opacity-100 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all"
+                        onClick={() => removeCycle(cycle.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                    {formData.growthCycleIds.includes(cycle.id) && (
-                      <div className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-full">
-                        Đã chọn
-                      </div>
-                    )}
+                  ))
+                ) : (
+                  <div className="text-center py-10 border-2 border-dashed rounded-2xl bg-muted/20">
+                    <Search className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Chưa có chu kỳ nào được chọn.
+                    </p>
+                    <Button
+                      variant="link"
+                      className="mt-2 text-green-700 font-bold"
+                      onClick={() => setDialogOpen(true)}
+                    >
+                      + Chọn chu kỳ từ thư viện
+                    </Button>
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>
@@ -296,16 +353,16 @@ export default function UpdateSeasonPage() {
                 <CardTitle>Tài liệu kỹ thuật</CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-muted/50 transition-all">
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-2">
-                  <Plus className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <p className="font-medium text-sm">Tải lên tài liệu</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  PDF, Word, Excel (Max 10MB)
-                </p>
-              </div>
+            <CardContent>
+              <FileUploader
+                files={formData.documents}
+                onChange={(files) =>
+                  setFormData({
+                    ...formData,
+                    documents: files,
+                  })
+                }
+              />
             </CardContent>
           </Card>
 
@@ -321,6 +378,13 @@ export default function UpdateSeasonPage() {
           </div>
         </div>
       </div>
+
+      <GrowthCycleSelectDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        selectedIds={formData.growthCycleIds}
+        onConfirm={(ids) => setFormData({ ...formData, growthCycleIds: ids })}
+      />
     </AdminLayout>
   );
 }

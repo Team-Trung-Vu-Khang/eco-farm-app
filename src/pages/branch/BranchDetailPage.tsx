@@ -37,6 +37,7 @@ import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useState } from "react";
+import useBranchStore from "../../stores/useBranchStore";
 
 // Fix Leaflet default icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -49,95 +50,52 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-// Mock Data lấy từ Form để hiển thị (Trong thực tế sẽ fetch API)
-const MOCK_DATA = {
-  id: "1",
-  code: "CN001",
-  name: "Chi nhánh Miền Nam",
-  enterpriseName: "Công ty CP Nông nghiệp Xanh EcoFarm",
-  enterpriseId: "DN001",
-  status: "active",
-  taxCode: "0123456789-001",
-  taxAddress: "123 Nguyễn Huệ, Quận 1, TP.HCM",
-  address: "123 Nguyễn Huệ",
-  ward: "Phường Bến Nghé",
-  district: "Quận 1",
-  city: "Hồ Chí Minh",
-  website: "https://ecofarm.vn",
-  imageUrl:
-    "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800",
-  latitude: 10.7769,
-  longitude: 106.7009,
-  contactInfos: [
-    {
-      id: "1",
-      phone: "02839999888",
-      email: "hcm@ecofarm.vn",
-      isPrimary: true,
-    },
-    {
-      id: "2",
-      phone: "0909000111",
-      email: "support.hcm@ecofarm.vn",
-      isPrimary: false,
-    },
-  ],
-  contacts: [
-    {
-      id: "1",
-      name: "Nguyễn Văn A",
-      position: "Giám đốc chi nhánh",
-      phone: "0901234567",
-      email: "nguyenvana@ecofarm.vn",
-      isPrimary: true,
-    },
-    {
-      id: "2",
-      name: "Trần Thị B",
-      position: "Kế toán trưởng",
-      phone: "0901234568",
-      email: "tranthib@ecofarm.vn",
-      isPrimary: false,
-    },
-  ],
-  bankAccounts: [
-    {
-      id: "1",
-      bankName: "Vietcombank",
-      accountNumber: "0123456789",
-      accountHolder: "Chi nhánh Miền Nam - EcoFarm",
-      branch: "Chi nhánh Sài Gòn",
-      isPrimary: true,
-    },
-    {
-      id: "2",
-      bankName: "Techcombank",
-      accountNumber: "8888999900",
-      accountHolder: "Chi nhánh Miền Nam - EcoFarm",
-      branch: "Hội sở chính",
-      isPrimary: false,
-    },
-  ],
-};
-
 export default function BranchDetailPage() {
   const [, setLocation] = useLocation();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { toast } = useToast();
 
-  // Trong thực tế, dùng id này để fetch data
-  const [, params] = useRoute("/branch/:id");
-  const id = params?.id;
+  // Get branch ID from route params
+  const [, params] = useRoute("/branch/:id/detail");
+  const branchId = params?.id ? parseInt(params.id) : undefined;
+
+  // Fetch branch from store
+  const getBranchById = useBranchStore((state) => state.getBranchById);
+  const deleteBranch = useBranchStore((state) => state.deleteBranch);
+  const branch = branchId ? getBranchById(branchId) : undefined;
 
   const handleDelete = () => {
-    // Call API delete here
-    toast({
-      title: "Đã xóa chi nhánh",
-      description: `Chi nhánh ${MOCK_DATA.name} đã được xóa thành công.`,
-    });
-    setShowDeleteDialog(false);
-    setLocation("/branch");
+    if (branchId) {
+      deleteBranch(branchId);
+      toast({
+        title: "Đã xóa chi nhánh",
+        description: `Chi nhánh ${branch?.name} đã được xóa thành công.`,
+      });
+      setShowDeleteDialog(false);
+      setLocation("/branch");
+    }
   };
+
+  // Show not found if branch doesn't exist
+  if (!branch) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center h-96">
+          <h2 className="text-2xl font-bold mb-4">
+            Không tìm thấy thông tin chi nhánh
+          </h2>
+          <Button onClick={() => setLocation("/branch")}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Quay lại danh sách
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  // Default coordinates if not available
+  const latitude = branch.latitude ? parseFloat(branch.latitude) : 10.7769;
+  const longitude = branch.longitude ? parseFloat(branch.longitude) : 106.7009;
 
   return (
     <AdminLayout>
@@ -156,15 +114,13 @@ export default function BranchDetailPage() {
             <div className="space-y-1">
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {MOCK_DATA.name}
+                  {branch.name}
                 </h1>
                 <Badge
-                  variant={
-                    MOCK_DATA.status === "active" ? "default" : "secondary"
-                  }
+                  variant={branch.status === "active" ? "default" : "secondary"}
                   className="capitalize"
                 >
-                  {MOCK_DATA.status === "active" ? (
+                  {branch.status === "active" ? (
                     <span className="flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" /> Hoạt động
                     </span>
@@ -177,14 +133,14 @@ export default function BranchDetailPage() {
               </div>
               <p className="text-muted-foreground flex items-center gap-2">
                 <Building2 className="w-4 h-4" />
-                {MOCK_DATA.enterpriseName}
+                {branch.enterpriseName}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              onClick={() => setLocation(`/branch/${id}/edit`)}
+              onClick={() => setLocation(`/branch/${branchId}/edit`)}
             >
               <Edit className="w-4 h-4 mr-2" />
               Chỉnh sửa
@@ -212,11 +168,11 @@ export default function BranchDetailPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Image Banner */}
-                {MOCK_DATA.imageUrl && (
+                {branch.imageUrl && (
                   <div className="w-full h-48 rounded-lg overflow-hidden mb-6">
                     <img
-                      src={MOCK_DATA.imageUrl}
-                      alt={MOCK_DATA.name}
+                      src={branch.imageUrl}
+                      alt={branch.name}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -228,22 +184,22 @@ export default function BranchDetailPage() {
                       Mã chi nhánh
                     </label>
                     <p className="text-base font-semibold mt-1">
-                      {MOCK_DATA.code}
+                      {branch.code}
                     </p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">
-                      Mã số thuế
+                      Điện thoại
                     </label>
                     <p className="text-base font-medium mt-1">
-                      {MOCK_DATA.taxCode}
+                      {branch.phone || "-"}
                     </p>
                   </div>
                   <div className="md:col-span-2">
                     <label className="text-sm font-medium text-muted-foreground">
-                      Địa chỉ đăng ký thuế
+                      Địa chỉ
                     </label>
-                    <p className="text-base mt-1">{MOCK_DATA.taxAddress}</p>
+                    <p className="text-base mt-1">{branch.address}</p>
                   </div>
                 </div>
               </CardContent>
@@ -262,17 +218,19 @@ export default function BranchDetailPage() {
                   <MapPin className="w-5 h-5 text-primary mt-0.5" />
                   <div>
                     <p className="font-medium text-gray-900">
-                      {MOCK_DATA.address}
+                      {branch.address}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {MOCK_DATA.ward}, {MOCK_DATA.district}, {MOCK_DATA.city}
+                      {branch.ward && `${branch.ward}, `}
+                      {branch.district && `${branch.district}, `}
+                      {branch.city}
                     </p>
                   </div>
                 </div>
 
                 <div className="h-64 w-full rounded-lg overflow-hidden border z-0 relative">
                   <MapContainer
-                    center={[MOCK_DATA.latitude, MOCK_DATA.longitude]}
+                    center={[latitude, longitude]}
                     zoom={15}
                     style={{ height: "100%", width: "100%", zIndex: 0 }}
                     dragging={false}
@@ -284,9 +242,7 @@ export default function BranchDetailPage() {
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
-                    <Marker
-                      position={[MOCK_DATA.latitude, MOCK_DATA.longitude]}
-                    />
+                    <Marker position={[latitude, longitude]} />
                   </MapContainer>
                 </div>
               </CardContent>
@@ -301,43 +257,52 @@ export default function BranchDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {MOCK_DATA.contacts.map((contact) => (
-                    <div
-                      key={contact.id}
-                      className="flex items-start gap-4 p-4 border rounded-xl bg-card hover:shadow-md transition-shadow"
-                    >
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                        <User className="w-5 h-5 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-semibold text-gray-900 truncate">
-                            {contact.name}
-                          </h4>
-                          {contact.isPrimary && (
-                            <Badge variant="secondary" className="text-[10px]">
-                              Chính
-                            </Badge>
-                          )}
+                {branch.contacts && branch.contacts.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {branch.contacts.map((contact) => (
+                      <div
+                        key={contact.id}
+                        className="flex items-start gap-4 p-4 border rounded-xl bg-card hover:shadow-md transition-shadow"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <User className="w-5 h-5 text-primary" />
                         </div>
-                        <p className="text-sm text-primary font-medium mb-2">
-                          {contact.position}
-                        </p>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Phone className="w-3.5 h-3.5" />
-                            {contact.phone}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="font-semibold text-gray-900 truncate">
+                              {contact.name}
+                            </h4>
+                            {contact.isPrimary && (
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px]"
+                              >
+                                Chính
+                              </Badge>
+                            )}
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Mail className="w-3.5 h-3.5" />
-                            <span className="truncate">{contact.email}</span>
+                          <p className="text-sm text-primary font-medium mb-2">
+                            {contact.position}
+                          </p>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <Phone className="w-3.5 h-3.5" />
+                              {contact.phone}
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <Mail className="w-3.5 h-3.5" />
+                              <span className="truncate">{contact.email}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Chưa có thông tin nhân sự liên hệ
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -353,54 +318,28 @@ export default function BranchDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Website */}
-                <div className="flex items-start gap-3 pb-4 border-b">
-                  <Globe className="w-5 h-5 text-gray-400 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Website</p>
-                    <a
-                      href={MOCK_DATA.website}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-primary hover:underline font-medium"
-                    >
-                      {MOCK_DATA.website}
-                    </a>
-                  </div>
-                </div>
-
-                {/* List Contacts */}
+                {/* Phone and Email */}
                 <div className="space-y-4">
-                  {MOCK_DATA.contactInfos.map((info, idx) => (
-                    <div
-                      key={info.id}
-                      className="flex items-start gap-3 relative"
-                    >
-                      <div className="mt-0.5">
-                        {idx === 0 ? (
-                          <Phone className="w-5 h-5 text-gray-400" />
-                        ) : (
-                          <div className="w-5" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">
-                          {info.phone}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {info.email}
-                        </p>
-                        {info.isPrimary && (
-                          <Badge
-                            variant="outline"
-                            className="mt-1 text-[10px] h-5"
-                          >
-                            Liên hệ chính
-                          </Badge>
-                        )}
-                      </div>
+                  <div className="flex items-start gap-3">
+                    <Phone className="w-5 h-5 text-gray-400 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-500">
+                        Điện thoại
+                      </p>
+                      <p className="font-medium text-gray-900">
+                        {branch.phone || "-"}
+                      </p>
                     </div>
-                  ))}
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Mail className="w-5 h-5 text-gray-400 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-500">Email</p>
+                      <p className="font-medium text-gray-900">
+                        {branch.email || "-"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -414,35 +353,41 @@ export default function BranchDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {MOCK_DATA.bankAccounts.map((bank) => (
-                  <div
-                    key={bank.id}
-                    className="p-4 rounded-xl border bg-gradient-to-br from-gray-50 to-white"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Landmark className="w-4 h-4 text-primary" />
-                        <span className="font-bold text-gray-900">
-                          {bank.bankName}
-                        </span>
+                {branch.bankAccounts && branch.bankAccounts.length > 0 ? (
+                  branch.bankAccounts.map((bank) => (
+                    <div
+                      key={bank.id}
+                      className="p-4 rounded-xl border bg-gradient-to-br from-gray-50 to-white"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Landmark className="w-4 h-4 text-primary" />
+                          <span className="font-bold text-gray-900">
+                            {bank.bankName}
+                          </span>
+                        </div>
+                        {bank.isPrimary && (
+                          <Badge variant="default" className="text-[10px]">
+                            Chính
+                          </Badge>
+                        )}
                       </div>
-                      {bank.isPrimary && (
-                        <Badge variant="default" className="text-[10px]">
-                          Chính
-                        </Badge>
-                      )}
+                      <p className="text-lg font-mono font-semibold text-gray-800 mb-1 tracking-wide">
+                        {bank.accountNumber}
+                      </p>
+                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+                        {bank.accountHolder}
+                      </p>
+                      <p className="text-xs text-gray-400 flex items-center gap-1">
+                        <MapPin className="w-3 h-3" /> {bank.branch}
+                      </p>
                     </div>
-                    <p className="text-lg font-mono font-semibold text-gray-800 mb-1 tracking-wide">
-                      {bank.accountNumber}
-                    </p>
-                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-                      {bank.accountHolder}
-                    </p>
-                    <p className="text-xs text-gray-400 flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> {bank.branch}
-                    </p>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Chưa có thông tin tài khoản ngân hàng
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -454,7 +399,7 @@ export default function BranchDetailPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Xác nhận xóa chi nhánh</AlertDialogTitle>
             <AlertDialogDescription>
-              Bạn có chắc chắn muốn xóa chi nhánh "{MOCK_DATA.name}" không?
+              Bạn có chắc chắn muốn xóa chi nhánh "{branch.name}" không?
               <br />
               Hành động này không thể hoàn tác và sẽ xóa toàn bộ dữ liệu liên
               quan.

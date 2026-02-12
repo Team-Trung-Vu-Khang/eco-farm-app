@@ -27,6 +27,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import type { CreateVarietyForm } from "./types";
+import useSeedStore from "../../stores/useSeedStore";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -125,6 +126,7 @@ const varieties: Record<
 export default function CreateSeedPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { addSeed } = useSeedStore();
 
   const [selectedCropGroup, setSelectedCropGroup] = useState<string>("");
   const [selectedCrop, setSelectedCrop] = useState<string>("");
@@ -187,6 +189,7 @@ export default function CreateSeedPage() {
   }, [formData.illustration]);
 
   const handleComplete = () => {
+    addSeed(formData);
     toast({
       title: "Thành công",
       description: `Đã tạo hạt giống "${formData.varietyName}"`,

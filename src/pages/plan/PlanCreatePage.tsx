@@ -43,7 +43,9 @@ import {
 } from "lucide-react";
 import { memo, useCallback, useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import { GROWTH_CYCLES, SEASONS, getCyclesByCrop } from "./constants";
+import { GROWTH_CYCLES, getCyclesByCrop } from "./constants";
+import usePlanStore from "../../stores/usePlanStore";
+import useSeasonStore from "../../stores/useSeasonStore";
 
 // --- Mock Data for Location Hierarchy (Enhanced) ---
 const LOCATIONS = [
@@ -195,6 +197,29 @@ interface TaskAllocation {
 }
 
 // 1. Location Selection Dialog (Filtered for Cultivation)
+
+const TREATMENT_REGIMENS = [
+  {
+    id: "reg-phen-cap-toc",
+    name: "Phác đồ khử phèn cấp tốc",
+    description: "Sử dụng vôi nóng và bơm xả liên tục",
+  },
+  {
+    id: "reg-phen-ben-vung",
+    name: "Phác đồ khử phèn bền vững",
+    description: "Kết hợp vôi, lân và hữu cơ vi sinh",
+  },
+  {
+    id: "reg-man-rua-troi",
+    name: "Phác đồ rửa mặn 3 bước",
+    description: "Rửa trôi - Bón vôi - Trồng cây chịu mặn",
+  },
+  {
+    id: "reg-phong-ngua-sau-benh",
+    name: "Phác đồ phòng ngừa sâu bệnh tổng hợp (IPM)",
+    description: "Kết hợp biện pháp sinh học, hóa học và canh tác",
+  },
+];
 
 // 2. Stage Selection Item
 const StageItem = ({
@@ -604,6 +629,10 @@ export default function PlanCreatePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
+  // Zustand store
+  const addPlan = usePlanStore((state) => state.addPlan);
+  const seasons = useSeasonStore((state) => state.seasons);
+
   const [formData, setFormData] = useState({
     code: "",
     name: "",
@@ -622,6 +651,7 @@ export default function PlanCreatePage() {
 
     // Process
     growthCycleId: "",
+    regimenId: "", // New State for Treatment Regimen
     selectedStages: [] as string[],
 
     // Resources
@@ -634,7 +664,7 @@ export default function PlanCreatePage() {
   // --- Helpers & Handlers ---
 
   const handleSeasonChange = (seasonId: string) => {
-    const season = SEASONS.find((s) => s.id === seasonId);
+    const season = seasons.find((s) => s.id === seasonId);
     if (season) {
       setFormData((prev) => ({
         ...prev,
@@ -815,7 +845,7 @@ export default function PlanCreatePage() {
                   <SelectValue placeholder="Chọn mùa vụ..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {SEASONS.map((s) => (
+                  {seasons.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
                       {s.name}
                     </SelectItem>
@@ -1113,6 +1143,30 @@ export default function PlanCreatePage() {
             </Select>
           </div>
 
+          <div className="space-y-4">
+            <Label className="text-base">Phác đồ điều trị (nếu có)</Label>
+            <Select
+              value={formData.regimenId}
+              onValueChange={(v) =>
+                setFormData((prev) => ({ ...prev, regimenId: v }))
+              }
+            >
+              <SelectTrigger className="h-12">
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-muted-foreground" />
+                  <SelectValue placeholder="Chọn phác đồ..." />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {TREATMENT_REGIMENS.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {formData.growthCycleId && (
             <div className="space-y-4 animation-fade-in">
               <div className="flex items-center justify-between">
@@ -1376,6 +1430,30 @@ export default function PlanCreatePage() {
   ];
 
   const handleComplete = () => {
+    // Create plan data from formData
+    const planData = {
+      code: formData.code,
+      name: formData.name,
+      description: formData.description,
+      seasonId: formData.seasonId,
+      seasonName: formData.seasonName,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      selectedRegionId: formData.selectedRegionId,
+      selectedZoneIds: formData.selectedZoneIds,
+      selectedPlotIds: formData.selectedPlotIds,
+      crop: formData.crop,
+      variety: formData.variety,
+      growthCycleId: formData.growthCycleId,
+      regimenId: formData.regimenId,
+      selectedStages: formData.selectedStages,
+      status: "active" as const,
+      materialAllocations: formData.materialAllocations,
+      taskAllocations: formData.taskAllocations,
+    };
+
+    addPlan(planData);
+
     toast({
       title: "Thành công",
       description: `Đã tạo kế hoạch ${formData.name}`,

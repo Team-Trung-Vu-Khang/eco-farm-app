@@ -13,22 +13,19 @@ import { MapContainer, TileLayer, Polygon, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-import {
-  MOCK_AREAS,
-  MOCK_REGIONS,
-  LAND_TYPES,
-  TERRAIN_TYPES,
-} from "../constants";
+import { LAND_TYPES, TERRAIN_TYPES } from "../constants";
 import { MapController } from "../components/DraggableRectangle";
+import useRegionStore from "../../../stores/useRegionStore";
 
 const AreaDetailPage = () => {
   const [, setLocation] = useLocation();
   const [match, params] = useRoute("/area-distribution/detail/:id");
-  const id = match && params?.id ? parseInt(params.id) : null;
+  const { getAreaById, regions } = useRegionStore();
+  const id = match && params?.id ? String(params.id) : null;
 
-  const areaData = MOCK_AREAS.find((a) => a.id === id);
+  const areaData = id ? getAreaById(id) : null;
   const regionData = areaData
-    ? MOCK_REGIONS.find((r) => r.id === areaData.regionId)
+    ? regions.find((r) => r.id === areaData.regionId)
     : null;
 
   if (!areaData) {
@@ -55,7 +52,7 @@ const AreaDetailPage = () => {
   // Calculate bounds for map centering
   let bounds = L.latLngBounds([11.53, 106.88], [11.55, 106.91]);
   if (areaData.coordinates && areaData.coordinates.length > 0) {
-    const points = areaData.coordinates.map((c) => L.latLng(c.lat, c.lng));
+    const points = areaData.coordinates.map((c: any) => L.latLng(c.lat, c.lng));
     if (points.length >= 1) {
       bounds = L.latLngBounds(points);
     }
@@ -158,7 +155,7 @@ const AreaDetailPage = () => {
             <CardContent>
               <div className="space-y-3">
                 {areaData.plots && areaData.plots.length > 0 ? (
-                  areaData.plots.map((plot) => (
+                  areaData.plots.map((plot: any) => (
                     <div
                       key={plot.id}
                       className="border p-3 rounded-lg text-sm bg-muted/20"
@@ -214,7 +211,10 @@ const AreaDetailPage = () => {
                 {/* Area Boundary */}
                 {areaData.coordinates && areaData.coordinates.length >= 3 && (
                   <Polygon
-                    positions={areaData.coordinates.map((c) => [c.lat, c.lng])}
+                    positions={areaData.coordinates.map((c: any) => [
+                      c.lat,
+                      c.lng,
+                    ])}
                     pathOptions={{
                       color: "blue",
                       fillColor: "blue",
@@ -230,14 +230,17 @@ const AreaDetailPage = () => {
                 )}
 
                 {/* Plots */}
-                {areaData.plots?.map((plot) => {
+                {areaData.plots?.map((plot: any) => {
                   if (!plot.coordinates || plot.coordinates.length < 3)
                     return null;
 
                   return (
                     <Polygon
                       key={plot.id}
-                      positions={plot.coordinates.map((c) => [c.lat, c.lng])}
+                      positions={plot.coordinates.map((c: any) => [
+                        c.lat,
+                        c.lng,
+                      ])}
                       pathOptions={{
                         color: "orange",
                         fillColor: "orange",

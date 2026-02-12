@@ -10,18 +10,14 @@ import { FileDown, Image as ImageIcon, Plus } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 
-import {
-  categories,
-  cropTypeOptions,
-  harvestMethodOptions,
-  initialData,
-} from "./mocks";
+import { categories, cropTypeOptions, harvestMethodOptions } from "./mocks";
 import type { Crop } from "./types";
+import useCropStore from "../../stores/useCropStore";
 
 export default function CropPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [sourceData, setSourceData] = useState<Crop[]>(initialData);
+  const { crops, deleteCrop } = useCropStore();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Crop | null>(null);
 
@@ -142,7 +138,7 @@ export default function CropPage() {
 
   const handleConfirmDelete = () => {
     if (deleteItem) {
-      setSourceData((prev) => prev.filter((item) => item.id !== deleteItem.id));
+      deleteCrop(deleteItem.id);
       toast({ title: "Thành công", description: "Đã xóa cây trồng" });
     }
     setDeleteOpen(false);
@@ -169,7 +165,7 @@ export default function CropPage() {
     >
       <DataTable
         columns={columns}
-        data={sourceData}
+        data={crops}
         onDelete={handleDelete}
         onView={handleView}
         onEdit={handleEdit}

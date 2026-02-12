@@ -10,78 +10,23 @@ import {
   useToast,
   type Column,
 } from "@tankhang1/eco-shared-ui";
-
-interface Farner {
-  id: number;
-  code: string;
-  name: string;
-  image?: string;
-  type: "enterprise" | "farm" | "cooperative";
-  classification: ("production" | "processing" | "trading" | "service")[];
-  taxCode: string;
-  address: string;
-  phone: string;
-  email: string;
-  status: "active" | "inactive";
-  createdAt: string;
-}
-
-const initialData: Farner[] = [
-  {
-    id: 1,
-    code: "NH001",
-    name: "Nông hộ Nguyễn Văn A",
-    image:
-      "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80",
-    type: "farm",
-    classification: ["production", "trading"],
-    taxCode: "",
-    address: "Ấp 1, Xã Tân Phú, Huyện Củ Chi",
-    phone: "0912345678",
-    email: "nguyenvana@gmail.com",
-    status: "active",
-    createdAt: "2024-01-12",
-  },
-  {
-    id: 2,
-    code: "NH002",
-    name: "Nông hộ Trần Thị B",
-    image:
-      "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&q=80",
-    type: "farm",
-    classification: ["processing", "trading"],
-    taxCode: "",
-    address: "Ấp 3, Xã Long An, Huyện Long Thành",
-    phone: "0934567890",
-    email: "tranthib@gmail.com",
-    status: "active",
-    createdAt: "2024-01-18",
-  },
-  {
-    id: 3,
-    code: "NH003",
-    name: "Nông hộ Trần Thị C",
-    image:
-      "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&q=80",
-    type: "farm",
-    classification: ["processing", "trading"],
-    taxCode: "",
-    address: "Ấp 3, Xã Long An, Huyện Long Thành",
-    phone: "0934567890",
-    email: "tranthic@gmail.com",
-    status: "inactive",
-    createdAt: "2024-01-18",
-  },
-];
+import useEnterpriseStore from "../../stores/useEnterpriseStore";
+import type { Enterprise } from "../enterprise/constants";
 
 export default function FarmerPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [data, setData] = useState<Farner[]>(initialData);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<Farner | null>(null);
+  const enterprises = useEnterpriseStore((state) => state.enterprises);
+  const deleteEnterprise = useEnterpriseStore(
+    (state) => state.deleteEnterprise,
+  );
 
-  const columns: Column<Farner>[] = [
+  const data = enterprises.filter((item) => item.type === "farm");
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<Enterprise | null>(null);
+
+  const columns: Column<Enterprise>[] = [
     { key: "code", label: "Mã" },
     {
       key: "image",
@@ -90,12 +35,12 @@ export default function FarmerPage() {
         value ? (
           <img
             src={value as string}
-            alt="enterprise"
+            alt="farmer"
             className="w-10 h-10 object-cover rounded-md border"
           />
         ) : null,
     },
-    { key: "name", label: "Tên đơn vị" },
+    { key: "name", label: "Tên nông hộ" },
     {
       key: "classification",
       label: "Phân loại",
@@ -106,7 +51,7 @@ export default function FarmerPage() {
           trading: "Thương mại",
           service: "Dịch vụ",
         };
-        return value.map((item: string) => {
+        return (value as string[])?.map((item: string) => {
           return (
             <Badge key={item} variant="secondary" className="mr-1">
               {labels[item]}
@@ -142,17 +87,17 @@ export default function FarmerPage() {
     },
   ];
 
-  const handleDelete = (item: Farner) => {
+  const handleDelete = (item: Enterprise) => {
     setDeleteItem(item);
     setDeleteOpen(true);
   };
 
   const handleConfirmDelete = () => {
     if (deleteItem) {
-      setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
+      deleteEnterprise(deleteItem.id);
       toast({
         title: "Thành công",
-        description: "Đã xóa đơn vị khỏi hệ thống",
+        description: "Đã xóa nông hộ khỏi hệ thống",
       });
     }
     setDeleteOpen(false);

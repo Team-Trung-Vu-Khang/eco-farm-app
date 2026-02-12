@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, memo } from "react";
+import { useState, useMemo, useCallback, memo, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
 import {
   ClipboardList,
@@ -48,6 +48,9 @@ import {
   TabsContent,
   Separator,
 } from "@tankhang1/eco-shared-ui";
+import useAmendmentPlanStore, {
+  type AllocationItem,
+} from "../../stores/useAmendmentPlanStore";
 
 // --- Mock Data ---
 
@@ -145,6 +148,24 @@ const AMENDMENT_PROCESSES = [
   },
 ];
 
+const TREATMENT_REGIMENS = [
+  {
+    id: "reg-phen-cap-toc",
+    name: "Phác đồ khử phèn cấp tốc",
+    description: "Sử dụng vôi nóng và bơm xả liên tục",
+  },
+  {
+    id: "reg-phen-ben-vung",
+    name: "Phác đồ khử phèn bền vững",
+    description: "Kết hợp vôi, lân và hữu cơ vi sinh",
+  },
+  {
+    id: "reg-man-rua-troi",
+    name: "Phác đồ rửa mặn 3 bước",
+    description: "Rửa trôi - Bón vôi - Trồng cây chịu mặn",
+  },
+];
+
 const MATERIAL_OPTIONS = [
   { value: "Vôi bột", label: "Vôi bột (Xử lý pH)" },
   { value: "Lân nung chảy", label: "Lân nung chảy (Khử phèn)" },
@@ -162,16 +183,6 @@ const TASK_OPTIONS = [
   { value: "Trồng cây che phủ", label: "Trồng cây che phủ" },
   { value: "Kiểm tra pH đất", label: "Kiểm tra pH đất (Định kỳ)" },
 ];
-
-// --- Types ---
-interface AllocationItem {
-  id: number;
-  stage: string;
-  type: "material" | "task";
-  name: string;
-  detail: string; // Quantity unit for material, Labor for task
-  subDetail?: string; // Duration for task
-}
 
 // --- Components ---
 
@@ -418,6 +429,11 @@ export default function AmendmentPlanCreatePage() {
   const [, params] = useRoute("/amendment-plan/:id/edit");
   const isEdit = !!params?.id;
 
+  // Zustand store
+  const addPlan = useAmendmentPlanStore((state) => state.addPlan);
+  const updatePlan = useAmendmentPlanStore((state) => state.updatePlan);
+  const getPlanById = useAmendmentPlanStore((state) => state.getPlanById);
+
   const [formData, setFormData] = useState({
     code: "",
     name: "",
@@ -437,6 +453,7 @@ export default function AmendmentPlanCreatePage() {
 
     // Process
     processId: "",
+    regimenId: "", // New State for Treatment Regimen
     selectedStages: [] as string[],
     allocations: [] as AllocationItem[],
 
@@ -445,6 +462,35 @@ export default function AmendmentPlanCreatePage() {
     endDate: "",
     budget: "",
   });
+
+  // Load existing plan data if editing
+  useEffect(() => {
+    if (isEdit && params?.id) {
+      const existingPlan = getPlanById(Number(params.id));
+      if (existingPlan) {
+        setFormData({
+          code: existingPlan.code,
+          name: existingPlan.name,
+          technician: existingPlan.technician,
+          priority: existingPlan.priority || "medium",
+          description: existingPlan.description || "",
+          selectedRegionId: "",
+          selectedZoneId: "",
+          selectedPlotIds: existingPlan.selectedPlotIds || [],
+          currentPH: existingPlan.currentPH || "",
+          targetPH: existingPlan.targetPH || "",
+          targetIssue: existingPlan.target_issue,
+          processId: existingPlan.processId || "",
+          regimenId: existingPlan.regimenId || "",
+          selectedStages: [],
+          allocations: existingPlan.allocations || [],
+          startDate: existingPlan.startDate,
+          endDate: existingPlan.endDate,
+          budget: String(existingPlan.budget),
+        });
+      }
+    }
+  }, [isEdit, params?.id, getPlanById]);
 
   const calculateArea = () => {
     let area = 0;
@@ -493,7 +539,39 @@ export default function AmendmentPlanCreatePage() {
   }, []);
 
   const handleComplete = () => {
-    toast({ title: "Thành công", description: "Đã lưu kế hoạch cải tạo" });
+    const planData = {
+      code: formData.code,
+      name: formData.name,
+      zone:
+        LOCATIONS.find((r) => r.id === formData.selectedRegionId)?.name || "",
+      target_issue: formData.targetIssue,
+      technician: formData.technician,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      status: "planning" as const,
+      area: Number(calculateArea()),
+      budget: Number(formData.budget) || 0,
+      methodCount: formData.allocations.length,
+      priority: formData.priority,
+      description: formData.description,
+      currentPH: formData.currentPH,
+      targetPH: formData.targetPH,
+      processId: formData.processId,
+      regimenId: formData.regimenId,
+      selectedPlotIds: formData.selectedPlotIds,
+      allocations: formData.allocations,
+    };
+
+    if (isEdit && params?.id) {
+      updatePlan(Number(params.id), planData);
+      toast({
+        title: "Thành công",
+        description: "Đã cập nhật kế hoạch cải tạo",
+      });
+    } else {
+      addPlan(planData);
+      toast({ title: "Thành công", description: "Đã tạo kế hoạch cải tạo" });
+    }
     setLocation("/amendment-plan");
   };
 
@@ -809,6 +887,26 @@ export default function AmendmentPlanCreatePage() {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label className="text-base">Phác đồ điều trị (nếu có)</Label>
+              <Select
+                value={formData.regimenId}
+                onValueChange={(v) =>
+                  setFormData((prev) => ({ ...prev, regimenId: v }))
+                }
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Chọn phác đồ..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {TREATMENT_REGIMENS.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
               <div className="flex gap-4">
                 <div className="flex-1 space-y-2">
                   <Label>Bắt đầu</Label>

@@ -18,12 +18,15 @@ import {
   Leaf,
   Sprout,
 } from "lucide-react";
-import { initialSeasons } from "./mocks";
-import { initialGrowthCycles } from "../growth-cycle/mocks";
+import useSeasonStore from "../../stores/useSeasonStore";
+import useGrowthCycleStore from "../../stores/useGrowthCycleStore";
 
 export default function SeasonDetailPage() {
   const [, params] = useRoute("/season/:id");
-  const season = initialSeasons.find((item) => item.id === params?.id);
+  const { getSeasonById } = useSeasonStore();
+  const { growthCycles } = useGrowthCycleStore();
+
+  const season = params?.id ? getSeasonById(params.id) : undefined;
 
   if (!season) {
     return (
@@ -38,7 +41,7 @@ export default function SeasonDetailPage() {
     );
   }
 
-  const selectedCycles = initialGrowthCycles.filter((c) =>
+  const selectedCycles = growthCycles.filter((c) =>
     season.growthCycleIds.includes(c.id),
   );
 

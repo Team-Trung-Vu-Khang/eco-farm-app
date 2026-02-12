@@ -20,14 +20,15 @@ import {
   Sprout,
 } from "lucide-react";
 import { Link } from "wouter";
-import { initialData } from "./mocks";
+import useVarietyStore from "../../stores/useVarietyStore";
 
 interface VarietyDetailPageProps {
   id: string;
 }
 
 export default function VarietyDetailPage({ id }: VarietyDetailPageProps) {
-  const variety = initialData.find((v) => v.id === id);
+  const { getVarietyById } = useVarietyStore();
+  const variety = getVarietyById(id);
 
   if (!variety) {
     return (
@@ -99,7 +100,7 @@ export default function VarietyDetailPage({ id }: VarietyDetailPageProps) {
                     : "Ngừng kinh doanh"}
                 </Badge>
               </div>
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6">
+              <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent p-6 flex flex-col justify-end">
                 <p className="text-white/80 text-xs font-bold uppercase tracking-wider mb-1">
                   {variety.crop}
                 </p>
@@ -229,7 +230,22 @@ export default function VarietyDetailPage({ id }: VarietyDetailPageProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              {variety.documents.length > 0 ? (
+              {variety.contentType === "editor" && variety.editorContent ? (
+                <div className="prose prose-slate max-w-none animate-in fade-in duration-700">
+                  <div
+                    className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm font-serif text-lg leading-loose text-slate-700 editor-content-preview"
+                    dangerouslySetInnerHTML={{ __html: variety.editorContent }}
+                  />
+                  <style>{`
+                    .editor-content-preview h1 { font-size: 2rem; font-weight: 800; margin-bottom: 1.5rem; color: #0f172a; }
+                    .editor-content-preview h2 { font-size: 1.5rem; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; color: #1e293b; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem; }
+                    .editor-content-preview p { margin-bottom: 1.25rem; }
+                    .editor-content-preview ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1.25rem; }
+                    .editor-content-preview ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1.25rem; }
+                    .editor-content-preview strong { color: #0f172a; font-weight: 700; }
+                  `}</style>
+                </div>
+              ) : variety.documents && variety.documents.length > 0 ? (
                 <div className="grid grid-cols-1 gap-3">
                   {variety.documents.map((doc, idx) => (
                     <div
@@ -237,7 +253,7 @@ export default function VarietyDetailPage({ id }: VarietyDetailPageProps) {
                       className="group flex items-center justify-between p-4 rounded-xl bg-white border border-slate-200 hover:border-purple-200 hover:shadow-sm transition-all"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
+                        <div className="w-12 h-12 rounded-lg bg-purple-50 flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform">
                           <FileText className="w-6 h-6" />
                         </div>
                         <div>
@@ -245,7 +261,7 @@ export default function VarietyDetailPage({ id }: VarietyDetailPageProps) {
                             {doc.name}
                           </p>
                           <p className="text-xs text-slate-500 font-medium mt-0.5">
-                            PDF • 2.4 MB
+                            PDF Tài liệu • Đã sẵn sàng
                           </p>
                         </div>
                       </div>

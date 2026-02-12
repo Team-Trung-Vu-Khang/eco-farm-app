@@ -19,10 +19,20 @@ import {
   useToast,
 } from "@tankhang1/eco-shared-ui";
 import { Save, X } from "lucide-react";
+import useContactStore from "../../stores/useContactStore";
+import useEnterpriseStore from "../../stores/useEnterpriseStore";
+import useDepartmentStore from "../../stores/useDepartmentStore";
 
 export default function ContactCreatePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  // Zustand store
+  const contacts = useContactStore((state) => state.contacts);
+  const groups = useContactStore((state) => state.groups);
+  const addContact = useContactStore((state) => state.addContact);
+  const enterprises = useEnterpriseStore((state) => state.enterprises);
+  const departments = useDepartmentStore((state) => state.departments);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -33,7 +43,7 @@ export default function ContactCreatePage() {
     entityName: "",
     groupId: "",
     note: "",
-    status: "active",
+    status: "active" as "active" | "inactive",
   });
 
   const handleSubmit = () => {
@@ -45,6 +55,25 @@ export default function ContactCreatePage() {
       });
       return;
     }
+
+    // Generate new ID
+    const newId =
+      contacts.length > 0 ? Math.max(...contacts.map((c) => c.id)) + 1 : 1;
+
+    // Add to store
+    addContact({
+      id: newId,
+      fullName: formData.fullName,
+      phone: formData.phone,
+      email: formData.email,
+      position: formData.position,
+      department: formData.department,
+      entityName: formData.entityName,
+      groupId: formData.groupId ? parseInt(formData.groupId) : undefined,
+      note: formData.note,
+      status: formData.status,
+      createdAt: new Date().toISOString(),
+    });
 
     toast({
       title: "Thành công",
@@ -132,15 +161,11 @@ export default function ContactCreatePage() {
                     <SelectValue placeholder="Chọn đơn vị" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Công ty CP Nông nghiệp Xanh">
-                      Công ty CP Nông nghiệp Xanh
-                    </SelectItem>
-                    <SelectItem value="HTX Rau sạch Thanh Hà">
-                      HTX Rau sạch Thanh Hà
-                    </SelectItem>
-                    <SelectItem value="Nông hộ Nguyễn Văn A">
-                      Nông hộ Nguyễn Văn A
-                    </SelectItem>
+                    {enterprises.map((enterprise) => (
+                      <SelectItem key={enterprise.id} value={enterprise.name}>
+                        {enterprise.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -156,10 +181,11 @@ export default function ContactCreatePage() {
                     <SelectValue placeholder="Chọn nhóm danh bạ" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Khách hàng</SelectItem>
-                    <SelectItem value="2">Đối tác</SelectItem>
-                    <SelectItem value="3">Nhà cung cấp</SelectItem>
-                    <SelectItem value="4">Cơ quan nhà nước</SelectItem>
+                    {groups.map((group) => (
+                      <SelectItem key={group.id} value={group.id.toString()}>
+                        {group.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -178,10 +204,13 @@ export default function ContactCreatePage() {
                     <SelectValue placeholder="Chọn phòng ban" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Kinh doanh">Kinh doanh</SelectItem>
-                    <SelectItem value="Kỹ thuật">Kỹ thuật</SelectItem>
-                    <SelectItem value="Kế toán">Kế toán</SelectItem>
-                    <SelectItem value="Hành chính">Hành chính</SelectItem>
+                    {departments
+                      .filter((dept) => dept.status === "active")
+                      .map((dept) => (
+                        <SelectItem key={dept.id} value={dept.name}>
+                          {dept.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -202,7 +231,7 @@ export default function ContactCreatePage() {
               <Label htmlFor="status">Trạng thái</Label>
               <Select
                 value={formData.status}
-                onValueChange={(val) =>
+                onValueChange={(val: "active" | "inactive") =>
                   setFormData({ ...formData, status: val })
                 }
               >

@@ -15,55 +15,17 @@ import {
   type Column,
 } from "@tankhang1/eco-shared-ui";
 import { ImportTeamDialog } from "../../components/team/ImportTeamDialog";
-
-interface Team {
-  id: number;
-  code: string;
-  name: string;
-  leader: string;
-  department: string;
-  memberCount: number;
-  description: string;
-  status: "active" | "inactive";
-}
-
-const initialData: Team[] = [
-  {
-    id: 1,
-    code: "TEAM-KD-MB",
-    name: "Đội kinh doanh miền Bắc",
-    leader: "Nguyễn Văn A",
-    department: "Kinh doanh",
-    memberCount: 15,
-    description: "Phụ trách thị trường từ Đà Nẵng trở ra.",
-    status: "active",
-  },
-  {
-    id: 2,
-    code: "TEAM-KT-T1",
-    name: "Tổ kỹ thuật trại 1",
-    leader: "Lê Văn C",
-    department: "Kỹ thuật",
-    memberCount: 8,
-    description: "Chăm sóc và vận hành kỹ thuật tại Farm 1.",
-    status: "active",
-  },
-  {
-    id: 3,
-    code: "TEAM-KT-TH",
-    name: "Tổ kế toán tổng hợp",
-    leader: "Trần Thị B",
-    department: "Kế toán",
-    memberCount: 5,
-    description: "Xử lý số liệu kế toán toàn công ty.",
-    status: "active",
-  },
-];
+import useTeamStore, { type Team } from "../../stores/useTeamStore";
 
 export default function TeamPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [data, setData] = useState<Team[]>(initialData);
+
+  // Zustand store
+  const teams = useTeamStore((state) => state.teams);
+  const deleteTeam = useTeamStore((state) => state.deleteTeam);
+  const bulkAddTeams = useTeamStore((state) => state.bulkAddTeams);
+
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Team | null>(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -92,7 +54,7 @@ export default function TeamPage() {
 
   const handleConfirmDelete = () => {
     if (deleteItem) {
-      setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
+      deleteTeam(deleteItem.id);
       toast({
         title: "Thành công",
         description: "Đã xóa đội nhóm khỏi hệ thống",
@@ -102,12 +64,11 @@ export default function TeamPage() {
   };
 
   const handleImportData = (newData: any[]) => {
-    const formattedData: Team[] = newData.map((item, index) => ({
-      ...item,
-      id: data.length + index + 1,
-      memberCount: 0, // Mặc định 0 cho dữ liệu mới nhập
-    }));
-    setData((prev) => [...prev, ...formattedData]);
+    bulkAddTeams(newData);
+    toast({
+      title: "Thành công",
+      description: `Đã nhập ${newData.length} đội nhóm mới`,
+    });
   };
 
   return (
@@ -138,7 +99,7 @@ export default function TeamPage() {
     >
       <DataTable
         columns={columns}
-        data={data}
+        data={teams}
         onView={(item) => setLocation(`/team/${item.id}`)}
         onEdit={(item) => setLocation(`/team/${item.id}`)}
         onDelete={handleDelete}

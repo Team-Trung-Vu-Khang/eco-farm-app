@@ -9,13 +9,9 @@ import {
 import { Download, Sprout } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import {
-  cropOptions,
-  initialData,
-  originOptions,
-  supplierOptions,
-} from "./mocks";
+import { cropOptions, originOptions, supplierOptions } from "./mocks";
 import type { Variety } from "./types";
+import useSeedStore from "../../stores/useSeedStore";
 
 const columns: Column<Variety>[] = [
   {
@@ -85,7 +81,7 @@ const columns: Column<Variety>[] = [
 const SeedPage = () => {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [sourceData, setSourceData] = useState<Variety[]>(initialData);
+  const { seeds, deleteSeed } = useSeedStore();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Variety | null>(null);
 
@@ -122,7 +118,7 @@ const SeedPage = () => {
 
   const handleConfirmDelete = () => {
     if (deleteItem) {
-      setSourceData((prev) => prev.filter((item) => item.id !== deleteItem.id));
+      deleteSeed(deleteItem.id);
       toast({ title: "Thành công", description: "Đã xóa giống cây trồng" });
     }
     setDeleteOpen(false);
@@ -151,7 +147,7 @@ const SeedPage = () => {
       <div className="space-y-6">
         <DataTable
           columns={columns}
-          data={sourceData}
+          data={seeds}
           selectable
           onView={handleView}
           onEdit={handleEdit}

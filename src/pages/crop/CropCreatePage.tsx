@@ -53,11 +53,13 @@ import {
   stageOptions,
 } from "./mocks";
 import type { CreateCropForm, GrowthCycleDetail } from "./types";
+import useCropStore from "../../stores/useCropStore";
 
 export default function CropCreatePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { addCrop } = useCropStore();
 
   const [formData, setFormData] = useState<CreateCropForm>({
     code: "TREE-" + Math.floor(1000 + Math.random() * 9000),
@@ -162,6 +164,21 @@ export default function CropCreatePage() {
   };
 
   const handleComplete = () => {
+    // Transform formData to Crop format
+    const illustrationUrl = formData.illustration
+      ? URL.createObjectURL(formData.illustration)
+      : null;
+
+    addCrop({
+      code: formData.code,
+      name: formData.name,
+      cropType: formData.cropType,
+      cropGroup: formData.cropGroup,
+      harvestMethod: formData.harvestMethod,
+      illustration: illustrationUrl,
+      technicalSpecs: formData.technicalSpecs,
+    });
+
     toast({
       title: "Thành công",
       description: `Đã tạo cây trồng "${formData.name}"`,

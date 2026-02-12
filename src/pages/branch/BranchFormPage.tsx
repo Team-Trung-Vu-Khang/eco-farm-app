@@ -39,6 +39,8 @@ import {
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import useBranchStore from "../../stores/useBranchStore";
+import useEnterpriseStore from "../../stores/useEnterpriseStore";
 
 // Fix Leaflet default icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -138,6 +140,15 @@ export default function BranchFormPage() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/branch/:id/edit");
   const isEdit = !!params?.id;
+  const branchId = params?.id ? parseInt(params.id) : undefined;
+
+  // Zustand store hooks
+  const getBranchById = useBranchStore((state) => state.getBranchById);
+  const addBranch = useBranchStore((state) => state.addBranch);
+  const updateBranch = useBranchStore((state) => state.updateBranch);
+  const branches = useBranchStore((state) => state.branches);
+  const branch = branchId ? getBranchById(branchId) : undefined;
+
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [searchAddress, setSearchAddress] = useState("");
@@ -162,64 +173,69 @@ export default function BranchFormPage() {
   }, []);
 
   const [formData, setFormData] = useState<BranchFormData>({
-    code: isEdit ? "CN001" : "",
-    name: isEdit ? "Chi nhánh Miền Nam" : "",
-    enterpriseId: isEdit ? "DN001" : "",
-    enterpriseName: isEdit ? "Công ty CP Nông nghiệp Xanh EcoFarm" : "",
-    taxCode: isEdit ? "0123456789-001" : "",
-    taxAddress: isEdit ? "123 Nguyễn Huệ, Quận 1, TP.HCM" : "",
-    address: isEdit ? "123 Nguyễn Huệ" : "",
-    city: isEdit ? "Hồ Chí Minh" : "",
-    district: isEdit ? "Quận 1" : "",
-    ward: isEdit ? "Phường Bến Nghé" : "",
-    imageUrl: isEdit
-      ? "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800"
-      : "",
-    latitude: isEdit ? 10.7769 : 10.7769,
-    longitude: isEdit ? 106.7009 : 106.7009,
+    code: "",
+    name: "",
+    enterpriseId: "",
+    enterpriseName: "",
+    taxCode: "",
+    taxAddress: "",
+    address: "",
+    city: "",
+    district: "",
+    ward: "",
+    imageUrl: "",
+    latitude: 10.7769,
+    longitude: 106.7009,
     status: "active",
-    website: isEdit ? "https://ecofarm.vn" : "",
-    contactInfos: isEdit
-      ? [
-          {
-            id: "1",
-            phone: "02839999888",
-            email: "hcm@ecofarm.vn",
-            isPrimary: true,
-          },
-        ]
-      : [],
-    contacts: isEdit
-      ? [
-          {
-            id: "1",
-            name: "Nguyễn Văn A",
-            position: "Giám đốc chi nhánh",
-            phone: "0901234567",
-            email: "nguyenvana@ecofarm.vn",
-            isPrimary: true,
-          },
-        ]
-      : [],
-    bankAccounts: isEdit
-      ? [
-          {
-            id: "1",
-            bankName: "Vietcombank",
-            accountNumber: "0123456789",
-            accountHolder: "Chi nhánh Miền Nam - EcoFarm",
-            branch: "Chi nhánh Sài Gòn",
-            isPrimary: true,
-          },
-        ]
-      : [],
+    website: "",
+    contactInfos: [],
+    contacts: [],
+    bankAccounts: [],
   });
 
-  const enterprises = [
-    { id: "DN001", name: "Công ty CP Nông nghiệp Xanh EcoFarm" },
-    { id: "DN002", name: "HTX Rau sạch Thanh Hà" },
-    { id: "DN003", name: "Công ty TNHH Nông sản Organic" },
-  ];
+  // Load branch data for edit mode
+  useEffect(() => {
+    if (branch) {
+      // Create contactInfos from branch phone and email
+      const contactInfos: ContactInfo[] = [];
+      if (branch.phone || branch.email) {
+        contactInfos.push({
+          id: "1",
+          phone: branch.phone || "",
+          email: branch.email || "",
+          isPrimary: true,
+        });
+      }
+
+      setFormData({
+        code: branch.code,
+        name: branch.name,
+        enterpriseId: "DN001", // Default for now
+        enterpriseName: branch.enterpriseName,
+        taxCode: branch.taxCode || "",
+        taxAddress: branch.taxAddress || "",
+        address: branch.address,
+        city: branch.city || "",
+        district: branch.district || "",
+        ward: branch.ward || "",
+        imageUrl: branch.imageUrl || "",
+        latitude: branch.latitude ? parseFloat(branch.latitude) : 10.7769,
+        longitude: branch.longitude ? parseFloat(branch.longitude) : 106.7009,
+        status: branch.status,
+        website: branch.website || "",
+        contactInfos: contactInfos,
+        contacts: branch.contacts || [],
+        bankAccounts: branch.bankAccounts || [],
+      });
+    }
+  }, [branch]);
+
+  // Get enterprises from store
+  const enterprisesFromStore = useEnterpriseStore((state) => state.enterprises);
+  const enterprises = enterprisesFromStore.map((e) => ({
+    id: e.id.toString(),
+    name: e.name,
+  }));
 
   const BANKS_LIST = [
     "Vietcombank",
@@ -506,10 +522,78 @@ export default function BranchFormPage() {
 
   const submitForm = () => {
     setShowConfirmDialog(false);
-    toast({
-      title: "Thành công",
-      description: isEdit ? "Đã cập nhật chi nhánh" : "Đã thêm chi nhánh mới",
-    });
+
+    // Construct full address
+    const fullAddress = [
+      formData.address,
+      formData.ward,
+      formData.district,
+      formData.city,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    if (isEdit && branchId) {
+      // Update existing branch
+      updateBranch(branchId, {
+        code: formData.code,
+        name: formData.name,
+        enterpriseName: formData.enterpriseName,
+        taxCode: formData.taxCode,
+        taxAddress: formData.taxAddress,
+        website: formData.website,
+        phone: formData.contactInfos[0]?.phone || "",
+        email: formData.contactInfos[0]?.email || "",
+        address: fullAddress || formData.address,
+        city: formData.city,
+        district: formData.district,
+        ward: formData.ward,
+        imageUrl: formData.imageUrl,
+        latitude: formData.latitude.toString(),
+        longitude: formData.longitude.toString(),
+        status: formData.status,
+        contacts: formData.contacts,
+        bankAccounts: formData.bankAccounts,
+      });
+
+      toast({
+        title: "Thành công",
+        description: `Đã cập nhật chi nhánh "${formData.name}"`,
+      });
+    } else {
+      // Create new branch
+      const newId =
+        branches.length > 0 ? Math.max(...branches.map((b) => b.id)) + 1 : 1;
+
+      addBranch({
+        id: newId,
+        code: formData.code || `CN${String(newId).padStart(3, "0")}`,
+        name: formData.name,
+        enterpriseName: formData.enterpriseName,
+        taxCode: formData.taxCode,
+        taxAddress: formData.taxAddress,
+        website: formData.website,
+        phone: formData.contactInfos[0]?.phone || "",
+        email: formData.contactInfos[0]?.email || "",
+        address: fullAddress || formData.address,
+        city: formData.city,
+        district: formData.district,
+        ward: formData.ward,
+        imageUrl: formData.imageUrl,
+        latitude: formData.latitude.toString(),
+        longitude: formData.longitude.toString(),
+        status: formData.status,
+        contacts: formData.contacts,
+        bankAccounts: formData.bankAccounts,
+        createdAt: new Date().toISOString(),
+      });
+
+      toast({
+        title: "Thành công",
+        description: `Đã thêm chi nhánh mới "${formData.name}"`,
+      });
+    }
+
     setLocation("/branch");
   };
 
@@ -945,27 +1029,6 @@ export default function BranchFormPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="ward">Phường/Xã</Label>
-                  <Select
-                    value={formData.ward}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, ward: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn Phường/Xã" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {WARDS_LIST.map((ward) => (
-                        <SelectItem key={ward} value={ward}>
-                          {ward}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
                   <Label htmlFor="city">Tỉnh/Thành phố</Label>
                   <Select
                     value={formData.city}
@@ -980,6 +1043,26 @@ export default function BranchFormPage() {
                       {CITIES_LIST.map((city) => (
                         <SelectItem key={city} value={city}>
                           {city}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ward">Phường/Xã</Label>
+                  <Select
+                    value={formData.ward}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, ward: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn Phường/Xã" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {WARDS_LIST.map((ward) => (
+                        <SelectItem key={ward} value={ward}>
+                          {ward}
                         </SelectItem>
                       ))}
                     </SelectContent>

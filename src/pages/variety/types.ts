@@ -9,10 +9,14 @@ export interface Variety {
   growthDuration?: string;
   averageYield?: string;
   description: string;
+  seedType?: string;
   documents: {
     name: string;
     url: string;
   }[];
+  contentType?: "pdf" | "editor";
+  pdfFile?: File | null;
+  editorContent?: string;
   status: "active" | "inactive";
   updatedAt: string;
 }

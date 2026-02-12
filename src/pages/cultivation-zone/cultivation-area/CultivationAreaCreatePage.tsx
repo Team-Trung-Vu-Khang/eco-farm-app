@@ -22,19 +22,17 @@ import {
   DialogTitle,
   Badge,
   ScrollArea,
+  cn,
 } from "@tankhang1/eco-shared-ui";
-import {
-  MOCK_REGIONS,
-  MOCK_AREAS,
-  MOCK_PLOTS,
-} from "../../region-chart/constants";
-import {
-  MOCK_CERTIFICATES,
-  MOCK_MANAGERS,
-  FARMING_METHODS,
-  IRRIGATION_METHODS,
-  CROP_VARIETIES,
-} from "./constants";
+import useRegionStore from "../../../stores/useRegionStore";
+import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
+import useDepartmentStore from "../../../stores/useDepartmentStore";
+import useEnterpriseStore from "../../../stores/useEnterpriseStore";
+import useEnterpriseCertificateStore from "../../../stores/useEnterpriseCertificateStore";
+import usePersonnelStore from "../../../stores/usePersonnelStore";
+import useVarietyStore from "../../../stores/useVarietyStore";
+import useFarmingMethodStore from "../../../stores/useFarmingMethodStore";
+import useIrrigationSystemStore from "../../../stores/useIrrigationSystemStore";
 import {
   User,
   CheckCircle2,
@@ -62,30 +60,31 @@ const CertificateSelector = ({
   selectedId: string;
   onSelect: (id: string) => void;
 }) => {
+  const { standards } = useEnterpriseCertificateStore();
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {MOCK_CERTIFICATES.map((cert) => (
+        {standards.map((cert) => (
           <div
-            key={cert.id}
+            key={cert.code}
             className={`cursor-pointer border rounded-xl p-3 relative flex items-start gap-3 transition-all ${
-              selectedId === cert.id
+              selectedId === cert.code
                 ? "border-primary bg-primary/5 ring-1 ring-primary/30 shadow-sm"
                 : "border-slate-200 hover:border-primary/40 hover:bg-slate-50"
             }`}
-            onClick={() => onSelect(cert.id)}
+            onClick={() => onSelect(cert.code)}
           >
             <div className="w-12 h-12 bg-white rounded-lg border flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
-              {/* @ts-ignore - Assuming imageUrl exists on mock data, if not it falls back gracefully or shows empty box */}
-              {(cert as any).imageUrl ? (
+              {cert.imageUrl ? (
                 <img
-                  src={(cert as any).imageUrl}
+                  src={cert.imageUrl}
                   alt={cert.name}
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <Award
-                  className={`w-6 h-6 ${selectedId === cert.id ? "text-primary" : "text-slate-400"}`}
+                  className={`w-6 h-6 ${selectedId === cert.code ? "text-primary" : "text-slate-400"}`}
                 />
               )}
             </div>
@@ -97,10 +96,10 @@ const CertificateSelector = ({
                 {cert.code}
               </div>
               <div className="text-xs text-slate-500 truncate mt-0.5">
-                {cert.organization}
+                {cert.organizations.join(", ")}
               </div>
             </div>
-            {selectedId === cert.id && (
+            {selectedId === cert.code && (
               <div className="absolute top-3 right-3 text-primary animate-in fade-in zoom-in">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
@@ -123,21 +122,23 @@ const ManagerSelector = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
 
-  const selectedManager = MOCK_MANAGERS.find((m) => m.id === selectedId);
-  const departments = useMemo(() => {
-    return Array.from(new Set(MOCK_MANAGERS.map((m) => m.department)));
-  }, []);
+  const { personnel } = usePersonnelStore();
+  const selectedManager = personnel.find((m) => m.id.toString() === selectedId);
+  const departmentsFromStore = useDepartmentStore((state) => state.departments);
+  const departments = departmentsFromStore
+    .filter((d) => d.status === "active")
+    .map((d) => d.name);
 
   const filteredManagers = useMemo(() => {
-    return MOCK_MANAGERS.filter((m) => {
+    return personnel.filter((m) => {
       const matchesSearch =
-        m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.role.toLowerCase().includes(searchTerm.toLowerCase());
+        m.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        m.position.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesDept =
         departmentFilter === "all" || m.department === departmentFilter;
       return matchesSearch && matchesDept;
     });
-  }, [searchTerm, departmentFilter]);
+  }, [searchTerm, departmentFilter, personnel]);
 
   return (
     <>
@@ -147,19 +148,27 @@ const ManagerSelector = ({
       >
         {selectedManager ? (
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
-              <User className="w-6 h-6 text-primary" />
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 overflow-hidden">
+              {selectedManager.avatar ? (
+                <img
+                  src={selectedManager.avatar}
+                  alt={selectedManager.fullName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-6 h-6 text-primary" />
+              )}
             </div>
             <div className="flex-1">
               <div className="font-bold text-slate-800">
-                {selectedManager.name}
+                {selectedManager.fullName}
               </div>
               <div className="text-sm text-muted-foreground flex items-center gap-1.5 flex-wrap">
                 <Badge
                   variant="outline"
                   className="font-normal text-xs bg-slate-100"
                 >
-                  {selectedManager.role}
+                  {selectedManager.position}
                 </Badge>
                 <span className="text-xs text-slate-400">&bull;</span>
                 <span className="text-xs">{selectedManager.department}</span>
@@ -224,29 +233,37 @@ const ManagerSelector = ({
                   <div
                     key={m.id}
                     className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${
-                      selectedId === m.id
+                      selectedId === m.id.toString()
                         ? "bg-primary/5 border border-primary/20 shadow-sm"
                         : "hover:bg-slate-50 border border-transparent"
                     }`}
                     onClick={() => {
-                      onSelect(m.id);
+                      onSelect(m.id.toString());
                       setIsOpen(false);
                     }}
                   >
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${selectedId === m.id ? "bg-primary text-white" : "bg-slate-200 text-slate-600"}`}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold overflow-hidden ${selectedId === m.id.toString() ? "bg-primary text-white" : "bg-slate-200 text-slate-600"}`}
                     >
-                      {m.name.charAt(0)}
+                      {m.avatar ? (
+                        <img
+                          src={m.avatar}
+                          alt={m.fullName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        m.fullName.charAt(0)
+                      )}
                     </div>
                     <div className="flex-1">
                       <div className="font-medium text-sm text-slate-900">
-                        {m.name}
+                        {m.fullName}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {m.role} - {m.department}
+                        {m.position} - {m.department}
                       </div>
                     </div>
-                    {selectedId === m.id && (
+                    {selectedId === m.id.toString() && (
                       <CheckCircle2 className="w-5 h-5 text-primary" />
                     )}
                   </div>
@@ -269,12 +286,21 @@ const ManagerSelector = ({
 
 const CultivationAreaCreatePage = () => {
   const [, setLocation] = useLocation();
+  const { regions } = useRegionStore();
+  const { enterprises } = useEnterpriseStore();
+  const { addArea } = useCultivationAreaStore();
+  const { standards } = useEnterpriseCertificateStore();
+  const { personnel } = usePersonnelStore();
+  const { varieties } = useVarietyStore();
+  const { farmingMethods } = useFarmingMethodStore();
+  const { irrigationSystems } = useIrrigationSystemStore();
 
   // State
   const [scope, setScope] = useState<ScopeType>("region");
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
 
+  const [selectedEnterpriseId, setSelectedEnterpriseId] = useState<string>("");
   const [selectedRegionId, setSelectedRegionId] = useState<string>("");
   const [selectedAreaIds, setSelectedAreaIds] = useState<string[]>([]);
   const [selectedPlotIds, setSelectedPlotIds] = useState<string[]>([]);
@@ -283,7 +309,7 @@ const CultivationAreaCreatePage = () => {
   const [selectedManagerId, setSelectedManagerId] = useState<string>("");
 
   /* Per-entity configuration state */
-  const [activeConfigId, setActiveConfigId] = useState<string>("default");
+  const [activeConfigId, setActiveConfigId] = useState<string>("region-main");
   const [configs, setConfigs] = useState<
     Record<
       string,
@@ -295,21 +321,52 @@ const CultivationAreaCreatePage = () => {
     >
   >({});
 
+  // Get current region's areas and plots from store
+  const currentRegion = useMemo(() => {
+    return regions.find((r) => r.id.toString() === selectedRegionId);
+  }, [regions, selectedRegionId]);
+
+  const availableAreas = useMemo(() => {
+    return currentRegion?.subAreas || [];
+  }, [currentRegion]);
+
+  const availablePlots = useMemo(() => {
+    // Filter plots based on SELECTED areas if area scope or plot scope is used
+    const filteredAreas = availableAreas.filter((a) =>
+      selectedAreaIds.includes(a.id.toString()),
+    );
+    return filteredAreas.flatMap((a) => a.plots || []);
+  }, [availableAreas, selectedAreaIds]);
+
   // Computed values
-  const selectedRegion = MOCK_REGIONS.find(
-    (r) => r.id.toString() === selectedRegionId,
-  );
-  const selectedAreas = MOCK_AREAS.filter((a) =>
-    selectedAreaIds.includes(a.id.toString()),
-  );
-  const selectedPlots = MOCK_PLOTS.filter((p) =>
-    selectedPlotIds.includes(p.id),
-  );
+  const selectedRegion = currentRegion;
+  const selectedAreas = useMemo(() => {
+    return availableAreas.filter((a) =>
+      selectedAreaIds.includes(a.id.toString()),
+    );
+  }, [availableAreas, selectedAreaIds]);
+
+  const selectedPlots = useMemo(() => {
+    return availablePlots.filter((p) => selectedPlotIds.includes(p.id));
+  }, [availablePlots, selectedPlotIds]);
 
   const toggleArea = (id: string) => {
-    setSelectedAreaIds((prev) =>
-      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id],
-    );
+    setSelectedAreaIds((prev) => {
+      const isSelected = prev.includes(id);
+      if (isSelected) {
+        // Remove plots associated with this area from selectedPlotIds
+        const area = availableAreas.find((a) => a.id.toString() === id);
+        if (area?.plots) {
+          const plotIdsToRemove = area.plots.map((p) => p.id);
+          setSelectedPlotIds((plots) =>
+            plots.filter((pid) => !plotIdsToRemove.includes(pid)),
+          );
+        }
+        return prev.filter((a) => a !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
   };
 
   const togglePlot = (id: string) => {
@@ -409,26 +466,65 @@ const CultivationAreaCreatePage = () => {
 
               <div className="grid gap-2">
                 <Label className="text-xs text-muted-foreground">
-                  Vùng trồng (Region) <span className="text-red-500">*</span>
+                  Doanh nghiệp (Enterprise){" "}
+                  <span className="text-red-500">*</span>
                 </Label>
                 <Select
-                  value={selectedRegionId}
-                  onValueChange={setSelectedRegionId}
+                  value={selectedEnterpriseId}
+                  onValueChange={(val) => {
+                    setSelectedEnterpriseId(val);
+                    setSelectedRegionId("");
+                    setSelectedAreaIds([]);
+                    setSelectedPlotIds([]);
+                  }}
                 >
                   <SelectTrigger className="bg-white border-slate-200">
-                    <SelectValue placeholder="Chọn vùng..." />
+                    <SelectValue placeholder="Chọn doanh nghiệp..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {MOCK_REGIONS.map((r) => (
-                      <SelectItem key={r.id} value={r.id.toString()}>
-                        {r.name}
+                    {enterprises.map((ent) => (
+                      <SelectItem key={ent.id} value={ent.id.toString()}>
+                        {ent.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {(scope === "area" || scope === "plot") && (
+              <div className="grid gap-2">
+                <Label className="text-xs text-muted-foreground">
+                  Vùng trồng (Region) <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={selectedRegionId}
+                  onValueChange={(val) => {
+                    setSelectedRegionId(val);
+                    setSelectedAreaIds([]);
+                    setSelectedPlotIds([]);
+                  }}
+                  disabled={!selectedEnterpriseId}
+                >
+                  <SelectTrigger className="bg-white border-slate-200">
+                    <SelectValue placeholder="Chọn vùng..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {regions
+                      .filter(
+                        (r) =>
+                          !selectedEnterpriseId ||
+                          r.enterpriseId === `ent-${selectedEnterpriseId}` ||
+                          r.enterpriseId === selectedEnterpriseId,
+                      )
+                      .map((r) => (
+                        <SelectItem key={r.id} value={r.id.toString()}>
+                          {r.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {(scope === "area" || scope === "plot") && selectedRegionId && (
                 <div className="space-y-2 animate-in slide-in-from-top-2">
                   <Label className="text-xs text-muted-foreground">
                     Khu vực (Area) <span className="text-red-500">*</span>
@@ -440,9 +536,7 @@ const CultivationAreaCreatePage = () => {
                   </Label>
                   <ScrollArea className="max-h-[200px] border rounded-lg p-2 bg-white">
                     <div className="space-y-1">
-                      {MOCK_AREAS.filter(
-                        (a) => a.regionId.toString() === selectedRegionId,
-                      ).map((a) => (
+                      {availableAreas.map((a) => (
                         <div
                           key={a.id}
                           onClick={() => toggleArea(a.id.toString())}
@@ -463,7 +557,7 @@ const CultivationAreaCreatePage = () => {
                 </div>
               )}
 
-              {scope === "plot" && (
+              {scope === "plot" && selectedAreaIds.length > 0 && (
                 <div className="space-y-2 animate-in slide-in-from-top-2">
                   <Label className="text-xs text-muted-foreground">
                     Lô trồng (Plot) <span className="text-red-500">*</span>
@@ -475,22 +569,41 @@ const CultivationAreaCreatePage = () => {
                   </Label>
                   <ScrollArea className="max-h-[200px] border rounded-lg p-2 bg-white">
                     <div className="space-y-1">
-                      {MOCK_PLOTS.map((p) => (
-                        <div
-                          key={p.id}
-                          onClick={() => togglePlot(p.id)}
-                          className={`flex items-center justify-between p-2 rounded cursor-pointer transition-all ${
-                            selectedPlotIds.includes(p.id)
-                              ? "bg-primary/10 border border-primary/30"
-                              : "hover:bg-slate-50"
-                          }`}
-                        >
-                          <span className="text-sm">{p.name}</span>
-                          {selectedPlotIds.includes(p.id) && (
-                            <CheckCircle2 className="w-4 h-4 text-primary" />
-                          )}
+                      {availablePlots.map((p) => {
+                        const parentArea = availableAreas.find((a) =>
+                          a.plots?.some((pp) => pp.id === p.id),
+                        );
+                        return (
+                          <div
+                            key={p.id}
+                            onClick={() => togglePlot(p.id)}
+                            className={`flex items-center justify-between p-2 rounded cursor-pointer transition-all ${
+                              selectedPlotIds.includes(p.id)
+                                ? "bg-primary/10 border border-primary/30"
+                                : "hover:bg-slate-50"
+                            }`}
+                          >
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium">
+                                {p.name}
+                              </span>
+                              {parentArea && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  Thuộc: {parentArea.name}
+                                </span>
+                              )}
+                            </div>
+                            {selectedPlotIds.includes(p.id) && (
+                              <CheckCircle2 className="w-4 h-4 text-primary" />
+                            )}
+                          </div>
+                        );
+                      })}
+                      {availablePlots.length === 0 && (
+                        <div className="text-center py-4 text-xs text-muted-foreground italic">
+                          Không có lô nào trong khu vực đã chọn
                         </div>
-                      ))}
+                      )}
                     </div>
                   </ScrollArea>
                 </div>
@@ -555,6 +668,36 @@ const CultivationAreaCreatePage = () => {
                 </div>
               </div>
             )}
+
+            {selectedRegion?.cropVarieties &&
+              selectedRegion.cropVarieties.length > 0 && (
+                <div className="bg-green-50 p-4 rounded-xl border border-green-100 flex gap-3 text-sm text-green-800 animate-in fade-in slide-in-from-top-2">
+                  <div className="bg-green-100 p-1.5 rounded-full h-fit">
+                    <Sprout className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div>
+                    <div className="font-semibold mb-1">
+                      Cây trồng chủ lực của vùng
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {selectedRegion.cropVarieties.map((crop) => (
+                        <Badge
+                          key={crop.id}
+                          variant="outline"
+                          className="bg-white text-green-700 border-green-200"
+                        >
+                          {crop.name} - {crop.variety}
+                          {crop.seedType && (
+                            <span className="ml-1 text-[10px] text-green-600/70 font-normal">
+                              ({crop.seedType})
+                            </span>
+                          )}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
           </div>
         </div>
       </div>
@@ -590,6 +733,8 @@ const CultivationAreaCreatePage = () => {
       entities.find((e) => e.id === activeConfigId)?.id ||
       entities[0]?.id ||
       "region-main";
+
+    // Initialize config if it doesn't exist for this entity
     const effectiveConfig = configs[effectiveId] || {
       farmingMethodId: "",
       irrigationMethodId: "",
@@ -597,11 +742,9 @@ const CultivationAreaCreatePage = () => {
     };
 
     const availableCropsForConfig = (() => {
-      const method = FARMING_METHODS.find(
-        (m) => m.id === effectiveConfig.farmingMethodId,
-      );
-      if (!method) return [];
-      return CROP_VARIETIES.filter((c) => method.allowedCrops.includes(c.id));
+      if (!effectiveConfig.farmingMethodId) return [];
+      // Return all active varieties, bypassing mock constraint
+      return varieties.filter((v) => v.status === "active");
     })();
 
     return (
@@ -673,7 +816,12 @@ const CultivationAreaCreatePage = () => {
         </div>
 
         {/* Main Content Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_3fr] gap-6">
+        <div
+          className={cn(
+            "grid grid-cols-1 gap-6",
+            entities.length > 1 ? "lg:grid-cols-[1fr_3fr]" : "grid-cols-1",
+          )}
+        >
           {/* Sidebar for multiple entities */}
           {entities.length > 1 && (
             <div className="w-full lg:w-72 shrink-0">
@@ -793,7 +941,7 @@ const CultivationAreaCreatePage = () => {
                         <SelectValue placeholder="Chọn phương pháp..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {FARMING_METHODS.map((m) => (
+                        {farmingMethods.map((m) => (
                           <SelectItem key={m.id} value={m.id}>
                             <span className="font-medium">{m.name}</span>
                           </SelectItem>
@@ -825,7 +973,7 @@ const CultivationAreaCreatePage = () => {
                         <SelectValue placeholder="Chọn phương pháp tưới..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {IRRIGATION_METHODS.map((m) => (
+                        {irrigationSystems.map((m) => (
                           <SelectItem key={m.id} value={m.id}>
                             <div className="flex items-center gap-2">
                               <Droplets className="w-4 h-4 text-blue-500" />
@@ -858,6 +1006,47 @@ const CultivationAreaCreatePage = () => {
                       </Button>
                     </div>
                   )}
+
+                  {!effectiveConfig.selectedCrops?.length &&
+                    selectedRegion?.cropVarieties?.length && (
+                      <div className="pt-2 border-t mt-4">
+                        <div className="text-xs font-medium text-muted-foreground mb-2">
+                          Gợi ý từ vùng trồng:
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedRegion.cropVarieties.map((rc) => (
+                            <Badge
+                              key={rc.id}
+                              variant="secondary"
+                              className="cursor-pointer hover:bg-primary/20 transition-colors"
+                              onClick={() => {
+                                // Find matching crop in available list
+                                const match = availableCropsForConfig.find(
+                                  (c) =>
+                                    c.crop === rc.name &&
+                                    c.varietyName === rc.variety,
+                                );
+                                if (match) {
+                                  const current =
+                                    effectiveConfig.selectedCrops || [];
+                                  if (!current.includes(match.id)) {
+                                    setConfigs((prev) => ({
+                                      ...prev,
+                                      [effectiveId]: {
+                                        ...prev[effectiveId],
+                                        selectedCrops: [...current, match.id],
+                                      },
+                                    }));
+                                  }
+                                }
+                              }}
+                            >
+                              + {rc.name} {rc.variety}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                 </CardContent>
               </Card>
 
@@ -916,10 +1105,10 @@ const CultivationAreaCreatePage = () => {
                                 }`}
                               >
                                 <div className="w-14 h-14 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
-                                  {crop.imageUrl ? (
+                                  {crop.illustration ? (
                                     <img
-                                      src={crop.imageUrl}
-                                      alt={crop.name}
+                                      src={crop.illustration as string}
+                                      alt={crop.varietyName}
                                       className="w-full h-full object-cover"
                                     />
                                   ) : (
@@ -936,10 +1125,15 @@ const CultivationAreaCreatePage = () => {
                                         : "text-slate-700"
                                     }`}
                                   >
-                                    {crop.name}
+                                    {crop.varietyName}
                                   </div>
                                   <div className="text-xs text-muted-foreground mt-0.5">
-                                    {crop.type}
+                                    {crop.crop}
+                                    {crop.seedType && (
+                                      <span className="ml-1 text-slate-500">
+                                        • {crop.seedType}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                                 <div
@@ -974,8 +1168,10 @@ const CultivationAreaCreatePage = () => {
   };
 
   const renderConfirmation = () => {
-    const manager = MOCK_MANAGERS.find((m) => m.id === selectedManagerId);
-    const certificate = MOCK_CERTIFICATES.find((c) => c.id === selectedCertId);
+    const manager = personnel.find(
+      (m) => m.id.toString() === selectedManagerId,
+    );
+    const certificate = standards.find((c) => c.code === selectedCertId);
 
     // Determine entities based on scope
     let entities: { id: string; name: string; type: string }[] = [];
@@ -1093,10 +1289,20 @@ const CultivationAreaCreatePage = () => {
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold">
-                            {manager.name.charAt(0)}
+                          <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold overflow-hidden">
+                            {manager.avatar ? (
+                              <img
+                                src={manager.avatar}
+                                alt={manager.fullName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              manager.fullName.charAt(0)
+                            )}
                           </div>
-                          <span className="font-medium">{manager.name}</span>
+                          <span className="font-medium">
+                            {manager.fullName}
+                          </span>
                         </div>
                       </td>
                     </tr>
@@ -1133,10 +1339,10 @@ const CultivationAreaCreatePage = () => {
                   irrigationMethodId: "",
                   selectedCrops: [],
                 };
-                const farming = FARMING_METHODS.find(
+                const farming = farmingMethods.find(
                   (m) => m.id === cfg.farmingMethodId,
                 );
-                const irrigation = IRRIGATION_METHODS.find(
+                const irrigation = irrigationSystems.find(
                   (m) => m.id === cfg.irrigationMethodId,
                 );
                 const selectedCrops = cfg.selectedCrops || [];
@@ -1186,9 +1392,7 @@ const CultivationAreaCreatePage = () => {
                       <div className="flex flex-wrap gap-2">
                         {selectedCrops.length > 0 ? (
                           selectedCrops.map((cid: string) => {
-                            const crop = CROP_VARIETIES.find(
-                              (c) => c.id === cid,
-                            );
+                            const crop = varieties.find((c) => c.id === cid);
                             return (
                               <Badge
                                 key={cid}
@@ -1198,7 +1402,12 @@ const CultivationAreaCreatePage = () => {
                                 <span className="w-4 h-4 rounded-full bg-green-200 flex items-center justify-center mr-1.5 text-[10px]">
                                   <Leaf className="w-2.5 h-2.5" />
                                 </span>
-                                {crop?.name}
+                                {crop?.varietyName}
+                                {crop?.seedType && (
+                                  <span className="ml-1 text-[10px] text-green-800/80">
+                                    ({crop.seedType})
+                                  </span>
+                                )}
                               </Badge>
                             );
                           })
@@ -1260,18 +1469,32 @@ const CultivationAreaCreatePage = () => {
               steps={steps}
               completeLabel="Khởi tạo Vùng canh tác"
               onComplete={() => {
+                // Determine target labels
+                let targetName = "";
+                let targetIds: string[] = [];
+                if (scope === "region") {
+                  targetName = selectedRegion?.name || "";
+                  targetIds = [selectedRegionId];
+                } else if (scope === "area") {
+                  targetName = selectedAreas.map((a) => a.name).join(", ");
+                  targetIds = selectedAreaIds;
+                } else if (scope === "plot") {
+                  targetName = selectedPlots.map((p) => p.name).join(", ");
+                  targetIds = selectedPlotIds;
+                }
+
                 // Handle submission
-                console.log("Submit:", {
+                addArea({
                   name,
                   scope,
-                  selectedRegionId,
-                  selectedAreaIds,
-                  selectedPlotIds,
+                  targetIds,
+                  targetName,
+                  enterpriseId: selectedEnterpriseId,
                   configs,
-                  selectedCertId,
-                  selectedManagerId,
+                  certificateId: selectedCertId,
+                  managerId: selectedManagerId,
+                  note,
                 });
-                // Add toast here in real app
                 setLocation("/cultivation-area");
               }}
               onCancel={() => setLocation("/cultivation-area")}

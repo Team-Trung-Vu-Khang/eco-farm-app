@@ -34,8 +34,9 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { initialData, mockSuppliers } from "./mocks";
+import { mockSuppliers } from "./mocks";
 import type { CreateVarietyForm } from "./types";
+import useSeedStore from "../../stores/useSeedStore";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -43,7 +44,8 @@ export default function UpdateSeedPage() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const seed = initialData.find((s) => s.id === id);
+  const { getSeedById, updateSeed } = useSeedStore();
+  const seed = getSeedById(id || "");
 
   const [formData, setFormData] = useState<CreateVarietyForm>({
     varietyCode: seed?.varietyCode || "SR-1112",
@@ -108,6 +110,36 @@ export default function UpdateSeedPage() {
   }, [formData.illustration]);
 
   const handleComplete = () => {
+    if (!id) return;
+
+    // Prepare update data
+    const updateData: any = {
+      supplier: formData.supplier,
+      origin: formData.origin,
+      germinationRate: formData.germinationRate,
+      uniformity: formData.uniformity,
+      yield: formData.yield,
+      description: formData.description,
+      editorContent: formData.editorContent,
+    };
+
+    // Add illustration if changed
+    if (formData.illustration) {
+      updateData.illustration = formData.illustration;
+    }
+
+    // Add documents if PDF uploaded
+    if (formData.contentType === "pdf" && formData.pdfFile) {
+      updateData.documents = [
+        {
+          name: formData.pdfFile.name,
+          url: URL.createObjectURL(formData.pdfFile),
+        },
+      ];
+    }
+
+    updateSeed(id, updateData);
+
     toast({
       title: "Thành công",
       description: `Đã cập nhật hạt giống "${formData.varietyName}"`,

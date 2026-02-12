@@ -87,6 +87,29 @@ export const GROWTH_CYCLES: GrowthCycle[] = [
   },
 ];
 
+export const TREATMENT_REGIMENS = [
+  {
+    id: "reg-phen-cap-toc",
+    name: "Phác đồ khử phèn cấp tốc",
+    description: "Sử dụng vôi nóng và bơm xả liên tục",
+  },
+  {
+    id: "reg-phen-ben-vung",
+    name: "Phác đồ khử phèn bền vững",
+    description: "Kết hợp vôi, lân và hữu cơ vi sinh",
+  },
+  {
+    id: "reg-man-rua-troi",
+    name: "Phác đồ rửa mặn 3 bước",
+    description: "Rửa trôi - Bón vôi - Trồng cây chịu mặn",
+  },
+  {
+    id: "reg-phong-ngua-sau-benh",
+    name: "Phác đồ phòng ngừa sâu bệnh tổng hợp (IPM)",
+    description: "Kết hợp biện pháp sinh học, hóa học và canh tác",
+  },
+];
+
 // Helper to get cycle by crop
 export const getCyclesByCrop = (crop: string) =>
   GROWTH_CYCLES.filter((c) => c.crop === crop);

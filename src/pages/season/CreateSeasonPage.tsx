@@ -15,6 +15,9 @@ import {
   Textarea,
   useToast,
   Badge,
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
 } from "@tankhang1/eco-shared-ui";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -22,18 +25,25 @@ import {
   ArrowLeft,
   Calendar,
   FileText,
-  Leaf,
+  Layers,
   Plus,
   Save,
   Sprout,
   Info,
+  Trash2,
 } from "lucide-react";
 import type { CreateSeasonForm } from "./types";
-import { initialGrowthCycles } from "../growth-cycle/mocks";
+import useGrowthCycleStore from "../../stores/useGrowthCycleStore";
+import useSeasonStore from "../../stores/useSeasonStore";
+import { GrowthCycleSelectDialog } from "./components/GrowthCycleSelectDialog";
+import { FileUploader } from "./components/FileUploader";
+import { CROP_OPTIONS } from "../../constants/crops";
 
 export default function CreateSeasonPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { growthCycles } = useGrowthCycleStore();
+  const { addSeason } = useSeasonStore();
 
   const [formData, setFormData] = useState<CreateSeasonForm>({
     code: "",
@@ -46,6 +56,12 @@ export default function CreateSeasonPage() {
     documents: [],
   });
 
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const selectedCycles = growthCycles.filter((c) =>
+    formData.growthCycleIds.includes(c.id),
+  );
+
   const handleSave = () => {
     // Validation
     if (!formData.code || !formData.name || !formData.startDate) {
@@ -57,7 +73,23 @@ export default function CreateSeasonPage() {
       return;
     }
 
-    console.log("Saving Season:", formData);
+    addSeason({
+      code: formData.code,
+      name: formData.name,
+      description: formData.description,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      status: formData.status,
+      growthCycleIds: formData.growthCycleIds,
+      documents: formData.documents.map((doc) => ({
+        name: doc.name,
+        type: "technical",
+        id: Date.now().toString(),
+        url: URL.createObjectURL(doc),
+        uploadedAt: new Date().toISOString(),
+      })),
+    });
+
     toast({
       title: "Thành công",
       description: "Đã tạo mùa vụ mới",
@@ -65,16 +97,15 @@ export default function CreateSeasonPage() {
     setLocation("/season");
   };
 
-  const toggleGrowthCycle = (id: string) => {
-    setFormData((prev) => {
-      const current = prev.growthCycleIds;
-      const exists = current.includes(id);
-      if (exists) {
-        return { ...prev, growthCycleIds: current.filter((c) => c !== id) };
-      } else {
-        return { ...prev, growthCycleIds: [...current, id] };
-      }
-    });
+  const removeCycle = (id: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      growthCycleIds: prev.growthCycleIds.filter((c) => c !== id),
+    }));
+  };
+
+  const getCropImage = (cropName: string) => {
+    return CROP_OPTIONS.find((c) => c.name === cropName)?.image;
   };
 
   return (
@@ -209,65 +240,69 @@ export default function CreateSeasonPage() {
                   </div>
                   <CardTitle>Chu kỳ sinh trưởng áp dụng</CardTitle>
                 </div>
-                <Badge variant="outline" className="ml-auto">
-                  Đã chọn: {formData.growthCycleIds.length}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="ml-auto">
+                    Đã chọn: {formData.growthCycleIds.length}
+                  </Badge>
+                  <Button
+                    size="sm"
+                    className="h-8 font-bold"
+                    onClick={() => setDialogOpen(true)}
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    Thêm
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 gap-4">
-                {initialGrowthCycles.map((cycle) => (
-                  <div
-                    key={cycle.id}
-                    className={`
-                        relative flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all
-                        ${
-                          formData.growthCycleIds.includes(cycle.id)
-                            ? "border-green-600 bg-green-50 shadow-md"
-                            : "border-muted hover:border-green-200 hover:bg-muted/50"
-                        }
-                    `}
-                    onClick={() => toggleGrowthCycle(cycle.id)}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div
-                        className={`
-                            w-10 h-10 rounded-full flex items-center justify-center
-                            ${formData.growthCycleIds.includes(cycle.id) ? "bg-green-600 text-white" : "bg-muted text-muted-foreground"}
-                        `}
-                      >
-                        <Leaf className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-foreground">
-                          {cycle.name}
-                        </h4>
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-                          <span className="flex items-center gap-1">
-                            <Sprout className="w-3 h-3" />
-                            {cycle.cropName} - {cycle.variety}
-                          </span>
-                          <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
-                          <span>{cycle.totalDays} ngày</span>
+              <div className="grid grid-cols-1 gap-3">
+                {selectedCycles.length > 0 ? (
+                  selectedCycles.map((cycle) => (
+                    <div
+                      key={cycle.id}
+                      className="flex items-center justify-between p-4 rounded-xl border bg-white shadow-sm hover:border-green-200 transition-all group"
+                    >
+                      <div className="flex items-center gap-4">
+                        <Avatar className="w-10 h-10 border shadow-sm">
+                          <AvatarImage src={getCropImage(cycle.cropName)} />
+                          <AvatarFallback>
+                            {cycle.cropName.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h4 className="font-bold text-sm leading-tight text-slate-800">
+                            {cycle.name}
+                          </h4>
+                          <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-1">
+                            <span>{cycle.cropName}</span>
+                            <span className="w-1 h-1 rounded-full bg-slate-300" />
+                            <span>{cycle.totalDays} ngày</span>
+                          </div>
                         </div>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="opacity-0 group-hover:opacity-100 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all"
+                        onClick={() => removeCycle(cycle.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                    {formData.growthCycleIds.includes(cycle.id) && (
-                      <div className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-full">
-                        Đã chọn
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                {initialGrowthCycles.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>Chưa có mẫu chu kỳ sinh trưởng nào.</p>
+                  ))
+                ) : (
+                  <div className="text-center py-10 border-2 border-dashed rounded-2xl bg-muted/20">
+                    <Layers className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Chưa có chu kỳ nào được chọn.
+                    </p>
                     <Button
                       variant="link"
-                      onClick={() => setLocation("/growth-cycle/create")}
+                      className="mt-2 text-green-700 font-bold"
+                      onClick={() => setDialogOpen(true)}
                     >
-                      + Tạo chu kỳ mới
+                      + Chọn chu kỳ từ thư viện
                     </Button>
                   </div>
                 )}
@@ -286,21 +321,15 @@ export default function CreateSeasonPage() {
                 <CardTitle>Tài liệu kỹ thuật</CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-muted/50 transition-all">
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-2">
-                  <Plus className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <p className="font-medium text-sm">Tải lên tài liệu</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  PDF, Word, Excel (Max 10MB)
-                </p>
-              </div>
-
-              {/* Placeholder for list of uploaded files */}
+            <CardContent>
+              <FileUploader
+                files={formData.documents}
+                onChange={(files) =>
+                  setFormData({ ...formData, documents: files as Array<File> })
+                }
+              />
             </CardContent>
           </Card>
-
           <div className="sticky top-6">
             <Button
               size="lg"
@@ -313,6 +342,13 @@ export default function CreateSeasonPage() {
           </div>
         </div>
       </div>
+
+      <GrowthCycleSelectDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        selectedIds={formData.growthCycleIds}
+        onConfirm={(ids) => setFormData({ ...formData, growthCycleIds: ids })}
+      />
     </AdminLayout>
   );
 }

@@ -5,7 +5,7 @@ export interface GrowthStage {
   name: string;
   duration: number;
   usePdf: boolean;
-  pdfFile?: File | null;
+  pdfFile?: File | null | { name: string; size: number };
   content: SerializedEditorState;
 }
 

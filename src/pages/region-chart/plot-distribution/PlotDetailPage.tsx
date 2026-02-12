@@ -12,19 +12,19 @@ import { MapContainer, TileLayer, Polygon, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-import { MOCK_PLOTS, MOCK_AREAS, MOCK_REGIONS } from "../constants";
 import { MapController } from "../components/DraggableRectangle";
+import useRegionStore from "../../../stores/useRegionStore";
 
 const PlotDetailPage = () => {
   const [, setLocation] = useLocation();
   const [match, params] = useRoute("/plot-distribution/detail/:id");
-  const id = match && params?.id ? params.id : null;
+  const { getPlotById } = useRegionStore();
+  const id = match && params?.id ? String(params.id) : null;
 
-  const plotData = MOCK_PLOTS.find((p) => p.id === id);
-  const parentArea = MOCK_AREAS.find((a) => a.plots?.some((p) => p.id === id));
-  const parentRegion = parentArea
-    ? MOCK_REGIONS.find((r) => r.id === parentArea.regionId)
-    : null;
+  const context = id ? getPlotById(id) : null;
+  const plotData = context?.plot;
+  const parentArea = context?.area;
+  const parentRegion = context?.region;
 
   if (!plotData) {
     return (
@@ -51,7 +51,7 @@ const PlotDetailPage = () => {
   let bounds = L.latLngBounds([11.53, 106.88], [11.55, 106.91]);
   if (plotData.coordinates && plotData.coordinates.length >= 3) {
     bounds = L.latLngBounds(
-      plotData.coordinates.map((c) => L.latLng(c.lat, c.lng)),
+      plotData.coordinates.map((c: any) => L.latLng(c.lat, c.lng)),
     );
   } else if (
     parentArea &&
@@ -59,7 +59,7 @@ const PlotDetailPage = () => {
     parentArea.coordinates.length >= 3
   ) {
     bounds = L.latLngBounds(
-      parentArea.coordinates.map((c) => L.latLng(c.lat, c.lng)),
+      parentArea.coordinates.map((c: any) => L.latLng(c.lat, c.lng)),
     );
   }
 
@@ -159,7 +159,7 @@ const PlotDetailPage = () => {
                   parentArea.coordinates &&
                   parentArea.coordinates.length >= 3 && (
                     <Polygon
-                      positions={parentArea.coordinates.map((c) => [
+                      positions={parentArea.coordinates.map((c: any) => [
                         c.lat,
                         c.lng,
                       ])}
@@ -177,7 +177,10 @@ const PlotDetailPage = () => {
                 {/* Plot Boundary */}
                 {plotData.coordinates && plotData.coordinates.length >= 3 && (
                   <Polygon
-                    positions={plotData.coordinates.map((c) => [c.lat, c.lng])}
+                    positions={plotData.coordinates.map((c: any) => [
+                      c.lat,
+                      c.lng,
+                    ])}
                     pathOptions={{
                       color: "orange",
                       fillColor: "orange",
