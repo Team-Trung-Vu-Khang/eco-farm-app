@@ -29,7 +29,7 @@ export interface Treatment {
   variety: string;
   seed: string;
   disease: string;
-  severity: "mild" | "moderate" | "severe";
+  severity: "M0" | "M1" | "M2" | "M3" | "M4";
   author: string;
   authorTitle: string;
   approvedBy: string;
