@@ -181,7 +181,7 @@ export function TreatmentDetail({
                  ${activeTab === "info" ? "border-green-600 text-green-700 bg-green-50/50" : "border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50"}
              `}
         >
-          <Activity className="w-4 h-4" /> Chi tiết kỹ thuật
+          <Activity className="w-4 h-4" /> Thông tin phác đồ
         </button>
 
         <button
