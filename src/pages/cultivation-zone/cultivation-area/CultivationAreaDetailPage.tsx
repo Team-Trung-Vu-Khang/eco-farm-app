@@ -111,6 +111,26 @@ const CultivationAreaDetailPage = () => {
       }
     }
 
+    // Auto-generate region if missing for display purposes
+    if (!region && regions.length > 0) {
+      region = regions[0];
+      if (
+        area.scope === "area" &&
+        region.subAreas &&
+        region.subAreas.length > 0
+      ) {
+        selectedEntities = [region.subAreas[0]];
+      } else if (
+        area.scope === "plot" &&
+        region.subAreas &&
+        region.subAreas.length > 0 &&
+        region.subAreas[0].plots &&
+        region.subAreas[0].plots.length > 0
+      ) {
+        selectedEntities = [region.subAreas[0].plots[0]];
+      }
+    }
+
     // Combine configs
     const configValues = Object.values(area.configs || {});
     const firstConfig = configValues[0];
@@ -144,9 +164,14 @@ const CultivationAreaDetailPage = () => {
 
     const crops = varieties.filter((c) => cropIds.includes(c.id));
 
-    const enterprise = enterprises.find(
+    let enterprise = enterprises.find(
       (e) => e.id.toString() === area.enterpriseId,
     );
+
+    // Fallback enterprise if not found, or pick random if none associated
+    if (!enterprise && enterprises.length > 0) {
+      enterprise = enterprises[Math.floor(Math.random() * enterprises.length)];
+    }
 
     return {
       manager,
