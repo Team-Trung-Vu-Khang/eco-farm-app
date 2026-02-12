@@ -43,8 +43,9 @@ import {
 } from "lucide-react";
 import { memo, useCallback, useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import { GROWTH_CYCLES, SEASONS, getCyclesByCrop } from "./constants";
+import { GROWTH_CYCLES, getCyclesByCrop } from "./constants";
 import usePlanStore from "../../stores/usePlanStore";
+import useSeasonStore from "../../stores/useSeasonStore";
 
 // --- Mock Data for Location Hierarchy (Enhanced) ---
 const LOCATIONS = [
@@ -607,6 +608,7 @@ export default function PlanCreatePage() {
 
   // Zustand store
   const addPlan = usePlanStore((state) => state.addPlan);
+  const seasons = useSeasonStore((state) => state.seasons);
 
   const [formData, setFormData] = useState({
     code: "",
@@ -638,7 +640,7 @@ export default function PlanCreatePage() {
   // --- Helpers & Handlers ---
 
   const handleSeasonChange = (seasonId: string) => {
-    const season = SEASONS.find((s) => s.id === seasonId);
+    const season = seasons.find((s) => s.id === seasonId);
     if (season) {
       setFormData((prev) => ({
         ...prev,
@@ -819,7 +821,7 @@ export default function PlanCreatePage() {
                   <SelectValue placeholder="Chọn mùa vụ..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {SEASONS.map((s) => (
+                  {seasons.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
                       {s.name}
                     </SelectItem>

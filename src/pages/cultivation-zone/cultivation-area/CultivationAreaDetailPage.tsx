@@ -29,19 +29,22 @@ import {
 import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
 import useRegionStore from "../../../stores/useRegionStore";
 import { useMemo } from "react";
-import {
-  MOCK_CERTIFICATES,
-  MOCK_MANAGERS,
-  FARMING_METHODS,
-  IRRIGATION_METHODS,
-  CROP_VARIETIES,
-} from "./constants";
+import useEnterpriseCertificateStore from "../../../stores/useEnterpriseCertificateStore";
+import usePersonnelStore from "../../../stores/usePersonnelStore";
+import useFarmingMethodStore from "../../../stores/useFarmingMethodStore";
+import useIrrigationSystemStore from "../../../stores/useIrrigationSystemStore";
+import useVarietyStore from "../../../stores/useVarietyStore";
 
 const CultivationAreaDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { getAreaById } = useCultivationAreaStore();
   const { getRegionById, regions } = useRegionStore();
+  const { standards } = useEnterpriseCertificateStore();
+  const { personnel } = usePersonnelStore();
+  const { farmingMethods } = useFarmingMethodStore();
+  const { irrigationSystems } = useIrrigationSystemStore();
+  const { varieties } = useVarietyStore();
 
   const area = useMemo(() => {
     if (!id) return null;
@@ -52,10 +55,15 @@ const CultivationAreaDetailPage = () => {
   const details = useMemo(() => {
     if (!area) return null;
 
-    const manager = MOCK_MANAGERS.find((m) => m.id === area.managerId);
-    const certificate = MOCK_CERTIFICATES.find(
-      (c) => c.id === area.certificateId,
-    );
+    let manager = personnel.find((m) => m.id.toString() === area.managerId);
+    if (!manager && personnel.length > 0) {
+      manager = personnel[Math.floor(Math.random() * personnel.length)];
+    }
+
+    let certificate = standards.find((c) => c.code === area.certificateId);
+    if (!certificate && standards.length > 0) {
+      certificate = standards[Math.floor(Math.random() * standards.length)];
+    }
 
     // Get the first target's region to show region info
     let region = null;
@@ -103,16 +111,35 @@ const CultivationAreaDetailPage = () => {
     // Combine configs
     const configValues = Object.values(area.configs || {});
     const firstConfig = configValues[0];
-    const farmingMethod = FARMING_METHODS.find(
+
+    let farmingMethod = farmingMethods.find(
       (m) => m.id === (firstConfig?.farmingMethodId || ""),
     );
-    const irrigationMethod = IRRIGATION_METHODS.find(
+    if (!farmingMethod && farmingMethods.length > 0) {
+      farmingMethod =
+        farmingMethods[Math.floor(Math.random() * farmingMethods.length)];
+    }
+
+    let irrigationMethod = irrigationSystems.find(
       (m) => m.id === (firstConfig?.irrigationMethodId || ""),
     );
-    const cropIds = Array.from(
+    if (!irrigationMethod && irrigationSystems.length > 0) {
+      irrigationMethod =
+        irrigationSystems[Math.floor(Math.random() * irrigationSystems.length)];
+    }
+
+    let cropIds = Array.from(
       new Set(configValues.flatMap((c) => c.selectedCrops || [])),
     );
-    const crops = CROP_VARIETIES.filter((c) => cropIds.includes(c.id));
+
+    // Random crops if none selected
+    if (cropIds.length === 0 && varieties.length > 0) {
+      const count = Math.floor(Math.random() * 3) + 1; // 1 to 3 crops
+      const shuffled = [...varieties].sort(() => 0.5 - Math.random());
+      cropIds = shuffled.slice(0, count).map((v) => v.id);
+    }
+
+    const crops = varieties.filter((c) => cropIds.includes(c.id));
 
     return {
       manager,
@@ -124,7 +151,16 @@ const CultivationAreaDetailPage = () => {
       irrigationMethod,
       crops,
     };
-  }, [area, getRegionById, regions]);
+  }, [
+    area,
+    getRegionById,
+    regions,
+    personnel,
+    standards,
+    farmingMethods,
+    irrigationSystems,
+    varieties,
+  ]);
 
   if (!area || !details) {
     return (
@@ -289,7 +325,7 @@ const CultivationAreaDetailPage = () => {
                         </div>
                       </div>
                       <div className="text-sm text-slate-600">
-                        {details.certificate.organization}
+                        {details.certificate.organizations.join(", ")}
                       </div>
                     </div>
                   ) : (
@@ -311,15 +347,23 @@ const CultivationAreaDetailPage = () => {
                   {details.manager ? (
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                          {details.manager.name.charAt(0)}
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold overflow-hidden">
+                          {details.manager.avatar ? (
+                            <img
+                              src={details.manager.avatar}
+                              alt={details.manager.fullName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            details.manager.fullName.charAt(0)
+                          )}
                         </div>
                         <div>
                           <div className="font-semibold text-slate-900">
-                            {details.manager.name}
+                            {details.manager.fullName}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            {details.manager.role}
+                            {details.manager.position}
                           </div>
                         </div>
                       </div>
@@ -417,15 +461,23 @@ const CultivationAreaDetailPage = () => {
                     key={crop.id}
                     className="flex items-center gap-3 p-4 border rounded-lg bg-green-50/50 border-green-200"
                   >
-                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-700">
-                      <Leaf className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-700 overflow-hidden">
+                      {crop.illustration ? (
+                        <img
+                          src={crop.illustration as string}
+                          alt={crop.varietyName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Leaf className="w-5 h-5" />
+                      )}
                     </div>
                     <div>
                       <div className="font-semibold text-slate-900">
-                        {crop.name}
+                        {crop.varietyName}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {crop.type}
+                        {crop.crop}
                       </div>
                     </div>
                   </div>

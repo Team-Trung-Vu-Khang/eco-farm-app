@@ -23,6 +23,7 @@ export interface Standard {
   code: string;
   name: string;
   organizations: string[];
+  imageUrl?: string;
 }
 
 export interface Enterprise {
@@ -72,11 +73,15 @@ const useEnterpriseCertificateStore = create<EnterpriseCertificateStore>(
           "Bộ Nông nghiệp và Phát triển Nông thôn",
           "Cục Trồng trọt",
         ],
+        imageUrl:
+          "https://cdn.vietnambiz.vn/2020/3/2/vg-15831176957661073999454.jpg",
       },
       {
         code: "GlobalGAP",
         name: "Global GAP",
         organizations: ["Tổ chức GlobalGAP", "FoodPLUS GmbH"],
+        imageUrl:
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0VCMHRpDAs8PTI0U7WmPd-Bnifg92-ai4_Q&s",
       },
       {
         code: "Organic",
@@ -85,16 +90,22 @@ const useEnterpriseCertificateStore = create<EnterpriseCertificateStore>(
           "Bộ Nông nghiệp và Phát triển Nông thôn",
           "Cục Quản lý Chất lượng Nông lâm sản và Thủy sản",
         ],
+        imageUrl:
+          "https://cdn.shopify.com/s/files/1/0789/8483/files/Untitled-4.png?875230042906236671",
       },
       {
         code: "HACCP",
         name: "HACCP",
         organizations: ["Cục Quản lý Chất lượng Nông lâm sản và Thủy sản"],
+        imageUrl:
+          "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/HACCP_logo.svg/1200px-HACCP_logo.svg.png",
       },
       {
         code: "ISO22000",
         name: "ISO 22000",
         organizations: ["Tổ chức Tiêu chuẩn Quốc tế (ISO)"],
+        imageUrl:
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSqJ-l2PDrkE8yTyX4w5q5o7g1G8t3X6x3Kqg&s",
       },
     ],
 

@@ -1,12 +1,18 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import { type Region } from "../pages/region-chart/constants";
+import {
+  type Region,
+  LAND_TYPES,
+  TERRAIN_TYPES,
+} from "../pages/region-chart/constants";
 
 import MOCK_REGIONS from "../assets/map/zone-full.json" with { type: "json" };
 
 interface RegionState {
   // State
   regions: Region[];
+  landTypes: { id: string; name: string }[];
+  terrainTypes: { id: string; name: string }[];
   isLoading: boolean;
   error: string | null;
 
@@ -35,6 +41,8 @@ const useRegionStore = create<RegionState>()(
       (set, get) => ({
         // Initial state
         regions: MOCK_REGIONS as unknown as Region[],
+        landTypes: LAND_TYPES,
+        terrainTypes: TERRAIN_TYPES,
         isLoading: false,
         error: null,
 

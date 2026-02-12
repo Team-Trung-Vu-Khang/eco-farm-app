@@ -39,14 +39,14 @@ const MOCK_DATA: CultivationArea[] = [
     scope: "region",
     targetIds: ["1"],
     targetName: "Vùng Bình Phước Alpha",
-    certificateId: "cert-1",
-    managerId: "man-1",
-    note: "Dự án thử nghiệm",
+    certificateId: "VietGAP",
+    managerId: "1",
+    note: "Dự án thử nghiệm công nghệ 4.0",
     configs: {
       "region-main": {
-        farmingMethodId: "vietgap",
-        irrigationMethodId: "drip",
-        selectedCrops: ["crop-1", "crop-4"],
+        farmingMethodId: "greenhouse", // Nhà kính
+        irrigationMethodId: "drip", // Tưới nhỏ giọt
+        selectedCrops: ["1", "3"], // Ri6, Musang King
       },
     },
     status: "active",
@@ -54,22 +54,60 @@ const MOCK_DATA: CultivationArea[] = [
   },
   {
     id: "ca-2",
-    name: "Khu vực trồng Bơ 034",
+    name: "Khu vực trồng Sầu riêng Dona Xuất khẩu",
     scope: "area",
     targetIds: ["sub-1-2"],
-    targetName: "Khu vực B - Bơ sáp",
-    certificateId: "cert-3",
-    managerId: "man-2",
-    note: "Khu vực bơ sáp hữu cơ",
+    targetName: "Khu vực B - Đồi thấp",
+    certificateId: "Organic",
+    managerId: "2",
+    note: "Canh tác theo tiêu chuẩn hữu cơ EU",
     configs: {
       "sub-1-2": {
-        farmingMethodId: "organic",
-        irrigationMethodId: "rain",
-        selectedCrops: ["crop-5"],
+        farmingMethodId: "organic", // Hữu cơ
+        irrigationMethodId: "rain", // Tưới phun
+        selectedCrops: ["2"], // Dona
       },
     },
     status: "active",
     createdAt: "2024-02-05",
+  },
+  {
+    id: "ca-3",
+    name: "Lô trồng Lúa chất lượng cao",
+    scope: "plot",
+    targetIds: ["plot-1-1-1"],
+    targetName: "Lô A1 - Cánh đồng mẫu lớn",
+    certificateId: "GlobalGAP",
+    managerId: "3",
+    note: "Mô hình lúa tôm kết hợp",
+    configs: {
+      "plot-1-1-1": {
+        farmingMethodId: "vietgap", // VietGAP
+        irrigationMethodId: "flood", // Tưới tràn
+        selectedCrops: ["5"], // Lúa OM5451
+      },
+    },
+    status: "active",
+    createdAt: "2024-02-10",
+  },
+  {
+    id: "ca-4",
+    name: "Vườn ươm giống Sầu riêng Black Thorn",
+    scope: "area",
+    targetIds: ["sub-1-3"],
+    targetName: "Khu vực C - Vườn ươm",
+    certificateId: "HACCP",
+    managerId: "1",
+    note: "Khu vực nhân giống và bảo tồn gen",
+    configs: {
+      "sub-1-3": {
+        farmingMethodId: "greenhouse",
+        irrigationMethodId: "manual", // Tưới thủ công
+        selectedCrops: ["4"], // Black Thorn
+      },
+    },
+    status: "active",
+    createdAt: "2024-02-15",
   },
 ];
 

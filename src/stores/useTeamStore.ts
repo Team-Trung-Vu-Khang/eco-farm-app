@@ -114,6 +114,38 @@ const useTeamStore = create<TeamStore>((set, get) => ({
       status: "inactive",
       avatar: "https://i.pravatar.cc/150?u=a042581f4e29026024f",
     },
+    // Members for Team 2
+    {
+      id: 4,
+      teamId: 2,
+      fullName: "Lê Văn C",
+      position: "Tổ trưởng kỹ thuật",
+      phone: "0912345678",
+      email: "c.le@ecofarm.vn",
+      status: "active",
+      avatar: "https://i.pravatar.cc/150?u=a042581f4e290260250",
+    },
+    {
+      id: 5,
+      teamId: 2,
+      fullName: "Hoàng Văn E",
+      position: "Kỹ thuật viên",
+      phone: "0919283746",
+      email: "e.hoang@ecofarm.vn",
+      status: "active",
+      avatar: "https://i.pravatar.cc/150?u=a042581f4e290260251",
+    },
+    // Members for Team 3
+    {
+      id: 6,
+      teamId: 3,
+      fullName: "Trần Thị B",
+      position: "Kế toán tổng hợp",
+      phone: "0909876543",
+      email: "b.tran.kt@ecofarm.vn",
+      status: "active",
+      avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704d",
+    },
   ],
 
   // Team CRUD operations

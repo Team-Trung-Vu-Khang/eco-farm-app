@@ -27,13 +27,11 @@ import {
 import useRegionStore from "../../../stores/useRegionStore";
 import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
 import useDepartmentStore from "../../../stores/useDepartmentStore";
-import {
-  MOCK_CERTIFICATES,
-  MOCK_MANAGERS,
-  FARMING_METHODS,
-  IRRIGATION_METHODS,
-  CROP_VARIETIES,
-} from "./constants";
+import useEnterpriseCertificateStore from "../../../stores/useEnterpriseCertificateStore";
+import usePersonnelStore from "../../../stores/usePersonnelStore";
+import useVarietyStore from "../../../stores/useVarietyStore";
+import useFarmingMethodStore from "../../../stores/useFarmingMethodStore";
+import useIrrigationSystemStore from "../../../stores/useIrrigationSystemStore";
 import {
   User,
   CheckCircle2,
@@ -61,30 +59,31 @@ const CertificateSelector = ({
   selectedId: string;
   onSelect: (id: string) => void;
 }) => {
+  const { standards } = useEnterpriseCertificateStore();
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {MOCK_CERTIFICATES.map((cert) => (
+        {standards.map((cert) => (
           <div
-            key={cert.id}
+            key={cert.code}
             className={`cursor-pointer border rounded-xl p-3 relative flex items-start gap-3 transition-all ${
-              selectedId === cert.id
+              selectedId === cert.code
                 ? "border-primary bg-primary/5 ring-1 ring-primary/30 shadow-sm"
                 : "border-slate-200 hover:border-primary/40 hover:bg-slate-50"
             }`}
-            onClick={() => onSelect(cert.id)}
+            onClick={() => onSelect(cert.code)}
           >
             <div className="w-12 h-12 bg-white rounded-lg border flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
-              {/* @ts-ignore - Assuming imageUrl exists on mock data, if not it falls back gracefully or shows empty box */}
-              {(cert as any).imageUrl ? (
+              {cert.imageUrl ? (
                 <img
-                  src={(cert as any).imageUrl}
+                  src={cert.imageUrl}
                   alt={cert.name}
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <Award
-                  className={`w-6 h-6 ${selectedId === cert.id ? "text-primary" : "text-slate-400"}`}
+                  className={`w-6 h-6 ${selectedId === cert.code ? "text-primary" : "text-slate-400"}`}
                 />
               )}
             </div>
@@ -96,10 +95,10 @@ const CertificateSelector = ({
                 {cert.code}
               </div>
               <div className="text-xs text-slate-500 truncate mt-0.5">
-                {cert.organization}
+                {cert.organizations.join(", ")}
               </div>
             </div>
-            {selectedId === cert.id && (
+            {selectedId === cert.code && (
               <div className="absolute top-3 right-3 text-primary animate-in fade-in zoom-in">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
@@ -122,22 +121,23 @@ const ManagerSelector = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
 
-  const selectedManager = MOCK_MANAGERS.find((m) => m.id === selectedId);
+  const { personnel } = usePersonnelStore();
+  const selectedManager = personnel.find((m) => m.id.toString() === selectedId);
   const departmentsFromStore = useDepartmentStore((state) => state.departments);
   const departments = departmentsFromStore
     .filter((d) => d.status === "active")
     .map((d) => d.name);
 
   const filteredManagers = useMemo(() => {
-    return MOCK_MANAGERS.filter((m) => {
+    return personnel.filter((m) => {
       const matchesSearch =
-        m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.role.toLowerCase().includes(searchTerm.toLowerCase());
+        m.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        m.position.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesDept =
         departmentFilter === "all" || m.department === departmentFilter;
       return matchesSearch && matchesDept;
     });
-  }, [searchTerm, departmentFilter]);
+  }, [searchTerm, departmentFilter, personnel]);
 
   return (
     <>
@@ -147,19 +147,27 @@ const ManagerSelector = ({
       >
         {selectedManager ? (
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
-              <User className="w-6 h-6 text-primary" />
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 overflow-hidden">
+              {selectedManager.avatar ? (
+                <img
+                  src={selectedManager.avatar}
+                  alt={selectedManager.fullName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-6 h-6 text-primary" />
+              )}
             </div>
             <div className="flex-1">
               <div className="font-bold text-slate-800">
-                {selectedManager.name}
+                {selectedManager.fullName}
               </div>
               <div className="text-sm text-muted-foreground flex items-center gap-1.5 flex-wrap">
                 <Badge
                   variant="outline"
                   className="font-normal text-xs bg-slate-100"
                 >
-                  {selectedManager.role}
+                  {selectedManager.position}
                 </Badge>
                 <span className="text-xs text-slate-400">&bull;</span>
                 <span className="text-xs">{selectedManager.department}</span>
@@ -224,29 +232,37 @@ const ManagerSelector = ({
                   <div
                     key={m.id}
                     className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${
-                      selectedId === m.id
+                      selectedId === m.id.toString()
                         ? "bg-primary/5 border border-primary/20 shadow-sm"
                         : "hover:bg-slate-50 border border-transparent"
                     }`}
                     onClick={() => {
-                      onSelect(m.id);
+                      onSelect(m.id.toString());
                       setIsOpen(false);
                     }}
                   >
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${selectedId === m.id ? "bg-primary text-white" : "bg-slate-200 text-slate-600"}`}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold overflow-hidden ${selectedId === m.id.toString() ? "bg-primary text-white" : "bg-slate-200 text-slate-600"}`}
                     >
-                      {m.name.charAt(0)}
+                      {m.avatar ? (
+                        <img
+                          src={m.avatar}
+                          alt={m.fullName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        m.fullName.charAt(0)
+                      )}
                     </div>
                     <div className="flex-1">
                       <div className="font-medium text-sm text-slate-900">
-                        {m.name}
+                        {m.fullName}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {m.role} - {m.department}
+                        {m.position} - {m.department}
                       </div>
                     </div>
-                    {selectedId === m.id && (
+                    {selectedId === m.id.toString() && (
                       <CheckCircle2 className="w-5 h-5 text-primary" />
                     )}
                   </div>
@@ -271,6 +287,11 @@ const CultivationAreaCreatePage = () => {
   const [, setLocation] = useLocation();
   const { regions } = useRegionStore();
   const { addArea } = useCultivationAreaStore();
+  const { standards } = useEnterpriseCertificateStore();
+  const { personnel } = usePersonnelStore();
+  const { varieties } = useVarietyStore();
+  const { farmingMethods } = useFarmingMethodStore();
+  const { irrigationSystems } = useIrrigationSystemStore();
 
   // State
   const [scope, setScope] = useState<ScopeType>("region");
@@ -653,11 +674,9 @@ const CultivationAreaCreatePage = () => {
     };
 
     const availableCropsForConfig = (() => {
-      const method = FARMING_METHODS.find(
-        (m) => m.id === effectiveConfig.farmingMethodId,
-      );
-      if (!method) return [];
-      return CROP_VARIETIES.filter((c) => method.allowedCrops.includes(c.id));
+      if (!effectiveConfig.farmingMethodId) return [];
+      // Return all active varieties, bypassing mock constraint
+      return varieties.filter((v) => v.status === "active");
     })();
 
     return (
@@ -854,7 +873,7 @@ const CultivationAreaCreatePage = () => {
                         <SelectValue placeholder="Chọn phương pháp..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {FARMING_METHODS.map((m) => (
+                        {farmingMethods.map((m) => (
                           <SelectItem key={m.id} value={m.id}>
                             <span className="font-medium">{m.name}</span>
                           </SelectItem>
@@ -886,7 +905,7 @@ const CultivationAreaCreatePage = () => {
                         <SelectValue placeholder="Chọn phương pháp tưới..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {IRRIGATION_METHODS.map((m) => (
+                        {irrigationSystems.map((m) => (
                           <SelectItem key={m.id} value={m.id}>
                             <div className="flex items-center gap-2">
                               <Droplets className="w-4 h-4 text-blue-500" />
@@ -977,10 +996,10 @@ const CultivationAreaCreatePage = () => {
                                 }`}
                               >
                                 <div className="w-14 h-14 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
-                                  {crop.imageUrl ? (
+                                  {crop.illustration ? (
                                     <img
-                                      src={crop.imageUrl}
-                                      alt={crop.name}
+                                      src={crop.illustration as string}
+                                      alt={crop.varietyName}
                                       className="w-full h-full object-cover"
                                     />
                                   ) : (
@@ -997,10 +1016,10 @@ const CultivationAreaCreatePage = () => {
                                         : "text-slate-700"
                                     }`}
                                   >
-                                    {crop.name}
+                                    {crop.varietyName}
                                   </div>
                                   <div className="text-xs text-muted-foreground mt-0.5">
-                                    {crop.type}
+                                    {crop.crop}
                                   </div>
                                 </div>
                                 <div
@@ -1035,8 +1054,10 @@ const CultivationAreaCreatePage = () => {
   };
 
   const renderConfirmation = () => {
-    const manager = MOCK_MANAGERS.find((m) => m.id === selectedManagerId);
-    const certificate = MOCK_CERTIFICATES.find((c) => c.id === selectedCertId);
+    const manager = personnel.find(
+      (m) => m.id.toString() === selectedManagerId,
+    );
+    const certificate = standards.find((c) => c.code === selectedCertId);
 
     // Determine entities based on scope
     let entities: { id: string; name: string; type: string }[] = [];
@@ -1154,10 +1175,20 @@ const CultivationAreaCreatePage = () => {
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold">
-                            {manager.name.charAt(0)}
+                          <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold overflow-hidden">
+                            {manager.avatar ? (
+                              <img
+                                src={manager.avatar}
+                                alt={manager.fullName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              manager.fullName.charAt(0)
+                            )}
                           </div>
-                          <span className="font-medium">{manager.name}</span>
+                          <span className="font-medium">
+                            {manager.fullName}
+                          </span>
                         </div>
                       </td>
                     </tr>
@@ -1194,10 +1225,10 @@ const CultivationAreaCreatePage = () => {
                   irrigationMethodId: "",
                   selectedCrops: [],
                 };
-                const farming = FARMING_METHODS.find(
+                const farming = farmingMethods.find(
                   (m) => m.id === cfg.farmingMethodId,
                 );
-                const irrigation = IRRIGATION_METHODS.find(
+                const irrigation = irrigationSystems.find(
                   (m) => m.id === cfg.irrigationMethodId,
                 );
                 const selectedCrops = cfg.selectedCrops || [];
@@ -1247,9 +1278,7 @@ const CultivationAreaCreatePage = () => {
                       <div className="flex flex-wrap gap-2">
                         {selectedCrops.length > 0 ? (
                           selectedCrops.map((cid: string) => {
-                            const crop = CROP_VARIETIES.find(
-                              (c) => c.id === cid,
-                            );
+                            const crop = varieties.find((c) => c.id === cid);
                             return (
                               <Badge
                                 key={cid}
@@ -1259,7 +1288,7 @@ const CultivationAreaCreatePage = () => {
                                 <span className="w-4 h-4 rounded-full bg-green-200 flex items-center justify-center mr-1.5 text-[10px]">
                                   <Leaf className="w-2.5 h-2.5" />
                                 </span>
-                                {crop?.name}
+                                {crop?.varietyName}
                               </Badge>
                             );
                           })

@@ -43,17 +43,12 @@ const customIcon = new L.Icon({
 });
 import { Plus, Edit, Trash2, ChevronLeft, X } from "lucide-react";
 
-import {
-  type Region,
-  type SubArea,
-  PROVINCES,
-  DISTRICTS,
-  ENTERPRISES,
-  LAND_TYPES,
-  TERRAIN_TYPES,
-} from "../constants";
+import { type Region, type SubArea, PROVINCES, DISTRICTS } from "../constants";
 import { MapController } from "../components/DraggableRectangle";
 import useRegionStore from "../../../stores/useRegionStore";
+import useEnterpriseStore from "../../../stores/useEnterpriseStore";
+import useLandStore from "../../../stores/useLandStore";
+import useTerrainStore from "../../../stores/useTerrainStore";
 
 const MapClickHandler = ({
   onClick,
@@ -101,6 +96,9 @@ const RegionCreatePage = () => {
   const [regionPoints, setRegionPoints] = useState<L.LatLng[]>(defaultPoints);
 
   const { addRegion, updateRegion, getRegionById } = useRegionStore();
+  const { enterprises } = useEnterpriseStore();
+  const { lands } = useLandStore();
+  const { terrains } = useTerrainStore();
 
   useEffect(() => {
     if (isEditMode && params?.id) {
@@ -444,8 +442,8 @@ const RegionCreatePage = () => {
                     <SelectValue placeholder="Chọn đơn vị" />
                   </SelectTrigger>
                   <SelectContent>
-                    {ENTERPRISES.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>
+                    {enterprises.map((e) => (
+                      <SelectItem key={e.id} value={e.id.toString()}>
                         <div className="flex items-center gap-2">
                           <img
                             src={e.image}
@@ -487,8 +485,8 @@ const RegionCreatePage = () => {
                     <SelectValue placeholder="Chọn loại đất" />
                   </SelectTrigger>
                   <SelectContent>
-                    {LAND_TYPES.map((l) => (
-                      <SelectItem key={l.id} value={l.id}>
+                    {lands.map((l) => (
+                      <SelectItem key={l.id} value={l.id.toString()}>
                         {l.name}
                       </SelectItem>
                     ))}
@@ -507,8 +505,8 @@ const RegionCreatePage = () => {
                     <SelectValue placeholder="Chọn địa hình" />
                   </SelectTrigger>
                   <SelectContent>
-                    {TERRAIN_TYPES.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
+                    {terrains.map((t) => (
+                      <SelectItem key={t.id} value={t.id.toString()}>
                         {t.name}
                       </SelectItem>
                     ))}
@@ -821,8 +819,8 @@ const RegionCreatePage = () => {
                             <SelectValue placeholder="Chọn loại đất" />
                           </SelectTrigger>
                           <SelectContent>
-                            {LAND_TYPES.map((l) => (
-                              <SelectItem key={l.id} value={l.id}>
+                            {lands.map((l) => (
+                              <SelectItem key={l.id} value={l.id.toString()}>
                                 {l.name}
                               </SelectItem>
                             ))}
@@ -945,8 +943,8 @@ const RegionCreatePage = () => {
                                 <div className="text-xs text-muted-foreground mt-1">
                                   {sub.area} ha •{" "}
                                   {
-                                    LAND_TYPES.find(
-                                      (l) => l.id === sub.landType,
+                                    lands.find(
+                                      (l) => l.id.toString() === sub.landType,
                                     )?.name
                                   }
                                 </div>

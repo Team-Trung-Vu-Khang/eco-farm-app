@@ -25,6 +25,8 @@ import {
 import { CreditCard, Save, User, Trash2, X } from "lucide-react";
 import usePersonnelStore from "../../stores/usePersonnelStore";
 import useTeamStore from "../../stores/useTeamStore";
+import useDepartmentStore from "../../stores/useDepartmentStore";
+import usePositionStore from "../../stores/usePositionStore";
 
 export default function PersonnelEditPage() {
   const [, setLocation] = useLocation();
@@ -37,6 +39,8 @@ export default function PersonnelEditPage() {
   const updatePersonnel = usePersonnelStore((state) => state.updatePersonnel);
   const deletePersonnel = usePersonnelStore((state) => state.deletePersonnel);
   const teams = useTeamStore((state) => state.teams);
+  const departments = useDepartmentStore((state) => state.departments);
+  const positions = usePositionStore((state) => state.positions);
 
   const id = params?.id ? Number(params.id) : 0;
   const personnel = getPersonnelById(id);
@@ -385,14 +389,11 @@ export default function PersonnelEditPage() {
                             <SelectValue placeholder="Chọn phòng ban" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Kinh doanh">
-                              Kinh doanh
-                            </SelectItem>
-                            <SelectItem value="Kỹ thuật">Kỹ thuật</SelectItem>
-                            <SelectItem value="Kế toán">Kế toán</SelectItem>
-                            <SelectItem value="Hành chính">
-                              Hành chính
-                            </SelectItem>
+                            {departments.map((dep) => (
+                              <SelectItem key={dep.id} value={dep.name}>
+                                {dep.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -408,11 +409,11 @@ export default function PersonnelEditPage() {
                             <SelectValue placeholder="Chọn chức vụ" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="GiamDoc">Giám Đốc</SelectItem>
-                            <SelectItem value="TruongPhong">
-                              Trưởng Phòng
-                            </SelectItem>
-                            <SelectItem value="NhanVien">Nhân Viên</SelectItem>
+                            {positions.map((pos) => (
+                              <SelectItem key={pos.id} value={pos.name}>
+                                {pos.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
