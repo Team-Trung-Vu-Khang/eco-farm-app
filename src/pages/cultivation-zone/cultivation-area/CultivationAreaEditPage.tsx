@@ -708,11 +708,11 @@ const GeographicalSelector = ({
 // --- Enhanced Helper Components ---
 
 const CertificateSelector = ({
-  selectedId,
-  onSelect,
+  selectedIds,
+  onToggle,
 }: {
-  selectedId: string;
-  onSelect: (id: string) => void;
+  selectedIds: string[];
+  onToggle: (id: string) => void;
 }) => {
   const { standards } = useEnterpriseCertificateStore();
 
@@ -723,11 +723,11 @@ const CertificateSelector = ({
           <div
             key={cert.code}
             className={`cursor-pointer border rounded-xl p-3 relative flex items-start gap-3 transition-all ${
-              selectedId === cert.code
+              selectedIds.includes(cert.code)
                 ? "border-primary bg-primary/5 ring-1 ring-primary/30 shadow-sm"
                 : "border-slate-200 hover:border-primary/40 hover:bg-slate-50"
             }`}
-            onClick={() => onSelect(cert.code)}
+            onClick={() => onToggle(cert.code)}
           >
             <div className="w-12 h-12 bg-white rounded-lg border flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
               {cert.imageUrl ? (
@@ -738,7 +738,7 @@ const CertificateSelector = ({
                 />
               ) : (
                 <Award
-                  className={`w-6 h-6 ${selectedId === cert.code ? "text-primary" : "text-slate-400"}`}
+                  className={`w-6 h-6 ${selectedIds.includes(cert.code) ? "text-primary" : "text-slate-400"}`}
                 />
               )}
             </div>
@@ -753,7 +753,7 @@ const CertificateSelector = ({
                 {cert.organizations.join(", ")}
               </div>
             </div>
-            {selectedId === cert.code && (
+            {selectedIds.includes(cert.code) && (
               <div className="absolute top-3 right-3 text-primary animate-in fade-in zoom-in">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
@@ -1084,10 +1084,9 @@ const CultivationAreaEditPage = () => {
   const [selectedEnterpriseId, setSelectedEnterpriseId] = useState<string>("");
   const [selections, setSelections] = useState<GeographicalSelection[]>([]);
 
-  const [selectedCertId, setSelectedCertId] = useState<string>("");
+  const [selectedCertIds, setSelectedCertIds] = useState<string[]>([]);
   const [selectedManagerId, setSelectedManagerId] = useState<string>("");
 
-  const [activeConfigId, setActiveConfigId] = useState<string>("region-main");
   const [configs, setConfigs] = useState<
     Record<
       string,
@@ -1108,9 +1107,31 @@ const CultivationAreaEditPage = () => {
     if (existingArea) {
       setName(existingArea.name);
       setNote(existingArea.note || "");
-      setSelectedCertId(existingArea.certificateId || "");
+      setSelectedCertIds(
+        existingArea.certificateIds ||
+          ((existingArea as any).certificateId
+            ? [(existingArea as any).certificateId]
+            : []),
+      );
       setSelectedManagerId(existingArea.managerId || "");
-      setConfigs(existingArea.configs || {});
+
+      // Load configs - prioritize flattened top-level fields
+      if (
+        existingArea.farmingMethodId ||
+        existingArea.irrigationMethodId ||
+        (existingArea.selectedCrops?.length || 0) > 0
+      ) {
+        setConfigs({
+          "area-config": {
+            farmingMethodId: existingArea.farmingMethodId || "",
+            irrigationMethodId: existingArea.irrigationMethodId || "",
+            selectedCrops: existingArea.selectedCrops || [],
+            seedSelections: existingArea.seedSelections || {},
+          },
+        });
+      } else {
+        setConfigs(existingArea.configs || {});
+      }
 
       // Set enterprise ID
       if (existingArea.enterpriseId) {
@@ -1233,12 +1254,6 @@ const CultivationAreaEditPage = () => {
   }, [regions, selections]);
 
   const selectedRegion = selectedRegions[0];
-
-  const effectiveScope = useMemo(() => {
-    if (selections.some((s) => s.type === "plot")) return "plot";
-    if (selections.some((s) => s.type === "area")) return "area";
-    return "region";
-  }, [selections]);
 
   const entities = useMemo(() => {
     return selections.map((s) => {
@@ -1405,8 +1420,14 @@ const CultivationAreaEditPage = () => {
                 Giấy chứng nhận / Tiêu chuẩn
               </Label>
               <CertificateSelector
-                selectedId={selectedCertId}
-                onSelect={setSelectedCertId}
+                selectedIds={selectedCertIds}
+                onToggle={(id) => {
+                  setSelectedCertIds((prev) =>
+                    prev.includes(id)
+                      ? prev.filter((i) => i !== id)
+                      : [...prev, id],
+                  );
+                }}
               />
             </div>
 
@@ -1456,10 +1477,7 @@ const CultivationAreaEditPage = () => {
   );
 
   const renderConfiguration = () => {
-    const effectiveId =
-      entities.find((e) => e.id === activeConfigId)?.id ||
-      entities[0]?.id ||
-      "region-main";
+    const effectiveId = "area-config";
     const effectiveConfig = configs[effectiveId] || {
       farmingMethodId: "",
       irrigationMethodId: "",
@@ -1479,167 +1497,15 @@ const CultivationAreaEditPage = () => {
 
     return (
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        {/* Scope Summary Banner - Full Width at Top */}
-        <div className="relative overflow-hidden rounded-xl border border-primary/20 bg-linear-to-r from-primary/5 via-white to-primary/5 p-6">
-          <div className="relative z-10 flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-white shadow-sm border flex items-center justify-center text-primary shrink-0">
-              {effectiveScope === "plot" ? (
-                <Target className="w-7 h-7" />
-              ) : effectiveScope === "area" ? (
-                <Layers className="w-7 h-7" />
-              ) : (
-                <MapPin className="w-7 h-7" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-                {effectiveScope === "region"
-                  ? "Vùng trồng"
-                  : effectiveScope === "area"
-                    ? "Khu vực"
-                    : "Lô đất"}
-              </div>
-              <div className="text-xl md:text-2xl font-bold text-slate-900 mt-0.5 truncate">
-                {effectiveScope === "region"
-                  ? selectedRegion?.name
-                  : effectiveScope === "area"
-                    ? `${selectedAreas.length} khu vực`
-                    : `${selectedPlots.length} lô trồng`}
-              </div>
-              {((effectiveScope === "region" && selectedRegion) || name) && (
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  {effectiveScope === "region" && selectedRegion && (
-                    <Badge
-                      variant="outline"
-                      className="bg-white font-mono text-xs"
-                    >
-                      {selectedRegion.code}
-                    </Badge>
-                  )}
-                  {name && (
-                    <span className="text-slate-600 text-sm">{name}</span>
-                  )}
-                </div>
-              )}
-            </div>
-            {entities.length > 0 && (
-              <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white rounded-lg border">
-                <div className="text-right">
-                  <div className="text-xs text-muted-foreground">Tiến độ</div>
-                  <div className="text-lg font-bold text-primary">
-                    {
-                      entities.filter((e) => {
-                        const cfg = configs[e.id];
-                        return (
-                          cfg?.farmingMethodId &&
-                          (cfg?.selectedCrops?.length || 0) > 0
-                        );
-                      }).length
-                    }
-                    /{entities.length}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-primary/10 rounded-full blur-2xl"></div>
-        </div>
+        {/* Scope Summary Banner removed */}
 
         {/* Main Content Area */}
-        <div
-          className={cn(
-            "grid grid-cols-1 gap-6",
-            entities.length > 0 ? "lg:grid-cols-[1fr_3fr]" : "grid-cols-1",
-          )}
-        >
-          {/* Sidebar for multiple entities */}
-          {entities.length > 0 && (
-            <div className="w-full lg:w-72 shrink-0">
-              <div className="sticky top-6">
-                <div className="flex items-center justify-between mb-3">
-                  <Label className="text-sm font-semibold text-slate-700">
-                    Danh sách thiết lập
-                  </Label>
-                  <Badge variant="secondary" className="text-xs">
-                    {entities.length}
-                  </Badge>
-                </div>
-                <ScrollArea className="h-150 border rounded-xl bg-white shadow-sm">
-                  <div className="p-2 space-y-1">
-                    {entities.map((entity) => {
-                      const isConfigured =
-                        configs[entity.id]?.farmingMethodId &&
-                        (configs[entity.id]?.selectedCrops?.length || 0) > 0;
-                      const isActive = effectiveId === entity.id;
-
-                      return (
-                        <div
-                          key={entity.id}
-                          onClick={() => setActiveConfigId(entity.id)}
-                          className={cn(
-                            "group relative p-3 rounded-lg text-sm cursor-pointer transition-all border",
-                            isActive
-                              ? "bg-primary/10 border-primary/30 shadow-sm"
-                              : "bg-white border-slate-100 hover:bg-slate-50 hover:border-slate-200",
-                          )}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={cn(
-                                "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors",
-                                isConfigured
-                                  ? "bg-green-100 text-green-600"
-                                  : isActive
-                                    ? "bg-primary/20 text-primary"
-                                    : "bg-slate-100 text-slate-400",
-                              )}
-                            >
-                              {isConfigured ? (
-                                <CheckCircle2 className="w-4 h-4" />
-                              ) : (
-                                <span className="text-xs font-bold">
-                                  {entities.indexOf(entity) + 1}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-xs text-muted-foreground uppercase font-medium">
-                                {entity.type}
-                              </div>
-                              <div
-                                className={`truncate font-medium ${
-                                  isActive ? "text-slate-900" : "text-slate-700"
-                                }`}
-                              >
-                                {entity.name}
-                              </div>
-                            </div>
-                          </div>
-                          {isActive && (
-                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r"></div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
-              </div>
-            </div>
-          )}
+        <div className="grid grid-cols-1 gap-6">
+          {/* Sidebar hidden */}
 
           {/* Configuration Cards */}
           <div className="flex-1 min-w-0 space-y-6">
-            {/* Entity Name Badge (for multiple entities) */}
-            {entities.length > 0 && (
-              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border rounded-lg">
-                <span className="text-sm text-muted-foreground">
-                  Đang thiết lập cho:
-                </span>
-                <Badge variant="default" className="font-semibold">
-                  {entities.find((e) => e.id === effectiveId)?.name}
-                </Badge>
-              </div>
-            )}
+            {/* Entity Name Badge hidden */}
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               {/* Farming & Irrigation Card */}
@@ -1717,21 +1583,7 @@ const CultivationAreaEditPage = () => {
                     </Select>
                   </div>
 
-                  {/* Auto-fill button */}
-                  {entities.length > 1 && (
-                    <div className="pt-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full border-dashed hover:bg-green-600 hover:text-white"
-                        onClick={() => setApplyToAllDialogOpen(true)}
-                      >
-                        <span className="text-xs">
-                          Áp dụng cho các vùng trồng khác
-                        </span>
-                      </Button>
-                    </div>
-                  )}
+                  {/* Auto-fill button removed */}
 
                   {/* Confirmation Dialog for Apply to All */}
                   <Dialog
@@ -1997,7 +1849,16 @@ const CultivationAreaEditPage = () => {
     const manager = personnel.find(
       (m: any) => m.id.toString() === selectedManagerId,
     );
-    const certificate = standards.find((c: any) => c.code === selectedCertId);
+    const selectedCerts = standards.filter((c) =>
+      selectedCertIds.includes(c.code),
+    );
+
+    const commonConfig = configs["area-config"] || {
+      farmingMethodId: "",
+      irrigationMethodId: "",
+      selectedCrops: [],
+      seedSelections: {},
+    };
 
     return (
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-4xl mx-auto">
@@ -2083,15 +1944,22 @@ const CultivationAreaEditPage = () => {
                       </td>
                     </tr>
                   )}
-                  {certificate && (
+                  {selectedCerts.length > 0 && (
                     <tr>
                       <td className="py-3 px-4 text-muted-foreground">
                         Chứng nhận
                       </td>
                       <td className="py-3 px-4">
-                        <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-orange-50 text-orange-700 text-xs font-medium">
-                          <Award className="w-3 h-3" />
-                          {certificate.name}
+                        <div className="flex flex-wrap gap-2">
+                          {selectedCerts.map((cert) => (
+                            <div
+                              key={cert.code}
+                              className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-orange-50 text-orange-700 text-xs font-medium"
+                            >
+                              <Award className="w-3 h-3" />
+                              {cert.name}
+                            </div>
+                          ))}
                         </div>
                       </td>
                     </tr>
@@ -2108,107 +1976,133 @@ const CultivationAreaEditPage = () => {
                 Phạm vi vùng canh tác ({entities.length} mục)
               </h4>
             </div>
-            <div className="p-4 space-y-4">
-              {entities.map((entity) => {
-                const cfg = configs[entity.id] || {
-                  farmingMethodId: "",
-                  irrigationMethodId: "",
-                  selectedCrops: [],
-                };
-                const farming = farmingMethods.find(
-                  (m) => m.id === cfg.farmingMethodId,
-                );
-                const irrigation = irrigationSystems.find(
-                  (m) => m.id === cfg.irrigationMethodId,
-                );
-                const selectedCrops = cfg.selectedCrops || [];
-
-                return (
-                  <div
-                    key={entity.id}
-                    className="border rounded-lg p-4 bg-white"
-                  >
-                    <div className="font-semibold text-sm mb-3 flex items-center gap-2">
-                      <span className="text-muted-foreground font-normal uppercase text-xs">
-                        {entity.type}
-                      </span>
+            <div className="p-4 flex flex-wrap gap-2 text-sm">
+              {entities.map((entity) => (
+                <div
+                  key={entity.id}
+                  className="px-3 py-2 rounded-lg border bg-white shadow-sm flex items-center gap-2"
+                >
+                  <MapPin className="w-4 h-4 text-slate-400" />
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-muted-foreground uppercase leading-none">
+                      {entity.type}
+                    </span>
+                    <span className="font-medium text-slate-900">
                       {entity.name}
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                      <div className="bg-slate-50 p-3 rounded-lg border">
-                        <div className="text-xs text-muted-foreground mb-1">
-                          Phương pháp
-                        </div>
-                        <div className="font-semibold text-primary">
-                          {farming?.name || (
-                            <span className="text-red-500 italic">
-                              Chưa chọn
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="bg-slate-50 p-3 rounded-lg border">
-                        <div className="text-xs text-muted-foreground mb-1">
-                          Tưới tiêu
-                        </div>
-                        <div className="font-semibold text-blue-600">
-                          {irrigation?.name || (
-                            <span className="text-red-500 italic">
-                              Chưa chọn
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
 
-                    <div>
-                      <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-2">
-                        Giống cây trồng ({selectedCrops.length})
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedCrops.length > 0 ? (
-                          selectedCrops.map((cid: string) => {
-                            const crop = varieties.find((c) => c.id === cid);
-                            return (
-                              <Badge
-                                key={cid}
-                                variant="secondary"
-                                className="pl-1 pr-2 py-1 bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
-                              >
-                                <span className="w-4 h-4 rounded-full bg-green-200 flex items-center justify-center mr-1.5 text-[10px]">
-                                  <Leaf className="w-2.5 h-2.5" />
-                                </span>
-                                {crop?.varietyName}
-                                {cfg.seedSelections?.[cid] &&
-                                  cfg.seedSelections[cid].length > 0 && (
-                                    <span className="ml-1 text-[10px] text-green-800/80 italic font-normal">
-                                      •{" "}
-                                      {cfg.seedSelections[cid]
-                                        .map((sid) => {
-                                          return seeds.find((s) => s.id === sid)
-                                            ?.varietyName;
-                                        })
-                                        .join(", ")}
-                                    </span>
-                                  )}
-                                {crop?.seedType && (
-                                  <span className="ml-1 text-[10px] text-green-800/80">
-                                    ({crop.seedType})
-                                  </span>
-                                )}
-                              </Badge>
-                            );
-                          })
-                        ) : (
-                          <span className="text-red-500 italic text-xs">
-                            Chưa chọn cây trồng
-                          </span>
-                        )}
-                      </div>
+          <Card className="border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-slate-50 border-b p-4 flex items-center gap-2">
+              <Sprout className="w-4 h-4 text-slate-500" />
+              <h4 className="font-semibold text-slate-800">
+                Cấu hình canh tác áp dụng
+              </h4>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center text-green-600 shrink-0">
+                    <ScrollText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">
+                      Phương pháp
+                    </div>
+                    <div className="font-bold text-slate-900">
+                      {farmingMethods.find(
+                        (m) => m.id === commonConfig.farmingMethodId,
+                      )?.name || (
+                        <span className="text-red-500 italic">Chưa chọn</span>
+                      )}
                     </div>
                   </div>
-                );
-              })}
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                    <Droplets className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">
+                      Tưới tiêu
+                    </div>
+                    <div className="font-bold text-slate-900">
+                      {irrigationSystems.find(
+                        (m) => m.id === commonConfig.irrigationMethodId,
+                      )?.name || (
+                        <span className="text-red-500 italic">Chưa chọn</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-slate-100">
+                <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-4 flex items-center gap-2">
+                  <Leaf className="w-4 h-4 text-green-600" />
+                  Danh sách giống cây trồng áp dụng (
+                  {(commonConfig.selectedCrops || []).length})
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  {(commonConfig.selectedCrops || []).length > 0 ? (
+                    (commonConfig.selectedCrops || []).map((cid: string) => {
+                      const crop = varieties.find((c) => c.id === cid);
+                      return (
+                        <div
+                          key={cid}
+                          className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 rounded-lg border border-slate-100 bg-white"
+                        >
+                          <div className="flex items-center gap-2 min-w-[200px]">
+                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                            <span className="font-bold text-slate-800">
+                              {crop?.varietyName}
+                            </span>
+                            {crop?.seedType && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] py-0 h-5"
+                              >
+                                {crop.seedType}
+                              </Badge>
+                            )}
+                          </div>
+                          {commonConfig.seedSelections?.[cid] &&
+                            commonConfig.seedSelections[cid].length > 0 && (
+                              <div className="flex flex-wrap gap-1 items-center ml-4 sm:ml-0">
+                                <span className="text-xs text-muted-foreground italic mr-1">
+                                  Hạt giống:
+                                </span>
+                                {commonConfig.seedSelections[cid].map(
+                                  (sid: string) => (
+                                    <Badge
+                                      key={sid}
+                                      variant="secondary"
+                                      className="text-[10px] bg-slate-100"
+                                    >
+                                      {
+                                        seeds.find((s) => s.id === sid)
+                                          ?.varietyName
+                                      }
+                                    </Badge>
+                                  ),
+                                )}
+                              </div>
+                            )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <span className="text-red-500 italic text-sm">
+                      Chưa chọn cây trồng
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           </Card>
         </div>
@@ -2276,6 +2170,8 @@ const CultivationAreaEditPage = () => {
                   targetName = selectedPlots.map((p) => p.name).join(", ");
                 }
 
+                const commonConfig = configs["area-config"];
+
                 // Handle update
                 updateArea(id!, {
                   name,
@@ -2283,10 +2179,14 @@ const CultivationAreaEditPage = () => {
                   targetIds,
                   targetName,
                   enterpriseId: selectedEnterpriseId,
-                  configs,
-                  certificateId: selectedCertId,
+                  certificateIds: selectedCertIds,
                   managerId: selectedManagerId,
                   note,
+                  farmingMethodId: commonConfig?.farmingMethodId || "",
+                  irrigationMethodId: commonConfig?.irrigationMethodId || "",
+                  selectedCrops: commonConfig?.selectedCrops || [],
+                  seedSelections: commonConfig?.seedSelections || {},
+                  configs,
                 });
 
                 toast({

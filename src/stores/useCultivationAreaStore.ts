@@ -15,10 +15,14 @@ export interface CultivationArea {
   targetIds: string[]; // IDs of the selected regions, areas, or plots
   targetName: string;
   enterpriseId?: string;
-  certificateId: string;
+  certificateIds: string[];
   managerId: string;
   note: string;
-  configs: Record<string, CultivationAreaConfig>;
+  farmingMethodId: string;
+  irrigationMethodId: string;
+  selectedCrops: string[];
+  seedSelections?: Record<string, string[]>;
+  configs?: Record<string, CultivationAreaConfig>;
   status: "active" | "inactive";
   createdAt: string;
 }
@@ -41,10 +45,13 @@ const MOCK_DATA: CultivationArea[] = [
     scope: "region",
     targetIds: ["1"],
     targetName: "Vùng Bình Phước Alpha",
-    certificateId: "VietGAP",
+    certificateIds: ["VietGAP"],
     enterpriseId: "DN001",
     managerId: "1",
     note: "Dự án thử nghiệm công nghệ 4.0",
+    farmingMethodId: "greenhouse",
+    irrigationMethodId: "drip",
+    selectedCrops: ["1", "3"],
     configs: {
       "region-main": {
         farmingMethodId: "greenhouse", // Nhà kính
@@ -61,10 +68,13 @@ const MOCK_DATA: CultivationArea[] = [
     scope: "area",
     targetIds: ["sub-1-2"],
     targetName: "Khu vực B - Đồi thấp",
-    certificateId: "Organic",
+    certificateIds: ["Organic"],
     enterpriseId: "DN001",
     managerId: "2",
     note: "Canh tác theo tiêu chuẩn hữu cơ EU",
+    farmingMethodId: "organic",
+    irrigationMethodId: "rain",
+    selectedCrops: ["2"],
     configs: {
       "sub-1-2": {
         farmingMethodId: "organic", // Hữu cơ
@@ -81,10 +91,13 @@ const MOCK_DATA: CultivationArea[] = [
     scope: "plot",
     targetIds: ["plot-1-1-1"],
     targetName: "Lô A1 - Cánh đồng mẫu lớn",
-    certificateId: "GlobalGAP",
+    certificateIds: ["GlobalGAP"],
     enterpriseId: "DN002",
     managerId: "3",
     note: "Mô hình lúa tôm kết hợp",
+    farmingMethodId: "vietgap",
+    irrigationMethodId: "flood",
+    selectedCrops: ["5"],
     configs: {
       "plot-1-1-1": {
         farmingMethodId: "vietgap", // VietGAP
@@ -101,10 +114,13 @@ const MOCK_DATA: CultivationArea[] = [
     scope: "area",
     targetIds: ["sub-1-3"],
     targetName: "Khu vực C - Vườn ươm",
-    certificateId: "HACCP",
+    certificateIds: ["HACCP"],
     enterpriseId: "DN003",
     managerId: "1",
     note: "Khu vực nhân giống và bảo tồn gen",
+    farmingMethodId: "greenhouse",
+    irrigationMethodId: "manual",
+    selectedCrops: ["4"],
     configs: {
       "sub-1-3": {
         farmingMethodId: "greenhouse",

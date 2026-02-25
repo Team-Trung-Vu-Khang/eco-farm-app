@@ -42,7 +42,7 @@ const CultivationAreaDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { getAreaById } = useCultivationAreaStore();
-  const { getRegionById, regions } = useRegionStore();
+  const { regions } = useRegionStore();
   const { standards } = useEnterpriseCertificateStore();
   const { personnel } = usePersonnelStore();
   const { farmingMethods } = useFarmingMethodStore();
@@ -62,7 +62,13 @@ const CultivationAreaDetailPage = () => {
     if (!area) return null;
 
     let manager = personnel.find((m) => m.id.toString() === area.managerId);
-    let certificate = standards.find((c) => c.code === area.certificateId);
+
+    // Resolve multiple certificates
+    const selectedCerts = standards.filter(
+      (c) =>
+        (area.certificateIds || []).includes(c.code) ||
+        (area as any).certificateId === c.code,
+    );
 
     // Flexible entity resolution
     const selectedEntities = area.targetIds
@@ -145,35 +151,54 @@ const CultivationAreaDetailPage = () => {
       return acc;
     }, {});
 
-    // Map configurations for each entity
-    const entityConfigs = selectedEntities.map((entity) => {
-      const config =
-        area.configs[entity.id] ||
-        area.configs[entity.plotId] ||
-        area.configs[entity.areaId] ||
-        area.configs[entity.regionId] ||
-        area.configs["region-main"]; // Fallback
+    // Unified Configuration (New Model)
+    const commonConfig = {
+      farmingMethodId: area.farmingMethodId || "",
+      irrigationMethodId: area.irrigationMethodId || "",
+      selectedCrops: area.selectedCrops || [],
+      seedSelections: area.seedSelections || {},
+    };
 
-      const farmingMethod = farmingMethods.find(
-        (m) => m.id === config?.farmingMethodId,
-      );
-      const irrigationMethod = irrigationSystems.find(
-        (m) => m.id === config?.irrigationMethodId,
-      );
-      const selectedCrops = varieties.filter((v) =>
-        config?.selectedCrops?.includes(v.id),
-      );
+    // Technical Config for display
+    const farmingMethod = farmingMethods.find(
+      (m) => m.id === commonConfig.farmingMethodId,
+    );
+    const irrigationMethod = irrigationSystems.find(
+      (m) => m.id === commonConfig.irrigationMethodId,
+    );
+    const commonCrops = varieties
+      .filter((v) => commonConfig.selectedCrops?.includes(v.id))
+      .map((crop) => ({
+        ...crop,
+        selectedSeeds: (commonConfig.seedSelections?.[crop.id] || [])
+          .map((sid: string) => seeds.find((s) => s.id === sid))
+          .filter(Boolean),
+      }));
+
+    // Legacy Entity Configurations (Compatibility or fallback)
+    const entityConfigs = selectedEntities.map((entity) => {
+      // Prioritize area-wide config if available, fallback to legacy per-entity config
+      const config =
+        commonConfig.farmingMethodId || commonConfig.selectedCrops.length > 0
+          ? commonConfig
+          : area.configs?.[entity.id] || area.configs?.[entity.plotId];
 
       return {
         entity,
-        farmingMethod,
-        irrigationMethod,
-        crops: selectedCrops.map((crop) => ({
-          ...crop,
-          selectedSeeds: (config?.seedSelections?.[crop.id] || [])
-            .map((sid) => seeds.find((s) => s.id === sid))
-            .filter(Boolean),
-        })),
+        farmingMethod: farmingMethods.find(
+          (m) => m.id === config?.farmingMethodId,
+        ),
+        irrigationMethod: irrigationSystems.find(
+          (m) => m.id === config?.irrigationMethodId,
+        ),
+        crops: varieties
+          .filter((v) => config?.selectedCrops?.includes(v.id))
+          .map((crop) => ({
+            ...crop,
+            selectedSeeds: (config?.seedSelections?.[crop.id] || [])
+              .map((sid: string) => seeds.find((s) => s.id === sid))
+              .filter(Boolean),
+          })),
       };
     });
 
@@ -183,17 +208,21 @@ const CultivationAreaDetailPage = () => {
 
     return {
       manager,
-      certificate,
+      selectedCerts,
       region,
       selectedEntities,
       groupedSelections,
       totalArea: totalAreaValue,
-      entityConfigs,
       enterprise,
+      entityConfigs,
+      technicalConfig: {
+        farmingMethod,
+        irrigationMethod,
+        crops: commonCrops,
+      },
     };
   }, [
     area,
-    getRegionById,
     regions,
     personnel,
     standards,
@@ -333,11 +362,7 @@ const CultivationAreaDetailPage = () => {
                   </div>
                   <div className="font-medium mt-1 text-slate-900">
                     {Array.from(
-                      new Set(
-                        details.entityConfigs.flatMap((ec) =>
-                          ec.crops.map((c) => c.crop),
-                        ),
-                      ),
+                      new Set(details.technicalConfig.crops.map((c) => c.crop)),
                     ).join(", ") || "Chưa xác định"}
                   </div>
                 </div>
@@ -353,13 +378,8 @@ const CultivationAreaDetailPage = () => {
                     Hệ thống tưới
                   </div>
                   <div className="font-medium mt-1 text-slate-900">
-                    {Array.from(
-                      new Set(
-                        details.entityConfigs
-                          .map((ec) => ec.irrigationMethod?.name)
-                          .filter(Boolean),
-                      ),
-                    ).join(", ") || "Chưa thiết lập"}
+                    {details.technicalConfig.irrigationMethod?.name ||
+                      "Chưa thiết lập"}
                   </div>
                 </div>
                 <div>
@@ -585,142 +605,154 @@ const CultivationAreaDetailPage = () => {
 
         {/* Crops & Configurations Tab */}
         <TabsContent value="crops" className="space-y-6">
-          {details.entityConfigs.map((cfg) => (
-            <Card key={cfg.entity.id} className="overflow-hidden">
-              <CardHeader className="bg-slate-50 border-b py-3 px-6">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div
-                      className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm",
-                        cfg.entity.typeCode === "region"
-                          ? "bg-primary"
-                          : cfg.entity.typeCode === "area"
-                            ? "bg-blue-500"
-                            : "bg-green-500",
-                      )}
-                    >
-                      {cfg.entity.typeCode === "region" ? (
-                        <MapPin className="w-4 h-4" />
-                      ) : cfg.entity.typeCode === "area" ? (
-                        <Layers className="w-4 h-4" />
-                      ) : (
-                        <Target className="w-4 h-4" />
-                      )}
-                    </div>
-                    <div>
-                      <div className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">
-                        {cfg.entity.type}
-                      </div>
-                      <span className="font-bold">{cfg.entity.name}</span>
-                    </div>
-                  </CardTitle>
-                  <div className="text-sm font-medium text-slate-600">
-                    Diện tích: {cfg.entity.area || 0} ha
-                  </div>
+          <Card className="overflow-hidden border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50 border-b py-4 px-6 flex flex-row items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-sm border border-primary/20">
+                <Sprout className="w-6 h-6" />
+              </div>
+              <div>
+                <CardTitle className="text-lg font-bold text-slate-900">
+                  Cấu hình kỹ thuật & Cây trồng
+                </CardTitle>
+                <div className="text-xs text-muted-foreground">
+                  Quy chuẩn kỹ thuật áp dụng thống nhất cho toàn bộ vùng canh
+                  tác
                 </div>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                  {/* Left: Technical Configs */}
-                  <div className="lg:col-span-4 space-y-4">
-                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 flex items-center gap-2">
-                      <span className="w-1 h-1 rounded-full bg-slate-400" />
-                      Cấu hình kỹ thuật
-                    </div>
-                    <div className="p-4 rounded-xl border bg-blue-50/20 border-blue-100/50 shadow-xs">
-                      <div className="text-xs text-blue-600 font-bold uppercase tracking-wider mb-3">
+              </div>
+            </CardHeader>
+            <CardContent className="p-8">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Left: Technical Configs */}
+                <div className="lg:col-span-4 space-y-6">
+                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
+                    <span className="w-1 h-1 rounded-full bg-primary" />
+                    Cấu hình kỹ thuật
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-2xl border bg-blue-50/30 border-blue-100 shadow-sm transition-all hover:shadow-md">
+                      <div className="text-xs text-blue-600 font-bold uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <Droplets className="w-3.5 h-3.5" />
                         Hệ thống tưới tiêu
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                          <Droplets className="w-5 h-5" />
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 shadow-inner">
+                          <Droplets className="w-6 h-6" />
                         </div>
-                        <div className="font-semibold text-slate-900">
-                          {cfg.irrigationMethod?.name || "Chưa thiết lập"}
+                        <div>
+                          <div className="font-bold text-slate-900 text-base">
+                            {details.technicalConfig.irrigationMethod?.name ||
+                              "Chưa thiết lập"}
+                          </div>
+                          <div className="text-[10px] text-blue-600/70 font-medium">
+                            Tiêu chuẩn hệ thống
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="p-4 rounded-xl border bg-orange-50/20 border-orange-100/50 shadow-xs">
-                      <div className="text-xs text-orange-600 font-bold uppercase tracking-wider mb-3">
+                    <div className="p-4 rounded-2xl border bg-orange-50/30 border-orange-100 shadow-sm transition-all hover:shadow-md">
+                      <div className="text-xs text-orange-600 font-bold uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <Sprout className="w-3.5 h-3.5" />
                         Phương pháp canh tác
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
-                          <Sprout className="w-5 h-5" />
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600 shadow-inner">
+                          <Leaf className="w-6 h-6" />
                         </div>
-                        <div className="font-semibold text-slate-900">
-                          {cfg.farmingMethod?.name || "Chưa thiết lập"}
+                        <div>
+                          <div className="font-bold text-slate-900 text-base">
+                            {details.technicalConfig.farmingMethod?.name ||
+                              "Chưa thiết lập"}
+                          </div>
+                          <div className="text-[10px] text-orange-600/70 font-medium">
+                            Quy trình canh tác
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* Right: Selected Crops */}
-                  <div className="lg:col-span-8">
-                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
-                      <span className="w-1 h-1 rounded-full bg-slate-400" />
-                      Danh sách giống cây trồng ({cfg.crops.length})
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {cfg.crops.map((crop) => (
-                        <div
-                          key={crop.id}
-                          className="flex items-center gap-3 p-3 border rounded-xl bg-white hover:border-primary/30 transition-all shadow-xs"
-                        >
-                          <div className="w-12 h-12 rounded-lg bg-slate-50 overflow-hidden shrink-0 border">
-                            {crop.illustration ? (
-                              <img
-                                src={crop.illustration as string}
-                                alt={crop.varietyName}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <Leaf className="w-5 h-5 text-slate-400 m-auto mt-3" />
+                {/* Right: Selected Crops */}
+                <div className="lg:col-span-8">
+                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <span className="w-1 h-1 rounded-full bg-green-500" />
+                    Danh sách giống cây trồng & Hạt giống (
+                    {details.technicalConfig.crops.length})
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {details.technicalConfig.crops.map((crop) => (
+                      <div
+                        key={crop.id}
+                        className="group flex items-start gap-4 p-4 border rounded-2xl bg-white hover:border-primary/40 hover:bg-slate-50/50 transition-all shadow-sm hover:shadow-md"
+                      >
+                        <div className="w-16 h-16 rounded-2xl bg-slate-50 overflow-hidden shrink-0 border relative">
+                          {crop.illustration ? (
+                            <img
+                              src={crop.illustration as string}
+                              alt={crop.varietyName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Leaf className="w-6 h-6 text-slate-300 m-auto absolute inset-0" />
+                          )}
+                        </div>
+                        <div className="flex-1 pt-1">
+                          <div className="font-bold text-slate-900 leading-tight mb-1 group-hover:text-primary transition-colors">
+                            {crop.varietyName}
+                          </div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge
+                              variant="secondary"
+                              className="text-[9px] px-1.5 py-0 h-4 bg-slate-100 text-slate-600 font-bold uppercase tracking-tight"
+                            >
+                              {crop.crop}
+                            </Badge>
+                            {crop.seedType && (
+                              <Badge
+                                variant="outline"
+                                className="text-[9px] px-1.5 py-0 h-4 border-primary/20 text-primary font-medium"
+                              >
+                                {crop.seedType}
+                              </Badge>
                             )}
                           </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="font-semibold text-sm truncate">
-                              {crop.varietyName}
-                            </div>
-                            <div className="text-[10px] text-muted-foreground flex items-center gap-1">
-                              {crop.crop}
-                              {crop.seedType && (
-                                <>
-                                  <span className="w-1 h-1 rounded-full bg-slate-300" />
-                                  <span>{crop.seedType}</span>
-                                </>
-                              )}
-                            </div>
-                            {crop.selectedSeeds &&
-                              crop.selectedSeeds.length > 0 && (
-                                <div className="mt-1.5 flex flex-wrap gap-1">
+
+                          {crop.selectedSeeds &&
+                            crop.selectedSeeds.length > 0 && (
+                              <div className="mt-2 space-y-1.5">
+                                <div className="text-[10px] text-muted-foreground font-semibold italic">
+                                  Hạt giống sử dụng:
+                                </div>
+                                <div className="flex flex-wrap gap-1.5">
                                   {crop.selectedSeeds.map((seed: any) => (
                                     <Badge
                                       key={seed.id}
                                       variant="secondary"
-                                      className="text-[9px] px-1.5 py-0 h-4 bg-primary/5 text-primary border-primary/10 font-normal whitespace-nowrap"
+                                      className="text-[10px] px-2 py-0.5 bg-green-50 text-green-700 border-green-100 font-medium"
                                     >
-                                      Hạt: {seed.varietyName}
+                                      {seed.varietyName}
                                     </Badge>
                                   ))}
                                 </div>
-                              )}
-                          </div>
+                              </div>
+                            )}
                         </div>
-                      ))}
-                    </div>
-                    {cfg.crops.length === 0 && (
-                      <div className="py-8 text-center text-muted-foreground italic border border-dashed rounded-xl bg-slate-50/50">
-                        Chưa chọn giống cây trồng
                       </div>
-                    )}
+                    ))}
                   </div>
+
+                  {details.technicalConfig.crops.length === 0 && (
+                    <div className="py-12 text-center text-muted-foreground italic border-2 border-dashed rounded-3xl bg-slate-50/50">
+                      Chưa chọn giống cây trồng cho vùng này
+                    </div>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Staff Tab */}
@@ -815,56 +847,59 @@ const CultivationAreaDetailPage = () => {
             <CardHeader className="border-b bg-slate-50">
               <CardTitle className="flex items-center gap-2">
                 <Award className="w-5 h-5 text-orange-600" />
-                Chứng nhận tiêu chuẩn
+                Chứng nhận tiêu chuẩn ({details.selectedCerts.length})
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-6">
-              {details.certificate ? (
-                <div className="border rounded-xl overflow-hidden">
-                  <div className="bg-orange-50 p-4 border-b border-orange-100 flex justify-between items-start">
-                    <div>
-                      <h3 className="font-bold text-lg text-orange-900">
-                        {details.certificate.name}
-                      </h3>
-                      <p className="text-orange-700 text-sm">
-                        {details.certificate.code}
-                      </p>
+            <CardContent className="pt-6 space-y-6">
+              {details.selectedCerts.length > 0 ? (
+                details.selectedCerts.map((cert) => (
+                  <div
+                    key={cert.code}
+                    className="border rounded-xl overflow-hidden"
+                  >
+                    <div className="bg-orange-50 p-4 border-b border-orange-100 flex justify-between items-start">
+                      <div>
+                        <h3 className="font-bold text-lg text-orange-900">
+                          {cert.name}
+                        </h3>
+                        <p className="text-orange-700 text-sm">{cert.code}</p>
+                      </div>
+                      <Badge className="bg-orange-200 text-orange-800 hover:bg-orange-300">
+                        Hoạt động
+                      </Badge>
                     </div>
-                    <Badge className="bg-orange-200 text-orange-800 hover:bg-orange-300">
-                      Hoạt động
-                    </Badge>
+                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 bg-white">
+                      <div>
+                        <div className="text-sm text-muted-foreground">
+                          Tổ chức cấp
+                        </div>
+                        <div className="font-medium">
+                          {cert.organizations?.join(", ") || "N/A"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-muted-foreground">
+                          Ngày cấp
+                        </div>
+                        <div className="font-medium">01/01/2024</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-muted-foreground">
+                          Ngày hết hạn
+                        </div>
+                        <div className="font-medium">01/01/2025</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-muted-foreground">
+                          Trạng thái
+                        </div>
+                        <div className="font-medium text-green-600">
+                          Còn hiệu lực
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 bg-white">
-                    <div>
-                      <div className="text-sm text-muted-foreground">
-                        Tổ chức cấp
-                      </div>
-                      <div className="font-medium">
-                        {details.certificate.organizations.join(", ")}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">
-                        Ngày cấp
-                      </div>
-                      <div className="font-medium">01/01/2024</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">
-                        Ngày hết hạn
-                      </div>
-                      <div className="font-medium">01/01/2025</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">
-                        Trạng thái
-                      </div>
-                      <div className="font-medium text-green-600">
-                        Còn hiệu lực
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                ))
               ) : (
                 <div className="text-center py-12 text-muted-foreground">
                   Chưa có thông tin chứng nhận
