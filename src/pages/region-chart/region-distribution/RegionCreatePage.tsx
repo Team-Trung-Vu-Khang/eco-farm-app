@@ -377,7 +377,7 @@ const RegionCreatePage = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Tỉnh / Thành</Label>
+                <Label>Tỉnh/Thành</Label>
                 <Select
                   value={formData.provinceId}
                   onValueChange={(v) =>
@@ -397,7 +397,7 @@ const RegionCreatePage = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Quận / Huyện</Label>
+                <Label>Phường/Xã</Label>
                 <Select
                   value={formData.districtId}
                   onValueChange={(v) =>
@@ -405,7 +405,7 @@ const RegionCreatePage = () => {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Chọn quận huyện" />
+                    <SelectValue placeholder="Chọn phường/xã" />
                   </SelectTrigger>
                   <SelectContent>
                     {DISTRICTS.map((d) => (

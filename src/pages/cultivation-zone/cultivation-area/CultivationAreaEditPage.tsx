@@ -24,10 +24,12 @@ import {
   ScrollArea,
   useToast,
   cn,
+  DialogFooter,
 } from "@tankhang1/eco-shared-ui";
 
 import useEnterpriseCertificateStore from "../../../stores/useEnterpriseCertificateStore";
 import usePersonnelStore from "../../../stores/usePersonnelStore";
+import useDepartmentStore from "../../../stores/useDepartmentStore";
 import useVarietyStore from "../../../stores/useVarietyStore";
 import useFarmingMethodStore from "../../../stores/useFarmingMethodStore";
 import useIrrigationSystemStore from "../../../stores/useIrrigationSystemStore";
@@ -45,12 +47,661 @@ import {
   ScrollText,
   Briefcase,
   Layers,
+  Plus,
+  Trash2,
+  ChevronRight,
+  ChevronDown,
+  X,
 } from "lucide-react";
 import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
 import useRegionStore from "../../../stores/useRegionStore";
-import useDepartmentStore from "../../../stores/useDepartmentStore";
+import useSeedStore from "../../../stores/useSeedStore";
+import { EnterpriseSelector } from "./components";
 
-type ScopeType = "region" | "area" | "plot";
+interface GeographicalSelection {
+  id: string;
+  type: "region" | "area" | "plot";
+  regionId: string;
+  areaId?: string;
+  plotId?: string;
+}
+
+const SelectionCard = ({
+  regionId,
+  areaId,
+  items,
+  regions,
+  onRemove,
+}: {
+  regionId: string;
+  areaId?: string;
+  items: GeographicalSelection[];
+  regions: any[];
+  onRemove: (ids: string[]) => void;
+}) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const region = regions.find((r) => r.id.toString() === regionId);
+  const area = region?.subAreas?.find((a: any) => a.id.toString() === areaId);
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case "region":
+        return "Vùng trồng";
+      case "area":
+        return "Khu vực";
+      case "plot":
+        return "Lô đất";
+      default:
+        return "";
+    }
+  };
+
+  const primaryItem =
+    items.find((i) => i.type === "area" || i.type === "region") || items[0];
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-all group animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+      <div className="p-4">
+        <div className="flex items-start gap-4">
+          <div
+            className={cn(
+              "p-2.5 rounded-xl shrink-0 transition-colors duration-300",
+              primaryItem.type === "region"
+                ? "bg-primary text-white"
+                : "bg-primary/10 text-primary group-hover:bg-primary/20",
+            )}
+          >
+            {primaryItem.type === "region" ? (
+              <MapPin className="w-5 h-5" />
+            ) : (
+              <Layers className="w-5 h-5" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1">
+              <Badge
+                variant="outline"
+                className="text-[10px] uppercase font-bold tracking-wider py-0 px-1.5 h-4 border-primary/20 text-primary bg-primary/5"
+              >
+                {getTypeLabel(primaryItem.type)}
+              </Badge>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full"
+                onClick={() => onRemove(items.map((i) => i.id))}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+            <div className="font-bold text-slate-900 text-sm mb-1">
+              {area?.name || region?.name}
+            </div>
+            <div className="text-[10px] text-muted-foreground truncate uppercase tracking-wider font-medium">
+              ID: {areaId || regionId}
+            </div>
+          </div>
+        </div>
+
+        {(primaryItem.type !== "region" || items.length > 1) && (
+          <div className="mt-4 pt-3 border-t border-slate-100">
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-primary transition-colors mb-2"
+            >
+              {isExpanded ? (
+                <ChevronDown className="w-3 h-3" />
+              ) : (
+                <ChevronRight className="w-3 h-3" />
+              )}
+              <span>Phân cấp quản lý</span>
+            </button>
+
+            {isExpanded && (
+              <div className="mt-4 ml-3 relative">
+                {/* Main vertical stem on the left */}
+                <div className="absolute left-0 top-0 bottom-4 w-px bg-slate-200" />
+
+                <div className="space-y-4">
+                  {/* Region Level */}
+                  <div className="flex items-center gap-3 relative z-10 pl-4">
+                    <div className="absolute left-0 w-4 h-px bg-slate-200 top-1/2" />
+                    <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shadow-xs shrink-0">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-none mb-1">
+                        Vùng trồng
+                      </div>
+                      <div className="text-xs font-bold text-slate-700">
+                        {region?.name}
+                      </div>
+                    </div>
+                    {items.some((i) => i.type === "region") && (
+                      <Badge className="ml-auto bg-primary/10 text-primary border-none text-[10px]">
+                        Đã chọn vùng
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Area Level & Plots */}
+                  {areaId && (
+                    <div className="relative pl-4">
+                      {/* Branch from main stem to Area */}
+                      <div className="absolute left-0 w-4 h-px bg-slate-200 top-4" />
+
+                      <div className="pl-4 relative">
+                        {/* Nested Stem if Plots exist */}
+                        {items.some((i) => i.type === "plot") && (
+                          <div className="absolute left-3.75 top-4 bottom-4 w-px bg-slate-200" />
+                        )}
+
+                        <div className="flex items-center gap-3 relative z-10 py-1">
+                          <div
+                            className={cn(
+                              "w-8 h-8 rounded-lg border flex items-center justify-center shadow-xs shrink-0",
+                              items.some((i) => i.type === "area")
+                                ? "bg-primary/5 border-primary/20"
+                                : "bg-slate-50 border-slate-100",
+                            )}
+                          >
+                            <Layers
+                              className={cn(
+                                "w-3.5 h-3.5",
+                                items.some((i) => i.type === "area")
+                                  ? "text-primary"
+                                  : "text-slate-400",
+                              )}
+                            />
+                          </div>
+                          <div>
+                            <div
+                              className={cn(
+                                "text-[10px] uppercase font-bold tracking-wider leading-none mb-1",
+                                items.some((i) => i.type === "area")
+                                  ? "text-primary/60"
+                                  : "text-slate-400",
+                              )}
+                            >
+                              Khu vực
+                            </div>
+                            <div
+                              className={cn(
+                                "text-xs font-bold",
+                                items.some((i) => i.type === "area")
+                                  ? "text-slate-900"
+                                  : "text-slate-700",
+                              )}
+                            >
+                              {area?.name}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Plots Level */}
+                        <div className="space-y-3 mt-3">
+                          {items
+                            .filter((i) => i.type === "plot")
+                            .map((pSelection) => {
+                              const plot = area?.plots?.find(
+                                (p: any) => p.id === pSelection.plotId,
+                              );
+                              return (
+                                <div
+                                  key={pSelection.id}
+                                  className="flex items-center gap-3 relative z-10 pl-8 group/plot"
+                                >
+                                  <div className="absolute left-3.75 w-4 h-px bg-slate-200 top-1/2" />
+                                  <div className="w-8 h-8 rounded-lg bg-primary/5 border border-primary/10 flex items-center justify-center shadow-xs shrink-0">
+                                    <Target className="w-3.5 h-3.5 text-primary" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="text-[10px] text-primary/60 font-bold uppercase tracking-wider leading-none mb-1">
+                                      Lô đất
+                                    </div>
+                                    <div className="text-xs font-bold text-slate-900">
+                                      {plot?.name || pSelection.plotId}
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => onRemove([pSelection.id])}
+                                    className="h-6 w-6 p-0 opacity-0 group-hover/plot:opacity-100 transition-opacity"
+                                  >
+                                    <X className="w-3 h-3 text-slate-400 hover:text-red-500" />
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const GeographicalSelector = ({
+  regions,
+  onConfirm,
+  enterpriseId,
+  existingSelections,
+}: {
+  regions: any[];
+  onConfirm: (selections: GeographicalSelection[]) => void;
+  enterpriseId: string;
+  existingSelections: GeographicalSelection[];
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [expandedRegions, setExpandedRegions] = useState<string[]>([]);
+  const [expandedAreas, setExpandedAreas] = useState<string[]>([]);
+  const [tempSelections, setTempSelections] = useState<GeographicalSelection[]>(
+    [],
+  );
+
+  useEffect(() => {
+    if (isOpen) {
+      setTempSelections(existingSelections);
+    }
+  }, [isOpen, existingSelections]);
+
+  const filteredRegions = useMemo(() => {
+    return regions.filter(
+      (r) =>
+        (!enterpriseId ||
+          r.enterpriseId === `ent-${enterpriseId}` ||
+          r.enterpriseId === enterpriseId) &&
+        r.name.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
+  }, [regions, enterpriseId, searchTerm]);
+
+  const toggleRegion = (id: string) => {
+    setExpandedRegions((prev) =>
+      prev.includes(id) ? prev.filter((rid) => rid !== id) : [...prev, id],
+    );
+  };
+
+  const toggleArea = (id: string) => {
+    setExpandedAreas((prev) =>
+      prev.includes(id) ? prev.filter((aid) => aid !== id) : [...prev, id],
+    );
+  };
+
+  const isSelected = (
+    type: "region" | "area" | "plot",
+    regionId: string,
+    areaId?: string,
+    plotId?: string,
+  ) => {
+    // Exact match
+    const exactMatch = tempSelections.some(
+      (s) =>
+        s.type === type &&
+        s.regionId === regionId &&
+        s.areaId === areaId &&
+        s.plotId === plotId,
+    );
+    if (exactMatch) return true;
+
+    // Parent check: if Region is selected, Area and Plot are considered selected
+    if (type === "area" || type === "plot") {
+      const regionSelected = tempSelections.some(
+        (s) => s.type === "region" && s.regionId === regionId,
+      );
+      if (regionSelected) return true;
+    }
+
+    // Parent check: if Area is selected, Plot is considered selected
+    if (type === "plot") {
+      const areaSelected = tempSelections.some(
+        (s) =>
+          s.type === "area" && s.regionId === regionId && s.areaId === areaId,
+      );
+      if (areaSelected) return true;
+    }
+
+    return false;
+  };
+
+  const handleSelect = (
+    type: "region" | "area" | "plot",
+    regionId: string,
+    areaId?: string,
+    plotId?: string,
+  ) => {
+    // If a parent is already selected, don't allow selecting children
+    if (type === "area") {
+      const regionSelected = tempSelections.some(
+        (s) => s.type === "region" && s.regionId === regionId,
+      );
+      if (regionSelected) return;
+    }
+    if (type === "plot") {
+      const regionSelected = tempSelections.some(
+        (s) => s.type === "region" && s.regionId === regionId,
+      );
+      const areaSelected = tempSelections.some(
+        (s) =>
+          s.type === "area" && s.regionId === regionId && s.areaId === areaId,
+      );
+      if (regionSelected || areaSelected) return;
+    }
+
+    const isCurrentlySelected = tempSelections.some(
+      (s) =>
+        s.type === type &&
+        s.regionId === regionId &&
+        s.areaId === areaId &&
+        s.plotId === plotId,
+    );
+
+    if (isCurrentlySelected) {
+      setTempSelections((prev) =>
+        prev.filter(
+          (s) =>
+            !(
+              s.type === type &&
+              s.regionId === regionId &&
+              s.areaId === areaId &&
+              s.plotId === plotId
+            ),
+        ),
+      );
+    } else {
+      setTempSelections((prev) => {
+        // Clear children if parent is selected
+        let next = [...prev];
+        if (type === "region") {
+          next = next.filter((s) => s.regionId !== regionId);
+        } else if (type === "area") {
+          next = next.filter(
+            (s) => !(s.regionId === regionId && s.areaId === areaId),
+          );
+        }
+
+        return [
+          ...next,
+          {
+            id: Math.random().toString(36).substr(2, 9),
+            type,
+            regionId,
+            areaId,
+            plotId,
+          },
+        ];
+      });
+    }
+  };
+
+  const handleConfirm = () => {
+    onConfirm(tempSelections);
+    setIsOpen(false);
+  };
+
+  return (
+    <>
+      <button
+        onClick={() => setIsOpen(true)}
+        disabled={!enterpriseId}
+        className="w-full h-12 cursor-pointer border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 text-primary font-bold gap-2 transition-all rounded-lg shadow-sm hover:shadow-md flex items-center justify-center"
+      >
+        <Plus className="w-5 h-5" />
+        Thêm phạm vi canh tác
+      </button>
+
+      <Dialog
+        open={isOpen}
+        onOpenChange={(open) => {
+          setIsOpen(open);
+          if (!open) setSearchTerm("");
+        }}
+      >
+        <DialogContent className="max-w-xl p-0 overflow-hidden rounded-2xl border-none shadow-2xl flex flex-col max-h-[90vh]">
+          <DialogHeader className="p-6 bg-slate-50 border-b shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-primary" />
+              Chọn phạm vi canh tác
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Bạn có thể chọn Vùng trồng, Khu vực hoặc từng Lô đất cụ thể
+            </p>
+          </DialogHeader>
+
+          <div className="px-6 pb-5 border-b shrink-0 bg-white">
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
+              <Input
+                placeholder="Tìm kiếm vùng, khu vực, lô..."
+                className="pl-10 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <ScrollArea className="flex-1 overflow-y-auto">
+            <div className="p-6 space-y-4">
+              {filteredRegions.map((r) => (
+                <div key={r.id} className="space-y-2">
+                  {/* Region Level */}
+                  <div className="flex items-center gap-2 group">
+                    <button
+                      onClick={() => toggleRegion(r.id.toString())}
+                      className="p-1 hover:bg-slate-100 rounded transition-colors"
+                    >
+                      {expandedRegions.includes(r.id.toString()) ? (
+                        <ChevronDown className="w-4 h-4 text-slate-400" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-slate-400" />
+                      )}
+                    </button>
+                    <div
+                      onClick={() => handleSelect("region", r.id.toString())}
+                      className={cn(
+                        "flex-1 flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer",
+                        isSelected("region", r.id.toString())
+                          ? "bg-primary/10 border-primary/40 opacity-60 cursor-not-allowed"
+                          : "bg-white border-slate-100 hover:border-primary/20 hover:bg-slate-50",
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                          <MapPin className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-slate-800 text-sm">
+                            {r.name}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                            Vùng trồng
+                          </div>
+                        </div>
+                      </div>
+                      {isSelected("region", r.id.toString()) ? (
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-5 h-5 text-primary" />
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] bg-primary/10 text-primary border-none"
+                          >
+                            Đã chọn
+                          </Badge>
+                        </div>
+                      ) : (
+                        <div className="w-5 h-5 rounded border-2 border-slate-200 group-hover:border-primary transition-colors flex items-center justify-center">
+                          <Plus className="w-3.5 h-3.5 text-slate-300 group-hover:text-primary" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Areas Level */}
+                  {expandedRegions.includes(r.id.toString()) && (
+                    <div className="ml-6 pl-4 border-l-2 border-slate-100 space-y-2 py-1">
+                      {r.subAreas?.map((area: any) => (
+                        <div key={area.id} className="space-y-2">
+                          <div className="flex items-center gap-2 group">
+                            <button
+                              onClick={() => toggleArea(area.id.toString())}
+                              className="p-1 hover:bg-slate-100 rounded transition-colors"
+                            >
+                              {expandedAreas.includes(area.id.toString()) ? (
+                                <ChevronDown className="w-4 h-4 text-slate-400" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4 text-slate-400" />
+                              )}
+                            </button>
+                            <div
+                              onClick={() =>
+                                handleSelect(
+                                  "area",
+                                  r.id.toString(),
+                                  area.id.toString(),
+                                )
+                              }
+                              className={cn(
+                                "flex-1 flex items-center justify-between p-2.5 rounded-xl border-2 transition-all cursor-pointer",
+                                isSelected(
+                                  "area",
+                                  r.id.toString(),
+                                  area.id.toString(),
+                                )
+                                  ? "bg-primary/10 border-primary/40 opacity-60 cursor-not-allowed"
+                                  : "bg-white border-slate-100 hover:border-primary/20 hover:bg-slate-50",
+                              )}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center">
+                                  <Layers className="w-4 h-4" />
+                                </div>
+                                <span className="font-bold text-slate-700 text-xs">
+                                  {area.name}
+                                </span>
+                              </div>
+                              {isSelected(
+                                "area",
+                                r.id.toString(),
+                                area.id.toString(),
+                              ) ? (
+                                <div className="flex items-center gap-2">
+                                  <CheckCircle2 className="w-4 h-4 text-primary" />
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-[9px] bg-primary/10 text-primary border-none h-4 py-0"
+                                  >
+                                    Đã chọn
+                                  </Badge>
+                                </div>
+                              ) : (
+                                <div className="w-4.5 h-4.5 rounded border border-slate-200 group-hover:border-primary flex items-center justify-center">
+                                  <Plus className="w-3 h-3 text-slate-300 group-hover:text-primary" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Plots Level */}
+                          {expandedAreas.includes(area.id.toString()) && (
+                            <div className="ml-6 pl-4 border-l-2 border-slate-50 space-y-2 py-1">
+                              {area.plots?.map((plot: any) => (
+                                <div
+                                  key={plot.id}
+                                  onClick={() =>
+                                    handleSelect(
+                                      "plot",
+                                      r.id.toString(),
+                                      area.id.toString(),
+                                      plot.id,
+                                    )
+                                  }
+                                  className={cn(
+                                    "flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer group/plot",
+                                    isSelected(
+                                      "plot",
+                                      r.id.toString(),
+                                      area.id.toString(),
+                                      plot.id,
+                                    )
+                                      ? "bg-primary/10 border-primary/40 opacity-60 cursor-not-allowed"
+                                      : "bg-white border-slate-100 hover:border-primary/20 hover:bg-slate-50",
+                                  )}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-md bg-slate-50 text-slate-400 flex items-center justify-center group-hover/plot:bg-primary/10 group-hover/plot:text-primary transition-colors">
+                                      <Target className="w-3 h-3" />
+                                    </div>
+                                    <span className="text-[11px] font-medium text-slate-600 group-hover/plot:text-slate-900">
+                                      {plot.name}
+                                    </span>
+                                  </div>
+                                  {isSelected(
+                                    "plot",
+                                    r.id.toString(),
+                                    area.id.toString(),
+                                    plot.id,
+                                  ) ? (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                                  ) : (
+                                    <div className="w-3.5 h-3.5 rounded-sm border border-slate-200 group-hover/plot:border-primary flex items-center justify-center">
+                                      <Plus className="w-2.5 h-2.5 text-slate-300 group-hover/plot:text-primary" />
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+
+          <DialogFooter className="p-6 bg-slate-50 border-t items-center shrink-0">
+            <div className="flex-1 text-xs text-muted-foreground">
+              Đã chọn{" "}
+              <span className="font-bold text-primary">
+                {tempSelections.length}
+              </span>{" "}
+              phạm vi
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                onClick={() => setIsOpen(false)}
+                className="h-9 px-4 text-xs"
+              >
+                Hủy
+              </Button>
+              <Button
+                onClick={handleConfirm}
+                className="h-9 px-6 text-xs font-bold gap-2"
+              >
+                Xác nhận
+                <Badge
+                  variant="secondary"
+                  className="bg-white/20 text-white border-none h-4 px-1 min-w-4 justify-center"
+                >
+                  {tempSelections.length}
+                </Badge>
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
 
 // (Removed mockExistingData and switched to store)
 
@@ -216,7 +867,7 @@ const ManagerSelector = ({
                 value={departmentFilter}
                 onValueChange={setDepartmentFilter}
               >
-                <SelectTrigger className="w-[140px] bg-slate-50">
+                <SelectTrigger className="w-35 bg-slate-50">
                   <SelectValue placeholder="Phòng ban" />
                 </SelectTrigger>
                 <SelectContent>
@@ -230,7 +881,7 @@ const ManagerSelector = ({
               </Select>
             </div>
 
-            <ScrollArea className="h-[300px] pr-4">
+            <ScrollArea className="h-75 -mx-4 px-4 pr-6">
               <div className="space-y-2">
                 {filteredManagers.map((m) => (
                   <div
@@ -282,6 +933,125 @@ const ManagerSelector = ({
     </>
   );
 };
+const SeedSelectorDialog = ({
+  variety,
+  onSelect,
+  selectedSeedIds = [],
+  isOpen,
+  onOpenChange,
+}: {
+  variety: any;
+  onSelect: (seedIds: string[]) => void;
+  selectedSeedIds?: string[];
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [tempSelectedIds, setTempSelectedIds] = useState<string[]>([]);
+  const { seeds } = useSeedStore();
+
+  useEffect(() => {
+    if (isOpen) {
+      setTempSelectedIds(selectedSeedIds);
+    }
+  }, [isOpen]);
+
+  const filteredSeeds = useMemo(() => {
+    if (!variety) return [];
+
+    return seeds.filter(
+      (s) =>
+        s.varietyCode === variety.varietyCode &&
+        (s.varietyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          s.varietyCode.toLowerCase().includes(searchTerm.toLowerCase())),
+    );
+  }, [seeds, variety, searchTerm]);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Sprout className="w-5 h-5 text-primary" />
+            Chọn hạt giống cho {variety?.varietyName}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
+            <Input
+              placeholder="Tìm kiếm hạt giống..."
+              className="pl-10 bg-slate-50 border-slate-200 focus:bg-white transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <ScrollArea className="h-72 border rounded-xl bg-slate-50/50">
+            <div className="p-2 space-y-2">
+              {filteredSeeds.map((seed) => {
+                const isSelected = tempSelectedIds.includes(seed.id);
+                return (
+                  <div
+                    key={seed.id}
+                    onClick={() => {
+                      if (isSelected) {
+                        setTempSelectedIds((prev) =>
+                          prev.filter((id) => id !== seed.id),
+                        );
+                      } else {
+                        setTempSelectedIds((prev) => [...prev, seed.id]);
+                      }
+                    }}
+                    className={cn(
+                      "flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all bg-white hover:border-primary/40",
+                      isSelected && "bg-primary/5 border-primary",
+                    )}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-sm">
+                        {seed.varietyName}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {seed.varietyCode} - {seed.supplier}
+                      </span>
+                    </div>
+                    {isSelected && (
+                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                    )}
+                  </div>
+                );
+              })}
+              {filteredSeeds.length === 0 && (
+                <div className="text-center py-8 text-sm text-slate-400">
+                  Không tìm thấy hạt giống phù hợp
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+            className="flex-1"
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={() => {
+              onSelect(tempSelectedIds);
+              onOpenChange(false);
+            }}
+            className="flex-1"
+            disabled={tempSelectedIds.length === 0}
+          >
+            Xác nhận
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 // --- Main Page Component ---
 
@@ -296,6 +1066,11 @@ const CultivationAreaEditPage = () => {
   const { varieties } = useVarietyStore();
   const { farmingMethods } = useFarmingMethodStore();
   const { irrigationSystems } = useIrrigationSystemStore();
+  const { seeds } = useSeedStore();
+
+  // Dialog state
+  const [seedDialogOpen, setSeedDialogOpen] = useState(false);
+  const [activeSeedVariety, setActiveSeedVariety] = useState<any>(null);
 
   const existingArea = useMemo(() => {
     if (!id) return null;
@@ -303,13 +1078,11 @@ const CultivationAreaEditPage = () => {
   }, [id, getAreaById]);
 
   // State
-  const [scope, setScope] = useState<ScopeType>("region");
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
 
-  const [selectedRegionId, setSelectedRegionId] = useState<string>("");
-  const [selectedAreaIds, setSelectedAreaIds] = useState<string[]>([]);
-  const [selectedPlotIds, setSelectedPlotIds] = useState<string[]>([]);
+  const [selectedEnterpriseId, setSelectedEnterpriseId] = useState<string>("");
+  const [selections, setSelections] = useState<GeographicalSelection[]>([]);
 
   const [selectedCertId, setSelectedCertId] = useState<string>("");
   const [selectedManagerId, setSelectedManagerId] = useState<string>("");
@@ -322,98 +1095,181 @@ const CultivationAreaEditPage = () => {
         farmingMethodId: string;
         irrigationMethodId: string;
         selectedCrops: string[];
+        seedSelections?: Record<string, string[]>; // varietyId -> seedIds[]
       }
     >
   >({});
 
+  const [cropSearchTerm, setCropSearchTerm] = useState("");
+  const [applyToAllDialogOpen, setApplyToAllDialogOpen] = useState(false);
+
   // Initialize state with existing area data
   useEffect(() => {
     if (existingArea) {
-      setScope(existingArea.scope);
       setName(existingArea.name);
       setNote(existingArea.note || "");
       setSelectedCertId(existingArea.certificateId || "");
       setSelectedManagerId(existingArea.managerId || "");
       setConfigs(existingArea.configs || {});
 
-      // Locate IDs based on scope
-      if (existingArea.scope === "region") {
-        setSelectedRegionId(existingArea.targetIds[0] || "");
-      } else if (existingArea.scope === "area") {
-        const areaIds = existingArea.targetIds;
-        setSelectedAreaIds(areaIds);
-        // Find region of first area
-        const allAreas = regions.flatMap((r) => r.subAreas || []);
-        const firstArea = allAreas.find((a) => a.id.toString() === areaIds[0]);
-        if (firstArea) {
-          setSelectedRegionId(firstArea.regionId.toString());
-        }
-      } else if (existingArea.scope === "plot") {
-        const plotIds = existingArea.targetIds;
-        setSelectedPlotIds(plotIds);
-        // Find areas of these plots
-        const allAreas = regions.flatMap((r) => r.subAreas || []);
-        const areasWithPlots = allAreas.filter((a) =>
-          a.plots?.some((p) => plotIds.includes(p.id)),
+      // Set enterprise ID
+      if (existingArea.enterpriseId) {
+        setSelectedEnterpriseId(existingArea.enterpriseId);
+      } else {
+        // Locate enterprise ID from regions if not stored on the area
+        const areaRegion = regions.find(
+          (r) =>
+            r.subAreas?.some((a: any) =>
+              existingArea.targetIds.includes(a.id.toString()),
+            ) ||
+            (existingArea.scope === "region" &&
+              existingArea.targetIds.includes(r.id.toString())),
         );
-        setSelectedAreaIds(areasWithPlots.map((a) => a.id.toString()));
-        if (areasWithPlots[0]) {
-          setSelectedRegionId(areasWithPlots[0].regionId.toString());
+        if (areaRegion) {
+          setSelectedEnterpriseId(areaRegion.enterpriseId);
         }
       }
+
+      // Reconstruct selections from targetIds
+      const reconstructedSelections: GeographicalSelection[] = [];
+
+      if (existingArea.scope === "region") {
+        existingArea.targetIds.forEach((rid) => {
+          reconstructedSelections.push({
+            id: Math.random().toString(36).substr(2, 9),
+            type: "region",
+            regionId: rid,
+          });
+        });
+      } else if (existingArea.scope === "area") {
+        existingArea.targetIds.forEach((aid) => {
+          // Find region for this area
+          const reg = regions.find((r) =>
+            r.subAreas?.some((sa: any) => sa.id.toString() === aid),
+          );
+          if (reg) {
+            reconstructedSelections.push({
+              id: Math.random().toString(36).substr(2, 9),
+              type: "area",
+              regionId: reg.id.toString(),
+              areaId: aid,
+            });
+          }
+        });
+      } else if (existingArea.scope === "plot") {
+        existingArea.targetIds.forEach((pid) => {
+          // Find region and area for this plot
+          const reg = regions.find((r) =>
+            r.subAreas?.some((sa: any) =>
+              sa.plots?.some((p: any) => p.id === pid),
+            ),
+          );
+          const area = reg?.subAreas?.find((sa: any) =>
+            sa.plots?.some((p: any) => p.id === pid),
+          );
+
+          if (reg && area) {
+            reconstructedSelections.push({
+              id: Math.random().toString(36).substr(2, 9),
+              type: "plot",
+              regionId: reg.id.toString(),
+              areaId: area.id.toString(),
+              plotId: pid,
+            });
+          }
+        });
+      }
+
+      setSelections(reconstructedSelections);
     }
   }, [existingArea, regions]);
 
-  // Computed values
-  const currentRegion = useMemo(
-    () => regions.find((r) => r.id.toString() === selectedRegionId),
-    [regions, selectedRegionId],
-  );
-  const availableAreas = useMemo(
-    () => currentRegion?.subAreas || [],
-    [currentRegion],
-  );
-  const availablePlots = useMemo(() => {
-    const filteredAreas = availableAreas.filter((a) =>
-      selectedAreaIds.includes(a.id.toString()),
-    );
-    return filteredAreas.flatMap((a) => a.plots || []);
-  }, [availableAreas, selectedAreaIds]);
+  // Grouped selections for visualization cards
+  const groupedSelectionsMap = useMemo(() => {
+    const groups: Record<
+      string,
+      { regionId: string; areaId?: string; items: GeographicalSelection[] }
+    > = {};
 
-  const selectedRegion = currentRegion;
-  const selectedAreas = useMemo(
-    () =>
-      availableAreas.filter((a) => selectedAreaIds.includes(a.id.toString())),
-    [availableAreas, selectedAreaIds],
-  );
-  const selectedPlots = useMemo(
-    () => availablePlots.filter((p) => selectedPlotIds.includes(p.id)),
-    [availablePlots, selectedPlotIds],
-  );
-
-  const toggleArea = (id: string) => {
-    setSelectedAreaIds((prev) => {
-      const isSelected = prev.includes(id);
-      if (isSelected) {
-        // Remove plots associated with this area
-        const area = availableAreas.find((a) => a.id.toString() === id);
-        if (area?.plots) {
-          const plotIdsToRemove = area.plots.map((p) => p.id);
-          setSelectedPlotIds((plots) =>
-            plots.filter((pid) => !plotIdsToRemove.includes(pid)),
-          );
-        }
-        return prev.filter((a) => a !== id);
-      } else {
-        return [...prev, id];
+    selections.forEach((s) => {
+      const gId = s.areaId ? `${s.regionId}-${s.areaId}` : s.regionId;
+      if (!groups[gId]) {
+        groups[gId] = {
+          regionId: s.regionId,
+          areaId: s.areaId,
+          items: [],
+        };
       }
+      groups[gId].items.push(s);
     });
-  };
 
-  const togglePlot = (id: string) => {
-    setSelectedPlotIds((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
-    );
+    return groups;
+  }, [selections]);
+
+  const selectedRegions = useMemo(() => {
+    const regionIds = [...new Set(selections.map((s) => s.regionId))];
+    return regions.filter((r) => regionIds.includes(r.id.toString()));
+  }, [regions, selections]);
+
+  const selectedAreas = useMemo(() => {
+    const areaIds = selections
+      .filter((s) => s.areaId)
+      .map((s) => s.areaId as string);
+    const uniqueAreaIds = [...new Set(areaIds)];
+    return regions
+      .flatMap((r) => r.subAreas || [])
+      .filter((a) => uniqueAreaIds.includes(a.id.toString()));
+  }, [regions, selections]);
+
+  const selectedPlots = useMemo(() => {
+    const plotIds = selections
+      .filter((s) => s.plotId)
+      .map((s) => s.plotId as string);
+    const uniquePlotIds = [...new Set(plotIds)];
+    return regions
+      .flatMap((r) => r.subAreas || [])
+      .flatMap((a) => a.plots || [])
+      .filter((p) => uniquePlotIds.includes(p.id));
+  }, [regions, selections]);
+
+  const selectedRegion = selectedRegions[0];
+
+  const effectiveScope = useMemo(() => {
+    if (selections.some((s) => s.type === "plot")) return "plot";
+    if (selections.some((s) => s.type === "area")) return "area";
+    return "region";
+  }, [selections]);
+
+  const entities = useMemo(() => {
+    return selections.map((s) => {
+      const region = regions.find((r) => r.id.toString() === s.regionId);
+      const area = region?.subAreas?.find(
+        (a: any) => a.id.toString() === s.areaId,
+      );
+      const plot = area?.plots?.find((p: any) => p.id === s.plotId);
+
+      return {
+        id: s.plotId || s.areaId || s.regionId,
+        targetId: s.plotId || s.areaId || s.regionId,
+        name:
+          s.type === "region"
+            ? region?.name
+            : s.type === "area"
+              ? area?.name
+              : plot?.name,
+        type:
+          s.type === "region"
+            ? "Vùng"
+            : s.type === "area"
+              ? "Khu vực"
+              : "Lô đất",
+        typeCode: s.type,
+      };
+    });
+  }, [selections, regions]);
+
+  const removeSelection = (ids: string[]) => {
+    setSelections((prev) => prev.filter((s) => !ids.includes(s.id)));
   };
 
   if (!existingArea) {
@@ -442,41 +1298,8 @@ const CultivationAreaEditPage = () => {
   // Steps Rendering
   const renderGeneralInfo = () => (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      {/* Edit Mode Banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
-        <div className="text-blue-600">
-          <CheckCircle2 className="w-5 h-5" />
-        </div>
-        <div className="text-sm text-blue-800">
-          <div className="font-semibold mb-1">Chế độ chỉnh sửa</div>
-          <div>
-            Bạn đang chỉnh sửa vùng canh tác <strong>{existingArea.id}</strong>.
-            Các thay đổi sẽ được lưu sau khi hoàn tất.
-          </div>
-        </div>
-      </div>
-
-      {/* Scope - Read only in edit mode */}
-      <div className="space-y-3">
-        <Label className="text-base font-semibold text-slate-800">
-          Phạm vi canh tác
-        </Label>
-        <div className="bg-slate-50 p-4 rounded-lg border">
-          <Badge variant="outline" className="capitalize text-base px-4 py-2">
-            {scope === "region"
-              ? "Vùng trồng"
-              : scope === "area"
-                ? "Khu vực"
-                : "Lô đất"}
-          </Badge>
-          <p className="text-sm text-muted-foreground mt-2">
-            Phạm vi không thể thay đổi sau khi tạo
-          </p>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-2">
-        {/* 2. Basic Info & Location */}
+        {/* 1. Basic Info & Location */}
         <div className="space-y-5">
           <div className="flex items-center gap-2 pb-2 border-b">
             <ScrollText className="w-5 h-5 text-primary" />
@@ -484,148 +1307,90 @@ const CultivationAreaEditPage = () => {
           </div>
 
           <div className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name" className="text-sm font-medium">
-                Tên vùng canh tác <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="name"
-                placeholder="VD: Vùng trồng Sầu riêng chất lượng cao"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="h-10 border-slate-300 focus:border-primary focus:ring-primary/20"
-              />
-            </div>
+            <Label htmlFor="name" className="text-sm font-medium">
+              Tên vùng canh tác <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="name"
+              placeholder="VD: Vùng trồng Sầu riêng chất lượng cao"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="h-10 border-slate-300 focus:border-primary focus:ring-primary/20"
+            />
 
-            <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <div className="text-sm font-medium text-slate-700 mb-2">
-                Vị trí địa lý
-              </div>
+            <Label className="text-sm font-medium">
+              Doanh nghiệp (Enterprise) <span className="text-red-500">*</span>
+            </Label>
+            <EnterpriseSelector
+              disabled
+              selectedId={selectedEnterpriseId}
+              onSelect={setSelectedEnterpriseId}
+            />
 
-              <div className="grid gap-2">
-                <Label className="text-xs text-muted-foreground">
-                  Vùng trồng (Region) <span className="text-red-500">*</span>
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold text-slate-700">
+                  Phạm vi địa lý <span className="text-red-500">*</span>
                 </Label>
-                <Select
-                  value={selectedRegionId}
-                  onValueChange={(val) => {
-                    setSelectedRegionId(val);
-                    setSelectedAreaIds([]);
-                    setSelectedPlotIds([]);
-                  }}
-                >
-                  <SelectTrigger className="bg-white border-slate-200">
-                    <SelectValue placeholder="Chọn vùng..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {regions.map((r) => (
-                      <SelectItem key={r.id} value={r.id.toString()}>
-                        {r.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {selections.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="bg-primary/10 text-primary border-none"
+                  >
+                    {selections.length} lựa chọn
+                  </Badge>
+                )}
               </div>
 
-              {(scope === "area" || scope === "plot") && selectedRegionId && (
-                <div className="space-y-2 animate-in slide-in-from-top-2">
-                  <Label className="text-xs text-muted-foreground">
-                    Khu vực (Area) <span className="text-red-500">*</span>
-                    {selectedAreaIds.length > 0 && (
-                      <span className="ml-1 text-primary font-medium">
-                        ({selectedAreaIds.length})
-                      </span>
-                    )}
-                  </Label>
-                  <ScrollArea className="max-h-[200px] border rounded-lg p-2 bg-white">
-                    <div className="space-y-1">
-                      {availableAreas.map((a) => (
-                        <div
-                          key={a.id}
-                          onClick={() => toggleArea(a.id.toString())}
-                          className={`flex items-center justify-between p-2 rounded cursor-pointer transition-all ${
-                            selectedAreaIds.includes(a.id.toString())
-                              ? "bg-primary/10 border border-primary/30"
-                              : "hover:bg-slate-50"
-                          }`}
-                        >
-                          <span className="text-sm">{a.name}</span>
-                          {selectedAreaIds.includes(a.id.toString()) && (
-                            <CheckCircle2 className="w-4 h-4 text-primary" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </div>
-              )}
+              <GeographicalSelector
+                regions={regions}
+                enterpriseId={selectedEnterpriseId}
+                existingSelections={selections}
+                onConfirm={(newSelections) => setSelections(newSelections)}
+              />
 
-              {scope === "plot" && selectedAreaIds.length > 0 && (
-                <div className="space-y-2 animate-in slide-in-from-top-2">
-                  <Label className="text-xs text-muted-foreground">
-                    Lô trồng (Plot) <span className="text-red-500">*</span>
-                    {selectedPlotIds.length > 0 && (
-                      <span className="ml-1 text-primary font-medium">
-                        ({selectedPlotIds.length})
-                      </span>
-                    )}
-                  </Label>
-                  <ScrollArea className="max-h-[200px] border rounded-lg p-2 bg-white">
-                    <div className="space-y-1">
-                      {availablePlots.map((p) => {
-                        const parentArea = availableAreas.find((a) =>
-                          a.plots?.some((pp) => pp.id === p.id),
-                        );
-                        return (
-                          <div
-                            key={p.id}
-                            onClick={() => togglePlot(p.id)}
-                            className={`flex items-center justify-between p-2 rounded cursor-pointer transition-all ${
-                              selectedPlotIds.includes(p.id)
-                                ? "bg-primary/10 border border-primary/30"
-                                : "hover:bg-slate-50"
-                            }`}
-                          >
-                            <div className="flex flex-col">
-                              <span className="text-sm font-medium">
-                                {p.name}
-                              </span>
-                              {parentArea && (
-                                <span className="text-[10px] text-muted-foreground">
-                                  Thuộc: {parentArea.name}
-                                </span>
-                              )}
-                            </div>
-                            {selectedPlotIds.includes(p.id) && (
-                              <CheckCircle2 className="w-4 h-4 text-primary" />
-                            )}
-                          </div>
-                        );
-                      })}
-                      {availablePlots.length === 0 && (
-                        <div className="text-center py-4 text-xs text-muted-foreground italic">
-                          Không có lô nào trong khu vực đã chọn
-                        </div>
-                      )}
+              <div className="grid grid-cols-1 gap-4 mt-2 max-h-120 overflow-y-auto pr-2 custom-scrollbar pb-4">
+                {Object.values(groupedSelectionsMap).map((group) => (
+                  <SelectionCard
+                    key={`${group.regionId}-${group.areaId || "none"}`}
+                    regionId={group.regionId}
+                    areaId={group.areaId}
+                    items={group.items}
+                    regions={regions}
+                    onRemove={removeSelection}
+                  />
+                ))}
+                {selections.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-12 px-6 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50 text-center gap-2 animate-in fade-in duration-500">
+                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm text-slate-300">
+                      <MapPin className="w-6 h-6" />
                     </div>
-                  </ScrollArea>
-                </div>
-              )}
+                    <div>
+                      <div className="text-sm font-bold text-slate-600">
+                        Chưa có lựa chọn nào
+                      </div>
+                      <div className="text-[11px] text-slate-400 max-w-50 mx-auto mt-1">
+                        Vui lòng thêm vị trí để tiếp tục
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid gap-2 pt-2">
               <Label className="text-sm font-medium">Ghi chú</Label>
               <Textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Nhập thông tin ghi chú thêm..."
-                className="min-h-[80px] border-slate-300 resize-none hover:border-slate-400 focus:border-primary"
+                className="min-h-20 border-slate-300 resize-none hover:border-slate-400 focus:border-primary"
               />
             </div>
           </div>
         </div>
 
-        {/* 3. Standards & Management */}
+        {/* 2. Standards & Management */}
         <div className="space-y-5">
           <div className="flex items-center gap-2 pb-2 border-b">
             <Award className="w-5 h-5 text-primary" />
@@ -635,7 +1400,7 @@ const CultivationAreaEditPage = () => {
           </div>
 
           <div className="space-y-6">
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label className="text-sm font-medium">
                 Giấy chứng nhận / Tiêu chuẩn
               </Label>
@@ -645,7 +1410,7 @@ const CultivationAreaEditPage = () => {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label className="text-sm font-medium">
                 Nhân viên chịu trách nhiệm
               </Label>
@@ -655,22 +1420,35 @@ const CultivationAreaEditPage = () => {
               />
             </div>
 
-            {selectedRegion && (
-              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex gap-3 text-sm text-blue-800">
-                <div className="bg-blue-100 p-1.5 rounded-full h-fit">
-                  <MapPin className="w-4 h-4 text-blue-600" />
-                </div>
-                <div>
-                  <div className="font-semibold">Thông tin địa chỉ</div>
-                  <div className="text-blue-700/80 mt-1">
-                    {selectedRegion.address}
+            {selectedRegion?.cropVarieties &&
+              selectedRegion.cropVarieties.length > 0 && (
+                <div className="bg-green-50 p-4 rounded-xl border border-green-100 flex gap-3 text-sm text-green-800 animate-in fade-in slide-in-from-top-2">
+                  <div className="bg-green-100 p-1.5 rounded-full h-fit">
+                    <Sprout className="w-4 h-4 text-green-600" />
                   </div>
-                  <div className="text-blue-700/80 mt-0.5 font-medium">
-                    {selectedRegion.enterpriseId}
+                  <div>
+                    <div className="font-semibold mb-1">
+                      Cây trồng chủ lực của vùng
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {selectedRegion.cropVarieties.map((crop: any) => (
+                        <Badge
+                          key={crop.id}
+                          variant="outline"
+                          className="bg-white text-green-700 border-green-200"
+                        >
+                          {crop.name} - {crop.variety}
+                          {crop.seedType && (
+                            <span className="ml-1 text-[10px] text-green-600/70 font-normal">
+                              ({crop.seedType})
+                            </span>
+                          )}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
         </div>
       </div>
@@ -678,30 +1456,6 @@ const CultivationAreaEditPage = () => {
   );
 
   const renderConfiguration = () => {
-    // Determine entities based on scope
-    let entities: { id: string; name: string; type: string }[] = [];
-    if (scope === "region") {
-      entities = [
-        {
-          id: "region-main",
-          name: selectedRegion?.name || "Vùng trồng",
-          type: "Vùng",
-        },
-      ];
-    } else if (scope === "area") {
-      entities = selectedAreas.map((a) => ({
-        id: a.id.toString(),
-        name: a.name,
-        type: "Khu vực",
-      }));
-    } else if (scope === "plot") {
-      entities = selectedPlots.map((p) => ({
-        id: p.id,
-        name: p.name,
-        type: "Lô",
-      }));
-    }
-
     const effectiveId =
       entities.find((e) => e.id === activeConfigId)?.id ||
       entities[0]?.id ||
@@ -710,22 +1464,28 @@ const CultivationAreaEditPage = () => {
       farmingMethodId: "",
       irrigationMethodId: "",
       selectedCrops: [],
+      seedSelections: {},
     };
 
-    const availableCropsForConfig = (() => {
+    const availableCropsForConfig = useMemo(() => {
       if (!effectiveConfig.farmingMethodId) return [];
-      return varieties.filter((v) => v.status === "active");
-    })();
+      return varieties.filter(
+        (v) =>
+          v.status === "active" &&
+          (v.varietyName.toLowerCase().includes(cropSearchTerm.toLowerCase()) ||
+            v.varietyCode.toLowerCase().includes(cropSearchTerm.toLowerCase())),
+      );
+    }, [varieties, effectiveConfig.farmingMethodId, cropSearchTerm]);
 
     return (
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         {/* Scope Summary Banner - Full Width at Top */}
-        <div className="relative overflow-hidden rounded-xl border border-green-200 bg-linear-to-r from-green-50 via-white to-green-50 p-6 shadow-sm">
+        <div className="relative overflow-hidden rounded-xl border border-primary/20 bg-linear-to-r from-primary/5 via-white to-primary/5 p-6">
           <div className="relative z-10 flex items-center gap-4">
             <div className="w-14 h-14 rounded-xl bg-white shadow-sm border flex items-center justify-center text-primary shrink-0">
-              {scope === "plot" ? (
+              {effectiveScope === "plot" ? (
                 <Target className="w-7 h-7" />
-              ) : scope === "area" ? (
+              ) : effectiveScope === "area" ? (
                 <Layers className="w-7 h-7" />
               ) : (
                 <MapPin className="w-7 h-7" />
@@ -733,22 +1493,22 @@ const CultivationAreaEditPage = () => {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-                {scope === "region"
+                {effectiveScope === "region"
                   ? "Vùng trồng"
-                  : scope === "area"
+                  : effectiveScope === "area"
                     ? "Khu vực"
                     : "Lô đất"}
               </div>
               <div className="text-xl md:text-2xl font-bold text-slate-900 mt-0.5 truncate">
-                {scope === "region"
+                {effectiveScope === "region"
                   ? selectedRegion?.name
-                  : scope === "area"
+                  : effectiveScope === "area"
                     ? `${selectedAreas.length} khu vực`
                     : `${selectedPlots.length} lô trồng`}
               </div>
-              {(scope === "region" && selectedRegion) || name ? (
+              {((effectiveScope === "region" && selectedRegion) || name) && (
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  {scope === "region" && selectedRegion && (
+                  {effectiveScope === "region" && selectedRegion && (
                     <Badge
                       variant="outline"
                       className="bg-white font-mono text-xs"
@@ -760,9 +1520,9 @@ const CultivationAreaEditPage = () => {
                     <span className="text-slate-600 text-sm">{name}</span>
                   )}
                 </div>
-              ) : null}
+              )}
             </div>
-            {entities.length > 1 && (
+            {entities.length > 0 && (
               <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white rounded-lg border">
                 <div className="text-right">
                   <div className="text-xs text-muted-foreground">Tiến độ</div>
@@ -789,11 +1549,11 @@ const CultivationAreaEditPage = () => {
         <div
           className={cn(
             "grid grid-cols-1 gap-6",
-            entities.length > 1 ? "lg:grid-cols-[1fr_3fr]" : "grid-cols-1",
+            entities.length > 0 ? "lg:grid-cols-[1fr_3fr]" : "grid-cols-1",
           )}
         >
           {/* Sidebar for multiple entities */}
-          {entities.length > 1 && (
+          {entities.length > 0 && (
             <div className="w-full lg:w-72 shrink-0">
               <div className="sticky top-6">
                 <div className="flex items-center justify-between mb-3">
@@ -804,7 +1564,7 @@ const CultivationAreaEditPage = () => {
                     {entities.length}
                   </Badge>
                 </div>
-                <ScrollArea className="h-[600px] border rounded-xl bg-white shadow-sm">
+                <ScrollArea className="h-150 border rounded-xl bg-white shadow-sm">
                   <div className="p-2 space-y-1">
                     {entities.map((entity) => {
                       const isConfigured =
@@ -816,21 +1576,23 @@ const CultivationAreaEditPage = () => {
                         <div
                           key={entity.id}
                           onClick={() => setActiveConfigId(entity.id)}
-                          className={`group relative p-3 rounded-lg text-sm cursor-pointer transition-all border ${
+                          className={cn(
+                            "group relative p-3 rounded-lg text-sm cursor-pointer transition-all border",
                             isActive
                               ? "bg-primary/10 border-primary/30 shadow-sm"
-                              : "bg-white border-slate-100 hover:bg-slate-50 hover:border-slate-200"
-                          }`}
+                              : "bg-white border-slate-100 hover:bg-slate-50 hover:border-slate-200",
+                          )}
                         >
                           <div className="flex items-center gap-3">
                             <div
-                              className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                              className={cn(
+                                "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors",
                                 isConfigured
                                   ? "bg-green-100 text-green-600"
                                   : isActive
                                     ? "bg-primary/20 text-primary"
-                                    : "bg-slate-100 text-slate-400"
-                              }`}
+                                    : "bg-slate-100 text-slate-400",
+                              )}
                             >
                               {isConfigured ? (
                                 <CheckCircle2 className="w-4 h-4" />
@@ -868,7 +1630,7 @@ const CultivationAreaEditPage = () => {
           {/* Configuration Cards */}
           <div className="flex-1 min-w-0 space-y-6">
             {/* Entity Name Badge (for multiple entities) */}
-            {entities.length > 1 && (
+            {entities.length > 0 && (
               <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border rounded-lg">
                 <span className="text-sm text-muted-foreground">
                   Đang thiết lập cho:
@@ -961,21 +1723,78 @@ const CultivationAreaEditPage = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="w-full border-dashed hover:bg-primary/5"
-                        onClick={() => {
-                          const newConfigs = { ...configs };
-                          entities.forEach((e) => {
-                            newConfigs[e.id] = { ...effectiveConfig };
-                          });
-                          setConfigs(newConfigs);
-                        }}
+                        className="w-full border-dashed hover:bg-green-600 hover:text-white"
+                        onClick={() => setApplyToAllDialogOpen(true)}
                       >
                         <span className="text-xs">
-                          Áp dụng cho tất cả ({entities.length} mục)
+                          Áp dụng cho các vùng trồng khác
                         </span>
                       </Button>
                     </div>
                   )}
+
+                  {/* Confirmation Dialog for Apply to All */}
+                  <Dialog
+                    open={applyToAllDialogOpen}
+                    onOpenChange={setApplyToAllDialogOpen}
+                  >
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                          <Sprout className="w-5 h-5 text-green-600" />
+                          Xác nhận đồng bộ cấu hình
+                        </DialogTitle>
+                      </DialogHeader>
+                      <div className="py-4">
+                        <p className="text-sm text-slate-600 leading-relaxed">
+                          Bạn có chắc chắn muốn áp dụng phương pháp canh tác, hệ
+                          thống tưới và danh sách cây trồng hiện tại cho{" "}
+                          <span className="font-bold text-slate-900">
+                            tất cả {entities.length - 1} mục còn lại
+                          </span>{" "}
+                          không?
+                        </p>
+                        <p className="text-xs text-amber-600 mt-3 flex gap-2 items-start bg-amber-50 p-3 rounded-lg border border-amber-100">
+                          <span className="shrink-0 font-bold italic">
+                            Lưu ý:
+                          </span>
+                          Hành động này sẽ ghi đè lên các cấu hình đã thiết lập
+                          trước đó của các mục khác.
+                        </p>
+                      </div>
+                      <DialogFooter className="gap-2 sm:gap-0">
+                        <Button
+                          variant="ghost"
+                          onClick={() => setApplyToAllDialogOpen(false)}
+                        >
+                          Hủy bỏ
+                        </Button>
+                        <Button
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          onClick={() => {
+                            const newConfigs = { ...configs };
+                            entities.forEach((e) => {
+                              newConfigs[e.id] = {
+                                ...effectiveConfig,
+                                seedSelections: {
+                                  ...(effectiveConfig.seedSelections || {}),
+                                },
+                              };
+                            });
+                            setConfigs(newConfigs);
+                            setApplyToAllDialogOpen(false);
+                            toast({
+                              title: "Thành công",
+                              description:
+                                "Đã đồng bộ cấu hình cho tất cả các mục",
+                            });
+                          }}
+                        >
+                          Đồng ý áp dụng
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </CardContent>
               </Card>
 
@@ -1003,123 +1822,182 @@ const CultivationAreaEditPage = () => {
                       </span>
                     </div>
                   ) : (
-                    <ScrollArea className="flex-1 -mx-6 px-6 h-[400px]">
-                      {availableCropsForConfig.length > 0 ? (
-                        <div className="space-y-2 pr-2">
-                          {availableCropsForConfig.map((crop) => {
-                            const isSelected = (
-                              effectiveConfig.selectedCrops || []
-                            ).includes(crop.id);
-                            return (
-                              <div
-                                key={crop.id}
-                                onClick={() => {
-                                  const current =
-                                    effectiveConfig.selectedCrops || [];
-                                  const newCrops = current.includes(crop.id)
-                                    ? current.filter((c) => c !== crop.id)
-                                    : [...current, crop.id];
-                                  setConfigs((prev) => ({
-                                    ...prev,
-                                    [effectiveId]: {
-                                      ...prev[effectiveId],
-                                      selectedCrops: newCrops,
-                                    },
-                                  }));
-                                }}
-                                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-                                  isSelected
-                                    ? "bg-green-50 border-green-300 shadow-sm"
-                                    : "bg-white border-slate-200 hover:border-green-200 hover:shadow-sm"
-                                }`}
-                              >
-                                <div className="w-14 h-14 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
-                                  {crop.illustration ? (
-                                    <img
-                                      src={crop.illustration as string}
-                                      alt={crop.varietyName}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-slate-400">
-                                      <Leaf className="w-5 h-5" />
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div
-                                    className={`text-sm font-semibold truncate ${
-                                      isSelected
-                                        ? "text-green-900"
-                                        : "text-slate-700"
-                                    }`}
-                                  >
-                                    {crop.varietyName}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground mt-0.5">
-                                    {crop.crop}
-                                  </div>
-                                </div>
+                    <>
+                      <div className="mb-4 relative">
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
+                        <Input
+                          value={cropSearchTerm}
+                          placeholder="Tìm kiếm giống cây trồng..."
+                          onChange={(e) => setCropSearchTerm(e.target.value)}
+                          className="pl-10 bg-slate-50/50 border-slate-200 focus:bg-white transition-all rounded-lg"
+                        />
+                      </div>
+                      <ScrollArea className="flex-1 h-100">
+                        {availableCropsForConfig.length > 0 ? (
+                          <div className="w-full space-y-2">
+                            {availableCropsForConfig.map((crop) => {
+                              const isSelected = (
+                                effectiveConfig.selectedCrops || []
+                              ).includes(crop.id);
+                              return (
                                 <div
-                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${
+                                  key={crop.id}
+                                  onClick={() => {
+                                    const current =
+                                      effectiveConfig.selectedCrops || [];
+                                    if (current.includes(crop.id)) {
+                                      const newCrops = current.filter(
+                                        (c) => c !== crop.id,
+                                      );
+                                      const newSeedSelections = {
+                                        ...(effectiveConfig.seedSelections ||
+                                          {}),
+                                      };
+                                      delete newSeedSelections[crop.id];
+
+                                      setConfigs((prev) => ({
+                                        ...prev,
+                                        [effectiveId]: {
+                                          ...prev[effectiveId],
+                                          selectedCrops: newCrops,
+                                          seedSelections: newSeedSelections,
+                                        },
+                                      }));
+                                    } else {
+                                      setActiveSeedVariety(crop);
+                                      setSeedDialogOpen(true);
+                                    }
+                                  }}
+                                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                                     isSelected
-                                      ? "bg-green-500 border-green-500"
-                                      : "border-slate-300"
+                                      ? "bg-green-50 border-green-300 shadow-sm"
+                                      : "bg-white border-slate-200 hover:border-green-200 hover:shadow-sm"
                                   }`}
                                 >
-                                  {isSelected && (
-                                    <CheckCircle2 className="w-4 h-4 text-white" />
-                                  )}
+                                  <div className="w-14 h-14 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
+                                    {crop.illustration ? (
+                                      <img
+                                        src={crop.illustration as string}
+                                        alt={crop.varietyName}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-slate-400">
+                                        <Leaf className="w-5 h-5" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-col flex-1 shrink min-w-0">
+                                    <div
+                                      className={`text-sm shrink font-semibold truncate ${
+                                        isSelected
+                                          ? "text-green-900"
+                                          : "text-slate-700"
+                                      }`}
+                                    >
+                                      {crop.varietyName}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground mt-0.5 shrink">
+                                      {crop.crop}
+                                      {crop.seedType && (
+                                        <span className="ml-1 text-slate-500">
+                                          • {crop.seedType}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {effectiveConfig.seedSelections?.[
+                                      crop.id
+                                    ] &&
+                                      effectiveConfig.seedSelections[crop.id]
+                                        .length > 0 && (
+                                        <div className="mt-1.5 flex flex-wrap gap-1.5 min-w-0">
+                                          {effectiveConfig.seedSelections[
+                                            crop.id
+                                          ].map((seedId) => {
+                                            const seed = seeds.find(
+                                              (s) => s.id === seedId,
+                                            );
+                                            if (!seed) return null;
+                                            return (
+                                              <Badge
+                                                key={seedId}
+                                                variant="secondary"
+                                                className="whitespace-normal wrap-break-word h-auto py-0.5 leading-tight bg-primary/5 text-primary border-primary/20 text-[10px] px-1.5 font-semibold max-w-full truncate"
+                                              >
+                                                Hạt giống: {seed.varietyName}
+                                              </Badge>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                  </div>
+                                  <div
+                                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${
+                                      isSelected
+                                        ? "bg-green-500 border-green-500"
+                                        : "border-slate-300"
+                                    }`}
+                                  >
+                                    {isSelected && (
+                                      <CheckCircle2 className="w-4 h-4 text-white" />
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center text-muted-foreground text-sm italic py-10">
-                          Không có giống cây phù hợp
-                        </div>
-                      )}
-                    </ScrollArea>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center text-muted-foreground text-sm italic py-10">
+                            Không có giống cây phù hợp
+                          </div>
+                        )}
+                      </ScrollArea>
+                    </>
                   )}
                 </CardContent>
               </Card>
             </div>
           </div>
         </div>
+        <SeedSelectorDialog
+          isOpen={seedDialogOpen}
+          onOpenChange={setSeedDialogOpen}
+          variety={activeSeedVariety}
+          selectedSeedIds={
+            effectiveConfig.seedSelections?.[activeSeedVariety?.id]
+          }
+          onSelect={(seedIds) => {
+            if (!activeSeedVariety) return;
+            const varietyId = activeSeedVariety.id;
+            const currentCrops = effectiveConfig.selectedCrops || [];
+            const newCrops = currentCrops.includes(varietyId)
+              ? currentCrops
+              : [...currentCrops, varietyId];
+
+            const newSeedSelections = {
+              ...(effectiveConfig.seedSelections || {}),
+              [varietyId]: seedIds,
+            };
+
+            setConfigs((prev) => ({
+              ...prev,
+              [effectiveId]: {
+                ...prev[effectiveId],
+                selectedCrops: newCrops,
+                seedSelections: newSeedSelections,
+              },
+            }));
+          }}
+        />
       </div>
     );
   };
 
   const renderConfirmation = () => {
     const manager = personnel.find(
-      (m) => m.id.toString() === selectedManagerId,
+      (m: any) => m.id.toString() === selectedManagerId,
     );
-    const certificate = standards.find((c) => c.code === selectedCertId);
-
-    // Determine entities based on scope
-    let entities: { id: string; name: string; type: string }[] = [];
-    if (scope === "region") {
-      entities = [
-        {
-          id: "region-main",
-          name: selectedRegion?.name || "Vùng trồng",
-          type: "Vùng",
-        },
-      ];
-    } else if (scope === "area") {
-      entities = selectedAreas.map((a) => ({
-        id: a.id.toString(),
-        name: a.name,
-        type: "Khu vực",
-      }));
-    } else if (scope === "plot") {
-      entities = selectedPlots.map((p) => ({
-        id: p.id,
-        name: p.name,
-        type: "Lô",
-      }));
-    }
+    const certificate = standards.find((c: any) => c.code === selectedCertId);
 
     return (
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-4xl mx-auto">
@@ -1160,50 +2038,24 @@ const CultivationAreaEditPage = () => {
                     </td>
                   </tr>
                   <tr className="border-b border-slate-100">
-                    <td className="py-3 px-4 text-muted-foreground">Phạm vi</td>
-                    <td className="py-3 px-4">
-                      <Badge
-                        variant="outline"
-                        className="capitalize bg-slate-50"
-                      >
-                        {scope}
-                      </Badge>
-                    </td>
-                  </tr>
-                  <tr className="border-b border-slate-100">
                     <td className="py-3 px-4 text-muted-foreground">
                       Đối tượng
                     </td>
                     <td className="py-3 px-4">
-                      {scope === "region" ? (
-                        <span className="font-medium text-slate-900">
-                          {selectedRegion?.name}
-                        </span>
-                      ) : scope === "area" ? (
-                        <div className="flex flex-wrap gap-1">
-                          {selectedAreas.map((a) => (
-                            <Badge
-                              key={a.id}
-                              variant="secondary"
-                              className="text-xs"
-                            >
-                              {a.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="flex flex-wrap gap-1">
-                          {selectedPlots.map((p) => (
-                            <Badge
-                              key={p.id}
-                              variant="secondary"
-                              className="text-xs"
-                            >
-                              {p.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
+                      <div className="flex flex-wrap gap-1">
+                        {entities.map((e) => (
+                          <Badge
+                            key={e.id}
+                            variant="secondary"
+                            className="text-xs"
+                          >
+                            <span className="text-[10px] opacity-60 mr-1 uppercase">
+                              {e.typeCode}:
+                            </span>
+                            {e.name}
+                          </Badge>
+                        ))}
+                      </div>
                     </td>
                   </tr>
                   {manager && (
@@ -1213,7 +2065,7 @@ const CultivationAreaEditPage = () => {
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold">
+                          <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold overflow-hidden">
                             {manager.avatar ? (
                               <img
                                 src={manager.avatar}
@@ -1253,7 +2105,7 @@ const CultivationAreaEditPage = () => {
             <div className="bg-slate-50 border-b p-4 flex items-center gap-2">
               <Layers className="w-4 h-4 text-slate-500" />
               <h4 className="font-semibold text-slate-800">
-                Cấu hình kỹ thuật ({entities.length} mục)
+                Phạm vi vùng canh tác ({entities.length} mục)
               </h4>
             </div>
             <div className="p-4 space-y-4">
@@ -1327,6 +2179,23 @@ const CultivationAreaEditPage = () => {
                                   <Leaf className="w-2.5 h-2.5" />
                                 </span>
                                 {crop?.varietyName}
+                                {cfg.seedSelections?.[cid] &&
+                                  cfg.seedSelections[cid].length > 0 && (
+                                    <span className="ml-1 text-[10px] text-green-800/80 italic font-normal">
+                                      •{" "}
+                                      {cfg.seedSelections[cid]
+                                        .map((sid) => {
+                                          return seeds.find((s) => s.id === sid)
+                                            ?.varietyName;
+                                        })
+                                        .join(", ")}
+                                    </span>
+                                  )}
+                                {crop?.seedType && (
+                                  <span className="ml-1 text-[10px] text-green-800/80">
+                                    ({crop.seedType})
+                                  </span>
+                                )}
                               </Badge>
                             );
                           })
@@ -1388,26 +2257,32 @@ const CultivationAreaEditPage = () => {
               steps={steps}
               completeLabel="Lưu thay đổi"
               onComplete={() => {
-                // Determine target labels
+                // Determine targetIds and effectiveScope
+                const targetIds = selections.map(
+                  (s) => s.plotId || s.areaId || s.regionId,
+                );
+                const effectiveScope = selections.some((s) => s.type === "plot")
+                  ? "plot"
+                  : selections.some((s) => s.type === "area")
+                    ? "area"
+                    : "region";
+
                 let targetName = "";
-                let targetIds: string[] = [];
-                if (scope === "region") {
-                  targetName = selectedRegion?.name || "";
-                  targetIds = [selectedRegionId];
-                } else if (scope === "area") {
+                if (effectiveScope === "region") {
+                  targetName = selectedRegions.map((r) => r.name).join(", ");
+                } else if (effectiveScope === "area") {
                   targetName = selectedAreas.map((a) => a.name).join(", ");
-                  targetIds = selectedAreaIds;
-                } else if (scope === "plot") {
+                } else {
                   targetName = selectedPlots.map((p) => p.name).join(", ");
-                  targetIds = selectedPlotIds;
                 }
 
                 // Handle update
                 updateArea(id!, {
                   name,
-                  scope,
+                  scope: effectiveScope,
                   targetIds,
                   targetName,
+                  enterpriseId: selectedEnterpriseId,
                   configs,
                   certificateId: selectedCertId,
                   managerId: selectedManagerId,

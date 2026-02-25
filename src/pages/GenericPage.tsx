@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Plus } from "lucide-react";
 import {
   AdminLayout,
@@ -33,10 +33,12 @@ interface GenericPageProps {
   initialData: GenericItem[];
   enableImage?: boolean;
   withRichTextEditor?: boolean;
+  columns?: Column<GenericItem>[];
 }
 
 export function GenericPage({
   title,
+  columns,
   description,
   entityName,
   initialData,
@@ -56,37 +58,41 @@ export function GenericPage({
     description: "",
   });
 
-  const columns: Column<GenericItem>[] = [
-    { key: "code", label: "Mã" },
-    ...(enableImage
-      ? [
-          {
-            key: "image" as keyof GenericItem,
-            label: "Hình ảnh",
-            render: (value: any) =>
-              value ? (
-                <img
-                  src={value as string}
-                  alt="item"
-                  className="w-10 h-10 object-cover rounded-md border"
-                />
-              ) : null,
-          },
-        ]
-      : []),
-    { key: "name", label: "Tên" },
-    { key: "description", label: "Mô tả" },
-    {
-      key: "status",
-      label: "Trạng thái",
-      render: (value) => (
-        <Badge variant={value === "active" ? "default" : "secondary"}>
-          {value === "active" ? "Hoạt động" : "Không hoạt động"}
-        </Badge>
-      ),
-    },
-    { key: "createdAt", label: "Ngày tạo" },
-  ];
+  const _columns: Column<GenericItem>[] = React.useMemo(() => {
+    return (
+      columns || [
+        { key: "code", label: "Mã" },
+        ...(enableImage
+          ? [
+              {
+                key: "image" as keyof GenericItem,
+                label: "Hình ảnh",
+                render: (value: any) =>
+                  value ? (
+                    <img
+                      src={value as string}
+                      alt="item"
+                      className="w-10 h-10 object-cover rounded-md border"
+                    />
+                  ) : null,
+              },
+            ]
+          : []),
+        { key: "name", label: "Tên" },
+        { key: "description", label: "Mô tả" },
+        {
+          key: "status",
+          label: "Trạng thái",
+          render: (value) => (
+            <Badge variant={value === "active" ? "default" : "secondary"}>
+              {value === "active" ? "Hoạt động" : "Không hoạt động"}
+            </Badge>
+          ),
+        },
+        { key: "createdAt", label: "Ngày tạo" },
+      ]
+    );
+  }, [columns, enableImage]);
 
   const handleAdd = () => {
     setEditItem(null);
@@ -154,7 +160,7 @@ export function GenericPage({
       }
     >
       <DataTable
-        columns={columns}
+        columns={_columns}
         data={data}
         onEdit={handleEdit}
         onDelete={handleDelete}

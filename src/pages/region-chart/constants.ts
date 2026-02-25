@@ -137,7 +137,34 @@ export const MOCK_REGIONS: Region[] = [
         terrain: "flat",
         status: "active",
         createdAt: "2024-01-15",
-        plots: [],
+        plots: [
+          {
+            id: "plot-1-1",
+            name: "Lô A1 - Dona",
+            area: 8.5,
+            altitude: 150,
+            contour: "100m",
+            coordinates: [
+              { lat: 11.546, lng: 106.892 },
+              { lat: 11.548, lng: 106.896 },
+              { lat: 11.544, lng: 106.898 },
+              { lat: 11.542, lng: 106.894 },
+            ],
+          },
+          {
+            id: "plot-1-2",
+            name: "Lô A2 - Dona",
+            area: 11.5,
+            altitude: 145,
+            contour: "90m",
+            coordinates: [
+              { lat: 11.548, lng: 106.896 },
+              { lat: 11.552, lng: 106.905 },
+              { lat: 11.547, lng: 106.905 },
+              { lat: 11.544, lng: 106.898 },
+            ],
+          },
+        ],
         coordinates: [
           { lat: 11.546, lng: 106.892 },
           { lat: 11.552, lng: 106.905 },
@@ -155,7 +182,21 @@ export const MOCK_REGIONS: Region[] = [
         terrain: "flat",
         status: "active",
         createdAt: "2024-01-15",
-        plots: [],
+        plots: [
+          {
+            id: "plot-1-3",
+            name: "Lô B1 - Musang King",
+            area: 15.5,
+            altitude: 155,
+            contour: "110m",
+            coordinates: [
+              { lat: 11.545, lng: 106.905 },
+              { lat: 11.549, lng: 106.918 },
+              { lat: 11.538, lng: 106.912 },
+              { lat: 11.542, lng: 106.908 },
+            ],
+          },
+        ],
         coordinates: [
           { lat: 11.545, lng: 106.905 },
           { lat: 11.549, lng: 106.918 },
@@ -197,7 +238,21 @@ export const MOCK_REGIONS: Region[] = [
         terrain: "flat",
         status: "active",
         createdAt: "2024-02-10",
-        plots: [],
+        plots: [
+          {
+            id: "plot-2-1",
+            name: "Lô C1 - Thủy canh",
+            area: 40,
+            altitude: 10,
+            contour: "5m",
+            coordinates: [
+              { lat: 10.957, lng: 107.22 },
+              { lat: 10.97, lng: 107.225 },
+              { lat: 10.965, lng: 107.235 },
+              { lat: 10.955, lng: 107.23 },
+            ],
+          },
+        ],
         coordinates: [
           { lat: 10.957, lng: 107.22 },
           { lat: 10.97, lng: 107.225 },
@@ -453,51 +508,65 @@ export interface Plant {
   code: string;
   name: string; // e.g., "Sầu riêng Dona", "Bơ 034"
   type: string; // "fruit", "industrial", etc.
-  status: "healthy" | "diseased" | "harvesting" | "removed";
+  status: "healthy" | "warning" | "critical" | "removed";
+  height: string;
+  age: string;
+  canopy: string;
+  rootSpread: string;
   plantedDate: string;
   coordinate: Coordinate;
   plotId: string;
+  regionName?: string;
+  areaName?: string;
 }
 
 export const MOCK_PLANTS: Plant[] = [
   {
-    id: "plant-1",
-    code: "TREE-001",
+    id: "1",
+    code: "PL-001",
     name: "Sầu riêng Dona",
-    type: "fruit",
+    type: "Cây ăn trái",
     status: "healthy",
-    plantedDate: "2020-05-15",
-    coordinate: { lat: 11.532, lng: 106.882 },
-    plotId: "PLOT-001",
+    height: "2.5m",
+    age: "3 năm 2 tháng",
+    canopy: "1.8m",
+    rootSpread: "1.2m",
+    plantedDate: "15/10/2021",
+    coordinate: { lat: 11.548, lng: 106.896 },
+    plotId: "plot-1-2",
+    regionName: "Vùng Bình Phước Alpha",
+    areaName: "Khu vực A - Sầu riêng",
   },
   {
-    id: "plant-2",
-    code: "TREE-002",
+    id: "2",
+    code: "PL-002",
     name: "Sầu riêng Ri6",
-    type: "fruit",
-    status: "harvesting",
-    plantedDate: "2019-11-20",
-    coordinate: { lat: 11.533, lng: 106.883 },
-    plotId: "PLOT-001",
-  },
-  {
-    id: "plant-3",
-    code: "TREE-003",
-    name: "Bơ 034",
-    type: "fruit",
-    status: "diseased",
-    plantedDate: "2021-03-10",
-    coordinate: { lat: 11.534, lng: 106.884 },
-    plotId: "PLOT-002",
-  },
-  {
-    id: "plant-4",
-    code: "TREE-004",
-    name: "Tiêu Vĩnh Linh",
-    type: "spice",
+    type: "Cây ăn trái",
     status: "healthy",
-    plantedDate: "2022-01-01",
-    coordinate: { lat: 11.54, lng: 106.9 },
-    plotId: "PLOT-001", // Assuming in same plot for mock
+    height: "1.8m",
+    age: "1 năm 6 tháng",
+    canopy: "1.2m",
+    rootSpread: "0.8m",
+    plantedDate: "15/10/2021",
+    coordinate: { lat: 11.55, lng: 106.902 },
+    plotId: "plot-1-2",
+    regionName: "Vùng Bình Phước Alpha",
+    areaName: "Khu vực A - Sầu riêng",
+  },
+  {
+    id: "3",
+    code: "PL-003",
+    name: "Bơ 034",
+    type: "Cây ăn trái",
+    status: "warning",
+    height: "3.2m",
+    age: "4 năm 1 tháng",
+    canopy: "2.5m",
+    rootSpread: "2.0m",
+    plantedDate: "10/03/2020",
+    coordinate: { lat: 11.545, lng: 106.91 },
+    plotId: "plot-2-1",
+    regionName: "Vùng Bình Phước Alpha",
+    areaName: "Khu vực B - Bơ sáp",
   },
 ];

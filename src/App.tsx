@@ -126,6 +126,10 @@ import MaterialGroupPage from "./pages/material-group/MaterialGroupPage";
 import FertilizerGroupPage from "./pages/fertilizer-group/FertilizerGroupPage";
 import PesticideGroupPage from "./pages/pesticide-group/PesticideGroupPage";
 import EquipmentGroupPage from "./pages/equipment-group/EquipmentGroupPage";
+import PlantIdentificationListPage from "./pages/cultivation-zone/cultivation-area/PlantIdentificationListPage";
+import PlantIdentificationDetailPage from "./pages/cultivation-zone/cultivation-area/PlantIdentificationDetailPage";
+import PlantIdentificationCreatePage from "./pages/cultivation-zone/cultivation-area/PlantIdentificationCreatePage";
+import PlantIdentificationEditPage from "./pages/cultivation-zone/cultivation-area/PlantIdentificationEditPage";
 
 function Router() {
   return (
@@ -236,6 +240,22 @@ function Router() {
       <Route path="/treatment" component={TreatmentPage} />
       <Route path="/search-crop" component={SearchCropPage} />
       <Route path="/search-zone" component={SearchZonePage} />
+      <Route
+        path="/plant-identification"
+        component={PlantIdentificationListPage}
+      />
+      <Route
+        path="/plant-identification/create"
+        component={PlantIdentificationCreatePage}
+      />
+      <Route
+        path="/plant-identification/:id"
+        component={PlantIdentificationDetailPage}
+      />
+      <Route
+        path="/plant-identification/:id/edit"
+        component={PlantIdentificationEditPage}
+      />
       <Route path="/crop" component={CropPage} />
       <Route path="/crop/create" component={CropCreatePage} />
       <Route path="/crop/:id" component={CropDetailPage} />

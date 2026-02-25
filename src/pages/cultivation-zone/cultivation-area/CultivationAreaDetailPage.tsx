@@ -11,11 +11,11 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  cn,
 } from "@tankhang1/eco-shared-ui";
 import {
   ChevronLeft,
   Edit,
-  MapPin,
   Award,
   User,
   Sprout,
@@ -25,6 +25,7 @@ import {
   Layers,
   Target,
   CheckCircle,
+  MapPin,
 } from "lucide-react";
 import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
 import useRegionStore from "../../../stores/useRegionStore";
@@ -35,6 +36,7 @@ import useFarmingMethodStore from "../../../stores/useFarmingMethodStore";
 import useIrrigationSystemStore from "../../../stores/useIrrigationSystemStore";
 import useVarietyStore from "../../../stores/useVarietyStore";
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
+import useSeedStore from "../../../stores/useSeedStore";
 
 const CultivationAreaDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -54,134 +56,139 @@ const CultivationAreaDetailPage = () => {
     return getAreaById(id);
   }, [id, getAreaById]);
 
-  // Derive related data
+  const { seeds } = useSeedStore();
+
   const details = useMemo(() => {
     if (!area) return null;
 
     let manager = personnel.find((m) => m.id.toString() === area.managerId);
-    if (!manager && personnel.length > 0) {
-      manager = personnel[Math.floor(Math.random() * personnel.length)];
-    }
-
     let certificate = standards.find((c) => c.code === area.certificateId);
-    if (!certificate && standards.length > 0) {
-      certificate = standards[Math.floor(Math.random() * standards.length)];
-    }
 
-    // Get the first target's region to show region info
-    let region = null;
-    let selectedEntities: any[] = [];
-    let totalAreaValue = 0;
+    // Flexible entity resolution
+    const selectedEntities = area.targetIds
+      .map((id) => {
+        // Find Region
+        const reg = regions.find((r) => r.id.toString() === id);
+        if (reg)
+          return {
+            ...reg,
+            type: "Vùng trồng",
+            typeCode: "region",
+            regionId: reg.id,
+          };
 
-    if (area.scope === "region") {
-      region = getRegionById(Number(area.targetIds[0]));
-      totalAreaValue = region?.area || 0;
-    } else if (area.scope === "area") {
-      const allSubAreas = regions.flatMap((r) => r.subAreas || []);
-      selectedEntities = allSubAreas.filter((sa) =>
-        area.targetIds.includes(sa.id.toString()),
-      );
-      if (selectedEntities.length > 0) {
-        region = getRegionById(selectedEntities[0].regionId);
-        totalAreaValue = selectedEntities.reduce(
-          (sum, e) => sum + (e.area || 0),
-          0,
-        );
-      }
-    } else if (area.scope === "plot") {
-      const allPlots = regions
-        .flatMap((r) => r.subAreas || [])
-        .flatMap((sa) => sa.plots || []);
-      selectedEntities = allPlots.filter((p) =>
-        area.targetIds.includes(p.id.toString()),
-      );
-      // Find parent area to get region
-      const firstPlot = selectedEntities[0];
-      if (firstPlot) {
-        const parentArea = regions
-          .flatMap((r) => r.subAreas || [])
-          .find((sa) => sa.plots?.some((p) => p.id === firstPlot.id));
-        if (parentArea) {
-          region = getRegionById(parentArea.regionId);
-          totalAreaValue = selectedEntities.reduce(
-            (sum, e) => sum + (e.area || 0),
-            0,
-          );
+        // Find Area
+        for (const r of regions) {
+          const sa = r.subAreas?.find((a: any) => a.id.toString() === id);
+          if (sa)
+            return {
+              ...sa,
+              type: "Khu vực",
+              typeCode: "area",
+              regionId: r.id,
+              areaId: sa.id,
+            };
         }
+
+        // Find Plot
+        for (const r of regions) {
+          for (const sa of r.subAreas || []) {
+            const p = sa.plots?.find((p: any) => p.id.toString() === id);
+            if (p)
+              return {
+                ...p,
+                type: "Lô đất",
+                typeCode: "plot",
+                regionId: r.id,
+                areaId: sa.id,
+                plotId: p.id,
+              };
+          }
+        }
+        return null;
+      })
+      .filter((e): e is any => e !== null);
+
+    const firstEntity = selectedEntities[0];
+    const region = firstEntity
+      ? regions.find((r) => r.id.toString() === firstEntity.regionId)
+      : null;
+
+    const totalAreaValue = selectedEntities.reduce(
+      (sum, e) => sum + (e.area || 0),
+      0,
+    );
+
+    const groupedSelections = selectedEntities.reduce((acc: any, entity) => {
+      const rId = entity.regionId.toString();
+      const aId = entity.areaId?.toString() || "none";
+
+      if (!acc[rId]) {
+        acc[rId] = {
+          region: regions.find((r) => r.id.toString() === rId),
+          areas: {},
+        };
       }
-    }
 
-    // Auto-generate region if missing for display purposes
-    if (!region && regions.length > 0) {
-      region = regions[0];
-      if (
-        area.scope === "area" &&
-        region.subAreas &&
-        region.subAreas.length > 0
-      ) {
-        selectedEntities = [region.subAreas[0]];
-      } else if (
-        area.scope === "plot" &&
-        region.subAreas &&
-        region.subAreas.length > 0 &&
-        region.subAreas[0].plots &&
-        region.subAreas[0].plots.length > 0
-      ) {
-        selectedEntities = [region.subAreas[0].plots[0]];
+      if (!acc[rId].areas[aId]) {
+        const reg = acc[rId].region;
+        acc[rId].areas[aId] = {
+          area:
+            aId === "none"
+              ? null
+              : reg?.subAreas?.find((sa: any) => sa.id.toString() === aId),
+          entities: [],
+        };
       }
-    }
 
-    // Combine configs
-    const configValues = Object.values(area.configs || {});
-    const firstConfig = configValues[0];
+      acc[rId].areas[aId].entities.push(entity);
+      return acc;
+    }, {});
 
-    let farmingMethod = farmingMethods.find(
-      (m) => m.id === (firstConfig?.farmingMethodId || ""),
-    );
-    if (!farmingMethod && farmingMethods.length > 0) {
-      farmingMethod =
-        farmingMethods[Math.floor(Math.random() * farmingMethods.length)];
-    }
+    // Map configurations for each entity
+    const entityConfigs = selectedEntities.map((entity) => {
+      const config =
+        area.configs[entity.id] ||
+        area.configs[entity.plotId] ||
+        area.configs[entity.areaId] ||
+        area.configs[entity.regionId] ||
+        area.configs["region-main"]; // Fallback
 
-    let irrigationMethod = irrigationSystems.find(
-      (m) => m.id === (firstConfig?.irrigationMethodId || ""),
-    );
-    if (!irrigationMethod && irrigationSystems.length > 0) {
-      irrigationMethod =
-        irrigationSystems[Math.floor(Math.random() * irrigationSystems.length)];
-    }
+      const farmingMethod = farmingMethods.find(
+        (m) => m.id === config?.farmingMethodId,
+      );
+      const irrigationMethod = irrigationSystems.find(
+        (m) => m.id === config?.irrigationMethodId,
+      );
+      const selectedCrops = varieties.filter((v) =>
+        config?.selectedCrops?.includes(v.id),
+      );
 
-    let cropIds = Array.from(
-      new Set(configValues.flatMap((c) => c.selectedCrops || [])),
-    );
-
-    // Random crops if none selected
-    if (cropIds.length === 0 && varieties.length > 0) {
-      const count = Math.floor(Math.random() * 3) + 1; // 1 to 3 crops
-      const shuffled = [...varieties].sort(() => 0.5 - Math.random());
-      cropIds = shuffled.slice(0, count).map((v) => v.id);
-    }
-
-    const crops = varieties.filter((c) => cropIds.includes(c.id));
+      return {
+        entity,
+        farmingMethod,
+        irrigationMethod,
+        crops: selectedCrops.map((crop) => ({
+          ...crop,
+          selectedSeeds: (config?.seedSelections?.[crop.id] || [])
+            .map((sid) => seeds.find((s) => s.id === sid))
+            .filter(Boolean),
+        })),
+      };
+    });
 
     let enterprise = enterprises.find(
       (e) => e.id.toString() === area.enterpriseId,
     );
-
-    // Fallback enterprise if not found, or pick random if none associated
-    if (!enterprise && enterprises.length > 0) {
-      enterprise = enterprises[Math.floor(Math.random() * enterprises.length)];
-    }
 
     return {
       manager,
       certificate,
       region,
       selectedEntities,
+      groupedSelections,
       totalArea: totalAreaValue,
-      farmingMethod,
-      irrigationMethod,
-      crops,
+      entityConfigs,
       enterprise,
     };
   }, [
@@ -194,6 +201,7 @@ const CultivationAreaDetailPage = () => {
     irrigationSystems,
     varieties,
     enterprises,
+    seeds,
   ]);
 
   if (!area || !details) {
@@ -291,7 +299,9 @@ const CultivationAreaDetailPage = () => {
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm text-muted-foreground">Phạm vi</div>
+                  <div className="text-sm text-muted-foreground">
+                    Phạm vi vùng canh tác
+                  </div>
                   <Badge variant="outline" className="mt-1 capitalize">
                     {area.scope === "region"
                       ? "Vùng trồng"
@@ -322,8 +332,13 @@ const CultivationAreaDetailPage = () => {
                     Cây trồng chính
                   </div>
                   <div className="font-medium mt-1 text-slate-900">
-                    {details.crops.map((c) => c.crop).join(", ") ||
-                      "Chưa xác định"}
+                    {Array.from(
+                      new Set(
+                        details.entityConfigs.flatMap((ec) =>
+                          ec.crops.map((c) => c.crop),
+                        ),
+                      ),
+                    ).join(", ") || "Chưa xác định"}
                   </div>
                 </div>
                 <div>
@@ -338,7 +353,13 @@ const CultivationAreaDetailPage = () => {
                     Hệ thống tưới
                   </div>
                   <div className="font-medium mt-1 text-slate-900">
-                    {details.irrigationMethod?.name || "Chưa thiết lập"}
+                    {Array.from(
+                      new Set(
+                        details.entityConfigs
+                          .map((ec) => ec.irrigationMethod?.name)
+                          .filter(Boolean),
+                      ),
+                    ).join(", ") || "Chưa thiết lập"}
                   </div>
                 </div>
                 <div>
@@ -403,22 +424,158 @@ const CultivationAreaDetailPage = () => {
               </Card>
             )}
 
-            {details.region && (
-              <Card>
-                <CardHeader className="border-b bg-slate-50 py-3">
-                  <CardTitle className="text-base">
-                    Vùng trồng trực thuộc
+            {details.selectedEntities.length > 0 && (
+              <Card className="border-slate-200 shadow-sm overflow-hidden">
+                <CardHeader className="border-b bg-slate-50/50 py-3 px-4 flex flex-row items-center justify-between">
+                  <CardTitle className="text-sm font-bold flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-primary" />
+                    Phạm vi vùng canh tác ({
+                      details.selectedEntities.length
+                    }{" "}
+                    mục)
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-4">
-                  <div className="font-semibold text-slate-900">
-                    {details.region.name}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {details.region.code}
-                  </div>
-                  <div className="text-sm text-slate-600 mt-1">
-                    {details.region.address}
+                <CardContent className="p-0">
+                  <div className="p-6">
+                    <div className="space-y-8">
+                      {Object.values(details.groupedSelections).map(
+                        (group: any) => (
+                          <div key={group.region.id} className="relative">
+                            {/* Region Level */}
+                            <div className="flex items-center gap-3 mb-4 relative z-10">
+                              <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm">
+                                <MapPin className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <div className="text-[10px] text-primary font-bold uppercase tracking-wider leading-none mb-1">
+                                  Vùng trồng
+                                </div>
+                                <div className="text-sm font-bold text-slate-900">
+                                  {group.region.name}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Area & Plot Level Tree */}
+                            <div className="ml-5 border-l-2 border-slate-100 pl-6 space-y-8">
+                              {Object.values(group.areas).map(
+                                (areaGroup: any) => (
+                                  <div
+                                    key={areaGroup.area?.id || "none"}
+                                    className="relative"
+                                  >
+                                    {/* Horizontal branch from main stem to Area/Entity */}
+                                    <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-5" />
+
+                                    {areaGroup.area ? (
+                                      <>
+                                        <div className="flex items-center gap-3 mb-4 relative z-10">
+                                          <div className="w-9 h-9 rounded-lg bg-blue-500 text-white flex items-center justify-center shadow-sm">
+                                            <Layers className="w-4.5 h-4.5" />
+                                          </div>
+                                          <div>
+                                            <div className="text-[10px] text-blue-500 font-bold uppercase tracking-wider leading-none mb-1">
+                                              Khu vực
+                                            </div>
+                                            <div className="text-sm font-bold text-slate-900">
+                                              {areaGroup.area.name}
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        {/* Plots under this Area */}
+                                        <div className="ml-4.5 border-l-2 border-slate-100 pl-6 space-y-4">
+                                          {areaGroup.entities
+                                            .filter(
+                                              (e: any) => e.typeCode === "plot",
+                                            )
+                                            .map((plot: any) => (
+                                              <div
+                                                key={plot.id}
+                                                className="relative flex items-center gap-3 py-1"
+                                              >
+                                                <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
+                                                <div className="w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center shadow-xs">
+                                                  <Target className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                  <div className="text-[10px] text-green-600 font-bold uppercase tracking-wider leading-none mb-1">
+                                                    Lô đất
+                                                  </div>
+                                                  <div className="text-xs font-bold text-slate-800">
+                                                    {plot.name}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          {areaGroup.entities.some(
+                                            (e: any) => e.typeCode === "area",
+                                          ) && (
+                                            <div className="flex items-center gap-3 py-1 relative">
+                                              <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
+                                              <Badge
+                                                variant="outline"
+                                                className="text-[9px] uppercase font-bold border-blue-200 text-blue-600 bg-blue-50/50"
+                                              >
+                                                Đã chọn toàn bộ khu vực
+                                              </Badge>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      /* No Area (Region or direct Plot) */
+                                      <div className="space-y-4">
+                                        {areaGroup.entities.map(
+                                          (entity: any) => (
+                                            <div
+                                              key={entity.id}
+                                              className="relative flex items-center gap-3"
+                                            >
+                                              <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
+                                              <div
+                                                className={cn(
+                                                  "w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-xs",
+                                                  entity.typeCode === "region"
+                                                    ? "bg-primary"
+                                                    : "bg-green-500",
+                                                )}
+                                              >
+                                                {entity.typeCode ===
+                                                "region" ? (
+                                                  <MapPin className="w-4 h-4" />
+                                                ) : (
+                                                  <Target className="w-4 h-4" />
+                                                )}
+                                              </div>
+                                              <div>
+                                                <div
+                                                  className={cn(
+                                                    "text-[10px] font-bold uppercase tracking-wider leading-none mb-1",
+                                                    entity.typeCode === "region"
+                                                      ? "text-primary"
+                                                      : "text-green-600",
+                                                  )}
+                                                >
+                                                  {entity.type}
+                                                </div>
+                                                <div className="text-xs font-bold text-slate-800">
+                                                  {entity.name}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ),
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                          </div>
+                        ),
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -426,98 +583,144 @@ const CultivationAreaDetailPage = () => {
           </div>
         </TabsContent>
 
-        {/* Crops Tab */}
+        {/* Crops & Configurations Tab */}
         <TabsContent value="crops" className="space-y-6">
-          <Card>
-            <CardHeader className="border-b bg-slate-50">
-              <div className="flex justify-between items-center">
-                <CardTitle className="flex items-center gap-2">
-                  <Leaf className="w-5 h-5 text-green-600" />
-                  Danh sách cây trồng ({details.crops.length})
-                </CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {details.crops.map((crop) => (
-                  <div
-                    key={crop.id}
-                    className="flex items-center gap-3 p-4 border rounded-lg bg-green-50/50 border-green-200"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-700 overflow-hidden shrink-0">
-                      {crop.illustration ? (
-                        <img
-                          src={crop.illustration as string}
-                          alt={crop.varietyName}
-                          className="w-full h-full object-cover"
-                        />
+          {details.entityConfigs.map((cfg) => (
+            <Card key={cfg.entity.id} className="overflow-hidden">
+              <CardHeader className="bg-slate-50 border-b py-3 px-6">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div
+                      className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm",
+                        cfg.entity.typeCode === "region"
+                          ? "bg-primary"
+                          : cfg.entity.typeCode === "area"
+                            ? "bg-blue-500"
+                            : "bg-green-500",
+                      )}
+                    >
+                      {cfg.entity.typeCode === "region" ? (
+                        <MapPin className="w-4 h-4" />
+                      ) : cfg.entity.typeCode === "area" ? (
+                        <Layers className="w-4 h-4" />
                       ) : (
-                        <Leaf className="w-6 h-6" />
+                        <Target className="w-4 h-4" />
                       )}
                     </div>
                     <div>
-                      <div className="font-semibold text-slate-900">
-                        {crop.varietyName}
+                      <div className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">
+                        {cfg.entity.type}
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {crop.crop}
+                      <span className="font-bold">{cfg.entity.name}</span>
+                    </div>
+                  </CardTitle>
+                  <div className="text-sm font-medium text-slate-600">
+                    Diện tích: {cfg.entity.area || 0} ha
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* Left: Technical Configs */}
+                  <div className="lg:col-span-4 space-y-4">
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 flex items-center gap-2">
+                      <span className="w-1 h-1 rounded-full bg-slate-400" />
+                      Cấu hình kỹ thuật
+                    </div>
+                    <div className="p-4 rounded-xl border bg-blue-50/20 border-blue-100/50 shadow-xs">
+                      <div className="text-xs text-blue-600 font-bold uppercase tracking-wider mb-3">
+                        Hệ thống tưới tiêu
                       </div>
-                      <div className="text-xs text-green-700 mt-1 font-medium bg-green-100 px-2 py-0.5 rounded-full inline-block">
-                        Đang sinh trưởng
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                          <Droplets className="w-5 h-5" />
+                        </div>
+                        <div className="font-semibold text-slate-900">
+                          {cfg.irrigationMethod?.name || "Chưa thiết lập"}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-                {details.crops.length === 0 && (
-                  <div className="col-span-full py-12 text-center text-muted-foreground italic border-2 border-dashed rounded-xl bg-slate-50">
-                    <Sprout className="w-12 h-12 mx-auto text-slate-300 mb-2" />
-                    Chưa chọn giống cây trồng cho vùng này
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader className="border-b bg-slate-50">
-              <CardTitle className="flex items-center gap-2">
-                <Sprout className="w-5 h-5 text-primary" />
-                Phương pháp canh tác & Tưới tiêu
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <div className="text-sm text-muted-foreground mb-1">
-                    Phương pháp canh tác
+                    <div className="p-4 rounded-xl border bg-orange-50/20 border-orange-100/50 shadow-xs">
+                      <div className="text-xs text-orange-600 font-bold uppercase tracking-wider mb-3">
+                        Phương pháp canh tác
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+                          <Sprout className="w-5 h-5" />
+                        </div>
+                        <div className="font-semibold text-slate-900">
+                          {cfg.farmingMethod?.name || "Chưa thiết lập"}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  {details.farmingMethod ? (
-                    <div className="font-medium text-lg">
-                      {details.farmingMethod.name}
+
+                  {/* Right: Selected Crops */}
+                  <div className="lg:col-span-8">
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
+                      <span className="w-1 h-1 rounded-full bg-slate-400" />
+                      Danh sách giống cây trồng ({cfg.crops.length})
                     </div>
-                  ) : (
-                    <div className="italic text-muted-foreground">
-                      Chưa thiết lập
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {cfg.crops.map((crop) => (
+                        <div
+                          key={crop.id}
+                          className="flex items-center gap-3 p-3 border rounded-xl bg-white hover:border-primary/30 transition-all shadow-xs"
+                        >
+                          <div className="w-12 h-12 rounded-lg bg-slate-50 overflow-hidden shrink-0 border">
+                            {crop.illustration ? (
+                              <img
+                                src={crop.illustration as string}
+                                alt={crop.varietyName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Leaf className="w-5 h-5 text-slate-400 m-auto mt-3" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-semibold text-sm truncate">
+                              {crop.varietyName}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              {crop.crop}
+                              {crop.seedType && (
+                                <>
+                                  <span className="w-1 h-1 rounded-full bg-slate-300" />
+                                  <span>{crop.seedType}</span>
+                                </>
+                              )}
+                            </div>
+                            {crop.selectedSeeds &&
+                              crop.selectedSeeds.length > 0 && (
+                                <div className="mt-1.5 flex flex-wrap gap-1">
+                                  {crop.selectedSeeds.map((seed: any) => (
+                                    <Badge
+                                      key={seed.id}
+                                      variant="secondary"
+                                      className="text-[9px] px-1.5 py-0 h-4 bg-primary/5 text-primary border-primary/10 font-normal whitespace-nowrap"
+                                    >
+                                      Hạt: {seed.varietyName}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground mb-1">
-                    Hệ thống tưới
+                    {cfg.crops.length === 0 && (
+                      <div className="py-8 text-center text-muted-foreground italic border border-dashed rounded-xl bg-slate-50/50">
+                        Chưa chọn giống cây trồng
+                      </div>
+                    )}
                   </div>
-                  {details.irrigationMethod ? (
-                    <div className="font-medium text-lg text-blue-600">
-                      {details.irrigationMethod.name}
-                    </div>
-                  ) : (
-                    <div className="italic text-muted-foreground">
-                      Chưa thiết lập
-                    </div>
-                  )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ))}
         </TabsContent>
 
         {/* Staff Tab */}
@@ -756,20 +959,26 @@ const CultivationAreaDetailPage = () => {
               },
               {
                 label: "Giống cây trồng",
-                value: details.crops.length,
+                value: Array.from(
+                  new Set(
+                    details.entityConfigs.flatMap((ec) =>
+                      ec.crops.map((c) => c.id),
+                    ),
+                  ),
+                ).length,
                 icon: Sprout,
                 color: "text-green-600",
                 bg: "bg-green-50",
               },
               {
                 label: "Cấu hình riêng",
-                value: Object.keys(area.configs).length,
+                value: Object.keys(area.configs || {}).length,
                 icon: FileText,
                 color: "text-purple-600",
                 bg: "bg-purple-50",
               },
-            ].map((stat, idx) => (
-              <Card key={idx}>
+            ].map((stat) => (
+              <Card key={stat.label}>
                 <CardContent className="pt-6">
                   <div className="flex items-start justify-between">
                     <div>
@@ -806,7 +1015,7 @@ const CultivationAreaDetailPage = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-6">
-                  <div className="h-[350px] flex items-end justify-between gap-2 px-2">
+                  <div className="h-87.5 flex items-end justify-between gap-2 px-2">
                     {[45, 60, 30, 75, 50, 80, 65, 90, 70, 55, 60, 40].map(
                       (h, i) => (
                         <div

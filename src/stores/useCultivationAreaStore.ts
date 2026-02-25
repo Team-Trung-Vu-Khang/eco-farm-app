@@ -5,6 +5,7 @@ export interface CultivationAreaConfig {
   farmingMethodId: string;
   irrigationMethodId: string;
   selectedCrops: string[];
+  seedSelections?: Record<string, string[]>;
 }
 
 export interface CultivationArea {

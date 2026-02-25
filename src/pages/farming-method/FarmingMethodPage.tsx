@@ -1,5 +1,11 @@
 import GenericPage from "../GenericPage";
 
+const columns = [
+  { key: "code", label: "Mã" },
+  { key: "name", label: "Tên" },
+  { key: "description", label: "Mô tả" },
+];
+
 const FarmingMethodPage = () => {
   return (
     <GenericPage
@@ -7,6 +13,7 @@ const FarmingMethodPage = () => {
       description="Các phương thức canh tác áp dụng trong sản xuất"
       entityName="phương thức"
       withRichTextEditor
+      columns={columns}
       initialData={[
         {
           id: 1,
