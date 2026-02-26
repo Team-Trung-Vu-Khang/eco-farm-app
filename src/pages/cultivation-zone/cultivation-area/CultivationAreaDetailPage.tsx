@@ -477,121 +477,125 @@ const CultivationAreaDetailPage = () => {
                             </div>
 
                             {/* Area & Plot Level Tree */}
-                            <div className="ml-5 border-l-2 border-slate-100 pl-6 space-y-8">
-                              {Object.values(group.areas).map(
-                                (areaGroup: any) => (
-                                  <div
-                                    key={areaGroup.area?.id || "none"}
-                                    className="relative"
-                                  >
-                                    {/* Horizontal branch from main stem to Area/Entity */}
-                                    <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-5" />
+                            {area.scope !== "region" && (
+                              <div className="ml-5 border-l-2 border-slate-100 pl-6 space-y-8">
+                                {Object.values(group.areas).map(
+                                  (areaGroup: any) => (
+                                    <div
+                                      key={areaGroup.area?.id || "none"}
+                                      className="relative"
+                                    >
+                                      {/* Horizontal branch from main stem to Area/Entity */}
+                                      <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-5" />
 
-                                    {areaGroup.area ? (
-                                      <>
-                                        <div className="flex items-center gap-3 mb-4 relative z-10">
-                                          <div className="w-9 h-9 rounded-lg bg-blue-500 text-white flex items-center justify-center shadow-sm">
-                                            <Layers className="w-4.5 h-4.5" />
-                                          </div>
-                                          <div>
-                                            <div className="text-[10px] text-blue-500 font-bold uppercase tracking-wider leading-none mb-1">
-                                              Khu vực
+                                      {areaGroup.area ? (
+                                        <>
+                                          <div className="flex items-center gap-3 mb-4 relative z-10">
+                                            <div className="w-9 h-9 rounded-lg bg-blue-500 text-white flex items-center justify-center shadow-sm">
+                                              <Layers className="w-4.5 h-4.5" />
                                             </div>
-                                            <div className="text-sm font-bold text-slate-900">
-                                              {areaGroup.area.name}
+                                            <div>
+                                              <div className="text-[10px] text-blue-500 font-bold uppercase tracking-wider leading-none mb-1">
+                                                Khu vực
+                                              </div>
+                                              <div className="text-sm font-bold text-slate-900">
+                                                {areaGroup.area.name}
+                                              </div>
                                             </div>
                                           </div>
-                                        </div>
 
-                                        {/* Plots under this Area */}
-                                        <div className="ml-4.5 border-l-2 border-slate-100 pl-6 space-y-4">
-                                          {areaGroup.entities
-                                            .filter(
-                                              (e: any) => e.typeCode === "plot",
-                                            )
-                                            .map((plot: any) => (
+                                          {/* Plots under this Area */}
+                                          <div className="ml-4.5 border-l-2 border-slate-100 pl-6 space-y-4">
+                                            {areaGroup.entities
+                                              .filter(
+                                                (e: any) =>
+                                                  e.typeCode === "plot",
+                                              )
+                                              .map((plot: any) => (
+                                                <div
+                                                  key={plot.id}
+                                                  className="relative flex items-center gap-3 py-1"
+                                                >
+                                                  <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
+                                                  <div className="w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center shadow-xs">
+                                                    <Target className="w-4 h-4" />
+                                                  </div>
+                                                  <div>
+                                                    <div className="text-[10px] text-green-600 font-bold uppercase tracking-wider leading-none mb-1">
+                                                      Lô đất
+                                                    </div>
+                                                    <div className="text-xs font-bold text-slate-800">
+                                                      {plot.name}
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            {areaGroup.entities.some(
+                                              (e: any) => e.typeCode === "area",
+                                            ) && (
+                                              <div className="flex items-center gap-3 py-1 relative">
+                                                <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
+                                                <Badge
+                                                  variant="outline"
+                                                  className="text-[9px] uppercase font-bold border-blue-200 text-blue-600 bg-blue-50/50"
+                                                >
+                                                  Đã chọn toàn bộ khu vực
+                                                </Badge>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </>
+                                      ) : (
+                                        /* No Area (Region or direct Plot) */
+                                        <div className="space-y-4">
+                                          {areaGroup.entities.map(
+                                            (entity: any) => (
                                               <div
-                                                key={plot.id}
-                                                className="relative flex items-center gap-3 py-1"
+                                                key={entity.id}
+                                                className="relative flex items-center gap-3"
                                               >
                                                 <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
-                                                <div className="w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center shadow-xs">
-                                                  <Target className="w-4 h-4" />
-                                                </div>
-                                                <div>
-                                                  <div className="text-[10px] text-green-600 font-bold uppercase tracking-wider leading-none mb-1">
-                                                    Lô đất
-                                                  </div>
-                                                  <div className="text-xs font-bold text-slate-800">
-                                                    {plot.name}
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            ))}
-                                          {areaGroup.entities.some(
-                                            (e: any) => e.typeCode === "area",
-                                          ) && (
-                                            <div className="flex items-center gap-3 py-1 relative">
-                                              <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
-                                              <Badge
-                                                variant="outline"
-                                                className="text-[9px] uppercase font-bold border-blue-200 text-blue-600 bg-blue-50/50"
-                                              >
-                                                Đã chọn toàn bộ khu vực
-                                              </Badge>
-                                            </div>
-                                          )}
-                                        </div>
-                                      </>
-                                    ) : (
-                                      /* No Area (Region or direct Plot) */
-                                      <div className="space-y-4">
-                                        {areaGroup.entities.map(
-                                          (entity: any) => (
-                                            <div
-                                              key={entity.id}
-                                              className="relative flex items-center gap-3"
-                                            >
-                                              <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
-                                              <div
-                                                className={cn(
-                                                  "w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-xs",
-                                                  entity.typeCode === "region"
-                                                    ? "bg-primary"
-                                                    : "bg-green-500",
-                                                )}
-                                              >
-                                                {entity.typeCode ===
-                                                "region" ? (
-                                                  <MapPin className="w-4 h-4" />
-                                                ) : (
-                                                  <Target className="w-4 h-4" />
-                                                )}
-                                              </div>
-                                              <div>
                                                 <div
                                                   className={cn(
-                                                    "text-[10px] font-bold uppercase tracking-wider leading-none mb-1",
+                                                    "w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-xs",
                                                     entity.typeCode === "region"
-                                                      ? "text-primary"
-                                                      : "text-green-600",
+                                                      ? "bg-primary"
+                                                      : "bg-green-500",
                                                   )}
                                                 >
-                                                  {entity.type}
+                                                  {entity.typeCode ===
+                                                  "region" ? (
+                                                    <MapPin className="w-4 h-4" />
+                                                  ) : (
+                                                    <Target className="w-4 h-4" />
+                                                  )}
                                                 </div>
-                                                <div className="text-xs font-bold text-slate-800">
-                                                  {entity.name}
+                                                <div>
+                                                  <div
+                                                    className={cn(
+                                                      "text-[10px] font-bold uppercase tracking-wider leading-none mb-1",
+                                                      entity.typeCode ===
+                                                        "region"
+                                                        ? "text-primary"
+                                                        : "text-green-600",
+                                                    )}
+                                                  >
+                                                    {entity.type}
+                                                  </div>
+                                                  <div className="text-xs font-bold text-slate-800">
+                                                    {entity.name}
+                                                  </div>
                                                 </div>
                                               </div>
-                                            </div>
-                                          ),
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                ),
-                              )}
-                            </div>
+                                            ),
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            )}
                           </div>
                         ),
                       )}

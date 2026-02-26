@@ -1,10 +1,5 @@
 import { Link } from "wouter";
-import {
-  AdminLayout,
-  DataTable,
-  Badge,
-  Button,
-} from "@tankhang1/eco-shared-ui";
+import { AdminLayout, DataTable, Button } from "@tankhang1/eco-shared-ui";
 import usePlantStore from "../../../stores/usePlantStore";
 import { type Plant } from "../../region-chart/constants";
 import { Plus } from "lucide-react";
@@ -31,19 +26,21 @@ const PlantIdentificationListPage = () => {
     },
     {
       key: "height",
-      label: "Chiều cao",
+      label: "C.Cao (m)",
+      render: (v: string) => v || "-",
     },
     {
-      key: "age",
+      key: "ageValue",
       label: "Độ tuổi",
-    },
-    {
-      key: "canopy",
-      label: "Tán",
-    },
-    {
-      key: "rootSpread",
-      label: "Rễ",
+      render: (_: any, r: Plant) => {
+        if (!r.ageValue) return r.age || "-";
+        const unitLabel = {
+          days: "ngày",
+          months: "tháng",
+          years: "năm",
+        }[r.ageUnit || "years"];
+        return `${r.ageValue} ${unitLabel}`;
+      },
     },
     {
       key: "regionName",
@@ -54,23 +51,16 @@ const PlantIdentificationListPage = () => {
       label: "Vị trí canh tác",
     },
     {
-      key: "status",
-      label: "Hiện trạng",
-      render: (v: string) => {
-        const config: Record<
-          string,
-          {
-            label: string;
-            variant: "default" | "secondary" | "destructive" | "outline";
-          }
-        > = {
-          healthy: { label: "Khỏe mạnh", variant: "default" },
-          warning: { label: "Cần chú ý", variant: "secondary" },
-          critical: { label: "Nguy kịch", variant: "destructive" },
-        };
-        const item = config[v] || { label: v, variant: "outline" };
-        return <Badge variant={item.variant}>{item.label}</Badge>;
-      },
+      key: "note",
+      label: "Ghi chú",
+      render: (v: string) => (
+        <span
+          className="text-muted-foreground italic text-xs block max-w-50 truncate"
+          title={v}
+        >
+          {v || "-"}
+        </span>
+      ),
     },
   ];
 

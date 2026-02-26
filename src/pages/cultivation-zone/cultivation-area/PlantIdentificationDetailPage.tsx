@@ -24,6 +24,7 @@ import {
   Ruler,
   Sprout,
   Trees,
+  User,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -36,6 +37,10 @@ import {
 } from "react-leaflet";
 import { Link, useParams } from "wouter";
 import usePlantStore from "../../../stores/usePlantStore";
+import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
+import usePersonnelStore from "../../../stores/usePersonnelStore";
+import useFarmingMethodStore from "../../../stores/useFarmingMethodStore";
+import useIrrigationSystemStore from "../../../stores/useIrrigationSystemStore";
 
 // Fix Leaflet marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -75,6 +80,10 @@ const HISTORY_DATA = [
 const PlantIdentificationDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { getPlantById } = usePlantStore();
+  const { areas: cultivationAreas } = useCultivationAreaStore();
+  const { personnel } = usePersonnelStore();
+  const { farmingMethods } = useFarmingMethodStore();
+  const { irrigationSystems } = useIrrigationSystemStore();
   const [data, setData] = useState<any>(null);
 
   useEffect(() => {
@@ -104,6 +113,32 @@ const PlantIdentificationDetailPage = () => {
   }
 
   const { plant, plot, area, region } = data;
+
+  // Resolve cultivation area technical info
+  const cultivationArea = cultivationAreas.find(
+    (ca) => ca.id === plant.cultivationAreaId,
+  );
+  const manager = personnel.find(
+    (p: any) => String(p.id) === String(cultivationArea?.managerId),
+  );
+  const farmingMethod = farmingMethods.find(
+    (m: any) => m.id === cultivationArea?.farmingMethodId,
+  );
+  const irrigationMethod = irrigationSystems.find(
+    (s: any) => s.id === cultivationArea?.irrigationMethodId,
+  );
+
+  const formatAge = () => {
+    if (plant.ageValue && plant.ageUnit) {
+      const unitMap = {
+        days: "ngày",
+        months: "tháng",
+        years: "năm",
+      };
+      return `${plant.ageValue} ${unitMap[plant.ageUnit as keyof typeof unitMap]}`;
+    }
+    return plant.age || "N/A";
+  };
 
   const historyColumns = [
     { key: "date", label: "Ngày" },
@@ -159,7 +194,7 @@ const PlantIdentificationDetailPage = () => {
                     {plant.status === "healthy" ? "Khỏe mạnh" : "Cần chú ý"}
                   </Badge>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 border-t border-slate-50">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-2 border-t border-slate-50">
                   <div className="space-y-1">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       Ngày trồng
@@ -170,14 +205,14 @@ const PlantIdentificationDetailPage = () => {
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       Độ tuổi
                     </p>
-                    <p className="text-sm font-semibold">{plant.age}</p>
+                    <p className="text-sm font-semibold">{formatAge()}</p>
                   </div>
-                  <div className="space-y-1">
+                  {/* <div className="space-y-1">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       Loại cây
                     </p>
                     <p className="text-sm font-semibold">{plant.type}</p>
-                  </div>
+                  </div> */}
                   <div className="space-y-1">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       Vị trí GPS
@@ -188,6 +223,16 @@ const PlantIdentificationDetailPage = () => {
                     </p>
                   </div>
                 </div>
+                {plant.note && (
+                  <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                      Ghi chú
+                    </p>
+                    <p className="text-sm text-slate-600 italic">
+                      "{plant.note}"
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
@@ -344,27 +389,48 @@ const PlantIdentificationDetailPage = () => {
                       {plant.height}
                     </span>
                   </div>
-                  <div className="p-4 flex justify-between items-center group hover:bg-slate-50 transition-colors">
-                    <span className="text-sm text-slate-500 flex items-center gap-2">
-                      <Maximize2 className="w-4 h-4" />
-                      Độ rộng tán
-                    </span>
-                    <span className="font-bold text-slate-900">
-                      {plant.canopy}
-                    </span>
-                  </div>
-                  <div className="p-4 flex justify-between items-center group hover:bg-slate-50 transition-colors">
-                    <span className="text-sm text-slate-500 flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-full border-2 border-slate-300" />
-                      Phạm vi rễ
-                    </span>
-                    <span className="font-bold text-slate-900">
-                      {plant.rootSpread}
-                    </span>
-                  </div>
                 </div>
               </CardContent>
             </Card>
+
+            {cultivationArea && (
+              <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
+                <CardHeader className="border-b py-4">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <User className="w-4 h-4 text-primary" />
+                    Đơn vị quản lý & Kỹ thuật
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="divide-y divide-slate-50">
+                    <div className="p-4 flex flex-col gap-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        Người quản lý
+                      </span>
+                      <span className="font-semibold text-slate-900">
+                        {manager?.fullName || "Chưa phân công"}
+                      </span>
+                    </div>
+                    <div className="p-4 flex flex-col gap-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        Phương pháp canh tác
+                      </span>
+                      <span className="font-semibold text-slate-900">
+                        {farmingMethod?.name || "N/A"}
+                      </span>
+                    </div>
+                    <div className="p-4 flex flex-col gap-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        Hệ thống tưới tiêu
+                      </span>
+                      <span className="font-semibold text-slate-900">
+                        {irrigationMethod?.name || "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <Card className="border-none shadow-sm bg-indigo-50/50 rounded-2xl overflow-hidden border border-indigo-100">
               <CardHeader className="py-4">

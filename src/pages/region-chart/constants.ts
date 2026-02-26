@@ -507,17 +507,21 @@ export interface Plant {
   id: string;
   code: string;
   name: string; // e.g., "Sầu riêng Dona", "Bơ 034"
-  type: string; // "fruit", "industrial", etc.
-  status: "healthy" | "warning" | "critical" | "removed";
-  height: string;
-  age: string;
-  canopy: string;
-  rootSpread: string;
+  type?: string; // "fruit", "industrial", etc. (Optional, moving towards notes)
+  status?: "healthy" | "warning" | "critical" | "removed"; // (Optional)
+  height?: string;
+  age?: string; // Legacy string age
+  ageValue?: string; // New numeric age value
+  ageUnit?: "days" | "months" | "years"; // New age unit
+  canopy?: string; // (Optional)
+  rootSpread?: string; // (Optional)
   plantedDate: string;
   coordinate: Coordinate;
   plotId: string;
+  cultivationAreaId?: string; // Link to the cultivation area configuration
   regionName?: string;
   areaName?: string;
+  note?: string; // New field for extra info
 }
 
 export const MOCK_PLANTS: Plant[] = [
@@ -527,15 +531,18 @@ export const MOCK_PLANTS: Plant[] = [
     name: "Sầu riêng Dona",
     type: "Cây ăn trái",
     status: "healthy",
-    height: "2.5m",
+    height: "2.5",
+    ageValue: "3",
+    ageUnit: "years",
     age: "3 năm 2 tháng",
-    canopy: "1.8m",
-    rootSpread: "1.2m",
-    plantedDate: "15/10/2021",
+    canopy: "1.8",
+    rootSpread: "1.2",
+    plantedDate: "2021-10-15",
     coordinate: { lat: 11.548, lng: 106.896 },
     plotId: "plot-1-2",
     regionName: "Vùng Bình Phước Alpha",
     areaName: "Khu vực A - Sầu riêng",
+    note: "Cây phát triển tốt, đã bón phân định kỳ.",
   },
   {
     id: "2",
@@ -543,11 +550,13 @@ export const MOCK_PLANTS: Plant[] = [
     name: "Sầu riêng Ri6",
     type: "Cây ăn trái",
     status: "healthy",
-    height: "1.8m",
+    height: "1.8",
+    ageValue: "1",
+    ageUnit: "years",
     age: "1 năm 6 tháng",
-    canopy: "1.2m",
-    rootSpread: "0.8m",
-    plantedDate: "15/10/2021",
+    canopy: "1.2",
+    rootSpread: "0.8",
+    plantedDate: "2021-10-15",
     coordinate: { lat: 11.55, lng: 106.902 },
     plotId: "plot-1-2",
     regionName: "Vùng Bình Phước Alpha",
@@ -559,14 +568,17 @@ export const MOCK_PLANTS: Plant[] = [
     name: "Bơ 034",
     type: "Cây ăn trái",
     status: "warning",
-    height: "3.2m",
+    height: "3.2",
+    ageValue: "4",
+    ageUnit: "years",
     age: "4 năm 1 tháng",
-    canopy: "2.5m",
-    rootSpread: "2.0m",
-    plantedDate: "10/03/2020",
+    canopy: "2.5",
+    rootSpread: "2.0",
+    plantedDate: "2020-03-10",
     coordinate: { lat: 11.545, lng: 106.91 },
     plotId: "plot-2-1",
     regionName: "Vùng Bình Phước Alpha",
     areaName: "Khu vực B - Bơ sáp",
+    note: "Lá hơi vàng, cần kiểm tra lại hệ thống tưới.",
   },
 ];

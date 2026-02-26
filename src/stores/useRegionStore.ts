@@ -202,9 +202,16 @@ const useRegionStore = create<RegionState>()(
         },
 
         getAreaById: (id) => {
-          return get()
-            .regions.flatMap((r) => r.subAreas || [])
-            .find((a) => String(a.id) === String(id));
+          let result: { area: any; region: any } | undefined;
+          get().regions.forEach((region) => {
+            const area = (region.subAreas || []).find(
+              (a) => String(a.id) === String(id),
+            );
+            if (area) {
+              result = { area, region };
+            }
+          });
+          return result;
         },
 
         getPlotById: (id) => {

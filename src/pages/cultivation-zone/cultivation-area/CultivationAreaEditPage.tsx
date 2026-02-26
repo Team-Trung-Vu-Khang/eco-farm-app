@@ -2057,7 +2057,7 @@ const CultivationAreaEditPage = () => {
                           key={cid}
                           className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 rounded-lg border border-slate-100 bg-white"
                         >
-                          <div className="flex items-center gap-2 min-w-[200px]">
+                          <div className="flex items-center gap-2 min-w-50">
                             <div className="w-2 h-2 rounded-full bg-green-500"></div>
                             <span className="font-bold text-slate-800">
                               {crop?.varietyName}
