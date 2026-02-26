@@ -13,6 +13,7 @@
     "@originjs/vite-plugin-federation": "^1.4.1",
     "@tailwindcss/vite": "^4.1.18",
     "@turf/turf": "^7.3.4",
+    "@tankhang1/eco-shared-ui": "^0.1.33",
     "@yudiel/react-qr-scanner": "^2.5.1",
     "geojson": "^0.5.0",
     "leaflet": "^1.9.4",
