@@ -41,6 +41,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import useBranchStore from "../../stores/useBranchStore";
 import useEnterpriseStore from "../../stores/useEnterpriseStore";
+import { PROVINCES } from "@/constants/province";
 
 // Fix Leaflet default icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -1031,7 +1032,7 @@ export default function BranchFormPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="city">Tỉnh/Thành phố</Label>
+                  <Label htmlFor="city">Tỉnh / Thành phố</Label>
                   <Select
                     value={formData.city}
                     onValueChange={(value) =>
@@ -1039,19 +1040,19 @@ export default function BranchFormPage() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Chọn Tỉnh/Thành phố" />
+                      <SelectValue placeholder="Chọn Tỉnh / Thành phố" />
                     </SelectTrigger>
                     <SelectContent>
-                      {CITIES_LIST.map((city) => (
-                        <SelectItem key={city} value={city}>
-                          {city}
+                      {PROVINCES.map((province) => (
+                        <SelectItem key={province.code} value={province.code}>
+                          {province.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="ward">Phường/Xã</Label>
+                  <Label htmlFor="ward">Phường / Xã</Label>
                   <Select
                     value={formData.ward}
                     onValueChange={(value) =>
@@ -1059,12 +1060,14 @@ export default function BranchFormPage() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Chọn Phường/Xã" />
+                      <SelectValue placeholder="Chọn Phường / Xã" />
                     </SelectTrigger>
                     <SelectContent>
-                      {WARDS_LIST.map((ward) => (
-                        <SelectItem key={ward} value={ward}>
-                          {ward}
+                      {PROVINCES.find(
+                        (p) => p.code === formData.city,
+                      )?.districts.map((district) => (
+                        <SelectItem key={district.code} value={district.code}>
+                          {district.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

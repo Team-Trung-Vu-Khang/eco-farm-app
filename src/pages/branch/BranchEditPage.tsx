@@ -29,6 +29,7 @@ import {
 } from "@tankhang1/eco-shared-ui";
 import { Save, X, Trash2 } from "lucide-react";
 import useBranchStore from "../../stores/useBranchStore";
+import { PROVINCES } from "@/constants/province";
 
 export default function BranchEditPage() {
   const [, params] = useRoute("/branch/:id/edit");
@@ -326,17 +327,19 @@ export default function BranchEditPage() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Chọn Tỉnh/Thành" />
+                      <SelectValue placeholder="Chọn Tỉnh / Thành Phố" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="hcm">TP. Hồ Chí Minh</SelectItem>
-                      <SelectItem value="hn">Hà Nội</SelectItem>
-                      <SelectItem value="dn">Đà Nẵng</SelectItem>
+                      {PROVINCES.map((province) => (
+                        <SelectItem key={province.code} value={province.code}>
+                          {province.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Quận / Huyện</Label>
+                  <Label>Phường / Xã</Label>
                   <Select
                     value={formData.district}
                     onValueChange={(val) =>
@@ -344,12 +347,16 @@ export default function BranchEditPage() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Chọn Quận/Huyện" />
+                      <SelectValue placeholder="Chọn Phường / Xã" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="q1">Quận 1</SelectItem>
-                      <SelectItem value="q3">Quận 3</SelectItem>
-                      <SelectItem value="badinh">Ba Đình</SelectItem>
+                      {PROVINCES.find(
+                        (p) => p.code === formData.province,
+                      )?.districts.map((district) => (
+                        <SelectItem key={district.code} value={district.code}>
+                          {district.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

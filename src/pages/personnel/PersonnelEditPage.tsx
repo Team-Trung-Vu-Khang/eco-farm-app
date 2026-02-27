@@ -27,6 +27,7 @@ import usePersonnelStore from "../../stores/usePersonnelStore";
 import useTeamStore from "../../stores/useTeamStore";
 import useDepartmentStore from "../../stores/useDepartmentStore";
 import usePositionStore from "../../stores/usePositionStore";
+import { PROVINCES } from "@/constants/province";
 
 export default function PersonnelEditPage() {
   const [, setLocation] = useLocation();
@@ -332,9 +333,14 @@ export default function PersonnelEditPage() {
                             <SelectValue placeholder="Chọn Tỉnh/Thành" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="hcm">TP. Hồ Chí Minh</SelectItem>
-                            <SelectItem value="hn">Hà Nội</SelectItem>
-                            <SelectItem value="dn">Đà Nẵng</SelectItem>
+                            {PROVINCES.map((province) => (
+                              <SelectItem
+                                key={province.code}
+                                value={province.code}
+                              >
+                                {province.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -350,9 +356,16 @@ export default function PersonnelEditPage() {
                             <SelectValue placeholder="Chọn Quận/Huyện" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="q1">Quận 1</SelectItem>
-                            <SelectItem value="q3">Quận 3</SelectItem>
-                            <SelectItem value="caugiay">Cầu Giấy</SelectItem>
+                            {PROVINCES.find(
+                              (p) => p.code === formData.province,
+                            )?.districts.map((district) => (
+                              <SelectItem
+                                key={district.code}
+                                value={district.code}
+                              >
+                                {district.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>

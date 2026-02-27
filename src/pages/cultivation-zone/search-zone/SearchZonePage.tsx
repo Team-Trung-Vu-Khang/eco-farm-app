@@ -261,7 +261,7 @@ const SearchZonePage = () => {
 
                   {/* Province Filter */}
                   <div className="space-y-2">
-                    <Label>Tỉnh thành</Label>
+                    <Label>Tỉnh / Thành Phố</Label>
                     <Select
                       value={advancedFilters.province}
                       onValueChange={(value) =>
@@ -626,7 +626,7 @@ const SearchZonePage = () => {
                           </div>
                           <div>
                             <Label className="text-muted-foreground">
-                              Tỉnh/Huyện
+                              Tỉnh / Thành Phố - Quận / Huyện
                             </Label>
                             <p className="font-medium mt-1">
                               {selectedZone.province} - {selectedZone.district}
