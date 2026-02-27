@@ -201,6 +201,7 @@ export default function BankEditPage() {
                       <SelectItem value="MBBank">MBBank</SelectItem>
                       <SelectItem value="Techcombank">Techcombank</SelectItem>
                       <SelectItem value="ACB">ACB</SelectItem>
+                      <SelectItem value="VPBank">VPBank</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

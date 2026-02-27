@@ -232,10 +232,12 @@ export default function BranchFormPage() {
 
   // Get enterprises from store
   const enterprisesFromStore = useEnterpriseStore((state) => state.enterprises);
-  const enterprises = enterprisesFromStore.map((e) => ({
-    id: e.id.toString(),
-    name: e.name,
-  }));
+  const enterprises = enterprisesFromStore
+    .filter((e) => e.type === "enterprise")
+    .map((e) => ({
+      id: e.id.toString(),
+      name: e.name,
+    }));
 
   const BANKS_LIST = [
     "Vietcombank",

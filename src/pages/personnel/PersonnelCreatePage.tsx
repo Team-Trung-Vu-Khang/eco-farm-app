@@ -345,7 +345,7 @@ export default function PersonnelCreatePage() {
                           <SelectTrigger>
                             <SelectValue placeholder="Chọn chức vụ" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="max-h-96">
                             {positions.map((pos) => (
                               <SelectItem key={pos.id} value={pos.name}>
                                 {pos.name}
