@@ -13,21 +13,23 @@ import { MapContainer, TileLayer, Polygon, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-import { LAND_TYPES, TERRAIN_TYPES } from "../constants";
 import { MapController } from "../components/DraggableRectangle";
 import useRegionStore from "../../../stores/useRegionStore";
+import useLandStore from "@/stores/useLandStore";
+import useTerrainStore from "@/stores/useTerrainStore";
 
 const AreaDetailPage = () => {
   const [, setLocation] = useLocation();
+  const lands = useLandStore((state) => state.lands);
+  const terrains = useTerrainStore((state) => state.terrains);
   const [match, params] = useRoute("/area-distribution/detail/:id");
   const { getAreaById, regions } = useRegionStore();
   const id = match && params?.id ? String(params.id) : null;
 
-  const areaData = id ? getAreaById(id) : null;
+  const areaData = id ? getAreaById(id)?.area : null;
   const regionData = areaData
     ? regions.find((r) => r.id === areaData.regionId)
     : null;
-
   if (!areaData) {
     return (
       <AdminLayout
@@ -59,11 +61,10 @@ const AreaDetailPage = () => {
   }
 
   const landTypeName =
-    LAND_TYPES.find((l) => l.id === areaData.landType)?.name ||
-    areaData.landType;
+    lands.find((l) => l.code === areaData.landType)?.name || areaData?.landType;
   const terrainName =
-    TERRAIN_TYPES.find((t) => t.id === areaData.terrain)?.name ||
-    areaData.terrain;
+    terrains.find((t) => t.code === areaData.terrain)?.name ||
+    areaData?.terrain;
 
   return (
     <AdminLayout
@@ -127,7 +128,7 @@ const AreaDetailPage = () => {
                 <span className="text-sm font-medium text-muted-foreground">
                   Diện tích
                 </span>
-                <p className="font-medium mt-1">{areaData.area} ha</p>
+                <p className="font-medium mt-1">{areaData?.area} ha</p>
               </div>
 
               <div>

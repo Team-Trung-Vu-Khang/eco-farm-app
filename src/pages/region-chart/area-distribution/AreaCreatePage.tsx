@@ -17,7 +17,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  MultiSelect,
   Combobox,
   type ComboboxOption,
 } from "@tankhang1/eco-shared-ui";
@@ -31,7 +30,7 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { ChevronLeft, Check, Plus, Trash2, Edit, X } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Edit, X } from "lucide-react";
 
 // Fix Leaflet Default Icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -48,14 +47,11 @@ const customIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-import {
-  type SubArea as Area,
-  type Plot,
-  LAND_TYPES,
-  TERRAIN_TYPES,
-} from "../constants";
+import { type SubArea as Area, type Plot } from "../constants";
 import { MapController } from "../components/DraggableRectangle";
 import useRegionStore from "../../../stores/useRegionStore";
+import useTerrainStore from "@/stores/useTerrainStore";
+import useLandStore from "@/stores/useLandStore";
 
 const MapClickHandler = ({
   onClick,
@@ -80,7 +76,8 @@ const AreaCreatePage = () => {
   const { toast } = useToast();
   const [match, params] = useRoute("/area-distribution/edit/:id");
   const isEditMode = match && !!params?.id;
-
+  const { lands } = useLandStore();
+  const { terrains } = useTerrainStore();
   // States
   const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Area>>({
@@ -481,8 +478,8 @@ const AreaCreatePage = () => {
                     <SelectValue placeholder="Chọn loại đất" />
                   </SelectTrigger>
                   <SelectContent>
-                    {LAND_TYPES.map((l) => (
-                      <SelectItem key={l.id} value={l.id}>
+                    {lands.map((l) => (
+                      <SelectItem key={l.code} value={l.code}>
                         {l.name}
                       </SelectItem>
                     ))}
@@ -501,8 +498,8 @@ const AreaCreatePage = () => {
                     <SelectValue placeholder="Chọn địa hình" />
                   </SelectTrigger>
                   <SelectContent>
-                    {TERRAIN_TYPES.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
+                    {terrains.map((t) => (
+                      <SelectItem key={t.code} value={t.code}>
                         {t.name}
                       </SelectItem>
                     ))}
