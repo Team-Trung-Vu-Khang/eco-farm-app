@@ -282,7 +282,7 @@ export default function PersonnelCreatePage() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="district">Quận / Huyện</Label>
+                        <Label htmlFor="district">Phường / Xã</Label>
                         <Select
                           value={formData.district}
                           onValueChange={(val) =>
@@ -290,7 +290,7 @@ export default function PersonnelCreatePage() {
                           }
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Chọn Quận/Huyện" />
+                            <SelectValue placeholder="Chọn Phường / Xã" />
                           </SelectTrigger>
                           <SelectContent>
                             {PROVINCES.find(

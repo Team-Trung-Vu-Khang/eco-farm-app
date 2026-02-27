@@ -626,7 +626,7 @@ const SearchZonePage = () => {
                           </div>
                           <div>
                             <Label className="text-muted-foreground">
-                              Tỉnh / Thành Phố - Quận / Huyện
+                              Tỉnh / Thành Phố - Phường / Xã
                             </Label>
                             <p className="font-medium mt-1">
                               {selectedZone.province} - {selectedZone.district}
