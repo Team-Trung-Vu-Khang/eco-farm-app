@@ -1786,7 +1786,7 @@ const CultivationAreaCreatePage = () => {
                       {name || "Chưa đặt tên"}
                     </td>
                   </tr>
-                  <tr className="border-b border-slate-100">
+                  {/* <tr className="border-b border-slate-100">
                     <td className="py-3 px-4 text-muted-foreground">
                       Đối tượng
                     </td>
@@ -1806,7 +1806,7 @@ const CultivationAreaCreatePage = () => {
                         ))}
                       </div>
                     </td>
-                  </tr>
+                  </tr> */}
                   {manager && (
                     <tr className="border-b border-slate-100">
                       <td className="py-3 px-4 text-muted-foreground">
