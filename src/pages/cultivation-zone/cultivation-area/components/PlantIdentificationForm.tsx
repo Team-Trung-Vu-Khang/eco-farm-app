@@ -925,7 +925,7 @@ const PlantIdentificationForm = ({
           <Card className="border-none shadow-sm rounded-2xl overflow-hidden">
             <CardHeader className="border-b py-4">
               <CardTitle className="text-sm font-semibold">
-                Vị trí địa lý
+                Định danh cây trồng
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">

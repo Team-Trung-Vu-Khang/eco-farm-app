@@ -1410,7 +1410,7 @@ const CultivationAreaEditPage = () => {
           <div className="flex items-center gap-2 pb-2 border-b">
             <Award className="w-5 h-5 text-primary" />
             <h3 className="font-semibold text-slate-800">
-              Tiêu chuẩn & Quản lý
+              Chứng nhận tiêu chuẩn
             </h3>
           </div>
 
@@ -2062,14 +2062,14 @@ const CultivationAreaEditPage = () => {
                             <span className="font-bold text-slate-800">
                               {crop?.varietyName}
                             </span>
-                            {crop?.seedType && (
+                            {/* {crop?.seedType && (
                               <Badge
                                 variant="outline"
                                 className="text-[10px] py-0 h-5"
                               >
                                 {crop.seedType}
                               </Badge>
-                            )}
+                            )} */}
                           </div>
                           {commonConfig.seedSelections?.[cid] &&
                             commonConfig.seedSelections[cid].length > 0 && (
