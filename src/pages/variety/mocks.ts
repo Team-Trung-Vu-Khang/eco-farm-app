@@ -73,7 +73,8 @@ export const initialData: Variety[] = [
   },
   {
     id: "5",
-    illustration: "https://giongcamau.vn/uploads/shops/2017_03/om5451-copy.jpg",
+    illustration:
+      "https://lh4.googleusercontent.com/proxy/MLacA6_LHyfmPvTfcrouV2QTLptGspn7YeqqJ9pAjtfQIl262TRrvqXI5nMWlZuSLoOKCs3pwfShUOALa0aEKTu8ATDBIrKX07oDdVXW6fdSHTlsi6vflJMhwO5QILIl3Dz5GLaveQ",
     crop: "Lúa",
     varietyCode: "VARI06",
     varietyName: "Lúa OM5451",

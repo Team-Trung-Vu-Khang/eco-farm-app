@@ -163,7 +163,8 @@ export const initialData: Variety[] = [
   },
   {
     id: "10",
-    illustration: "https://giongcamau.vn/uploads/shops/2017_03/om5451-copy.jpg",
+    illustration:
+      "https://encrypted-tbn1.gstatic.com/shopping?q=tbn:ANd9GcROeFYHrBvhkXLU78CIneldJwI3mgAWoFDZsxJ5f2sXfPdgwkF9xweTGSi2oLpcSSt1n4CoRTq2huxq1toGW128i1mZCKxrYcXbSwPQ-tesGnTqXiN-gKtN0VidPtK1b188MUGgnw&usqp=CAc",
     crop: "Lúa",
     varietyCode: "VARI05",
     varietyName: "Hạt giống Lúa OM5451",
