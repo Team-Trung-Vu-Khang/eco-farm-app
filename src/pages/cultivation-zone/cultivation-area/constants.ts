@@ -1,3 +1,5 @@
+import { divIcon, DivIcon } from "leaflet";
+
 export interface Certificate {
   id: string;
   name: string;
@@ -145,3 +147,15 @@ export const CROP_VARIETIES: CropVariety[] = [
       "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400&h=400&fit=crop",
   },
 ];
+
+export const RedMarker = () =>
+  divIcon({
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
+    shadowUrl:
+      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png",
+    iconUrl:
+      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
+  });

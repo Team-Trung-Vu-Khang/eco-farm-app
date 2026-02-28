@@ -39,6 +39,7 @@ import {
   Search,
   Sprout,
   Trash2,
+  Upload,
   User,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -46,6 +47,7 @@ import {
   MapContainer,
   Marker,
   Polygon,
+  Polyline,
   TileLayer,
   useMapEvents,
 } from "react-leaflet";
@@ -58,12 +60,29 @@ import useRegionStore from "../../../../stores/useRegionStore";
 import useSeedStore from "../../../../stores/useSeedStore";
 import { type Plant } from "../../../region-chart/constants";
 import { EnterpriseSelector } from "./EnterpriseSelector";
+import { ImportPlantDialog } from "./ImportPlantDialog";
+import L from "leaflet";
 
 interface PlantIdentificationFormProps {
   initialData?: Partial<Plant>;
   initialList?: Partial<Plant>[];
   onSubmit: (data: any) => void;
 }
+
+const getMarkerIcon = (color: string = "red") => {
+  return L.icon({
+    iconUrl:
+      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-" +
+      color +
+      ".png",
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
+    shadowUrl:
+      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png",
+  });
+};
 
 // --- Local Refined Components ---
 
@@ -615,6 +634,7 @@ interface PlantEntry {
   note: string;
   plotId: string;
   coordinate: { lat: number; lng: number };
+  isInvalidBoundary?: boolean;
 }
 
 const makeEmptyPlant = (): PlantEntry => ({
@@ -626,6 +646,7 @@ const makeEmptyPlant = (): PlantEntry => ({
   note: "",
   plotId: "",
   coordinate: { lat: 11.548, lng: 106.896 },
+  isInvalidBoundary: false,
 });
 
 // ---- Per-plant plot helper ----
@@ -638,6 +659,7 @@ const PlantCard = ({
   onRemove,
   canRemove,
   setActiveEntry,
+  isInvalidBoundary,
 }: {
   plant: PlantEntry;
   index: number;
@@ -647,6 +669,7 @@ const PlantCard = ({
   onRemove: () => void;
   canRemove: boolean;
   setActiveEntry: () => void;
+  isInvalidBoundary?: boolean;
 }) => {
   const [expanded, setExpanded] = useState(true);
   const [tempLat, setTempLat] = useState(
@@ -701,7 +724,7 @@ const PlantCard = ({
       const poly = turf.polygon([polyCoords]);
 
       if (turf.booleanPointInPolygon(pt, poly)) {
-        onUpdate({ coordinate: { lat, lng } });
+        onUpdate({ coordinate: { lat, lng }, isInvalidBoundary: false });
         setActiveEntry();
         setValidationError(null);
         setSuggestion(null);
@@ -733,8 +756,13 @@ const PlantCard = ({
           {index + 1}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-slate-800 text-sm truncate">
+          <div className="font-semibold text-slate-800 text-sm truncate flex items-center gap-2">
             {`Cây trồng ${index + 1}`}
+            {isInvalidBoundary && (
+              <span className="text-[10px] text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" /> Tọa độ lỗi
+              </span>
+            )}
           </div>
         </div>
         {plant.plotId ? (
@@ -963,6 +991,7 @@ const AllPlantsMapContent = ({
   plants,
   smallestUnits,
   setActiveEntryId,
+  suggestedCorrection,
 }: {
   activeId: string;
   onPlantMove: (entryId: string, lat: number, lng: number) => void;
@@ -976,6 +1005,7 @@ const AllPlantsMapContent = ({
   plants: PlantEntry[];
   smallestUnits: any[];
   setActiveEntryId: (id: string) => void;
+  suggestedCorrection?: { entryId: string; lat: number; lng: number } | null;
 }) => {
   const activePlant = plants.find((p) => p.entryId === activeId);
 
@@ -1049,14 +1079,24 @@ const AllPlantsMapContent = ({
       })}
       {/* All plant markers */}
       {plants.map((p) => {
-        if (!p.plotId) return null;
+        // if (!p.plotId) return null;
         const isActive = p.entryId === activeId;
+
+        if (isActive) {
+          console.log("currentitem", p);
+        }
+
         return (
           <Marker
             key={p.entryId}
             position={[p.coordinate.lat, p.coordinate.lng]}
             draggable={isActive}
             opacity={isActive ? 1 : 0.6}
+            icon={
+              p.isInvalidBoundary
+                ? getMarkerIcon("red")
+                : getMarkerIcon("green")
+            }
             eventHandlers={{
               click() {
                 setActiveEntryId(p.entryId);
@@ -1070,6 +1110,29 @@ const AllPlantsMapContent = ({
           />
         );
       })}
+      {/* Ghost marker for suggested correction */}
+      {suggestedCorrection &&
+        suggestedCorrection.entryId === activeId &&
+        activePlant && (
+          <>
+            <Polyline
+              positions={[
+                [activePlant.coordinate.lat, activePlant.coordinate.lng],
+                [suggestedCorrection.lat, suggestedCorrection.lng],
+              ]}
+              pathOptions={{ color: "#ef4444", dashArray: "5, 5", weight: 2 }}
+            />
+            <Marker
+              position={[suggestedCorrection.lat, suggestedCorrection.lng]}
+              opacity={0.5}
+              eventHandlers={{
+                click() {
+                  // Clicking suggestion might not do anything specific, users use the Apply button
+                },
+              }}
+            />
+          </>
+        )}
     </>
   );
 };
@@ -1097,6 +1160,8 @@ const PlantIdentificationForm = ({
     initialData?.cultivationAreaId || "",
   );
 
+  const [isImportOpen, setIsImportOpen] = useState(false);
+
   // ---- Per-plant list ----
   const [plants, setPlants] = useState<PlantEntry[]>(() => {
     if (initialData) {
@@ -1111,6 +1176,7 @@ const PlantIdentificationForm = ({
           note: initialData.note || "",
           plotId: initialData.plotId || "",
           coordinate: initialData.coordinate || { lat: 11.548, lng: 106.896 },
+          isInvalidBoundary: false,
         },
       ];
     }
@@ -1124,6 +1190,7 @@ const PlantIdentificationForm = ({
         note: item.note || "",
         plotId: item.plotId || "",
         coordinate: item.coordinate || { lat: 11.548, lng: 106.896 },
+        isInvalidBoundary: false,
       }));
     }
     return [makeEmptyPlant()];
@@ -1306,9 +1373,21 @@ const PlantIdentificationForm = ({
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   // ---- Active plant on map ----
   const [activeEntryId, setActiveEntryId] = useState<string>("");
-  const [outOfBoundsEntryId, setOutOfBoundsEntryId] = useState<string | null>(
-    null,
-  );
+  const [suggestedCorrection, setSuggestedCorrection] = useState<{
+    entryId: string;
+    lat: number;
+    lng: number;
+  } | null>(null);
+
+  const handleSetActiveEntry = (id: string) => {
+    setActiveEntryId(id);
+    setTimeout(() => {
+      const element = document.getElementById(`plant-item-${id}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 50);
+  };
 
   // Resolve effective active entry (fallback to first plant that has a plot)
   const effectiveActiveId =
@@ -1325,11 +1404,13 @@ const PlantIdentificationForm = ({
       updatePlant(plantEntryId, { coordinate: { lat, lng } });
       return;
     }
+
     const unit = smallestUnits.find((u) => u.id === plant.plotId);
     if (!unit || !unit.coordinates || unit.coordinates.length < 3) {
       updatePlant(plantEntryId, { coordinate: { lat, lng } });
       return;
     }
+
     try {
       const pt = turf.point([lng, lat]);
       const polyCoords = [
@@ -1337,20 +1418,28 @@ const PlantIdentificationForm = ({
         [unit.coordinates[0].lng, unit.coordinates[0].lat],
       ];
       const poly = turf.polygon([polyCoords]);
+
       if (turf.booleanPointInPolygon(pt, poly)) {
-        setOutOfBoundsEntryId(null);
-        updatePlant(plantEntryId, { coordinate: { lat, lng } });
+        setSuggestedCorrection(null);
+        updatePlant(plantEntryId, {
+          coordinate: { lat, lng },
+          isInvalidBoundary: false,
+        });
       } else {
-        // Snap to nearest boundary point
+        // Snap to nearest boundary point for suggestion
         const line = turf.polygonToLine(poly);
         const snapped = turf.nearestPointOnLine(line as any, pt);
         const [snapLng, snapLat] = snapped.geometry.coordinates;
-        setOutOfBoundsEntryId(plantEntryId);
-        updatePlant(plantEntryId, {
-          coordinate: { lat: snapLat, lng: snapLng },
+        setSuggestedCorrection({
+          entryId: plantEntryId,
+          lat: snapLat,
+          lng: snapLng,
         });
-        // Auto-clear warning after 3s
-        setTimeout(() => setOutOfBoundsEntryId(null), 3000);
+
+        updatePlant(plantEntryId, {
+          coordinate: { lat, lng },
+          isInvalidBoundary: true,
+        });
       }
     } catch {
       updatePlant(plantEntryId, { coordinate: { lat, lng } });
@@ -1363,10 +1452,44 @@ const PlantIdentificationForm = ({
     lat: number,
     lng: number,
   ) => {
-    updatePlant(entryId, {
-      plotId,
-      coordinate: { lat, lng },
-    });
+    const unit = smallestUnits.find((u) => u.id === plotId);
+    if (!unit || !unit.coordinates || unit.coordinates.length < 3) {
+      updatePlant(entryId, { coordinate: { lat, lng }, plotId });
+      return;
+    }
+
+    const pt = turf.point([lng, lat]);
+    const polyCoords = [
+      ...unit.coordinates.map((c: any) => [c.lng, c.lat]),
+      [unit.coordinates[0].lng, unit.coordinates[0].lat],
+    ];
+
+    const poly = turf.polygon([polyCoords]);
+
+    if (turf.booleanPointInPolygon(pt, poly)) {
+      setSuggestedCorrection(null);
+      updatePlant(entryId, {
+        plotId,
+        coordinate: { lat, lng },
+        isInvalidBoundary: false,
+      });
+    } else {
+      // Snap to nearest boundary point for suggestion
+      const line = turf.polygonToLine(poly);
+      const snapped = turf.nearestPointOnLine(line as any, pt);
+      const [snapLng, snapLat] = snapped.geometry.coordinates;
+      setSuggestedCorrection({
+        entryId: entryId,
+        lat: snapLat,
+        lng: snapLng,
+      });
+
+      updatePlant(entryId, {
+        plotId,
+        coordinate: { lat, lng },
+        isInvalidBoundary: true,
+      });
+    }
   };
 
   // ---- Submit: one plant per entry ----
@@ -1617,22 +1740,34 @@ const PlantIdentificationForm = ({
       content: (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div className="relative overflow-hidden rounded-xl border border-blue-200 bg-linear-to-r from-blue-50 via-white to-blue-50 p-5 shadow-sm">
-            <div className="relative z-10 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white shadow-sm border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                <Sprout className="w-6 h-6" />
+            <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-white shadow-sm border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                  <Sprout className="w-6 h-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-bold text-blue-900">
+                    Danh sách cây trồng
+                  </h3>
+                  <p className="text-sm text-blue-700/80">
+                    Mỗi cây có thể thuộc một lô/vị trí khác nhau trong vùng canh
+                    tác.
+                  </p>
+                </div>
+                <div className="shrink-0 px-3 py-1 bg-blue-100 text-blue-700 text-sm font-bold rounded-full">
+                  {plants.length} cây
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-base font-bold text-blue-900">
-                  Danh sách cây trồng
-                </h3>
-                <p className="text-sm text-blue-700/80">
-                  Mỗi cây có thể thuộc một lô/vị trí khác nhau trong vùng canh
-                  tác.
-                </p>
-              </div>
-              <div className="shrink-0 px-3 py-1 bg-blue-100 text-blue-700 text-sm font-bold rounded-full">
-                {plants.length} cây
-              </div>
+              {!initialData && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsImportOpen(true)}
+                  className="bg-white hover:bg-blue-50 text-blue-700 border-blue-200 shrink-0"
+                >
+                  <Upload className="w-4 h-4 mr-2" /> Nhập từ Excel
+                </Button>
+              )}
             </div>
             <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl" />
           </div>
@@ -1649,8 +1784,9 @@ const PlantIdentificationForm = ({
                   regions={regions}
                   onUpdate={(partial) => updatePlant(plant.entryId, partial)}
                   onRemove={() => removePlant(plant.entryId)}
-                  canRemove={plants.length > 1}
+                  canRemove
                   setActiveEntry={() => setActiveEntryId(plant.entryId)}
+                  isInvalidBoundary={plant.isInvalidBoundary}
                 />
               ))}
 
@@ -1698,7 +1834,7 @@ const PlantIdentificationForm = ({
                           <button
                             key={p.entryId}
                             type="button"
-                            onClick={() => setActiveEntryId(p.entryId)}
+                            onClick={() => handleSetActiveEntry(p.entryId)}
                             className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border font-medium transition-all ${
                               isActive
                                 ? "bg-indigo-500 text-white border-indigo-500 shadow-sm"
@@ -1724,14 +1860,35 @@ const PlantIdentificationForm = ({
                     </div>
                   )}
                   {/* Out-of-bounds warning */}
-                  {outOfBoundsEntryId && (
-                    <div className="absolute z-10 bottom-4 left-4 flex items-start gap-2.5 bg-amber-50 border border-amber-200 text-amber-800 text-xs px-3 py-2.5 rounded-xl animate-in fade-in slide-in-from-top-1 duration-300">
-                      <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-500" />
-                      <span>
-                        <span className="font-bold">Ngoài vùng cho phép!</span>{" "}
-                        Vị trí đã được tự động điều chỉnh về ranh giới của lô đã
-                        chọn.
-                      </span>
+                  {suggestedCorrection && (
+                    <div className="absolute z-10 bottom-4 left-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-red-50 border border-red-200 text-red-800 text-xs px-3 py-2.5 rounded-xl animate-in fade-in slide-in-from-top-1 duration-300 shadow-sm">
+                      <div className="flex items-start gap-2.5">
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-500" />
+                        <span>
+                          <span className="font-bold">
+                            Ngoài phạm vi hợp lệ!
+                          </span>{" "}
+                          Vị trí bạn chọn nằm ngoài phạm vi hợp lệ. Di chuyển
+                          marker vào trong vùng hợp lệ hoặc áp dụng gợi ý.
+                        </span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="h-7 text-[10px] shrink-0 sm:w-auto bg-red-600 hover:bg-red-700 text-white"
+                        onClick={() => {
+                          updatePlant(suggestedCorrection.entryId, {
+                            coordinate: {
+                              lat: suggestedCorrection.lat,
+                              lng: suggestedCorrection.lng,
+                            },
+                            isInvalidBoundary: false,
+                          });
+                          setSuggestedCorrection(null);
+                        }}
+                      >
+                        Áp dụng gợi ý
+                      </Button>
                     </div>
                   )}
                   <div
@@ -1750,17 +1907,18 @@ const PlantIdentificationForm = ({
                         plants={plants}
                         activeId={effectiveActiveId}
                         smallestUnits={smallestUnits}
-                        setActiveEntryId={setActiveEntryId}
+                        setActiveEntryId={handleSetActiveEntry}
                         onPlantMove={validateAndSnapToUnit}
                         onAutoAssign={handleAutoAssign}
+                        suggestedCorrection={suggestedCorrection}
                       />
                     </MapContainer>
-                    <div className="absolute bottom-4 left-4 z-[1000] bg-white/90 backdrop-blur shadow-sm border border-slate-100 px-3 py-1.5 rounded-lg text-[11px] text-slate-500 flex items-center gap-2">
+                    <div className="absolute bottom-4 left-4 z-1000 bg-white/90 backdrop-blur shadow-sm border border-slate-100 px-3 py-1.5 rounded-lg text-[11px] text-slate-500 flex items-center gap-2">
                       <MapPin className="w-3 h-3 text-primary" />
                       Bấm bản đồ hoặc kéo marker để thay đổi vị trí
                     </div>
                     {/* Legend */}
-                    <div className="absolute top-4 right-4 z-[1000] bg-white/90 backdrop-blur shadow-sm border border-slate-100 px-3 py-2 rounded-lg space-y-1">
+                    <div className="absolute top-4 right-4 z-1000 bg-white/90 backdrop-blur shadow-sm border border-slate-100 px-3 py-2 rounded-lg space-y-1">
                       <div className="flex items-center gap-2 text-[10px] text-slate-600">
                         <div className="w-3 h-3 rounded-sm border-2 border-indigo-500 bg-indigo-500/20" />
                         Cây đang chỉnh
@@ -1803,7 +1961,7 @@ const PlantIdentificationForm = ({
                         <button
                           key={p.entryId}
                           type="button"
-                          onClick={() => setActiveEntryId(p.entryId)}
+                          onClick={() => handleSetActiveEntry(p.entryId)}
                           className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border font-medium transition-all ${
                             isActive
                               ? "bg-indigo-500 text-white border-indigo-500 shadow-sm"
@@ -1829,14 +1987,35 @@ const PlantIdentificationForm = ({
                   </div>
                 )}
                 <div className="flex-1 relative">
-                  {outOfBoundsEntryId && (
-                    <div className="absolute z-[1000] bottom-4 left-4 flex items-start gap-2.5 bg-amber-50 border border-amber-200 text-amber-800 text-xs px-3 py-2.5 rounded-xl animate-in fade-in slide-in-from-top-1 duration-300">
-                      <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-500" />
-                      <span>
-                        <span className="font-bold">Ngoài vùng cho phép!</span>{" "}
-                        Vị trí đã được tự động điều chỉnh về ranh giới của lô đã
-                        chọn.
-                      </span>
+                  {suggestedCorrection && (
+                    <div className="absolute z-[1000] bottom-4 left-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-red-50 border border-red-200 text-red-800 text-xs px-3 py-2.5 rounded-xl animate-in fade-in slide-in-from-top-1 duration-300 shadow-sm">
+                      <div className="flex items-start gap-2.5">
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-500" />
+                        <span>
+                          <span className="font-bold">
+                            Ngoài phạm vi hợp lệ!
+                          </span>{" "}
+                          Vị trí bạn chọn nằm ngoài phạm vi hợp lệ. Di chuyển
+                          marker vào trong vùng hợp lệ hoặc áp dụng gợi ý.
+                        </span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="h-7 text-[10px] shrink-0 sm:w-auto bg-red-600 hover:bg-red-700 text-white"
+                        onClick={() => {
+                          updatePlant(suggestedCorrection.entryId, {
+                            coordinate: {
+                              lat: suggestedCorrection.lat,
+                              lng: suggestedCorrection.lng,
+                            },
+                            isInvalidBoundary: false,
+                          });
+                          setSuggestedCorrection(null);
+                        }}
+                      >
+                        Áp dụng gợi ý
+                      </Button>
                     </div>
                   )}
 
@@ -1852,7 +2031,8 @@ const PlantIdentificationForm = ({
                       clickable={true}
                       plants={plants}
                       smallestUnits={smallestUnits}
-                      setActiveEntryId={setActiveEntryId}
+                      setActiveEntryId={handleSetActiveEntry}
+                      suggestedCorrection={suggestedCorrection}
                     />
                   </MapContainer>
                 </div>
@@ -2188,12 +2368,70 @@ const PlantIdentificationForm = ({
   ];
 
   return (
-    <StepperForm
-      steps={steps}
-      onComplete={handleComplete}
-      onCancel={() => setLocation("/plant-identification")}
-      completeLabel={initialData ? "Cập nhật cây trồng" : "Lưu cây trồng"}
-    />
+    <>
+      <StepperForm
+        steps={steps}
+        onComplete={handleComplete}
+        onCancel={() => setLocation("/plant-identification")}
+        completeLabel={initialData ? "Cập nhật cây trồng" : "Lưu cây trồng"}
+      />
+      <ImportPlantDialog
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        onImport={(importedList) => {
+          if (importedList.length === 0) return;
+          const newPlants: PlantEntry[] = importedList.map((item, index) => {
+            const coord = item.coordinate || { lat: 11.548, lng: 106.896 };
+            let autoPlotId = item.plotId || "";
+            let invalid = true;
+
+            // Auto-assign logic just like AllPlantsMapContent if possible
+            if (!autoPlotId) {
+              const pt = turf.point([coord.lng, coord.lat]);
+              for (const unit of smallestUnits) {
+                if (unit.coordinates && unit.coordinates.length >= 3) {
+                  const polyCoords = [
+                    ...unit.coordinates.map((c: any) => [c.lng, c.lat]),
+                    [unit.coordinates[0].lng, unit.coordinates[0].lat],
+                  ];
+                  const poly = turf.polygon([polyCoords]);
+                  if (turf.booleanPointInPolygon(pt, poly)) {
+                    autoPlotId = unit.id;
+                    invalid = false; // valid coordinate because it landed inside one of the selectable zones!
+                    break;
+                  }
+                }
+              }
+            }
+
+            return {
+              entryId: `plant-import-${Date.now()}-${index}`,
+              height: item.height?.toString() || "",
+              ageValue: item.ageValue?.toString() || "",
+              ageUnit: item.ageUnit || "years",
+              plantedDate:
+                item.plantedDate || new Date().toISOString().split("T")[0],
+              note: item.note || "",
+              plotId: autoPlotId,
+              coordinate: coord,
+              isInvalidBoundary: invalid,
+            };
+          });
+          setPlants((prev) => {
+            // override the initial empty plant row if untouched
+            if (
+              prev.length === 1 &&
+              !prev[0].height &&
+              !prev[0].ageValue &&
+              !prev[0].plotId
+            ) {
+              return newPlants;
+            }
+            return [...prev, ...newPlants];
+          });
+        }}
+      />
+    </>
   );
 };
 

@@ -19,12 +19,11 @@ import {
 } from "lucide-react";
 import readXlsxFile from "read-excel-file";
 import type { Plant } from "@/pages/region-chart/constants";
-import usePlantStore from "@/stores/usePlantStore";
-import { useLocation } from "wouter";
 
 interface ImportPlantDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onImport: (plants: Partial<Plant>[]) => void;
 }
 
 interface TempPlant extends Partial<Plant> {
@@ -36,14 +35,13 @@ interface TempPlant extends Partial<Plant> {
 export function ImportPlantDialog({
   open,
   onOpenChange,
+  onImport,
 }: ImportPlantDialogProps) {
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importData, setImportData] = useState<TempPlant[]>([]);
   const [isParsing, setIsParsing] = useState(false);
-  const { setImportedPlants } = usePlantStore();
-  const [, setLocation] = useLocation();
 
   const columns: Column<TempPlant>[] = [
     {
@@ -93,6 +91,23 @@ export function ImportPlantDialog({
           }
         >
           {value || "-"}
+        </span>
+      ),
+    },
+    {
+      key: "coordinate",
+      label: "Tọa độ",
+      render: (_, item) => (
+        <span
+          className={
+            item.errors?.includes("coordinate")
+              ? "text-red-500 font-medium font-mono text-xs block truncate max-w-28"
+              : "font-mono text-xs block truncate max-w-28"
+          }
+        >
+          {item.coordinate?.lat && item.coordinate?.lng
+            ? `${item.coordinate.lat}, ${item.coordinate.lng}`
+            : "Thiếu"}
         </span>
       ),
     },
@@ -180,18 +195,31 @@ export function ImportPlantDialog({
             }
           } else if (headerClean?.includes("ghi chú")) {
             rowData.note = val?.toString();
+          } else if (headerClean?.includes("vĩ độ") || headerClean === "lat") {
+            rowData.lat = parseFloat(val?.toString());
+          } else if (
+            headerClean?.includes("kinh độ") ||
+            headerClean === "lng"
+          ) {
+            rowData.lng = parseFloat(val?.toString());
           }
         });
 
         // Validation
         const errors: string[] = [];
-        // Optionally validate missing required fields if requested. For now, height/age might be optional,
-        // but let's check basic sanity
         if (rowData.height && isNaN(Number(rowData.height))) {
           errors.push("height");
         }
         if (rowData.ageValue && isNaN(Number(rowData.ageValue))) {
           errors.push("ageValue");
+        }
+        if (
+          isNaN(rowData.lat) ||
+          isNaN(rowData.lng) ||
+          !rowData.lat ||
+          !rowData.lng
+        ) {
+          errors.push("coordinate");
         }
 
         return {
@@ -202,6 +230,10 @@ export function ImportPlantDialog({
           plantedDate:
             rowData.plantedDate || new Date().toISOString().split("T")[0],
           note: rowData.note || "",
+          coordinate: {
+            lat: rowData.lat || 0,
+            lng: rowData.lng || 0,
+          },
           isValid: errors.length === 0,
           errors,
         };
@@ -232,7 +264,7 @@ export function ImportPlantDialog({
       description: "Hệ thống đang tạo file mẫu cho bạn...",
     });
     window.open(
-      "https://static.affina.com.vn/affina/92d3b727-9048-4a39-abc1-94aaf52db7a3.xlsx",
+      "https://static.affina.com.vn/affina/9c1e9ec6-1992-4590-a9dc-c24bbadd234d.xlsx",
       "_blank",
     );
   };
@@ -248,23 +280,20 @@ export function ImportPlantDialog({
       return;
     }
 
-    // Pass valid items to store
+    // Pass valid items exactly as required
     // Remove temporary id, isValid, errors properties
     const plantsToImport = validItems.map(
       ({ id, isValid, errors, ...rest }) => rest,
     );
 
-    setImportedPlants(plantsToImport);
+    onImport(plantsToImport);
     onOpenChange(false);
     setImportData([]);
 
     toast({
       title: "Chuyển dữ liệu thành công",
-      description: `Đang chuyển đến trang tạo mới với ${validItems.length} cây.`,
+      description: `Đã đưa ${validItems.length} cây vào danh sách thêm mới.`,
     });
-
-    // Redirect to create page
-    setLocation("/plant-identification/create");
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -321,7 +350,7 @@ export function ImportPlantDialog({
                   <h4 className="font-bold text-green-900">Mẫu file Excel</h4>
                   <p className="text-sm text-green-700 opacity-80">
                     Tải xuống file mẫu (Gồm: Chiều cao, Độ tuổi, Đơn vị tuổi,
-                    Ngày trồng, Ghi chú)
+                    Ngày trồng, Vĩ độ, Kinh độ, Ghi chú)
                   </p>
                 </div>
               </div>
@@ -426,7 +455,7 @@ export function ImportPlantDialog({
             onClick={handleImport}
             disabled={importData.filter((i) => i.isValid).length === 0}
           >
-            Chuyển đến tạo mới ({importData.filter((i) => i.isValid).length})
+            Nhập vào danh sách ({importData.filter((i) => i.isValid).length})
           </Button>
         </DialogFooter>
       </DialogContent>

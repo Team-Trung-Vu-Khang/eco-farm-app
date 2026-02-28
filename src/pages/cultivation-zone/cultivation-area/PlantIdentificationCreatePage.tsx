@@ -4,18 +4,9 @@ import PlantIdentificationForm from "./components/PlantIdentificationForm";
 import type { Plant } from "@/pages/region-chart/constants";
 import { useLocation } from "wouter";
 
-import { useEffect } from "react";
-
 const PlantIdentificationCreatePage = () => {
   const [_, setLocation] = useLocation();
-  const { addPlants, importedPlants, setImportedPlants } = usePlantStore();
-
-  useEffect(() => {
-    // Cleanup imported plants when leaving the component
-    return () => {
-      setImportedPlants(null);
-    };
-  }, [setImportedPlants]);
+  const { addPlants } = usePlantStore();
 
   // Called once per plant entry by the form's handleComplete loop
   const handleSubmit = (data: Plant[]) => {
@@ -28,10 +19,7 @@ const PlantIdentificationCreatePage = () => {
       title="Thêm mới cây trồng"
       description="Định danh và thiết lập vị trí cho cây trồng mới"
     >
-      <PlantIdentificationForm
-        onSubmit={handleSubmit}
-        initialList={importedPlants || undefined}
-      />
+      <PlantIdentificationForm onSubmit={handleSubmit} />
     </AdminLayout>
   );
 };

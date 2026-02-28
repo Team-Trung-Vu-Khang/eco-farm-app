@@ -3,13 +3,10 @@ import { AdminLayout, DataTable, Button } from "@tankhang1/eco-shared-ui";
 import usePlantStore from "@/stores/usePlantStore";
 import useRegionStore from "@/stores/useRegionStore";
 import { type Plant } from "@/pages/region-chart/constants";
-import { Plus, MapPin, Upload } from "lucide-react";
-import { ImportPlantDialog } from "./components/ImportPlantDialog";
-import { useState } from "react";
+import { Plus, MapPin } from "lucide-react";
 
 const PlantIdentificationListPage = () => {
   const { plants } = usePlantStore();
-  const [isImportOpen, setIsImportOpen] = useState(false);
 
   const columns = [
     {
@@ -149,31 +146,19 @@ const PlantIdentificationListPage = () => {
   ];
 
   return (
-    <>
-      <AdminLayout
-        title="Định danh cây trồng"
-        description="Danh sách thông tin định danh và thông số sinh trưởng của cây trồng"
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsImportOpen(true)}
-            >
-              <Upload className="w-4 h-4 mr-2" /> Nhập từ Excel
-            </Button>
-            <Link href="/plant-identification/create">
-              <Button size="sm">
-                <Plus className="w-4 h-4 mr-2" /> Thêm mới cây
-              </Button>
-            </Link>
-          </div>
-        }
-      >
-        <DataTable columns={columns} data={plants} />
-      </AdminLayout>
-      <ImportPlantDialog open={isImportOpen} onOpenChange={setIsImportOpen} />
-    </>
+    <AdminLayout
+      title="Định danh cây trồng"
+      description="Danh sách thông tin định danh và thông số sinh trưởng của cây trồng"
+      actions={
+        <Link href="/plant-identification/create">
+          <Button size="sm">
+            <Plus className="w-4 h-4 mr-2" /> Thêm mới cây
+          </Button>
+        </Link>
+      }
+    >
+      <DataTable columns={columns} data={plants} />
+    </AdminLayout>
   );
 };
 
