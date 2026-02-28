@@ -40,6 +40,71 @@ interface CultivationAreaState {
 
 const MOCK_DATA: CultivationArea[] = [
   {
+    name: "Vùng canh tác sầu riêng công nghệ cao 3",
+    scope: "area",
+    targetIds: ["sub-1-1", "sub-1-2", "5"],
+    targetName:
+      "Khu A - Sầu riêng Dona, Khu B - Sầu riêng Musang King, Khu Phức hợp Nông nghiệp Công nghệ cao",
+    enterpriseId: "1",
+    certificateIds: ["ISO22000", "Organic"],
+    managerId: "1",
+    note: "",
+    farmingMethodId: "organic",
+    irrigationMethodId: "drip",
+    selectedCrops: ["1", "4"],
+    seedSelections: {
+      "1": ["6"],
+      "4": ["9"],
+    },
+    configs: {
+      "area-config": {
+        farmingMethodId: "organic",
+        selectedCrops: ["1", "4"],
+        seedSelections: {
+          "1": ["6"],
+          "4": ["9"],
+        },
+        irrigationMethodId: "drip",
+      },
+    },
+    id: "ca-1772278404110",
+    status: "active",
+    createdAt: "2026-02-28",
+  },
+  {
+    name: "Vùng canh tác sầu riêng công nghệ cao 2",
+    scope: "region",
+    targetIds: ["1", "3"],
+    targetName: "Vùng Bình Phước Alpha, Đồi Cà phê Buôn Ma Thuột",
+    enterpriseId: "1",
+    certificateIds: ["GlobalGAP", "HACCP", "Organic"],
+    managerId: "1",
+    note: "",
+    farmingMethodId: "organic",
+    irrigationMethodId: "drip",
+    selectedCrops: ["1", "2", "3"],
+    seedSelections: {
+      "1": ["6"],
+      "2": ["7"],
+      "3": ["8"],
+    },
+    configs: {
+      "area-config": {
+        farmingMethodId: "organic",
+        irrigationMethodId: "drip",
+        selectedCrops: ["1", "2", "3"],
+        seedSelections: {
+          "1": ["6"],
+          "2": ["7"],
+          "3": ["8"],
+        },
+      },
+    },
+    id: "ca-1772278286585",
+    status: "active",
+    createdAt: "2026-02-28",
+  },
+  {
     id: "ca-1",
     name: "Canh tác Sầu riêng Công nghệ cao",
     scope: "region",
@@ -54,9 +119,9 @@ const MOCK_DATA: CultivationArea[] = [
     selectedCrops: ["1", "3"],
     configs: {
       "region-main": {
-        farmingMethodId: "greenhouse", // Nhà kính
-        irrigationMethodId: "drip", // Tưới nhỏ giọt
-        selectedCrops: ["1", "3"], // Ri6, Musang King
+        farmingMethodId: "greenhouse",
+        irrigationMethodId: "drip",
+        selectedCrops: ["1", "3"],
       },
     },
     status: "active",
@@ -77,9 +142,9 @@ const MOCK_DATA: CultivationArea[] = [
     selectedCrops: ["2"],
     configs: {
       "sub-1-2": {
-        farmingMethodId: "organic", // Hữu cơ
-        irrigationMethodId: "rain", // Tưới phun
-        selectedCrops: ["2"], // Dona
+        farmingMethodId: "organic",
+        irrigationMethodId: "rain",
+        selectedCrops: ["2"],
       },
     },
     status: "active",
@@ -100,9 +165,9 @@ const MOCK_DATA: CultivationArea[] = [
     selectedCrops: ["5"],
     configs: {
       "plot-1-1-1": {
-        farmingMethodId: "vietgap", // VietGAP
-        irrigationMethodId: "flood", // Tưới tràn
-        selectedCrops: ["5"], // Lúa OM5451
+        farmingMethodId: "vietgap",
+        irrigationMethodId: "flood",
+        selectedCrops: ["5"],
       },
     },
     status: "active",
@@ -124,8 +189,8 @@ const MOCK_DATA: CultivationArea[] = [
     configs: {
       "sub-1-3": {
         farmingMethodId: "greenhouse",
-        irrigationMethodId: "manual", // Tưới thủ công
-        selectedCrops: ["4"], // Black Thorn
+        irrigationMethodId: "manual",
+        selectedCrops: ["4"],
       },
     },
     status: "active",
