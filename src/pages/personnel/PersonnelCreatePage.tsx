@@ -28,6 +28,7 @@ import usePersonnelStore from "../../stores/usePersonnelStore";
 import useTeamStore from "../../stores/useTeamStore";
 import useDepartmentStore from "../../stores/useDepartmentStore";
 import usePositionStore from "../../stores/usePositionStore";
+import { PROVINCES } from "@/constants/province";
 
 const bankOptions = vietQrBankData.map((bank) => ({
   id: bank.id,
@@ -269,14 +270,19 @@ export default function PersonnelCreatePage() {
                             <SelectValue placeholder="Chọn Tỉnh/Thành" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="hcm">TP. Hồ Chí Minh</SelectItem>
-                            <SelectItem value="hn">Hà Nội</SelectItem>
-                            <SelectItem value="dn">Đà Nẵng</SelectItem>
+                            {PROVINCES.map((province) => (
+                              <SelectItem
+                                key={province.code}
+                                value={province.code}
+                              >
+                                {province.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="district">Quận / Huyện</Label>
+                        <Label htmlFor="district">Phường / Xã</Label>
                         <Select
                           value={formData.district}
                           onValueChange={(val) =>
@@ -284,12 +290,19 @@ export default function PersonnelCreatePage() {
                           }
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Chọn Quận/Huyện" />
+                            <SelectValue placeholder="Chọn Phường / Xã" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="q1">Quận 1</SelectItem>
-                            <SelectItem value="q3">Quận 3</SelectItem>
-                            <SelectItem value="caugiay">Cầu Giấy</SelectItem>
+                            {PROVINCES.find(
+                              (p) => p.code === formData.province,
+                            )?.districts.map((district) => (
+                              <SelectItem
+                                key={district.code}
+                                value={district.code}
+                              >
+                                {district.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -345,7 +358,7 @@ export default function PersonnelCreatePage() {
                           <SelectTrigger>
                             <SelectValue placeholder="Chọn chức vụ" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="max-h-96">
                             {positions.map((pos) => (
                               <SelectItem key={pos.id} value={pos.name}>
                                 {pos.name}

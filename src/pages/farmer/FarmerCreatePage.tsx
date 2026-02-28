@@ -65,6 +65,7 @@ import { vietQrBankData } from "../../constants/banks";
 import { parseVietQR } from "../../utils/commons";
 import readXlsxFile from "read-excel-file";
 import useEnterpriseStore from "../../stores/useEnterpriseStore";
+import { PROVINCES } from "@/constants/province";
 
 interface Branch {
   name: string;
@@ -663,7 +664,7 @@ export default function FarmerCreatePage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="province">Tỉnh/Thành phố *</Label>
+                <Label htmlFor="province">Tỉnh / Thành Phố *</Label>
                 <Select
                   value={formData.province}
                   onValueChange={(val) =>
@@ -671,19 +672,19 @@ export default function FarmerCreatePage() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Chọn Tỉnh/Thành" />
+                    <SelectValue placeholder="Chọn Tỉnh / Thành Phố" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="hcm">TP. Hồ Chí Minh</SelectItem>
-                    <SelectItem value="hn">Hà Nội</SelectItem>
-                    <SelectItem value="dn">Đà Nẵng</SelectItem>
-                    <SelectItem value="bd">Bình Dương</SelectItem>
-                    <SelectItem value="la">Long An</SelectItem>
+                    {PROVINCES.map((province) => (
+                      <SelectItem key={province.code} value={province.code}>
+                        {province.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="ward">Phường/Xã *</Label>
+                <Label htmlFor="ward">Phường / Xã *</Label>
                 <Select
                   value={formData.ward}
                   onValueChange={(val) =>
@@ -691,13 +692,16 @@ export default function FarmerCreatePage() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Chọn Phường/Xã" />
+                    <SelectValue placeholder="Chọn Phường / Xã" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="p1">Phường 1</SelectItem>
-                    <SelectItem value="p2">Phường 2</SelectItem>
-                    <SelectItem value="tan_phu">Tân Phú</SelectItem>
-                    <SelectItem value="tan_phong">Tân Phong</SelectItem>
+                    {PROVINCES.find(
+                      (p) => p.code === formData.province,
+                    )?.districts.map((district) => (
+                      <SelectItem key={district.code} value={district.code}>
+                        {district.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

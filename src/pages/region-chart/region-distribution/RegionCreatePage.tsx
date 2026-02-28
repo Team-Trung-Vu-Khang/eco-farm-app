@@ -43,12 +43,13 @@ const customIcon = new L.Icon({
 });
 import { Plus, Edit, Trash2, ChevronLeft, X } from "lucide-react";
 
-import { type Region, type SubArea, PROVINCES, DISTRICTS } from "../constants";
+import { type Region, type SubArea } from "../constants";
 import { MapController } from "../components/DraggableRectangle";
 import useRegionStore from "../../../stores/useRegionStore";
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 import useLandStore from "../../../stores/useLandStore";
 import useTerrainStore from "../../../stores/useTerrainStore";
+import { PROVINCES } from "@/constants/province";
 
 const MapClickHandler = ({
   onClick,
@@ -377,7 +378,7 @@ const RegionCreatePage = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Tỉnh/Thành</Label>
+                <Label>Tỉnh / Thành Phố</Label>
                 <Select
                   value={formData.provinceId}
                   onValueChange={(v) =>
@@ -385,11 +386,11 @@ const RegionCreatePage = () => {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Chọn tỉnh thành" />
+                    <SelectValue placeholder="Chọn Tỉnh / Thành Phố" />
                   </SelectTrigger>
                   <SelectContent>
                     {PROVINCES.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
+                      <SelectItem key={p.code} value={p.code}>
                         {p.name}
                       </SelectItem>
                     ))}
@@ -405,11 +406,13 @@ const RegionCreatePage = () => {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Chọn phường/xã" />
+                    <SelectValue placeholder="Chọn Phường / Xã" />
                   </SelectTrigger>
                   <SelectContent>
-                    {DISTRICTS.map((d) => (
-                      <SelectItem key={d.id} value={d.id}>
+                    {PROVINCES.find(
+                      (p) => p.code === formData.provinceId,
+                    )?.districts.map((d) => (
+                      <SelectItem key={d.code} value={d.code}>
                         {d.name}
                       </SelectItem>
                     ))}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Plus } from "lucide-react";
 import {
@@ -18,6 +18,9 @@ export default function EnterprisePage() {
   const [, setLocation] = useLocation();
 
   const enterprises = useEnterpriseStore((state) => state.enterprises);
+  const filterEnterprises = useMemo(() => {
+    return enterprises.filter((enterprise) => enterprise.type === "enterprise");
+  }, [enterprises]);
   const deleteEnterprise = useEnterpriseStore(
     (state) => state.deleteEnterprise,
   );
@@ -49,6 +52,7 @@ export default function EnterprisePage() {
           processing: "Chế biến",
           trading: "Thương mại",
           service: "Dịch vụ",
+          other: "Khác",
         };
         return value.map((item: string) => {
           return (
@@ -82,6 +86,7 @@ export default function EnterprisePage() {
         { label: "Chế biến", value: "processing" },
         { label: "Thương mại", value: "trading" },
         { label: "Dịch vụ", value: "service" },
+        { label: "Khác", value: "other" },
       ],
     },
   ];
@@ -117,7 +122,7 @@ export default function EnterprisePage() {
     >
       <DataTable
         columns={columns}
-        data={enterprises}
+        data={filterEnterprises}
         onView={(item) => setLocation(`/enterprise/${item.id}`)}
         onEdit={(item) => setLocation(`/enterprise/${item.id}/edit`)}
         onDelete={handleDelete}

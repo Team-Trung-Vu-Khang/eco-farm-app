@@ -98,14 +98,14 @@ const useEnterpriseCertificateStore = create<EnterpriseCertificateStore>(
         name: "HACCP",
         organizations: ["Cục Quản lý Chất lượng Nông lâm sản và Thủy sản"],
         imageUrl:
-          "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/HACCP_logo.svg/1200px-HACCP_logo.svg.png",
+          "https://vinachg.vn/wp-content/uploads/2024/08/haccp-la-gi.jpg",
       },
       {
         code: "ISO22000",
         name: "ISO 22000",
         organizations: ["Tổ chức Tiêu chuẩn Quốc tế (ISO)"],
         imageUrl:
-          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSqJ-l2PDrkE8yTyX4w5q5o7g1G8t3X6x3Kqg&s",
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSl2YKlHQjHyVQKQP79v1xTTyH1Mc0Czcv9rQ&s",
       },
     ],
 
