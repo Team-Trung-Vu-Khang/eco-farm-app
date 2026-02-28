@@ -149,7 +149,7 @@ const PlantIdentificationDetailPage = () => {
 
   return (
     <AdminLayout
-      title={`Thông tin cây: ${plant.code}`}
+      title={`Thông tin cây: ${plant.id}`}
       description="Chi tiết định danh và vị trí địa lý của cây trồng"
       actions={
         <div className="flex gap-2">
@@ -186,15 +186,15 @@ const PlantIdentificationDetailPage = () => {
                       {plant.code}
                     </p>
                   </div>
-                  <Badge
+                  {/* <Badge
                     variant={
                       plant.status === "healthy" ? "default" : "secondary"
                     }
                   >
                     {plant.status === "healthy" ? "Khỏe mạnh" : "Cần chú ý"}
-                  </Badge>
+                  </Badge> */}
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-2 border-t border-slate-50">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-2">
                   <div className="space-y-1">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       Ngày trồng
@@ -383,7 +383,7 @@ const PlantIdentificationDetailPage = () => {
                   <div className="p-4 flex justify-between items-center group hover:bg-slate-50 transition-colors">
                     <span className="text-sm text-slate-500 flex items-center gap-2">
                       <Ruler className="w-4 h-4" />
-                      Chiều cao
+                      Chiều cao (m)
                     </span>
                     <span className="font-bold text-slate-900">
                       {plant.height}

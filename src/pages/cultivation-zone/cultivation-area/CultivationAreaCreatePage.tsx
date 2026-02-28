@@ -454,7 +454,7 @@ const GeographicalSelector = ({
         variant="outline"
       >
         <Plus className="w-5 h-5" />
-        Thêm phạm vi canh tác
+        Thêm phạm vi địa lý
       </Button>
 
       <Dialog
@@ -1861,7 +1861,7 @@ const CultivationAreaCreatePage = () => {
             <div className="bg-slate-50 border-b p-4 flex items-center gap-2">
               <Layers className="w-4 h-4 text-slate-500" />
               <h4 className="font-semibold text-slate-800">
-                Phạm vi vùng canh tác ({entities.length} mục)
+                Phạm vi địa lý ({entities.length} mục)
               </h4>
             </div>
             <div className="p-4 flex flex-wrap gap-2 text-sm">

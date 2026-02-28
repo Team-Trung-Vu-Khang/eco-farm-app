@@ -6,12 +6,15 @@ import useRegionStore from "./useRegionStore";
 interface PlantState {
   // State
   plants: Plant[];
+  importedPlants: Partial<Plant>[] | null;
   isLoading: boolean;
   error: string | null;
 
   // Actions
   setPlants: (plants: Plant[]) => void;
+  setImportedPlants: (plants: Partial<Plant>[] | null) => void;
   addPlant: (plant: Omit<Plant, "id">) => void;
+  addPlants: (plants: Plant[]) => void;
   updatePlant: (id: string, plant: Partial<Plant>) => void;
   deletePlant: (id: string) => void;
   getPlantById: (id: string) =>
@@ -33,11 +36,15 @@ const usePlantStore = create<PlantState>()(
       (set, get) => ({
         // Initial state
         plants: MOCK_PLANTS as unknown as Plant[],
+        importedPlants: null,
         isLoading: false,
         error: null,
 
         // Actions
         setPlants: (plants) => set({ plants }, false, "setPlants"),
+
+        setImportedPlants: (importedPlants) =>
+          set({ importedPlants }, false, "setImportedPlants"),
 
         addPlant: (plantData) =>
           set(
@@ -49,12 +56,22 @@ const usePlantStore = create<PlantState>()(
                   1
                 ).toString(),
               } as Plant;
+
               return {
                 plants: [newPlant, ...state.plants],
               };
             },
             false,
             "addPlant",
+          ),
+
+        addPlants: (plants: Plant[]) =>
+          set(
+            (state) => ({
+              plants: [...state.plants, ...plants],
+            }),
+            false,
+            "addPlants",
           ),
 
         updatePlant: (id, plantData) =>
