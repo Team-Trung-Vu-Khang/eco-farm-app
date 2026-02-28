@@ -660,6 +660,7 @@ const PlantCard = ({
   canRemove,
   setActiveEntry,
   isInvalidBoundary,
+  setSuggestedCorrection,
 }: {
   plant: PlantEntry;
   index: number;
@@ -670,6 +671,7 @@ const PlantCard = ({
   canRemove: boolean;
   setActiveEntry: () => void;
   isInvalidBoundary?: boolean;
+  setSuggestedCorrection: (value: any) => void;
 }) => {
   const [expanded, setExpanded] = useState(true);
   const [tempLat, setTempLat] = useState(
@@ -728,6 +730,7 @@ const PlantCard = ({
         setActiveEntry();
         setValidationError(null);
         setSuggestion(null);
+        setSuggestedCorrection(null);
       } else {
         const line = turf.polygonToLine(poly);
         const snapped = turf.nearestPointOnLine(line as any, pt);
@@ -746,7 +749,10 @@ const PlantCard = ({
   const selectedUnit = smallestUnits.find((u) => u.id === plant.plotId);
 
   return (
-    <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm bg-white">
+    <div
+      id={`plant-${plant.entryId}`}
+      className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm bg-white"
+    >
       {/* Card Header */}
       <div
         className="flex items-center gap-3 px-5 py-3.5 bg-slate-50 border-b cursor-pointer select-none"
@@ -898,37 +904,49 @@ const PlantCard = ({
           </div>
 
           <div className="space-y-3 w-full">
-            <div className="flex items-center justify-between">
-              <Label htmlFor={`coord-${plant.entryId}`} className="text-xs">
-                Tọa độ
-              </Label>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={handleValidate}
-                className="h-7 text-[10px] px-2"
-              >
-                Kiểm tra & Cập nhật
-              </Button>
-            </div>
-            <div className="flex gap-2 w-full">
-              <Input
-                type="number"
-                step="0.000001"
-                placeholder="Lat"
-                className="flex-1 text-xs font-mono border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/30"
-                value={tempLat}
-                onChange={(e) => setTempLat(e.target.value)}
-              />
-              <Input
-                type="number"
-                step="0.000001"
-                placeholder="Lng"
-                className="flex-1 text-xs font-mono border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/30"
-                value={tempLng}
-                onChange={(e) => setTempLng(e.target.value)}
-              />
+            <div className="space-y-2 border border-slate-200 rounded-lg p-2">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                <Label htmlFor={`coord-${plant.entryId}`} className="text-xs">
+                  Tọa độ
+                </Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleValidate}
+                  className="h-7 text-[10px] px-2"
+                >
+                  Kiểm tra & Cập nhật
+                </Button>
+              </div>
+              <div className="flex gap-2 w-full">
+                <div className="flex-1">
+                  <Label htmlFor={`coord-${plant.entryId}`} className="text-xs">
+                    Vĩ độ
+                  </Label>
+                  <Input
+                    type="number"
+                    step="0.000001"
+                    placeholder="Lat"
+                    className="flex-1 text-xs font-mono border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    value={tempLat}
+                    onChange={(e) => setTempLat(e.target.value)}
+                  />
+                </div>
+                <div className="flex-1">
+                  <Label htmlFor={`coord-${plant.entryId}`} className="text-xs">
+                    Kinh độ
+                  </Label>
+                  <Input
+                    type="number"
+                    step="0.000001"
+                    placeholder="Lng"
+                    className="flex-1 text-xs font-mono border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    value={tempLng}
+                    onChange={(e) => setTempLng(e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
             {validationError && (
               <div className="text-[10px] text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-100 flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1">
@@ -1082,10 +1100,6 @@ const AllPlantsMapContent = ({
         // if (!p.plotId) return null;
         const isActive = p.entryId === activeId;
 
-        if (isActive) {
-          console.log("currentitem", p);
-        }
-
         return (
           <Marker
             key={p.entryId}
@@ -1093,12 +1107,22 @@ const AllPlantsMapContent = ({
             draggable={isActive}
             opacity={isActive ? 1 : 0.6}
             icon={
-              p.isInvalidBoundary
-                ? getMarkerIcon("red")
-                : getMarkerIcon("green")
+              !p.plotId
+                ? getMarkerIcon("yellow")
+                : p.isInvalidBoundary
+                  ? getMarkerIcon("red")
+                  : getMarkerIcon("green")
             }
             eventHandlers={{
               click() {
+                if (!isActive) {
+                  document
+                    .getElementById(`plant-${p.entryId}`)
+                    ?.scrollIntoView({
+                      block: "center",
+                      behavior: "smooth",
+                    });
+                }
                 setActiveEntryId(p.entryId);
               },
               dragend(e) {
@@ -1782,6 +1806,7 @@ const PlantIdentificationForm = ({
                   index={idx}
                   smallestUnits={smallestUnits}
                   regions={regions}
+                  setSuggestedCorrection={setSuggestedCorrection}
                   onUpdate={(partial) => updatePlant(plant.entryId, partial)}
                   onRemove={() => removePlant(plant.entryId)}
                   canRemove
@@ -1832,9 +1857,18 @@ const PlantIdentificationForm = ({
                         const hasPlot = !!p.plotId;
                         return (
                           <button
-                            key={p.entryId}
                             type="button"
-                            onClick={() => handleSetActiveEntry(p.entryId)}
+                            key={p.entryId}
+                            onClick={() => {
+                              handleSetActiveEntry(p.entryId);
+                              setSuggestedCorrection(null);
+                              document
+                                .getElementById(`plant-${p.entryId}`)
+                                ?.scrollIntoView({
+                                  block: "center",
+                                  behavior: "smooth",
+                                });
+                            }}
                             className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border font-medium transition-all ${
                               isActive
                                 ? "bg-indigo-500 text-white border-indigo-500 shadow-sm"
@@ -1861,7 +1895,7 @@ const PlantIdentificationForm = ({
                   )}
                   {/* Out-of-bounds warning */}
                   {suggestedCorrection && (
-                    <div className="absolute z-10 bottom-4 left-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-red-50 border border-red-200 text-red-800 text-xs px-3 py-2.5 rounded-xl animate-in fade-in slide-in-from-top-1 duration-300 shadow-sm">
+                    <div className="absolute z-10 bottom-4 left-4 right-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-red-50 border border-red-200 text-red-800 text-xs px-3 py-2.5 rounded-xl animate-in fade-in slide-in-from-top-1 duration-300 shadow-sm">
                       <div className="flex items-start gap-2.5">
                         <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-500" />
                         <span>
@@ -1869,7 +1903,11 @@ const PlantIdentificationForm = ({
                             Ngoài phạm vi hợp lệ!
                           </span>{" "}
                           Vị trí bạn chọn nằm ngoài phạm vi hợp lệ. Di chuyển
-                          marker vào trong vùng hợp lệ hoặc áp dụng gợi ý.
+                          marker vào trong vùng hợp lệ hoặc áp dụng gợi ý.{" "}
+                          <span className="text-red-500">
+                            Vĩ độ: {suggestedCorrection.lat} - Kinh độ:{" "}
+                            {suggestedCorrection.lng}
+                          </span>
                         </span>
                       </div>
                       <Button
@@ -1988,7 +2026,7 @@ const PlantIdentificationForm = ({
                 )}
                 <div className="flex-1 relative">
                   {suggestedCorrection && (
-                    <div className="absolute z-[1000] bottom-4 left-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-red-50 border border-red-200 text-red-800 text-xs px-3 py-2.5 rounded-xl animate-in fade-in slide-in-from-top-1 duration-300 shadow-sm">
+                    <div className="absolute z-[1000] bottom-4 left-4 right-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-red-50 border border-red-200 text-red-800 text-xs px-3 py-2.5 rounded-xl animate-in fade-in slide-in-from-top-1 duration-300 shadow-sm">
                       <div className="flex items-start gap-2.5">
                         <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-500" />
                         <span>
@@ -1997,6 +2035,10 @@ const PlantIdentificationForm = ({
                           </span>{" "}
                           Vị trí bạn chọn nằm ngoài phạm vi hợp lệ. Di chuyển
                           marker vào trong vùng hợp lệ hoặc áp dụng gợi ý.
+                          <span className="text-red-500">
+                            Vĩ độ: {suggestedCorrection.lat} - Kinh độ:{" "}
+                            {suggestedCorrection.lng}
+                          </span>
                         </span>
                       </div>
                       <Button
