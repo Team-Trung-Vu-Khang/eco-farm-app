@@ -1027,6 +1027,27 @@ const AllPlantsMapContent = ({
 }) => {
   const activePlant = plants.find((p) => p.entryId === activeId);
 
+  const findCurrentPlot = (lng: number, lat: number) => {
+    for (const unit of smallestUnits) {
+      if (!unit.coordinates || unit.coordinates.length < 3) continue;
+      try {
+        const pt = turf.point([lng, lat]);
+        const polyCoords = [
+          ...unit.coordinates.map((c: any) => [c.lng, c.lat]),
+          [unit.coordinates[0].lng, unit.coordinates[0].lat],
+        ];
+        const poly = turf.polygon([polyCoords]);
+        if (turf.booleanPointInPolygon(pt, poly)) {
+          return unit.id;
+        }
+      } catch {
+        return null;
+      }
+    }
+
+    return null;
+  };
+
   // Inner component to handle map clicks
   const MapClickHandler = () => {
     useMapEvents({
@@ -1036,22 +1057,10 @@ const AllPlantsMapContent = ({
 
         // If plant has no plotId: auto-detect which unit was clicked
         if (!activePlant?.plotId) {
-          for (const unit of smallestUnits) {
-            if (!unit.coordinates || unit.coordinates.length < 3) continue;
-            try {
-              const pt = turf.point([lng, lat]);
-              const polyCoords = [
-                ...unit.coordinates.map((c: any) => [c.lng, c.lat]),
-                [unit.coordinates[0].lng, unit.coordinates[0].lat],
-              ];
-              const poly = turf.polygon([polyCoords]);
-              if (turf.booleanPointInPolygon(pt, poly)) {
-                onAutoAssign(activeId, unit.id, lat, lng);
-                return;
-              }
-            } catch {
-              // skip
-            }
+          const plotId = findCurrentPlot(lng, lat);
+          if (plotId) {
+            onAutoAssign(activeId, plotId, lat, lng);
+            return;
           }
           // Clicked outside all units — do nothing
           return;
@@ -1128,6 +1137,15 @@ const AllPlantsMapContent = ({
               dragend(e) {
                 if (!isActive) return;
                 const pos = e.target.getLatLng();
+
+                if (!p.plotId) {
+                  const plotId = findCurrentPlot(pos.lng, pos.lat);
+                  if (plotId) {
+                    onAutoAssign(p.entryId, plotId, pos.lat, pos.lng);
+                    return;
+                  }
+                }
+
                 onPlantMove(p.entryId, pos.lat, pos.lng);
               },
             }}
