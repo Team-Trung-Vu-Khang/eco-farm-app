@@ -34,11 +34,12 @@ export interface Plan {
   endDate: string;
 
   // Location & Crop
-  selectedRegionId: string;
+  selectedRegionIds: string[];
   selectedZoneIds: string[];
   selectedPlotIds: string[];
   crop: string;
   variety: string;
+  purpose: "cultivation" | "treatment";
 
   // Additional display fields
   zone?: string;
@@ -61,12 +62,132 @@ export interface Plan {
   createdAt: string;
 }
 
+const initialPlans: Plan[] = [
+  {
+    id: 1,
+    code: "KH001",
+    name: "Kế hoạch sầu riêng vụ Xuân 2025",
+    description: "Kế hoạch canh tác sầu riêng Monthon vụ Xuân 2025 tại vùng A1",
+    seasonId: "spring-2025",
+    seasonName: "Vụ Xuân 2025",
+    startDate: "2025-01-15",
+    endDate: "2025-06-30",
+    selectedRegionIds: ["1"],
+    selectedZoneIds: ["sub-1-1"],
+    selectedPlotIds: ["plot-1-1", "plot-1-2"],
+    crop: "Sầu riêng",
+    variety: "Monthon",
+    purpose: "cultivation",
+    growthCycleId: "GC001",
+    area: "20.0",
+    expectedYield: "45",
+    selectedStages: [
+      "Chuẩn bị đất",
+      "Gieo trồng",
+      "Chăm sóc giai đoạn 1",
+      "Bón phân lần 1",
+    ],
+    materialAllocations: [
+      {
+        id: 1,
+        stageId: "Chuẩn bị đất",
+        materialCategory: "Phân bón",
+        materialType: "Phân hữu cơ",
+        materialName: "Phân chuồng hoai mục",
+        quantity: "5000",
+        unit: "kg",
+      },
+    ],
+    taskAllocations: [
+      {
+        id: 1,
+        stageId: "Chuẩn bị đất",
+        name: "Cày ải và khử trùng đất",
+        description: "Cày sâu 25-30cm, rải vôi bột khử trùng",
+        labor: "5 người",
+        duration: "7 ngày",
+      },
+    ],
+    status: "active",
+    createdAt: "2024-12-01",
+  },
+  {
+    id: 2,
+    code: "KH002",
+    name: "Phác đồ khử phèn Khu B",
+    description: "Cải tạo đất bị nhiễm phèn nặng tại Khu vực B",
+    seasonId: "S2025-HE",
+    seasonName: "Vụ Hè 2025",
+    startDate: "2025-03-01",
+    endDate: "2025-04-15",
+    selectedRegionIds: ["1"],
+    selectedZoneIds: ["sub-1-2"],
+    selectedPlotIds: ["plot-1-3"],
+    crop: "Cải tạo đất",
+    variety: "",
+    purpose: "treatment",
+    regimenId: "reg-phen-cap-toc",
+    growthCycleId: "",
+    area: "15.5",
+    expectedYield: "0",
+    selectedStages: ["Xả phèn lần 1", "Bón vôi khử chua", "Kiểm tra pH đất"],
+    materialAllocations: [
+      {
+        id: 3,
+        stageId: "Bón vôi khử chua",
+        materialCategory: "Khác",
+        materialType: "Vôi bột",
+        materialName: "Vôi nông nghiệp",
+        quantity: "1500",
+        unit: "kg",
+      },
+    ],
+    taskAllocations: [
+      {
+        id: 2,
+        stageId: "Xả phèn lần 1",
+        name: "Bơm xả nước phèn",
+        description: "Mở cống xả nước cũ, bơm nước mới vào ngâm",
+        labor: "2 người",
+        duration: "3 ngày",
+      },
+    ],
+    status: "draft",
+    createdAt: "2024-12-10",
+  },
+  {
+    id: 3,
+    code: "KH003",
+    name: "Kế hoạch bưởi da xanh Bình Phước",
+    description: "Canh tác bưởi da xanh tiêu chuẩn VietGAP",
+    seasonId: "S001",
+    seasonName: "Vụ Xuân 2024",
+    startDate: "2025-07-01",
+    endDate: "2025-12-31",
+    selectedRegionIds: ["4"],
+    selectedZoneIds: [],
+    selectedPlotIds: [],
+    crop: "Bưởi",
+    variety: "Da xanh",
+    purpose: "cultivation",
+    growthCycleId: "GC002",
+    area: "15.0",
+    expectedYield: "12",
+    selectedStages: ["Chuẩn bị cây giống", "Đào hố trồng"],
+    materialAllocations: [],
+    taskAllocations: [],
+    status: "draft",
+    createdAt: "2024-12-15",
+  },
+];
+
 interface PlanStore {
   plans: Plan[];
   getPlanById: (id: number) => Plan | undefined;
   addPlan: (plan: Omit<Plan, "id" | "createdAt">) => void;
   updatePlan: (id: number, updates: Partial<Plan>) => void;
   deletePlan: (id: number) => void;
+  resetPlans: () => void;
   getStatistics: () => {
     active: number;
     draft: number;
@@ -79,110 +200,7 @@ const usePlanStore = create<PlanStore>()(
   devtools(
     persist(
       (set, get) => ({
-        plans: [
-          {
-            id: 1,
-            code: "KH001",
-            name: "Kế hoạch sầu riêng vụ Xuân 2025",
-            description:
-              "Kế hoạch canh tác sầu riêng Monthon vụ Xuân 2025 tại vùng A1",
-            seasonId: "spring-2025",
-            seasonName: "Vụ Xuân 2025",
-            startDate: "2025-01-15",
-            endDate: "2025-06-30",
-            selectedRegionId: "pr-1",
-            selectedZoneIds: ["zone-1-1"],
-            selectedPlotIds: ["plot-1-1-1", "plot-1-1-2"],
-            crop: "Sầu riêng",
-            variety: "Monthon",
-            growthCycleId: "durian-standard",
-            selectedStages: [
-              "Chuẩn bị đất",
-              "Gieo trồng",
-              "Chăm sóc giai đoạn 1",
-              "Bón phân lần 1",
-              "Phun thuốc BVTV",
-            ],
-            materialAllocations: [
-              {
-                id: 1,
-                stageId: "Chuẩn bị đất",
-                materialCategory: "Phân bón",
-                materialType: "Phân hữu cơ",
-                materialName: "Phân chuồng",
-                quantity: "500",
-                unit: "kg",
-              },
-              {
-                id: 2,
-                stageId: "Bón phân lần 1",
-                materialCategory: "Phân bón",
-                materialType: "Phân NPK",
-                materialName: "NPK 20-20-15",
-                quantity: "100",
-                unit: "kg",
-              },
-            ],
-            taskAllocations: [
-              {
-                id: 1,
-                stageId: "Chuẩn bị đất",
-                name: "Cày xới đất",
-                description: "Cày sâu 30cm, phơi đất 5 ngày",
-                labor: "2 người",
-                duration: "3 ngày",
-              },
-            ],
-            status: "active",
-            createdAt: "2024-12-01",
-          },
-          {
-            id: 2,
-            code: "KH002",
-            name: "Kế hoạch xoài vụ Hè 2025",
-            description: "Kế hoạch canh tác xoài Cát Hòa Lộc vụ Hè 2025",
-            seasonId: "summer-2025",
-            seasonName: "Vụ Hè 2025",
-            startDate: "2025-03-01",
-            endDate: "2025-08-15",
-            selectedRegionId: "pr-3",
-            selectedZoneIds: ["zone-2-1"],
-            selectedPlotIds: ["plot-2-1-1"],
-            crop: "Xoài",
-            variety: "Cát Hòa Lộc",
-            growthCycleId: "mango-standard",
-            selectedStages: [
-              "Chuẩn bị đất",
-              "Gieo trồng",
-              "Chăm sóc giai đoạn 1",
-            ],
-            materialAllocations: [],
-            taskAllocations: [],
-            status: "draft",
-            createdAt: "2024-12-10",
-          },
-          {
-            id: 3,
-            code: "KH003",
-            name: "Kế hoạch bưởi da xanh 2025",
-            description: "Kế hoạch canh tác bưởi da xanh vụ Thu 2025",
-            seasonId: "fall-2025",
-            seasonName: "Vụ Thu 2025",
-            startDate: "2025-07-01",
-            endDate: "2025-12-31",
-            selectedRegionId: "pr-2",
-            selectedZoneIds: ["zone-1-2"],
-            selectedPlotIds: ["plot-1-2-1"],
-            crop: "Bưởi",
-            variety: "Da xanh",
-            growthCycleId: "pomelo-standard",
-            selectedStages: ["Chuẩn bị đất"],
-            materialAllocations: [],
-            taskAllocations: [],
-            status: "draft",
-            createdAt: "2024-12-15",
-          },
-        ],
+        plans: initialPlans,
 
         getPlanById: (id) => {
           return get().plans.find((p) => p.id === id);
@@ -217,6 +235,10 @@ const usePlanStore = create<PlanStore>()(
           }));
         },
 
+        resetPlans: () => {
+          set({ plans: initialPlans });
+        },
+
         getStatistics: () => {
           const plans = get().plans;
           return {
@@ -228,9 +250,10 @@ const usePlanStore = create<PlanStore>()(
         },
       }),
       {
-        name: "plan-storage",
+        name: "plan-reset-storage-v1",
       },
     ),
+    { name: "PlanStore" },
   ),
 );
 

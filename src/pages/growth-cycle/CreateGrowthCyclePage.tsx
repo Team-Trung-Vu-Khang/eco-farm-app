@@ -329,9 +329,7 @@ export default function CreateGrowthCyclePage() {
           </div>
         </div>
       ),
-      isValid: formData.stages.every(
-        (s) => s.name.trim() !== "" && s.duration > 0,
-      ),
+      isValid: formData.stages.every((s) => s.name.trim() !== ""),
     },
     {
       id: "confirm",

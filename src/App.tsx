@@ -93,6 +93,8 @@ import ContractPage from "./pages/contract/ContractPage";
 import EquipmentPage from "./pages/equipment/EquipmentPage";
 import UnitPage from "./pages/unit/UnitPage";
 import TaskPage from "./pages/task/TaskPage";
+import TaskCreatePage from "./pages/task/TaskCreatePage";
+import TaskEditPage from "./pages/task/TaskEditPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 import RegionDetailPage from "./pages/region-chart/region-distribution/RegionDetailPage";
 import CultivationAreaDetailPage from "./pages/cultivation-zone/cultivation-area/CultivationAreaDetailPage";
@@ -310,6 +312,8 @@ function Router() {
       <Route path="/plan/:id/edit" component={PlanEditPage} />
       <Route path="/plan/:id" component={PlanDetailPage} />
       <Route path="/task" component={TaskPage} />
+      <Route path="/task/create" component={TaskCreatePage} />
+      <Route path="/task/:id/edit" component={TaskEditPage} />
       <Route path="/settings" component={SettingsPage} />
       <Route path="/treatment" component={TreatmentPage} />
       <Route path="/treatment/create" component={CreateTreatmentPage} />

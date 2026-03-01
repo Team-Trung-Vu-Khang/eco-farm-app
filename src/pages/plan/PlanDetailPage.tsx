@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import {
   ArrowLeft,
@@ -32,80 +32,24 @@ import {
   useToast,
 } from "@tankhang1/eco-shared-ui";
 import usePlanStore from "../../stores/usePlanStore";
-import { GROWTH_CYCLES, TREATMENT_REGIMENS } from "./constants";
-
-// Mock Data to match Create Page logic for display lookup
-const LOCATIONS = [
-  {
-    id: "pr-1",
-    name: "Vùng canh tác Sầu riêng Ri6 - Bình Phước",
-    zones: [
-      {
-        id: "zone-1-1",
-        name: "Khu vực A1",
-        plots: [
-          {
-            id: "plot-1-1-1",
-            name: "Lô A1-01",
-            area: 1.5,
-            soilType: "Đất đỏ Bazan",
-          },
-          {
-            id: "plot-1-1-2",
-            name: "Lô A1-02",
-            area: 2.0,
-            soilType: "Đất thịt nhẹ",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "pr-2",
-    name: "Vùng canh tác Sầu riêng Monthong - Bình Phước",
-    zones: [
-      {
-        id: "zone-1-2",
-        name: "Khu vực A2",
-        plots: [
-          {
-            id: "plot-1-2-1",
-            name: "Lô A2-01",
-            area: 1.2,
-            soilType: "Đất đỏ Bazan",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "pr-3",
-    name: "Vùng canh tác Xoài Cát Hòa Lộc - Đồng Nai",
-    zones: [
-      {
-        id: "zone-2-1",
-        name: "Khu vực B1",
-        plots: [
-          {
-            id: "plot-2-1-1",
-            name: "Lô B1-01",
-            area: 2.5,
-            soilType: "Đất xám",
-          },
-        ],
-      },
-    ],
-  },
-];
+import useRegionStore from "@/stores/useRegionStore";
+import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
+import useSeasonStore from "@/stores/useSeasonStore";
+import useRegimenStore from "../../stores/useRegimenStore";
+import { cn } from "@tankhang1/eco-shared-ui";
 
 export default function PlanDetailPage() {
   const params = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  // Zustand store
+  // Zustand stores
   const getPlanById = usePlanStore((state) => state.getPlanById);
   const deletePlan = usePlanStore((state) => state.deletePlan);
+  const { regions } = useRegionStore();
+  const { growthCycles } = useGrowthCycleStore();
+  const { seasons } = useSeasonStore();
+  const regimens = useRegimenStore((state) => state.regimens);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const plan = getPlanById(Number(params.id));
@@ -154,36 +98,161 @@ export default function PlanDetailPage() {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  // Helper to find location details
-  const getLocationDetails = () => {
-    // Try to find by ID first if logic exists, otherwise fallback or assume IDs match mock
-    if (plan.selectedRegionId) {
-      const region = LOCATIONS.find((r) => r.id === plan.selectedRegionId);
-      if (region) {
-        const zone = region.zones.find((z) =>
-          plan.selectedZoneIds?.includes(z.id),
-        );
-        const plots = zone?.plots.filter((p) =>
-          plan.selectedPlotIds?.includes(p.id),
-        );
-        return {
-          regionName: region.name,
-          zoneName: zone?.name || "",
-          plotNames: plots?.map((p) => p.name).join(", ") || "",
-          soilType: plots?.[0]?.soilType || "",
-        };
-      }
-    }
-    // Fallback to text fields stored in plan
-    return {
-      regionName: "Chưa cập nhật", // Plan doesn't store 'region' text field explicitly in detail view usually
-      zoneName: plan.zone || "Chưa cập nhật",
-      plotNames: plan.plot || "Chưa cập nhật",
-      soilType: "Đất đỏ Bazan", // Mock default
-    };
-  };
+  // Enhanced Location Details using selectionSummary logic
+  const selectionSummary = useMemo(() => {
+    if (!plan || !regions) return [];
+    const summary: {
+      regionId: string;
+      regionName: string;
+      items: {
+        type: "region" | "area" | "plot";
+        id: string;
+        name: string;
+        parentName?: string;
+      }[];
+    }[] = [];
 
-  const locDetails = getLocationDetails();
+    // Reconstruct selections from plan data to reuse summary logic
+    const selections: {
+      regionId: string;
+      type: string;
+      areaId?: string;
+      plotId?: string;
+    }[] = [];
+
+    if (!plan.selectedRegionIds) return [];
+
+    plan.selectedRegionIds.forEach((rid) => {
+      const region = regions.find((r) => String(r.id) === String(rid));
+
+      // Check if whole region was selected
+      const hasZonesSelected = plan.selectedZoneIds?.some((zid) => {
+        return region?.subAreas?.some((sa) => sa.id === zid);
+      });
+
+      if (!hasZonesSelected) {
+        selections.push({ regionId: rid, type: "region" });
+      } else {
+        // Find selected areas and plots
+        // Region is already found above
+        region?.subAreas?.forEach((sa) => {
+          if (plan.selectedZoneIds?.includes(sa.id)) {
+            const hasPlotsSelected = plan.selectedPlotIds?.some((pid) =>
+              sa.plots?.some((p) => p.id === pid),
+            );
+
+            if (!hasPlotsSelected) {
+              selections.push({ regionId: rid, type: "area", areaId: sa.id });
+            } else {
+              sa.plots?.forEach((p) => {
+                if (plan.selectedPlotIds?.includes(p.id)) {
+                  selections.push({
+                    regionId: rid,
+                    type: "plot",
+                    areaId: sa.id,
+                    plotId: p.id,
+                  });
+                }
+              });
+            }
+          }
+        });
+      }
+    });
+
+    selections.forEach((sel) => {
+      const region = regions.find((r) => String(r.id) === String(sel.regionId));
+      if (!region) return;
+
+      let regionGroup = summary.find((s) => s.regionId === String(region.id));
+      if (!regionGroup) {
+        regionGroup = {
+          regionId: String(region.id),
+          regionName: region.name,
+          items: [],
+        };
+        summary.push(regionGroup);
+      }
+
+      if (sel.type === "region") {
+        regionGroup.items.push({
+          type: "region",
+          id: String(region.id),
+          name: "Toàn bộ vùng",
+        });
+      } else if (sel.type === "area") {
+        const area = region.subAreas?.find(
+          (a) => String(a.id) === String(sel.areaId),
+        );
+        if (area)
+          regionGroup.items.push({
+            type: "area",
+            id: String(area.id),
+            name: area.name,
+          });
+      } else if (sel.type === "plot") {
+        const area = region.subAreas?.find(
+          (a) => String(a.id) === String(sel.areaId),
+        );
+        const plot = area?.plots?.find(
+          (p) => String(p.id) === String(sel.plotId),
+        );
+        if (plot)
+          regionGroup.items.push({
+            type: "plot",
+            id: String(plot.id),
+            name: plot.name,
+            parentName: area?.name,
+          });
+      }
+    });
+
+    return summary;
+  }, [plan, regions]);
+
+  const totalArea = useMemo(() => {
+    if (!plan || !regions || regions.length === 0) return "0.0";
+
+    let total = 0;
+    const regionIds = plan.selectedRegionIds || [];
+    const zoneIds = plan.selectedZoneIds || [];
+    const plotIds = plan.selectedPlotIds || [];
+
+    regionIds.forEach((rid) => {
+      const region = regions.find((r) => String(r.id) === String(rid));
+      if (!region) return;
+
+      const regionZoneIds = region.subAreas?.map((sa) => sa.id) || [];
+      const isWholeRegion =
+        regionZoneIds.length > 0 &&
+        regionZoneIds.every((zid) => zoneIds.includes(zid));
+
+      if (isWholeRegion) {
+        total += region.area || 0;
+      } else {
+        region.subAreas?.forEach((sa) => {
+          if (zoneIds.includes(sa.id)) {
+            const zonePlotIds = sa.plots?.map((p) => p.id) || [];
+            const isWholeArea =
+              zonePlotIds.length > 0 &&
+              zonePlotIds.every((pid) => plotIds.includes(pid));
+
+            if (isWholeArea) {
+              total += sa.area || 0;
+            } else {
+              sa.plots?.forEach((p) => {
+                if (plotIds.includes(p.id)) {
+                  total += p.area || 0;
+                }
+              });
+            }
+          }
+        });
+      }
+    });
+
+    return total.toFixed(1);
+  }, [plan, regions]);
 
   return (
     <AdminLayout
@@ -248,12 +317,19 @@ export default function PlanDetailPage() {
         </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Thông tin chung */}
           <Card className="shadow-sm">
             <CardHeader className="pb-3 border-b bg-slate-50/80">
               <CardTitle className="text-base flex items-center gap-2 text-blue-700">
                 <Sprout className="w-5 h-5" />
                 Thông tin chung
+                {plan.purpose === "treatment" && (
+                  <Badge
+                    variant="outline"
+                    className="ml-auto bg-blue-100 text-blue-800 border-blue-200"
+                  >
+                    KẾ HOẠCH ĐIỀU TRỊ
+                  </Badge>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4 space-y-5">
@@ -274,35 +350,31 @@ export default function PlanDetailPage() {
                     {plan.crop} - {plan.variety}
                   </p>
                 </div>
+                {plan.purpose === "cultivation" ? (
+                  <div>
+                    <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                      Quy trình
+                    </label>
+                    <p className="font-medium mt-1 text-slate-800">
+                      Đã chọn {(plan.selectedStages || []).length} giai đoạn
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                      Phác đồ điều trị
+                    </label>
+                    <p className="font-bold mt-1 text-blue-900">
+                      {regimens.find((r) => r.id === plan.regimenId)?.name ||
+                        "Chưa chọn phác đồ"}
+                    </p>
+                  </div>
+                )}
                 <div>
                   <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                    Quy trình
+                    Trạng thái
                   </label>
-                  <p
-                    className="font-medium mt-1 text-slate-800 truncate"
-                    title={
-                      GROWTH_CYCLES.find((c) => c.id === plan.growthCycleId)
-                        ?.name || "Tùy chỉnh"
-                    }
-                  >
-                    {GROWTH_CYCLES.find((c) => c.id === plan.growthCycleId)
-                      ?.name || "Tùy chỉnh"}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                    Phác đồ điều trị
-                  </label>
-                  <p
-                    className="font-medium mt-1 text-slate-800 truncate"
-                    title={
-                      TREATMENT_REGIMENS.find((r) => r.id === plan.regimenId)
-                        ?.name || "Không áp dụng"
-                    }
-                  >
-                    {TREATMENT_REGIMENS.find((r) => r.id === plan.regimenId)
-                      ?.name || "Không áp dụng"}
-                  </p>
+                  <div className="mt-1">{getStatusBadge(plan.status)}</div>
                 </div>
               </div>
               <Separator />
@@ -333,48 +405,74 @@ export default function PlanDetailPage() {
                 Thông tin canh tác
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4 space-y-5">
-              <div>
-                <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                  Vùng canh tác
+            <CardContent className="pt-4 space-y-5 px-6">
+              <div className="space-y-4">
+                <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                  Chi tiết phạm vi canh tác
                 </label>
-                <p className="font-medium mt-1 flex items-start gap-2 text-slate-800">
-                  <MapPin className="w-4 h-4 mt-0.5 text-muted-foreground" />
-                  {locDetails.regionName}
-                </p>
+                <div className="space-y-3">
+                  {selectionSummary.length === 0 && (
+                    <p className="text-sm italic text-slate-400">
+                      Chưa xác định vùng chọn
+                    </p>
+                  )}
+                  {selectionSummary.map((group) => (
+                    <div
+                      key={group.regionId}
+                      className="space-y-2 p-3 rounded-xl border border-slate-100 bg-slate-50/50"
+                    >
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                        {group.regionName}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 pl-0">
+                        {group.items.map((item, idx) => (
+                          <Badge
+                            key={idx}
+                            variant="outline"
+                            className={cn(
+                              "text-[10px] py-0 px-2 h-5 font-medium shadow-xs border-emerald-100 bg-white",
+                              item.type === "region" &&
+                                "bg-emerald-50 text-emerald-800",
+                              item.type === "area" &&
+                                "bg-blue-50 text-blue-700 border-blue-100",
+                            )}
+                          >
+                            <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
+                              {item.type === "region"
+                                ? "Vùng"
+                                : item.type === "area"
+                                  ? "Khu"
+                                  : "Lô"}
+                            </span>
+                            {item.name}
+                            {item.parentName && (
+                              <span className="ml-1 opacity-50 font-normal italic">
+                                ({item.parentName})
+                              </span>
+                            )}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+
+              <div className="grid grid-cols-2 gap-4 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
                 <div>
-                  <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                    Khu vực / Lô
-                  </label>
-                  <p className="font-medium mt-1 text-slate-800">
-                    {locDetails.zoneName} - {locDetails.plotNames}
+                  <p className="text-[10px] text-emerald-700 font-black uppercase tracking-wider mb-1">
+                    Tổng diện tích
+                  </p>
+                  <p className="text-xl font-black text-emerald-800">
+                    {totalArea} ha
                   </p>
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                    Loại đất
-                  </label>
-                  <p className="font-medium mt-1 text-slate-800">
-                    {locDetails.soilType}
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 bg-green-50/50 p-3 rounded-lg border border-green-100">
-                <div>
-                  <p className="text-xs text-green-700 font-bold uppercase">
-                    Diện tích
-                  </p>
-                  <p className="text-lg font-bold text-green-800">
-                    {plan.area || "0"} ha
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-green-700 font-bold uppercase">
+                  <p className="text-[10px] text-emerald-700 font-black uppercase tracking-wider mb-1">
                     Sản lượng dự kiến
                   </p>
-                  <p className="text-lg font-bold text-green-800">
+                  <p className="text-xl font-black text-emerald-800">
                     {plan.expectedYield || "0"} tấn
                   </p>
                 </div>
@@ -386,42 +484,81 @@ export default function PlanDetailPage() {
         {/* Quy trình canh tác (Stages) */}
         <div className="space-y-4 pt-4">
           <div className="flex items-center gap-3">
-            <div className="bg-primary/10 p-2 rounded-lg">
-              <Layers className="w-6 h-6 text-primary" />
+            <div
+              className={cn(
+                "p-2.5 rounded-2xl shadow-sm",
+                plan.purpose === "treatment"
+                  ? "bg-blue-100/50"
+                  : "bg-emerald-100/50",
+              )}
+            >
+              <Layers
+                className={cn(
+                  "w-7 h-7",
+                  plan.purpose === "treatment"
+                    ? "text-blue-600"
+                    : "text-emerald-600",
+                )}
+              />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900">
-                Quy trình canh tác
+              <h3 className="text-lg font-black text-slate-900">
+                {plan.purpose === "treatment"
+                  ? "Lộ trình xử lý & Phác đồ"
+                  : "Lộ trình triển khai & Giai đoạn"}
               </h3>
-              <p className="text-sm text-muted-foreground">
-                Chi tiết các giai đoạn, vật tư và công việc
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5">
+                Chi tiết các hạng mục và kế hoạch hành động
               </p>
             </div>
           </div>
 
           <div className="space-y-4">
-            {plan.selectedStages.map((stage, index) => {
+            {(plan.selectedStages || []).map((stageKey, index) => {
+              const [cycleId, stageName] = stageKey.includes(":")
+                ? stageKey.split(":")
+                : [null, stageKey];
+              const cycle = cycleId
+                ? growthCycles.find((c) => c.id === cycleId)
+                : null;
+
               // Filter allocations for this stage
-              const stageMaterials = plan.materialAllocations.filter(
-                (m) => m.stageId === stage,
+              const stageMaterials = (plan.materialAllocations || []).filter(
+                (m) => m.stageId === stageKey,
               );
               const stageTasks =
-                plan.taskAllocations?.filter((t) => t.stageId === stage) || [];
+                plan.taskAllocations?.filter((t) => t.stageId === stageKey) ||
+                [];
 
               return (
                 <Card
-                  key={stage}
-                  className="overflow-hidden border shadow-sm hover:shadow-md transition-shadow"
+                  key={stageKey}
+                  className="overflow-hidden border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl"
                 >
-                  <div className="bg-slate-50 px-4 py-3 border-b flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-white border shadow-sm flex items-center justify-center font-bold text-sm text-slate-700">
+                  <div className="bg-slate-50/80 px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 shadow-xs flex items-center justify-center font-black text-sm text-slate-700">
                         {index + 1}
                       </div>
-                      <div>
-                        <h4 className="font-bold text-base text-slate-800">
-                          {stage}
-                        </h4>
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-base text-slate-900">
+                            {stageName}
+                          </h4>
+                          {cycle && (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-100 font-normal py-0 px-2 h-4"
+                            >
+                              {cycle.name}
+                            </Badge>
+                          )}
+                        </div>
+                        {plan.purpose === "treatment" && (
+                          <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">
+                            Hoạt động điều trị bệnh
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-3 text-sm">
@@ -588,7 +725,7 @@ export default function PlanDetailPage() {
                 </p>
                 <div className="flex items-baseline justify-center md:justify-start gap-1">
                   <span className="text-4xl font-bold">
-                    {plan.selectedStages.length}
+                    {(plan.selectedStages || []).length}
                   </span>
                   <span className="text-slate-500 font-medium">bước</span>
                 </div>
@@ -599,7 +736,7 @@ export default function PlanDetailPage() {
                 </p>
                 <div className="flex items-baseline justify-center md:justify-start gap-1">
                   <span className="text-4xl font-bold text-green-400">
-                    {plan.materialAllocations.length}
+                    {(plan.materialAllocations || []).length}
                   </span>
                   <span className="text-slate-500 font-medium">mục</span>
                 </div>
