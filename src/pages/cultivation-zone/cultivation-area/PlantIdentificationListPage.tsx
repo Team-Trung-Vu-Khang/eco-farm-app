@@ -1,12 +1,38 @@
 import { Link } from "wouter";
-import { AdminLayout, DataTable, Button } from "@tankhang1/eco-shared-ui";
+import {
+  AdminLayout,
+  DataTable,
+  Button,
+  DeleteDialog,
+  useToast,
+} from "@tankhang1/eco-shared-ui";
 import usePlantStore from "@/stores/usePlantStore";
 import useRegionStore from "@/stores/useRegionStore";
 import { type Plant } from "@/pages/region-chart/constants";
 import { Plus, MapPin } from "lucide-react";
+import { useState } from "react";
 
 const PlantIdentificationListPage = () => {
-  const { plants } = usePlantStore();
+  const { plants, deletePlant } = usePlantStore();
+  const { toast } = useToast();
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<Plant | null>(null);
+
+  const handleDelete = (item: Plant) => {
+    setDeleteItem(item);
+    setDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteItem) {
+      deletePlant(deleteItem.id);
+      toast({
+        title: "Thành công",
+        description: `Đã xóa cây có mã ${deleteItem.code || deleteItem.id}`,
+      });
+    }
+    setDeleteOpen(false);
+  };
 
   const columns = [
     {
@@ -157,7 +183,19 @@ const PlantIdentificationListPage = () => {
         </Link>
       }
     >
-      <DataTable columns={columns} data={plants} />
+      <DataTable
+        columns={columns}
+        data={plants}
+        selectable
+        onDelete={handleDelete}
+      />
+
+      <DeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onConfirm={handleConfirmDelete}
+        description="Bạn có chắc chắn muốn xóa thông tin định danh của cây này? Hành động này không thể hoàn tác."
+      />
     </AdminLayout>
   );
 };

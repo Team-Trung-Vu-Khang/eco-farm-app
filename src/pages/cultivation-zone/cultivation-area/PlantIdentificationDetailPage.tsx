@@ -11,6 +11,8 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  DeleteDialog,
+  useToast,
 } from "@tankhang1/eco-shared-ui";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -23,6 +25,7 @@ import {
   Maximize2,
   Ruler,
   Sprout,
+  Trash2,
   Trees,
   User,
 } from "lucide-react";
@@ -35,7 +38,7 @@ import {
   Popup,
   TileLayer,
 } from "react-leaflet";
-import { Link, useParams } from "wouter";
+import { Link, useParams, useLocation } from "wouter";
 import usePlantStore from "../../../stores/usePlantStore";
 import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
 import usePersonnelStore from "../../../stores/usePersonnelStore";
@@ -79,12 +82,15 @@ const HISTORY_DATA = [
 
 const PlantIdentificationDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { getPlantById } = usePlantStore();
+  const [, setLocation] = useLocation();
+  const { getPlantById, deletePlant } = usePlantStore();
+  const { toast } = useToast();
   const { areas: cultivationAreas } = useCultivationAreaStore();
   const { personnel } = usePersonnelStore();
   const { farmingMethods } = useFarmingMethodStore();
   const { irrigationSystems } = useIrrigationSystemStore();
   const [data, setData] = useState<any>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -92,6 +98,18 @@ const PlantIdentificationDetailPage = () => {
       setData(result);
     }
   }, [id, getPlantById]);
+
+  const handleConfirmDelete = () => {
+    if (id) {
+      deletePlant(id);
+      toast({
+        title: "Thành công",
+        description: `Đã xóa cây có mã ${data?.plant?.code || id}`,
+      });
+      setLocation("/plant-identification");
+    }
+    setDeleteOpen(false);
+  };
 
   if (!data || !data.plant) {
     return (
@@ -165,6 +183,14 @@ const PlantIdentificationDetailPage = () => {
               Chỉnh sửa
             </Button>
           </Link>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setDeleteOpen(true)}
+          >
+            <Trash2 className="w-4 h-4 mr-1" />
+            Xóa
+          </Button>
         </div>
       }
     >
@@ -218,7 +244,7 @@ const PlantIdentificationDetailPage = () => {
                       Vị trí GPS
                     </p>
                     <p className="text-sm font-mono">
-                      {plant.coordinate.lat.toFixed(6)},{" "}
+                      Kinh độ: {plant.coordinate.lat.toFixed(6)}, Vĩ độ:{" "}
                       {plant.coordinate.lng.toFixed(6)}
                     </p>
                   </div>
@@ -469,6 +495,13 @@ const PlantIdentificationDetailPage = () => {
           </div>
         </div>
       </div>
+
+      <DeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onConfirm={handleConfirmDelete}
+        description="Bạn có chắc chắn muốn xóa thông tin định danh của cây này? Hành động này không thể hoàn tác."
+      />
     </AdminLayout>
   );
 };
