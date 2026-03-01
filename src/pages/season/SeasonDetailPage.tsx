@@ -17,14 +17,20 @@ import {
   Hash,
   Leaf,
   Sprout,
+  Trees,
+  Flower,
 } from "lucide-react";
 import useSeasonStore from "../../stores/useSeasonStore";
 import useGrowthCycleStore from "../../stores/useGrowthCycleStore";
+import useCropStore from "../../stores/useCropStore";
+import useVarietyStore from "../../stores/useVarietyStore";
 
 export default function SeasonDetailPage() {
   const [, params] = useRoute("/season/:id");
   const { getSeasonById } = useSeasonStore();
   const { growthCycles } = useGrowthCycleStore();
+  const { getCropById } = useCropStore();
+  const { getVarietyById } = useVarietyStore();
 
   const season = params?.id ? getSeasonById(params.id) : undefined;
 
@@ -143,6 +149,33 @@ export default function SeasonDetailPage() {
                   </span>
                   <p className="font-bold text-lg">{season.duration} ngày</p>
                 </div>
+                <div className="space-y-1">
+                  <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    {season.scope === "crop" ? (
+                      <Trees className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <Flower className="w-4 h-4 text-green-600" />
+                    )}
+                    Phạm vi áp dụng
+                  </span>
+                  <p className="font-bold text-lg">
+                    {season.scope === "crop" ? (
+                      <>
+                        {season.cropId
+                          ? getCropById(Number(season.cropId))?.name ||
+                            "Theo loại cây trồng"
+                          : "Theo loại cây trồng"}
+                      </>
+                    ) : (
+                      <>
+                        {season.varietyId
+                          ? getVarietyById(season.varietyId)?.varietyName ||
+                            "Theo giống cụ thể"
+                          : "Theo giống cụ thể"}
+                      </>
+                    )}
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -158,34 +191,67 @@ export default function SeasonDetailPage() {
             <CardContent>
               {selectedCycles.length > 0 ? (
                 <div className="grid grid-cols-1 gap-4">
-                  {selectedCycles.map((cycle) => (
-                    <div
-                      key={cycle.id}
-                      className="flex items-center gap-4 p-4 rounded-xl border bg-white hover:shadow-sm transition-all"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
-                        <Leaf className="w-6 h-6" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold text-base">{cycle.name}</h3>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1.5">
-                            <Sprout className="w-3.5 h-3.5" />
-                            {cycle.cropName} - {cycle.variety}
-                          </span>
-                          <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-                          <span>{cycle.totalDays} ngày</span>
-                          <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-                          <span>{cycle.numStages} giai đoạn</span>
+                  {selectedCycles.map((cycle) => {
+                    const selectedStageMap =
+                      season.selectedStages?.[cycle.id] || {};
+                    const selectedStages =
+                      cycle.stages?.filter((s) => !!selectedStageMap[s.id]) ||
+                      [];
+
+                    return (
+                      <div
+                        key={cycle.id}
+                        className="flex flex-col p-4 rounded-xl border bg-white hover:shadow-sm transition-all gap-4"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+                            <Leaf className="w-6 h-6" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-bold text-base">
+                              {cycle.name}
+                            </h3>
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1.5">
+                                <Sprout className="w-3.5 h-3.5" />
+                                {cycle.cropName} - {cycle.variety}
+                              </span>
+                              <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
+                              <span>{cycle.totalDays} ngày gốc</span>
+                            </div>
+                          </div>
+                          <Link href={`/growth-cycle/${cycle.id}/edit`}>
+                            <Button variant="outline" size="sm">
+                              Xem gốc
+                            </Button>
+                          </Link>
                         </div>
+
+                        {selectedStages.length > 0 && (
+                          <div className="pl-16">
+                            <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                              <h4 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                                Giai đoạn áp dụng & Thời gian tùy chỉnh
+                              </h4>
+                              <div className="flex flex-wrap gap-2">
+                                {selectedStages.map((stage) => (
+                                  <Badge
+                                    key={stage.id}
+                                    variant="secondary"
+                                    className="bg-white border-slate-200 text-slate-700 font-normal shadow-sm"
+                                  >
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5" />
+                                    {stage.name} ({selectedStageMap[stage.id]}{" "}
+                                    ngày)
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <Link href={`/growth-cycle/${cycle.id}/edit`}>
-                        <Button variant="outline" size="sm">
-                          Xem chi tiết
-                        </Button>
-                      </Link>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground italic bg-muted/20 rounded-xl border border-dashed">

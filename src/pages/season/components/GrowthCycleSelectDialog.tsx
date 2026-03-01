@@ -15,30 +15,43 @@ import {
 } from "@tankhang1/eco-shared-ui";
 import { Search, Sprout, Calendar, FilterX } from "lucide-react";
 import useGrowthCycleStore from "../../../stores/useGrowthCycleStore";
+import useCropStore from "../../../stores/useCropStore";
+import useVarietyStore from "../../../stores/useVarietyStore";
 import { CROP_OPTIONS } from "../../../constants/crops";
 
 interface GrowthCycleSelectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  scope: "crop" | "variety";
+  cropId?: string;
+  varietyId?: string;
   selectedIds: string[];
-  selectedStages?: Record<string, string[]>;
-  onConfirm: (ids: string[], stages: Record<string, string[]>) => void;
+  selectedStages?: Record<string, Record<string, number>>;
+  onConfirm: (
+    ids: string[],
+    stages: Record<string, Record<string, number>>,
+  ) => void;
 }
 
-const EMPTY_STAGES: Record<string, string[]> = {};
+const EMPTY_STAGES: Record<string, Record<string, number>> = {};
 
 export function GrowthCycleSelectDialog({
   open,
   onOpenChange,
+  scope,
+  cropId,
+  varietyId,
   selectedIds,
   selectedStages = EMPTY_STAGES,
   onConfirm,
 }: GrowthCycleSelectDialogProps) {
   const { growthCycles } = useGrowthCycleStore();
+  const { crops } = useCropStore();
+  const { varieties } = useVarietyStore();
   const [search, setSearch] = useState("");
   const [tempSelected, setTempSelected] = useState<string[]>(selectedIds);
   const [tempStages, setTempStages] =
-    useState<Record<string, string[]>>(selectedStages);
+    useState<Record<string, Record<string, number>>>(selectedStages);
 
   // Sync temp selection when dialog opens
   React.useEffect(() => {
@@ -50,6 +63,23 @@ export function GrowthCycleSelectDialog({
 
   const filteredCycles = useMemo(() => {
     return growthCycles.filter((cycle) => {
+      // Filter by scope first
+      if (cycle.scope !== scope) return false;
+
+      // Filter by crop if selected
+      if (cropId) {
+        const selectedCrop = crops.find((c) => c.id.toString() === cropId);
+        if (selectedCrop && cycle.cropName !== selectedCrop.cropType)
+          return false;
+      }
+
+      // Filter by variety if selected
+      if (scope === "variety" && varietyId) {
+        const selectedVariety = varieties.find((v) => v.id === varietyId);
+        if (selectedVariety && cycle.variety !== selectedVariety.varietyName)
+          return false;
+      }
+
       const searchLower = search.toLowerCase();
       return (
         cycle.name.toLowerCase().includes(searchLower) ||
@@ -57,7 +87,7 @@ export function GrowthCycleSelectDialog({
         (cycle.variety && cycle.variety.toLowerCase().includes(searchLower))
       );
     });
-  }, [growthCycles, search]);
+  }, [growthCycles, search, scope, cropId, varietyId, crops, varieties]);
 
   const toggleSelect = (cycle: any) => {
     setTempSelected((prev) => {
@@ -68,24 +98,45 @@ export function GrowthCycleSelectDialog({
         setTempStages(newStages);
         return prev.filter((i) => i !== cycle.id);
       } else {
+        const initialStages: Record<string, number> = {};
+        cycle.stages.forEach((s: any) => {
+          initialStages[s.id] = s.duration;
+        });
         setTempStages((prevStages) => ({
           ...prevStages,
-          [cycle.id]: cycle.stages.map((s: any) => s.id),
+          [cycle.id]: initialStages,
         }));
         return [...prev, cycle.id];
       }
     });
   };
 
-  const toggleStage = (cycleId: string, stageId: string) => {
+  const toggleStage = (cycleId: string, stage: any) => {
     setTempStages((prev) => {
-      const current = prev[cycleId] || [];
-      const isSelected = current.includes(stageId);
-      const newStages = isSelected
-        ? current.filter((id) => id !== stageId)
-        : [...current, stageId];
-      return { ...prev, [cycleId]: newStages };
+      const current = prev[cycleId] || {};
+      const isSelected = !!current[stage.id];
+      const next = { ...current };
+      if (isSelected) {
+        delete next[stage.id];
+      } else {
+        next[stage.id] = stage.duration;
+      }
+      return { ...prev, [cycleId]: next };
     });
+  };
+
+  const updateStageDuration = (
+    cycleId: string,
+    stageId: string,
+    duration: number,
+  ) => {
+    setTempStages((prev) => ({
+      ...prev,
+      [cycleId]: {
+        ...(prev[cycleId] || {}),
+        [stageId]: duration,
+      },
+    }));
   };
 
   const handleConfirm = () => {
@@ -188,40 +239,66 @@ export function GrowthCycleSelectDialog({
                   {isSelected && cycle.stages && cycle.stages.length > 0 && (
                     <div className="mt-4 pt-4 border-t border-green-100 space-y-2">
                       <div className="text-xs font-semibold text-green-800 mb-2 px-2 flex items-center justify-between">
-                        <span>Chọn các giai đoạn áp dụng:</span>
                         <span>
-                          {(tempStages[cycle.id] || []).length} /{" "}
+                          Chọn các giai đoạn áp dụng & Điều chỉnh (ngày):
+                        </span>
+                        <span>
+                          {Object.keys(tempStages[cycle.id] || {}).length} /{" "}
                           {cycle.stages.length}
                         </span>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 gap-2">
                         {cycle.stages.map((stage: any) => {
-                          const isStageSelected = (
-                            tempStages[cycle.id] || []
-                          ).includes(stage.id);
+                          const currentCycleStages = tempStages[cycle.id] || {};
+                          const stageDuration = currentCycleStages[stage.id];
+                          const isStageSelected = stageDuration !== undefined;
                           return (
-                            <label
+                            <div
                               key={stage.id}
                               className={`
-                              flex items-center gap-3 p-2.5 rounded-lg border group-hover:border-green-200 cursor-pointer transition-colors
+                              flex items-center gap-3 p-2.5 rounded-lg border group-hover:border-green-200 transition-colors
                               ${isStageSelected ? "bg-white border-green-200 shadow-sm text-green-900" : "bg-white/50 border-muted text-muted-foreground"}
                             `}
                             >
                               <Checkbox
                                 checked={isStageSelected}
                                 onCheckedChange={() =>
-                                  toggleStage(cycle.id, stage.id)
+                                  toggleStage(cycle.id, stage)
                                 }
                               />
-                              <div className="flex-1 min-w-0">
+                              <div
+                                className="flex-1 min-w-0 cursor-pointer"
+                                onClick={() => toggleStage(cycle.id, stage)}
+                              >
                                 <p className="text-sm font-medium truncate shrink-0">
                                   {stage.name}
                                 </p>
-                                <p className="text-[10px] uppercase tracking-wider mt-0.5">
+                              </div>
+                              {isStageSelected && (
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    type="number"
+                                    className="w-20 h-8 text-xs text-center"
+                                    value={stageDuration}
+                                    onChange={(e) =>
+                                      updateStageDuration(
+                                        cycle.id,
+                                        stage.id,
+                                        Number(e.target.value),
+                                      )
+                                    }
+                                  />
+                                  <span className="text-[10px] text-muted-foreground uppercase">
+                                    ngày
+                                  </span>
+                                </div>
+                              )}
+                              {!isStageSelected && (
+                                <p className="text-[10px] uppercase tracking-wider">
                                   {stage.duration} ngày
                                 </p>
-                              </div>
-                            </label>
+                              )}
+                            </div>
                           );
                         })}
                       </div>

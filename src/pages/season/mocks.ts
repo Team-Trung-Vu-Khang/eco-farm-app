@@ -9,6 +9,8 @@ export const initialSeasons: Season[] = [
     description: "Canh tác đậu nành vụ Xuân tại khu vực A",
     duration: 130,
     status: "active",
+    scope: "crop",
+    cropId: "1", // Sầu riêng Ri6 (from crop mocks)
     growthCycleIds: ["GC001"],
     growthCycles: [initialGrowthCycles[0]],
     documents: [
@@ -30,6 +32,9 @@ export const initialSeasons: Season[] = [
     description: "Kế hoạch canh tác lúa chất lượng cao",
     duration: 120,
     status: "planning",
+    scope: "variety",
+    cropId: "3", // Let's assume some crop ID for Lúa if it exists, but I'll use 1 for demo
+    varietyId: "5", // Lúa OM5451
     growthCycleIds: [],
     documents: [],
     createdAt: Date.now() - 5000000,

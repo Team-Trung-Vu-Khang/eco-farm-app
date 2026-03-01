@@ -7,17 +7,18 @@ import {
   CardTitle,
   Input,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Textarea,
   useToast,
   Badge,
   Avatar,
   AvatarFallback,
   AvatarImage,
+  Separator,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@tankhang1/eco-shared-ui";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -31,10 +32,14 @@ import {
   Sprout,
   Info,
   Trash2,
+  Trees,
+  Flower,
 } from "lucide-react";
 import type { CreateSeasonForm } from "./types";
 import useGrowthCycleStore from "../../stores/useGrowthCycleStore";
 import useSeasonStore from "../../stores/useSeasonStore";
+import useCropStore from "../../stores/useCropStore";
+import useVarietyStore from "../../stores/useVarietyStore";
 import { GrowthCycleSelectDialog } from "./components/GrowthCycleSelectDialog";
 import { FileUploader } from "./components/FileUploader";
 import { CROP_OPTIONS } from "../../constants/crops";
@@ -44,6 +49,8 @@ export default function CreateSeasonPage() {
   const { toast } = useToast();
   const { growthCycles } = useGrowthCycleStore();
   const { addSeason } = useSeasonStore();
+  const { crops } = useCropStore();
+  const { varieties } = useVarietyStore();
 
   const [formData, setFormData] = useState<CreateSeasonForm>({
     code: "",
@@ -51,6 +58,9 @@ export default function CreateSeasonPage() {
     description: "",
     duration: 0,
     status: "planning",
+    scope: "crop",
+    cropId: undefined,
+    varietyId: undefined,
     growthCycleIds: [],
     selectedStages: {},
     documents: [],
@@ -78,7 +88,10 @@ export default function CreateSeasonPage() {
       name: formData.name,
       description: formData.description,
       duration: formData.duration,
-      status: formData.status,
+      status: "planning",
+      scope: formData.scope,
+      cropId: formData.cropId,
+      varietyId: formData.varietyId,
       growthCycleIds: formData.growthCycleIds,
       selectedStages: formData.selectedStages,
       documents: formData.documents.map((doc) => ({
@@ -141,47 +154,231 @@ export default function CreateSeasonPage() {
                 <CardTitle>Thông tin chung</CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>
-                    Mã mùa vụ <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    placeholder="VD: MV2024-01"
-                    value={formData.code}
-                    onChange={(e) =>
-                      setFormData({ ...formData, code: e.target.value })
-                    }
-                  />
+            <CardContent className="space-y-6">
+              <div className="space-y-3">
+                <Label className="text-base font-bold text-slate-800">
+                  Phạm vi áp dụng
+                </Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div
+                    className={`
+                      relative p-4 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-4
+                      ${formData.scope === "crop" ? "border-green-600 bg-green-50/30" : "border-slate-100 bg-white hover:border-green-200"}
+                    `}
+                    onClick={() => {
+                      if (formData.scope !== "crop") {
+                        setFormData({
+                          ...formData,
+                          scope: "crop",
+                          cropId: undefined,
+                          varietyId: undefined,
+                          growthCycleIds: [],
+                          selectedStages: {},
+                        });
+                      }
+                    }}
+                  >
+                    <div
+                      className={`
+                      p-3 rounded-full shrink-0
+                      ${formData.scope === "crop" ? "bg-green-600 text-white" : "bg-slate-100 text-slate-500"}
+                    `}
+                    >
+                      <Trees className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-800">
+                          Theo loại cây trồng
+                        </span>
+                        <div
+                          className={`
+                          w-5 h-5 rounded-full border-2 flex items-center justify-center
+                          ${formData.scope === "crop" ? "border-green-600" : "border-slate-300"}
+                        `}
+                        >
+                          {formData.scope === "crop" && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-green-600" />
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-500 leading-relaxed">
+                        Áp dụng cho tất cả các giống thuộc loại cây trồng này.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`
+                      relative p-4 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-4
+                      ${formData.scope === "variety" ? "border-green-600 bg-green-50/30" : "border-slate-100 bg-white hover:border-green-200"}
+                    `}
+                    onClick={() => {
+                      if (formData.scope !== "variety") {
+                        setFormData({
+                          ...formData,
+                          scope: "variety",
+                          cropId: undefined,
+                          varietyId: undefined,
+                          growthCycleIds: [],
+                          selectedStages: {},
+                        });
+                      }
+                    }}
+                  >
+                    <div
+                      className={`
+                      p-3 rounded-full shrink-0
+                      ${formData.scope === "variety" ? "bg-green-600 text-white" : "bg-slate-100 text-slate-500"}
+                    `}
+                    >
+                      <Flower className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-800">
+                          Theo giống cụ thể
+                        </span>
+                        <div
+                          className={`
+                          w-5 h-5 rounded-full border-2 flex items-center justify-center
+                          ${formData.scope === "variety" ? "border-green-600" : "border-slate-300"}
+                        `}
+                        >
+                          {formData.scope === "variety" && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-green-600" />
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-500 leading-relaxed">
+                        Chỉ áp dụng cho chính xác giống cây trồng được chọn.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>
-                    Tên mùa vụ <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    placeholder="VD: Vụ Xuân 2024"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                  />
+
+                {/* Specific Selection based on Scope */}
+                <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">
+                        {formData.scope === "crop"
+                          ? "Chọn loại cây trồng"
+                          : "Bước 1: Chọn loại cây trồng"}
+                        <span className="text-destructive"> *</span>
+                      </Label>
+                      <Select
+                        value={formData.cropId}
+                        onValueChange={(value) =>
+                          setFormData({
+                            ...formData,
+                            cropId: value,
+                            varietyId: undefined,
+                            growthCycleIds: [],
+                            selectedStages: {},
+                          })
+                        }
+                      >
+                        <SelectTrigger className="bg-white">
+                          <SelectValue placeholder="-- Chọn cây trồng --" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {crops.map((crop) => (
+                            <SelectItem
+                              key={crop.id}
+                              value={crop.id.toString()}
+                            >
+                              {crop.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {formData.scope === "variety" && (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold">
+                          Bước 2: Chọn giống cây trồng
+                          <span className="text-destructive"> *</span>
+                        </Label>
+                        <Select
+                          value={formData.varietyId}
+                          disabled={!formData.cropId}
+                          onValueChange={(value) =>
+                            setFormData({
+                              ...formData,
+                              varietyId: value,
+                              growthCycleIds: [],
+                              selectedStages: {},
+                            })
+                          }
+                        >
+                          <SelectTrigger className="bg-white">
+                            <SelectValue placeholder="-- Chọn giống --" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {varieties
+                              .filter((v) => {
+                                const crop = crops.find(
+                                  (c) => c.id.toString() === formData.cropId,
+                                );
+                                return crop ? v.crop === crop.cropType : false;
+                              })
+                              .map((variety) => (
+                                <SelectItem key={variety.id} value={variety.id}>
+                                  {variety.varietyName}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Mô tả</Label>
-                <Textarea
-                  placeholder="Mô tả chi tiết về kế hoạch mùa vụ..."
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  rows={3}
-                />
-              </div>
+              <Separator className="bg-slate-100" />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>
+                      Mã mùa vụ <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      placeholder="VD: MV2024-01"
+                      value={formData.code}
+                      onChange={(e) =>
+                        setFormData({ ...formData, code: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>
+                      Tên mùa vụ <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      placeholder="VD: Vụ Xuân 2024"
+                      value={formData.name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Mô tả</Label>
+                  <Textarea
+                    placeholder="Mô tả chi tiết về kế hoạch mùa vụ..."
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    rows={3}
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <Label>
                     Thời gian (ngày) <span className="text-destructive">*</span>
@@ -201,27 +398,6 @@ export default function CreateSeasonPage() {
                       }
                     />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Trạng thái</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(v: any) =>
-                      setFormData({ ...formData, status: v })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn trạng thái" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="planning">
-                        Đang lập kế hoạch
-                      </SelectItem>
-                      <SelectItem value="active">Đang triển khai</SelectItem>
-                      <SelectItem value="completed">Đã hoàn thành</SelectItem>
-                      <SelectItem value="cancelled">Đã hủy</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
             </CardContent>
@@ -255,12 +431,11 @@ export default function CreateSeasonPage() {
               <div className="grid grid-cols-1 gap-3">
                 {selectedCycles.length > 0 ? (
                   selectedCycles.map((cycle) => {
-                    const selectedStageIds =
-                      formData.selectedStages[cycle.id] || [];
+                    const selectedStageMap =
+                      formData.selectedStages[cycle.id] || {};
                     const selectedStageData =
-                      cycle.stages?.filter((s) =>
-                        selectedStageIds.includes(s.id),
-                      ) || [];
+                      cycle.stages?.filter((s) => !!selectedStageMap[s.id]) ||
+                      [];
 
                     return (
                       <div
@@ -285,7 +460,7 @@ export default function CreateSeasonPage() {
                                 <span>{cycle.totalDays} ngày</span>
                                 <span className="w-1 h-1 rounded-full bg-slate-300" />
                                 <span className="text-green-600 font-medium">
-                                  {selectedStageIds.length}/
+                                  {Object.keys(selectedStageMap).length}/
                                   {cycle.stages?.length || 0} giai đoạn
                                 </span>
                               </div>
@@ -315,7 +490,8 @@ export default function CreateSeasonPage() {
                                     className="bg-white border-slate-200 text-slate-700 font-normal shadow-sm"
                                   >
                                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5" />
-                                    {stage.name} ({stage.duration} ngày)
+                                    {stage.name} ({selectedStageMap[stage.id]}{" "}
+                                    ngày)
                                   </Badge>
                                 ))}
                               </div>
@@ -380,6 +556,9 @@ export default function CreateSeasonPage() {
       <GrowthCycleSelectDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        scope={formData.scope}
+        cropId={formData.cropId}
+        varietyId={formData.varietyId}
         selectedIds={formData.growthCycleIds}
         selectedStages={formData.selectedStages}
         onConfirm={(ids, stages) =>

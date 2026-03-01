@@ -242,6 +242,45 @@ export const initialData: Crop[] = [
       watering: "Tưới giữ ẩm, tránh khô hạn kéo dài",
     },
   },
+  {
+    id: 7,
+    code: "CROP007",
+    illustration:
+      "https://cdn.tgdd.vn/Files/2021/08/17/1375787/dau-nanh-la-gi-cong-dung-va-cac-loai-dau-nanh-pho-bien-202108171018318625.jpg",
+    name: "Đậu nành miền Nam",
+    cropType: "Đậu nành",
+    cropGroup: "Hạt ngũ cốc",
+    harvestMethod: "machine",
+    technicalSpecs: {
+      scientificName: "Glycine max",
+      family: "Họ Đậu (Fabaceae)",
+      origin: "Đông Á",
+      tempRange: "20 - 30°C",
+      humidityRange: "60 - 70%",
+      phRange: "6.0 - 7.0",
+      plantingDensity: "40cm x 10cm",
+      watering: "Tưới đều giai đoạn ra hoa kết trái",
+    },
+  },
+  {
+    id: 8,
+    code: "CROP008",
+    illustration: "https://giongcamau.vn/uploads/shops/2017_03/om5451-copy.jpg",
+    name: "Lúa mùa OM5451",
+    cropType: "Lúa",
+    cropGroup: "Cây lương thực",
+    harvestMethod: "machine",
+    technicalSpecs: {
+      scientificName: "Oryza sativa",
+      family: "Họ Hòa thảo (Poaceae)",
+      origin: "Đông Nam Á",
+      tempRange: "25 - 35°C",
+      humidityRange: "80 - 90%",
+      phRange: "5.5 - 6.5",
+      plantingDensity: "20cm x 15cm",
+      watering: "Luôn giữ mức nước ngập chân",
+    },
+  },
 ];
 
 export const cropTypeOptions = Object.values(CROP_HIERARCHY).flatMap((group) =>

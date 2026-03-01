@@ -15,6 +15,9 @@ export interface Season {
   description: string;
   duration: number;
   status: "planning" | "active" | "completed" | "cancelled";
+  scope: "crop" | "variety";
+  cropId?: string;
+  varietyId?: string;
 
   // Link to Reference Growth Cycles (Blueprints)
   // A season might use multiple cycles (e.g. distinct stages or multiple crops in one season?)
@@ -22,7 +25,7 @@ export interface Season {
   // but the user said "one or more". Maybe for intercropping or sequential cycles?
   growthCycleIds: string[];
   growthCycles?: GrowthCycle[]; // Populated data
-  selectedStages?: Record<string, string[]>; // cycleId -> array of stageIds
+  selectedStages?: Record<string, Record<string, number>>; // cycleId -> stageId -> duration
 
   documents: SeasonDocument[];
 
@@ -36,7 +39,10 @@ export interface CreateSeasonForm {
   description: string;
   duration: number;
   status: "planning" | "active" | "completed" | "cancelled";
+  scope: "crop" | "variety";
+  cropId?: string;
+  varietyId?: string;
   growthCycleIds: string[];
-  selectedStages: Record<string, string[]>;
+  selectedStages: Record<string, Record<string, number>>;
   documents: File[];
 }
