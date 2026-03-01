@@ -7,6 +7,8 @@ import {
   CardHeader,
   CardTitle,
   Checkbox,
+  Dialog,
+  DialogContent,
   Input,
   Label,
   Select,
@@ -20,268 +22,37 @@ import {
   TabsList,
   TabsTrigger,
   Textarea,
+  ScrollArea,
   useToast,
+  cn,
   type Step,
 } from "@tankhang1/eco-shared-ui";
 import {
   AlertTriangle,
-  Check,
   ClipboardList,
   Clock,
   FileCheck,
   Info,
   Layers,
-  Leaf,
   MapPin,
   Package,
-  Plus,
   Sprout,
   StickyNote,
-  Users,
-  Wrench,
-  X,
 } from "lucide-react";
-import { memo, useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import { GROWTH_CYCLES, getCyclesByCrop } from "./constants";
+import { GROWTH_CYCLES } from "./constants";
 import usePlanStore from "../../stores/usePlanStore";
+import type {
+  MaterialAllocation,
+  TaskAllocation,
+} from "../../stores/usePlanStore";
 import useSeasonStore from "../../stores/useSeasonStore";
-
-// --- Mock Data for Location Hierarchy (Enhanced) ---
-const LOCATIONS = [
-  {
-    id: "pr-1",
-    name: "Vùng canh tác Sầu riêng Ri6 - Bình Phước",
-    crop: "Sầu riêng",
-    variety: "Ri6",
-    zones: [
-      {
-        id: "zone-1-1",
-        name: "Khu vực A1",
-        plots: [
-          {
-            id: "plot-1-1-1",
-            name: "Lô A1-01",
-            area: 1.5,
-            status: "ready",
-            soilType: "Đất đỏ Bazan",
-            slope: "3-5%",
-          },
-          {
-            id: "plot-1-1-2",
-            name: "Lô A1-02",
-            area: 2.0,
-            status: "active",
-            soilType: "Đất thịt nhẹ",
-            slope: "<3%",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "pr-2",
-    name: "Vùng canh tác Sầu riêng Monthong - Bình Phước",
-    crop: "Sầu riêng",
-    variety: "Monthong",
-    zones: [
-      {
-        id: "zone-1-2",
-        name: "Khu vực A2",
-        plots: [
-          {
-            id: "plot-1-2-1",
-            name: "Lô A2-01",
-            area: 1.2,
-            status: "resting",
-            soilType: "Đất đỏ Bazan",
-            slope: "5-8%",
-          },
-          {
-            id: "plot-1-2-2",
-            name: "Lô A2-02",
-            area: 1.8,
-            status: "ready",
-            soilType: "Đất đỏ Bazan",
-            slope: "3-5%",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "pr-3",
-    name: "Vùng canh tác Xoài Cát Hòa Lộc - Đồng Nai",
-    crop: "Xoài",
-    variety: "Xoài Cát Hòa Lộc", // Assuming Monthong for now per previous mock
-    zones: [
-      {
-        id: "zone-2-1",
-        name: "Khu vực B1",
-        plots: [
-          {
-            id: "plot-2-1-1",
-            name: "Lô B1-01",
-            area: 2.5,
-            status: "active",
-            soilType: "Đất xám",
-            slope: "<3%",
-          },
-          {
-            id: "plot-2-1-2",
-            name: "Lô B1-02",
-            area: 3.0,
-            status: "ready",
-            soilType: "Đất phù sa cổ",
-            slope: "<3%",
-          },
-        ],
-      },
-    ],
-  },
-];
-
-// --- Mock Data for Select Options ---
-// --- Mock Data for Select Options (Enhanced) ---
-const MATERIAL_TYPES = [
-  { value: "Phân bón", label: "Phân bón" },
-  { value: "Thuốc BVTV", label: "Thuốc BVTV" },
-  { value: "Giống", label: "Giống cây trồng" },
-  { value: "Nông cụ", label: "Nông cụ & Thiết bị" },
-  { value: "Vật tư khác", label: "Vật tư khác" },
-];
-
-const MATERIAL_OPTIONS: Record<
-  string,
-  { value: string; label: string; unit: string }[]
-> = {
-  "Phân bón": [
-    { value: "NPK 20-20-15", label: "NPK 20-20-15", unit: "kg" },
-    { value: "Uure", label: "Phân Ure (Đạm)", unit: "kg" },
-    { value: "Kali Clorua", label: "Kali Clorua (Kali đỏ)", unit: "kg" },
-    { value: "Lân Super", label: "Lân Super (Lân Long Thành)", unit: "kg" },
-    { value: "DAP", label: "Phân DAP 18-46-0", unit: "kg" },
-    { value: "Hữu cơ vi sinh", label: "Phân hữu cơ vi sinh", unit: "kg" },
-    { value: "Phân chuồng", label: "Phân chuồng hoai mục", unit: "tấn" },
-    { value: "Humic Acid", label: "Humic Acid (Kích rễ)", unit: "lít" },
-    { value: "Canxi Bo", label: "Phân bón lá Canxi Bo", unit: "chai" },
-    { value: "MKP", label: "MKP (0-52-34)", unit: "kg" },
-  ],
-  "Thuốc BVTV": [
-    { value: "Abamectin", label: "Abamectin (Trừ sâu/nhện)", unit: "chai" },
-    { value: "Mancozeb", label: "Mancozeb (Trừ nấm)", unit: "kg" },
-    { value: "Glyphosate", label: "Glyphosate (Trừ cỏ)", unit: "lít" },
-    { value: "Imidacloprid", label: "Imidacloprid (Rầy rệp)", unit: "gói" },
-    {
-      value: "Azoxystrobin",
-      label: "Azoxystrobin (Lem lép hạt)",
-      unit: "chai",
-    },
-    { value: "Chlorpyrifos", label: "Chlorpyrifos Ethyl", unit: "chai" },
-    { value: "Hexaconazole", label: "Hexaconazole (Anvil)", unit: "lít" },
-    { value: "Metalaxyl", label: "Metalaxyl (Trừ nấm đất)", unit: "gói" },
-    { value: "Emamectin", label: "Emamectin Benzoate", unit: "chai" },
-    { value: "Trichoderma", label: "Nấm Trichoderma", unit: "kg" },
-  ],
-  Giống: [
-    { value: "Sầu riêng Ri6", label: "Giống Sầu riêng Ri6", unit: "cây" },
-    {
-      value: "Sầu riêng Monthong",
-      label: "Giống Sầu riêng Monthong",
-      unit: "cây",
-    },
-    { value: "Xoài Cát Hòa Lộc", label: "Giống Xoài Cát Hòa Lộc", unit: "cây" },
-    { value: "Xoài Đài Loan", label: "Giống Xoài Đài Loan", unit: "cây" },
-    { value: "Bưởi Da Xanh", label: "Giống Bưởi Da Xanh", unit: "cây" },
-    { value: "Cam Sành", label: "Giống Cam Sành", unit: "cây" },
-    { value: "Mít Thái", label: "Giống Mít Thái", unit: "cây" },
-    { value: "Vú Sữa", label: "Giống Vú Sữa Lò Rèn", unit: "cây" },
-    { value: "Chanh Không Hạt", label: "Giống Chanh Không Hạt", unit: "cây" },
-    { value: "Na Thái", label: "Giống Na Thái", unit: "cây" },
-  ],
-  "Nông cụ": [
-    { value: "Cuốc", label: "Cuốc làm đất", unit: "cái" },
-    { value: "Xẻng", label: "Xẻng xúc đất", unit: "cái" },
-    { value: "Kéo cắt cành", label: "Kéo cắt cành chuyên dụng", unit: "cái" },
-    { value: "Cưa cầm tay", label: "Cưa cành cầm tay", unit: "cái" },
-    { value: "Bình xịt điện", label: "Bình xịt thuốc chạy điện", unit: "cái" },
-    { value: "Máy cắt cỏ", label: "Máy cắt cỏ cầm tay", unit: "cái" },
-    { value: "Ủng bảo hộ", label: "Ủng cao su bảo hộ", unit: "đôi" },
-    { value: "Găng tay", label: "Găng tay làm vườn", unit: "đôi" },
-    { value: "Thang nhôm", label: "Thang nhôm rút", unit: "cái" },
-    { value: "Xe rùa", label: "Xe rùa đẩy tay", unit: "cái" },
-  ],
-  "Vật tư khác": [
-    { value: "Bao bì", label: "Bao bì đóng gói", unit: "kg" },
-    { value: "Dây buộc", label: "Dây nilon buộc cành", unit: "cuộn" },
-    { value: "Túi bao trái", label: "Túi vải bao trái", unit: "cái" },
-    { value: "Màng phủ", label: "Màng phủ nông nghiệp", unit: "cuộn" },
-    { value: "Cọc tre", label: "Cọc tre chống cây", unit: "cây" },
-    { value: "Lưới che nắng", label: "Lưới lan che nắng", unit: "m2" },
-    { value: "Khay ươm", label: "Khay nhựa ươm hạt", unit: "cái" },
-    { value: "Chậu nhựa", label: "Chậu nhựa trồng cây", unit: "cái" },
-    { value: "Xơ dừa", label: "Giá thể xơ dừa", unit: "bao" },
-    { value: "Tro trấu", label: "Tro trấu hun", unit: "bao" },
-  ],
-};
-
-const MATERIAL_UNITS: Record<string, string[]> = {
-  "Phân bón": ["kg", "tấn", "bao", "lít", "can", "chai"],
-  "Thuốc BVTV": ["lít", "ml", "chai", "gói", "can", "phi"],
-  Giống: ["cây", "hạt", "kg", "hom"],
-  "Nông cụ": ["cái", "bộ", "hộp", "đôi"],
-  "Vật tư khác": ["kg", "cái", "cuộn", "m", "m2", "thùng", "bao"],
-};
-
-const TASK_OPTIONS = [
-  { value: "Cày xới đất", label: "Cày xới đất" },
-  { value: "Bón lót", label: "Bón lót" },
-  { value: "Gieo hạt/Trồng cây", label: "Gieo hạt/Trồng cây" },
-  { value: "Tưới nước", label: "Tưới nước" },
-  { value: "Bón thúc lần 1", label: "Bón thúc lần 1" },
-  { value: "Bón thúc lần 2", label: "Bón thúc lần 2" },
-  { value: "Bón thúc lần 3", label: "Bón thúc lần 3" },
-  { value: "Phun thuốc phòng bệnh", label: "Phun thuốc phòng bệnh" },
-  { value: "Phun thuốc trừ sâu", label: "Phun thuốc trừ sâu" },
-  { value: "Tỉa cành/tạo tán", label: "Tỉa cành/tạo tán" },
-  { value: "Làm cỏ", label: "Làm cỏ" },
-  { value: "Tủ gốc giữ ẩm", label: "Tủ gốc giữ ẩm" },
-  { value: "Bao trái", label: "Bao trái" },
-  { value: "Thu hoạch đợt 1", label: "Thu hoạch đợt 1" },
-  { value: "Thu hoạch đợt 2", label: "Thu hoạch đợt 2" },
-  { value: "Vệ sinh đồng ruộng", label: "Vệ sinh đồng ruộng" },
-  { value: "Kiểm tra sâu bệnh", label: "Kiểm tra sâu bệnh" },
-  { value: "Bảo dưỡng hệ thống tưới", label: "Bảo dưỡng hệ thống tưới" },
-];
-
-const LABOR_OPTIONS = [
-  { value: "1 người", label: "1 người" },
-  { value: "2 người", label: "2 người" },
-  { value: "3-5 người", label: "3-5 người" },
-  { value: "5-10 người", label: "5-10 người" },
-  { value: "Cơ giới hóa", label: "Cơ giới hóa (Máy móc)" },
-  { value: "Khoán trọn gói", label: "Khoán trọn gói" },
-];
-
-// Interface cho vật tư chi tiết
-interface MaterialAllocation {
-  id: number;
-  stageId: string; // Linked to a specific stage
-  materialCategory: string; // Loại vật tư
-  materialType: string; // Loại vật tư cụ thể
-  materialName: string; // Tên vật tư cụ thể
-  quantity: string;
-  unit: string;
-}
-
-interface TaskAllocation {
-  id: number;
-  stageId: string;
-  name: string; // Tên hoạt động (e.g. Cày đất)
-  description: string; // Chi tiết kỹ thuật
-  labor: string; // Số lượng nhân sự/công
-  duration: string; // Thời gian ước tính (giờ/ngày)
-}
+import useRegionStore from "@/stores/useRegionStore";
+import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
+import { StageAllocation } from "./components/StageAllocation";
+import { EnterpriseSelector } from "../cultivation-zone/cultivation-area/components";
+import GeographicalSelector from "./components/GeographicalSelector";
 
 // 1. Location Selection Dialog (Filtered for Cultivation)
 
@@ -307,7 +78,35 @@ const TREATMENT_REGIMENS = [
     description: "Kết hợp biện pháp sinh học, hóa học và canh tác",
   },
 ];
+export interface GeographicalSelection {
+  id: string;
+  type: "region" | "area" | "plot";
+  regionId: string;
+  areaId?: string;
+  plotId?: string;
+}
 
+export interface CreatePlanForm {
+  code: string;
+  name: string;
+  description: string;
+  seasonId: string;
+  seasonName: string;
+  startDate: string;
+  endDate: string;
+  selectedRegionIds: string[];
+  selectedZoneIds: string[];
+  selectedPlotIds: string[];
+  crop: string;
+  variety: string;
+  purpose: "cultivation" | "treatment";
+  growthCycleId: string;
+  regimenId: string;
+  selectedStages: string[];
+  status: "active" | "planning" | "completed" | "cancelled";
+  materialAllocations: any[]; // define proper type
+  taskAllocations: any[]; // define proper type
+}
 // 2. Stage Selection Item
 const StageItem = ({
   stage,
@@ -339,417 +138,19 @@ const StageItem = ({
   </div>
 );
 
-// 3. Stage Allocation Component
-const StageAllocation = memo(
-  ({
-    stageName,
-    index,
-    allocations,
-    tasks,
-    onAddMaterial,
-    onRemoveMaterial,
-    onAddTask,
-    onRemoveTask,
-  }: {
-    stageName: string;
-    index: number;
-    allocations: MaterialAllocation[];
-    tasks: TaskAllocation[];
-    onAddMaterial: (item: any) => void;
-    onRemoveMaterial: (id: number) => void;
-    onAddTask: (item: any) => void;
-    onRemoveTask: (id: number) => void;
-  }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [newItem, setNewItem] = useState({
-      name: "",
-      qty: "",
-      unit: "kg",
-      type: "Phân bón",
-    });
-
-    const [newTask, setNewTask] = useState({
-      name: "",
-      desc: "",
-      labor: "",
-      duration: "",
-    });
-
-    const handleAddMaterial = () => {
-      if (!newItem.name || !newItem.qty) return;
-      onAddMaterial({
-        stageId: stageName,
-        materialCategory: newItem.type,
-        materialType: newItem.type,
-        materialName: newItem.name,
-        quantity: newItem.qty,
-        unit: newItem.unit,
-      });
-      setNewItem({ name: "", qty: "", unit: "kg", type: "Phân bón" });
-    };
-
-    const handleAddTask = () => {
-      if (!newTask.name) return;
-      onAddTask({
-        stageId: stageName,
-        name: newTask.name,
-        description: newTask.desc,
-        labor: newTask.labor,
-        duration: newTask.duration,
-      });
-      setNewTask({ name: "", desc: "", labor: "", duration: "" });
-    };
-
-    return (
-      <div className="bg-white border rounded-xl shadow-sm overflow-hidden flex flex-col transition-all duration-200">
-        {/* Header - Click to Toggle */}
-        <div
-          className="bg-slate-50 px-4 py-3 border-b flex justify-between items-center cursor-pointer hover:bg-slate-100"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shadow-sm transition-colors ${isExpanded ? "bg-blue-600 text-white" : "bg-white border text-slate-500"}`}
-            >
-              {index + 1}
-            </div>
-            <div>
-              <h4 className="font-semibold text-slate-800">{stageName}</h4>
-              <div className="flex gap-2 text-xs text-muted-foreground mt-0.5">
-                <span className="flex items-center gap-1">
-                  <Leaf className="w-3 h-3" /> {allocations.length} vật tư
-                </span>
-                <span className="text-slate-300">|</span>
-                <span className="flex items-center gap-1">
-                  <Users className="w-3 h-3" /> {tasks.length} công việc
-                </span>
-              </div>
-            </div>
-          </div>
-          <div
-            className={`transform transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-slate-400"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </div>
-        </div>
-
-        {/* Content Tabs - Collapsible */}
-        {isExpanded && (
-          <div className="p-4 flex-1 flex flex-col animation-fade-in border-t border-slate-100">
-            <Tabs defaultValue="materials" className="flex-1 flex flex-col">
-              <TabsList className="grid w-full grid-cols-2 mb-4 bg-slate-100 p-1 rounded-lg">
-                <TabsTrigger
-                  value="materials"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm"
-                >
-                  <Leaf className="w-3.5 h-3.5 mr-2 text-green-600" />
-                  Vật tư & Thiết bị
-                </TabsTrigger>
-                <TabsTrigger
-                  value="tasks"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm"
-                >
-                  <Users className="w-3.5 h-3.5 mr-2 text-blue-600" />
-                  Nhân sự & Cách thức
-                </TabsTrigger>
-              </TabsList>
-
-              {/* TAB: MATERIALS */}
-              <TabsContent value="materials" className="flex-1 space-y-4">
-                <div className="space-y-2 min-h-[120px]">
-                  {allocations.length === 0 ? (
-                    <div className="text-center py-6 border border-dashed rounded-lg bg-slate-50/50">
-                      <Package className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                      <p className="text-sm text-slate-500">
-                        Chưa có vật tư phân bổ
-                      </p>
-                    </div>
-                  ) : (
-                    allocations.map((a) => (
-                      <div
-                        key={a.id}
-                        className="flex justify-between items-center bg-slate-50 p-2.5 rounded-md text-sm group hover:bg-slate-100 transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant="outline"
-                            className="bg-white text-xs font-normal"
-                          >
-                            {a.materialType}
-                          </Badge>
-                          <span className="font-medium text-slate-700">
-                            {a.materialName}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="font-semibold text-slate-900 bg-white px-2 py-0.5 rounded border">
-                            {a.quantity} {a.unit}
-                          </span>
-                          <button
-                            className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => onRemoveMaterial(a.id)}
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                {/* Add Material Form */}
-                <div className="flex gap-2 pt-3 border-t mt-auto">
-                  <Select
-                    value={newItem.type}
-                    onValueChange={(v) => {
-                      const defaultUnit =
-                        MATERIAL_UNITS[v as keyof typeof MATERIAL_UNITS]?.[0] ||
-                        "kg";
-                      setNewItem({
-                        ...newItem,
-                        type: v,
-                        name: "",
-                        unit: defaultUnit,
-                      });
-                    }}
-                  >
-                    <SelectTrigger className="w-[120px] h-9 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MATERIAL_TYPES.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select
-                    value={newItem.name}
-                    onValueChange={(v) => {
-                      const category =
-                        MATERIAL_OPTIONS[
-                          newItem.type as keyof typeof MATERIAL_OPTIONS
-                        ] || [];
-                      const item = category.find((i) => i.value === v);
-                      setNewItem({
-                        ...newItem,
-                        name: v,
-                        unit: item?.unit || newItem.unit,
-                      });
-                    }}
-                  >
-                    <SelectTrigger className="h-9 text-xs flex-1">
-                      <SelectValue placeholder="Chọn vật tư..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(
-                        MATERIAL_OPTIONS[
-                          newItem.type as keyof typeof MATERIAL_OPTIONS
-                        ] || []
-                      ).map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="flex gap-1">
-                    <Input
-                      placeholder="SL"
-                      type="number"
-                      className="h-9 text-sm"
-                      value={newItem.qty}
-                      onChange={(e) =>
-                        setNewItem({ ...newItem, qty: e.target.value })
-                      }
-                    />
-                    <Select
-                      value={newItem.unit}
-                      onValueChange={(v) => setNewItem({ ...newItem, unit: v })}
-                    >
-                      <SelectTrigger className="h-9 text-xs px-2 w-20">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(
-                          MATERIAL_UNITS[
-                            newItem.type as keyof typeof MATERIAL_UNITS
-                          ] || ["kg"]
-                        ).map((u) => (
-                          <SelectItem key={u} value={u}>
-                            {u}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button
-                    size="sm"
-                    className="h-9 w-9 p-0 bg-slate-900 hover:bg-slate-800"
-                    onClick={handleAddMaterial}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
-              </TabsContent>
-
-              {/* TAB: TASKS */}
-              <TabsContent value="tasks" className="flex-1 space-y-4">
-                <div className="space-y-2 min-h-[120px]">
-                  {tasks.length === 0 ? (
-                    <div className="text-center py-6 border border-dashed rounded-lg bg-slate-50/50">
-                      <Wrench className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                      <p className="text-sm text-slate-500">
-                        Chưa thiết lập công việc
-                      </p>
-                    </div>
-                  ) : (
-                    tasks.map((t) => (
-                      <div
-                        key={t.id}
-                        className="bg-slate-50 p-3 rounded-md text-sm space-y-1 group hover:bg-slate-100 transition-colors"
-                      >
-                        <div className="flex justify-between items-start">
-                          <span className="font-semibold text-slate-800">
-                            {t.name}
-                          </span>
-                          <button
-                            className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => onRemoveTask(t.id)}
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                        {t.description && (
-                          <p className="text-slate-600 text-xs italic flex items-start gap-1">
-                            <StickyNote className="w-3 h-3 mt-0.5" />
-                            {t.description}
-                          </p>
-                        )}
-                        <div className="flex gap-3 mt-1 pt-1 border-t border-slate-200/50">
-                          {t.labor && (
-                            <Badge
-                              variant="secondary"
-                              className="text-[10px] h-5 bg-blue-50 text-blue-700 border-blue-100 px-1.5"
-                            >
-                              <Users className="w-3 h-3 mr-1" /> {t.labor}
-                            </Badge>
-                          )}
-                          {t.duration && (
-                            <Badge
-                              variant="secondary"
-                              className="text-[10px] h-5 bg-amber-50 text-amber-700 border-amber-100 px-1.5"
-                            >
-                              <Clock className="w-3 h-3 mr-1" /> {t.duration}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                {/* Add Task Form */}
-                <div className="space-y-2 pt-3 border-t mt-auto text-sm">
-                  <div className="flex gap-2">
-                    <Select
-                      value={newTask.name}
-                      onValueChange={(v) => setNewTask({ ...newTask, name: v })}
-                    >
-                      <SelectTrigger className="h-9 flex-1 font-medium">
-                        <SelectValue placeholder="Chọn công việc..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TASK_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      size="sm"
-                      className="h-9 px-3 bg-slate-900 hover:bg-slate-800"
-                      onClick={handleAddTask}
-                    >
-                      <Plus className="w-3.5 h-3.5 mr-1.5" /> Thêm
-                    </Button>
-                  </div>
-                  <Input
-                    placeholder="Mô tả kỹ thuật (VD: Cày sâu 30cm, phơi đất 5 ngày)..."
-                    className="h-9 text-muted-foreground"
-                    value={newTask.desc}
-                    onChange={(e) =>
-                      setNewTask({ ...newTask, desc: e.target.value })
-                    }
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="relative">
-                      <Users className="w-3.5 h-3.5 absolute left-2.5 top-3 z-10 text-slate-400" />
-                      <Select
-                        value={newTask.labor}
-                        onValueChange={(v) =>
-                          setNewTask({ ...newTask, labor: v })
-                        }
-                      >
-                        <SelectTrigger className="h-9 pl-8">
-                          <SelectValue placeholder="Nhân sự" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {LABOR_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="relative">
-                      <Clock className="w-3.5 h-3.5 absolute left-2.5 top-3 text-slate-400" />
-                      <Input
-                        placeholder="Thời gian (ngày/giờ)"
-                        className="h-9 pl-8"
-                        type="datetime-local"
-                        value={newTask.duration}
-                        onChange={(e) =>
-                          setNewTask({ ...newTask, duration: e.target.value })
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
-        )}
-      </div>
-    );
-  },
-);
-
 export default function PlanCreatePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [selections, setSelections] = useState<GeographicalSelection[]>([]);
+  const [selectedEnterpriseId, setSelectedEnterpriseId] = useState<string>("");
 
   // Zustand store
   const addPlan = usePlanStore((state) => state.addPlan);
   const seasons = useSeasonStore((state) => state.seasons);
+  const { regions } = useRegionStore();
+  const { growthCycles } = useGrowthCycleStore();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CreatePlanForm>({
     code: "",
     name: "",
     description: "",
@@ -759,20 +160,20 @@ export default function PlanCreatePage() {
     endDate: "",
 
     // Location & Crop
-    selectedRegionId: "",
+    selectedRegionIds: [] as string[],
     selectedZoneIds: [] as string[],
-    selectedPlotIds: [] as string[],
+    selectedPlotIds: [],
     crop: "",
     variety: "",
-
-    // Process
+    purpose: "cultivation",
     growthCycleId: "",
-    regimenId: "", // New State for Treatment Regimen
-    selectedStages: [] as string[],
+    regimenId: "",
+    selectedStages: [],
 
     // Resources
     materialAllocations: [] as MaterialAllocation[],
     taskAllocations: [] as TaskAllocation[],
+    status: "planning", // Default status
   });
 
   const [dateWarning, setDateWarning] = useState<string | null>(null);
@@ -786,33 +187,143 @@ export default function PlanCreatePage() {
         ...prev,
         seasonId: season.id,
         seasonName: season.name,
-        startDate: season.startDate,
-        endDate: season.endDate,
+        duration: season.duration,
       }));
       setDateWarning(null);
     }
   };
 
-  const handleRegionChange = (id: string) => {
-    const region = LOCATIONS.find((loc) => loc.id === id);
-    if (region) {
-      const zoneIds: string[] = [];
-      const plotIds: string[] = [];
-      region.zones.forEach((zone) => {
-        zoneIds.push(zone.id);
-        zone.plots.forEach((plot) => {
-          plotIds.push(plot.id);
+  const selectionSummary = useMemo(() => {
+    const summary: {
+      regionId: string;
+      regionName: string;
+      items: {
+        type: "region" | "area" | "plot";
+        id: string;
+        name: string;
+        parentName?: string;
+      }[];
+    }[] = [];
+
+    selections.forEach((sel) => {
+      const region = (regions || []).find(
+        (r) => String(r.id) === String(sel.regionId),
+      );
+      if (!region) return;
+
+      let regionGroup = summary.find((s) => s.regionId === String(region.id));
+      if (!regionGroup) {
+        regionGroup = {
+          regionId: String(region.id),
+          regionName: region.name,
+          items: [],
+        };
+        summary.push(regionGroup);
+      }
+
+      if (sel.type === "region") {
+        regionGroup.items.push({
+          type: "region",
+          id: String(region.id),
+          name: "Toàn bộ vùng",
         });
-      });
-      setFormData((prev) => ({
-        ...prev,
-        selectedRegionId: id,
-        selectedZoneIds: zoneIds,
-        selectedPlotIds: plotIds,
-        crop: region.crop,
-        variety: region.variety,
-      }));
-    }
+      } else if (sel.type === "area") {
+        const area = region.subAreas?.find(
+          (a) => String(a.id) === String(sel.areaId),
+        );
+        if (area) {
+          regionGroup.items.push({
+            type: "area",
+            id: String(area.id),
+            name: area.name,
+          });
+        }
+      } else if (sel.type === "plot") {
+        const area = region.subAreas?.find(
+          (a) => String(a.id) === String(sel.areaId),
+        );
+        const plot = area?.plots?.find(
+          (p) => String(p.id) === String(sel.plotId),
+        );
+        if (plot) {
+          regionGroup.items.push({
+            type: "plot",
+            id: String(plot.id),
+            name: plot.name,
+            parentName: area?.name,
+          });
+        }
+      }
+    });
+
+    return summary;
+  }, [selections, regions]);
+
+  const handleGeographicalConfirm = (
+    newSelections: GeographicalSelection[],
+  ) => {
+    setSelections(newSelections);
+    const regionIds = new Set<string>();
+    const zoneIds = new Set<string>();
+    const plotIds = new Set<string>();
+    let mainCrop = "";
+    let mainVariety = "";
+
+    newSelections.forEach((sel) => {
+      // Find the region
+      const region = (regions || []).find(
+        (loc) => String(loc.id) === String(sel.regionId),
+      );
+      if (!region) return;
+
+      // Extract crop info if not yet set (or update based on latest region)
+      if (region.cropVarieties && region.cropVarieties.length > 0) {
+        mainCrop = region.cropVarieties[0].name;
+        mainVariety = region.cropVarieties[0].variety;
+      }
+
+      regionIds.add(String(region.id));
+
+      if (sel.type === "region") {
+        region.subAreas?.forEach((zone) => {
+          zoneIds.add(String(zone.id));
+          zone.plots?.forEach((plot) => {
+            plotIds.add(String(plot.id));
+          });
+        });
+      }
+
+      if (sel.type === "area") {
+        const zone = region.subAreas?.find(
+          (z) => String(z.id) === String(sel.areaId),
+        );
+        if (zone) {
+          zoneIds.add(String(zone.id));
+          zone.plots?.forEach((plot) => {
+            plotIds.add(String(plot.id));
+          });
+        }
+      }
+
+      if (sel.type === "plot") {
+        plotIds.add(String(sel.plotId));
+        const zone = region.subAreas?.find(
+          (z) => String(z.id) === String(sel.areaId),
+        );
+        if (zone) {
+          zoneIds.add(String(zone.id));
+        }
+      }
+    });
+
+    setFormData((prev) => ({
+      ...prev,
+      selectedRegionIds: Array.from(regionIds),
+      selectedZoneIds: Array.from(zoneIds),
+      selectedPlotIds: Array.from(plotIds),
+      crop: mainCrop,
+      variety: mainVariety,
+    }));
   };
 
   const handleGrowthCycleChange = (id: string) => {
@@ -827,64 +338,44 @@ export default function PlanCreatePage() {
   };
 
   const calculateArea = () => {
-    let area = 0;
-    LOCATIONS.forEach((region) => {
-      region.zones.forEach((zone) => {
-        zone.plots.forEach((plot) => {
-          if (formData.selectedPlotIds.includes(plot.id)) {
-            area += plot.area;
+    let total = 0;
+    const regionIds = formData.selectedRegionIds || [];
+    const zoneIds = formData.selectedZoneIds || [];
+    const plotIds = formData.selectedPlotIds || [];
+
+    regions.forEach((region) => {
+      if (!regionIds.includes(String(region.id))) return;
+
+      const regionZoneIds = region.subAreas?.map((sa) => sa.id) || [];
+      const isWholeRegion =
+        regionZoneIds.length > 0 &&
+        regionZoneIds.every((zid) => zoneIds.includes(zid));
+
+      if (isWholeRegion) {
+        total += region.area || 0;
+      } else {
+        region.subAreas?.forEach((sa) => {
+          if (zoneIds.includes(sa.id)) {
+            const zonePlotIds = sa.plots?.map((p) => p.id) || [];
+            const isWholeArea =
+              zonePlotIds.length > 0 &&
+              zonePlotIds.every((pid) => plotIds.includes(pid));
+
+            if (isWholeArea) {
+              total += sa.area || 0;
+            } else {
+              sa.plots?.forEach((p) => {
+                if (plotIds.includes(p.id)) {
+                  total += p.area || 0;
+                }
+              });
+            }
           }
         });
-      });
-    });
-    return area.toFixed(1);
-  };
-
-  const groupedLocations = useMemo(() => {
-    const groups: {
-      region: string;
-      zones: {
-        id: string;
-        name: string;
-        plots: { id: string; name: string }[];
-      }[];
-    }[] = [];
-
-    LOCATIONS.forEach((region) => {
-      const activeZones: {
-        id: string;
-        name: string;
-        plots: { id: string; name: string }[];
-      }[] = [];
-
-      region.zones.forEach((zone) => {
-        const activePlots = zone.plots.filter((p) =>
-          formData.selectedPlotIds.includes(p.id),
-        );
-        if (activePlots.length > 0) {
-          activeZones.push({
-            id: zone.id,
-            name: zone.name,
-            plots: activePlots.map((p) => ({ id: p.id, name: p.name })),
-          });
-        }
-      });
-
-      if (activeZones.length > 0) {
-        groups.push({ region: region.name, zones: activeZones });
       }
     });
 
-    return groups;
-  }, [formData.selectedPlotIds]);
-
-  const removeLocationGroup = (plotIds: string[]) => {
-    setFormData((prev) => ({
-      ...prev,
-      selectedPlotIds: prev.selectedPlotIds.filter(
-        (id) => !plotIds.includes(id),
-      ),
-    }));
+    return total.toFixed(1);
   };
 
   const toggleStage = (stage: string, checked: boolean) => {
@@ -1054,81 +545,90 @@ export default function PlanCreatePage() {
                   </span>
                   Chọn vùng canh tác
                 </h3>
-                <div className="p-5 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm space-y-4">
+                <Label className="text-sm font-medium">
+                  Doanh nghiệp (Enterprise){" "}
+                  <span className="text-red-500">*</span>
+                </Label>
+                <EnterpriseSelector
+                  selectedId={selectedEnterpriseId}
+                  onSelect={(val) => {
+                    setSelectedEnterpriseId(val);
+                    setSelections([]);
+                  }}
+                />
+                <div className="p-5 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm space-y-4 relative">
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Vùng canh tác <span className="text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={formData.selectedRegionId}
-                      onValueChange={handleRegionChange}
-                    >
-                      <SelectTrigger className="bg-white border-emerald-200 h-12 text-base font-medium">
-                        <SelectValue placeholder="Chọn vùng canh tác..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {LOCATIONS.map((loc) => (
-                          <SelectItem key={loc.id} value={loc.id}>
-                            {loc.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                        Vùng canh tác <span className="text-red-500">*</span>
+                      </label>
+                      {!selectedEnterpriseId && (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] text-amber-600 border-amber-200 bg-amber-50"
+                        >
+                          Chọn doanh nghiệp trước
+                        </Badge>
+                      )}
+                    </div>
+                    <GeographicalSelector
+                      regions={regions || []}
+                      enterpriseId={selectedEnterpriseId}
+                      existingSelections={selections}
+                      onConfirm={handleGeographicalConfirm}
+                    />
+
+                    {selectionSummary.length > 0 && (
+                      <div className="mt-4 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
+                        <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
+                          <Layers className="w-3 h-3" />
+                          Phạm vi đã chọn ({selections.length} mục)
+                        </div>
+                        <div className="space-y-3">
+                          {selectionSummary.map((group) => (
+                            <div key={group.regionId} className="space-y-2">
+                              <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
+                                <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                                {group.regionName}
+                              </div>
+                              <div className="flex flex-wrap gap-1.5 pl-2.5">
+                                {group.items.map((item, idx) => (
+                                  <Badge
+                                    key={idx}
+                                    variant="outline"
+                                    className={cn(
+                                      "text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm",
+                                      item.type === "region"
+                                        ? "bg-emerald-100 text-emerald-800"
+                                        : item.type === "area"
+                                          ? "bg-blue-50 text-blue-700 border-blue-100"
+                                          : "bg-white text-slate-600 border-slate-200",
+                                    )}
+                                  >
+                                    <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
+                                      {item.type === "region"
+                                        ? "Vùng"
+                                        : item.type === "area"
+                                          ? "Khu"
+                                          : "Lô"}
+                                    </span>
+                                    {item.name}
+                                    {item.parentName && (
+                                      <span className="ml-1 opacity-50 font-normal italic">
+                                        ({item.parentName})
+                                      </span>
+                                    )}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-
-              {/* Chi tiết phạm vi - Read Only Hierarchy */}
-              {formData.selectedRegionId && (
-                <div className="space-y-4 animation-fade-in">
-                  <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-emerald-600" />
-                    Chi tiết phạm vi canh tác
-                  </h3>
-                  <div className="p-5 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-6">
-                    {/* Zone & Plot Hierarchy List */}
-                    <div className="space-y-4">
-                      {LOCATIONS.find(
-                        (r) => r.id === formData.selectedRegionId,
-                      )?.zones.map((zone) => (
-                        <div key={zone.id} className="space-y-2">
-                          <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-100 shadow-sm">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                                <Layers className="w-4 h-4" />
-                              </div>
-                              <span className="font-bold text-slate-900">
-                                {zone.name}
-                              </span>
-                            </div>
-                            <Check className="w-4 h-4 text-emerald-500" />
-                          </div>
-
-                          {/* Plots within Zone */}
-                          <div className="grid grid-cols-2 gap-2 pl-4">
-                            {zone.plots.map((plot) => (
-                              <div
-                                key={plot.id}
-                                className="flex items-center justify-between p-2 rounded-lg bg-slate-100/50 border border-slate-200/50"
-                              >
-                                <span className="text-sm text-slate-600 truncate mr-2">
-                                  {plot.name}
-                                </span>
-                                <Badge
-                                  variant="outline"
-                                  className="text-[10px] h-4 px-1.5 bg-white font-normal border-slate-200"
-                                >
-                                  {plot.area} ha
-                                </Badge>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Ghi chú Section */}
               <div className="space-y-2">
@@ -1145,82 +645,138 @@ export default function PlanCreatePage() {
             </div>
 
             <div className="space-y-6">
-              {/* Crop & Variety Selection */}
-              <div className="space-y-4">
-                <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                  <Leaf className="w-4 h-4 text-emerald-600" />
-                  Thông tin cây trồng
-                </h3>
-                <div className="grid grid-cols-1 gap-4 p-5 rounded-2xl border border-slate-100 bg-white shadow-sm">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Loại cây trồng
-                    </Label>
-                    <div className="h-11 px-3 flex items-center border border-slate-200 rounded-md bg-slate-50 text-slate-600 font-medium">
-                      {formData.crop || "Chưa xác định"}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Giống (Variety)
-                    </Label>
-                    <div className="h-11 px-3 flex items-center border border-slate-200 rounded-md bg-slate-50 text-slate-600 font-medium">
-                      {formData.variety || "Chưa xác định"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* Summary Section */}
               <div className="space-y-4">
                 <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
                   <Package className="w-4 h-4 text-emerald-600" />
                   Tóm tắt phạm vi đã chọn
                 </h3>
-                <div className="bg-linear-to-br from-emerald-600 to-teal-700 p-6 rounded-2xl text-white shadow-lg space-y-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-inner">
-                      <MapPin className="w-6 h-6 text-white" />
+                <div className="bg-linear-to-br from-emerald-600 to-teal-700 p-6 rounded-3xl text-white shadow-xl space-y-6 relative overflow-hidden">
+                  {/* Decorative blobs */}
+                  <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+                  <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-24 h-24 bg-black/10 rounded-full blur-2xl" />
+
+                  <div className="flex items-start gap-4 relative z-10">
+                    <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg ring-1 ring-white/30">
+                      <MapPin className="w-7 h-7 text-white" />
                     </div>
-                    <div>
-                      <p className="text-emerald-100 text-xs font-semibold uppercase tracking-widest">
-                        Đang chọn canh tác
+                    <div className="flex-1">
+                      <p className="text-emerald-100 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">
+                        Khu vực canh tác
                       </p>
-                      <h4 className="text-xl font-bold leading-tight">
-                        {LOCATIONS.find(
-                          (r) => r.id === formData.selectedRegionId,
-                        )?.name || "Chưa chọn vùng"}
+                      <h4 className="text-2xl font-black leading-tight tracking-tight">
+                        {regions
+                          .filter((r) =>
+                            formData.selectedRegionIds.includes(
+                              r.id.toString(),
+                            ),
+                          )
+                          .map((r) => r.name)
+                          .join(", ") || "Chưa chọn vùng"}
                       </h4>
-                      <p className="text-xs text-emerald-200 mt-0.5">
-                        {formData.selectedPlotIds.length} lô đất •{" "}
-                        {calculateArea()} ha
+                      <div className="flex items-center gap-3 mt-2">
+                        <Badge
+                          variant="secondary"
+                          className="bg-white/20 text-white border-transparent text-[10px] font-bold h-5"
+                        >
+                          {formData.selectedPlotIds.length} LÔ ĐẤT
+                        </Badge>
+                        <Badge
+                          variant="secondary"
+                          className="bg-white/20 text-white border-transparent text-[10px] font-bold h-5"
+                        >
+                          {calculateArea()} HA
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 relative z-10">
+                    <div className="bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-sm">
+                      <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider mb-1">
+                        Cây trồng
+                      </p>
+                      <p className="font-bold text-sm truncate">
+                        {formData.crop || "---"}
+                      </p>
+                    </div>
+                    <div className="bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-sm">
+                      <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider mb-1">
+                        Giống
+                      </p>
+                      <p className="font-bold text-sm truncate">
+                        {formData.variety || "---"}
                       </p>
                     </div>
                   </div>
 
-                  <div className="space-y-2 pt-2 border-t border-white/10">
-                    <div className="flex justify-between items-center text-sm font-medium">
-                      <span className="text-emerald-200">Khu vực đã chọn</span>
-                      <span>{formData.selectedZoneIds.length} khu vực</span>
+                  {selectionSummary.length > 0 && (
+                    <div className="space-y-3 relative z-10">
+                      <div className="flex items-center justify-between">
+                        <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider">
+                          Chi tiết phạm vi
+                        </p>
+                      </div>
+                      <ScrollArea className="h-32 pr-2">
+                        <div className="space-y-3">
+                          {selectionSummary.map((group) => (
+                            <div key={group.regionId} className="space-y-1.5">
+                              <div className="text-[10px] font-bold text-emerald-100 uppercase tracking-wider opacity-60">
+                                {group.regionName}
+                              </div>
+                              {group.items.map((item, idx) => (
+                                <div
+                                  key={idx}
+                                  className="flex items-center justify-between p-2 rounded-xl bg-white/10 border border-white/5 hover:bg-white/15 transition-colors"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      className={cn(
+                                        "w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.5)]",
+                                        item.type === "region"
+                                          ? "bg-amber-400"
+                                          : item.type === "area"
+                                            ? "bg-blue-400"
+                                            : "bg-emerald-400",
+                                      )}
+                                    />
+                                    <div className="flex flex-col">
+                                      <span className="text-[10px] uppercase font-black opacity-40 leading-none mb-0.5">
+                                        {item.type === "region"
+                                          ? "Toàn vùng"
+                                          : item.type === "area"
+                                            ? "Khu vực"
+                                            : "Lô đất"}
+                                      </span>
+                                      <span className="text-xs font-medium truncate max-w-[150px]">
+                                        {item.name}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {item.parentName && (
+                                    <span className="text-[9px] font-bold opacity-50 italic truncate max-w-[80px]">
+                                      {item.parentName}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
                     </div>
-                    <div className="flex justify-between items-center text-sm font-medium">
-                      <span className="text-emerald-200">Giống cây trồng</span>
-                      <span className="bg-white/10 px-2 py-0.5 rounded text-xs uppercase">
-                        {formData.variety || "Trống"}
-                      </span>
-                    </div>
-                  </div>
+                  )}
 
-                  <div className="bg-white/10 p-4 rounded-xl backdrop-blur-sm border border-white/10">
+                  <div className="bg-black/20 p-4 rounded-2xl border border-white/10 relative z-10">
                     <div className="flex items-center gap-2 mb-2">
-                      <Info className="w-3.5 h-3.5 text-emerald-200" />
-                      <span className="text-xs font-bold text-emerald-100 uppercase tracking-wide">
-                        Thông báo phạm vi
+                      <Info className="w-4 h-4 text-emerald-300" />
+                      <span className="text-[10px] font-black text-emerald-200 uppercase tracking-widest">
+                        Lưu ý
                       </span>
                     </div>
-                    <p className="text-sm text-white leading-relaxed font-medium">
-                      Kế hoạch này sẽ áp dụng cho tất cả các lô đất thuộc vùng
-                      đã chọn.
+                    <p className="text-xs text-emerald-50/80 leading-relaxed italic text-justify">
+                      Quy trình canh tác sẽ được áp dụng đồng bộ cho tất cả các
+                      lô đất đã chọn trong danh sách trên.
                     </p>
                   </div>
                 </div>
@@ -1238,124 +794,341 @@ export default function PlanCreatePage() {
       content: (
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="space-y-4">
-            <Label className="text-base">Quy trình áp dụng</Label>
-            <Select
-              value={formData.growthCycleId}
-              onValueChange={handleGrowthCycleChange}
-            >
-              <SelectTrigger className="h-12">
-                <div className="flex items-center gap-2">
-                  <ClipboardList className="w-5 h-5 text-muted-foreground" />
-                  <SelectValue placeholder="Chọn quy trình mẫu..." />
+            <Label className="text-base font-bold text-slate-800">
+              Mục đích kế hoạch
+            </Label>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((prev) => ({ ...prev, purpose: "cultivation" }))
+                }
+                className={cn(
+                  "flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all text-left",
+                  formData.purpose === "cultivation"
+                    ? "bg-emerald-50 border-emerald-500 text-emerald-900 shadow-md"
+                    : "bg-white border-slate-100 text-slate-500 hover:border-slate-200",
+                )}
+              >
+                <div
+                  className={cn(
+                    "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
+                    formData.purpose === "cultivation"
+                      ? "bg-emerald-500 text-white"
+                      : "bg-slate-100 text-slate-400",
+                  )}
+                >
+                  <Sprout className="w-6 h-6" />
                 </div>
-              </SelectTrigger>
-              <SelectContent>
-                {getCyclesByCrop(formData.crop).map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name} ({c.durationDays} ngày)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                <div className="text-center">
+                  <p className="font-bold text-sm">Canh tác</p>
+                  <p className="text-[10px] opacity-60 mt-1">
+                    Sử dụng quy trình chuẩn cho mùa vụ
+                  </p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((prev) => ({ ...prev, purpose: "treatment" }))
+                }
+                className={cn(
+                  "flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all text-left",
+                  formData.purpose === "treatment"
+                    ? "bg-blue-50 border-blue-500 text-blue-900 shadow-md"
+                    : "bg-white border-slate-100 text-slate-500 hover:border-slate-200",
+                )}
+              >
+                <div
+                  className={cn(
+                    "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
+                    formData.purpose === "treatment"
+                      ? "bg-blue-500 text-white"
+                      : "bg-slate-100 text-slate-400",
+                  )}
+                >
+                  <StickyNote className="w-6 h-6" />
+                </div>
+                <div className="text-center">
+                  <p className="font-bold text-sm">Điều trị</p>
+                  <p className="text-[10px] opacity-60 mt-1">
+                    Áp dụng phác đồ xử lý cụ thể
+                  </p>
+                </div>
+              </button>
+            </div>
           </div>
 
-          <div className="space-y-4">
-            <Label className="text-base">Phác đồ điều trị (nếu có)</Label>
-            <Select
-              value={formData.regimenId}
-              onValueChange={(v) =>
-                setFormData((prev) => ({ ...prev, regimenId: v }))
-              }
-            >
-              <SelectTrigger className="h-12">
-                <div className="flex items-center gap-2">
-                  <ClipboardList className="w-5 h-5 text-muted-foreground" />
-                  <SelectValue placeholder="Chọn phác đồ..." />
+          {formData.purpose === "cultivation" ? (
+            <div className="space-y-6 animation-slide-up">
+              {(() => {
+                const season = seasons.find((s) => s.id === formData.seasonId);
+                const seasonCycles = (season?.growthCycleIds || [])
+                  .map((cid) => growthCycles.find((gc) => gc.id === cid))
+                  .filter(Boolean);
+
+                if (!season) {
+                  return (
+                    <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
+                      <p className="text-slate-400 font-medium">
+                        Vui lòng chọn mùa vụ ở bước 1
+                      </p>
+                    </div>
+                  );
+                }
+
+                if (seasonCycles.length === 0) {
+                  return (
+                    <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
+                      <p className="text-slate-400 font-medium italic">
+                        Vùng trồng/Mùa vụ này chưa được gán quy trình mẫu.
+                      </p>
+                      <p className="text-[10px] text-slate-400 mt-2">
+                        Vui lòng kiểm tra lại cấu hình mùa vụ.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-8">
+                    {seasonCycles.map((cycle) => (
+                      <div
+                        key={cycle!.id}
+                        className="space-y-4 animation-fade-in"
+                      >
+                        <div className="flex items-center justify-between px-2">
+                          <div className="space-y-0.5">
+                            <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                              <ClipboardList className="w-4 h-4 text-emerald-500" />
+                              {cycle!.name}
+                            </h4>
+                            <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                              {cycle!.totalDays} ngày • {cycle!.stages.length}{" "}
+                              giai đoạn
+                            </p>
+                          </div>
+                          <Badge
+                            variant="secondary"
+                            className="bg-emerald-100 text-emerald-700 text-[9px] font-bold border-transparent"
+                          >
+                            {
+                              formData.selectedStages.filter((s) =>
+                                s.startsWith(`${cycle!.id}:`),
+                              ).length
+                            }{" "}
+                            / {cycle!.stages.length}
+                          </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                          {cycle!.stages.map((stage, idx) => {
+                            const stageKey = `${cycle!.id}:${stage.name}`;
+                            return (
+                              <StageItem
+                                key={stage.id}
+                                index={idx}
+                                stage={stage.name}
+                                checked={formData.selectedStages.includes(
+                                  stageKey,
+                                )}
+                                onChange={(c) => {
+                                  setFormData((prev) => {
+                                    const current = prev.selectedStages;
+                                    if (c && !current.includes(stageKey))
+                                      return {
+                                        ...prev,
+                                        selectedStages: [...current, stageKey],
+                                      };
+                                    if (!c && current.includes(stageKey))
+                                      return {
+                                        ...prev,
+                                        selectedStages: current.filter(
+                                          (s) => s !== stageKey,
+                                        ),
+                                      };
+                                    return prev;
+                                  });
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="flex gap-3 text-[11px] text-muted-foreground bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      <Info className="w-4 h-4 text-blue-500 shrink-0" />
+                      <p className="leading-relaxed">
+                        Các giai đoạn được hiển thị dựa trên quy trình mẫu đã
+                        gán cho Mùa vụ. Bạn có thể chọn lọc các giai đoạn thực
+                        tế sẽ triển khai.
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          ) : (
+            <div className="space-y-4 animation-slide-up">
+              <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
+                Phác đồ điều trị
+              </Label>
+              <Select
+                value={formData.regimenId}
+                onValueChange={(v) => {
+                  const regimen = TREATMENT_REGIMENS.find((r) => r.id === v);
+                  setFormData((prev) => ({
+                    ...prev,
+                    regimenId: v,
+                    // If treatment, we might want to set a single default stage for allocations
+                    selectedStages: regimen ? [regimen.name] : [],
+                  }));
+                }}
+              >
+                <SelectTrigger className="h-14 border-blue-100 bg-blue-50/20 focus:ring-blue-500">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0">
+                      <FileCheck className="w-4 h-4" />
+                    </div>
+                    <SelectValue placeholder="Chọn phác đồ điều trị..." />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {TREATMENT_REGIMENS.map((r) => (
+                    <SelectItem key={r.id} value={r.id} className="py-3">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-bold text-slate-900">
+                          {r.name}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-normal">
+                          {r.description}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {formData.regimenId && (
+                <div className="p-5 rounded-2xl bg-blue-50/50 border border-blue-100 flex gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center border border-blue-200 text-blue-500 shrink-0 shadow-sm">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-blue-900">
+                      Tính chất lộ trình
+                    </p>
+                    <p className="text-[11px] text-blue-700 leading-relaxed">
+                      Phác đồ này được thiết kế để xử lý vấn đề hiện tại. Bạn có
+                      thể phân bổ vật tư điều trị ở bước tiếp theo.
+                    </p>
+                  </div>
                 </div>
-              </SelectTrigger>
-              <SelectContent>
-                {TREATMENT_REGIMENS.map((r) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    {r.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {formData.growthCycleId && (
-            <div className="space-y-4 animation-fade-in">
-              <div className="flex items-center justify-between">
-                <Label>Các giai đoạn triển khai</Label>
-                <Badge variant="outline">
-                  {formData.selectedStages.length} được chọn
-                </Badge>
-              </div>
-
-              <div className="grid gap-2 max-h-[400px] overflow-y-auto pr-2">
-                {GROWTH_CYCLES.find(
-                  (c) => c.id === formData.growthCycleId,
-                )?.stages.map((stage, idx) => (
-                  <StageItem
-                    key={idx}
-                    index={idx}
-                    stage={stage}
-                    checked={formData.selectedStages.includes(stage)}
-                    onChange={(c) => toggleStage(stage, c)}
-                  />
-                ))}
-              </div>
-
-              <div className="flex gap-2 text-sm text-muted-foreground bg-slate-50 p-3 rounded">
-                <Info className="w-4 h-4 mt-0.5 text-blue-500" />
-                <p>
-                  Bạn có thể bỏ chọn các giai đoạn không cần thiết cho mùa vụ
-                  này (ví dụ: bỏ qua giai đoạn làm đất nếu trồng gối vụ).
-                </p>
-              </div>
+              )}
             </div>
           )}
         </div>
       ),
-      isValid: !!formData.growthCycleId && formData.selectedStages.length > 0,
+      isValid:
+        formData.purpose === "treatment"
+          ? !!formData.regimenId
+          : formData.selectedStages.length > 0,
     },
     {
-      title: "Phân bổ & Công việc",
+      id: "resources",
+      title:
+        formData.purpose === "cultivation"
+          ? "Phân bổ & Công việc"
+          : "Vật tư & Phác đồ",
       description: "Hoạch định nguồn lực chi tiết",
       content: (
         <div className="max-w-3xl mx-auto space-y-6">
           <div className="text-center mb-6">
             <h3 className="text-xl font-bold text-slate-900">
-              Định mức Vật tư & Công việc
+              {formData.purpose === "cultivation"
+                ? "Định mức Vật tư & Giai đoạn"
+                : "Vật tư & Công việc Điều trị"}
             </h3>
             <p className="text-slate-500 text-sm mt-1 max-w-lg mx-auto">
-              Thiết lập chi tiết các hạng mục đầu tư và quy trình kỹ thuật cho
-              từng giai đoạn của mùa vụ.
+              {formData.purpose === "cultivation"
+                ? "Thiết lập chi tiết các hạng mục đầu tư và quy trình kỹ thuật cho từng giai đoạn của mùa vụ."
+                : "Phân bổ vật tư và công việc cụ thể để thực hiện phác đồ điều trị đã chọn."}
             </p>
           </div>
 
           <div className="space-y-4">
-            {formData.selectedStages.map((stage, idx) => (
-              <StageAllocation
-                key={idx}
-                stageName={stage}
-                index={idx}
-                allocations={formData.materialAllocations.filter(
-                  (m) => m.stageId === stage,
-                )}
-                tasks={formData.taskAllocations.filter(
-                  (t) => t.stageId === stage,
-                )}
-                onAddMaterial={handleAddMaterial}
-                onRemoveMaterial={handleRemoveMaterial}
-                onAddTask={handleAddTask}
-                onRemoveTask={handleRemoveTask}
-              />
-            ))}
+            {formData.purpose === "cultivation"
+              ? formData.selectedStages.map((stageKey, idx) => {
+                  const [cycleId, stageName] = stageKey.includes(":")
+                    ? stageKey.split(":")
+                    : [null, stageKey];
+                  const cycleName = cycleId
+                    ? growthCycles.find((c) => c.id === cycleId)?.name
+                    : null;
+
+                  return (
+                    <StageAllocation
+                      key={idx}
+                      stageName={stageName}
+                      cycleName={cycleName}
+                      index={idx}
+                      allocations={formData.materialAllocations.filter(
+                        (m) => m.stageId === stageKey,
+                      )}
+                      tasks={formData.taskAllocations.filter(
+                        (t) => t.stageId === stageKey,
+                      )}
+                      onAddMaterial={(item) =>
+                        handleAddMaterial({ ...item, stageId: stageKey })
+                      }
+                      onRemoveMaterial={handleRemoveMaterial}
+                      onAddTask={(item) =>
+                        handleAddTask({ ...item, stageId: stageKey })
+                      }
+                      onRemoveTask={handleRemoveTask}
+                    />
+                  );
+                })
+              : (() => {
+                  const regimen = TREATMENT_REGIMENS.find(
+                    (r) => r.id === formData.regimenId,
+                  );
+                  const stageKey = regimen?.name || "Treatment";
+                  return regimen ? (
+                    <div className="animation-slide-up">
+                      <StageAllocation
+                        index={0}
+                        stageName={regimen.name}
+                        cycleName="Phác đồ điều trị"
+                        allocations={formData.materialAllocations.filter(
+                          (m) => m.stageId === stageKey,
+                        )}
+                        tasks={formData.taskAllocations.filter(
+                          (t) => t.stageId === stageKey,
+                        )}
+                        onAddMaterial={(item) =>
+                          handleAddMaterial({ ...item, stageId: stageKey })
+                        }
+                        onRemoveMaterial={handleRemoveMaterial}
+                        onAddTask={(item) =>
+                          handleAddTask({ ...item, stageId: stageKey })
+                        }
+                        onRemoveTask={handleRemoveTask}
+                      />
+                    </div>
+                  ) : (
+                    <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
+                      <p className="text-slate-400 font-medium italic">
+                        Vui lòng chọn phác đồ điều trị ở bước trước.
+                      </p>
+                    </div>
+                  );
+                })()}
           </div>
         </div>
       ),
-      id: "resources",
     },
     {
       id: "confirmation",
@@ -1449,34 +1222,43 @@ export default function PlanCreatePage() {
                       Chi tiết phạm vi canh tác
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {groupedLocations.map((group) => (
+                      {selectionSummary.map((group) => (
                         <div
-                          key={group.region}
+                          key={group.regionId}
                           className="space-y-3 p-4 rounded-xl border border-slate-100 bg-slate-50/30"
                         >
                           <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wide">
-                            <MapPin className="w-3 h-3" />
-                            {group.region}
+                            <MapPin className="w-3 h-3 text-emerald-500" />
+                            {group.regionName}
                           </div>
-                          <div className="space-y-3">
-                            {group.zones.map((zone) => (
-                              <div key={zone.id} className="space-y-1.5">
-                                <div className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                  {zone.name}
-                                </div>
-                                <div className="flex flex-wrap gap-1.5 pl-3.5">
-                                  {zone.plots.map((plot) => (
-                                    <Badge
-                                      key={plot.id}
-                                      variant="outline"
-                                      className="bg-white text-slate-600 border-slate-200 font-medium text-[11px] py-0 px-2 h-5"
-                                    >
-                                      {plot.name}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
+                          <div className="flex flex-wrap gap-1.5 pl-0">
+                            {group.items.map((item, idx) => (
+                              <Badge
+                                key={idx}
+                                variant="outline"
+                                className={cn(
+                                  "text-[10px] py-0 px-2 h-5 font-medium shadow-xs",
+                                  item.type === "region"
+                                    ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                                    : item.type === "area"
+                                      ? "bg-blue-50 text-blue-700 border-blue-100"
+                                      : "bg-white text-slate-600 border-slate-200",
+                                )}
+                              >
+                                <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
+                                  {item.type === "region"
+                                    ? "Vùng"
+                                    : item.type === "area"
+                                      ? "Khu"
+                                      : "Lô"}
+                                </span>
+                                {item.name}
+                                {item.parentName && (
+                                  <span className="ml-1 opacity-50 font-normal italic">
+                                    ({item.parentName})
+                                  </span>
+                                )}
+                              </Badge>
                             ))}
                           </div>
                         </div>
@@ -1497,22 +1279,44 @@ export default function PlanCreatePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4 space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Quy trình mẫu</span>
-                    <span className="font-medium text-slate-900">
-                      {
-                        GROWTH_CYCLES.find(
-                          (c) => c.id === formData.growthCycleId,
-                        )?.name
-                      }
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Số giai đoạn</span>
-                    <Badge variant="outline" className="font-bold">
-                      {formData.selectedStages.length} giai đoạn
-                    </Badge>
-                  </div>
+                  {formData.purpose === "cultivation" ? (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Mùa vụ áp dụng</span>
+                        <span className="font-medium text-slate-900">
+                          {formData.seasonName}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">
+                          Số giai đoạn chọn
+                        </span>
+                        <Badge variant="outline" className="font-bold">
+                          {formData.selectedStages.length} giai đoạn
+                        </Badge>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Loại kế hoạch</span>
+                        <Badge
+                          variant="outline"
+                          className="bg-blue-50 text-blue-700 border-blue-200"
+                        >
+                          ĐIỀU TRỊ
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Phác đồ áp dụng</span>
+                        <span className="font-bold text-blue-900">
+                          {TREATMENT_REGIMENS.find(
+                            (r) => r.id === formData.regimenId,
+                          )?.name || "---"}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
@@ -1555,17 +1359,19 @@ export default function PlanCreatePage() {
       seasonName: formData.seasonName,
       startDate: formData.startDate,
       endDate: formData.endDate,
-      selectedRegionId: formData.selectedRegionId,
+      selectedRegionIds: formData.selectedRegionIds,
       selectedZoneIds: formData.selectedZoneIds,
       selectedPlotIds: formData.selectedPlotIds,
       crop: formData.crop,
       variety: formData.variety,
+      purpose: formData.purpose,
       growthCycleId: formData.growthCycleId,
       regimenId: formData.regimenId,
       selectedStages: formData.selectedStages,
       status: "active" as const,
       materialAllocations: formData.materialAllocations,
       taskAllocations: formData.taskAllocations,
+      area: calculateArea(),
     };
 
     addPlan(planData);

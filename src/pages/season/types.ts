@@ -13,8 +13,7 @@ export interface Season {
   code: string;
   name: string;
   description: string;
-  startDate: string;
-  endDate: string; // Estimated or actual
+  duration: number;
   status: "planning" | "active" | "completed" | "cancelled";
 
   // Link to Reference Growth Cycles (Blueprints)
@@ -23,6 +22,7 @@ export interface Season {
   // but the user said "one or more". Maybe for intercropping or sequential cycles?
   growthCycleIds: string[];
   growthCycles?: GrowthCycle[]; // Populated data
+  selectedStages?: Record<string, string[]>; // cycleId -> array of stageIds
 
   documents: SeasonDocument[];
 
@@ -34,9 +34,9 @@ export interface CreateSeasonForm {
   code: string;
   name: string;
   description: string;
-  startDate: string;
-  endDate: string;
+  duration: number;
   status: "planning" | "active" | "completed" | "cancelled";
   growthCycleIds: string[];
+  selectedStages: Record<string, string[]>;
   documents: File[];
 }

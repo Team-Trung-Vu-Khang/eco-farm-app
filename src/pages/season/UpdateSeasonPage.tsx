@@ -54,10 +54,10 @@ export default function UpdateSeasonPage() {
     code: "",
     name: "",
     description: "",
-    startDate: "",
-    endDate: "",
+    duration: 0,
     status: "planning",
     growthCycleIds: [],
+    selectedStages: {},
     documents: [],
   });
 
@@ -71,10 +71,10 @@ export default function UpdateSeasonPage() {
           code: existing.code,
           name: existing.name,
           description: existing.description,
-          startDate: existing.startDate,
-          endDate: existing.endDate,
+          duration: existing.duration,
           status: existing.status,
           growthCycleIds: existing.growthCycleIds,
+          selectedStages: existing.selectedStages || {},
           documents: existing.documents,
         });
       }
@@ -89,7 +89,7 @@ export default function UpdateSeasonPage() {
     if (!params?.id) return;
 
     // Validation
-    if (!formData.code || !formData.name || !formData.startDate) {
+    if (!formData.code || !formData.name || formData.duration <= 0) {
       toast({
         title: "Lỗi",
         description: "Vui lòng điền đầy đủ thông tin bắt buộc",
@@ -102,8 +102,7 @@ export default function UpdateSeasonPage() {
       code: formData.code,
       name: formData.name,
       description: formData.description,
-      startDate: formData.startDate,
-      endDate: formData.endDate,
+      duration: formData.duration,
       status: formData.status,
       documents: formData.documents.map((doc) => {
         if (doc instanceof File) {
@@ -118,6 +117,7 @@ export default function UpdateSeasonPage() {
         return doc;
       }),
       growthCycleIds: formData.growthCycleIds,
+      selectedStages: formData.selectedStages,
     });
 
     toast({
@@ -128,10 +128,15 @@ export default function UpdateSeasonPage() {
   };
 
   const removeCycle = (id: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      growthCycleIds: prev.growthCycleIds.filter((c) => c !== id),
-    }));
+    setFormData((prev) => {
+      const newStages = { ...prev.selectedStages };
+      delete newStages[id];
+      return {
+        ...prev,
+        growthCycleIds: prev.growthCycleIds.filter((c) => c !== id),
+        selectedStages: newStages,
+      };
+    });
   };
 
   const getCropImage = (cropName: string) => {
@@ -211,54 +216,45 @@ export default function UpdateSeasonPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>
-                    Ngày bắt đầu <span className="text-destructive">*</span>
+                    Thời gian (ngày) <span className="text-destructive">*</span>
                   </Label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      type="date"
+                      type="number"
+                      placeholder="VD: 120"
                       className="pl-10"
-                      value={formData.startDate}
+                      value={formData.duration || ""}
                       onChange={(e) =>
-                        setFormData({ ...formData, startDate: e.target.value })
+                        setFormData({
+                          ...formData,
+                          duration: Number(e.target.value),
+                        })
                       }
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Ngày kết thúc (Dự kiến)</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="date"
-                      className="pl-10"
-                      value={formData.endDate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, endDate: e.target.value })
-                      }
-                    />
-                  </div>
+                  <Label>Trạng thái</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(v: any) =>
+                      setFormData({ ...formData, status: v })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn trạng thái" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="planning">
+                        Đang lập kế hoạch
+                      </SelectItem>
+                      <SelectItem value="active">Đang triển khai</SelectItem>
+                      <SelectItem value="completed">Đã hoàn thành</SelectItem>
+                      <SelectItem value="cancelled">Đã hủy</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Trạng thái</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(v: any) =>
-                    setFormData({ ...formData, status: v })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn trạng thái" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="planning">Đang lập kế hoạch</SelectItem>
-                    <SelectItem value="active">Đang triển khai</SelectItem>
-                    <SelectItem value="completed">Đã hoàn thành</SelectItem>
-                    <SelectItem value="cancelled">Đã hủy</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </CardContent>
           </Card>
@@ -290,39 +286,77 @@ export default function UpdateSeasonPage() {
             <CardContent>
               <div className="grid grid-cols-1 gap-3">
                 {selectedCycles.length > 0 ? (
-                  selectedCycles.map((cycle) => (
-                    <div
-                      key={cycle.id}
-                      className="flex items-center justify-between p-4 rounded-xl border bg-white shadow-sm hover:border-green-200 transition-all group"
-                    >
-                      <div className="flex items-center gap-4">
-                        <Avatar className="w-10 h-10 border shadow-sm">
-                          <AvatarImage src={getCropImage(cycle.cropName)} />
-                          <AvatarFallback>
-                            {cycle.cropName.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h4 className="font-bold text-sm leading-tight text-slate-800">
-                            {cycle.name}
-                          </h4>
-                          <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-1">
-                            <span>{cycle.cropName}</span>
-                            <span className="w-1 h-1 rounded-full bg-slate-300" />
-                            <span>{cycle.totalDays} ngày</span>
-                          </div>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="opacity-0 group-hover:opacity-100 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all"
-                        onClick={() => removeCycle(cycle.id)}
+                  selectedCycles.map((cycle) => {
+                    const selectedStageIds =
+                      formData.selectedStages[cycle.id] || [];
+                    const selectedStageData =
+                      cycle.stages?.filter((s) =>
+                        selectedStageIds.includes(s.id),
+                      ) || [];
+
+                    return (
+                      <div
+                        key={cycle.id}
+                        className="flex flex-col p-4 rounded-xl border bg-white shadow-sm hover:border-green-200 transition-all group gap-4"
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="w-10 h-10 border shadow-sm">
+                              <AvatarImage src={getCropImage(cycle.cropName)} />
+                              <AvatarFallback>
+                                {cycle.cropName.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <h4 className="font-bold text-sm leading-tight text-slate-800">
+                                {cycle.name}
+                              </h4>
+                              <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-1">
+                                <span>{cycle.cropName}</span>
+                                <span className="w-1 h-1 rounded-full bg-slate-300" />
+                                <span>{cycle.totalDays} ngày</span>
+                                <span className="w-1 h-1 rounded-full bg-slate-300" />
+                                <span className="text-green-600 font-medium">
+                                  {selectedStageIds.length}/
+                                  {cycle.stages?.length || 0} giai đoạn
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="opacity-0 group-hover:opacity-100 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all"
+                            onClick={() => removeCycle(cycle.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+
+                        {selectedStageData.length > 0 && (
+                          <div className="pl-14">
+                            <div className="bg-slate-50/50 rounded-lg p-3 border border-slate-100">
+                              <h5 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                                Giai đoạn áp dụng
+                              </h5>
+                              <div className="flex flex-wrap gap-2">
+                                {selectedStageData.map((stage) => (
+                                  <Badge
+                                    key={stage.id}
+                                    variant="secondary"
+                                    className="bg-white border-slate-200 text-slate-700 font-normal shadow-sm"
+                                  >
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5" />
+                                    {stage.name} ({stage.duration} ngày)
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
                 ) : (
                   <div className="text-center py-10 border-2 border-dashed rounded-2xl bg-muted/20">
                     <Search className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
@@ -383,7 +417,14 @@ export default function UpdateSeasonPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         selectedIds={formData.growthCycleIds}
-        onConfirm={(ids) => setFormData({ ...formData, growthCycleIds: ids })}
+        selectedStages={formData.selectedStages}
+        onConfirm={(ids, stages) =>
+          setFormData({
+            ...formData,
+            growthCycleIds: ids,
+            selectedStages: stages,
+          })
+        }
       />
     </AdminLayout>
   );

@@ -49,22 +49,14 @@ const columns: Column<Season>[] = [
     ),
   },
   {
-    key: "startDate",
+    key: "duration",
     label: "Thời gian",
     render: (_, item) => (
-      <div className="flex flex-col text-xs space-y-1">
-        <div className="flex items-center gap-1.5">
-          <Calendar className="w-3 h-3 text-green-600" />
-          <span className="font-medium text-green-700">
-            BĐ: {item.startDate}
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Calendar className="w-3 h-3 text-orange-600" />
-          <span className="font-medium text-orange-700">
-            KT: {item.endDate}
-          </span>
-        </div>
+      <div className="flex items-center gap-1.5 text-xs">
+        <Calendar className="w-4 h-4 text-green-600" />
+        <span className="font-medium text-green-700 text-sm">
+          {item.duration} ngày
+        </span>
       </div>
     ),
   },

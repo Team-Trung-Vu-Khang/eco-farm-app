@@ -21,25 +21,32 @@ interface GrowthCycleSelectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedIds: string[];
-  onConfirm: (ids: string[]) => void;
+  selectedStages?: Record<string, string[]>;
+  onConfirm: (ids: string[], stages: Record<string, string[]>) => void;
 }
+
+const EMPTY_STAGES: Record<string, string[]> = {};
 
 export function GrowthCycleSelectDialog({
   open,
   onOpenChange,
   selectedIds,
+  selectedStages = EMPTY_STAGES,
   onConfirm,
 }: GrowthCycleSelectDialogProps) {
   const { growthCycles } = useGrowthCycleStore();
   const [search, setSearch] = useState("");
   const [tempSelected, setTempSelected] = useState<string[]>(selectedIds);
+  const [tempStages, setTempStages] =
+    useState<Record<string, string[]>>(selectedStages);
 
   // Sync temp selection when dialog opens
   React.useEffect(() => {
     if (open) {
       setTempSelected(selectedIds);
+      setTempStages(selectedStages);
     }
-  }, [open, selectedIds]);
+  }, [open, selectedIds, selectedStages]);
 
   const filteredCycles = useMemo(() => {
     return growthCycles.filter((cycle) => {
@@ -52,14 +59,37 @@ export function GrowthCycleSelectDialog({
     });
   }, [growthCycles, search]);
 
-  const toggleSelect = (id: string) => {
-    setTempSelected((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
-    );
+  const toggleSelect = (cycle: any) => {
+    setTempSelected((prev) => {
+      const isSelected = prev.includes(cycle.id);
+      if (isSelected) {
+        const newStages = { ...tempStages };
+        delete newStages[cycle.id];
+        setTempStages(newStages);
+        return prev.filter((i) => i !== cycle.id);
+      } else {
+        setTempStages((prevStages) => ({
+          ...prevStages,
+          [cycle.id]: cycle.stages.map((s: any) => s.id),
+        }));
+        return [...prev, cycle.id];
+      }
+    });
+  };
+
+  const toggleStage = (cycleId: string, stageId: string) => {
+    setTempStages((prev) => {
+      const current = prev[cycleId] || [];
+      const isSelected = current.includes(stageId);
+      const newStages = isSelected
+        ? current.filter((id) => id !== stageId)
+        : [...current, stageId];
+      return { ...prev, [cycleId]: newStages };
+    });
   };
 
   const handleConfirm = () => {
-    onConfirm(tempSelected);
+    onConfirm(tempSelected, tempStages);
     onOpenChange(false);
   };
 
@@ -107,46 +137,96 @@ export function GrowthCycleSelectDialog({
                 <div
                   key={cycle.id}
                   className={`
-                    flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all
-                    ${isSelected ? "border-green-600 bg-green-50/50 shadow-sm" : "border-muted hover:border-green-200 hover:bg-muted/30"}
+                    p-4 rounded-xl border-2 transition-all group
+                    ${isSelected ? "border-green-600 bg-green-50/10 shadow-sm" : "border-muted hover:border-green-200 hover:bg-muted/30"}
                   `}
-                  onClick={() => toggleSelect(cycle.id)}
                 >
-                  <div className="flex items-center gap-4">
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => toggleSelect(cycle.id)}
-                    />
-                    <Avatar className="w-10 h-10 border shadow-sm">
-                      <AvatarImage src={getCropImage(cycle.cropName)} />
-                      <AvatarFallback className="bg-green-100 text-green-700 font-bold">
-                        {cycle.cropName.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h4 className="font-bold text-sm leading-tight">
-                        {cycle.name}
-                      </h4>
-                      <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-1">
-                        <span className="bg-white px-1.5 py-0.5 rounded border border-slate-100">
-                          {cycle.cropName}
-                        </span>
-                        {cycle.variety && (
-                          <>
-                            <span className="w-1 h-1 rounded-full bg-slate-300" />
-                            <span className="bg-white px-1.5 py-0.5 rounded border border-slate-100">
-                              {cycle.variety}
-                            </span>
-                          </>
-                        )}
-                        <span className="w-1 h-1 rounded-full bg-slate-300" />
-                        <span className="flex items-center gap-1 font-medium text-slate-600">
-                          <Calendar className="w-3 h-3" />
-                          {cycle.totalDays} ngày
-                        </span>
+                  {/* Header: Select whole cycle */}
+                  <div
+                    className="flex items-center justify-between cursor-pointer"
+                    onClick={() => toggleSelect(cycle)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleSelect(cycle)}
+                      />
+
+                      <Avatar className="w-10 h-10 border shadow-sm">
+                        <AvatarImage src={getCropImage(cycle.cropName)} />
+                        <AvatarFallback className="bg-green-100 text-green-700 font-bold">
+                          {cycle.cropName.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h4 className="font-bold text-sm leading-tight">
+                          {cycle.name}
+                        </h4>
+                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-1">
+                          <span className="bg-white px-1.5 py-0.5 rounded border border-slate-100">
+                            {cycle.cropName}
+                          </span>
+                          {cycle.variety && (
+                            <>
+                              <span className="w-1 h-1 rounded-full bg-slate-300" />
+                              <span className="bg-white px-1.5 py-0.5 rounded border border-slate-100">
+                                {cycle.variety}
+                              </span>
+                            </>
+                          )}
+                          <span className="w-1 h-1 rounded-full bg-slate-300" />
+                          <span className="flex items-center gap-1 font-medium text-slate-600">
+                            <Calendar className="w-3 h-3" />
+                            {cycle.totalDays} ngày
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
+
+                  {/* Stages list (only visible if cycle is selected) */}
+                  {isSelected && cycle.stages && cycle.stages.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-green-100 space-y-2">
+                      <div className="text-xs font-semibold text-green-800 mb-2 px-2 flex items-center justify-between">
+                        <span>Chọn các giai đoạn áp dụng:</span>
+                        <span>
+                          {(tempStages[cycle.id] || []).length} /{" "}
+                          {cycle.stages.length}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {cycle.stages.map((stage: any) => {
+                          const isStageSelected = (
+                            tempStages[cycle.id] || []
+                          ).includes(stage.id);
+                          return (
+                            <label
+                              key={stage.id}
+                              className={`
+                              flex items-center gap-3 p-2.5 rounded-lg border group-hover:border-green-200 cursor-pointer transition-colors
+                              ${isStageSelected ? "bg-white border-green-200 shadow-sm text-green-900" : "bg-white/50 border-muted text-muted-foreground"}
+                            `}
+                            >
+                              <Checkbox
+                                checked={isStageSelected}
+                                onCheckedChange={() =>
+                                  toggleStage(cycle.id, stage.id)
+                                }
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate shrink-0">
+                                  {stage.name}
+                                </p>
+                                <p className="text-[10px] uppercase tracking-wider mt-0.5">
+                                  {stage.duration} ngày
+                                </p>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })

@@ -12,7 +12,7 @@ import {
   useToast,
   type Column,
 } from "@tankhang1/eco-shared-ui";
-import usePlanStore from "../../stores/usePlanStore";
+import usePlanStore, { type Plan } from "../../stores/usePlanStore";
 
 export default function PlanPage() {
   const { toast } = useToast();
@@ -29,23 +29,26 @@ export default function PlanPage() {
     name: string;
   } | null>(null);
 
-  const columns: Column<any>[] = [
+  const columns: Column<Plan>[] = [
     { key: "code", label: "Mã" },
     { key: "name", label: "Tên kế hoạch" },
     { key: "seasonName", label: "Mùa vụ" },
     {
       key: "crop",
       label: "Cây trồng",
-      render: (item: any) => (
-        <span>
-          {item.crop} - {item.variety}
-        </span>
-      ),
+
+      render: (_, row) => {
+        return (
+          <span>
+            {row.crop} {row.variety ? "- " + row.variety : ""}
+          </span>
+        );
+      },
     },
     {
       key: "status",
       label: "Trạng thái",
-      render: (item: any) => {
+      render: (_, row) => {
         const statusConfig = {
           active: { label: "Đang thực hiện", variant: "default" as const },
           completed: { label: "Hoàn thành", variant: "secondary" as const },
@@ -53,7 +56,7 @@ export default function PlanPage() {
           cancelled: { label: "Đã hủy", variant: "destructive" as const },
         };
         const config =
-          statusConfig[item.status as keyof typeof statusConfig] ||
+          statusConfig[row.status as keyof typeof statusConfig] ||
           statusConfig.draft;
         return <Badge variant={config.variant}>{config.label}</Badge>;
       },

@@ -139,16 +139,9 @@ export default function SeasonDetailPage() {
                 <div className="space-y-1">
                   <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-green-600" />
-                    Ngày bắt đầu
+                    Thời gian
                   </span>
-                  <p className="font-bold text-lg">{season.startDate}</p>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-orange-600" />
-                    Ngày kết thúc (Dự kiến)
-                  </span>
-                  <p className="font-bold text-lg">{season.endDate}</p>
+                  <p className="font-bold text-lg">{season.duration} ngày</p>
                 </div>
               </div>
             </CardContent>
