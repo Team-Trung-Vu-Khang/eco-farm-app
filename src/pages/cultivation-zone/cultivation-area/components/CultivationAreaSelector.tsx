@@ -84,31 +84,31 @@ export const CultivationAreaSelector = ({
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-2xl">
-          <DialogHeader className="border-b pb-6">
-            <DialogTitle className="flex items-center gap-2">
+          <DialogHeader className="border-b pb-6 w-full">
+            <DialogTitle className="flex items-start gap-2">
               <Layers className="w-5 h-5 text-primary" />
               Chọn vùng canh tác
             </DialogTitle>
           </DialogHeader>
 
-          <div className="w-p-4 p-4 space-y-4">
+          <div className="p-4 space-y-4 w-full">
             <div className="flex flex-col w-full gap-3">
               <div className="w-full relative">
                 <Search className="z-10 absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   value={searchTerm}
-                  className="w-full pl-10 h-10 bg-white"
+                  className="w-full max-w-xl pl-10 h-10 bg-white"
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Tìm tên vùng, tên đối tượng, mã..."
                 />
               </div>
-              <ScrollArea className="h-80 pr-4 w-full">
-                <div className="space-y-2">
+              <ScrollArea className="h-80 max-w-xl">
+                <div className="space-y-2 w-full">
                   {filteredAreas.map((a) => (
                     <div
                       key={a.id}
                       className={cn(
-                        "flex items-center max-w-full justify-between p-3 rounded-xl border cursor-pointer transition-all",
+                        "flex items-center w-full max-w-xl justify-between p-3 rounded-xl border cursor-pointer transition-all",
                         selectedId === a.id
                           ? "bg-primary/5 border-primary shadow-sm"
                           : "hover:bg-slate-50 bg-white border-slate-100",
@@ -137,25 +137,6 @@ export const CultivationAreaSelector = ({
                             Đối tượng: {a.targetName}
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0 ml-4">
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            "text-[9px] px-1.5 h-4 border-none capitalize",
-                            a.scope === "region"
-                              ? "bg-blue-50 text-blue-600"
-                              : a.scope === "area"
-                                ? "bg-purple-50 text-purple-600"
-                                : "bg-green-50 text-green-600",
-                          )}
-                        >
-                          {a.scope === "region"
-                            ? "Vùng"
-                            : a.scope === "area"
-                              ? "Khu vực"
-                              : "Lô"}
-                        </Badge>
                       </div>
                     </div>
                   ))}

@@ -127,9 +127,7 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
 
         <div className="bg-white border rounded-xl p-2 text-center shadow-sm">
           <div className="text-2xl font-bold text-primary">{plants.length}</div>
-          <div className="text-xs text-muted-foreground mt-1">
-            Số lượng cây trồng
-          </div>
+          <div className="text-xs text-muted-foreground mt-1">cây trồng</div>
         </div>
         <div className="bg-white col-span-3 border rounded-xl p-4 text-center shadow-sm">
           <div className="flex items-center gap-4">
@@ -155,7 +153,7 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
           <div className="bg-slate-50 border-b p-4 flex items-center gap-2">
             <Beaker className="w-4 h-4 text-slate-500" />
             <h4 className="font-semibold text-slate-800">
-              Cấu hình kỹ thuật được áp dụng
+              Thông tin vùng canh tác
             </h4>
           </div>
           <div className="p-6 space-y-5 bg-white">
@@ -276,7 +274,7 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
           <Sprout className="w-4 h-4 text-slate-500" />
           <h4 className="font-semibold text-slate-800">Danh sách cây trồng</h4>
         </div>
-        <div className="rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm">
+        <div className="overflow-hidden bg-white">
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b">
@@ -378,44 +376,6 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
           </Table>
         </div>
       </Card>
-
-      {/* Technical config summary bottom */}
-      {selectedCultivationArea && (
-        <Card className="border-slate-200 shadow-sm overflow-hidden">
-          <div className="bg-slate-50 border-b p-4 flex items-center gap-2">
-            <Beaker className="w-4 h-4 text-slate-500" />
-            <h4 className="font-semibold text-slate-800">
-              Cấu hình kỹ thuật tổng quát
-            </h4>
-          </div>
-          <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-            <div>
-              <div className="text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1">
-                Quản lý
-              </div>
-              <div className="font-medium text-slate-900">
-                {manager?.fullName || "—"}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1">
-                Canh tác
-              </div>
-              <div className="font-medium text-slate-900">
-                {farmingMethod?.name || "—"}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1">
-                Tưới tiêu
-              </div>
-              <div className="font-medium text-slate-900">
-                {irrigationMethod?.name || "—"}
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
     </div>
   );
 };
