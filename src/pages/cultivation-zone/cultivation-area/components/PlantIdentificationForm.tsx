@@ -21,6 +21,12 @@ import {
   SelectTrigger,
   SelectValue,
   StepperForm,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
   type Step,
 } from "@tankhang1/eco-shared-ui";
 import * as turf from "@turf/turf";
@@ -38,17 +44,20 @@ import {
   Plus,
   Search,
   Sprout,
+  Target,
   Trash2,
   Upload,
   User,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   MapContainer,
   Marker,
   Polygon,
   Polyline,
   TileLayer,
+  Tooltip,
+  useMap,
   useMapEvents,
 } from "react-leaflet";
 import { useLocation } from "wouter";
@@ -85,252 +94,6 @@ const getMarkerIcon = (color: string = "red") => {
 };
 
 // --- Local Refined Components ---
-
-const SingleSelectionCard = ({
-  selectedUnit,
-  onRemove,
-  regions,
-}: {
-  selectedUnit: any;
-  onRemove: () => void;
-  regions: any[];
-}) => {
-  const [isExpanded, setIsExpanded] = useState(true);
-
-  if (!selectedUnit) return null;
-
-  // Resolve hierarchy for the selected unit
-  const region = regions.find((r) => r.id.toString() === selectedUnit.regionId);
-
-  const area = region?.subAreas?.find(
-    (sa: any) => sa.id.toString() === selectedUnit.areaId,
-  );
-
-  return (
-    <div className="bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-all group animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
-      <div className="p-4">
-        <div className="flex items-start gap-4">
-          <div
-            className={cn(
-              "p-2.5 rounded-xl shrink-0 transition-colors duration-300 bg-primary/10 text-primary group-hover:bg-primary/20",
-            )}
-          >
-            <Layers className="w-5 h-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1">
-              <Badge
-                variant="outline"
-                className="text-[10px] uppercase font-bold tracking-wider py-0 px-1.5 h-4 border-primary/20 text-primary bg-primary/5"
-              >
-                {selectedUnit.type}
-              </Badge>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full"
-                onClick={onRemove}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </Button>
-            </div>
-            <div className="font-bold text-slate-900 text-sm mb-1 truncate">
-              {selectedUnit.name}
-            </div>
-            <div className="text-[10px] text-muted-foreground truncate uppercase tracking-wider font-medium">
-              ID: {selectedUnit.id}
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 pt-3 border-t border-slate-100">
-          <button
-            type="button"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-primary transition-colors mb-2"
-          >
-            {isExpanded ? (
-              <ChevronDown className="w-3 h-3" />
-            ) : (
-              <ChevronRight className="w-3 h-3" />
-            )}
-            <span>Phân cấp quản lý</span>
-          </button>
-
-          {isExpanded && (
-            <div className="mt-4 ml-3 relative">
-              <div className="absolute left-0 top-0 bottom-4 w-px bg-slate-200" />
-              <div className="space-y-4">
-                {/* Region Level */}
-                {region && (
-                  <div className="flex items-center gap-3 relative z-10 pl-4">
-                    <div className="absolute left-0 w-4 h-px bg-slate-200 top-1/2" />
-                    <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shadow-xs shrink-0">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-none mb-1">
-                        Vùng trồng
-                      </div>
-                      <div className="text-xs font-bold text-slate-700">
-                        {region.name}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Area Level */}
-                {area && (
-                  <div className="relative pl-4">
-                    <div className="absolute left-0 w-4 h-px bg-slate-200 top-4" />
-                    <div className="flex items-center gap-3 relative z-10 pl-4">
-                      <div className="absolute left-0 w-4 h-px bg-slate-200 top-1/2" />
-                      <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shadow-xs shrink-0">
-                        <Layers className="w-3.5 h-3.5 text-slate-400" />
-                      </div>
-                      <div>
-                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-none mb-1">
-                          Khu vực
-                        </div>
-                        <div className="text-xs font-bold text-slate-700">
-                          {area.name}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const SingleGeographicalSelector = ({
-  units,
-  selectedId,
-  onSelect,
-  disabled,
-}: {
-  units: any[];
-  selectedId: string;
-  onSelect: (id: string) => void;
-  disabled?: boolean;
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const filteredUnits = useMemo(() => {
-    return units.filter(
-      (u) =>
-        u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.type.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
-  }, [units, searchTerm]);
-
-  return (
-    <>
-      <Button
-        type="button"
-        variant="outline"
-        onClick={() => setIsOpen(true)}
-        disabled={disabled}
-        className="w-full h-10 border-dashed border-2 hover:border-primary/50 hover:bg-primary/5 justify-start text-muted-foreground font-normal"
-      >
-        <Plus className="w-4 h-4 mr-2" />
-        {selectedId ? "Thay đổi vị trí cụ thể" : "Chọn vị trí cụ thể"}
-      </Button>
-
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-md p-0 overflow-hidden">
-          <DialogHeader className="p-6 bg-slate-50 border-b">
-            <DialogTitle className="flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-primary" />
-              Chọn vị trí cụ thể
-            </DialogTitle>
-          </DialogHeader>
-          <div className="p-4 space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Tìm kiếm vị trí..."
-                className="pl-10 h-10 bg-white"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <ScrollArea className="h-80 pr-4">
-              <div className="space-y-2">
-                {filteredUnits.map((u) => (
-                  <div
-                    key={u.id}
-                    className={cn(
-                      "flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all",
-                      selectedId === u.id
-                        ? "bg-primary/5 border-primary shadow-sm"
-                        : "hover:bg-slate-50 border-transparent hover:border-slate-200",
-                    )}
-                    onClick={() => {
-                      onSelect(u.id);
-                      setIsOpen(false);
-                      setSearchTerm("");
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={cn(
-                          "p-2 rounded-lg",
-                          selectedId === u.id
-                            ? "bg-primary text-white"
-                            : "bg-slate-100 text-slate-400",
-                        )}
-                      >
-                        {u.type === "Lô trồng" ? (
-                          <MapPin className="w-4 h-4" />
-                        ) : (
-                          <Layers className="w-4 h-4" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="font-bold text-sm text-slate-900">
-                          {u.name}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground uppercase font-medium">
-                          {u.type}
-                        </div>
-                      </div>
-                    </div>
-                    {selectedId === u.id && (
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
-                    )}
-                  </div>
-                ))}
-                {filteredUnits.length === 0 && (
-                  <div className="text-center py-10 text-muted-foreground text-sm">
-                    {units.length === 0
-                      ? "Vui lòng chọn Vùng canh tác trước"
-                      : "Không tìm thấy vị trí nào"}
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-          </div>
-          <DialogFooter className="p-4 bg-slate-50 border-t">
-            <Button
-              variant="ghost"
-              onClick={() => setIsOpen(false)}
-              className="w-full"
-            >
-              Hủy bỏ
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-};
 
 const CultivationAreaSelector = ({
   areas,
@@ -488,142 +251,6 @@ const CultivationAreaSelector = ({
   );
 };
 
-// Map Content component to be reused between small and large view
-const MapContent = ({
-  formData,
-  currentRegion,
-  currentArea,
-  currentPlot,
-  selectableUnits,
-  onLocationChange,
-}: {
-  formData: Partial<Plant>;
-  currentRegion: any;
-  currentArea: any;
-  currentPlot: any;
-  selectableUnits: any[];
-  onLocationChange: (lat: number, lng: number) => void;
-}) => {
-  // Logic: Smallest unit gets vivid color, parents get grey
-  const isPlotLevel = !!currentPlot;
-  const isAreaLevel = !isPlotLevel && !!currentArea;
-
-  const regionPathOptions = {
-    color: isPlotLevel || isAreaLevel ? "#94a3b8" : "#3b82f6", // Grey if area/plot selected
-    weight: 1,
-    fillOpacity: 0.05,
-  };
-
-  const areaPathOptions = {
-    color: isPlotLevel ? "#94a3b8" : isAreaLevel ? "#10b981" : "#10b981", // Grey if plot selected
-    weight: 1,
-    fillOpacity: isAreaLevel ? 0.2 : 0.1,
-  };
-
-  const plotPathOptions = {
-    color: "#f59e0b",
-    weight: 2,
-    fillOpacity: 0.2,
-  };
-
-  return (
-    <>
-      <TileLayer
-        url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-        attribution="Esri"
-      />
-
-      {currentRegion?.coordinates && (
-        <Polygon
-          positions={currentRegion.coordinates.map((c: any) => [c.lat, c.lng])}
-          pathOptions={regionPathOptions}
-        />
-      )}
-
-      {currentArea?.coordinates && (
-        <Polygon
-          positions={currentArea.coordinates.map((c: any) => [c.lat, c.lng])}
-          pathOptions={areaPathOptions}
-        />
-      )}
-
-      {currentPlot?.coordinates && (
-        <Polygon
-          positions={currentPlot.coordinates.map((c: any) => [c.lat, c.lng])}
-          pathOptions={plotPathOptions}
-        />
-      )}
-
-      {/* Selectable Boundaries (Background) */}
-      {!currentPlot &&
-        selectableUnits.map((unit) => {
-          if (!unit.coordinates || unit.coordinates.length < 3) return null;
-          // Don't show if it's the current area (already shown vividly)
-          if (unit.id === currentArea?.id) return null;
-
-          return (
-            <Polygon
-              key={unit.id}
-              positions={unit.coordinates.map((c: any) => [c.lat, c.lng])}
-              pathOptions={{
-                color: "#E67E22",
-                weight: 2,
-                fillOpacity: 0.1,
-                dashArray: "6, 6",
-              }}
-            />
-          );
-        })}
-
-      {formData.coordinate && (
-        <Marker
-          position={[formData.coordinate.lat, formData.coordinate.lng]}
-          draggable={true}
-          eventHandlers={{
-            dragend: (e) => {
-              const marker = e.target;
-              const position = marker.getLatLng();
-              onLocationChange(position.lat, position.lng);
-            },
-          }}
-        />
-      )}
-
-      <LocationPicker
-        onLocationSelect={(lat, lng) => onLocationChange(lat, lng)}
-      />
-      {formData.coordinate && (
-        <RecenterMap
-          lat={formData.coordinate.lat}
-          lng={formData.coordinate.lng}
-        />
-      )}
-    </>
-  );
-};
-
-// Map Event component to handle clicking on the map to set coordinate
-const LocationPicker = ({
-  onLocationSelect,
-}: {
-  onLocationSelect: (lat: number, lng: number) => void;
-}) => {
-  useMapEvents({
-    click(e) {
-      onLocationSelect(e.latlng.lat, e.latlng.lng);
-    },
-  });
-  return null;
-};
-
-// Component to recenter map when coordinates change manually
-const RecenterMap = ({ lat, lng }: { lat: number; lng: number }) => {
-  const map = useMapEvents({});
-  useEffect(() => {
-    map.setView([lat, lng]);
-  }, [lat, lng, map]);
-  return null;
-};
 // ---- Multi-plant entry type ----
 interface PlantEntry {
   entryId: string; // local UI id
@@ -653,25 +280,19 @@ const makeEmptyPlant = (): PlantEntry => ({
 const PlantCard = ({
   plant,
   index,
-  smallestUnits,
-  regions,
+  geographicalUnits,
   onUpdate,
   onRemove,
   canRemove,
-  setActiveEntry,
   isInvalidBoundary,
-  setSuggestedCorrection,
 }: {
   plant: PlantEntry;
   index: number;
-  smallestUnits: any[];
-  regions: any[];
+  geographicalUnits: any[];
   onUpdate: (partial: Partial<PlantEntry>) => void;
   onRemove: () => void;
   canRemove: boolean;
-  setActiveEntry: () => void;
   isInvalidBoundary?: boolean;
-  setSuggestedCorrection: (value: any) => void;
 }) => {
   const [expanded, setExpanded] = useState(true);
   const [tempLat, setTempLat] = useState(
@@ -686,9 +307,16 @@ const PlantCard = ({
     lng: number;
   } | null>(null);
 
+  // Ref to prevent the useEffect from clearing errors set by handleValidate
+  const skipErrorReset = useRef(false);
+
   useEffect(() => {
     setTempLat(plant.coordinate?.lat?.toString() || "");
     setTempLng(plant.coordinate?.lng?.toString() || "");
+    if (skipErrorReset.current) {
+      skipErrorReset.current = false;
+      return; // errors were just set by handleValidate — don't clear them
+    }
     setValidationError(null);
     setSuggestion(null);
   }, [plant.coordinate?.lat, plant.coordinate?.lng]);
@@ -702,51 +330,75 @@ const PlantCard = ({
       return;
     }
 
-    if (!plant.plotId) {
-      setValidationError("Vui lòng chọn vị trí cụ thể (bên trên) trước.");
-      setSuggestion(null);
-      return;
+    // Always run hierarchical detection: Plot (1) > Area (2) > Region (3)
+    const pt = turf.point([lng, lat]);
+    const sortedUnits = [...geographicalUnits].sort(
+      (a, b) => a.level - b.level,
+    );
+
+    for (const unit of sortedUnits) {
+      if (!unit.coordinates || unit.coordinates.length < 3) continue;
+      try {
+        const polyCoords = [
+          ...unit.coordinates.map((c: any) => [c.lng, c.lat]),
+          [unit.coordinates[0].lng, unit.coordinates[0].lat],
+        ];
+        const poly = turf.polygon([polyCoords]);
+        if (turf.booleanPointInPolygon(pt, poly)) {
+          // Found the most specific unit — assign it
+          onUpdate({
+            coordinate: { lat, lng },
+            plotId: unit.id,
+            isInvalidBoundary: false,
+          });
+          setValidationError(null);
+          setSuggestion(null);
+          return;
+        }
+      } catch {
+        // skip invalid polygons
+      }
     }
 
-    const unit = smallestUnits.find((u) => u.id === plant.plotId);
-    if (!unit || !unit.coordinates || unit.coordinates.length < 3) {
+    // Coordinate not inside any unit — mark invalid and suggest nearest boundary
+    if (geographicalUnits.length === 0) {
+      // No boundary data at all — just update coordinate freely
       onUpdate({ coordinate: { lat, lng } });
-      setActiveEntry();
       setValidationError(null);
       setSuggestion(null);
       return;
     }
 
-    try {
-      const pt = turf.point([lng, lat]);
-      const polyCoords = [
-        ...unit.coordinates.map((c: any) => [c.lng, c.lat]),
-        [unit.coordinates[0].lng, unit.coordinates[0].lat],
-      ];
-      const poly = turf.polygon([polyCoords]);
-
-      if (turf.booleanPointInPolygon(pt, poly)) {
-        onUpdate({ coordinate: { lat, lng }, isInvalidBoundary: false });
-        setActiveEntry();
-        setValidationError(null);
-        setSuggestion(null);
-        setSuggestedCorrection(null);
-      } else {
+    let nearestSuggestion: { lat: number; lng: number } | null = null;
+    let minDistance = Infinity;
+    for (const unit of geographicalUnits) {
+      if (!unit.coordinates || unit.coordinates.length < 3) continue;
+      try {
+        const polyCoords = [
+          ...unit.coordinates.map((c: any) => [c.lng, c.lat]),
+          [unit.coordinates[0].lng, unit.coordinates[0].lat],
+        ];
+        const poly = turf.polygon([polyCoords]);
         const line = turf.polygonToLine(poly);
         const snapped = turf.nearestPointOnLine(line as any, pt);
-        const [snapLng, snapLat] = snapped.geometry.coordinates;
-        setValidationError("Toạ độ nằm ngoài ranh giới vị trí đã chọn.");
-        setSuggestion({ lat: snapLat, lng: snapLng });
-      }
-    } catch {
-      onUpdate({ coordinate: { lat, lng } });
-      setActiveEntry();
-      setValidationError(null);
-      setSuggestion(null);
+        const dist = turf.distance(pt, snapped);
+        if (dist < minDistance) {
+          minDistance = dist;
+          const [snapLng, snapLat] = snapped.geometry.coordinates;
+          nearestSuggestion = { lat: snapLat, lng: snapLng };
+        }
+      } catch {}
     }
+
+    skipErrorReset.current = true;
+    onUpdate({ coordinate: { lat, lng }, isInvalidBoundary: true });
+    setValidationError(
+      "Toạ độ nằm ngoài mọi ranh giới. Vị trí gợi ý gần nhất được hiển thị bên dưới.",
+    );
+    setSuggestion(nearestSuggestion);
   };
 
-  const selectedUnit = smallestUnits.find((u) => u.id === plant.plotId);
+  const selectedUnit = geographicalUnits.find((u) => u.id === plant.plotId);
 
   return (
     <div
@@ -805,50 +457,188 @@ const PlantCard = ({
       {/* Card Body */}
       {expanded && (
         <div className="p-5 space-y-5">
-          {/* Plot selection */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-              <MapPin className="w-3.5 h-3.5 text-primary" />
-              Vị trí cụ thể <span className="text-red-500">*</span>
-            </Label>
-            {plant.plotId ? (
-              <SingleSelectionCard
-                selectedUnit={selectedUnit}
-                regions={regions}
-                onRemove={() =>
-                  onUpdate({
-                    plotId: "",
-                    coordinate: { lat: 11.548, lng: 106.896 },
-                  })
-                }
-              />
-            ) : (
-              <SingleGeographicalSelector
-                units={smallestUnits}
-                selectedId={plant.plotId}
-                onSelect={(val) => {
-                  const regionStore = useRegionStore.getState();
-                  const plotContext = regionStore.getPlotById(val);
-                  let coord = { lat: 11.548, lng: 106.896 };
-                  if (plotContext?.plot.coordinates?.[0]) {
-                    coord = plotContext.plot.coordinates[0];
-                  } else {
-                    const areaContext = regionStore.getAreaById(val);
-                    if (areaContext?.area.coordinates?.[0]) {
-                      coord = areaContext.area.coordinates[0];
-                    }
-                  }
-                  onUpdate({ plotId: val, coordinate: coord });
-                }}
-                disabled={smallestUnits.length === 0}
-              />
-            )}
-            {!plant.plotId && smallestUnits.length > 0 && (
-              <p className="text-[10px] text-destructive">
-                * Vui lòng chọn vị trí cho cây này
-              </p>
-            )}
-          </div>
+          {/* Detected location display */}
+          {(() => {
+            if (!selectedUnit) {
+              return (
+                <div className="bg-amber-50 border border-dashed border-amber-200 rounded-xl p-4 text-center">
+                  <div className="text-amber-600 text-[11px] font-medium mb-1">
+                    Chưa xác định được đơn vị địa lý
+                  </div>
+                  <div className="text-slate-400 text-[10px]">
+                    Vui lòng kéo marker trên bản đồ hoặc nhập tọa độ để nhận
+                    diện.
+                  </div>
+                </div>
+              );
+            }
+
+            // Build the ancestor chain from geographicalUnits
+            // Try to get full context from the store
+            const regionStore = useRegionStore.getState();
+            let regionUnit: any = null;
+            let areaUnit: any = null;
+            let plotUnit: any = null;
+
+            if (selectedUnit.level === 1) {
+              plotUnit = selectedUnit;
+              // Find parent area and region via store
+              const pc = regionStore.getPlotById?.(selectedUnit.id);
+              if (pc) {
+                if (pc.area)
+                  areaUnit = geographicalUnits.find(
+                    (u: any) => u.id === pc.area.id?.toString(),
+                  ) || {
+                    id: pc.area.id?.toString(),
+                    name: pc.area.name,
+                    type: "Khu vực",
+                    level: 2,
+                  };
+                if (pc.region)
+                  regionUnit = geographicalUnits.find(
+                    (u: any) => u.id === pc.region.id?.toString(),
+                  ) || {
+                    id: pc.region.id?.toString(),
+                    name: pc.region.name,
+                    type: "Vùng trồng",
+                    level: 3,
+                  };
+              } else {
+                // fallback: look up level 2 and 3 via name matching in geographicalUnits
+                areaUnit = geographicalUnits.find((u: any) => u.level === 2);
+                regionUnit = geographicalUnits.find((u: any) => u.level === 3);
+              }
+            } else if (selectedUnit.level === 2) {
+              areaUnit = selectedUnit;
+              const ac = regionStore.getAreaById?.(selectedUnit.id);
+              if (ac?.region)
+                regionUnit = geographicalUnits.find(
+                  (u: any) => u.id === ac.region.id?.toString(),
+                ) || {
+                  id: ac.region.id?.toString(),
+                  name: ac.region.name,
+                  type: "Vùng trồng",
+                  level: 3,
+                };
+              else
+                regionUnit = geographicalUnits.find((u: any) => u.level === 3);
+            } else {
+              regionUnit = selectedUnit;
+            }
+
+            const chain = [regionUnit, areaUnit, plotUnit].filter(Boolean);
+
+            const levelIcon = (level: number) => {
+              if (level === 1)
+                return (
+                  <div className="w-8 h-8 rounded-lg bg-green-50 border border-green-100 flex items-center justify-center text-green-600 shrink-0">
+                    <MapPin className="w-3.5 h-3.5" />
+                  </div>
+                );
+              if (level === 2)
+                return (
+                  <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-500 shrink-0">
+                    <Layers className="w-3.5 h-3.5" />
+                  </div>
+                );
+              return (
+                <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-500 shrink-0">
+                  <MapPin className="w-3.5 h-3.5" />
+                </div>
+              );
+            };
+
+            return (
+              <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
+                {/* Header: detected unit summary */}
+                <div className="flex items-center gap-3 p-3 border-b bg-slate-50/60">
+                  <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <Layers className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                        {selectedUnit.type}
+                      </span>
+                    </div>
+                    <div className="font-bold text-sm text-slate-900 truncate">
+                      {selectedUnit.name}
+                    </div>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] bg-white text-green-600 border-green-200 shrink-0"
+                  >
+                    Đã xác định
+                  </Badge>
+                </div>
+
+                {/* Hierarchy chain */}
+                <div className="px-3 py-2.5">
+                  <div className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
+                    <ChevronRight className="w-3 h-3" />
+                    Phân cấp quản lý
+                  </div>
+                  <div className="space-y-2">
+                    {chain.map((unit: any, i: number) => {
+                      const indent = i * 20; // px indent per level
+                      const iconSize = 32; // w-8 = 32px
+                      const halfIcon = iconSize / 2; // center of icon horizontally
+                      return (
+                        <div
+                          key={unit.id}
+                          className="flex items-center gap-2.5 relative"
+                          style={{ paddingLeft: `${indent}px` }}
+                        >
+                          {/* L-shaped connector for non-root items */}
+                          {i > 0 && (
+                            <>
+                              {/* Vertical segment from parent's icon center down */}
+                              <div
+                                className="absolute bg-slate-200"
+                                style={{
+                                  left: `${indent - 20 + halfIcon - 1}px`,
+                                  top: `-10px`,
+                                  width: "1px",
+                                  height: "calc(50% + 10px)",
+                                }}
+                              />
+                              {/* Horizontal segment connecting vertical to this icon */}
+                              <div
+                                className="absolute bg-slate-200"
+                                style={{
+                                  left: `${indent - 20 + halfIcon - 1}px`,
+                                  top: "50%",
+                                  width: `${20 - halfIcon + halfIcon}px`,
+                                  height: "1px",
+                                }}
+                              />
+                            </>
+                          )}
+                          {levelIcon(unit.level)}
+                          <div className="min-w-0">
+                            <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                              {unit.type}
+                            </div>
+                            <div
+                              className={cn(
+                                "text-sm font-semibold truncate",
+                                i === chain.length - 1
+                                  ? "text-primary"
+                                  : "text-slate-700",
+                              )}
+                            >
+                              {unit.name}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Info grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -963,10 +753,79 @@ const PlantCard = ({
                     <button
                       type="button"
                       onClick={() => {
-                        setTempLat(suggestion.lat.toString());
-                        setTempLng(suggestion.lng.toString());
-                        onUpdate({ coordinate: suggestion });
-                        setActiveEntry();
+                        const lat = suggestion.lat;
+                        const lng = suggestion.lng;
+                        setTempLat(lat.toString());
+                        setTempLng(lng.toString());
+
+                        // Try hierarchical detection on the snapped point first
+                        const pt = turf.point([lng, lat]);
+                        const sorted = [...geographicalUnits].sort(
+                          (a, b) => a.level - b.level,
+                        );
+                        let foundId = "";
+                        for (const unit of sorted) {
+                          if (!unit.coordinates || unit.coordinates.length < 3)
+                            continue;
+                          try {
+                            const polyCoords = [
+                              ...unit.coordinates.map((c: any) => [
+                                c.lng,
+                                c.lat,
+                              ]),
+                              [
+                                unit.coordinates[0].lng,
+                                unit.coordinates[0].lat,
+                              ],
+                            ];
+                            const poly = turf.polygon([polyCoords]);
+                            if (turf.booleanPointInPolygon(pt, poly)) {
+                              foundId = unit.id;
+                              break;
+                            }
+                          } catch {}
+                        }
+
+                        // If on-boundary (not strictly inside), pick nearest unit
+                        if (!foundId && sorted.length > 0) {
+                          let minDist = Infinity;
+                          for (const unit of sorted) {
+                            if (
+                              !unit.coordinates ||
+                              unit.coordinates.length < 3
+                            )
+                              continue;
+                            try {
+                              const polyCoords = [
+                                ...unit.coordinates.map((c: any) => [
+                                  c.lng,
+                                  c.lat,
+                                ]),
+                                [
+                                  unit.coordinates[0].lng,
+                                  unit.coordinates[0].lat,
+                                ],
+                              ];
+                              const poly = turf.polygon([polyCoords]);
+                              const line = turf.polygonToLine(poly);
+                              const snapped = turf.nearestPointOnLine(
+                                line as any,
+                                pt,
+                              );
+                              const d = turf.distance(pt, snapped);
+                              if (d < minDist) {
+                                minDist = d;
+                                foundId = unit.id;
+                              }
+                            } catch {}
+                          }
+                        }
+
+                        onUpdate({
+                          coordinate: { lat, lng },
+                          plotId: foundId || plant.plotId,
+                          isInvalidBoundary: false,
+                        });
                         setValidationError(null);
                         setSuggestion(null);
                       }}
@@ -1000,6 +859,15 @@ const PlantCard = ({
   );
 };
 
+// Component to recenter map when coordinates change manually
+const RecenterMap = ({ lat, lng }: { lat: number; lng: number }) => {
+  const map = useMapEvents({});
+  useEffect(() => {
+    map.setView([lat, lng]);
+  }, [lat, lng, map]);
+  return null;
+};
+
 // ---- Map: multiple markers + all plot boundaries ----
 const AllPlantsMapContent = ({
   activeId,
@@ -1007,7 +875,7 @@ const AllPlantsMapContent = ({
   onAutoAssign,
   clickable,
   plants,
-  smallestUnits,
+  geographicalUnits,
   setActiveEntryId,
   suggestedCorrection,
 }: {
@@ -1021,14 +889,17 @@ const AllPlantsMapContent = ({
   ) => void;
   clickable?: boolean;
   plants: PlantEntry[];
-  smallestUnits: any[];
+  geographicalUnits: any[];
   setActiveEntryId: (id: string) => void;
   suggestedCorrection?: { entryId: string; lat: number; lng: number } | null;
 }) => {
+  const map = useMap();
   const activePlant = plants.find((p) => p.entryId === activeId);
 
   const findCurrentPlot = (lng: number, lat: number) => {
-    for (const unit of smallestUnits) {
+    // Use all geographical units sorted by most specific first (Plot > Area > Region)
+    const sorted = [...geographicalUnits].sort((a, b) => a.level - b.level);
+    for (const unit of sorted) {
       if (!unit.coordinates || unit.coordinates.length < 3) continue;
       try {
         const pt = turf.point([lng, lat]);
@@ -1044,7 +915,6 @@ const AllPlantsMapContent = ({
         return null;
       }
     }
-
     return null;
   };
 
@@ -1073,6 +943,42 @@ const AllPlantsMapContent = ({
     return null;
   };
 
+  // Style helpers per level
+  const getBoundaryStyle = (unit: any, isActiveUnit: boolean) => {
+    if (isActiveUnit) {
+      return {
+        color: "#6366f1",
+        weight: 2.5,
+        fillOpacity: 0.18,
+        dashArray: undefined,
+      };
+    }
+    switch (unit.level) {
+      case 1: // Plot
+        return {
+          color: "#f59e0b",
+          weight: 1.5,
+          fillOpacity: 0.06,
+          dashArray: "5,4",
+        };
+      case 2: // Area
+        return {
+          color: "#10b981",
+          weight: 2,
+          fillOpacity: 0.08,
+          dashArray: "8,4",
+        };
+      case 3: // Region
+      default:
+        return {
+          color: "#3b82f6",
+          weight: 2.5,
+          fillOpacity: 0.05,
+          dashArray: undefined,
+        };
+    }
+  };
+
   return (
     <>
       <TileLayer
@@ -1087,23 +993,42 @@ const AllPlantsMapContent = ({
           lng={activePlant.coordinate.lng}
         />
       )}
-      {/* All plot boundaries — uniform color, active unit highlighted */}
-      {smallestUnits.map((unit) => {
-        if (!unit.coordinates || unit.coordinates.length < 3) return null;
-        const isActiveUnit = activePlant?.plotId === unit.id;
-        return (
-          <Polygon
-            key={unit.id}
-            positions={unit.coordinates.map((c: any) => [c.lat, c.lng])}
-            pathOptions={{
-              color: isActiveUnit ? "#6366f1" : "#10b981",
-              weight: isActiveUnit ? 2.5 : 1.5,
-              fillOpacity: isActiveUnit ? 0.18 : 0.08,
-              dashArray: isActiveUnit ? undefined : "6,4",
-            }}
-          />
-        );
-      })}
+      {/* All geographical boundaries — Region > Area > Plot, rendered outermost first */}
+      {[...geographicalUnits]
+        .sort((a, b) => b.level - a.level) // Region first so Plots render on top
+        .map((unit) => {
+          if (!unit.coordinates || unit.coordinates.length < 3) return null;
+          const isActiveUnit = activePlant?.plotId === unit.id;
+          const style = getBoundaryStyle(unit, isActiveUnit);
+          const showTooltip = true; // show name for all units (Region, Area, Plot) on hover
+          return (
+            <Polygon
+              key={unit.id}
+              positions={unit.coordinates.map((c: any) => [c.lat, c.lng])}
+              pathOptions={style}
+            >
+              {showTooltip && (
+                <Tooltip sticky direction="top" opacity={0.95}>
+                  <div
+                    style={{ fontWeight: 600, fontSize: 12, lineHeight: "1.4" }}
+                  >
+                    {unit.name}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      color: "#64748b",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    {unit.type}
+                  </div>
+                </Tooltip>
+              )}
+            </Polygon>
+          );
+        })}
       {/* All plant markers */}
       {plants.map((p) => {
         // if (!p.plotId) return null;
@@ -1132,6 +1057,9 @@ const AllPlantsMapContent = ({
                       behavior: "smooth",
                     });
                 }
+                map.flyTo([p.coordinate.lat, p.coordinate.lng], map.getZoom(), {
+                  duration: 0.5,
+                });
                 setActiveEntryId(p.entryId);
               },
               dragend(e) {
@@ -1184,7 +1112,7 @@ const PlantIdentificationForm = ({
   initialList,
   onSubmit,
 }: PlantIdentificationFormProps) => {
-  const { regions } = useRegionStore();
+  const {} = useRegionStore();
   const { areas } = useCultivationAreaStore();
   const { personnel } = usePersonnelStore();
   const { farmingMethods } = useFarmingMethodStore();
@@ -1201,6 +1129,7 @@ const PlantIdentificationForm = ({
   const [cultivationAreaId, setCultivationAreaId] = useState(
     initialData?.cultivationAreaId || "",
   );
+  const [selectedScopeIds, setSelectedScopeIds] = useState<string[]>([]);
 
   const [isImportOpen, setIsImportOpen] = useState(false);
 
@@ -1264,110 +1193,200 @@ const PlantIdentificationForm = ({
   const selectedCultivationArea = areas.find((a) => a.id === cultivationAreaId);
 
   // ---- Logic to find smallest geographical units ----
-  const smallestUnits = useMemo(() => {
+  const geographicalUnits = useMemo(() => {
     if (!selectedCultivationArea) return [];
     const regionStore = useRegionStore.getState();
     const result: {
       id: string;
       name: string;
       type: string;
-      plotId: string;
-      regionId?: string;
-      areaId?: string;
+      level: number; // 1: Plot, 2: Area, 3: Region
       coordinates?: { lat: number; lng: number }[];
     }[] = [];
+
+    const processedIds = new Set<string>();
 
     selectedCultivationArea.targetIds.forEach((id) => {
       // 1. Check if ID is a plot
       const pc = regionStore.getPlotById(id);
-      if (pc) {
+      if (pc && !processedIds.has(pc.plot.id)) {
         result.push({
           id: pc.plot.id,
           name: pc.plot.name,
           type: "Lô trồng",
-          plotId: pc.plot.id,
-          regionId: pc.region.id.toString(),
-          areaId: pc.area.id.toString(),
+          level: 1,
           coordinates: pc.plot.coordinates,
         });
+        processedIds.add(pc.plot.id);
+
+        // Also add its Area and Region context if not already added
+        if (pc.area && !processedIds.has(pc.area.id.toString())) {
+          result.push({
+            id: pc.area.id.toString(),
+            name: pc.area.name,
+            type: "Khu vực",
+            level: 2,
+            coordinates: pc.area.coordinates,
+          });
+          processedIds.add(pc.area.id.toString());
+        }
+        if (pc.region && !processedIds.has(pc.region.id.toString())) {
+          result.push({
+            id: pc.region.id.toString(),
+            name: pc.region.name,
+            type: "Vùng trồng",
+            level: 3,
+            coordinates: pc.region.coordinates,
+          });
+          processedIds.add(pc.region.id.toString());
+        }
         return;
       }
 
       // 2. Check if ID is an Area
       const ac = regionStore.getAreaById(id);
-      if (ac) {
-        if (ac.area.plots && ac.area.plots.length > 0) {
-          ac.area.plots.forEach((p: any) => {
+      if (ac && !processedIds.has(ac.area.id.toString())) {
+        result.push({
+          id: ac.area.id.toString(),
+          name: ac.area.name,
+          type: "Khu vực",
+          level: 2,
+          coordinates: ac.area.coordinates,
+        });
+        processedIds.add(ac.area.id.toString());
+
+        ac.area.plots?.forEach((p: any) => {
+          if (!processedIds.has(p.id)) {
             result.push({
               id: p.id,
               name: p.name,
               type: "Lô trồng",
-              plotId: p.id,
-              regionId: ac.region.id.toString(),
-              areaId: ac.area.id.toString(),
+              level: 1,
               coordinates: p.coordinates,
             });
-          });
-        } else {
+            processedIds.add(p.id);
+          }
+        });
+
+        if (ac.region && !processedIds.has(ac.region.id.toString())) {
           result.push({
-            id: ac.area.id,
-            name: ac.area.name,
-            type: "Khu vực",
-            plotId: ac.area.id,
-            regionId: ac.region.id.toString(),
-            areaId: ac.area.id.toString(),
-            coordinates: ac.area.coordinates,
+            id: ac.region.id.toString(),
+            name: ac.region.name,
+            type: "Vùng trồng",
+            level: 3,
+            coordinates: ac.region.coordinates,
           });
+          processedIds.add(ac.region.id.toString());
         }
         return;
       }
 
       // 3. Check if ID is a Region
       const region = regionStore.regions.find((r: any) => String(r.id) === id);
-      if (region) {
-        const hasPlots = (region.subAreas || []).some(
-          (sa: any) => sa.plots && sa.plots.length > 0,
-        );
-        if (!hasPlots && (!region.subAreas || region.subAreas.length === 0)) {
-          result.push({
-            id: region.id.toString(),
-            name: region.name,
-            type: "Vùng trồng",
-            plotId: region.id.toString(),
-            regionId: region.id.toString(),
-            coordinates: region.coordinates,
-          });
-        } else {
-          region.subAreas?.forEach((sa: any) => {
-            if (sa.plots && sa.plots.length > 0) {
-              sa.plots.forEach((p: any) => {
-                result.push({
-                  id: p.id,
-                  name: p.name,
-                  type: "Lô trồng",
-                  plotId: p.id,
-                  regionId: region.id.toString(),
-                  areaId: sa.id.toString(),
-                  coordinates: p.coordinates,
-                });
-              });
-            } else {
+      if (region && !processedIds.has(region.id.toString())) {
+        result.push({
+          id: region.id.toString(),
+          name: region.name,
+          type: "Vùng trồng",
+          level: 3,
+          coordinates: region.coordinates,
+        });
+        processedIds.add(region.id.toString());
+
+        region.subAreas?.forEach((sa: any) => {
+          if (!processedIds.has(sa.id.toString())) {
+            result.push({
+              id: sa.id.toString(),
+              name: sa.name,
+              type: "Khu vực",
+              level: 2,
+              coordinates: sa.coordinates,
+            });
+            processedIds.add(sa.id.toString());
+          }
+          sa.plots?.forEach((p: any) => {
+            if (!processedIds.has(p.id)) {
               result.push({
-                id: sa.id,
-                name: sa.name,
-                type: "Khu vực",
-                plotId: sa.id,
-                regionId: region.id.toString(),
-                areaId: sa.id.toString(),
-                coordinates: sa.coordinates,
+                id: p.id,
+                name: p.name,
+                type: "Lô trồng",
+                level: 1,
+                coordinates: p.coordinates,
               });
+              processedIds.add(p.id);
             }
           });
-        }
+        });
       }
     });
+
     return result;
   }, [selectedCultivationArea]);
+
+  const scopedGeographicalUnits = useMemo(() => {
+    if (!selectedScopeIds || selectedScopeIds.length === 0)
+      return geographicalUnits;
+
+    const regionStore = useRegionStore.getState();
+    const resultIds = new Set<string>();
+
+    selectedScopeIds.forEach((id) => {
+      const scopeUnit = geographicalUnits.find((u) => u.id === id);
+      if (!scopeUnit) return;
+
+      if (scopeUnit.level === 3) {
+        geographicalUnits.forEach((u) => resultIds.add(u.id));
+      } else if (scopeUnit.level === 2) {
+        resultIds.add(id);
+        const ac = regionStore.getAreaById?.(id);
+        const childPlotIds = (ac?.area?.plots || []).map((p: any) => p.id);
+        childPlotIds.forEach((pid: string) => resultIds.add(pid));
+      } else {
+        resultIds.add(id);
+      }
+    });
+
+    return geographicalUnits.filter((u) => resultIds.has(u.id));
+  }, [selectedScopeIds, geographicalUnits]);
+
+  // Smallest units for map rendering (only Plot if exists, else Area, else Region)
+  // This is for Polygon rendering to avoid overlapping colors
+  const smallestUnits = useMemo(() => {
+    // Find the level with items
+    const hasPlots = geographicalUnits.some((u) => u.level === 1);
+    const hasAreas = geographicalUnits.some((u) => u.level === 2);
+
+    if (hasPlots) return geographicalUnits.filter((u) => u.level === 1);
+    if (hasAreas) return geographicalUnits.filter((u) => u.level === 2);
+    return geographicalUnits;
+  }, [geographicalUnits]);
+
+  const findGeographicalUnit = (lat: number, lng: number) => {
+    // Priority: Plot (level 1) > Area (level 2) > Region (level 3)
+    const pt = turf.point([lng, lat]);
+
+    // Use selectedScopeIds to find strictly within the chosen scope
+    const sortedUnits = geographicalUnits
+      .filter((u) => selectedScopeIds.includes(u.id))
+      .sort((a, b) => a.level - b.level);
+
+    for (const unit of sortedUnits) {
+      if (!unit.coordinates || unit.coordinates.length < 3) continue;
+      try {
+        const polyCoords = [
+          ...unit.coordinates.map((c: any) => [c.lng, c.lat]),
+          [unit.coordinates[0].lng, unit.coordinates[0].lat],
+        ];
+        const poly = turf.polygon([polyCoords]);
+        if (turf.booleanPointInPolygon(pt, poly)) {
+          return unit;
+        }
+      } catch (e) {
+        // skip errors
+      }
+    }
+    return null;
+  };
 
   // ---- Technical config (based on area only, no per-plant plot needed for Step 1) ----
   const activeConfig = useMemo(() => {
@@ -1441,97 +1460,68 @@ const PlantIdentificationForm = ({
     lat: number,
     lng: number,
   ) => {
-    const plant = plants.find((p) => p.entryId === plantEntryId);
-    if (!plant || !plant.plotId) {
-      updatePlant(plantEntryId, { coordinate: { lat, lng } });
-      return;
-    }
+    const unit = findGeographicalUnit(lat, lng);
 
-    const unit = smallestUnits.find((u) => u.id === plant.plotId);
-    if (!unit || !unit.coordinates || unit.coordinates.length < 3) {
-      updatePlant(plantEntryId, { coordinate: { lat, lng } });
-      return;
-    }
+    if (unit) {
+      setSuggestedCorrection(null);
+      updatePlant(plantEntryId, {
+        plotId: unit.id,
+        coordinate: { lat, lng },
+        isInvalidBoundary: false,
+      });
+    } else {
+      let nearestSuggestion: {
+        lat: number;
+        lng: number;
+        entryId: string;
+      } | null = null;
+      let minDistance = Infinity;
 
-    try {
-      const pt = turf.point([lng, lat]);
-      const polyCoords = [
-        ...unit.coordinates.map((c: any) => [c.lng, c.lat]),
-        [unit.coordinates[0].lng, unit.coordinates[0].lat],
-      ];
-      const poly = turf.polygon([polyCoords]);
+      geographicalUnits
+        .filter((u) => selectedScopeIds.includes(u.id))
+        .forEach((u) => {
+          if (!u.coordinates || u.coordinates.length < 3) return;
+          try {
+            const pt = turf.point([lng, lat]);
+            const polyCoords = [
+              ...u.coordinates.map((c: any) => [c.lng, c.lat]),
+              [u.coordinates[0].lng, u.coordinates[0].lat],
+            ];
+            const poly = turf.polygon([polyCoords]);
+            const line = turf.polygonToLine(poly);
+            const snapped = turf.nearestPointOnLine(line as any, pt);
 
-      if (turf.booleanPointInPolygon(pt, poly)) {
-        setSuggestedCorrection(null);
-        updatePlant(plantEntryId, {
-          coordinate: { lat, lng },
-          isInvalidBoundary: false,
+            const distance = turf.distance(pt, snapped);
+            if (distance < minDistance) {
+              minDistance = distance;
+              const [snapLng, snapLat] = snapped.geometry.coordinates;
+              nearestSuggestion = {
+                entryId: plantEntryId,
+                lat: snapLat,
+                lng: snapLng,
+              };
+            }
+          } catch {}
         });
-      } else {
-        // Snap to nearest boundary point for suggestion
-        const line = turf.polygonToLine(poly);
-        const snapped = turf.nearestPointOnLine(line as any, pt);
-        const [snapLng, snapLat] = snapped.geometry.coordinates;
-        setSuggestedCorrection({
-          entryId: plantEntryId,
-          lat: snapLat,
-          lng: snapLng,
-        });
 
-        updatePlant(plantEntryId, {
-          coordinate: { lat, lng },
-          isInvalidBoundary: true,
-        });
+      if (nearestSuggestion) {
+        setSuggestedCorrection(nearestSuggestion);
       }
-    } catch {
-      updatePlant(plantEntryId, { coordinate: { lat, lng } });
+
+      updatePlant(plantEntryId, {
+        coordinate: { lat, lng },
+        isInvalidBoundary: true,
+      });
     }
   };
 
   const handleAutoAssign = (
     entryId: string,
-    plotId: string,
+    _plotId: string, // ignored, we re-calculate
     lat: number,
     lng: number,
   ) => {
-    const unit = smallestUnits.find((u) => u.id === plotId);
-    if (!unit || !unit.coordinates || unit.coordinates.length < 3) {
-      updatePlant(entryId, { coordinate: { lat, lng }, plotId });
-      return;
-    }
-
-    const pt = turf.point([lng, lat]);
-    const polyCoords = [
-      ...unit.coordinates.map((c: any) => [c.lng, c.lat]),
-      [unit.coordinates[0].lng, unit.coordinates[0].lat],
-    ];
-
-    const poly = turf.polygon([polyCoords]);
-
-    if (turf.booleanPointInPolygon(pt, poly)) {
-      setSuggestedCorrection(null);
-      updatePlant(entryId, {
-        plotId,
-        coordinate: { lat, lng },
-        isInvalidBoundary: false,
-      });
-    } else {
-      // Snap to nearest boundary point for suggestion
-      const line = turf.polygonToLine(poly);
-      const snapped = turf.nearestPointOnLine(line as any, pt);
-      const [snapLng, snapLat] = snapped.geometry.coordinates;
-      setSuggestedCorrection({
-        entryId: entryId,
-        lat: snapLat,
-        lng: snapLng,
-      });
-
-      updatePlant(entryId, {
-        plotId,
-        coordinate: { lat, lng },
-        isInvalidBoundary: true,
-      });
-    }
+    validateAndSnapToUnit(entryId, lat, lng);
   };
 
   // ---- Submit: one plant per entry ----
@@ -1587,7 +1577,11 @@ const PlantIdentificationForm = ({
       id: "selection",
       title: "Chọn vùng canh tác",
       description: "Chọn doanh nghiệp và vùng canh tác",
-      isValid: !!(enterpriseId && cultivationAreaId),
+      isValid: !!(
+        enterpriseId &&
+        cultivationAreaId &&
+        selectedScopeIds.length > 0
+      ),
       content: (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div className="relative overflow-hidden rounded-xl border border-green-200 bg-linear-to-r from-green-50 via-white to-green-50 p-5 shadow-sm">
@@ -1648,6 +1642,7 @@ const PlantIdentificationForm = ({
                     selectedId={cultivationAreaId}
                     onSelect={(val) => {
                       setCultivationAreaId(val);
+                      setSelectedScopeIds([]);
                       setPlants((prev) =>
                         prev.map((p) => ({
                           ...p,
@@ -1666,6 +1661,673 @@ const PlantIdentificationForm = ({
                 </CardContent>
               </Card>
             </div>
+
+            {/* Step 1 Part 3: Geographical scope picker (modal) — shown BEFORE tech config */}
+            {selectedCultivationArea &&
+              geographicalUnits.length > 0 &&
+              (() => {
+                const selectedScopeUnits = geographicalUnits.filter((u) =>
+                  selectedScopeIds.includes(u.id),
+                );
+
+                // Build tree data for the modal
+                const regionStore = useRegionStore.getState();
+                const regions = geographicalUnits.filter((u) => u.level === 3);
+                const areas = geographicalUnits.filter((u) => u.level === 2);
+                const plots = geographicalUnits.filter((u) => u.level === 1);
+
+                const areasByRegion: Record<string, any[]> = {};
+                areas.forEach((area) => {
+                  const ac = regionStore.getAreaById?.(area.id);
+                  const rid = ac?.region?.id?.toString() || "";
+                  if (!areasByRegion[rid]) areasByRegion[rid] = [];
+                  areasByRegion[rid].push(area);
+                });
+                const plotsByArea: Record<string, any[]> = {};
+                plots.forEach((plot) => {
+                  const pc = regionStore.getPlotById?.(plot.id);
+                  const aid = pc?.area?.id?.toString() || "";
+                  if (!plotsByArea[aid]) plotsByArea[aid] = [];
+                  plotsByArea[aid].push(plot);
+                });
+
+                // Calculate selected hierarchy for display
+                const selectedHierarchy = regions
+                  .filter(
+                    (r) =>
+                      selectedScopeIds.includes(r.id) ||
+                      (areasByRegion[r.id] || []).some(
+                        (a) =>
+                          selectedScopeIds.includes(a.id) ||
+                          (plotsByArea[a.id] || []).some((p) =>
+                            selectedScopeIds.includes(p.id),
+                          ),
+                      ),
+                  )
+                  .map((r) => ({
+                    ...r,
+                    isSelected: selectedScopeIds.includes(r.id),
+                    areas: (areasByRegion[r.id] || [])
+                      .filter(
+                        (a) =>
+                          selectedScopeIds.includes(a.id) ||
+                          selectedScopeIds.includes(r.id) ||
+                          (plotsByArea[a.id] || []).some((p) =>
+                            selectedScopeIds.includes(p.id),
+                          ),
+                      )
+                      .map((a) => ({
+                        ...a,
+                        isSelected:
+                          selectedScopeIds.includes(a.id) ||
+                          selectedScopeIds.includes(r.id),
+                        plots: (plotsByArea[a.id] || [])
+                          .filter(
+                            (p) =>
+                              selectedScopeIds.includes(p.id) ||
+                              selectedScopeIds.includes(a.id) ||
+                              selectedScopeIds.includes(r.id),
+                          )
+                          .map((p) => ({
+                            ...p,
+                            isSelected:
+                              selectedScopeIds.includes(p.id) ||
+                              selectedScopeIds.includes(a.id) ||
+                              selectedScopeIds.includes(r.id),
+                          })),
+                      })),
+                  }));
+
+                const ScopeModal = () => {
+                  const [open, setOpen] = useState(false);
+                  const [search, setSearch] = useState("");
+                  const [tempIds, setTempIds] =
+                    useState<string[]>(selectedScopeIds);
+                  const [expandedRegions, setExpandedRegions] = useState<
+                    string[]
+                  >(regions.map((r) => r.id));
+                  const [expandedAreas, setExpandedAreas] = useState<string[]>(
+                    areas.map((a) => a.id),
+                  );
+
+                  const lowerSearch = search.toLowerCase();
+                  const filteredRegions = regions.filter(
+                    (r) =>
+                      !search || r.name.toLowerCase().includes(lowerSearch),
+                  );
+
+                  const toggleId = (id: string, level: number) => {
+                    const toAdd = new Set<string>();
+                    const toRemove = new Set<string>();
+
+                    const isCurrentlySelected = tempIds.includes(id);
+
+                    if (level === 3) {
+                      // Region: toggle region and all children
+                      const regionAreas = areasByRegion[id] || [];
+                      const allChildIds = [id];
+                      regionAreas.forEach((area) => {
+                        allChildIds.push(area.id);
+                        (plotsByArea[area.id] || []).forEach((plot) =>
+                          allChildIds.push(plot.id),
+                        );
+                      });
+
+                      if (isCurrentlySelected) {
+                        allChildIds.forEach((cid) => toRemove.add(cid));
+                      } else {
+                        allChildIds.forEach((cid) => toAdd.add(cid));
+                      }
+                    } else if (level === 2) {
+                      // Area: toggle area and its plots
+                      const allChildIds = [id];
+                      (plotsByArea[id] || []).forEach((plot) =>
+                        allChildIds.push(plot.id),
+                      );
+
+                      if (isCurrentlySelected) {
+                        allChildIds.forEach((cid) => toRemove.add(cid));
+                      } else {
+                        allChildIds.forEach((cid) => toAdd.add(cid));
+                      }
+                    } else {
+                      // Plot: just toggle self
+                      if (isCurrentlySelected) {
+                        toRemove.add(id);
+                      } else {
+                        toAdd.add(id);
+                      }
+                    }
+
+                    setTempIds((prev) => {
+                      const next = prev.filter((x) => !toRemove.has(x));
+                      toAdd.forEach((aid) => {
+                        if (!next.includes(aid)) next.push(aid);
+                      });
+                      return next;
+                    });
+                  };
+
+                  const confirm = () => {
+                    setSelectedScopeIds(tempIds);
+                    setPlants((prev) =>
+                      prev.map((p) => ({
+                        ...p,
+                        plotId: "",
+                        coordinate: { lat: 11.548, lng: 106.896 },
+                      })),
+                    );
+                    setOpen(false);
+                  };
+
+                  return (
+                    <>
+                      {/* Trigger card */}
+                      <Card className="border-none shadow-sm rounded-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500">
+                        <CardHeader className="border-b py-4 bg-slate-50/80">
+                          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-primary" />
+                            Phạm vi địa lý{" "}
+                            <span className="text-red-500">*</span>
+                            <span className="ml-auto text-[10px] font-normal text-slate-400">
+                              Giới hạn địa lý tối đa của cây trồng ở bước 2
+                            </span>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4 space-y-3">
+                          {selectedHierarchy.length > 0 ? (
+                            <div className="space-y-4">
+                              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">
+                                <ChevronDown className="w-3 h-3" />
+                                Phân cấp quản lý
+                              </div>
+
+                              <div className="space-y-0 relative ml-2">
+                                {selectedHierarchy.map((region) => (
+                                  <div key={region.id} className="relative">
+                                    {/* Region Row */}
+                                    <div className="flex items-start gap-3 relative pb-4">
+                                      {/* Vertical line for region descendants */}
+                                      {region.areas.length > 0 && (
+                                        <div className="absolute left-[15px] top-[34px] bottom-0 w-px bg-slate-200" />
+                                      )}
+
+                                      <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 relative z-10">
+                                        <MapPin className="w-4 h-4" />
+                                      </div>
+                                      <div className="pt-0.5">
+                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight leading-none mb-1">
+                                          Vùng trồng
+                                        </div>
+                                        <div className="text-sm font-bold text-slate-800">
+                                          {region.name}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Areas */}
+                                    <div className="ml-[15px] space-y-0">
+                                      {region.areas.map((area) => (
+                                        <div
+                                          key={area.id}
+                                          className="relative pl-6 pb-4"
+                                        >
+                                          {/* Horizontal connector to area */}
+                                          <div className="absolute left-0 top-4 w-5 h-px bg-slate-200" />
+
+                                          {/* Vertical line for plot descendants */}
+                                          {area.plots.length > 0 && (
+                                            <div className="absolute left-[19px] top-[34px] bottom-0 w-px bg-slate-100" />
+                                          )}
+
+                                          <div className="flex items-start gap-3 relative">
+                                            <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 relative z-10">
+                                              <Layers className="w-4 h-4" />
+                                            </div>
+                                            <div className="pt-0.5">
+                                              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight leading-none mb-1">
+                                                Khu vực
+                                              </div>
+                                              <div className="text-sm font-bold text-slate-800">
+                                                {area.name}
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          {/* Plots */}
+                                          <div className="ml-[19px] space-y-0">
+                                            {area.plots.map((plot: any) => (
+                                              <div
+                                                key={plot.id}
+                                                className="relative pl-6 pt-4 first:pt-4"
+                                              >
+                                                {/* Horizontal connector to plot */}
+                                                <div className="absolute left-0 top-8 w-5 h-px bg-slate-100" />
+
+                                                <div className="flex items-start gap-3 relative">
+                                                  <div className="w-8 h-8 rounded-xl bg-green-50 border border-green-100 flex items-center justify-center text-green-600 shrink-0 relative z-10">
+                                                    <Target className="w-4 h-4" />
+                                                  </div>
+                                                  <div className="pt-0.5">
+                                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight leading-none mb-1">
+                                                      Lô đất
+                                                    </div>
+                                                    <div className="text-sm font-bold text-slate-800">
+                                                      {plot.name}
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                              Chưa chọn phạm vi địa lý — vui lòng chọn để tiếp
+                              tục
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTempIds(selectedScopeIds);
+                              setOpen(true);
+                            }}
+                            className="w-full h-10 cursor-pointer border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 text-primary font-bold gap-2 transition-all rounded-xl flex items-center justify-center text-sm mt-2"
+                          >
+                            <Plus className="w-4 h-4" />
+                            {selectedScopeUnits.length > 0
+                              ? `Chỉnh sửa phạm vi (${selectedScopeUnits.length})`
+                              : "Chọn phạm vi địa lý"}
+                          </button>
+                        </CardContent>
+                      </Card>
+
+                      {/* Modal */}
+                      <Dialog
+                        open={open}
+                        onOpenChange={(o) => {
+                          setOpen(o);
+                          if (!o) setSearch("");
+                        }}
+                      >
+                        <DialogContent className="max-w-xl p-0 overflow-hidden rounded-2xl border-none shadow-2xl flex flex-col max-h-[90vh]">
+                          <DialogHeader className="p-6 bg-slate-50 border-b shrink-0">
+                            <DialogTitle className="flex items-center gap-2">
+                              <MapPin className="w-5 h-5 text-primary" />
+                              Chọn phạm vi địa lý
+                              {tempIds.length > 0 && (
+                                <Badge className="ml-2 text-[10px]">
+                                  {tempIds.length} đã chọn
+                                </Badge>
+                              )}
+                            </DialogTitle>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Chọn một hoặc nhiều Vùng trồng, Khu vực hoặc Lô
+                              đất. Cây trồng ở bước 2 sẽ bị giới hạn trong phạm
+                              vi này.
+                            </p>
+                          </DialogHeader>
+
+                          <div className="px-6 pb-5 border-b shrink-0 bg-white">
+                            <div className="relative">
+                              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
+                              <Input
+                                placeholder="Tìm kiếm vùng, khu vực, lô..."
+                                className="pl-10 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                              />
+                            </div>
+                          </div>
+
+                          <ScrollArea className="flex-1 overflow-y-auto">
+                            <div className="p-6 space-y-4">
+                              {filteredRegions.length === 0 &&
+                                regions.length > 0 &&
+                                search && (
+                                  <div className="space-y-2">
+                                    {areas
+                                      .filter((a) =>
+                                        a.name
+                                          .toLowerCase()
+                                          .includes(lowerSearch),
+                                      )
+                                      .map((area: any) => {
+                                        const ac = regionStore.getAreaById?.(
+                                          area.id,
+                                        );
+                                        const rid =
+                                          ac?.region?.id?.toString() || "";
+                                        const isInherited =
+                                          tempIds.includes(rid);
+
+                                        return (
+                                          <button
+                                            key={area.id}
+                                            type="button"
+                                            onClick={() => toggleId(area.id, 2)}
+                                            disabled={isInherited}
+                                            className={cn(
+                                              "w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer",
+                                              tempIds.includes(area.id)
+                                                ? "bg-primary/10 border-primary/40"
+                                                : "bg-white border-slate-100 hover:border-primary/20 hover:bg-slate-50",
+                                              isInherited &&
+                                                "opacity-60 cursor-not-allowed",
+                                            )}
+                                          >
+                                            <div className="flex items-center gap-3">
+                                              <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
+                                                <Layers className="w-4 h-4" />
+                                              </div>
+                                              <div>
+                                                <div className="font-bold text-slate-800 text-sm">
+                                                  {area.name}
+                                                </div>
+                                                <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                                                  Khu vực
+                                                </div>
+                                              </div>
+                                            </div>
+                                            {tempIds.includes(area.id) ? (
+                                              <CheckCircle2 className="w-5 h-5 text-primary" />
+                                            ) : (
+                                              <div className="w-5 h-5 rounded border-2 border-slate-200" />
+                                            )}
+                                          </button>
+                                        );
+                                      })}
+                                    {plots
+                                      .filter((p) =>
+                                        p.name
+                                          .toLowerCase()
+                                          .includes(lowerSearch),
+                                      )
+                                      .map((plot: any) => {
+                                        const pc = regionStore.getPlotById?.(
+                                          plot.id,
+                                        );
+                                        const aid =
+                                          pc?.area?.id?.toString() || "";
+                                        const ac =
+                                          regionStore.getAreaById?.(aid);
+                                        const rid =
+                                          ac?.region?.id?.toString() || "";
+                                        const isInherited =
+                                          tempIds.includes(rid) ||
+                                          tempIds.includes(aid);
+
+                                        return (
+                                          <button
+                                            key={plot.id}
+                                            type="button"
+                                            onClick={() => toggleId(plot.id, 1)}
+                                            disabled={isInherited}
+                                            className={cn(
+                                              "w-full flex items-center justify-between p-2.5 rounded-lg border-2 transition-all cursor-pointer",
+                                              tempIds.includes(plot.id)
+                                                ? "bg-primary/10 border-primary/40"
+                                                : "bg-white border-slate-50 hover:border-primary/20 hover:bg-slate-50",
+                                              isInherited &&
+                                                "opacity-60 cursor-not-allowed",
+                                            )}
+                                          >
+                                            <div className="flex items-center gap-2.5">
+                                              <div className="w-2 h-2 rounded-full bg-slate-200" />
+                                              <span className="font-medium text-slate-600 text-xs">
+                                                {plot.name}
+                                              </span>
+                                            </div>
+                                            {tempIds.includes(plot.id) ? (
+                                              <CheckCircle2 className="w-4 h-4 text-primary" />
+                                            ) : (
+                                              <div className="w-4 h-4 rounded border border-slate-200" />
+                                            )}
+                                          </button>
+                                        );
+                                      })}
+                                  </div>
+                                )}
+
+                              {filteredRegions.map((r) => (
+                                <div key={r.id} className="space-y-2">
+                                  {/* Region row */}
+                                  <div className="flex items-center gap-2 group">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setExpandedRegions((prev) =>
+                                          prev.includes(r.id)
+                                            ? prev.filter((x) => x !== r.id)
+                                            : [...prev, r.id],
+                                        )
+                                      }
+                                      className="p-1 hover:bg-slate-100 rounded transition-colors shrink-0"
+                                    >
+                                      {expandedRegions.includes(r.id) ? (
+                                        <ChevronDown className="w-4 h-4 text-slate-400" />
+                                      ) : (
+                                        <ChevronRight className="w-4 h-4 text-slate-400" />
+                                      )}
+                                    </button>
+                                    <div
+                                      onClick={() => toggleId(r.id, 3)}
+                                      className={cn(
+                                        "flex-1 flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer",
+                                        tempIds.includes(r.id)
+                                          ? "bg-primary/10 border-primary/40"
+                                          : "bg-white border-slate-100 hover:border-primary/20 hover:bg-slate-50",
+                                      )}
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                                          <MapPin className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                          <div className="font-bold text-slate-800 text-sm">
+                                            {r.name}
+                                          </div>
+                                          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                                            Vùng trồng
+                                          </div>
+                                        </div>
+                                      </div>
+                                      {tempIds.includes(r.id) ? (
+                                        <div className="flex items-center gap-2">
+                                          <CheckCircle2 className="w-5 h-5 text-primary" />
+                                          <Badge
+                                            variant="secondary"
+                                            className="text-[10px] bg-primary/10 text-primary border-none"
+                                          >
+                                            Đã chọn
+                                          </Badge>
+                                        </div>
+                                      ) : (
+                                        <div className="w-5 h-5 rounded border-2 border-slate-200 group-hover:border-primary transition-colors" />
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Areas */}
+                                  {expandedRegions.includes(r.id) && (
+                                    <div className="ml-6 pl-4 border-l-2 border-slate-100 space-y-2 py-1">
+                                      {(areasByRegion[r.id] || []).map(
+                                        (area: any) => {
+                                          const isInheritedArea =
+                                            tempIds.includes(r.id);
+                                          return (
+                                            <div
+                                              key={area.id}
+                                              className="space-y-2"
+                                            >
+                                              <div className="flex items-center gap-2 group">
+                                                <button
+                                                  type="button"
+                                                  onClick={() =>
+                                                    setExpandedAreas((prev) =>
+                                                      prev.includes(area.id)
+                                                        ? prev.filter(
+                                                            (x) =>
+                                                              x !== area.id,
+                                                          )
+                                                        : [...prev, area.id],
+                                                    )
+                                                  }
+                                                  className="p-1 hover:bg-slate-100 rounded transition-colors shrink-0"
+                                                >
+                                                  {expandedAreas.includes(
+                                                    area.id,
+                                                  ) ? (
+                                                    <ChevronDown className="w-4 h-4 text-slate-400" />
+                                                  ) : (
+                                                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                                                  )}
+                                                </button>
+                                                <div
+                                                  onClick={() =>
+                                                    !isInheritedArea &&
+                                                    toggleId(area.id, 2)
+                                                  }
+                                                  className={cn(
+                                                    "flex-1 flex items-center justify-between p-2.5 rounded-xl border-2 transition-all cursor-pointer",
+                                                    tempIds.includes(area.id)
+                                                      ? "bg-primary/10 border-primary/40"
+                                                      : "bg-white border-slate-100 hover:border-primary/20 hover:bg-slate-50",
+                                                    isInheritedArea &&
+                                                      "opacity-60 cursor-not-allowed",
+                                                  )}
+                                                >
+                                                  <div className="flex items-center gap-3">
+                                                    <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center">
+                                                      <Layers className="w-4 h-4" />
+                                                    </div>
+                                                    <span className="font-bold text-slate-700 text-xs">
+                                                      {area.name}
+                                                    </span>
+                                                  </div>
+                                                  {tempIds.includes(area.id) ? (
+                                                    <div className="flex items-center gap-2">
+                                                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                                                      <Badge
+                                                        variant="secondary"
+                                                        className="text-[9px] bg-primary/10 text-primary border-none h-4 py-0"
+                                                      >
+                                                        Đã chọn
+                                                      </Badge>
+                                                    </div>
+                                                  ) : (
+                                                    <div className="w-4 h-4 rounded border border-slate-200 group-hover:border-primary transition-colors" />
+                                                  )}
+                                                </div>
+                                              </div>
+
+                                              {/* Plots */}
+                                              {expandedAreas.includes(
+                                                area.id,
+                                              ) && (
+                                                <div className="ml-5 pl-4 border-l-2 border-slate-50 space-y-1 py-1">
+                                                  {(
+                                                    plotsByArea[area.id] || []
+                                                  ).map((plot: any) => {
+                                                    const isInheritedPlot =
+                                                      isInheritedArea ||
+                                                      tempIds.includes(area.id);
+                                                    return (
+                                                      <div
+                                                        key={plot.id}
+                                                        onClick={() =>
+                                                          !isInheritedPlot &&
+                                                          toggleId(plot.id, 1)
+                                                        }
+                                                        className={cn(
+                                                          "flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer group",
+                                                          tempIds.includes(
+                                                            plot.id,
+                                                          )
+                                                            ? "bg-primary/10 border-primary/40"
+                                                            : "bg-white border-slate-50 hover:border-primary/20 hover:bg-slate-50",
+                                                          isInheritedPlot &&
+                                                            "opacity-60 cursor-not-allowed",
+                                                        )}
+                                                      >
+                                                        <div className="flex items-center gap-2.5">
+                                                          <div
+                                                            className={cn(
+                                                              "w-2 h-2 rounded-full transition-colors",
+                                                              tempIds.includes(
+                                                                plot.id,
+                                                              )
+                                                                ? "bg-primary"
+                                                                : "bg-slate-200 group-hover:bg-primary/50",
+                                                            )}
+                                                          />
+                                                          <span className="font-medium text-slate-600 text-xs">
+                                                            {plot.name}
+                                                          </span>
+                                                        </div>
+                                                        {tempIds.includes(
+                                                          plot.id,
+                                                        ) ? (
+                                                          <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                                                        ) : (
+                                                          <div className="w-3.5 h-3.5 rounded border border-slate-200 group-hover:border-primary transition-colors" />
+                                                        )}
+                                                      </div>
+                                                    );
+                                                  })}
+                                                </div>
+                                              )}
+                                            </div>
+                                          );
+                                        },
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+
+                              {filteredRegions.length === 0 && !search && (
+                                <div className="text-center py-12">
+                                  <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                                    <Search className="w-6 h-6 text-slate-300" />
+                                  </div>
+                                  <div className="text-slate-500 font-medium text-sm">
+                                    Không có dữ liệu địa lý
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </ScrollArea>
+
+                          <div className="p-4 bg-slate-50 border-t flex justify-end gap-3 shrink-0">
+                            <Button
+                              variant="outline"
+                              onClick={() => setOpen(false)}
+                            >
+                              Hủy
+                            </Button>
+                            <Button
+                              onClick={confirm}
+                              disabled={tempIds.length === 0}
+                            >
+                              Xác nhận
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </>
+                  );
+                };
+
+                return <ScopeModal key={selectedCultivationArea.id} />;
+              })()}
 
             {selectedCultivationArea && (
               <Card className="border-none shadow-sm rounded-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500">
@@ -1822,13 +2484,10 @@ const PlantIdentificationForm = ({
                   key={plant.entryId}
                   plant={plant}
                   index={idx}
-                  smallestUnits={smallestUnits}
-                  regions={regions}
-                  setSuggestedCorrection={setSuggestedCorrection}
+                  geographicalUnits={scopedGeographicalUnits}
                   onUpdate={(partial) => updatePlant(plant.entryId, partial)}
                   onRemove={() => removePlant(plant.entryId)}
                   canRemove
-                  setActiveEntry={() => setActiveEntryId(plant.entryId)}
                   isInvalidBoundary={plant.isInvalidBoundary}
                 />
               ))}
@@ -1962,7 +2621,7 @@ const PlantIdentificationForm = ({
                         clickable={true}
                         plants={plants}
                         activeId={effectiveActiveId}
-                        smallestUnits={smallestUnits}
+                        geographicalUnits={scopedGeographicalUnits}
                         setActiveEntryId={handleSetActiveEntry}
                         onPlantMove={validateAndSnapToUnit}
                         onAutoAssign={handleAutoAssign}
@@ -2090,7 +2749,7 @@ const PlantIdentificationForm = ({
                       onAutoAssign={handleAutoAssign}
                       clickable={true}
                       plants={plants}
-                      smallestUnits={smallestUnits}
+                      geographicalUnits={scopedGeographicalUnits}
                       setActiveEntryId={handleSetActiveEntry}
                       suggestedCorrection={suggestedCorrection}
                     />
@@ -2200,7 +2859,7 @@ const PlantIdentificationForm = ({
                 {plants.length}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                {initialData ? "Cây chờ cập nhật" : "Cây chờ thêm"}
+                Số lượng cây trồng
               </div>
             </div>
             <div className="bg-white col-span-3 border rounded-xl p-4 text-center shadow-sm">
@@ -2268,39 +2927,72 @@ const PlantIdentificationForm = ({
                     Giống cây trồng
                   </div>
                   {selectedCropsData.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {selectedCropsData.map((c: any) => (
-                        <div
-                          key={c.id}
-                          className="flex items-start gap-3 p-3 rounded-xl bg-white border border-slate-100 shadow-sm"
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-slate-50 overflow-hidden shrink-0 border border-slate-100 flex items-center justify-center">
-                            {c.illustration ? (
-                              <img
-                                src={
-                                  typeof c.illustration === "string"
-                                    ? c.illustration
-                                    : URL.createObjectURL(c.illustration)
-                                }
-                                alt={c.varietyName}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <Sprout className="w-4 h-4 text-slate-300" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                              <span className="text-[9px] font-bold text-primary font-mono uppercase bg-primary/5 px-1 py-0.5 rounded">
-                                {c.varietyCode}
-                              </span>
-                            </div>
-                            <div className="text-xs font-bold text-slate-900 truncate">
-                              {c.varietyName}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="border rounded-xl overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
+                            <TableHead className="w-[80px]">Hình ảnh</TableHead>
+                            <TableHead>Mã giống</TableHead>
+                            <TableHead>Tên giống</TableHead>
+                            <TableHead className="text-right">
+                              Tỷ lệ nảy mầm
+                            </TableHead>
+                            <TableHead className="text-right">
+                              Độ đồng đều
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {selectedCropsData.map((c: any) => (
+                            <TableRow
+                              key={c.id}
+                              className="hover:bg-slate-50/30"
+                            >
+                              <TableCell>
+                                <div className="w-10 h-10 rounded-lg bg-slate-50 overflow-hidden border border-slate-100 flex items-center justify-center shrink-0">
+                                  {c.illustration ? (
+                                    <img
+                                      src={
+                                        typeof c.illustration === "string"
+                                          ? c.illustration
+                                          : URL.createObjectURL(c.illustration)
+                                      }
+                                      alt={c.varietyName}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <Sprout className="w-4 h-4 text-slate-300" />
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <span className="font-mono text-[10px] font-bold text-primary bg-primary/5 px-2 py-0.5 rounded border border-primary/10">
+                                  {c.varietyCode}
+                                </span>
+                              </TableCell>
+                              <TableCell className="font-semibold text-slate-800">
+                                {c.varietyName}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Badge
+                                  variant="outline"
+                                  className="border-green-100 text-green-600 bg-green-50/50 text-[10px]"
+                                >
+                                  {c.germinationRate}%
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Badge
+                                  variant="outline"
+                                  className="border-blue-100 text-blue-600 bg-blue-50/50 text-[10px]"
+                                >
+                                  {c.uniformity}%
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     </div>
                   ) : (
                     <div className="py-5 text-center text-muted-foreground italic border-2 border-dashed rounded-2xl bg-slate-50/30 text-sm">
@@ -2320,68 +3012,110 @@ const PlantIdentificationForm = ({
                 Danh sách cây trồng
               </h4>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-slate-50/50">
-                    <th className="text-left py-2.5 px-4 text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
+            <div className="rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b">
+                    <TableHead className="w-[50px] text-center font-bold text-[10px] uppercase tracking-wider">
                       #
-                    </th>
-                    <th className="text-left py-2.5 px-4 text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
-                      Vị trí
-                    </th>
-                    <th className="text-left py-2.5 px-4 text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
+                    </TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase tracking-wider">
+                      Vị trí (Lô/Khu vực)
+                    </TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase tracking-wider">
+                      Ngày trồng
+                    </TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase tracking-wider text-right">
                       Cao (m)
-                    </th>
-                    <th className="text-left py-2.5 px-4 text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
+                    </TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase tracking-wider text-center">
                       Tuổi
-                    </th>
-                    <th className="text-left py-2.5 px-4 text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
+                    </TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase tracking-wider">
                       Tọa độ
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
+                    </TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase tracking-wider">
+                      Ghi chú
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {plants.map((p, idx) => {
-                    const unit = smallestUnits.find((u) => u.id === p.plotId);
+                    const unit = geographicalUnits.find(
+                      (u) => u.id === p.plotId,
+                    );
                     return (
-                      <tr
+                      <TableRow
                         key={p.entryId}
-                        className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors"
+                        className="hover:bg-slate-50/30 transition-colors border-b border-slate-100 last:border-0"
                       >
-                        <td className="py-3 px-4 text-muted-foreground text-xs">
+                        <TableCell className="text-center font-medium text-slate-400 text-xs">
                           {idx + 1}
-                        </td>
-                        <td className="py-3 px-4 text-slate-700">
+                        </TableCell>
+                        <TableCell>
                           {unit ? (
-                            <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-medium">
-                              <MapPin className="w-2.5 h-2.5" />
-                              {unit.name}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={cn(
+                                  "w-6 h-6 rounded flex items-center justify-center shrink-0",
+                                  unit.level === 3
+                                    ? "bg-blue-50 text-blue-600"
+                                    : unit.level === 2
+                                      ? "bg-purple-50 text-purple-600"
+                                      : "bg-green-50 text-green-600",
+                                )}
+                              >
+                                {unit.level === 3 ? (
+                                  <MapPin className="w-3 h-3" />
+                                ) : unit.level === 2 ? (
+                                  <Layers className="w-3 h-3" />
+                                ) : (
+                                  <Target className="w-3 h-3" />
+                                )}
+                              </div>
+                              <span className="text-sm font-semibold text-slate-700">
+                                {unit.name}
+                              </span>
+                            </div>
                           ) : (
-                            <span className="text-red-400 italic text-xs">
+                            <span className="text-red-400 italic text-xs flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" />
                               Chưa chọn
                             </span>
                           )}
-                        </td>
-                        <td className="py-3 px-4 text-slate-700">
+                        </TableCell>
+                        <TableCell className="text-slate-600 text-xs">
+                          {p.plantedDate
+                            ? new Date(p.plantedDate).toLocaleDateString(
+                                "vi-VN",
+                              )
+                            : "—"}
+                        </TableCell>
+                        <TableCell className="text-right font-medium text-slate-700">
                           {p.height || "—"}
-                        </td>
-                        <td className="py-3 px-4 text-slate-700">
-                          {p.ageValue
-                            ? `${p.ageValue} ${p.ageUnit === "years" ? "năm" : p.ageUnit === "months" ? "tháng" : "ngày"}`
-                            : "—"}
-                        </td>
-                        <td className="py-3 px-4 font-mono text-[10px] text-slate-500">
-                          {p.plotId
-                            ? `${p.coordinate.lat.toFixed(5)}, ${p.coordinate.lng.toFixed(5)}`
-                            : "—"}
-                        </td>
-                      </tr>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge
+                            variant="secondary"
+                            className="bg-slate-100 text-slate-600 text-[10px] py-0 px-2 border-none"
+                          >
+                            {p.ageValue
+                              ? `${p.ageValue} ${p.ageUnit === "years" ? "năm" : p.ageUnit === "months" ? "tháng" : "ngày"}`
+                              : "—"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono text-[10px] text-slate-400">
+                          {p.coordinate.lat.toFixed(5)},{" "}
+                          {p.coordinate.lng.toFixed(5)}
+                        </TableCell>
+                        <TableCell className="max-w-[150px] truncate text-slate-500 text-xs italic">
+                          {p.note || "—"}
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </Card>
 
@@ -2445,20 +3179,28 @@ const PlantIdentificationForm = ({
             let autoPlotId = item.plotId || "";
             let invalid = true;
 
-            // Auto-assign logic just like AllPlantsMapContent if possible
             if (!autoPlotId) {
               const pt = turf.point([coord.lng, coord.lat]);
-              for (const unit of smallestUnits) {
+              // Strictly check against selectedScopeIds only
+              const sortedUnits = geographicalUnits
+                .filter((u) => selectedScopeIds.includes(u.id))
+                .sort((a, b) => a.level - b.level);
+
+              for (const unit of sortedUnits) {
                 if (unit.coordinates && unit.coordinates.length >= 3) {
-                  const polyCoords = [
-                    ...unit.coordinates.map((c: any) => [c.lng, c.lat]),
-                    [unit.coordinates[0].lng, unit.coordinates[0].lat],
-                  ];
-                  const poly = turf.polygon([polyCoords]);
-                  if (turf.booleanPointInPolygon(pt, poly)) {
-                    autoPlotId = unit.id;
-                    invalid = false; // valid coordinate because it landed inside one of the selectable zones!
-                    break;
+                  try {
+                    const polyCoords = [
+                      ...unit.coordinates.map((c: any) => [c.lng, c.lat]),
+                      [unit.coordinates[0].lng, unit.coordinates[0].lat],
+                    ];
+                    const poly = turf.polygon([polyCoords]);
+                    if (turf.booleanPointInPolygon(pt, poly)) {
+                      autoPlotId = unit.id;
+                      invalid = false;
+                      break;
+                    }
+                  } catch {
+                    // skip invalid polygon
                   }
                 }
               }
