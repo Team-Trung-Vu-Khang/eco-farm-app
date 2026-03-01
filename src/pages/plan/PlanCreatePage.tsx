@@ -53,31 +53,11 @@ import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import { StageAllocation } from "./components/StageAllocation";
 import { EnterpriseSelector } from "../cultivation-zone/cultivation-area/components";
 import GeographicalSelector from "./components/GeographicalSelector";
+import useRegimenStore from "../../stores/useRegimenStore";
 
 // 1. Location Selection Dialog (Filtered for Cultivation)
 
-const TREATMENT_REGIMENS = [
-  {
-    id: "reg-phen-cap-toc",
-    name: "Phác đồ khử phèn cấp tốc",
-    description: "Sử dụng vôi nóng và bơm xả liên tục",
-  },
-  {
-    id: "reg-phen-ben-vung",
-    name: "Phác đồ khử phèn bền vững",
-    description: "Kết hợp vôi, lân và hữu cơ vi sinh",
-  },
-  {
-    id: "reg-man-rua-troi",
-    name: "Phác đồ rửa mặn 3 bước",
-    description: "Rửa trôi - Bón vôi - Trồng cây chịu mặn",
-  },
-  {
-    id: "reg-phong-ngua-sau-benh",
-    name: "Phác đồ phòng ngừa sâu bệnh tổng hợp (IPM)",
-    description: "Kết hợp biện pháp sinh học, hóa học và canh tác",
-  },
-];
+// --- Components ---
 export interface GeographicalSelection {
   id: string;
   type: "region" | "area" | "plot";
@@ -149,6 +129,7 @@ export default function PlanCreatePage() {
   const seasons = useSeasonStore((state) => state.seasons);
   const { regions } = useRegionStore();
   const { growthCycles } = useGrowthCycleStore();
+  const regimens = useRegimenStore((state) => state.regimens);
 
   const [formData, setFormData] = useState<CreatePlanForm>({
     code: "",
@@ -978,7 +959,7 @@ export default function PlanCreatePage() {
               <Select
                 value={formData.regimenId}
                 onValueChange={(v) => {
-                  const regimen = TREATMENT_REGIMENS.find((r) => r.id === v);
+                  const regimen = regimens.find((r) => r.id === v);
                   setFormData((prev) => ({
                     ...prev,
                     regimenId: v,
@@ -996,18 +977,20 @@ export default function PlanCreatePage() {
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  {TREATMENT_REGIMENS.map((r) => (
-                    <SelectItem key={r.id} value={r.id} className="py-3">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="font-bold text-slate-900">
-                          {r.name}
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-normal">
-                          {r.description}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
+                  {regimens
+                    .filter((r) => r.type === "tri-benh")
+                    .map((r) => (
+                      <SelectItem key={r.id} value={r.id} className="py-3">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-bold text-slate-900">
+                            {r.name}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-normal">
+                            {r.description}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
 
@@ -1092,7 +1075,7 @@ export default function PlanCreatePage() {
                   );
                 })
               : (() => {
-                  const regimen = TREATMENT_REGIMENS.find(
+                  const regimen = regimens.find(
                     (r) => r.id === formData.regimenId,
                   );
                   const stageKey = regimen?.name || "Treatment";
@@ -1310,9 +1293,8 @@ export default function PlanCreatePage() {
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-500">Phác đồ áp dụng</span>
                         <span className="font-bold text-blue-900">
-                          {TREATMENT_REGIMENS.find(
-                            (r) => r.id === formData.regimenId,
-                          )?.name || "---"}
+                          {regimens.find((r) => r.id === formData.regimenId)
+                            ?.name || "---"}
                         </span>
                       </div>
                     </>

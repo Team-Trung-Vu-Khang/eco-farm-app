@@ -3,8 +3,6 @@ import { useLocation, useRoute } from "wouter";
 import {
   ClipboardList,
   FileCheck,
-  Target,
-  Banknote,
   MapPin,
   Check,
   Leaf,
@@ -45,6 +43,7 @@ import {
 import useAmendmentPlanStore, {
   type AllocationItem,
 } from "../../stores/useAmendmentPlanStore";
+import useRegimenStore from "../../stores/useRegimenStore";
 
 // --- Mock Data ---
 
@@ -146,23 +145,7 @@ const AMENDMENT_PROCESSES = [
   },
 ];
 
-const TREATMENT_REGIMENS = [
-  {
-    id: "reg-phen-cap-toc",
-    name: "Phác đồ khử phèn cấp tốc",
-    description: "Sử dụng vôi nóng và bơm xả liên tục",
-  },
-  {
-    id: "reg-phen-ben-vung",
-    name: "Phác đồ khử phèn bền vững",
-    description: "Kết hợp vôi, lân và hữu cơ vi sinh",
-  },
-  {
-    id: "reg-man-rua-troi",
-    name: "Phác đồ rửa mặn 3 bước",
-    description: "Rửa trôi - Bón vôi - Trồng cây chịu mặn",
-  },
-];
+// --- Material Configs ---
 
 const MATERIAL_TYPES = [
   { value: "Phân bón", label: "Phân bón" },
@@ -607,6 +590,7 @@ export default function AmendmentPlanCreatePage() {
   const addPlan = useAmendmentPlanStore((state) => state.addPlan);
   const updatePlan = useAmendmentPlanStore((state) => state.updatePlan);
   const getPlanById = useAmendmentPlanStore((state) => state.getPlanById);
+  const regimens = useRegimenStore((state) => state.regimens);
 
   const [formData, setFormData] = useState({
     code: "",
@@ -1137,11 +1121,13 @@ export default function AmendmentPlanCreatePage() {
                   <SelectValue placeholder="Chọn phác đồ..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {TREATMENT_REGIMENS.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>
-                      {r.name}
-                    </SelectItem>
-                  ))}
+                  {regimens
+                    .filter((r) => r.type === "cai-tao-dat")
+                    .map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -1361,9 +1347,8 @@ export default function AmendmentPlanCreatePage() {
                       Phác đồ điều trị
                     </span>
                     <div className="font-medium">
-                      {TREATMENT_REGIMENS.find(
-                        (r) => r.id === formData.regimenId,
-                      )?.name || "N/A"}
+                      {regimens.find((r) => r.id === formData.regimenId)
+                        ?.name || "N/A"}
                     </div>
                   </div>
                 )}

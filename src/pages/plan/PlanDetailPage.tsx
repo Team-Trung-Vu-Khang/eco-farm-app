@@ -35,7 +35,7 @@ import usePlanStore from "../../stores/usePlanStore";
 import useRegionStore from "@/stores/useRegionStore";
 import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import useSeasonStore from "@/stores/useSeasonStore";
-import { TREATMENT_REGIMENS } from "./constants";
+import useRegimenStore from "../../stores/useRegimenStore";
 import { cn } from "@tankhang1/eco-shared-ui";
 
 export default function PlanDetailPage() {
@@ -49,6 +49,7 @@ export default function PlanDetailPage() {
   const { regions } = useRegionStore();
   const { growthCycles } = useGrowthCycleStore();
   const { seasons } = useSeasonStore();
+  const regimens = useRegimenStore((state) => state.regimens);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const plan = getPlanById(Number(params.id));
@@ -364,8 +365,8 @@ export default function PlanDetailPage() {
                       Phác đồ điều trị
                     </label>
                     <p className="font-bold mt-1 text-blue-900">
-                      {TREATMENT_REGIMENS.find((r) => r.id === plan.regimenId)
-                        ?.name || "Chưa chọn phác đồ"}
+                      {regimens.find((r) => r.id === plan.regimenId)?.name ||
+                        "Chưa chọn phác đồ"}
                     </p>
                   </div>
                 )}

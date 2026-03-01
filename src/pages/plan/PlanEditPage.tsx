@@ -1,7 +1,6 @@
 import {
   AdminLayout,
   Badge,
-  Button,
   Card,
   CardContent,
   CardHeader,
@@ -22,18 +21,16 @@ import {
   type Step,
 } from "@tankhang1/eco-shared-ui";
 import {
-  AlertTriangle,
   ClipboardList,
   FileCheck,
   Info,
-  Layers,
   MapPin,
   Package,
   Sprout,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { GROWTH_CYCLES, TREATMENT_REGIMENS } from "./constants";
+import useRegimenStore from "../../stores/useRegimenStore";
 import usePlanStore from "../../stores/usePlanStore";
 import type {
   MaterialAllocation,
@@ -125,6 +122,7 @@ export default function PlanEditPage() {
   const seasons = useSeasonStore((state) => state.seasons);
   const { regions } = useRegionStore();
   const { growthCycles } = useGrowthCycleStore();
+  const regimens = useRegimenStore((state) => state.regimens);
 
   const plan = getPlanById(Number(params.id));
 
@@ -802,11 +800,13 @@ export default function PlanEditPage() {
                   <SelectValue placeholder="Chọn phác đồ điều trị..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {TREATMENT_REGIMENS.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>
-                      {r.name}
-                    </SelectItem>
-                  ))}
+                  {regimens
+                    .filter((r) => r.type === "tri-benh")
+                    .map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
