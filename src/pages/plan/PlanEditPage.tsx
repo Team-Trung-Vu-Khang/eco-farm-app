@@ -788,26 +788,7 @@ export default function PlanEditPage() {
           </div>
 
           {formData.purpose === "cultivation" ? (
-            <div className="space-y-4 animation-fade-in">
-              <Label className="text-base">Quy trình canh tác áp dụng</Label>
-              <Select
-                value={formData.growthCycleId}
-                onValueChange={handleGrowthCycleChange}
-              >
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Chọn quy trình mẫu..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {growthCycles
-                    .filter((c) => c.cropName === formData.crop)
-                    .map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name} ({c.totalDays} ngày)
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <div />
           ) : (
             <div className="space-y-4 animation-fade-in">
               <Label className="text-base">Phác đồ điều trị bệnh</Label>
