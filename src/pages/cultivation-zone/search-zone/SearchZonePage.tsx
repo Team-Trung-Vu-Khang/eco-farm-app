@@ -22,6 +22,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Checkbox,
+  cn,
 } from "@tankhang1/eco-shared-ui";
 import {
   Search,
@@ -36,6 +38,7 @@ import {
   X,
   TrendingUp,
   DollarSign,
+  Activity,
 } from "lucide-react";
 import { MOCK_CULTIVATION_ZONES, type CultivationZone } from "../constants";
 import { MapContainer, TileLayer, Polygon } from "react-leaflet";
@@ -43,14 +46,23 @@ import "leaflet/dist/leaflet.css";
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 
 interface AdvancedFilters {
-  status?: string;
-  province?: string;
+  // Nhóm 1: Thông tin cây trồng
+  crops?: string[];
+  varieties?: string[];
+  seedTypes?: string[];
+
+  // Nhóm 2: Doanh nghiệp & Địa điểm
+  enterpriseIds?: number[];
+  provinces?: string[];
+  districts?: string[];
+  wards?: string[];
+  certifications?: string[];
+
+  // Nhóm 3: Thông số & Trạng thái
+  status?: string[];
   minArea?: number;
   maxArea?: number;
-  mainCrop?: string;
-  hasCertification?: boolean;
   hasActivePlan?: boolean;
-  enterpriseId?: string;
 }
 
 const SearchZonePage = () => {
@@ -64,56 +76,131 @@ const SearchZonePage = () => {
 
   const { enterprises } = useEnterpriseStore();
 
-  // Get unique values for filters
+  // Get unique values for filters from MOCK DATA
   const uniqueProvinces = Array.from(
     new Set(MOCK_CULTIVATION_ZONES.map((z) => z.province)),
   );
-  const uniqueCrops = Array.from(
-    new Set(MOCK_CULTIVATION_ZONES.map((z) => z.mainCrop)),
+  const uniqueDistricts = Array.from(
+    new Set(MOCK_CULTIVATION_ZONES.map((z) => z.district)),
+  );
+  const uniqueWards = Array.from(
+    new Set(
+      MOCK_CULTIVATION_ZONES.map((z) => z.ward).filter((w): w is string => !!w),
+    ),
+  );
+  const allCropVarieties = MOCK_CULTIVATION_ZONES.flatMap(
+    (z) => z.cropVarieties,
+  );
+  const uniqueCropNames = Array.from(
+    new Set(allCropVarieties.map((v) => v.name)),
+  );
+  const uniqueVarieties = Array.from(
+    new Set(allCropVarieties.map((v) => v.variety)),
+  );
+  const uniqueSeedTypes = Array.from(
+    new Set(
+      allCropVarieties.map((v) => v.seedType).filter((s): s is string => !!s),
+    ),
+  );
+  const uniqueCertNames = Array.from(
+    new Set(
+      MOCK_CULTIVATION_ZONES.flatMap((z) =>
+        z.certifications.map((c) => c.name),
+      ),
+    ),
   );
 
   const filteredZones = MOCK_CULTIVATION_ZONES.filter((zone) => {
+    // Basic search
     const matchesSearch =
       zone.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       zone.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
       zone.province.toLowerCase().includes(searchQuery.toLowerCase()) ||
       zone.district.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = advancedFilters.status
-      ? zone.status === advancedFilters.status
-      : true;
-    const matchesProvince = advancedFilters.province
-      ? zone.province === advancedFilters.province
-      : true;
+    // Grouped filters
+    const matchesCrops =
+      advancedFilters.crops && advancedFilters.crops.length > 0
+        ? zone.cropVarieties.some((v) =>
+            advancedFilters.crops?.includes(v.name),
+          )
+        : true;
+
+    const matchesVarieties =
+      advancedFilters.varieties && advancedFilters.varieties.length > 0
+        ? zone.cropVarieties.some((v) =>
+            advancedFilters.varieties?.includes(v.variety),
+          )
+        : true;
+
+    const matchesSeeds =
+      advancedFilters.seedTypes && advancedFilters.seedTypes.length > 0
+        ? zone.cropVarieties.some(
+            (v) =>
+              v.seedType && advancedFilters.seedTypes?.includes(v.seedType),
+          )
+        : true;
+
+    const matchesEnterprise =
+      advancedFilters.enterpriseIds && advancedFilters.enterpriseIds.length > 0
+        ? zone.enterpriseId &&
+          advancedFilters.enterpriseIds.includes(zone.enterpriseId)
+        : true;
+
+    const matchesProvince =
+      advancedFilters.provinces && advancedFilters.provinces.length > 0
+        ? advancedFilters.provinces.includes(zone.province)
+        : true;
+
+    const matchesDistrict =
+      advancedFilters.districts && advancedFilters.districts.length > 0
+        ? advancedFilters.districts.includes(zone.district)
+        : true;
+
+    const matchesWard =
+      advancedFilters.wards && advancedFilters.wards.length > 0
+        ? zone.ward && advancedFilters.wards.includes(zone.ward)
+        : true;
+
+    const matchesCert =
+      advancedFilters.certifications &&
+      advancedFilters.certifications.length > 0
+        ? zone.certifications.some((c) =>
+            advancedFilters.certifications?.includes(c.name),
+          )
+        : true;
+
+    const matchesStatus =
+      advancedFilters.status && advancedFilters.status.length > 0
+        ? advancedFilters.status.includes(zone.status)
+        : true;
+
     const matchesMinArea = advancedFilters.minArea
       ? zone.totalArea >= advancedFilters.minArea
       : true;
     const matchesMaxArea = advancedFilters.maxArea
       ? zone.totalArea <= advancedFilters.maxArea
       : true;
-    const matchesCrop = advancedFilters.mainCrop
-      ? zone.mainCrop === advancedFilters.mainCrop
-      : true;
-    const matchesCert = advancedFilters.hasCertification
-      ? zone.certifications.length > 0
-      : true;
-    const matchesPlan = advancedFilters.hasActivePlan
-      ? zone.cultivationPlans.some((p) => p.status === "in-progress")
-      : true;
-    const matchesEnterprise = advancedFilters.enterpriseId
-      ? zone.enterpriseId?.toString() === advancedFilters.enterpriseId
-      : true;
+
+    const matchesPlan =
+      advancedFilters.hasActivePlan === true
+        ? zone.cultivationPlans.some((p) => p.status === "in-progress")
+        : true;
 
     return (
       matchesSearch &&
-      matchesStatus &&
+      matchesCrops &&
+      matchesVarieties &&
+      matchesSeeds &&
+      matchesEnterprise &&
       matchesProvince &&
+      matchesDistrict &&
+      matchesWard &&
+      matchesCert &&
+      matchesStatus &&
       matchesMinArea &&
       matchesMaxArea &&
-      matchesCrop &&
-      matchesCert &&
-      matchesPlan &&
-      matchesEnterprise
+      matchesPlan
     );
   });
 
@@ -122,9 +209,26 @@ const SearchZonePage = () => {
     setSearchQuery("");
   };
 
-  const activeFilterCount = Object.keys(advancedFilters).filter(
-    (key) => advancedFilters[key as keyof AdvancedFilters] !== undefined,
-  ).length;
+  const activeFilterCount = Object.keys(advancedFilters).reduce(
+    (count, key) => {
+      const val = advancedFilters[key as keyof AdvancedFilters];
+      if (Array.isArray(val)) return count + (val.length > 0 ? 1 : 0);
+      return count + (val !== undefined ? 1 : 0);
+    },
+    0,
+  );
+
+  const toggleFilter = (key: keyof AdvancedFilters, value: any) => {
+    setAdvancedFilters((prev) => {
+      const currentVal = prev[key] as any[] | undefined;
+      if (!currentVal) return { ...prev, [key]: [value] };
+      if (currentVal.includes(value)) {
+        const nextVal = currentVal.filter((v) => v !== value);
+        return { ...prev, [key]: nextVal.length > 0 ? nextVal : undefined };
+      }
+      return { ...prev, [key]: [...currentVal, value] };
+    });
+  };
 
   const getStatusBadge = (status: string) => {
     const config = {
@@ -157,250 +261,222 @@ const SearchZonePage = () => {
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Tìm kiếm vùng trồng</h1>
-          <p className="text-muted-foreground mt-2">
-            Tra cứu thông tin chi tiết về vùng canh tác
-          </p>
+    <AdminLayout title="Tìm kiếm vùng trồng">
+      <div className="p-6 space-y-6">
+        {/* Search & Filter Header (Same style as SearchCropPage) */}
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+            <Input
+              placeholder="Tìm kiếm vùng trồng theo tên, mã vùng, địa chỉ..."
+              className="pl-10 rounded-xl border-slate-200 focus:ring-primary h-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2 w-full md:w-auto">
+            <Button
+              variant={isAdvancedSearchOpen ? "default" : "outline"}
+              className="gap-2 rounded-xl"
+              onClick={() => setIsAdvancedSearchOpen(!isAdvancedSearchOpen)}
+            >
+              <Filter className="h-4 w-4" />
+              Tìm kiếm nâng cao
+              {activeFilterCount > 0 && (
+                <Badge variant="secondary" className="ml-1 px-1 h-5 min-w-5">
+                  {activeFilterCount}
+                </Badge>
+              )}
+            </Button>
+            <Button className="rounded-xl px-6">Tìm kiếm</Button>
+          </div>
         </div>
 
-        {/* Search Bar with Advanced Filters */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Tìm kiếm theo tên vùng, mã số, tỉnh thành..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => setIsAdvancedSearchOpen(!isAdvancedSearchOpen)}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Tìm kiếm nâng cao
-                {activeFilterCount > 0 && (
-                  <Badge variant="destructive" className="ml-2">
-                    {activeFilterCount}
-                  </Badge>
-                )}
-              </Button>
-              {(activeFilterCount > 0 || searchQuery) && (
-                <Button variant="ghost" onClick={clearFilters}>
-                  <X className="h-4 w-4 mr-2" />
-                  Xóa bộ lọc
+        {/* Advanced Search Panel (Refactored to Groups) */}
+        {isAdvancedSearchOpen && (
+          <Card className="border-none shadow-md overflow-hidden animate-in slide-in-from-top-2 duration-200">
+            <CardHeader className="bg-slate-50 border-b pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                  <Filter className="h-5 w-5 text-primary" />
+                  Bộ lọc nâng cao
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="text-primary hover:text-primary/80"
+                >
+                  Xóa tất cả bộ lọc
                 </Button>
-              )}
-            </div>
-
-            {/* Advanced Search Panel */}
-            {isAdvancedSearchOpen && (
-              <div className="mt-6 pt-6 border-t space-y-4">
-                <h3 className="font-semibold text-lg mb-4">Bộ lọc nâng cao</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Status Filter */}
-                  <div className="space-y-2">
-                    <Label>Doanh nghiệp</Label>
-                    <Select
-                      value={advancedFilters.enterpriseId}
-                      onValueChange={(value) =>
-                        setAdvancedFilters({
-                          ...advancedFilters,
-                          enterpriseId: value,
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tất cả" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {enterprises.map((enterprise) => (
-                          <SelectItem
-                            key={enterprise.id}
-                            value={enterprise.id.toString()}
-                          >
-                            {enterprise.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {/* Group 1: Crops, Varieties, Seeds */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-primary">
+                    <Sprout className="h-5 w-5" />
+                    <h4 className="font-semibold">1. Cây trồng & Giống</h4>
                   </div>
-
-                  {/* Status Filter */}
-                  <div className="space-y-2">
-                    <Label>Trạng thái</Label>
-                    <Select
-                      value={advancedFilters.status}
-                      onValueChange={(value) =>
-                        setAdvancedFilters({
-                          ...advancedFilters,
-                          status: value,
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tất cả" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Hoạt động</SelectItem>
-                        <SelectItem value="inactive">
-                          Ngưng hoạt động
-                        </SelectItem>
-                        <SelectItem value="under-construction">
-                          Đang xây dựng
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Province Filter */}
-                  <div className="space-y-2">
-                    <Label>Tỉnh / Thành Phố</Label>
-                    <Select
-                      value={advancedFilters.province}
-                      onValueChange={(value) =>
-                        setAdvancedFilters({
-                          ...advancedFilters,
-                          province: value,
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tất cả" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {uniqueProvinces.map((province) => (
-                          <SelectItem key={province} value={province}>
-                            {province}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Main Crop Filter */}
-                  <div className="space-y-2">
-                    <Label>Cây trồng chính</Label>
-                    <Select
-                      value={advancedFilters.mainCrop}
-                      onValueChange={(value) =>
-                        setAdvancedFilters({
-                          ...advancedFilters,
-                          mainCrop: value,
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tất cả" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {uniqueCrops.map((crop) => (
-                          <SelectItem key={crop} value={crop}>
-                            {crop}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Min Area Filter */}
-                  <div className="space-y-2">
-                    <Label>DT tối thiểu (ha)</Label>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      value={advancedFilters.minArea || ""}
-                      onChange={(e) =>
-                        setAdvancedFilters({
-                          ...advancedFilters,
-                          minArea: e.target.value
-                            ? parseFloat(e.target.value)
-                            : undefined,
-                        })
-                      }
+                  <div className="grid grid-cols-1 gap-4">
+                    <MultiSelectField
+                      label="Cây trồng"
+                      options={uniqueCropNames.map((c) => ({ id: c, name: c }))}
+                      selectedValues={advancedFilters.crops}
+                      onToggle={(v) => toggleFilter("crops", v)}
+                    />
+                    <MultiSelectField
+                      label="Giống cây"
+                      options={uniqueVarieties.map((v) => ({ id: v, name: v }))}
+                      selectedValues={advancedFilters.varieties}
+                      onToggle={(v) => toggleFilter("varieties", v)}
+                    />
+                    <MultiSelectField
+                      label="Hạt giống / Cây giống"
+                      options={uniqueSeedTypes.map((s) => ({ id: s, name: s }))}
+                      selectedValues={advancedFilters.seedTypes}
+                      onToggle={(v) => toggleFilter("seedTypes", v)}
                     />
                   </div>
+                </div>
 
-                  {/* Max Area Filter */}
-                  <div className="space-y-2">
-                    <Label>DT tối đa (ha)</Label>
-                    <Input
-                      type="number"
-                      placeholder="1000"
-                      value={advancedFilters.maxArea || ""}
-                      onChange={(e) =>
-                        setAdvancedFilters({
-                          ...advancedFilters,
-                          maxArea: e.target.value
-                            ? parseFloat(e.target.value)
-                            : undefined,
-                        })
+                {/* Group 2: Enterprise, Location, Certification */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-primary">
+                    <MapPin className="h-5 w-5" />
+                    <h4 className="font-semibold">
+                      2. Doanh nghiệp & Địa điểm
+                    </h4>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    <MultiSelectField
+                      label="Doanh nghiệp sở hữu"
+                      options={enterprises.map((e) => ({
+                        id: e.id,
+                        name: e.brandName || e.name,
+                      }))}
+                      selectedValues={advancedFilters.enterpriseIds}
+                      onToggle={(v) =>
+                        toggleFilter("enterpriseIds", parseInt(v))
                       }
                     />
+                    <div className="grid grid-cols-2 gap-4">
+                      <MultiSelectField
+                        label="Tỉnh thành"
+                        options={uniqueProvinces.map((p) => ({
+                          id: p,
+                          name: p,
+                        }))}
+                        selectedValues={advancedFilters.provinces}
+                        onToggle={(v) => toggleFilter("provinces", v)}
+                      />
+                      <MultiSelectField
+                        label="Quận / Huyện"
+                        options={uniqueDistricts.map((d) => ({
+                          id: d,
+                          name: d,
+                        }))}
+                        selectedValues={advancedFilters.districts}
+                        onToggle={(v) => toggleFilter("districts", v)}
+                      />
+                      <MultiSelectField
+                        label="Phường / Xã"
+                        options={uniqueWards.map((w) => ({ id: w, name: w }))}
+                        selectedValues={advancedFilters.wards}
+                        onToggle={(v) => toggleFilter("wards", v)}
+                      />
+                    </div>
+                    <MultiSelectField
+                      label="Chứng nhận đạt được"
+                      options={uniqueCertNames.map((c) => ({ id: c, name: c }))}
+                      selectedValues={advancedFilters.certifications}
+                      onToggle={(v) => toggleFilter("certifications", v)}
+                    />
                   </div>
+                </div>
 
-                  {/* Certification Filter */}
-                  <div className="space-y-2">
-                    <Label>Có chứng nhận</Label>
-                    <Select
-                      value={
-                        advancedFilters.hasCertification === undefined
-                          ? undefined
-                          : advancedFilters.hasCertification.toString()
-                      }
-                      onValueChange={(value) =>
-                        setAdvancedFilters({
-                          ...advancedFilters,
-                          hasCertification: value === "true",
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tất cả" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="true">Có</SelectItem>
-                        <SelectItem value="false">Không</SelectItem>
-                      </SelectContent>
-                    </Select>
+                {/* Group 3: Specs & Status */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-primary">
+                    <Activity className="h-5 w-5" />
+                    <h4 className="font-semibold">3. Quy mô & Trạng thái</h4>
                   </div>
-
-                  {/* Active Plan Filter */}
-                  <div className="space-y-2">
-                    <Label>Có KH đang thực hiện</Label>
-                    <Select
-                      value={
-                        advancedFilters.hasActivePlan === undefined
-                          ? undefined
-                          : advancedFilters.hasActivePlan.toString()
-                      }
-                      onValueChange={(value) =>
-                        setAdvancedFilters({
-                          ...advancedFilters,
-                          hasActivePlan: value === "true",
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tất cả" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="true">Có</SelectItem>
-                        <SelectItem value="false">Không</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs font-bold text-slate-500 uppercase">
+                          Diện tích từ (ha)
+                        </Label>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          className="rounded-xl"
+                          value={advancedFilters.minArea || ""}
+                          onChange={(e) =>
+                            setAdvancedFilters({
+                              ...advancedFilters,
+                              minArea: e.target.value
+                                ? parseFloat(e.target.value)
+                                : undefined,
+                            })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs font-bold text-slate-500 uppercase">
+                          Đến (ha)
+                        </Label>
+                        <Input
+                          type="number"
+                          placeholder="1000"
+                          className="rounded-xl"
+                          value={advancedFilters.maxArea || ""}
+                          onChange={(e) =>
+                            setAdvancedFilters({
+                              ...advancedFilters,
+                              maxArea: e.target.value
+                                ? parseFloat(e.target.value)
+                                : undefined,
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+                    <MultiSelectField
+                      label="Trạng thái hoạt động"
+                      options={[
+                        { id: "active", name: "Hoạt động" },
+                        { id: "inactive", name: "Ngừng hoạt động" },
+                        { id: "under-construction", name: "Đang xây dựng" },
+                      ]}
+                      selectedValues={advancedFilters.status}
+                      onToggle={(v) => toggleFilter("status", v)}
+                    />
+                    <div className="flex items-center gap-3 pt-2">
+                      <Checkbox
+                        id="hasActivePlan"
+                        checked={advancedFilters.hasActivePlan}
+                        onCheckedChange={(checked) =>
+                          setAdvancedFilters({
+                            ...advancedFilters,
+                            hasActivePlan: !!checked,
+                          })
+                        }
+                      />
+                      <Label
+                        htmlFor="hasActivePlan"
+                        className="text-sm font-medium cursor-pointer"
+                      >
+                        Đang có kế hoạch canh tác triển khai
+                      </Label>
+                    </div>
                   </div>
                 </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Statistics Summary */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -1257,5 +1333,85 @@ const SearchZonePage = () => {
     </AdminLayout>
   );
 };
+
+const MultiSelectField = ({
+  label,
+  options,
+  selectedValues,
+  onToggle,
+  placeholder = "Tất cả",
+}: {
+  label: string;
+  options: { id: any; name: string }[];
+  selectedValues?: any[];
+  onToggle: (val: any) => void;
+  placeholder?: string;
+}) => (
+  <div className="space-y-2">
+    <Label className="text-xs font-bold text-slate-500 uppercase ml-1">
+      {label}
+    </Label>
+    <Select
+      value={selectedValues?.[0]?.toString() || ""}
+      onValueChange={(v) => {
+        onToggle(v);
+      }}
+    >
+      <SelectTrigger className="rounded-xl bg-white border-slate-200">
+        <SelectValue
+          placeholder={
+            selectedValues && selectedValues.length > 0
+              ? `Đã chọn ${selectedValues.length}`
+              : placeholder
+          }
+        />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((opt) => (
+          <SelectItem
+            key={opt.id}
+            value={opt.id.toString()}
+            className={cn(
+              selectedValues?.includes(opt.id) && "bg-primary/10 font-bold",
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={selectedValues?.includes(opt.id)}
+                onCheckedChange={() => onToggle(opt.id)}
+                className="mr-2"
+              />
+              {opt.name}
+            </div>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+    {selectedValues && selectedValues.length > 0 && (
+      <div className="flex flex-wrap gap-1 mt-1">
+        {selectedValues.map((val) => {
+          const opt = options.find((o) => o.id.toString() === val.toString());
+          return (
+            <Badge
+              key={val}
+              variant="secondary"
+              className="text-[10px] h-5 bg-primary/10 text-primary border-primary/20 gap-1 pr-1"
+            >
+              {opt?.name || val}
+              <X
+                size={10}
+                className="cursor-pointer hover:text-destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggle(val);
+                }}
+              />
+            </Badge>
+          );
+        })}
+      </div>
+    )}
+  </div>
+);
 
 export default SearchZonePage;

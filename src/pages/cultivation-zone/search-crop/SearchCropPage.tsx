@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   AdminLayout,
   Button,
@@ -15,116 +15,189 @@ import {
   TabsTrigger,
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  cn,
+  useToast,
+  ScrollArea,
 } from "@tankhang1/eco-shared-ui";
 import {
   Search,
   MapPin,
-  Calendar,
   Leaf,
-  FileText,
   Activity,
-  Bug,
-  ShoppingCart,
   Award,
   Image as ImageIcon,
   ChevronRight,
   Filter,
   X,
+  Building2,
+  Calendar,
+  Layers,
+  Info,
+  ExternalLink,
 } from "lucide-react";
-import { MOCK_CROPS, type CropDetail, GROWTH_STAGES } from "../constants";
-import { MOCK_REGIONS, MOCK_AREAS } from "../../region-chart/constants";
+import { type CropDetail } from "../constants";
+import useRegionStore from "../../../stores/useRegionStore";
+import useEnterpriseStore from "../../../stores/useEnterpriseStore";
+import { CultivationZoneDialog } from "./components/CultivationZoneDialog";
+import useCropDetailStore from "../../../stores/useCropDetailStore";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+
+// Fix leaflet icon issue
+// @ts-ignore
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+});
+
+const activeIcon = new L.Icon({
+  iconUrl:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const defaultIcon = new L.Icon({
+  iconUrl:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const SetMapCenter = ({ lat, lng }: { lat: number; lng: number }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.flyTo([lat, lng], 17, { duration: 1 });
+  }, [lat, lng, map]);
+  return null;
+};
 
 interface AdvancedFilters {
-  status?: string;
-  regionId?: string;
-  areaId?: string;
-  growthStage?: string;
-  variety?: string;
-  minAge?: number;
-  maxAge?: number;
-  hasCertification?: boolean;
-  hasDisease?: boolean;
+  // Group 1: Crop Info
+  cropNames?: string[];
+  varieties?: string[];
+  seedTypes?: string[];
+  age?: number;
+  status?: string[];
+
+  // Group 2: Cultivation Zone
+  regionIds?: number[];
+
+  // Group 3: Certifications
+  certifications?: string[];
 }
 
 const SearchCropPage = () => {
+  const { toast } = useToast();
+  const { crops } = useCropDetailStore();
+  const { regions } = useRegionStore();
+  const { enterprises } = useEnterpriseStore();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCrop, setSelectedCrop] = useState<CropDetail | null>(null);
+  const [activeRegionId, setActiveRegionId] = useState<number | null>(null);
+  const [activeCropInDialog, setActiveCropInDialog] =
+    useState<CropDetail | null>(null);
+
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({});
+  const [isZoneDialogOpen, setIsZoneDialogOpen] = useState(false);
 
   // Get unique varieties
   const uniqueVarieties = Array.from(
-    new Set(MOCK_CROPS.map((crop) => crop.variety)),
+    new Set(crops.map((crop) => crop.variety)),
   );
 
-  const filteredCrops = MOCK_CROPS.filter((crop) => {
+  const filteredCrops = crops.filter((crop) => {
     // Basic search
     const matchesSearch =
       crop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       crop.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
       crop.variety.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // Advanced filters
-    const matchesStatus = advancedFilters.status
-      ? crop.status === advancedFilters.status
+    // Advanced filters - Group 1
+    const matchesStatus =
+      advancedFilters.status && advancedFilters.status.length > 0
+        ? advancedFilters.status.includes(crop.status)
+        : true;
+
+    const matchesCropName =
+      advancedFilters.cropNames && advancedFilters.cropNames.length > 0
+        ? advancedFilters.cropNames.includes(crop.name)
+        : true;
+
+    const matchesVariety =
+      advancedFilters.varieties && advancedFilters.varieties.length > 0
+        ? advancedFilters.varieties.includes(crop.variety)
+        : true;
+
+    const matchesSeedType =
+      advancedFilters.seedTypes && advancedFilters.seedTypes.length > 0
+        ? advancedFilters.seedTypes.includes(crop.seedType)
+        : true;
+
+    const matchesAge = advancedFilters.age
+      ? Math.abs(crop.actualAge - advancedFilters.age) <= 6 // Within 6 months
       : true;
 
-    const matchesRegion = advancedFilters.regionId
-      ? crop.regionId === parseInt(advancedFilters.regionId)
-      : true;
+    // Advanced filters - Group 2 (Cultivation Zone)
+    const matchesRegion =
+      advancedFilters.regionIds && advancedFilters.regionIds.length > 0
+        ? advancedFilters.regionIds.includes(crop.regionId)
+        : true;
 
-    const matchesArea = advancedFilters.areaId
-      ? crop.areaId === parseInt(advancedFilters.areaId)
-      : true;
-
-    const matchesGrowthStage = advancedFilters.growthStage
-      ? crop.growthStage === advancedFilters.growthStage
-      : true;
-
-    const matchesVariety = advancedFilters.variety
-      ? crop.variety === advancedFilters.variety
-      : true;
-
-    const matchesMinAge = advancedFilters.minAge
-      ? crop.actualAge >= advancedFilters.minAge
-      : true;
-
-    const matchesMaxAge = advancedFilters.maxAge
-      ? crop.actualAge <= advancedFilters.maxAge
-      : true;
-
-    const matchesCertification = advancedFilters.hasCertification
-      ? crop.certifications.length > 0
-      : true;
-
-    const matchesDisease = advancedFilters.hasDisease
-      ? crop.diseaseHistory.length > 0
-      : true;
+    // Advanced filters - Group 3 (Certifications)
+    const matchesCertification =
+      advancedFilters.certifications &&
+      advancedFilters.certifications.length > 0
+        ? crop.certifications.some((c) =>
+            advancedFilters.certifications?.includes(c.name),
+          )
+        : true;
 
     return (
       matchesSearch &&
       matchesStatus &&
-      matchesRegion &&
-      matchesArea &&
-      matchesGrowthStage &&
+      matchesCropName &&
       matchesVariety &&
-      matchesMinAge &&
-      matchesMaxAge &&
-      matchesCertification &&
-      matchesDisease
+      matchesSeedType &&
+      matchesAge &&
+      matchesRegion &&
+      matchesCertification
     );
   });
 
+  const handleSearch = () => {
+    toast({
+      title: "Tìm kiếm hoàn tất",
+      description: `Đã tìm thấy ${filteredCrops.length} cây trồng phù hợp với tiêu chí của bạn.`,
+    });
+  };
+
   const handleViewDetail = (crop: CropDetail) => {
     setSelectedCrop(crop);
+    setActiveRegionId(crop.regionId);
+    setActiveCropInDialog(crop);
     setIsDetailOpen(true);
   };
 
@@ -148,335 +221,369 @@ const SearchCropPage = () => {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  const getSeverityBadge = (severity: string) => {
-    const severityConfig = {
-      low: { label: "Nhẹ", variant: "default" as const },
-      medium: { label: "Trung bình", variant: "secondary" as const },
-      high: { label: "Nghiêm trọng", variant: "destructive" as const },
-    };
-    const config = severityConfig[severity as keyof typeof severityConfig];
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
-
-  const getQualityBadge = (quality: string) => {
-    const qualityConfig = {
-      A: { label: "Loại A", variant: "default" as const },
-      B: { label: "Loại B", variant: "secondary" as const },
-      C: { label: "Loại C", variant: "outline" as const },
-    };
-    const config = qualityConfig[quality as keyof typeof qualityConfig];
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
-
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold">Tìm kiếm cây trồng</h1>
-          <p className="text-muted-foreground mt-2">
-            Tra cứu thông tin chi tiết về cây trồng trong vùng canh tác
-          </p>
+    <AdminLayout title="Tìm kiếm cây trồng">
+      <div className="p-6 space-y-6">
+        {/* Search & Filter Header */}
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+            <Input
+              placeholder="Tìm kiếm cây trồng theo tên, mã số, giống..."
+              className="pl-10 rounded-xl border-slate-200 focus:ring-primary h-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2 w-full md:w-auto">
+            <Button
+              variant={isAdvancedSearchOpen ? "default" : "outline"}
+              className="gap-2 rounded-xl"
+              onClick={() => setIsAdvancedSearchOpen(!isAdvancedSearchOpen)}
+            >
+              <Filter className="h-4 w-4" />
+              Tìm kiếm nâng cao
+              {activeFilterCount > 0 && (
+                <Badge variant="secondary" className="ml-1 px-1 h-5 min-w-5">
+                  {activeFilterCount}
+                </Badge>
+              )}
+            </Button>
+            <Button className="rounded-xl px-6" onClick={handleSearch}>
+              Tìm kiếm
+            </Button>
+          </div>
         </div>
 
-        {/* Search Bar */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Tìm kiếm theo tên cây, mã số, giống..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => setIsAdvancedSearchOpen(!isAdvancedSearchOpen)}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Tìm kiếm nâng cao
-                {activeFilterCount > 0 && (
-                  <Badge variant="destructive" className="ml-2">
-                    {activeFilterCount}
-                  </Badge>
-                )}
-              </Button>
-              {(activeFilterCount > 0 || searchQuery) && (
-                <Button variant="ghost" onClick={clearFilters}>
-                  <X className="h-4 w-4 mr-2" />
-                  Xóa bộ lọc
+        {/* Advanced Filter Panel */}
+        {isAdvancedSearchOpen && (
+          <Card className="border-none shadow-md overflow-hidden animate-in slide-in-from-top-2 duration-200">
+            <CardHeader className="bg-slate-50 border-b pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                  <Filter className="h-5 w-5 text-primary" />
+                  Bộ lọc nâng cao
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="text-primary hover:text-primary/80"
+                >
+                  Xóa tất cả
                 </Button>
-              )}
-            </div>
-
-            {/* Advanced Search Panel */}
-            {isAdvancedSearchOpen && (
-              <div className="mt-6 pt-6 border-t space-y-4">
-                <h3 className="font-semibold text-lg mb-4">Bộ lọc nâng cao</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Status Filter */}
-                  <div className="space-y-2">
-                    <Label>Trạng thái</Label>
-                    <Select
-                      value={advancedFilters.status}
-                      onValueChange={(value) =>
-                        setAdvancedFilters({
-                          ...advancedFilters,
-                          status: value,
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tất cả" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="healthy">Khỏe mạnh</SelectItem>
-                        <SelectItem value="diseased">Bệnh</SelectItem>
-                        <SelectItem value="harvesting">Thu hoạch</SelectItem>
-                        <SelectItem value="removed">Đã loại bỏ</SelectItem>
-                      </SelectContent>
-                    </Select>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Group 1: Crop Information */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-primary">
+                    <Leaf className="h-5 w-5" />
+                    <h4 className="font-semibold">1. Thông tin cây trồng</h4>
                   </div>
-
-                  {/* Region Filter */}
-                  <div className="space-y-2">
-                    <Label>Vùng trồng</Label>
-                    <Select
-                      value={advancedFilters.regionId}
-                      onValueChange={(value) =>
-                        setAdvancedFilters({
-                          ...advancedFilters,
-                          regionId: value,
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tất cả" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {MOCK_REGIONS.map((region) => (
-                          <SelectItem
-                            key={region.id}
-                            value={region.id.toString()}
-                          >
-                            {region.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-2">
+                      <Label>Dòng cây trồng</Label>
+                      <Select
+                        onValueChange={(v) =>
+                          setAdvancedFilters({
+                            ...advancedFilters,
+                            cropNames: [v],
+                          })
+                        }
+                      >
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue placeholder="Chọn loại cây" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Durian">Sầu riêng</SelectItem>
+                          <SelectItem value="Coffee">Cà phê</SelectItem>
+                          <SelectItem value="Avocado">Bơ</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Giống cây</Label>
+                      <Select
+                        onValueChange={(v) =>
+                          setAdvancedFilters({
+                            ...advancedFilters,
+                            varieties: [v],
+                          })
+                        }
+                      >
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue placeholder="Chọn giống" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {uniqueVarieties.map((v) => (
+                            <SelectItem key={v} value={v}>
+                              {v}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Hạt giống</Label>
+                        <Select
+                          onValueChange={(v) =>
+                            setAdvancedFilters({
+                              ...advancedFilters,
+                              seedTypes: [v],
+                            })
+                          }
+                        >
+                          <SelectTrigger className="rounded-xl">
+                            <SelectValue placeholder="Loại hạt" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Hạt giống F1">
+                              Hạt giống F1
+                            </SelectItem>
+                            <SelectItem value="Cây giống ghép">
+                              Cây giống ghép
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Độ tuổi (tháng)</Label>
+                        <Input
+                          type="number"
+                          placeholder="Nhập tháng"
+                          className="rounded-xl"
+                          onChange={(e) =>
+                            setAdvancedFilters({
+                              ...advancedFilters,
+                              age: parseInt(e.target.value),
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Hiện trạng sức khỏe</Label>
+                      <Select
+                        onValueChange={(v) =>
+                          setAdvancedFilters({
+                            ...advancedFilters,
+                            status: [v],
+                          })
+                        }
+                      >
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue placeholder="Tất cả trạng thái" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="healthy">Khỏe mạnh</SelectItem>
+                          <SelectItem value="diseased">Bệnh</SelectItem>
+                          <SelectItem value="harvesting">Thu hoạch</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
+                </div>
 
-                  {/* Area Filter */}
-                  <div className="space-y-2">
-                    <Label>Khu vực</Label>
-                    <Select
-                      value={advancedFilters.areaId}
-                      onValueChange={(value) =>
-                        setAdvancedFilters({
-                          ...advancedFilters,
-                          areaId: value,
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tất cả" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {MOCK_AREAS.map((area) => (
-                          <SelectItem key={area.id} value={area.id.toString()}>
-                            {area.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                {/* Group 2: Cultivation Zone */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-primary">
+                    <MapPin className="h-5 w-5" />
+                    <h4 className="font-semibold">2. Vùng canh tác</h4>
                   </div>
+                  <div className="bg-slate-50 p-4 rounded-3xl border-2 border-dashed border-slate-200 transition-all hover:bg-slate-100/50">
+                    <div className="flex flex-wrap gap-4 items-end">
+                      <div className="flex-1 min-w-[200px] space-y-2">
+                        <Label className="text-slate-500 font-bold text-xs uppercase ml-1">
+                          Vùng đã chọn
+                        </Label>
+                        <div className="flex flex-wrap gap-2 min-h-12 p-3 bg-white border border-slate-100 rounded-2xl shadow-inner overflow-hidden">
+                          {!advancedFilters.regionIds?.length && (
+                            <span className="text-muted-foreground text-sm py-1 px-2 italic">
+                              Chưa chọn vùng nào
+                            </span>
+                          )}
+                          {advancedFilters.regionIds?.map((rId) => {
+                            const region = regions.find((r) => r.id === rId);
+                            return (
+                              <Badge
+                                key={rId}
+                                variant="secondary"
+                                className="gap-1.5 bg-primary/10 text-primary border-none py-1.5 px-3 font-bold group animate-in slide-in-from-left-2 duration-200"
+                              >
+                                {region?.name || `Vùng #${rId}`}{" "}
+                                <X
+                                  size={14}
+                                  className="cursor-pointer opacity-60 hover:opacity-100 transition-opacity"
+                                  onClick={() => {
+                                    setAdvancedFilters({
+                                      ...advancedFilters,
+                                      regionIds:
+                                        advancedFilters.regionIds?.filter(
+                                          (id) => id !== rId,
+                                        ),
+                                    });
+                                  }}
+                                />
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="gap-2 h-12 px-6 rounded-2xl border-primary/20 text-primary font-bold hover:bg-primary hover:text-white transition-all active:scale-95 shadow-lg shadow-primary/5"
+                        onClick={() => setIsZoneDialogOpen(true)}
+                      >
+                        <MapPin size={18} /> Chọn vùng canh tác
+                      </Button>
+                    </div>
 
-                  {/* Growth Stage Filter */}
-                  <div className="space-y-2">
-                    <Label>Giai đoạn sinh trưởng</Label>
-                    <Select
-                      value={advancedFilters.growthStage}
-                      onValueChange={(value) =>
+                    <CultivationZoneDialog
+                      open={isZoneDialogOpen}
+                      onOpenChange={setIsZoneDialogOpen}
+                      initialSelections={regions.filter((r) =>
+                        advancedFilters.regionIds?.includes(r.id),
+                      )}
+                      onConfirm={(selections) => {
                         setAdvancedFilters({
                           ...advancedFilters,
-                          growthStage: value,
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tất cả" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {GROWTH_STAGES.map((stage) => (
-                          <SelectItem key={stage.id} value={stage.name}>
-                            {stage.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Variety Filter */}
-                  <div className="space-y-2">
-                    <Label>Giống cây</Label>
-                    <Select
-                      value={advancedFilters.variety}
-                      onValueChange={(value) =>
-                        setAdvancedFilters({
-                          ...advancedFilters,
-                          variety: value,
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tất cả" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {uniqueVarieties.map((variety) => (
-                          <SelectItem key={variety} value={variety}>
-                            {variety}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Min Age Filter */}
-                  <div className="space-y-2">
-                    <Label>Tuổi tối thiểu (tháng)</Label>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      value={advancedFilters.minAge || ""}
-                      onChange={(e) =>
-                        setAdvancedFilters({
-                          ...advancedFilters,
-                          minAge: e.target.value
-                            ? parseInt(e.target.value)
-                            : undefined,
-                        })
-                      }
+                          regionIds: selections.map((s) => s.id),
+                        });
+                      }}
                     />
+                    <p className="text-[10px] text-slate-400 mt-3 ml-1 italic">
+                      * Nhấn nút để mở hộp thoại trực quan và lọc theo Doanh
+                      nghiệp, Tỉnh/Thành
+                    </p>
                   </div>
+                </div>
 
-                  {/* Max Age Filter */}
-                  <div className="space-y-2">
-                    <Label>Tuổi tối đa (tháng)</Label>
-                    <Input
-                      type="number"
-                      placeholder="100"
-                      value={advancedFilters.maxAge || ""}
-                      onChange={(e) =>
-                        setAdvancedFilters({
-                          ...advancedFilters,
-                          maxAge: e.target.value
-                            ? parseInt(e.target.value)
-                            : undefined,
-                        })
-                      }
-                    />
+                {/* Group 3: Certifications */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-primary">
+                    <Award className="h-5 w-5" />
+                    <h4 className="font-semibold">3. Chứng nhận</h4>
                   </div>
-
-                  {/* Certification Filter */}
-                  <div className="space-y-2">
-                    <Label>Có chứng nhận</Label>
-                    <Select
-                      value={
-                        advancedFilters.hasCertification === undefined
-                          ? undefined
-                          : advancedFilters.hasCertification.toString()
-                      }
-                      onValueChange={(value) =>
-                        setAdvancedFilters({
-                          ...advancedFilters,
-                          hasCertification: value === "true",
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tất cả" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="true">Có</SelectItem>
-                        <SelectItem value="false">Không</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="flex flex-wrap gap-2 min-h-12 p-3 border rounded-xl bg-white shadow-inner">
+                    {["VietGAP", "GlobalGAP", "Organic", "Premium Quality"].map(
+                      (cert) => (
+                        <Badge
+                          key={cert}
+                          variant={
+                            advancedFilters.certifications?.includes(cert)
+                              ? "default"
+                              : "outline"
+                          }
+                          className={cn(
+                            "cursor-pointer hover:bg-primary/10 transition-colors py-1.5 px-3 rounded-lg",
+                            advancedFilters.certifications?.includes(cert)
+                              ? "bg-primary border-primary shadow-sm"
+                              : "bg-white border-slate-100",
+                          )}
+                          onClick={() => {
+                            const current =
+                              advancedFilters.certifications || [];
+                            const updated = current.includes(cert)
+                              ? current.filter((c) => c !== cert)
+                              : [...current, cert];
+                            setAdvancedFilters({
+                              ...advancedFilters,
+                              certifications: updated,
+                            });
+                          }}
+                        >
+                          {cert}
+                        </Badge>
+                      ),
+                    )}
                   </div>
                 </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
+        {/* Search Results Summary */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="flex items-center gap-3">
+            <div className="bg-primary/10 p-2 rounded-xl">
+              <Leaf className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-800">
+                Kết quả tìm kiếm
+              </h2>
+              <p className="text-sm text-slate-500">
+                Tìm thấy{" "}
+                <span className="text-primary font-black px-2 py-0.5 bg-primary/10 rounded-lg animate-pulse">
+                  {filteredCrops.length}
+                </span>{" "}
+                cây trồng phù hợp
+              </p>
+            </div>
+          </div>
 
-        {/* Results Summary */}
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Tìm thấy{" "}
-            <span className="font-semibold">{filteredCrops.length}</span> cây
-            trồng
-          </p>
+          {(searchQuery || activeFilterCount > 0) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearFilters}
+              className="rounded-xl border-slate-200 text-slate-500 hover:text-destructive hover:border-destructive transition-all gap-2 h-9"
+            >
+              <X className="h-4 w-4" />
+              Xóa bộ lọc
+            </Button>
+          )}
         </div>
 
-        {/* Results */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredCrops.map((crop) => (
             <Card
               key={crop.id}
-              className="hover:shadow-lg transition-shadow cursor-pointer"
+              className="group overflow-hidden border-none shadow-sm hover:shadow-xl transition-all duration-300 rounded-2xl cursor-pointer"
               onClick={() => handleViewDetail(crop)}
             >
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{crop.name}</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {crop.code}
-                    </p>
-                  </div>
+              <div className="relative aspect-4/3 overflow-hidden">
+                <img
+                  src={crop.image}
+                  alt={crop.name}
+                  className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
+                  onError={(e) => {
+                    e.currentTarget.src =
+                      "https://images.unsplash.com/photo-1592150621344-c79230550bd5?q=80&w=400&auto=format&fit=crop";
+                  }}
+                />
+                <div className="absolute top-3 right-3">
                   {getStatusBadge(crop.status)}
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <Leaf className="h-4 w-4 text-green-600" />
-                  <span className="text-muted-foreground">Giống:</span>
-                  <span className="font-medium truncate">{crop.variety}</span>
+                <div className="absolute bottom-3 left-3">
+                  <Badge
+                    variant="secondary"
+                    className="bg-black/50 text-white border-none backdrop-blur-sm"
+                  >
+                    {crop.code}
+                  </Badge>
                 </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-blue-600" />
-                  <span className="text-muted-foreground">Ngày trồng:</span>
-                  <span className="font-medium">
-                    {new Date(crop.plantedDate).toLocaleDateString("vi-VN")}
+              </div>
+              <CardContent className="p-4">
+                <h3 className="font-bold text-lg mb-1 group-hover:text-primary transition-colors">
+                  {crop.name}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3 flex items-center gap-1">
+                  Giống:{" "}
+                  <span className="text-slate-700 font-medium">
+                    {crop.variety}
                   </span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-red-600" />
-                  <span className="text-muted-foreground truncate">
-                    {crop.regionName} / {crop.areaName}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Activity className="h-4 w-4 text-purple-600" />
-                  <span className="text-muted-foreground">Giai đoạn:</span>
-                  <span className="font-medium">{crop.growthStage}</span>
-                </div>
-                <div className="pt-3 border-t flex justify-between items-center">
-                  <div className="flex gap-2">
-                    <span className="text-sm text-muted-foreground">
-                      Tuổi: {crop.actualAge} tháng
-                    </span>
+                </p>
+                <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+                  <div className="flex items-center text-xs text-muted-foreground gap-1">
+                    <MapPin className="h-3 w-3" />
+                    {crop.regionName}
                   </div>
-                  <div className="flex gap-1">
-                    {crop.certifications.length > 0 && (
-                      <Award className="h-4 w-4 text-yellow-600" />
-                    )}
-                    {crop.diseaseHistory.length > 0 && (
-                      <Bug className="h-4 w-4 text-red-600" />
-                    )}
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  <div className="text-primary font-bold text-xs flex items-center gap-1">
+                    Chi tiết <ChevronRight className="h-3 w-3" />
                   </div>
                 </div>
               </CardContent>
@@ -485,637 +592,503 @@ const SearchCropPage = () => {
         </div>
 
         {filteredCrops.length === 0 && (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">
-                Không tìm thấy cây trồng nào phù hợp với tiêu chí tìm kiếm
-              </p>
-            </CardContent>
-          </Card>
+          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl shadow-sm border border-dashed border-slate-200">
+            <Search className="h-12 w-12 text-slate-300 mb-4" />
+            <h3 className="text-lg font-medium text-slate-600">
+              Không tìm thấy cây trồng nào
+            </h3>
+            <p className="text-slate-400">
+              Hãy thử thay đổi từ khóa hoặc bộ lọc
+            </p>
+          </div>
         )}
 
-        {/* Detail Dialog */}
+        {/* Crop Detail Dialog */}
         <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-[95vw] w-[1400px] p-0 overflow-hidden rounded-4xl h-[90vh] border-none shadow-2xl flex flex-col">
             {selectedCrop && (
-              <>
-                <DialogHeader>
-                  <DialogTitle className="text-2xl">
-                    {selectedCrop.name}
-                  </DialogTitle>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge variant="outline">{selectedCrop.code}</Badge>
-                    {getStatusBadge(selectedCrop.status)}
+              <div className="flex flex-1 overflow-hidden">
+                {/* Left Sidebar: Regions planting this crop */}
+                <aside className="w-[320px] bg-slate-50 border-r flex flex-col pt-6">
+                  <div className="px-6 mb-4">
+                    <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                      <Layers className="h-5 w-5 text-primary" />
+                      Điểm canh tác
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium italic">
+                      Các vùng đang trồng {selectedCrop.name}
+                    </p>
                   </div>
-                </DialogHeader>
 
-                <Tabs defaultValue="info" className="mt-6">
-                  <TabsList className="grid w-full grid-cols-7">
-                    <TabsTrigger value="info">Thông tin</TabsTrigger>
-                    <TabsTrigger value="location">Vị trí</TabsTrigger>
-                    <TabsTrigger value="cultivation">Canh tác</TabsTrigger>
-                    <TabsTrigger value="disease">Sâu bệnh</TabsTrigger>
-                    <TabsTrigger value="certificates">Chứng nhận</TabsTrigger>
-                    <TabsTrigger value="growth">Sinh trưởng</TabsTrigger>
-                    <TabsTrigger value="harvest">Thu hoạch</TabsTrigger>
-                  </TabsList>
+                  <ScrollArea className="flex-1 px-3">
+                    <div className="space-y-2 pb-6">
+                      {regions
+                        .filter((r) =>
+                          crops.some(
+                            (c) =>
+                              c.regionId === r.id &&
+                              c.name === selectedCrop.name,
+                          ),
+                        )
+                        .map((region) => {
+                          const isActive = activeRegionId === region.id;
+                          const countInRegion = crops.filter(
+                            (c) =>
+                              c.regionId === region.id &&
+                              c.name === selectedCrop.name,
+                          ).length;
 
-                  {/* Tab 1: Thông tin cây trồng */}
-                  <TabsContent value="info" className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <ImageIcon className="h-5 w-5" />
-                          Thông tin cơ bản
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label className="text-muted-foreground">
-                              Tên cây trồng
-                            </Label>
-                            <p className="font-medium mt-1">
-                              {selectedCrop.name}
-                            </p>
-                          </div>
-                          <div>
-                            <Label className="text-muted-foreground">
-                              Mã số
-                            </Label>
-                            <p className="font-medium mt-1">
-                              {selectedCrop.code}
-                            </p>
-                          </div>
-                          <div>
-                            <Label className="text-muted-foreground">
-                              Giống cây
-                            </Label>
-                            <p className="font-medium mt-1">
-                              {selectedCrop.variety}
-                            </p>
-                          </div>
-                          <div>
-                            <Label className="text-muted-foreground">
-                              Loại hạt giống
-                            </Label>
-                            <p className="font-medium mt-1">
-                              {selectedCrop.seedType}
-                            </p>
-                          </div>
-                          <div>
-                            <Label className="text-muted-foreground">
-                              Ngày trồng
-                            </Label>
-                            <p className="font-medium mt-1">
-                              {new Date(
-                                selectedCrop.plantedDate,
-                              ).toLocaleDateString("vi-VN")}
-                            </p>
-                          </div>
-                          <div>
-                            <Label className="text-muted-foreground">
-                              Tuổi cây
-                            </Label>
-                            <p className="font-medium mt-1">
-                              {selectedCrop.actualAge} tháng
-                            </p>
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-muted-foreground">
-                            Ghi chú
-                          </Label>
-                          <p className="mt-1">{selectedCrop.notes}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  {/* Tab 2: Vị trí */}
-                  <TabsContent value="location" className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <MapPin className="h-5 w-5" />
-                          Thông tin vị trí
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label className="text-muted-foreground">
-                              Vùng trồng
-                            </Label>
-                            <p className="font-medium mt-1">
-                              {selectedCrop.regionName}
-                            </p>
-                          </div>
-                          <div>
-                            <Label className="text-muted-foreground">
-                              Khu vực
-                            </Label>
-                            <p className="font-medium mt-1">
-                              {selectedCrop.areaName}
-                            </p>
-                          </div>
-                          <div>
-                            <Label className="text-muted-foreground">Lô</Label>
-                            <p className="font-medium mt-1">
-                              {selectedCrop.plotName}
-                            </p>
-                          </div>
-                          <div>
-                            <Label className="text-muted-foreground">
-                              Số hàng
-                            </Label>
-                            <p className="font-medium mt-1">
-                              {selectedCrop.rowNumber || "N/A"}
-                            </p>
-                          </div>
-                          <div>
-                            <Label className="text-muted-foreground">
-                              Tọa độ GPS
-                            </Label>
-                            <p className="font-medium mt-1">
-                              {selectedCrop.coordinate.lat.toFixed(6)},{" "}
-                              {selectedCrop.coordinate.lng.toFixed(6)}
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  {/* Tab 3: Lịch sử canh tác */}
-                  <TabsContent value="cultivation" className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Activity className="h-5 w-5" />
-                          Lịch sử canh tác
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {selectedCrop.cultivationHistory.map((record) => (
+                          return (
                             <div
-                              key={record.id}
-                              className="border-l-2 border-primary pl-4 pb-4"
+                              key={region.id}
+                              onClick={() => {
+                                setActiveRegionId(region.id);
+                                const firstCropInRegion = crops.find(
+                                  (c) =>
+                                    c.regionId === region.id &&
+                                    c.name === selectedCrop.name,
+                                );
+                                setActiveCropInDialog(
+                                  firstCropInRegion || null,
+                                );
+                              }}
+                              className={cn(
+                                "p-4 mx-2 rounded-2xl cursor-pointer transition-all duration-300 group",
+                                isActive
+                                  ? "bg-white shadow-md ring-1 ring-primary/20 scale-[1.02]"
+                                  : "hover:bg-white/60 text-slate-600 hover:text-slate-900",
+                              )}
                             >
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <Badge>{record.activity}</Badge>
-                                    <span className="text-sm text-muted-foreground">
-                                      {new Date(record.date).toLocaleDateString(
-                                        "vi-VN",
-                                      )}
-                                    </span>
-                                  </div>
-                                  <p className="mt-2 font-medium">
-                                    {record.description}
-                                  </p>
-                                  <div className="mt-2 space-y-1 text-sm">
-                                    <p>
-                                      <span className="text-muted-foreground">
-                                        Người thực hiện:
-                                      </span>{" "}
-                                      {record.performedBy}
+                              <div className="flex items-start gap-3">
+                                <div
+                                  className={cn(
+                                    "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-colors",
+                                    isActive
+                                      ? "bg-primary text-white"
+                                      : "bg-slate-200 group-hover:bg-primary/10 group-hover:text-primary",
+                                  )}
+                                >
+                                  <MapPin size={20} />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <p className="text-xs font-bold text-primary mb-0.5">
+                                      {region.code}
                                     </p>
-                                    {record.materials && (
-                                      <p>
-                                        <span className="text-muted-foreground">
-                                          Vật tư:
-                                        </span>{" "}
-                                        {record.materials}
-                                      </p>
-                                    )}
-                                    {record.quantity && (
-                                      <p>
-                                        <span className="text-muted-foreground">
-                                          Liều lượng:
-                                        </span>{" "}
-                                        {record.quantity}
-                                      </p>
-                                    )}
-                                    {record.cost && (
-                                      <p>
-                                        <span className="text-muted-foreground">
-                                          Chi phí:
-                                        </span>{" "}
-                                        {record.cost.toLocaleString("vi-VN")} đ
-                                      </p>
-                                    )}
-                                    {record.notes && (
-                                      <p className="text-muted-foreground italic">
-                                        {record.notes}
-                                      </p>
-                                    )}
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] px-1.5 h-4 border-slate-200 text-slate-400 font-black"
+                                    >
+                                      {countInRegion} cây
+                                    </Badge>
+                                  </div>
+                                  <h4 className="font-bold text-sm leading-tight truncate">
+                                    {region.name}
+                                  </h4>
+                                  <div className="flex items-center gap-2 mt-1.5 opacity-60">
+                                    <div className="flex items-center gap-1 text-[10px] font-bold">
+                                      <Building2 size={10} />
+                                      {enterprises.find(
+                                        (e) =>
+                                          e.id.toString() ===
+                                          region.enterpriseId.toString(),
+                                      )?.name || "N/A"}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
                             </div>
-                          ))}
-                          {selectedCrop.cultivationHistory.length === 0 && (
-                            <p className="text-center text-muted-foreground py-8">
-                              Chưa có lịch sử canh tác
-                            </p>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
+                          );
+                        })}
+                    </div>
+                  </ScrollArea>
+                </aside>
 
-                  {/* Tab 4: Lịch sử sâu bệnh */}
-                  <TabsContent value="disease" className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Bug className="h-5 w-5" />
-                          Lịch sử sâu bệnh
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {selectedCrop.diseaseHistory.map((record) => (
-                            <div
-                              key={record.id}
-                              className="border rounded-lg p-4 space-y-3"
-                            >
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <h4 className="font-semibold text-lg">
-                                    {record.diseaseName}
-                                  </h4>
-                                  <p className="text-sm text-muted-foreground">
-                                    Phát hiện:{" "}
-                                    {new Date(record.date).toLocaleDateString(
-                                      "vi-VN",
-                                    )}
-                                  </p>
-                                </div>
-                                {getSeverityBadge(record.severity)}
-                              </div>
-                              <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                  <Label className="text-muted-foreground">
-                                    Vùng ảnh hưởng
-                                  </Label>
-                                  <p className="mt-1">{record.affectedArea}</p>
-                                </div>
-                                <div>
-                                  <Label className="text-muted-foreground">
-                                    Trạng thái
-                                  </Label>
-                                  <p className="mt-1 capitalize">
-                                    {record.recoveryStatus === "recovered"
-                                      ? "Đã hồi phục"
-                                      : record.recoveryStatus === "treating"
-                                        ? "Đang điều trị"
-                                        : "Nghiêm trọng"}
-                                  </p>
-                                </div>
-                              </div>
-                              <div>
-                                <Label className="text-muted-foreground">
-                                  Triệu chứng
-                                </Label>
-                                <p className="mt-1 text-sm">
-                                  {record.symptoms}
-                                </p>
-                              </div>
-                              <div>
-                                <Label className="text-muted-foreground">
-                                  Phương pháp điều trị
-                                </Label>
-                                <p className="mt-1 text-sm">
-                                  {record.treatment}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  Ngày điều trị:{" "}
-                                  {new Date(
-                                    record.treatmentDate,
-                                  ).toLocaleDateString("vi-VN")}
-                                </p>
-                              </div>
-                              {record.notes && (
-                                <div className="bg-muted p-3 rounded">
-                                  <p className="text-sm italic">
-                                    {record.notes}
-                                  </p>
-                                </div>
+                {/* Right Content: Dashboard for selected crop */}
+                <main className="flex-1 flex flex-col bg-white overflow-hidden relative">
+                  {/* Top Bar: Enterprise Info */}
+                  {(() => {
+                    const currentRegion = regions.find(
+                      (r) => r.id === activeRegionId,
+                    );
+                    const owner = enterprises.find((e) => {
+                      const entId = e.id.toString();
+                      const regEntId = (
+                        currentRegion?.enterpriseId || ""
+                      ).toString();
+                      return (
+                        entId === regEntId ||
+                        `ent-${entId}` === regEntId ||
+                        (e.id === 5 && regEntId === "farmer-1")
+                      );
+                    });
+                    const cropsInThisRegion = crops.filter(
+                      (c) =>
+                        c.regionId === activeRegionId &&
+                        c.name === selectedCrop.name,
+                    );
+
+                    return (
+                      <>
+                        <header className="px-8 py-6 border-b flex items-center justify-between bg-white z-10 shadow-sm">
+                          <div className="flex items-center gap-6">
+                            <div className="w-16 h-16 rounded-2xl bg-slate-100 p-0.5 border shadow-inner flex items-center justify-center overflow-hidden">
+                              {owner?.image ? (
+                                <img
+                                  src={owner.image}
+                                  alt={owner.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <Building2
+                                  size={32}
+                                  className="text-slate-300"
+                                />
                               )}
                             </div>
-                          ))}
-                          {selectedCrop.diseaseHistory.length === 0 && (
-                            <p className="text-center text-muted-foreground py-8">
-                              Không có lịch sử sâu bệnh
-                            </p>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  {/* Tab 5: Giấy chứng nhận */}
-                  <TabsContent value="certificates" className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Award className="h-5 w-5" />
-                          Giấy chứng nhận
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {selectedCrop.certifications.map((cert) => (
-                            <div
-                              key={cert.id}
-                              className="border rounded-lg p-4 space-y-3"
-                            >
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <h4 className="font-semibold text-lg">
-                                    {cert.name}
-                                  </h4>
-                                  <p className="text-sm text-muted-foreground">
-                                    {cert.certificateNumber}
-                                  </p>
-                                </div>
-                                <Badge
-                                  variant={
-                                    cert.status === "valid"
-                                      ? "default"
-                                      : cert.status === "expired"
-                                        ? "destructive"
-                                        : "secondary"
-                                  }
-                                >
-                                  {cert.status === "valid"
-                                    ? "Còn hiệu lực"
-                                    : cert.status === "expired"
-                                      ? "Hết hạn"
-                                      : "Đang chờ"}
+                            <div>
+                              <div className="flex items-center gap-3 mb-1">
+                                <Badge className="bg-emerald-50 text-emerald-600 border-none hover:bg-emerald-100 transition-colors uppercase font-black text-[10px]">
+                                  Đơn vị sở hữu
+                                </Badge>
+                                <Badge className="bg-primary/10 text-primary border-none uppercase font-black text-[10px]">
+                                  Đang truy xuất: {selectedCrop.name}
                                 </Badge>
                               </div>
-                              <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                  <Label className="text-muted-foreground">
-                                    Đơn vị cấp
-                                  </Label>
-                                  <p className="mt-1">{cert.issuer}</p>
-                                </div>
-                                <div>
-                                  <Label className="text-muted-foreground">
-                                    Ngày cấp
-                                  </Label>
-                                  <p className="mt-1">
-                                    {new Date(
-                                      cert.issueDate,
-                                    ).toLocaleDateString("vi-VN")}
-                                  </p>
-                                </div>
-                                <div>
-                                  <Label className="text-muted-foreground">
-                                    Ngày hết hạn
-                                  </Label>
-                                  <p className="mt-1">
-                                    {new Date(
-                                      cert.expiryDate,
-                                    ).toLocaleDateString("vi-VN")}
-                                  </p>
+                              <h2 className="text-2xl font-black text-slate-800">
+                                {owner?.brandName ||
+                                  owner?.name ||
+                                  "Đang tải..."}
+                              </h2>
+                              <p className="text-sm text-slate-500 font-medium flex items-center gap-1.5 italic">
+                                <MapPin size={14} />{" "}
+                                {currentRegion?.address || "Không xác định"}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-4">
+                            <div className="text-right border-r pr-4 hidden md:block">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                Vùng canh tác
+                              </p>
+                              <p className="font-black text-primary">
+                                {currentRegion?.name || "..."}
+                              </p>
+                            </div>
+                            <div className="text-right border-r pr-4 hidden md:block">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                Loại hạt/giống
+                              </p>
+                              <p className="font-black text-slate-700">
+                                {selectedCrop.variety}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setIsDetailOpen(false)}
+                              className="rounded-full hover:bg-slate-100"
+                            >
+                              <X size={24} />
+                            </Button>
+                          </div>
+                        </header>
+
+                        <div className="flex-1 overflow-hidden flex flex-col p-8 space-y-6">
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[400px]">
+                            {/* Map Box */}
+                            <div className="rounded-4xl overflow-hidden border bg-slate-100 shadow-inner relative group">
+                              <MapContainer
+                                center={
+                                  activeCropInDialog
+                                    ? [
+                                        activeCropInDialog.coordinate.lat,
+                                        activeCropInDialog.coordinate.lng,
+                                      ]
+                                    : [11.53, 106.88]
+                                }
+                                zoom={15}
+                                style={{ height: "100%", width: "100%" }}
+                                scrollWheelZoom={true}
+                              >
+                                <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
+                                {cropsInThisRegion.map((c) => (
+                                  <Marker
+                                    key={c.id}
+                                    position={[
+                                      c.coordinate.lat,
+                                      c.coordinate.lng,
+                                    ]}
+                                    icon={
+                                      activeCropInDialog?.id === c.id
+                                        ? activeIcon
+                                        : defaultIcon
+                                    }
+                                    eventHandlers={{
+                                      click: () => setActiveCropInDialog(c),
+                                    }}
+                                  >
+                                    <Popup
+                                      className="rounded-2xl"
+                                      autoPan={false}
+                                    >
+                                      <div className="p-1 min-w-[150px]">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <Badge
+                                            variant="secondary"
+                                            className="bg-primary/10 text-primary border-none text-[10px] font-black"
+                                          >
+                                            {c.code}
+                                          </Badge>
+                                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                            {new Date(
+                                              c.plantedDate,
+                                            ).getFullYear()}
+                                          </span>
+                                        </div>
+                                        <h5 className="font-black text-slate-800 leading-tight text-sm mb-1">
+                                          {c.name}
+                                        </h5>
+                                        <div className="flex items-center gap-1 text-[10px] text-slate-500 font-medium">
+                                          <Activity
+                                            size={10}
+                                            className="text-primary"
+                                          />
+                                          <span>{c.growthStage}</span>
+                                        </div>
+                                      </div>
+                                    </Popup>
+                                  </Marker>
+                                ))}
+                                {activeCropInDialog && (
+                                  <SetMapCenter
+                                    lat={activeCropInDialog.coordinate.lat}
+                                    lng={activeCropInDialog.coordinate.lng}
+                                  />
+                                )}
+                              </MapContainer>
+
+                              <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm p-3 rounded-2xl shadow-xl z-1000 border border-white/20">
+                                <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                                  <Leaf size={14} className="text-primary" />
+                                  <span>
+                                    Phân bố {selectedCrop.name}:{" "}
+                                    {cropsInThisRegion.length} điểm
+                                  </span>
                                 </div>
                               </div>
-                              {cert.documentUrl && (
-                                <Button variant="outline" size="sm">
-                                  <FileText className="h-4 w-4 mr-2" />
-                                  Xem tài liệu
-                                </Button>
-                              )}
                             </div>
-                          ))}
-                          {selectedCrop.certifications.length === 0 && (
-                            <p className="text-center text-muted-foreground py-8">
-                              Chưa có giấy chứng nhận
-                            </p>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
 
-                  {/* Tab 6: Chu kỳ sinh trưởng */}
-                  <TabsContent value="growth" className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Leaf className="h-5 w-5" />
-                          Chu kỳ sinh trưởng
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label className="text-muted-foreground">
-                              Giai đoạn hiện tại
-                            </Label>
-                            <p className="font-medium mt-1 text-lg">
-                              {selectedCrop.growthStage}
-                            </p>
+                            {/* Active Crop Detail Info */}
+                            <div className="flex flex-col gap-4">
+                              <Card className="flex-1 bg-linear-to-br from-white to-slate-50 border-none shadow-sm rounded-4xl overflow-hidden">
+                                <CardHeader className="pb-2 border-b bg-white/50">
+                                  <div className="flex items-center justify-between">
+                                    <CardTitle className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                      <Info size={16} /> Thông tin chi tiết cây
+                                    </CardTitle>
+                                    {activeCropInDialog && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="bg-primary/10 text-primary border-none font-black"
+                                      >
+                                        {activeCropInDialog.code}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </CardHeader>
+                                <CardContent className="p-6">
+                                  {activeCropInDialog ? (
+                                    <div className="space-y-6">
+                                      <div className="flex gap-6">
+                                        <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-md border-2 border-white shrink-0">
+                                          <img
+                                            src={activeCropInDialog.image}
+                                            alt=""
+                                            className="w-full h-full object-cover"
+                                          />
+                                        </div>
+                                        <div className="flex-1">
+                                          <h3 className="text-2xl font-black text-slate-800 leading-none mb-2">
+                                            {activeCropInDialog.name}
+                                          </h3>
+                                          <div className="flex flex-wrap gap-2">
+                                            <Badge className="bg-slate-100 text-slate-600 border-none font-bold">
+                                              {activeCropInDialog.variety}
+                                            </Badge>
+                                            <Badge className="bg-slate-100 text-slate-600 border-none font-bold">
+                                              {activeCropInDialog.seedType}
+                                            </Badge>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-white p-4 rounded-2xl shadow-xs border border-slate-100/50">
+                                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
+                                            Ngày trồng
+                                          </p>
+                                          <div className="flex items-center gap-2">
+                                            <Calendar
+                                              size={14}
+                                              className="text-primary"
+                                            />
+                                            <p className="font-bold text-slate-800">
+                                              {new Date(
+                                                activeCropInDialog.plantedDate,
+                                              ).toLocaleDateString("vi-VN")}
+                                            </p>
+                                          </div>
+                                        </div>
+                                        <div className="bg-white p-4 rounded-2xl shadow-xs border border-slate-100/50">
+                                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
+                                            Vị trí Lô/Hàng
+                                          </p>
+                                          <div className="flex items-center gap-2">
+                                            <MapPin
+                                              size={14}
+                                              className="text-primary"
+                                            />
+                                            <p className="font-bold text-slate-800">
+                                              {activeCropInDialog.plotName} -
+                                              Hàng{" "}
+                                              {activeCropInDialog.rowNumber ||
+                                                "N/A"}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <div className="bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/10">
+                                        <div className="flex items-center justify-between">
+                                          <div>
+                                            <p className="text-[10px] font-bold text-emerald-600 uppercase mb-1">
+                                              Tuổi cây / Sinh trưởng
+                                            </p>
+                                            <p className="font-black text-slate-800 text-lg">
+                                              {activeCropInDialog.actualAge}{" "}
+                                              tháng -{" "}
+                                              {activeCropInDialog.growthStage}
+                                            </p>
+                                          </div>
+                                          <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none font-black">
+                                            75%
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-col items-center justify-center h-full text-slate-300 py-20">
+                                      <Leaf
+                                        size={48}
+                                        className="mb-4 opacity-20"
+                                      />
+                                      <p className="font-bold">
+                                        Chọn một cây từ danh sách hoặc bản đồ
+                                      </p>
+                                    </div>
+                                  )}
+                                </CardContent>
+                              </Card>
+                            </div>
                           </div>
-                          <div>
-                            <Label className="text-muted-foreground">
-                              Tuổi cây
-                            </Label>
-                            <p className="font-medium mt-1 text-lg">
-                              {selectedCrop.actualAge} tháng
-                            </p>
-                          </div>
-                          <div>
-                            <Label className="text-muted-foreground">
-                              Ngày trồng
-                            </Label>
-                            <p className="font-medium mt-1">
-                              {new Date(
-                                selectedCrop.plantedDate,
-                              ).toLocaleDateString("vi-VN")}
-                            </p>
-                          </div>
-                          <div>
-                            <Label className="text-muted-foreground">
-                              Dự kiến thu hoạch
-                            </Label>
-                            <p className="font-medium mt-1">
-                              {new Date(
-                                selectedCrop.expectedHarvestDate,
-                              ).toLocaleDateString("vi-VN")}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="mt-6">
-                          <Label className="text-muted-foreground mb-3 block">
-                            Tiến trình sinh trưởng
-                          </Label>
-                          <div className="space-y-2">
-                            {[
-                              "Giai đoạn cây con",
-                              "Sinh trưởng thân lá",
-                              "Ra hoa",
-                              "Đậu quả",
-                              "Quả chín",
-                              "Thu hoạch",
-                            ].map((stage, index) => (
-                              <div
-                                key={index}
-                                className="flex items-center gap-3"
-                              >
-                                <div
-                                  className={`w-3 h-3 rounded-full ${
-                                    stage === selectedCrop.growthStage
-                                      ? "bg-primary"
-                                      : "bg-muted"
-                                  }`}
-                                />
-                                <span
-                                  className={
-                                    stage === selectedCrop.growthStage
-                                      ? "font-semibold"
-                                      : "text-muted-foreground"
-                                  }
-                                >
-                                  {stage}
+
+                          {/* Crops List Table */}
+                          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-4xl border overflow-hidden shadow-sm mt-4">
+                            <div className="px-6 py-4 border-b bg-slate-50/50 flex items-center justify-between">
+                              <h4 className="font-black text-slate-700 flex items-center gap-2 uppercase tracking-tighter text-sm">
+                                <Activity size={16} className="text-primary" />
+                                Danh sách {selectedCrop.name} tại{" "}
+                                {currentRegion?.name}
+                              </h4>
+                              <div className="text-xs font-bold text-slate-500">
+                                Đang chọn:{" "}
+                                <span className="text-primary font-black">
+                                  {activeCropInDialog?.code || "..."}
                                 </span>
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
+                            </div>
 
-                  {/* Tab 7: Lịch sử thu hoạch */}
-                  <TabsContent value="harvest" className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <ShoppingCart className="h-5 w-5" />
-                          Lịch sử thu hoạch
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {selectedCrop.harvestHistory.map((record) => (
-                            <div
-                              key={record.id}
-                              className="border rounded-lg p-4 space-y-3"
-                            >
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <h4 className="font-semibold">
-                                    {new Date(record.date).toLocaleDateString(
-                                      "vi-VN",
-                                    )}
-                                  </h4>
-                                  <p className="text-sm text-muted-foreground">
-                                    Vụ thu hoạch
-                                  </p>
-                                </div>
-                                {getQualityBadge(record.quality)}
-                              </div>
-                              <div className="grid grid-cols-3 gap-4">
-                                <div>
-                                  <Label className="text-muted-foreground text-xs">
-                                    Sản lượng
-                                  </Label>
-                                  <p className="font-semibold text-lg">
-                                    {record.quantity} kg
-                                  </p>
-                                </div>
-                                <div>
-                                  <Label className="text-muted-foreground text-xs">
-                                    Đơn giá
-                                  </Label>
-                                  <p className="font-semibold text-lg">
-                                    {record.price.toLocaleString("vi-VN")} đ/kg
-                                  </p>
-                                </div>
-                                <div>
-                                  <Label className="text-muted-foreground text-xs">
-                                    Doanh thu
-                                  </Label>
-                                  <p className="font-semibold text-lg text-green-600">
-                                    {record.totalRevenue.toLocaleString(
-                                      "vi-VN",
-                                    )}{" "}
-                                    đ
-                                  </p>
-                                </div>
-                              </div>
-                              {record.buyer && (
-                                <div>
-                                  <Label className="text-muted-foreground text-xs">
-                                    Người mua
-                                  </Label>
-                                  <p className="mt-1">{record.buyer}</p>
-                                </div>
-                              )}
-                              {record.notes && (
-                                <div className="bg-muted p-3 rounded">
-                                  <p className="text-sm italic">
-                                    {record.notes}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                          {selectedCrop.harvestHistory.length === 0 && (
-                            <p className="text-center text-muted-foreground py-8">
-                              Chưa có lịch sử thu hoạch
-                            </p>
-                          )}
-                        </div>
-                        {selectedCrop.harvestHistory.length > 0 && (
-                          <div className="mt-6 pt-6 border-t">
-                            <div className="grid grid-cols-3 gap-4">
-                              <div className="text-center">
-                                <Label className="text-muted-foreground text-xs">
-                                  Tổng sản lượng
-                                </Label>
-                                <p className="font-bold text-2xl mt-1">
-                                  {selectedCrop.harvestHistory
-                                    .reduce((sum, h) => sum + h.quantity, 0)
-                                    .toLocaleString("vi-VN")}{" "}
-                                  kg
-                                </p>
-                              </div>
-                              <div className="text-center">
-                                <Label className="text-muted-foreground text-xs">
-                                  Tổng doanh thu
-                                </Label>
-                                <p className="font-bold text-2xl mt-1 text-green-600">
-                                  {selectedCrop.harvestHistory
-                                    .reduce((sum, h) => sum + h.totalRevenue, 0)
-                                    .toLocaleString("vi-VN")}{" "}
-                                  đ
-                                </p>
-                              </div>
-                              <div className="text-center">
-                                <Label className="text-muted-foreground text-xs">
-                                  Số vụ thu hoạch
-                                </Label>
-                                <p className="font-bold text-2xl mt-1">
-                                  {selectedCrop.harvestHistory.length} vụ
-                                </p>
-                              </div>
-                            </div>
+                            <ScrollArea className="flex-1">
+                              <table className="w-full text-left border-collapse">
+                                <thead className="sticky top-0 bg-white z-10">
+                                  <tr className="border-b">
+                                    <th className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                      Mã hiệu
+                                    </th>
+                                    <th className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                      Tên & Giống
+                                    </th>
+                                    <th className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
+                                      Ngày trồng
+                                    </th>
+                                    <th className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
+                                      Tọa độ
+                                    </th>
+                                    <th className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">
+                                      Lô
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {cropsInThisRegion.map((c) => (
+                                    <tr
+                                      key={c.id}
+                                      onClick={() => setActiveCropInDialog(c)}
+                                      className={cn(
+                                        "border-b last:border-0 cursor-pointer transition-all hover:bg-primary/5",
+                                        activeCropInDialog?.id === c.id
+                                          ? "bg-primary/10"
+                                          : "",
+                                      )}
+                                    >
+                                      <td className="px-6 py-4">
+                                        <span className="font-bold text-slate-800 bg-slate-100 px-2 py-1 rounded-lg text-xs">
+                                          {c.code}
+                                        </span>
+                                      </td>
+                                      <td className="px-6 py-4">
+                                        <div className="font-black text-slate-800 text-sm leading-tight">
+                                          {c.name}
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">
+                                          {c.variety}
+                                        </div>
+                                      </td>
+                                      <td className="px-6 py-4 text-center">
+                                        <span className="text-xs font-bold text-slate-600">
+                                          {new Date(
+                                            c.plantedDate,
+                                          ).toLocaleDateString("vi-VN")}
+                                        </span>
+                                      </td>
+                                      <td className="px-6 py-4 text-center">
+                                        <code className="text-[11px] bg-slate-50 px-2 py-1 rounded-md text-slate-500 border border-slate-100">
+                                          {c.coordinate.lat.toFixed(6)},{" "}
+                                          {c.coordinate.lng.toFixed(6)}
+                                        </code>
+                                      </td>
+                                      <td className="px-6 py-4 text-right">
+                                        <Badge
+                                          variant="outline"
+                                          className="text-[10px] border-slate-200 text-slate-500 font-bold"
+                                        >
+                                          {c.plotName}
+                                        </Badge>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </ScrollArea>
                           </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                </Tabs>
-              </>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </main>
+              </div>
             )}
           </DialogContent>
         </Dialog>
