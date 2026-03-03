@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation, useRoute } from "wouter";
 import {
   AdminLayout,
@@ -24,32 +24,67 @@ import {
   TileLayer,
   Polygon,
   Marker,
+  Polyline,
+  Tooltip,
   useMapEvents,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-
-const customIcon = new L.Icon({
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
+import polygonToLine from "@turf/polygon-to-line";
+import nearestPointOnLine from "@turf/nearest-point-on-line";
+import { point, polygon } from "@turf/helpers";
 import { Plus, Edit, Trash2, ChevronLeft, X } from "lucide-react";
 
 import { type Region, type SubArea } from "../constants";
-import { MapController } from "../components/DraggableRectangle";
 import useRegionStore from "../../../stores/useRegionStore";
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 import useLandStore from "../../../stores/useLandStore";
 import useTerrainStore from "../../../stores/useTerrainStore";
 import { PROVINCES } from "@/constants/province";
+import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-area/components/mapUtils";
+
+const customIcon = getMarkerIcon("blue");
+const activeIcon = getMarkerIcon("green");
+const invalidIcon = getMarkerIcon("red");
+
+const formatLatLng = (latlng: L.LatLng) =>
+  `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
+
+type PointWarning = {
+  index: number;
+  invalidLatLng: L.LatLng;
+  suggestedLatLng: L.LatLng;
+};
+
+const toTurfPolygonFromCoords = (coords?: { lat: number; lng: number }[]) => {
+  if (!coords || coords.length < 3) return null;
+  const lngLat = coords.map((c) => [c.lng, c.lat]);
+  const first = lngLat[0];
+  const closed = [...lngLat, first];
+  return polygon([closed]);
+};
+
+const getNearestPointOnPolygonBoundary = (
+  polyFeature: any,
+  latlng: L.LatLng,
+) => {
+  if (!polyFeature) return null;
+  const lineFeature = polygonToLine(polyFeature);
+  const line = Array.isArray((lineFeature as any).features)
+    ? (lineFeature as any).features[0]
+    : lineFeature;
+  if (!line) return null;
+  const snapped = nearestPointOnLine(
+    line as any,
+    point([latlng.lng, latlng.lat]),
+  );
+  if (!snapped) return null;
+  return L.latLng(
+    snapped.geometry.coordinates[1],
+    snapped.geometry.coordinates[0],
+  );
+};
 
 const MapClickHandler = ({
   onClick,
@@ -114,6 +149,16 @@ const RegionCreatePage = () => {
     }
   }, [isEditMode, params?.id, getRegionById]);
 
+  const resolveRegionId = useCallback(() => {
+    if (formData.id) return formData.id;
+
+    if (params?.id) {
+      const parsed = parseInt(params.id, 10);
+      if (!Number.isNaN(parsed)) return parsed;
+    }
+    return null;
+  }, [formData.id, params?.id]);
+
   // Sub-area State
   const [editingSubArea, setEditingSubArea] = useState<Partial<SubArea> | null>(
     null,
@@ -125,6 +170,196 @@ const RegionCreatePage = () => {
   };
 
   const [subAreaPoints, setSubAreaPoints] = useState<L.LatLng[]>([]);
+  const [activeSubAreaPointIndex, setActiveSubAreaPointIndex] = useState<
+    number | null
+  >(null);
+  const [subAreaPointWarnings, setSubAreaPointWarnings] = useState<
+    Record<number, PointWarning>
+  >({});
+  const [activeSubAreaDragWarning, setActiveSubAreaDragWarning] =
+    useState<PointWarning | null>(null);
+  const [isDraggingSubAreaPoint, setIsDraggingSubAreaPoint] = useState(false);
+
+  const regionPolygonFeature = useMemo(() => {
+    if (regionPoints.length < 3) return null;
+    const coordinates = regionPoints.map((p) => [p.lng, p.lat]);
+    const first = coordinates[0];
+    const closed = [...coordinates, first];
+    return polygon([closed]);
+  }, [regionPoints]);
+
+  const blockingSubAreaPolygons = useMemo(() => {
+    if (!formData.subAreas || formData.subAreas.length === 0) return [];
+    return (formData.subAreas as SubArea[])
+      .filter((sub) => {
+        if (!sub.coordinates || sub.coordinates.length < 3) return false;
+        if (editingSubArea && sub.id === editingSubArea.id) return false;
+        return true;
+      })
+      .map((sub) => {
+        const poly = toTurfPolygonFromCoords(sub.coordinates);
+        if (!poly) return null;
+        return { id: sub.id, polygon: poly };
+      })
+      .filter((item): item is { id: string; polygon: any } => item !== null);
+  }, [formData.subAreas, editingSubArea]);
+
+  const activePersistentSubAreaWarning = useMemo(() => {
+    if (activeSubAreaPointIndex === null) return null;
+    return subAreaPointWarnings[activeSubAreaPointIndex] ?? null;
+  }, [activeSubAreaPointIndex, subAreaPointWarnings]);
+
+  useEffect(() => {
+    setSubAreaPointWarnings({});
+    setActiveSubAreaPointIndex(null);
+    setActiveSubAreaDragWarning(null);
+    setIsDraggingSubAreaPoint(false);
+  }, [editingSubArea]);
+
+  const getNearestValidSubAreaPosition = useCallback(
+    (latlng: L.LatLng) => {
+      if (!regionPolygonFeature) return null;
+      const polygonLine = polygonToLine(regionPolygonFeature);
+      const lineFeature = Array.isArray((polygonLine as any).features)
+        ? (polygonLine as any).features[0]
+        : polygonLine;
+      if (!lineFeature) return null;
+      const snapped = nearestPointOnLine(
+        lineFeature as any,
+        point([latlng.lng, latlng.lat]),
+      );
+      if (!snapped) return null;
+      return L.latLng(
+        snapped.geometry.coordinates[1],
+        snapped.geometry.coordinates[0],
+      );
+    },
+    [regionPolygonFeature],
+  );
+
+  const updateSubAreaWarningForIndex = (
+    index: number,
+    warning: PointWarning | null,
+  ) => {
+    setSubAreaPointWarnings((prev) => {
+      if (!warning) {
+        if (!(index in prev)) return prev;
+        const { [index]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [index]: warning };
+    });
+  };
+
+  const shiftSubAreaWarningsAfterRemoval = (removedIndex: number) => {
+    setSubAreaPointWarnings((prev) => {
+      if (Object.keys(prev).length === 0) return prev;
+      const next: Record<number, PointWarning> = {};
+      Object.entries(prev).forEach(([idxStr, warning]) => {
+        const idx = Number(idxStr);
+        if (idx === removedIndex) return;
+        const newIndex = idx > removedIndex ? idx - 1 : idx;
+        next[newIndex] = { ...warning, index: newIndex };
+      });
+      return next;
+    });
+  };
+
+  const setSubAreaPointWithValidation = (
+    index: number,
+    latlng: L.LatLng,
+    options?: { persist?: boolean; preview?: boolean },
+  ) => {
+    const { persist = true, preview = false } = options || {};
+
+    setSubAreaPoints((prev) => {
+      const next = [...prev];
+      next[index] = latlng;
+      return next;
+    });
+
+    const clearPreview = () => {
+      if (preview) {
+        setActiveSubAreaDragWarning((prev) =>
+          prev?.index === index ? null : prev,
+        );
+      }
+    };
+
+    const pointFeature = point([latlng.lng, latlng.lat]);
+
+    let violationType: "outsideRegion" | "overlapsSubArea" | null = null;
+    let overlapPolygon: any | null = null;
+
+    if (regionPolygonFeature) {
+      const insideRegion = booleanPointInPolygon(
+        pointFeature,
+        regionPolygonFeature,
+      );
+      if (!insideRegion) {
+        violationType = "outsideRegion";
+      }
+    }
+
+    if (!violationType && blockingSubAreaPolygons.length > 0) {
+      const overlapping = blockingSubAreaPolygons.find((subPoly) =>
+        booleanPointInPolygon(pointFeature, subPoly.polygon),
+      );
+      if (overlapping) {
+        violationType = "overlapsSubArea";
+        overlapPolygon = overlapping.polygon;
+      }
+    }
+
+    if (!violationType) {
+      if (persist) {
+        updateSubAreaWarningForIndex(index, null);
+      }
+      clearPreview();
+      return;
+    }
+
+    let nearestValid: L.LatLng | null = null;
+    if (violationType === "outsideRegion") {
+      nearestValid = getNearestValidSubAreaPosition(latlng);
+    } else if (violationType === "overlapsSubArea" && overlapPolygon) {
+      nearestValid = getNearestPointOnPolygonBoundary(overlapPolygon, latlng);
+    }
+
+    if (!nearestValid) {
+      clearPreview();
+      if (persist) {
+        updateSubAreaWarningForIndex(index, null);
+      }
+      return;
+    }
+
+    const warningData: PointWarning = {
+      index,
+      invalidLatLng: latlng,
+      suggestedLatLng: nearestValid,
+    };
+
+    if (preview) {
+      setActiveSubAreaDragWarning(warningData);
+    }
+
+    if (persist) {
+      updateSubAreaWarningForIndex(index, warningData);
+    }
+  };
+
+  const applySuggestedSubAreaPoint = () => {
+    if (!activePersistentSubAreaWarning) return;
+    const { index, suggestedLatLng } = activePersistentSubAreaWarning;
+    setSubAreaPointWithValidation(index, suggestedLatLng, {
+      persist: true,
+      preview: false,
+    });
+    setActiveSubAreaPointIndex(index);
+    updateSubAreaWarningForIndex(index, null);
+    setActiveSubAreaDragWarning(null);
+  };
 
   // --- Handlers ---
 
@@ -134,11 +369,23 @@ const RegionCreatePage = () => {
     setRegionPoints(newPoints);
   };
 
-  const handleSubAreaPointDrag = (index: number, latlng: L.LatLng) => {
-    const newPoints = [...subAreaPoints];
-    newPoints[index] = latlng;
-    setSubAreaPoints(newPoints);
+  const handleSubAreaPointDrag = (
+    index: number,
+    latlng: L.LatLng,
+    options?: { finalize?: boolean },
+  ) => {
+    setActiveSubAreaPointIndex(index);
+    setSubAreaPointWithValidation(index, latlng, {
+      persist: options?.finalize ?? false,
+      preview: !(options?.finalize ?? false),
+    });
+    if (options?.finalize) {
+      setActiveSubAreaDragWarning(null);
+    }
   };
+
+  const subAreaWarningForDisplay =
+    activeSubAreaDragWarning ?? activePersistentSubAreaWarning;
 
   const handleAddPoint = () => {
     const center = getBoundsFromPoints(regionPoints).getCenter();
@@ -150,20 +397,18 @@ const RegionCreatePage = () => {
 
   const handleAddSubAreaPoint = () => {
     const center = getBoundsFromPoints(subAreaPoints).getCenter();
-    setSubAreaPoints([
-      ...subAreaPoints,
-      L.latLng(center.lat + 0.002, center.lng + 0.002),
-    ]);
+    const nextIndex = subAreaPoints.length;
+    const newLatLng = L.latLng(center.lat + 0.002, center.lng + 0.002);
+    setSubAreaPointWithValidation(nextIndex, newLatLng, {
+      persist: true,
+      preview: false,
+    });
+    setActiveSubAreaPointIndex(nextIndex);
+    setActiveSubAreaDragWarning(null);
   };
 
   const handleMapClick = (latlng: L.LatLng) => {
     setRegionPoints([...regionPoints, latlng]);
-  };
-
-  const handleSubAreaMapClick = (latlng: L.LatLng) => {
-    if (editingSubArea) {
-      setSubAreaPoints([...subAreaPoints, latlng]);
-    }
   };
 
   const removePoint = (index: number) => {
@@ -190,6 +435,9 @@ const RegionCreatePage = () => {
     }
     const newPoints = subAreaPoints.filter((_, i) => i !== index);
     setSubAreaPoints(newPoints);
+    setActiveSubAreaPointIndex(null);
+    setActiveSubAreaDragWarning(null);
+    shiftSubAreaWarningsAfterRemoval(index);
   };
 
   const handlePointInputChange = (
@@ -217,13 +465,18 @@ const RegionCreatePage = () => {
     const val = parseFloat(value);
     if (isNaN(val)) return;
 
-    const newPoints = [...subAreaPoints];
-    const currentPoint = newPoints[index];
-    newPoints[index] = L.latLng(
+    const currentPoint = subAreaPoints[index];
+    if (!currentPoint) return;
+    const updated = L.latLng(
       field === "lat" ? val : currentPoint.lat,
       field === "lng" ? val : currentPoint.lng,
     );
-    setSubAreaPoints(newPoints);
+    setSubAreaPointWithValidation(index, updated, {
+      persist: true,
+      preview: false,
+    });
+    setActiveSubAreaPointIndex(index);
+    setActiveSubAreaDragWarning(null);
   };
 
   const handleSubmit = () => {
@@ -272,6 +525,7 @@ const RegionCreatePage = () => {
   };
 
   const addSubArea = () => {
+    const regionIdForSub = resolveRegionId() ?? 0;
     const newSub: SubArea = {
       area: 0,
       code: "",
@@ -281,10 +535,11 @@ const RegionCreatePage = () => {
       status: "active",
       name: "Khu vực mới",
       id: `sub-${Date.now()}`,
-      regionId: formData.id!,
       terrain: formData.terrain || "",
+      regionId: regionIdForSub as number,
       createdAt: new Date().toISOString(),
     };
+
     setEditingSubArea(newSub);
     const center = getBoundsFromPoints(regionPoints).getCenter();
     setSubAreaPoints([
@@ -309,8 +564,11 @@ const RegionCreatePage = () => {
 
     const fullCoords = subAreaPoints.map((p) => ({ lat: p.lat, lng: p.lng }));
 
+    const regionIdForSub = editingSubArea.regionId ?? resolveRegionId() ?? 0;
+
     const updatedSub = {
       ...editingSubArea,
+      regionId: regionIdForSub,
       coordinates: fullCoords,
     } as SubArea;
 
@@ -434,7 +692,7 @@ const RegionCreatePage = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Doanh nghiệp / Nông hộ</Label>
+                <Label>Thuộc đơn vị</Label>
                 <Select
                   value={formData.enterpriseId}
                   onValueChange={(v) =>
@@ -576,13 +834,6 @@ const RegionCreatePage = () => {
                     }}
                   />
                 ))}
-
-                <MapController
-                  center={[
-                    getBoundsFromPoints(regionPoints).getCenter().lat,
-                    getBoundsFromPoints(regionPoints).getCenter().lng,
-                  ]}
-                />
               </MapContainer>
             </div>
 
@@ -678,8 +929,6 @@ const RegionCreatePage = () => {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
 
-                  <MapClickHandler onClick={handleSubAreaMapClick} />
-
                   {/* Main Region Boundary (Dynamic Polygon) */}
                   <Polygon
                     positions={regionPoints}
@@ -738,28 +987,119 @@ const RegionCreatePage = () => {
                           fillOpacity: 0.2,
                         }}
                       />
-                      {subAreaPoints.map((point, idx) => (
-                        <Marker
-                          key={`sub-point-${idx}`}
-                          position={point}
-                          draggable={true}
-                          icon={customIcon}
-                          eventHandlers={{
-                            drag: (e) => {
-                              handleSubAreaPointDrag(idx, e.target.getLatLng());
-                            },
+                      {subAreaPoints.map((point, idx) => {
+                        const isActive = activeSubAreaPointIndex === idx;
+                        const isInvalid = !!subAreaPointWarnings[idx];
+                        const markerIcon = isInvalid
+                          ? invalidIcon
+                          : isActive
+                            ? activeIcon
+                            : customIcon;
+                        return (
+                          <Marker
+                            key={`sub-point-${idx}`}
+                            position={point}
+                            draggable={true}
+                            icon={markerIcon}
+                            eventHandlers={{
+                              click: () => {
+                                setActiveSubAreaPointIndex(idx);
+                                setSubAreaPointWithValidation(idx, point, {
+                                  persist: true,
+                                  preview: false,
+                                });
+                              },
+                              dragstart: (e) => {
+                                setActiveSubAreaPointIndex(idx);
+                                setIsDraggingSubAreaPoint(true);
+                                handleSubAreaPointDrag(
+                                  idx,
+                                  e.target.getLatLng(),
+                                  {
+                                    finalize: false,
+                                  },
+                                );
+                              },
+                              drag: (e) =>
+                                handleSubAreaPointDrag(
+                                  idx,
+                                  e.target.getLatLng(),
+                                  {
+                                    finalize: false,
+                                  },
+                                ),
+                              dragend: (e) => {
+                                setIsDraggingSubAreaPoint(false);
+                                handleSubAreaPointDrag(
+                                  idx,
+                                  e.target.getLatLng(),
+                                  {
+                                    finalize: true,
+                                  },
+                                );
+                              },
+                            }}
+                          >
+                            <Tooltip sticky direction="top" className="z-1000">
+                              Điểm {idx + 1}
+                            </Tooltip>
+                          </Marker>
+                        );
+                      })}
+                      {subAreaWarningForDisplay && (
+                        <Polyline
+                          positions={[
+                            subAreaWarningForDisplay.invalidLatLng,
+                            subAreaWarningForDisplay.suggestedLatLng,
+                          ]}
+                          pathOptions={{
+                            color: "red",
+                            weight: 2,
+                            dashArray: "6, 6",
                           }}
                         />
-                      ))}
+                      )}
                     </>
                   )}
-                  <MapController
-                    center={[
-                      getBoundsFromPoints(regionPoints).getCenter().lat,
-                      getBoundsFromPoints(regionPoints).getCenter().lng,
-                    ]}
-                  />
                 </MapContainer>
+                {activePersistentSubAreaWarning &&
+                  editingSubArea &&
+                  !isDraggingSubAreaPoint && (
+                    <div className="pointer-events-none absolute inset-x-0 top-4 z-1000 flex justify-center">
+                      <div className="pointer-events-auto w-[320px] rounded-lg border border-red-200 bg-white/95 p-4 text-xs shadow-lg">
+                        <p className="text-sm font-semibold text-red-600">
+                          Vị trí{" "}
+                          <span className="font-bold border rounded-md border-red-200 p-0.5">
+                            điểm {activePersistentSubAreaWarning.index + 1}
+                          </span>{" "}
+                          không hợp lệ
+                        </p>
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Toạ độ hiện tại:{" "}
+                          <span className="font-medium text-gray-900">
+                            {formatLatLng(
+                              activePersistentSubAreaWarning.invalidLatLng,
+                            )}
+                          </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Gợi ý hợp lệ:{" "}
+                          <span className="font-medium text-gray-900">
+                            {formatLatLng(
+                              activePersistentSubAreaWarning.suggestedLatLng,
+                            )}
+                          </span>
+                        </p>
+                        <Button
+                          size="sm"
+                          className="mt-3 w-full"
+                          onClick={applySuggestedSubAreaPoint}
+                        >
+                          Áp dụng toạ độ hợp lệ
+                        </Button>
+                      </div>
+                    </div>
+                  )}
               </div>
 
               <div className="lg:col-span-2 flex flex-col h-full overflow-hidden">
@@ -839,7 +1179,9 @@ const RegionCreatePage = () => {
                           Danh sách toạ độ
                         </h4>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Kéo thả điểm hoặc click bản đồ để thêm.
+                          Chọn marker để đổi màu xanh rồi kéo thả hoặc dùng nút
+                          Thêm điểm. Nếu ra khỏi vùng hoặc chồng lên khu vực
+                          khác điểm sẽ đổi đỏ và hiển thị gợi ý hợp lệ.
                         </p>
                       </div>
                       <div className="flex-1 overflow-y-auto p-3 space-y-3 max-h-[300px]">

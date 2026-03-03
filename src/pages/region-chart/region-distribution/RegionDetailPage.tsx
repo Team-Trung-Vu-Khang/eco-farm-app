@@ -8,7 +8,7 @@ import {
   CardTitle,
   Badge,
 } from "@tankhang1/eco-shared-ui";
-import { MapContainer, TileLayer, Polygon } from "react-leaflet";
+import { MapContainer, TileLayer, Polygon, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { ChevronLeft, Edit } from "lucide-react";
@@ -25,13 +25,14 @@ import useRegionStore from "../../../stores/useRegionStore";
 
 const RegionDetailPage = () => {
   const [, setLocation] = useLocation();
+  const { getRegionById } = useRegionStore();
+
   const [match, params] = useRoute("/region-distribution/detail/:id");
 
   if (!match || !params?.id) {
     return <div>Không tìm thấy trang</div>;
   }
 
-  const { getRegionById } = useRegionStore();
   const regionId = parseInt(params.id);
   const region = getRegionById(regionId);
 
@@ -205,11 +206,16 @@ const RegionDetailPage = () => {
                   <Polygon
                     positions={region.coordinates.map((c) => [c.lat, c.lng])}
                     pathOptions={{
-                      color: "blue",
                       fill: false,
+                      color: "blue",
                       dashArray: "5, 5",
+                      bubblingMouseEvents: false,
                     }}
-                  />
+                  >
+                    <Tooltip sticky direction="top">
+                      Vùng trồng: {region.name}
+                    </Tooltip>
+                  </Polygon>
                 )}
 
                 {/* Sub Areas Polygons */}
@@ -222,7 +228,11 @@ const RegionDetailPage = () => {
                       key={sub.id}
                       positions={sub.coordinates.map((c) => [c.lat, c.lng])}
                       pathOptions={{ color: "green", weight: 2 }}
-                    />
+                    >
+                      <Tooltip sticky direction="top">
+                        Khu vực {sub.name}
+                      </Tooltip>
+                    </Polygon>
                   );
                 })}
 

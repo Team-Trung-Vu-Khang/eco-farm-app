@@ -77,8 +77,12 @@ export const DraggableRectangle = ({
 
 export const MapController = ({ center }: { center: L.LatLngExpression }) => {
   const map = useMap();
+
   useEffect(() => {
-    map.flyTo(center, 13);
+    // Keep the current zoom level instead of forcing a default so manual zooms persist
+    const currentZoom = map.getZoom();
+    map.flyTo(center, currentZoom);
   }, [center, map]);
+
   return null;
 };

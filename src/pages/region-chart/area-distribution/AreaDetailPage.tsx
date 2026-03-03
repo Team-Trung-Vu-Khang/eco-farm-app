@@ -28,8 +28,11 @@ const AreaDetailPage = () => {
 
   const areaData = id ? getAreaById(id)?.area : null;
   const regionData = areaData
-    ? regions.find((r) => r.id === areaData.regionId)
+    ? regions.find(
+        (r) => r.id === areaData.regionId || r.code === areaData.regionId,
+      )
     : null;
+
   if (!areaData) {
     return (
       <AdminLayout
@@ -68,8 +71,8 @@ const AreaDetailPage = () => {
 
   return (
     <AdminLayout
+      description={`Mã khu vực: ${areaData.id}`}
       title={`Chi tiết khu vực: ${areaData.name}`}
-      description={`Mã khu vực: ${areaData.code}`}
       actions={
         <div className="flex gap-2">
           <Button

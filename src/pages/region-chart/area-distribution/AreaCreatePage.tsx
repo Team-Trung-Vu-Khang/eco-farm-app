@@ -25,62 +25,96 @@ import {
   TileLayer,
   Polygon,
   Marker,
-  useMapEvents,
+  Polyline,
   Tooltip,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { ChevronLeft, Plus, Trash2, Edit, X } from "lucide-react";
-
-// Fix Leaflet Default Icon
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-const customIcon = new L.Icon({
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
+import polygonToLine from "@turf/polygon-to-line";
+import nearestPointOnLine from "@turf/nearest-point-on-line";
+import { point, polygon } from "@turf/helpers";
+import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-area/components/mapUtils";
 
 import { type SubArea as Area, type Plot } from "../constants";
 import { MapController } from "../components/DraggableRectangle";
 import useRegionStore from "../../../stores/useRegionStore";
 import useTerrainStore from "@/stores/useTerrainStore";
 import useLandStore from "@/stores/useLandStore";
+import useEnterpriseStore from "@/stores/useEnterpriseStore";
 
-const MapClickHandler = ({
-  onClick,
-}: {
-  onClick: (latlng: L.LatLng) => void;
-}) => {
-  useMapEvents({
-    click(e) {
-      onClick(e.latlng);
-    },
-  });
-  return null;
-};
+const customIcon = getMarkerIcon("blue");
+const activeIcon = getMarkerIcon("green");
+const invalidIcon = getMarkerIcon("red");
+
+const DEFAULT_AREA_POINT_TUPLES: [number, number][] = [
+  [11.53, 106.88],
+  [11.55, 106.91],
+  [11.53, 106.91],
+];
+
+const createLatLngPoints = (tuples: [number, number][]) =>
+  tuples.map(([lat, lng]) => L.latLng(lat, lng));
 
 const getBoundsFromPoints = (points: L.LatLng[]): L.LatLngBounds => {
   if (points.length === 0) return L.latLngBounds([0, 0], [0, 0]);
   return L.latLngBounds(points);
 };
 
+const formatLatLng = (latlng: L.LatLng) =>
+  `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
+
+type PointWarning = {
+  index: number;
+  invalidLatLng: L.LatLng;
+  suggestedLatLng: L.LatLng;
+};
+
+const toTurfPolygonFromCoords = (coords: { lat: number; lng: number }[]) => {
+  if (!coords || coords.length < 3) return null;
+  const lngLat = coords.map((c) => [c.lng, c.lat]);
+  const first = lngLat[0];
+  const closed = [...lngLat, first];
+  return polygon([closed]);
+};
+
+const getNearestPointOnPolygonBoundary = (
+  polyFeature: any,
+  latlng: L.LatLng,
+) => {
+  if (!polyFeature) return null;
+  const lineFeature = polygonToLine(polyFeature);
+  const line = Array.isArray((lineFeature as any).features)
+    ? (lineFeature as any).features[0]
+    : lineFeature;
+  if (!line) return null;
+  const snapped = nearestPointOnLine(
+    line as any,
+    point([latlng.lng, latlng.lat]),
+  );
+  if (!snapped) return null;
+  return L.latLng(
+    snapped.geometry.coordinates[1],
+    snapped.geometry.coordinates[0],
+  );
+};
 const AreaCreatePage = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [match, params] = useRoute("/area-distribution/edit/:id");
   const isEditMode = match && !!params?.id;
+  const { enterprises } = useEnterpriseStore();
   const { lands } = useLandStore();
   const { terrains } = useTerrainStore();
   // States
+
+  const [selectEnterpriseId, setSelectEnterpriseId] = useState<number | null>(
+    null,
+  );
   const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Area>>({
+    id: "",
     code: "",
     name: "",
     area: 0,
@@ -90,55 +124,196 @@ const AreaCreatePage = () => {
     plots: [],
   });
 
-  const [areaPoints, setAreaPoints] = useState<L.LatLng[]>([
-    L.latLng(11.53, 106.88),
-    L.latLng(11.55, 106.91),
-    L.latLng(11.53, 106.91),
-  ]);
+  const [areaPoints, setAreaPoints] = useState<L.LatLng[]>(() =>
+    createLatLngPoints(DEFAULT_AREA_POINT_TUPLES),
+  );
+  const [areaMapCenter, setAreaMapCenter] = useState<L.LatLng>(() =>
+    getBoundsFromPoints(
+      createLatLngPoints(DEFAULT_AREA_POINT_TUPLES),
+    ).getCenter(),
+  );
+  const [plotMapCenter, setPlotMapCenter] = useState<L.LatLng>(() =>
+    getBoundsFromPoints(
+      createLatLngPoints(DEFAULT_AREA_POINT_TUPLES),
+    ).getCenter(),
+  );
+  const [activePointIndex, setActivePointIndex] = useState<number | null>(null);
+  const [areaPointWarnings, setAreaPointWarnings] = useState<
+    Record<number, PointWarning>
+  >({});
+  const [activeAreaDragWarning, setActiveAreaDragWarning] =
+    useState<PointWarning | null>(null);
+  const [isDraggingAreaPoint, setIsDraggingAreaPoint] = useState(false);
 
   // Plot Editing
   const [plotPoints, setPlotPoints] = useState<L.LatLng[]>([]);
   const [editingPlot, setEditingPlot] = useState<Partial<Plot> | null>(null);
+  const [activePlotPointIndex, setActivePlotPointIndex] = useState<
+    number | null
+  >(null);
+  const [plotPointWarnings, setPlotPointWarnings] = useState<
+    Record<number, PointWarning>
+  >({});
+  const [activeDragWarning, setActiveDragWarning] =
+    useState<PointWarning | null>(null);
+  const [isDraggingPlotPoint, setIsDraggingPlotPoint] = useState(false);
 
   const { regions, upsertSubArea, getAreaById } = useRegionStore();
+  const hasInitializedEditData = React.useRef(false);
+
+  const enterpriseOptions = React.useMemo(() => {
+    return enterprises.map((item) => ({
+      label: item.name,
+      image: item.image,
+      value: item.id?.toString(),
+    }));
+  }, [enterprises]);
+
+  const regionOptions: ComboboxOption[] = React.useMemo(() => {
+    return regions
+      ?.filter(
+        (item) => String(item?.enterpriseId) === String(selectEnterpriseId),
+      )
+      .map((region) => ({
+        label: region.name,
+        value: region.id?.toString(),
+      }));
+  }, [regions, selectEnterpriseId]);
+
+  const syncMapCenters = React.useCallback(
+    (points: L.LatLng[]) => {
+      if (!points || points.length === 0) return;
+      const nextCenter = getBoundsFromPoints(points).getCenter();
+      setAreaMapCenter(nextCenter);
+      setPlotMapCenter(nextCenter);
+    },
+    [setAreaMapCenter, setPlotMapCenter],
+  );
 
   const currentRegion = React.useMemo(() => {
     return regions.find((r) => r.id === selectedRegionId);
   }, [regions, selectedRegionId]);
 
-  const regionOptions: ComboboxOption[] = React.useMemo(() => {
-    return regions.map((region) => ({
-      label: region.name,
-      value: region.id?.toString(),
-    }));
-  }, [regions]);
+  const areaPolygonFeature = React.useMemo(() => {
+    if (areaPoints.length < 3) return null;
+    const coordinates = areaPoints.map((p) => [p.lng, p.lat]);
+    const first = coordinates[0];
+    const closed = [...coordinates, first];
+    return polygon([closed]);
+  }, [areaPoints]);
+
+  const regionPolygonFeature = React.useMemo(() => {
+    if (!selectedRegionId) return null;
+    const region = regions.find((r) => r.id === selectedRegionId);
+    if (!region || !region.coordinates || region.coordinates.length < 3)
+      return null;
+    const coordinates = region.coordinates.map((c: any) => [c.lng, c.lat]);
+    const first = coordinates[0];
+    const closed = [...coordinates, first];
+    return polygon([closed]);
+  }, [selectedRegionId, regions]);
+
+  const activePersistentPlotWarning = React.useMemo(() => {
+    if (activePlotPointIndex === null) return null;
+    return plotPointWarnings[activePlotPointIndex] ?? null;
+  }, [activePlotPointIndex, plotPointWarnings]);
+
+  const activePersistentAreaWarning = React.useMemo(() => {
+    if (activePointIndex === null) return null;
+    return areaPointWarnings[activePointIndex] ?? null;
+  }, [activePointIndex, areaPointWarnings]);
+
+  const blockingAreaPolygons = React.useMemo(() => {
+    if (!currentRegion?.subAreas) return [];
+    return currentRegion.subAreas
+      .filter((area) => {
+        if (!area.coordinates || area.coordinates.length < 3) return false;
+        if (isEditMode && params?.id && area.id === params.id) return false;
+        return true;
+      })
+      .map((area) => {
+        const poly = toTurfPolygonFromCoords(
+          area.coordinates as { lat: number; lng: number }[],
+        );
+        if (!poly) return null;
+        return { id: area.id, polygon: poly };
+      })
+      .filter((item): item is { id: string; polygon: any } => item !== null);
+  }, [currentRegion, isEditMode, params?.id]);
+
+  const blockingPlotPolygons = React.useMemo(() => {
+    if (!formData.plots || formData.plots.length === 0) return [];
+    return (formData.plots as Plot[])
+      .filter((plot) => {
+        if (!plot.coordinates || plot.coordinates.length < 3) return false;
+        if (editingPlot && plot.id === editingPlot.id) return false;
+        return true;
+      })
+      .map((plot) => {
+        const poly = toTurfPolygonFromCoords(plot.coordinates);
+        if (!poly) return null;
+        return { id: plot.id, polygon: poly };
+      })
+      .filter((item): item is { id: string; polygon: any } => item !== null);
+  }, [formData.plots, editingPlot]);
 
   useEffect(() => {
-    if (isEditMode && params?.id) {
-      const found = getAreaById(String(params.id));
-      if (found) {
-        setFormData(found);
-        setSelectedRegionId(found.regionId);
-        if (found.coordinates && found.coordinates.length >= 3) {
-          setAreaPoints(
-            found.coordinates.map((c: any) => L.latLng(c.lat, c.lng)),
-          );
-        }
-      }
+    hasInitializedEditData.current = false;
+  }, [params?.id]);
+
+  useEffect(() => {
+    if (!isEditMode || !params?.id) {
+      hasInitializedEditData.current = false;
+      return;
     }
-  }, [isEditMode, params?.id, getAreaById]);
+    if (hasInitializedEditData.current) return;
+
+    const found = getAreaById(String(params.id));
+
+    console.log(found);
+
+    if (!found) return;
+
+    hasInitializedEditData.current = true;
+    const area = found.area;
+    setFormData(area);
+    setSelectedRegionId(area.regionId);
+    if (area.coordinates && area.coordinates.length >= 3) {
+      const loadedPoints = area.coordinates.map((c: any) =>
+        L.latLng(c.lat, c.lng),
+      );
+      setAreaPoints(loadedPoints);
+      syncMapCenters(loadedPoints);
+    }
+    setAreaPointWarnings({});
+    setActiveAreaDragWarning(null);
+    setIsDraggingAreaPoint(false);
+    setActivePointIndex(null);
+  }, [
+    isEditMode,
+    params?.id,
+    getAreaById,
+    syncMapCenters,
+    regions,
+    hasInitializedEditData,
+  ]);
 
   // When region changes, update bounds and auto-fill details
   useEffect(() => {
     if (selectedRegionId) {
       const region = regions.find((r) => r.id === selectedRegionId);
       if (region) {
-        setFormData((prev) => ({
-          ...prev,
-          regionId: region.id,
-          landType: region.landType,
-          terrain: region.terrain,
-        }));
+        setFormData((prev) => {
+          const isSameRegion = prev.regionId === region.id;
+          const shouldUseRegionDefaults =
+            !isEditMode || !isSameRegion || !prev.landType || !prev.terrain;
+          return {
+            ...prev,
+            regionId: region.id,
+            landType: shouldUseRegionDefaults ? region.landType : prev.landType,
+            terrain: shouldUseRegionDefaults ? region.terrain : prev.terrain,
+          };
+        });
 
         // If creating new area and region has coords, use region center
         if (
@@ -150,27 +325,206 @@ const AreaCreatePage = () => {
             L.latLng(c.lat, c.lng),
           );
           const center = L.latLngBounds(points).getCenter();
-          // Default triangle at center
-          setAreaPoints([
+          const defaultTriangle = [
             L.latLng(center.lat - 0.005, center.lng - 0.005),
             L.latLng(center.lat + 0.005, center.lng),
             L.latLng(center.lat - 0.005, center.lng + 0.005),
-          ]);
+          ];
+          // Default triangle at center
+          setAreaPoints(defaultTriangle);
+          syncMapCenters(defaultTriangle);
+          setAreaPointWarnings({});
+          setActiveAreaDragWarning(null);
+          setIsDraggingAreaPoint(false);
+          setActivePointIndex(null);
         }
       }
     }
-  }, [selectedRegionId, regions, isEditMode]);
+  }, [selectedRegionId, regions, isEditMode, syncMapCenters]);
 
-  // --- Handlers ---
+  useEffect(() => {
+    if (!selectedRegionId) {
+      setAreaPointWarnings({});
+      setActiveAreaDragWarning(null);
+      setIsDraggingAreaPoint(false);
+      setActivePointIndex(null);
+    }
+  }, [selectedRegionId]);
 
-  const handlePointDrag = (index: number, latlng: L.LatLng) => {
-    const newPoints = [...areaPoints];
-    newPoints[index] = latlng;
-    setAreaPoints(newPoints);
+  useEffect(() => {
+    setPlotPointWarnings({});
+    setActivePlotPointIndex(null);
+    setActiveDragWarning(null);
+    setIsDraggingPlotPoint(false);
+  }, [editingPlot]);
+
+  const getNearestValidAreaPosition = (latlng: L.LatLng) => {
+    if (!regionPolygonFeature) return null;
+    const polygonLine = polygonToLine(regionPolygonFeature);
+    const lineFeature = Array.isArray((polygonLine as any).features)
+      ? (polygonLine as any).features[0]
+      : polygonLine;
+    if (!lineFeature) return null;
+    const snapped = nearestPointOnLine(
+      lineFeature as any,
+      point([latlng.lng, latlng.lat]),
+    );
+    if (!snapped) return null;
+    return L.latLng(
+      snapped.geometry.coordinates[1],
+      snapped.geometry.coordinates[0],
+    );
   };
 
-  const handleMapClick = (latlng: L.LatLng) => {
-    setAreaPoints([...areaPoints, latlng]);
+  const updateAreaWarningForIndex = (
+    index: number,
+    warning: PointWarning | null,
+  ) => {
+    setAreaPointWarnings((prev) => {
+      if (!warning) {
+        if (!(index in prev)) return prev;
+        const { [index]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [index]: warning };
+    });
+  };
+
+  const shiftAreaWarningsAfterRemoval = (removedIndex: number) => {
+    setAreaPointWarnings((prev) => {
+      if (Object.keys(prev).length === 0) return prev;
+      const next: Record<number, PointWarning> = {};
+      Object.entries(prev).forEach(([idxStr, warning]) => {
+        const idx = Number(idxStr);
+        if (idx === removedIndex) return;
+        const newIndex = idx > removedIndex ? idx - 1 : idx;
+        next[newIndex] = { ...warning, index: newIndex };
+      });
+      return next;
+    });
+  };
+
+  const setAreaPointWithValidation = (
+    index: number,
+    latlng: L.LatLng,
+    options?: { persist?: boolean; preview?: boolean },
+  ) => {
+    const { persist = true, preview = false } = options || {};
+
+    setAreaPoints((prev) => {
+      const next = [...prev];
+      next[index] = latlng;
+      return next;
+    });
+
+    const clearPreview = () => {
+      if (preview) {
+        setActiveAreaDragWarning((prev) =>
+          prev?.index === index ? null : prev,
+        );
+      }
+    };
+
+    const pointFeature = point([latlng.lng, latlng.lat]);
+
+    let violationType: "outsideRegion" | "overlapsArea" | null = null;
+    let overlapPolygon: any | null = null;
+
+    if (regionPolygonFeature) {
+      const insideRegion = booleanPointInPolygon(
+        pointFeature,
+        regionPolygonFeature,
+      );
+      if (!insideRegion) {
+        violationType = "outsideRegion";
+      }
+    }
+
+    if (!violationType && blockingAreaPolygons.length > 0) {
+      const overlapping = blockingAreaPolygons.find((areaPoly) =>
+        booleanPointInPolygon(pointFeature, areaPoly.polygon),
+      );
+      if (overlapping) {
+        violationType = "overlapsArea";
+        overlapPolygon = overlapping.polygon;
+      }
+    }
+
+    if (!violationType) {
+      if (persist) {
+        updateAreaWarningForIndex(index, null);
+      }
+      clearPreview();
+      return;
+    }
+
+    let nearestValid: L.LatLng | null = null;
+    if (violationType === "outsideRegion") {
+      nearestValid = getNearestValidAreaPosition(latlng);
+    } else if (violationType === "overlapsArea" && overlapPolygon) {
+      nearestValid = getNearestPointOnPolygonBoundary(overlapPolygon, latlng);
+    }
+
+    if (!nearestValid) {
+      clearPreview();
+      if (persist) {
+        updateAreaWarningForIndex(index, null);
+      }
+      return;
+    }
+
+    const warningData: PointWarning = {
+      index,
+      invalidLatLng: latlng,
+      suggestedLatLng: nearestValid,
+    };
+
+    if (preview) {
+      setActiveAreaDragWarning(warningData);
+    }
+
+    if (persist) {
+      updateAreaWarningForIndex(index, warningData);
+    }
+  };
+
+  const applySuggestedAreaPoint = () => {
+    if (!activePersistentAreaWarning) return;
+    const { index, suggestedLatLng } = activePersistentAreaWarning;
+    setAreaPointWithValidation(index, suggestedLatLng, {
+      persist: true,
+      preview: false,
+    });
+    setActivePointIndex(index);
+    updateAreaWarningForIndex(index, null);
+    setActiveAreaDragWarning(null);
+  };
+
+  const handleAreaPointDrag = (
+    index: number,
+    latlng: L.LatLng,
+    options?: { finalize?: boolean },
+  ) => {
+    setActivePointIndex(index);
+    setAreaPointWithValidation(index, latlng, {
+      persist: options?.finalize ?? false,
+      preview: !(options?.finalize ?? false),
+    });
+    if (options?.finalize) {
+      setActiveAreaDragWarning(null);
+    }
+  };
+
+  const areaWarningForDisplay =
+    activeAreaDragWarning ?? activePersistentAreaWarning;
+
+  // --- Handlers ---
+  const handlePointDrag = (
+    index: number,
+    latlng: L.LatLng,
+    options?: { finalize?: boolean },
+  ) => {
+    handleAreaPointDrag(index, latlng, options);
   };
 
   const removePoint = (index: number) => {
@@ -183,7 +537,10 @@ const AreaCreatePage = () => {
       return;
     }
     const newPoints = areaPoints.filter((_, i) => i !== index);
+    setActivePointIndex(null);
     setAreaPoints(newPoints);
+    shiftAreaWarningsAfterRemoval(index);
+    setActiveAreaDragWarning(null);
   };
 
   const handlePointInputChange = (
@@ -194,21 +551,30 @@ const AreaCreatePage = () => {
     const val = parseFloat(value);
     if (isNaN(val)) return;
 
-    const newPoints = [...areaPoints];
-    const currentPoint = newPoints[index];
-    newPoints[index] = L.latLng(
+    const currentPoint = areaPoints[index];
+    if (!currentPoint) return;
+    const updated = L.latLng(
       field === "lat" ? val : currentPoint.lat,
       field === "lng" ? val : currentPoint.lng,
     );
-    setAreaPoints(newPoints);
+    setAreaPointWithValidation(index, updated, {
+      persist: true,
+      preview: false,
+    });
+    setActivePointIndex(index);
+    setActiveAreaDragWarning(null);
   };
 
   const handleAddPoint = () => {
     const center = getBoundsFromPoints(areaPoints).getCenter();
-    setAreaPoints([
-      ...areaPoints,
-      L.latLng(center.lat + 0.002, center.lng + 0.002),
-    ]);
+    const nextIndex = areaPoints.length;
+    const newLatLng = L.latLng(center.lat + 0.002, center.lng + 0.002);
+    setAreaPointWithValidation(nextIndex, newLatLng, {
+      persist: true,
+      preview: false,
+    });
+    setActivePointIndex(nextIndex);
+    setActiveAreaDragWarning(null);
   };
 
   const handleSubmit = () => {
@@ -230,8 +596,7 @@ const AreaCreatePage = () => {
       return;
     }
 
-    const areaData: Omit<Area, "id"> = {
-      code: formData.code || "",
+    const areaData: Omit<Area, "id" | "code"> = {
       name: formData.name || "",
       regionId: selectedRegionId,
       area: formData.area || 0,
@@ -246,7 +611,7 @@ const AreaCreatePage = () => {
           : new Date().toISOString(),
     };
 
-    let finalAreaId =
+    const finalAreaId =
       isEditMode && params?.id
         ? String(params.id)
         : `sub-${selectedRegionId}-${Date.now()}`;
@@ -266,24 +631,173 @@ const AreaCreatePage = () => {
     setLocation("/area-distribution");
   };
 
-  const handlePlotPointDrag = (index: number, latlng: L.LatLng) => {
-    const newPoints = [...plotPoints];
-    newPoints[index] = latlng;
-    setPlotPoints(newPoints);
+  const getNearestValidPlotPosition = (latlng: L.LatLng) => {
+    if (!areaPolygonFeature) return null;
+    const polygonLine = polygonToLine(areaPolygonFeature);
+    const lineFeature = Array.isArray((polygonLine as any).features)
+      ? (polygonLine as any).features[0]
+      : polygonLine;
+    if (!lineFeature) return null;
+    const snapped = nearestPointOnLine(
+      lineFeature as any,
+      point([latlng.lng, latlng.lat]),
+    );
+    if (!snapped) return null;
+    return L.latLng(
+      snapped.geometry.coordinates[1],
+      snapped.geometry.coordinates[0],
+    );
   };
 
-  const handlePlotMapClick = (latlng: L.LatLng) => {
-    if (editingPlot) {
-      setPlotPoints([...plotPoints, latlng]);
+  const updateWarningForIndex = (
+    index: number,
+    warning: PointWarning | null,
+  ) => {
+    setPlotPointWarnings((prev) => {
+      if (!warning) {
+        if (!(index in prev)) return prev;
+        const { [index]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [index]: warning };
+    });
+  };
+
+  const shiftWarningsAfterRemoval = (removedIndex: number) => {
+    setPlotPointWarnings((prev) => {
+      if (Object.keys(prev).length === 0) return prev;
+      const next: Record<number, PointWarning> = {};
+      Object.entries(prev).forEach(([idxStr, warning]) => {
+        const idx = Number(idxStr);
+        if (idx === removedIndex) return;
+        const newIndex = idx > removedIndex ? idx - 1 : idx;
+        next[newIndex] = { ...warning, index: newIndex };
+      });
+      return next;
+    });
+  };
+
+  const setPlotPointWithValidation = (
+    index: number,
+    latlng: L.LatLng,
+    options?: { persist?: boolean; preview?: boolean },
+  ) => {
+    const { persist = true, preview = false } = options || {};
+
+    setPlotPoints((prev) => {
+      const next = [...prev];
+      next[index] = latlng;
+      return next;
+    });
+
+    const clearPreview = () => {
+      if (preview) {
+        setActiveDragWarning((prev) => (prev?.index === index ? null : prev));
+      }
+    };
+
+    const pointFeature = point([latlng.lng, latlng.lat]);
+
+    let violationType: "outsideArea" | "overlapsPlot" | null = null;
+    let overlapPolygon: any | null = null;
+
+    if (areaPolygonFeature) {
+      const insideArea = booleanPointInPolygon(
+        pointFeature,
+        areaPolygonFeature,
+      );
+      if (!insideArea) {
+        violationType = "outsideArea";
+      }
+    }
+
+    if (!violationType && blockingPlotPolygons.length > 0) {
+      const overlapping = blockingPlotPolygons.find((plotPoly) =>
+        booleanPointInPolygon(pointFeature, plotPoly.polygon),
+      );
+      if (overlapping) {
+        violationType = "overlapsPlot";
+        overlapPolygon = overlapping.polygon;
+      }
+    }
+
+    if (!violationType) {
+      if (persist) {
+        updateWarningForIndex(index, null);
+      }
+      clearPreview();
+      return;
+    }
+
+    let nearestValid: L.LatLng | null = null;
+    if (violationType === "outsideArea") {
+      nearestValid = getNearestValidPlotPosition(latlng);
+    } else if (violationType === "overlapsPlot" && overlapPolygon) {
+      nearestValid = getNearestPointOnPolygonBoundary(overlapPolygon, latlng);
+    }
+
+    if (!nearestValid) {
+      clearPreview();
+      if (persist) {
+        updateWarningForIndex(index, null);
+      }
+      return;
+    }
+
+    const warningData: PointWarning = {
+      index,
+      invalidLatLng: latlng,
+      suggestedLatLng: nearestValid,
+    };
+
+    if (preview) {
+      setActiveDragWarning(warningData);
+    }
+
+    if (persist) {
+      updateWarningForIndex(index, warningData);
     }
   };
 
+  const applySuggestedPlotPoint = () => {
+    if (activePersistentPlotWarning == null) return;
+    const { index, suggestedLatLng } = activePersistentPlotWarning;
+    setPlotPointWithValidation(index, suggestedLatLng, {
+      persist: true,
+      preview: false,
+    });
+    setActivePlotPointIndex(index);
+    updateWarningForIndex(index, null);
+    setActiveDragWarning(null);
+  };
+
+  const handlePlotPointDrag = (
+    index: number,
+    latlng: L.LatLng,
+    options?: { finalize?: boolean },
+  ) => {
+    setActivePlotPointIndex(index);
+    setPlotPointWithValidation(index, latlng, {
+      persist: options?.finalize ?? false,
+      preview: !(options?.finalize ?? false),
+    });
+    if (options?.finalize) {
+      setActiveDragWarning(null);
+    }
+  };
+
+  const plotWarningForDisplay =
+    activeDragWarning ?? activePersistentPlotWarning;
+
   const handleAddPlotPoint = () => {
     const center = getBoundsFromPoints(plotPoints).getCenter();
-    setPlotPoints([
-      ...plotPoints,
+    const nextIndex = plotPoints.length;
+    setPlotPoints((prev) => [
+      ...prev,
       L.latLng(center.lat + 0.002, center.lng + 0.002),
     ]);
+    setActivePlotPointIndex(nextIndex);
+    setActiveDragWarning(null);
   };
 
   const removePlotPoint = (index: number) => {
@@ -297,6 +811,9 @@ const AreaCreatePage = () => {
     }
     const newPoints = plotPoints.filter((_, i) => i !== index);
     setPlotPoints(newPoints);
+    setActivePlotPointIndex(null);
+    setActiveDragWarning(null);
+    shiftWarningsAfterRemoval(index);
   };
 
   const handlePlotPointInputChange = (
@@ -307,13 +824,18 @@ const AreaCreatePage = () => {
     const val = parseFloat(value);
     if (isNaN(val)) return;
 
-    const newPoints = [...plotPoints];
-    const currentPoint = newPoints[index];
-    newPoints[index] = L.latLng(
+    const currentPoint = plotPoints[index];
+    if (!currentPoint) return;
+    const updated = L.latLng(
       field === "lat" ? val : currentPoint.lat,
       field === "lng" ? val : currentPoint.lng,
     );
-    setPlotPoints(newPoints);
+    setPlotPointWithValidation(index, updated, {
+      persist: true,
+      preview: false,
+    });
+    setActivePlotPointIndex(index);
+    setActiveDragWarning(null);
   };
 
   const addPlot = () => {
@@ -333,6 +855,9 @@ const AreaCreatePage = () => {
       L.latLng(center.lat + 0.002, center.lng + 0.002),
       L.latLng(center.lat - 0.002, center.lng + 0.002),
     ]);
+    setPlotPointWarnings({});
+    setActiveDragWarning(null);
+    setActivePlotPointIndex(null);
   };
 
   const savePlot = () => {
@@ -378,7 +903,7 @@ const AreaCreatePage = () => {
       id: "info",
       title: "Thông tin chung",
       description: "Chọn vùng và thông tin cơ bản",
-      isValid: !!selectedRegionId && !!formData.code && !!formData.name,
+      isValid: !!selectedRegionId && !!formData.id && !!formData.name,
       content: (
         <Card>
           <CardHeader>
@@ -387,42 +912,28 @@ const AreaCreatePage = () => {
           <CardContent className="space-y-6">
             <div className="space-y-2">
               <Label>
+                Chọn đơn vị <span className="text-red-500">*</span>
+              </Label>
+
+              <Combobox
+                options={enterpriseOptions}
+                placeholder="Chọn vùng trồng"
+                value={selectEnterpriseId?.toString() ?? ""}
+                onChange={(value) => setSelectEnterpriseId(Number(value))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>
                 Chọn vùng trồng <span className="text-red-500">*</span>
               </Label>
 
               <Combobox
                 options={regionOptions}
                 placeholder="Chọn vùng trồng"
+                disabled={!selectEnterpriseId}
                 value={selectedRegionId?.toString() ?? ""}
                 onChange={(value) => setSelectedRegionId(Number(value))}
               />
-
-              {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[300px] overflow-y-auto p-1">
-                {regions.map((region) => (
-                  <div
-                    key={region.id}
-                    onClick={() => setSelectedRegionId(region.id)}
-                    className={`cursor-pointer rounded-lg border p-4 transition-all hover:border-primary ${
-                      selectedRegionId === region.id
-                        ? "border-primary ring-2 ring-primary/20 bg-primary/5"
-                        : "bg-card"
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="font-semibold text-sm">
-                        {region.code}
-                      </span>
-                      {selectedRegionId === region.id && (
-                        <Check className="w-4 h-4 text-primary" />
-                      )}
-                    </div>
-                    <p className="font-medium truncate">{region.name}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {region.area} ha
-                    </p>
-                  </div>
-                ))}
-              </div> */}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -431,9 +942,9 @@ const AreaCreatePage = () => {
                   Mã khu vực <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  value={formData.code || ""}
+                  value={formData.id || ""}
                   onChange={(e) =>
-                    setFormData({ ...formData, code: e.target.value })
+                    setFormData({ ...formData, id: e.target.value })
                   }
                   placeholder="VD: KHU-A"
                 />
@@ -523,10 +1034,7 @@ const AreaCreatePage = () => {
           <CardContent className="flex-1 p-4 overflow-hidden flex gap-4">
             <div className="flex-1 h-full rounded-lg border overflow-hidden relative">
               <MapContainer
-                center={[
-                  getBoundsFromPoints(areaPoints).getCenter().lat,
-                  getBoundsFromPoints(areaPoints).getCenter().lng,
-                ]}
+                center={areaMapCenter}
                 zoom={14}
                 className="h-full w-full"
               >
@@ -534,8 +1042,6 @@ const AreaCreatePage = () => {
                   attribution="&copy; OpenStreetMap"
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-
-                <MapClickHandler onClick={handleMapClick} />
 
                 {/* Region Boundary */}
                 {selectedRegionId && (
@@ -582,32 +1088,117 @@ const AreaCreatePage = () => {
                   pathOptions={{ color: "blue", fillOpacity: 0.1 }}
                 />
 
-                {areaPoints.map((point, idx) => (
-                  <Marker
-                    key={`pt-${idx}`}
-                    position={point}
-                    draggable={true}
-                    icon={customIcon}
-                    eventHandlers={{
-                      drag: (e) => handlePointDrag(idx, e.target.getLatLng()),
+                {areaPoints.map((point, idx) => {
+                  const isActive = activePointIndex === idx;
+                  const isInvalid = !!areaPointWarnings[idx];
+                  const markerIcon = isInvalid
+                    ? invalidIcon
+                    : isActive
+                      ? activeIcon
+                      : customIcon;
+                  return (
+                    <Marker
+                      key={`pt-${idx}`}
+                      position={point}
+                      draggable={true}
+                      icon={markerIcon}
+                      eventHandlers={{
+                        click: () => {
+                          setActivePointIndex(idx);
+                          setAreaPointWithValidation(idx, point, {
+                            persist: true,
+                            preview: false,
+                          });
+                        },
+                        dragstart: (e) => {
+                          setActivePointIndex(idx);
+                          setIsDraggingAreaPoint(true);
+                          handlePointDrag(idx, e.target.getLatLng(), {
+                            finalize: false,
+                          });
+                        },
+                        drag: (e) =>
+                          handlePointDrag(idx, e.target.getLatLng(), {
+                            finalize: false,
+                          }),
+                        dragend: (e) => {
+                          setIsDraggingAreaPoint(false);
+                          handlePointDrag(idx, e.target.getLatLng(), {
+                            finalize: true,
+                          });
+                        },
+                      }}
+                    >
+                      <Tooltip sticky direction="top" className="z-1000">
+                        Điểm {idx + 1}
+                      </Tooltip>
+                    </Marker>
+                  );
+                })}
+
+                {areaWarningForDisplay && (
+                  <Polyline
+                    positions={[
+                      areaWarningForDisplay.invalidLatLng,
+                      areaWarningForDisplay.suggestedLatLng,
+                    ]}
+                    pathOptions={{
+                      color: "red",
+                      weight: 2,
+                      dashArray: "6, 6",
                     }}
                   />
-                ))}
-
-                <MapController
-                  center={[
-                    getBoundsFromPoints(areaPoints).getCenter().lat,
-                    getBoundsFromPoints(areaPoints).getCenter().lng,
-                  ]}
-                />
+                )}
+                <MapController center={areaMapCenter} />
               </MapContainer>
+
+              {activePersistentAreaWarning &&
+                !isDraggingAreaPoint &&
+                selectedRegionId && (
+                  <div className="pointer-events-none absolute inset-x-0 top-4 z-1000 flex justify-center">
+                    <div className="pointer-events-auto w-[320px] rounded-lg border border-red-200 bg-white/95 p-4 text-xs shadow-lg">
+                      <p className="text-sm font-semibold text-red-600">
+                        Vị trí{" "}
+                        <span className="font-bold border rounded-md border-red-200 p-0.5">
+                          điểm {activePersistentAreaWarning.index + 1}
+                        </span>{" "}
+                        không hợp lệ
+                      </p>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Toạ độ hiện tại:{" "}
+                        <span className="font-medium text-gray-900">
+                          {formatLatLng(
+                            activePersistentAreaWarning.invalidLatLng,
+                          )}
+                        </span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Gợi ý hợp lệ:{" "}
+                        <span className="font-medium text-gray-900">
+                          {formatLatLng(
+                            activePersistentAreaWarning.suggestedLatLng,
+                          )}
+                        </span>
+                      </p>
+                      <Button
+                        size="sm"
+                        className="mt-3 w-full"
+                        onClick={applySuggestedAreaPoint}
+                      >
+                        Áp dụng toạ độ hợp lệ
+                      </Button>
+                    </div>
+                  </div>
+                )}
             </div>
 
             <div className="w-[300px] flex flex-col h-full bg-slate-50 border rounded-lg overflow-hidden">
               <div className="p-3 border-b bg-white">
                 <h4 className="font-semibold text-sm">Danh sách toạ độ</h4>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Kéo thả hoặc click bản đồ để thêm.
+                  Chọn marker để đổi màu xanh rồi kéo thả hoặc dùng nút Thêm
+                  điểm. Nếu ra khỏi vùng hoặc đè lên khu vực cũ, điểm sẽ đổi đỏ
+                  và hiển thị gợi ý hợp lệ khi bấm vào.
                 </p>
               </div>
               <div className="flex-1 overflow-y-auto p-3 space-y-3">
@@ -682,10 +1273,7 @@ const AreaCreatePage = () => {
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
               <div className="lg:col-span-3 h-full rounded-lg border overflow-hidden relative">
                 <MapContainer
-                  center={[
-                    getBoundsFromPoints(areaPoints).getCenter().lat,
-                    getBoundsFromPoints(areaPoints).getCenter().lng,
-                  ]}
+                  center={plotMapCenter}
                   zoom={14}
                   className="h-full w-full"
                 >
@@ -693,8 +1281,6 @@ const AreaCreatePage = () => {
                     attribution="&copy; OpenStreetMap"
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
-
-                  <MapClickHandler onClick={handlePlotMapClick} />
 
                   {/* Area Boundary */}
                   <Polygon
@@ -753,28 +1339,106 @@ const AreaCreatePage = () => {
                           fillOpacity: 0.2,
                         }}
                       />
-                      {plotPoints.map((point, idx) => (
-                        <Marker
-                          key={`plot-point-${idx}`}
-                          position={point}
-                          draggable={true}
-                          icon={customIcon}
-                          eventHandlers={{
-                            drag: (e) => {
-                              handlePlotPointDrag(idx, e.target.getLatLng());
-                            },
+                      {plotPoints.map((point, idx) => {
+                        const isActive = activePlotPointIndex === idx;
+                        const isInvalid = !!plotPointWarnings[idx];
+                        const markerIcon = isInvalid
+                          ? invalidIcon
+                          : isActive
+                            ? activeIcon
+                            : customIcon;
+                        return (
+                          <Marker
+                            key={`plot-point-${idx}`}
+                            position={point}
+                            draggable={true}
+                            icon={markerIcon}
+                            eventHandlers={{
+                              click: () => {
+                                setActivePlotPointIndex(idx);
+                                setPlotPointWithValidation(idx, point, {
+                                  persist: true,
+                                  preview: false,
+                                });
+                              },
+                              dragstart: (e) => {
+                                setActivePlotPointIndex(idx);
+                                setIsDraggingPlotPoint(true);
+                                handlePlotPointDrag(idx, e.target.getLatLng(), {
+                                  finalize: false,
+                                });
+                              },
+                              drag: (e) =>
+                                handlePlotPointDrag(idx, e.target.getLatLng(), {
+                                  finalize: false,
+                                }),
+                              dragend: (e) => {
+                                setIsDraggingPlotPoint(false);
+                                handlePlotPointDrag(idx, e.target.getLatLng(), {
+                                  finalize: true,
+                                });
+                              },
+                            }}
+                          >
+                            <Tooltip>Điểm {idx + 1}</Tooltip>
+                          </Marker>
+                        );
+                      })}
+                      {plotWarningForDisplay && (
+                        <Polyline
+                          positions={[
+                            plotWarningForDisplay.invalidLatLng,
+                            plotWarningForDisplay.suggestedLatLng,
+                          ]}
+                          pathOptions={{
+                            color: "red",
+                            weight: 2,
+                            dashArray: "6, 6",
                           }}
                         />
-                      ))}
+                      )}
                     </>
                   )}
-                  <MapController
-                    center={[
-                      getBoundsFromPoints(areaPoints).getCenter().lat,
-                      getBoundsFromPoints(areaPoints).getCenter().lng,
-                    ]}
-                  />
+                  <MapController center={plotMapCenter} />
                 </MapContainer>
+                {activePersistentPlotWarning &&
+                  editingPlot &&
+                  !isDraggingPlotPoint && (
+                    <div className="pointer-events-none absolute inset-x-0 top-4 z-1000 flex justify-center">
+                      <div className="pointer-events-auto w-[320px] rounded-lg border border-red-200 bg-white/95 p-4 text-xs shadow-lg">
+                        <p className="text-sm font-semibold text-red-600">
+                          Vị trí{" "}
+                          <span className="font-bold border rounded-md border-red-200 p-0.5">
+                            điểm {activePersistentPlotWarning.index + 1}
+                          </span>{" "}
+                          không hợp lệ
+                        </p>
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Toạ độ hiện tại:{" "}
+                          <span className="font-medium text-gray-900">
+                            {formatLatLng(
+                              activePersistentPlotWarning.invalidLatLng,
+                            )}
+                          </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Gợi ý hợp lệ:{" "}
+                          <span className="font-medium text-gray-900">
+                            {formatLatLng(
+                              activePersistentPlotWarning.suggestedLatLng,
+                            )}
+                          </span>
+                        </p>
+                        <Button
+                          size="sm"
+                          className="mt-3 w-full"
+                          onClick={applySuggestedPlotPoint}
+                        >
+                          Áp dụng toạ độ hợp lệ
+                        </Button>
+                      </div>
+                    </div>
+                  )}
               </div>
 
               <div className="lg:col-span-2 flex flex-col h-full overflow-hidden">
@@ -860,7 +1524,9 @@ const AreaCreatePage = () => {
                             Danh sách toạ độ
                           </h4>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Kéo thả điểm hoặc click bản đồ để thêm.
+                            Chọn marker (đổi màu xanh) rồi kéo thả để điều
+                            chỉnh. Nếu ra khỏi khu vực hoặc chồng lên lô đã tồn
+                            tại hệ thống sẽ gợi ý toạ độ hợp lệ.
                           </p>
                         </div>
                         <div className="flex-1 overflow-y-auto p-3 space-y-3 max-h-[300px]">

@@ -51,10 +51,20 @@ const useRegionStore = create<RegionState>()(
         addRegion: (regionData) =>
           set(
             (state) => {
+              const regionId =
+                Math.max(0, ...state.regions.map((r) => r.id)) + 1;
+
+              const newSubAreas = regionData.subAreas.map((area) => ({
+                ...area,
+                regionId,
+              }));
+
               const newRegion: Region = {
                 ...regionData,
-                id: Math.max(0, ...state.regions.map((r) => r.id)) + 1,
+                id: regionId,
+                subAreas: newSubAreas,
               } as Region;
+
               return {
                 regions: [newRegion, ...state.regions],
               };
