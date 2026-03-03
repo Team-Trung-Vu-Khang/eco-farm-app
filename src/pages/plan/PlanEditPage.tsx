@@ -27,6 +27,7 @@ import {
   MapPin,
   Package,
   Sprout,
+  Users,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
@@ -940,30 +941,136 @@ export default function PlanEditPage() {
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Card className="bg-emerald-50/30 border-emerald-100">
-                <CardContent className="pt-6 text-center">
-                  <p className="text-[10px] font-black text-emerald-600 uppercase mb-2">
-                    Vật tư phân bổ
-                  </p>
-                  <p className="text-3xl font-black text-emerald-900">
-                    {formData.materialAllocations.length}
-                  </p>
-                  <p className="text-[10px] opacity-60">hạng mục</p>
-                </CardContent>
-              </Card>
-              <Card className="bg-blue-50/30 border-blue-100">
-                <CardContent className="pt-6 text-center">
-                  <p className="text-[10px] font-black text-blue-600 uppercase mb-2">
-                    Công việc
-                  </p>
-                  <p className="text-3xl font-black text-blue-900">
-                    {formData.taskAllocations.length}
-                  </p>
-                  <p className="text-[10px] opacity-60">đầu việc</p>
-                </CardContent>
-              </Card>
-            </div>
+            <Card>
+              <CardHeader className="pb-3 border-b bg-slate-50/50">
+                <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+                  <Package className="w-4 h-4 text-purple-600" />
+                  Nguồn lực & Công việc
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-4">
+                <div className="grid grid-cols-3 gap-4 pb-4 border-b">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Vật tư
+                    </span>
+                    <p className="text-xl font-black text-slate-800">
+                      {formData.materialAllocations.length}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Nhân lực
+                    </span>
+                    <p className="text-xl font-black text-slate-800">
+                      {
+                        new Set(
+                          formData.taskAllocations
+                            .map((t) => t.labor)
+                            .filter(Boolean),
+                        ).size
+                      }
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Công việc
+                    </span>
+                    <p className="text-xl font-black text-slate-800">
+                      {formData.taskAllocations.length}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-2">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                      <Package className="w-3 h-3 text-purple-500" />
+                      Danh mục vật tư
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 leading-none">
+                      {formData.materialAllocations.length > 0 ? (
+                        Array.from(
+                          new Set(
+                            formData.materialAllocations.map(
+                              (m) => m.materialName,
+                            ),
+                          ),
+                        ).map((name, i) => (
+                          <Badge
+                            key={i}
+                            variant="secondary"
+                            className="bg-purple-50 text-purple-700 border-purple-100 text-[10px] px-2 h-5 font-bold"
+                          >
+                            {name}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">
+                          Chưa có vật tư
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                      <Users className="w-3 h-3 text-blue-500" />
+                      Nhân lực huy động
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 leading-none">
+                      {formData.taskAllocations.some((t) => t.labor) ? (
+                        Array.from(
+                          new Set(
+                            formData.taskAllocations
+                              .map((t) => t.labor)
+                              .filter(Boolean),
+                          ),
+                        ).map((labor, i) => (
+                          <Badge
+                            key={i}
+                            variant="secondary"
+                            className="bg-blue-50 text-blue-700 border-blue-100 text-[10px] px-2 h-5 font-bold"
+                          >
+                            {labor}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">
+                          Chưa phân bổ nhân lực
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                      <ClipboardList className="w-3 h-3 text-amber-500" />
+                      Đầu việc triển khai
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 leading-none">
+                      {formData.taskAllocations.length > 0 ? (
+                        Array.from(
+                          new Set(formData.taskAllocations.map((t) => t.name)),
+                        ).map((name, i) => (
+                          <Badge
+                            key={i}
+                            variant="secondary"
+                            className="bg-amber-50 text-amber-700 border-amber-100 text-[10px] px-2 h-5 font-bold"
+                          >
+                            {name}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">
+                          Chưa có đầu việc
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       ),

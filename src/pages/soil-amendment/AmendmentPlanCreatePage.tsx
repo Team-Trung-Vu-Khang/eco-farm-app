@@ -39,11 +39,16 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
 } from "@tankhang1/eco-shared-ui";
 import useAmendmentPlanStore, {
   type AllocationItem,
 } from "../../stores/useAmendmentPlanStore";
 import useRegimenStore from "../../stores/useRegimenStore";
+import usePersonnelStore from "../../stores/usePersonnelStore";
+import { PersonnelSelectDialog } from "./components/PersonnelSelectDialog";
 
 // --- Mock Data ---
 
@@ -591,6 +596,9 @@ export default function AmendmentPlanCreatePage() {
   const updatePlan = useAmendmentPlanStore((state) => state.updatePlan);
   const getPlanById = useAmendmentPlanStore((state) => state.getPlanById);
   const regimens = useRegimenStore((state) => state.regimens);
+  const personnel = usePersonnelStore((state) => state.personnel);
+
+  const [personnelDialogOpen, setPersonnelDialogOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     code: "",
@@ -838,21 +846,38 @@ export default function AmendmentPlanCreatePage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Phụ trách kỹ thuật</Label>
-              <Select
-                value={formData.technician}
-                onValueChange={(v) =>
-                  setFormData({ ...formData, technician: v })
-                }
+              <Label className="text-sm font-semibold text-slate-700">
+                Phụ trách kỹ thuật
+              </Label>
+              <div
+                onClick={() => setPersonnelDialogOpen(true)}
+                className="flex items-center justify-between p-3 rounded-md border-2 border-slate-100 bg-slate-50/50 hover:border-primary/40 hover:bg-primary/5 cursor-pointer transition-all group h-11"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn nhân sự..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Nguyễn Văn A">Nguyễn Văn A</SelectItem>
-                  <SelectItem value="Trần Thị B">Trần Thị B</SelectItem>
-                </SelectContent>
-              </Select>
+                {formData.technician ? (
+                  <div className="flex items-center gap-2">
+                    <Avatar className="w-6 h-6 border-2 border-white shadow-sm shrink-0">
+                      <AvatarImage
+                        src={
+                          personnel.find(
+                            (p) => p.fullName === formData.technician,
+                          )?.avatar
+                        }
+                      />
+                      <AvatarFallback className="text-[8px] bg-primary/10 text-primary font-bold">
+                        {formData.technician.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-bold text-slate-800 truncate max-w-[120px]">
+                      {formData.technician}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-sm text-slate-400 font-medium pl-1">
+                    Chọn...
+                  </span>
+                )}
+                <Users className="w-4 h-4 text-slate-400 group-hover:text-primary transition-colors" />
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Kinh phí dự trù (VNĐ)</Label>
@@ -863,6 +888,7 @@ export default function AmendmentPlanCreatePage() {
                   setFormData({ ...formData, budget: e.target.value })
                 }
                 placeholder="0"
+                className="h-11"
               />
             </div>
           </div>
@@ -1390,6 +1416,13 @@ export default function AmendmentPlanCreatePage() {
           completeLabel={isEdit ? "Cập nhật" : "Kích hoạt Kế hoạch"}
         />
       </div>
+
+      <PersonnelSelectDialog
+        open={personnelDialogOpen}
+        onOpenChange={setPersonnelDialogOpen}
+        selectedName={formData.technician}
+        onConfirm={(name) => setFormData({ ...formData, technician: name })}
+      />
     </AdminLayout>
   );
 }
