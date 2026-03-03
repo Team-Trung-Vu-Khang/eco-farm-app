@@ -15,7 +15,6 @@ import {
 } from "@tankhang1/eco-shared-ui";
 import { Search, Sprout, Calendar, FilterX } from "lucide-react";
 import useGrowthCycleStore from "../../../stores/useGrowthCycleStore";
-import useCropStore from "../../../stores/useCropStore";
 import useVarietyStore from "../../../stores/useVarietyStore";
 import { CROP_OPTIONS } from "../../../constants/crops";
 
@@ -46,7 +45,6 @@ export function GrowthCycleSelectDialog({
   onConfirm,
 }: GrowthCycleSelectDialogProps) {
   const { growthCycles } = useGrowthCycleStore();
-  const { crops } = useCropStore();
   const { varieties } = useVarietyStore();
   const [search, setSearch] = useState("");
   const [tempSelected, setTempSelected] = useState<string[]>(selectedIds);
@@ -68,16 +66,12 @@ export function GrowthCycleSelectDialog({
 
       // Filter by crop if selected
       if (cropId) {
-        const selectedCrop = crops.find((c) => c.id.toString() === cropId);
-        if (selectedCrop && cycle.cropName !== selectedCrop.cropType)
-          return false;
+        if (cycle.cropName !== cropId) return false;
       }
 
       // Filter by variety if selected
       if (scope === "variety" && varietyId) {
-        const selectedVariety = varieties.find((v) => v.id === varietyId);
-        if (selectedVariety && cycle.variety !== selectedVariety.varietyName)
-          return false;
+        if (cycle.variety !== varietyId) return false;
       }
 
       const searchLower = search.toLowerCase();
@@ -87,7 +81,7 @@ export function GrowthCycleSelectDialog({
         (cycle.variety && cycle.variety.toLowerCase().includes(searchLower))
       );
     });
-  }, [growthCycles, search, scope, cropId, varietyId, crops, varieties]);
+  }, [growthCycles, search, scope, cropId, varietyId, varieties]);
 
   const toggleSelect = (cycle: any) => {
     setTempSelected((prev) => {

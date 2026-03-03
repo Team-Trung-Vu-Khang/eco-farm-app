@@ -38,6 +38,7 @@ import {
   Package,
   Sprout,
   StickyNote,
+  Users,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useLocation } from "wouter";
@@ -1309,18 +1310,131 @@ export default function PlanCreatePage() {
                     Nguồn lực dự kiến
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-4 space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Tổng vật tư</span>
-                    <span className="font-medium text-slate-900">
-                      {formData.materialAllocations.length} hạng mục
-                    </span>
+                <CardContent className="pt-4 space-y-4">
+                  <div className="grid grid-cols-3 gap-4 pb-4 border-b">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        Vật tư
+                      </span>
+                      <p className="text-xl font-black text-slate-800">
+                        {formData.materialAllocations.length}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        Nhân lực
+                      </span>
+                      <p className="text-xl font-black text-slate-800">
+                        {
+                          new Set(
+                            formData.taskAllocations
+                              .map((t) => t.labor)
+                              .filter(Boolean),
+                          ).size
+                        }
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        Công việc
+                      </span>
+                      <p className="text-xl font-black text-slate-800">
+                        {formData.taskAllocations.length}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Tổng công việc</span>
-                    <span className="font-medium text-slate-900">
-                      {formData.taskAllocations.length} đầu việc
-                    </span>
+
+                  <div className="space-y-4 pt-2">
+                    {/* Material Summary */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase">
+                        <Package className="w-3 h-3 text-purple-500" />
+                        Danh mục vật tư
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {formData.materialAllocations.length > 0 ? (
+                          Array.from(
+                            new Set(
+                              formData.materialAllocations.map(
+                                (m) => m.materialName,
+                              ),
+                            ),
+                          ).map((name, i) => (
+                            <Badge
+                              key={i}
+                              variant="secondary"
+                              className="bg-purple-50 text-purple-700 border-purple-100 font-medium"
+                            >
+                              {name}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">
+                            Chưa có vật tư
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Personnel Summary */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase">
+                        <Users className="w-3 h-3 text-blue-500" />
+                        Nhân lực huy động
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {formData.taskAllocations.some((t) => t.labor) ? (
+                          Array.from(
+                            new Set(
+                              formData.taskAllocations
+                                .map((t) => t.labor)
+                                .filter(Boolean),
+                            ),
+                          ).map((labor, i) => (
+                            <Badge
+                              key={i}
+                              variant="secondary"
+                              className="bg-blue-50 text-blue-700 border-blue-100 font-medium"
+                            >
+                              {labor}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">
+                            Chưa phân bổ nhân lực
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Task Summary */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase">
+                        <ClipboardList className="w-3 h-3 text-amber-500" />
+                        Đầu việc triển khai
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {formData.taskAllocations.length > 0 ? (
+                          Array.from(
+                            new Set(
+                              formData.taskAllocations.map((t) => t.name),
+                            ),
+                          ).map((name, i) => (
+                            <Badge
+                              key={i}
+                              variant="secondary"
+                              className="bg-amber-50 text-amber-700 border-amber-100 font-medium"
+                            >
+                              {name}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">
+                            Chưa có đầu việc
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
