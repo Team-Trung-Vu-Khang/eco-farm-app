@@ -81,8 +81,12 @@ export default function CreateGrowthCyclePage() {
       CROP_OPTIONS.find((c) => c.name === formData.cropId)?.name ||
       formData.cropId;
 
+    const varietyName =
+      varieties.find((v) => v.id === formData.variety)?.varietyName ||
+      formData.variety;
+
     addGrowthCycle({
-      name: `Chu kỳ sinh trưởng ${cropName}${formData.variety ? ` - ${formData.variety}` : ""}`,
+      name: `Chu kỳ sinh trưởng ${cropName}${varietyName ? ` - ${varietyName}` : ""}`,
       scope: formData.scope,
       cropId: formData.cropId,
       cropName: cropName,
@@ -277,7 +281,7 @@ export default function CreateGrowthCyclePage() {
                     <SelectContent>
                       {filteredVarieties.length > 0 ? (
                         filteredVarieties.map((v) => (
-                          <SelectItem key={v.id} value={v.varietyName}>
+                          <SelectItem key={v.id} value={v.id}>
                             <div className="flex items-center gap-2">
                               <Flower2 className="w-4 h-4 text-rose-500" />
                               <span>{v.varietyName}</span>
@@ -368,7 +372,10 @@ export default function CreateGrowthCyclePage() {
                   </span>
                   <div className="flex items-center gap-2">
                     <Sprout className="w-4 h-4 text-green-600" />
-                    <span className="font-bold">{formData.variety}</span>
+                    <span className="font-bold">
+                      {varieties.find((v) => v.id === formData.variety)
+                        ?.varietyName || formData.variety}
+                    </span>
                   </div>
                 </div>
               )}

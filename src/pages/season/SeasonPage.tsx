@@ -1,4 +1,3 @@
-import useCropStore from "@/stores/useCropStore";
 import useVarietyStore from "@/stores/useVarietyStore";
 import {
   AdminLayout,
@@ -9,7 +8,7 @@ import {
   useToast,
   type Column,
 } from "@tankhang1/eco-shared-ui";
-import { Calendar, FileText, Hash, Plus } from "lucide-react";
+import { Calendar, FileText, Hash, Plus, Layers } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import useSeasonStore from "../../stores/useSeasonStore";
@@ -67,10 +66,30 @@ const columns: Column<Season>[] = [
         );
       }
 
-      const crop = useCropStore.getState().getCropById(Number(seasons.cropId));
       return (
         <div className="flex font-mono font-bold text-xs text-green-600 rounded-md bg-green-100 border border-green-200 px-2 py-1 items-center gap-3 w-fit">
-          {crop?.name}
+          {seasons.cropId}
+        </div>
+      );
+    },
+  },
+  {
+    key: "stages",
+    label: "Giai đoạn",
+    render: (_, item) => {
+      const stageCount = Object.values(item.selectedStages || {}).reduce(
+        (acc, stages) => acc + Object.keys(stages).length,
+        0,
+      );
+      return (
+        <div className="flex items-center gap-3">
+          <Badge
+            variant="outline"
+            className="gap-1.5 bg-purple-50 text-purple-700 border-purple-200"
+          >
+            <Layers className="w-3 h-3" />
+            {stageCount} giai đoạn
+          </Badge>
         </div>
       );
     },

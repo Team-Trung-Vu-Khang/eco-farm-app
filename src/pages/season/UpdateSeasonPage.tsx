@@ -40,7 +40,6 @@ import useGrowthCycleStore from "../../stores/useGrowthCycleStore";
 import useSeasonStore from "../../stores/useSeasonStore";
 import { FileUploader } from "./components/FileUploader";
 import { GrowthCycleSelectDialog } from "./components/GrowthCycleSelectDialog";
-import useCropStore from "../../stores/useCropStore";
 import useVarietyStore from "../../stores/useVarietyStore";
 import type { CreateSeasonForm, SeasonDocument } from "./types";
 
@@ -50,7 +49,6 @@ export default function UpdateSeasonPage() {
   const { toast } = useToast();
   const { growthCycles } = useGrowthCycleStore();
   const { getSeasonById, updateSeason } = useSeasonStore();
-  const { crops } = useCropStore();
   const { varieties } = useVarietyStore();
 
   const [formData, setFormData] = useState<
@@ -318,12 +316,17 @@ export default function UpdateSeasonPage() {
                           <SelectValue placeholder="-- Chọn cây trồng --" />
                         </SelectTrigger>
                         <SelectContent>
-                          {crops.map((crop) => (
-                            <SelectItem
-                              key={crop.id}
-                              value={crop.id.toString()}
-                            >
-                              {crop.name}
+                          {CROP_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.id} value={opt.name}>
+                              <div className="flex items-center gap-2">
+                                <Avatar className="w-6 h-6">
+                                  <AvatarFallback>
+                                    {opt.name.charAt(0)}
+                                  </AvatarFallback>
+                                  <AvatarImage src={opt.image} />
+                                </Avatar>
+                                <span>{opt.name}</span>
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -354,10 +357,7 @@ export default function UpdateSeasonPage() {
                           <SelectContent>
                             {varieties
                               .filter((v) => {
-                                const crop = crops.find(
-                                  (c) => c.id.toString() === formData.cropId,
-                                );
-                                return crop ? v.crop === crop.cropType : false;
+                                return v.crop === formData.cropId;
                               })
                               .map((variety) => (
                                 <SelectItem key={variety.id} value={variety.id}>

@@ -33,4 +33,32 @@ export const CROP_OPTIONS = [
     image: "https://giongcamau.vn/uploads/shops/2017_03/om5451-copy.jpg",
     group: "Cây lương thực",
   },
+  {
+    id: "Hồ tiêu",
+    name: "Hồ tiêu",
+    image:
+      "https://images.unsplash.com/photo-1596755094514-f87e34085b3c?auto=format&fit=crop&q=80&w=200",
+    group: "Cây công nghiệp",
+  },
+  {
+    id: "Cao su",
+    name: "Cao su",
+    image:
+      "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?auto=format&fit=crop&q=80&w=200",
+    group: "Cây công nghiệp",
+  },
+  {
+    id: "Điều",
+    name: "Điều",
+    image:
+      "https://images.unsplash.com/photo-1596755094514-f87e34085b3c?auto=format&fit=crop&q=80&w=200",
+    group: "Cây công nghiệp",
+  },
+  {
+    id: "Mắc ca",
+    name: "Mắc ca",
+    image:
+      "https://images.unsplash.com/photo-1596755094514-f87e34085b3c?auto=format&fit=crop&q=80&w=200",
+    group: "Cây công nghiệp",
+  },
 ];
