@@ -10,9 +10,9 @@ import { FileDown, Image as ImageIcon, Plus } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 
-import { categories, cropTypeOptions, harvestMethodOptions } from "./mocks";
-import type { Crop } from "./types";
 import useCropStore from "../../stores/useCropStore";
+import { categories, cropTypeOptions } from "./mocks";
+import type { Crop } from "./types";
 
 export default function CropPage() {
   const { toast } = useToast();
@@ -32,11 +32,11 @@ export default function CropPage() {
       label: "Loại cây",
       options: cropTypeOptions,
     },
-    {
-      key: "harvestMethod",
-      label: "Hình thức thu hoạch",
-      options: harvestMethodOptions,
-    },
+    // {
+    //   key: "harvestMethod",
+    //   label: "Hình thức thu hoạch",
+    //   options: harvestMethodOptions,
+    // },
   ];
 
   const columns: Column<Crop>[] = [
@@ -82,6 +82,22 @@ export default function CropPage() {
         </div>
       ),
     },
+    // {
+    //   key: "cropType",
+    //   label: "Loại cây",
+    //   render: (value: string) => (
+    //     <span className="text-sm font-medium text-muted-foreground">
+    //       {value}
+    //     </span>
+    //   ),
+    // },
+    {
+      key: "cropGroup",
+      label: "Nhóm cây trồng",
+      render: (value: string) => (
+        <span className="text-sm text-muted-foreground">{value}</span>
+      ),
+    },
     {
       key: "origin",
       label: "Nguồn gốc",
@@ -91,36 +107,20 @@ export default function CropPage() {
         </span>
       ),
     },
-    {
-      key: "cropType",
-      label: "Loại cây",
-      render: (value: string) => (
-        <span className="text-sm font-medium text-muted-foreground">
-          {value}
-        </span>
-      ),
-    },
-    {
-      key: "cropGroup",
-      label: "Nhóm cây",
-      render: (value: string) => (
-        <span className="text-sm text-muted-foreground">{value}</span>
-      ),
-    },
-    {
-      key: "harvestMethod",
-      label: "Thu hoạch",
-      render: (value: string) => {
-        const option = harvestMethodOptions.find(
-          (opt: any) => opt.value === value,
-        );
-        return (
-          <span className="text-sm text-muted-foreground italic">
-            {option ? option.label : value}
-          </span>
-        );
-      },
-    },
+    // {
+    //   key: "harvestMethod",
+    //   label: "Thu hoạch",
+    //   render: (value: string) => {
+    //     const option = harvestMethodOptions.find(
+    //       (opt: any) => opt.value === value,
+    //     );
+    //     return (
+    //       <span className="text-sm text-muted-foreground italic">
+    //         {option ? option.label : value}
+    //       </span>
+    //     );
+    //   },
+    // },
   ];
 
   const handleDelete = (item: Crop) => {

@@ -35,8 +35,7 @@ const useGroupCropStore = create<GroupCropState>()(
                 id: newId,
                 code: data.code,
                 name: data.name,
-                scientificName: data.scientificName,
-                category: data.category,
+                biological: data.biological,
                 description: data.description,
                 createdAt: new Date().toISOString().split("T")[0],
               };

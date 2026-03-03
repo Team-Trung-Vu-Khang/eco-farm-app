@@ -72,7 +72,7 @@ export const Step1GeographicalSelection: React.FC<
             <CardHeader className="border-b py-4">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <User className="w-4 h-4 text-primary" />
-                Doanh nghiệp sở hữu <span className="text-red-500">*</span>
+                Đơn vị sở hữu <span className="text-red-500">*</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">

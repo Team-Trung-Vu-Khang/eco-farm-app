@@ -1,6 +1,5 @@
 import {
   AdminLayout,
-  Badge,
   Button,
   DataTable,
   DeleteDialog,
@@ -14,8 +13,8 @@ import {
 import { Hash, Leaf, Plus } from "lucide-react";
 import { useState } from "react";
 
-import type { GroupCrop } from "./types";
 import useGroupCropStore from "../../stores/useGroupCropStore";
+import type { GroupCrop } from "./types";
 
 export default function GroupCropPage() {
   const { toast } = useToast();
@@ -28,15 +27,14 @@ export default function GroupCropPage() {
   const [formData, setFormData] = useState({
     code: "",
     name: "",
-    scientificName: "",
-    category: "",
+    biological: "",
     description: "",
   });
 
   const columns: Column<GroupCrop>[] = [
     {
       key: "code",
-      label: "Mã loại cây",
+      label: "Mã nhóm cây",
       render: (value: string) => (
         <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-muted-foreground bg-muted/50 px-2 py-1 rounded-md border w-fit">
           <Hash className="w-3 h-3 opacity-60" />
@@ -46,12 +44,21 @@ export default function GroupCropPage() {
     },
     {
       key: "name",
-      label: "Tên loại cây",
+      label: "Tên nhóm cây",
       render: (value: string) => (
         <div className="flex items-center gap-2">
           <Leaf className="w-4 h-4 text-green-600" />
           <span className="font-bold text-foreground">{value}</span>
         </div>
+      ),
+    },
+    {
+      key: "biological",
+      label: "Đặc tính sinh học",
+      render: (value: string) => (
+        <p className="text-sm text-muted-foreground line-clamp-2 max-w-50">
+          {value}
+        </p>
       ),
     },
     {
@@ -70,8 +77,7 @@ export default function GroupCropPage() {
     setFormData({
       code: "",
       name: "",
-      scientificName: "",
-      category: "",
+      biological: "",
       description: "",
     });
     setFormOpen(true);
@@ -82,8 +88,7 @@ export default function GroupCropPage() {
     setFormData({
       code: item.code,
       name: item.name,
-      scientificName: item.scientificName,
-      category: item.category,
+      biological: item.biological,
       description: item.description,
     });
     setFormOpen(true);
@@ -119,7 +124,7 @@ export default function GroupCropPage() {
   return (
     <AdminLayout
       title="Quản lý nhóm cây trồng"
-      description="Danh mục các loại cây trồng có trên thị trường"
+      description="Danh mục các nhóm cây trồng có trên thị trường"
       actions={
         <Button
           className="shadow-sm hover:shadow-md transition-all active:scale-95 bg-green-600 hover:bg-green-700"
@@ -144,14 +149,14 @@ export default function GroupCropPage() {
         title={
           editItem ? "Chỉnh sửa nhóm cây trồng" : "Thêm mới nhóm cây trồng"
         }
-        size="lg"
+        size="xl"
         onSubmit={handleSubmit}
       >
         <div className="space-y-6 pt-2 pb-4">
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="code" className="font-semibold">
-                Mã loại cây *
+                Mã nhóm cây *
               </Label>
               <Input
                 id="code"
@@ -164,23 +169,23 @@ export default function GroupCropPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="category" className="font-semibold">
-                Phân loại
+              <Label htmlFor="biological" className="font-semibold">
+                Đặc tính sinh học
               </Label>
               <Input
-                id="category"
-                value={formData.category}
+                id="biological"
+                value={formData.biological}
                 onChange={(e) =>
-                  setFormData({ ...formData, category: e.target.value })
+                  setFormData({ ...formData, biological: e.target.value })
                 }
-                placeholder="VD: Cây ăn quả"
+                placeholder="VD: Cây lâu năm"
                 className="focus-visible:ring-green-500"
               />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="name" className="font-semibold">
-              Tên loại cây *
+              Tên nhóm cây *
             </Label>
             <Input
               id="name"

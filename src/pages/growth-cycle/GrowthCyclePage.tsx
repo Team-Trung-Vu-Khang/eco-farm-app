@@ -12,6 +12,7 @@ import { Link, useLocation } from "wouter";
 import { Hash, Layers, Plus, Sprout } from "lucide-react";
 import type { GrowthCycle } from "./types";
 import useGrowthCycleStore from "../../stores/useGrowthCycleStore";
+import useVarietyStore from "@/stores/useVarietyStore";
 
 const columns: Column<GrowthCycle>[] = [
   {
@@ -45,6 +46,23 @@ const columns: Column<GrowthCycle>[] = [
         {value === "crop" ? "Theo loại" : "Theo giống"}
       </Badge>
     ),
+  },
+  {
+    key: "applyFor",
+    label: "Áp dụng cho",
+    render: (_, row: GrowthCycle) => {
+      const label =
+        row.scope === "crop"
+          ? row.cropName
+          : useVarietyStore.getState().getVarietyById(row.variety!)
+              ?.varietyName;
+
+      return (
+        <div className="flex font-mono font-bold text-xs text-green-600 rounded-md bg-green-100 border border-green-200 px-2 py-1 items-center gap-3 w-fit">
+          {label}
+        </div>
+      );
+    },
   },
   {
     key: "totalDays",

@@ -351,7 +351,7 @@ const SearchZonePage = () => {
                   </div>
                   <div className="grid grid-cols-1 gap-4">
                     <MultiSelectField
-                      label="Doanh nghiệp sở hữu"
+                      label="Đơn vị sở hữu"
                       options={enterprises.map((e) => ({
                         id: e.id,
                         name: e.brandName || e.name,

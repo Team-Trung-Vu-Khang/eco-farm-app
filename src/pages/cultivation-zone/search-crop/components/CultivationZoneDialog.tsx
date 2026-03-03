@@ -27,7 +27,7 @@ import {
 import type { Region } from "../../../region-chart/constants";
 import useRegionStore from "../../../../stores/useRegionStore";
 import useEnterpriseStore from "../../../../stores/useEnterpriseStore";
-import { PROVINCES } from "@/constants/province";
+import { PROVINCES } from "../../../../constants/province";
 
 export const CultivationZoneDialog = ({
   open,

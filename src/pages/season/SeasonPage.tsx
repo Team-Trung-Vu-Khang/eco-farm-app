@@ -1,3 +1,5 @@
+import useCropStore from "@/stores/useCropStore";
+import useVarietyStore from "@/stores/useVarietyStore";
 import {
   AdminLayout,
   Badge,
@@ -7,24 +9,11 @@ import {
   useToast,
   type Column,
 } from "@tankhang1/eco-shared-ui";
+import { Calendar, FileText, Hash, Plus } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Calendar, FileText, Hash, Plus, Sprout } from "lucide-react";
-import type { Season } from "./types";
 import useSeasonStore from "../../stores/useSeasonStore";
-
-const statusMap: Record<
-  string,
-  {
-    label: string;
-    variant: "default" | "secondary" | "outline" | "destructive";
-  }
-> = {
-  planning: { label: "Lập kế hoạch", variant: "secondary" },
-  active: { label: "Đang triển khai", variant: "default" },
-  completed: { label: "Hoàn thành", variant: "outline" },
-  cancelled: { label: "Đã hủy", variant: "destructive" },
-};
+import type { Season } from "./types";
 
 const columns: Column<Season>[] = [
   {
@@ -61,39 +50,43 @@ const columns: Column<Season>[] = [
     ),
   },
   {
-    key: "status",
-    label: "Trạng thái",
-    render: (value) => {
-      const config = statusMap[value as string] || {
-        label: value,
-        variant: "outline",
-      };
-      return <Badge variant={config.variant}>{config.label}</Badge>;
+    key: "applyFor",
+    label: "Áp dụng cho",
+    render: (_: string[], seasons: Season) => {
+      const isUseVariety = !!seasons?.varietyId;
+
+      if (isUseVariety) {
+        const variety = useVarietyStore
+          .getState()
+          .getVarietyById(seasons.varietyId!);
+
+        return (
+          <div className="flex font-mono font-bold text-xs text-green-600 rounded-md bg-green-100 border border-green-200 px-2 py-1 items-center gap-3 w-fit">
+            {variety?.varietyName}
+          </div>
+        );
+      }
+
+      const crop = useCropStore.getState().getCropById(Number(seasons.cropId));
+      return (
+        <div className="flex font-mono font-bold text-xs text-green-600 rounded-md bg-green-100 border border-green-200 px-2 py-1 items-center gap-3 w-fit">
+          {crop?.name}
+        </div>
+      );
     },
   },
   {
-    key: "growthCycleIds",
-    label: "Chu kỳ & Tài liệu",
-    render: (value: string[], item: Season) => (
+    key: "documents",
+    label: "Tài liệu",
+    render: (value: Document[]) => (
       <div className="flex items-center gap-3">
-        {value.length > 0 ? (
-          <Badge variant="secondary" className="gap-1.5">
-            <Sprout className="w-3 h-3 text-green-600" />
-            {value.length} chu kỳ
-          </Badge>
-        ) : (
-          <span className="text-xs text-muted-foreground italic">
-            Chưa có chu kỳ
-          </span>
-        )}
-
-        {item.documents.length > 0 && (
+        {value.length > 0 && (
           <Badge
             variant="outline"
             className="gap-1.5 bg-blue-50 text-blue-700 border-blue-200"
           >
             <FileText className="w-3 h-3" />
-            {item.documents.length} tài liệu
+            {value.length} tài liệu
           </Badge>
         )}
       </div>

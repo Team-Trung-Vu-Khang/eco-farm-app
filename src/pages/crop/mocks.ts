@@ -2,7 +2,7 @@ import type { Crop } from "./types";
 import { initialEditorValue } from "../docs/mocks";
 
 export const CROP_HIERARCHY: Record<string, Record<string, string[]>> = {
-  "Cây ăn quả": {
+  "Cây ăn trái (Fruit Trees)": {
     "Sầu riêng": [
       "Ri6",
       "Monthong (Thái)",
@@ -29,7 +29,7 @@ export const initialData: Crop[] = [
       "https://traicayvuongtron.vn/resources/cache/original_xxxxx/WEBSITE%202023/tim%20hieu%20them/blog/kinh%20nghiem%2Cmeo%20vat/trai%20cay/trai%20cay%20dac%20san/sauriengri6/sauriengri62.jpg.webp",
     name: "Sầu riêng Ri6",
     cropType: "Sầu riêng",
-    cropGroup: "Cây ăn trái",
+    cropGroup: "Cây ăn trái (Fruit Trees)",
     harvestMethod: "manual",
     technicalSpecs: {
       scientificName: "Durio zibethinus",
@@ -149,7 +149,7 @@ export const initialData: Crop[] = [
       "https://nongsantaynguyen.net/wp-content/uploads/2017/04/sau-rieng-dona-sau-rieng-thai-lan.jpg",
     name: "Sầu riêng Dona",
     cropType: "Sầu riêng",
-    cropGroup: "Cây ăn trái",
+    cropGroup: "Cây ăn trái (Fruit Trees)",
     harvestMethod: "manual",
     technicalSpecs: {
       scientificName: "Durio zibethinus (Monthong)",
@@ -169,7 +169,7 @@ export const initialData: Crop[] = [
       "https://cdn.tgdd.vn/2021/05/CookProductThumb/thumb2-620x620-11.jpg",
     name: "Sầu riêng Ri6",
     cropType: "Sầu riêng",
-    cropGroup: "Cây ăn trái",
+    cropGroup: "Cây ăn trái (Fruit Trees)",
     harvestMethod: "manual",
     technicalSpecs: {
       scientificName: "Durio zibethinus (Ri6)",
@@ -189,7 +189,7 @@ export const initialData: Crop[] = [
       "https://traicayvuongtron.vn/resources/cache/original_xxxxx/WEBSITE%202023/tim%20hieu%20them/blog/kinh%20nghiem%2Cmeo%20vat/trai%20cay/trai%20cay%20nuoc%20ngoai/sauriengmonthong/monthong2.png.webp",
     name: "Sầu riêng Monthong (Thái)",
     cropType: "Sầu riêng",
-    cropGroup: "Cây ăn trái",
+    cropGroup: "Cây ăn trái (Fruit Trees)",
     harvestMethod: "manual",
     technicalSpecs: {
       scientificName: "Durio zibethinus (Monthong)",
@@ -209,7 +209,7 @@ export const initialData: Crop[] = [
       "https://sauriengoi.vn/wp-content/uploads/2023/08/SAU-RIENG-MUSANG-KING-1-1.jpg",
     name: "Sầu riêng Musang King",
     cropType: "Sầu riêng",
-    cropGroup: "Cây ăn trái",
+    cropGroup: "Cây ăn trái (Fruit Trees)",
     harvestMethod: "manual",
     technicalSpecs: {
       scientificName: "Durio zibethinus (D197)",
@@ -229,7 +229,7 @@ export const initialData: Crop[] = [
       "https://cdn.tgdd.vn/2021/05/CookProductThumb/SRVuong-620x620.jpg",
     name: "Sầu riêng Chuồng Bò",
     cropType: "Sầu riêng",
-    cropGroup: "Cây ăn trái",
+    cropGroup: "Cây ăn trái (Fruit Trees)",
     harvestMethod: "manual",
     technicalSpecs: {
       scientificName: "Durio zibethinus (Chuồng Bò)",
@@ -249,7 +249,7 @@ export const initialData: Crop[] = [
       "https://cdn.tgdd.vn/Files/2021/08/17/1375787/dau-nanh-la-gi-cong-dung-va-cac-loai-dau-nanh-pho-bien-202108171018318625.jpg",
     name: "Đậu nành miền Nam",
     cropType: "Đậu nành",
-    cropGroup: "Hạt ngũ cốc",
+    cropGroup: "Cây lương thực (Cereal/Grain Crops)",
     harvestMethod: "machine",
     technicalSpecs: {
       scientificName: "Glycine max",
@@ -268,7 +268,7 @@ export const initialData: Crop[] = [
     illustration: "https://giongcamau.vn/uploads/shops/2017_03/om5451-copy.jpg",
     name: "Lúa mùa OM5451",
     cropType: "Lúa",
-    cropGroup: "Cây lương thực",
+    cropGroup: "Cây lương thực (Cereal/Grain Crops)",
     harvestMethod: "machine",
     technicalSpecs: {
       scientificName: "Oryza sativa",
