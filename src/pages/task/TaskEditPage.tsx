@@ -22,6 +22,8 @@ import {
   Users,
   MapPin,
   Trash2,
+  Shield,
+  ClipboardCheck,
 } from "lucide-react";
 import {
   AdminLayout,
@@ -55,10 +57,13 @@ import {
 import useTaskStore, {
   type MaterialAllocation,
 } from "../../stores/useTaskStore";
+import type { TaskAllocation } from "../plan/types";
 import usePlanStore from "../../stores/usePlanStore";
+import useAmendmentPlanStore from "../../stores/useAmendmentPlanStore";
 import usePersonnelStore from "../../stores/usePersonnelStore";
 import useTeamStore from "../../stores/useTeamStore";
 import useRegimenStore from "../../stores/useRegimenStore";
+import { StageAllocation } from "../plan/components/StageAllocation";
 
 // Material data constants (keeping them local or importing if they move)
 const MATERIAL_TYPES = [
@@ -163,11 +168,15 @@ export default function TaskEditPage() {
     regimenId: "",
     assignedType: "individual" as "individual" | "team",
     assignedTo: [] as string[],
+    supervisors: [] as string[],
+    qualityInspectors: [] as string[],
     startDate: "",
     endDate: "",
     priority: "medium" as "low" | "medium" | "high",
     description: "",
     materials: [] as MaterialAllocation[],
+    tasks: [] as TaskAllocation[],
+    selectedStages: [] as string[],
   });
 
   useEffect(() => {
@@ -199,17 +208,28 @@ export default function TaskEditPage() {
         regimenId: rId,
         assignedType: task.assignedType,
         assignedTo: task.assignedTo,
+        supervisors: task.supervisors || [],
+        qualityInspectors: task.qualityInspectors || [],
         startDate: task.startDate,
         endDate: task.endDate,
         priority: task.priority,
         description: task.description,
         materials: task.materials || [],
+        tasks: (task as any).tasks || [],
+        selectedStages:
+          task.stage && task.stage !== "N/A"
+            ? task.stage.split(", ").filter(Boolean)
+            : [],
       });
     }
   }, [task, plans, regimens]);
 
   const [isAssigneeDialogOpen, setIsAssigneeDialogOpen] = useState(false);
   const [searchAssignee, setSearchAssignee] = useState("");
+  const [isSupervisorDialogOpen, setIsSupervisorDialogOpen] = useState(false);
+  const [searchSupervisor, setSearchSupervisor] = useState("");
+  const [isInspectorDialogOpen, setIsInspectorDialogOpen] = useState(false);
+  const [searchInspector, setSearchInspector] = useState("");
   const [newMaterial, setNewMaterial] = useState({
     type: "fertilizer" as "fertilizer" | "pesticide" | "tool" | "other",
     name: "",
@@ -260,6 +280,38 @@ export default function TaskEditPage() {
     });
   };
 
+  const handleAddMaterialFromStage = (
+    item: Omit<MaterialAllocation, "id" | "quantity" | "type">,
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      materials: [
+        ...prev.materials,
+        {
+          id: Date.now(),
+          name: (item as any).materialName || "",
+          quantity: Number((item as any).quantity) || 0,
+          unit: (item as any).unit || "kg",
+          type: (item as any).materialType || "other",
+        },
+      ],
+    }));
+  };
+
+  const handleAddTask = (item: Omit<TaskAllocation, "id">) => {
+    setFormData((prev) => ({
+      ...prev,
+      tasks: [...prev.tasks, { id: Date.now(), ...item }],
+    }));
+  };
+
+  const handleRemoveTask = (id: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      tasks: prev.tasks.filter((t) => t.id !== id),
+    }));
+  };
+
   const handleRemoveMaterial = (id: number) => {
     setFormData((prev) => ({
       ...prev,
@@ -282,6 +334,8 @@ export default function TaskEditPage() {
       stage: formData.stage || "N/A",
       assignedTo: formData.assignedTo,
       assignedType: formData.assignedType,
+      supervisors: formData.supervisors,
+      qualityInspectors: formData.qualityInspectors,
       startDate: formData.startDate,
       endDate: formData.endDate,
       priority: formData.priority,
@@ -520,104 +574,341 @@ export default function TaskEditPage() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-black uppercase text-slate-400">
-                      Loại phân công *
+                {/* Nhân sự quản lý */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-blue-500" />
+                      Nhân sự quản lý
                     </Label>
-                    <Select
-                      value={formData.assignedType}
-                      onValueChange={(val: any) =>
-                        setFormData({
-                          ...formData,
-                          assignedType: val,
-                          assignedTo: [],
-                        })
-                      }
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs rounded-xl border-blue-200 text-blue-600 hover:bg-blue-50"
+                      onClick={() => setIsSupervisorDialogOpen(true)}
                     >
-                      <SelectTrigger className="rounded-xl">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="individual">Cá nhân</SelectItem>
-                        <SelectItem value="team">Đội nhóm</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      <Plus className="w-3.5 h-3.5 mr-1" /> Thêm
+                    </Button>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-black uppercase text-slate-400">
-                      {formData.assignedType === "team" ? "Đội nhóm" : "Người"}{" "}
-                      thực hiện *
+                  <div className="grid grid-cols-1 gap-2">
+                    {formData.supervisors.map((name) => {
+                      const item = personnel.find((p) => p.fullName === name);
+                      return (
+                        <div
+                          key={name}
+                          className="flex items-center justify-between p-3 rounded-2xl border bg-blue-50/30 border-blue-100 group hover:border-blue-200 transition-all animate-in fade-in"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 overflow-hidden rounded-xl border border-blue-100 bg-white shadow-sm flex items-center justify-center shrink-0">
+                              {item?.avatar ? (
+                                <img
+                                  src={item.avatar}
+                                  alt={name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <Shield className="w-4 h-4 text-blue-400" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-slate-800 leading-none">
+                                {name}
+                              </p>
+                              <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                {item?.taxCode || "Quản lý"}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-full"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                supervisors: prev.supervisors.filter(
+                                  (n) => n !== name,
+                                ),
+                              }))
+                            }
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                    {formData.supervisors.length === 0 && (
+                      <div className="py-5 border-2 border-dashed border-blue-100 rounded-2xl flex flex-col items-center justify-center bg-blue-50/20">
+                        <Shield className="w-6 h-6 text-blue-200 mb-1" />
+                        <p className="text-xs text-slate-400 italic">
+                          Chưa có nhân sự quản lý
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Kiểm định chất lượng */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                      <ClipboardCheck className="w-4 h-4 text-violet-500" />
+                      Kiểm định chất lượng
                     </Label>
-                    <div className="space-y-3">
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal rounded-xl border-slate-200"
-                        onClick={() => setIsAssigneeDialogOpen(true)}
-                      >
-                        <Plus className="w-4 h-4 mr-2" /> Chọn{" "}
-                        {formData.assignedType === "team"
-                          ? "đội nhóm"
-                          : "nhân sự"}
-                        ...
-                      </Button>
-                      <div className="grid grid-cols-1 gap-2 mt-2">
-                        {formData.assignedTo.map((name) => {
-                          const item = availableAssignees.find(
-                            (a) => a.name === name,
-                          );
-                          return (
-                            <div
-                              key={name}
-                              className="flex items-center justify-between p-3 rounded-2xl border bg-white border-slate-100 group transition-all hover:border-primary/30 hover:shadow-md animate-in fade-in slide-in-from-bottom-2"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 overflow-hidden rounded-xl border bg-slate-50 shadow-sm flex items-center justify-center shrink-0">
-                                  {formData.assignedType === "team" ? (
-                                    <Users className="w-5 h-5 text-blue-500" />
-                                  ) : item?.avatar ? (
-                                    <img
-                                      src={item.avatar}
-                                      alt={name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <User className="w-5 h-5 text-emerald-500" />
-                                  )}
-                                </div>
-                                <div>
-                                  <p className="text-sm font-black text-slate-800 leading-none">
-                                    {name}
-                                  </p>
-                                  {item && (
-                                    <p className="text-[10px] text-slate-400 font-mono tracking-tighter mt-1">
-                                      {item.code}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-full"
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs rounded-xl border-violet-200 text-violet-600 hover:bg-violet-50"
+                      onClick={() => setIsInspectorDialogOpen(true)}
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1" /> Thêm
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2">
+                    {formData.qualityInspectors.map((name) => {
+                      const item = personnel.find((p) => p.fullName === name);
+                      return (
+                        <div
+                          key={name}
+                          className="flex items-center justify-between p-3 rounded-2xl border bg-violet-50/30 border-violet-100 group hover:border-violet-200 transition-all animate-in fade-in"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 overflow-hidden rounded-xl border border-violet-100 bg-white shadow-sm flex items-center justify-center shrink-0">
+                              {item?.avatar ? (
+                                <img
+                                  src={item.avatar}
+                                  alt={name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <ClipboardCheck className="w-4 h-4 text-violet-400" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-slate-800 leading-none">
+                                {name}
+                              </p>
+                              <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                {item?.taxCode || "Kiểm định"}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-full"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                qualityInspectors:
+                                  prev.qualityInspectors.filter(
+                                    (n) => n !== name,
+                                  ),
+                              }))
+                            }
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                    {formData.qualityInspectors.length === 0 && (
+                      <div className="py-5 border-2 border-dashed border-violet-100 rounded-2xl flex flex-col items-center justify-center bg-violet-50/20">
+                        <ClipboardCheck className="w-6 h-6 text-violet-200 mb-1" />
+                        <p className="text-xs text-slate-400 italic">
+                          Chưa có nhân sự kiểm định
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Supervisor Dialog */}
+                <Dialog
+                  open={isSupervisorDialogOpen}
+                  onOpenChange={setIsSupervisorDialogOpen}
+                >
+                  <DialogContent className="max-w-md p-0 overflow-hidden">
+                    <DialogHeader className="p-6 pb-3 border-b">
+                      <DialogTitle className="flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-blue-500" /> Chọn nhân
+                        sự quản lý
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="px-5 pb-3 pt-4">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                        <Input
+                          placeholder="Tìm theo tên..."
+                          className="pl-9 h-9 text-sm"
+                          value={searchSupervisor}
+                          onChange={(e) => setSearchSupervisor(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <ScrollArea className="h-[300px] px-3">
+                      <div className="space-y-1 pb-2">
+                        {personnel
+                          .filter((p) =>
+                            p.fullName
+                              .toLowerCase()
+                              .includes(searchSupervisor.toLowerCase()),
+                          )
+                          .map((p) => {
+                            const isSelected = formData.supervisors.includes(
+                              p.fullName,
+                            );
+                            return (
+                              <button
+                                key={p.id}
+                                type="button"
+                                className={cn(
+                                  "w-full flex items-center gap-3 p-2.5 rounded-xl border transition-all text-left",
+                                  isSelected
+                                    ? "bg-blue-50 border-blue-200"
+                                    : "bg-white border-transparent hover:border-slate-200",
+                                )}
                                 onClick={() =>
                                   setFormData((prev) => ({
                                     ...prev,
-                                    assignedTo: prev.assignedTo.filter(
-                                      (n) => n !== name,
-                                    ),
+                                    supervisors: isSelected
+                                      ? prev.supervisors.filter(
+                                          (n) => n !== p.fullName,
+                                        )
+                                      : [...prev.supervisors, p.fullName],
                                   }))
                                 }
                               >
-                                <X className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          );
-                        })}
+                                <div className="h-9 w-9 overflow-hidden rounded-full border bg-slate-100 flex items-center justify-center shrink-0">
+                                  {p.avatar ? (
+                                    <img
+                                      src={p.avatar}
+                                      alt={p.fullName}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <User className="w-4 h-4 text-blue-400" />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-slate-800 truncate">
+                                    {p.fullName}
+                                  </p>
+                                  <p className="text-[11px] text-slate-400 truncate">
+                                    {p.taxCode || "—"}
+                                  </p>
+                                </div>
+                                {isSelected && (
+                                  <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0" />
+                                )}
+                              </button>
+                            );
+                          })}
+                      </div>
+                    </ScrollArea>
+                    <DialogFooter className="p-4 bg-slate-50 border-t">
+                      <Button
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                        onClick={() => setIsSupervisorDialogOpen(false)}
+                      >
+                        Xác nhận ({formData.supervisors.length})
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Inspector Dialog */}
+                <Dialog
+                  open={isInspectorDialogOpen}
+                  onOpenChange={setIsInspectorDialogOpen}
+                >
+                  <DialogContent className="max-w-md p-0 overflow-hidden">
+                    <DialogHeader className="p-6 pb-3 border-b">
+                      <DialogTitle className="flex items-center gap-2">
+                        <ClipboardCheck className="w-4 h-4 text-violet-500" />{" "}
+                        Chọn nhân sự kiểm định chất lượng
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="px-5 pb-3 pt-4">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                        <Input
+                          placeholder="Tìm theo tên..."
+                          className="pl-9 h-9 text-sm"
+                          value={searchInspector}
+                          onChange={(e) => setSearchInspector(e.target.value)}
+                        />
                       </div>
                     </div>
-                  </div>
-                </div>
+                    <ScrollArea className="h-[300px] px-3">
+                      <div className="space-y-1 pb-2">
+                        {personnel
+                          .filter((p) =>
+                            p.fullName
+                              .toLowerCase()
+                              .includes(searchInspector.toLowerCase()),
+                          )
+                          .map((p) => {
+                            const isSelected =
+                              formData.qualityInspectors.includes(p.fullName);
+                            return (
+                              <button
+                                key={p.id}
+                                type="button"
+                                className={cn(
+                                  "w-full flex items-center gap-3 p-2.5 rounded-xl border transition-all text-left",
+                                  isSelected
+                                    ? "bg-violet-50 border-violet-200"
+                                    : "bg-white border-transparent hover:border-slate-200",
+                                )}
+                                onClick={() =>
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    qualityInspectors: isSelected
+                                      ? prev.qualityInspectors.filter(
+                                          (n) => n !== p.fullName,
+                                        )
+                                      : [...prev.qualityInspectors, p.fullName],
+                                  }))
+                                }
+                              >
+                                <div className="h-9 w-9 overflow-hidden rounded-full border bg-slate-100 flex items-center justify-center shrink-0">
+                                  {p.avatar ? (
+                                    <img
+                                      src={p.avatar}
+                                      alt={p.fullName}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <User className="w-4 h-4 text-violet-400" />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-slate-800 truncate">
+                                    {p.fullName}
+                                  </p>
+                                  <p className="text-[11px] text-slate-400 truncate">
+                                    {p.taxCode || "—"}
+                                  </p>
+                                </div>
+                                {isSelected && (
+                                  <CheckCircle2 className="w-4 h-4 text-violet-500 shrink-0" />
+                                )}
+                              </button>
+                            );
+                          })}
+                      </div>
+                    </ScrollArea>
+                    <DialogFooter className="p-4 bg-slate-50 border-t">
+                      <Button
+                        className="w-full bg-violet-600 hover:bg-violet-700"
+                        onClick={() => setIsInspectorDialogOpen(false)}
+                      >
+                        Xác nhận ({formData.qualityInspectors.length})
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </CardContent>
             </Card>
           </div>
@@ -736,252 +1027,40 @@ export default function TaskEditPage() {
     },
     {
       id: "resources",
-      title: "Nguồn lực vật tư",
-      description: "Điều chỉnh vật tư phân bổ",
+      title: "Vật tư & Nhân sự",
+      description: "Phân bổ vật tư và nhân sự theo giai đoạn",
       content: (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-left">
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="border-none shadow-sm rounded-[32px] overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between bg-slate-50/50 border-b border-slate-100">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Package className="w-5 h-5 text-emerald-500" /> Danh mục vật
-                  tư sử dụng
-                </CardTitle>
-                <Badge
-                  variant="outline"
-                  className="rounded-full border-slate-200 text-slate-500 font-bold px-4"
-                >
-                  {formData.materials.length} hạng mục
-                </Badge>
-              </CardHeader>
-              <CardContent className="pt-8 min-h-[400px]">
-                <div className="space-y-4">
-                  {formData.materials.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between p-5 bg-white rounded-2xl border border-slate-100 group transition-all hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-500/5 animate-in fade-in zoom-in-95"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={cn(
-                            "w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm",
-                            MATERIAL_TYPES.find((t) => t.id === item.type)?.bg,
-                          )}
-                        >
-                          {(() => {
-                            const Icon =
-                              MATERIAL_TYPES.find((t) => t.id === item.type)
-                                ?.icon || Package;
-                            return (
-                              <Icon
-                                className={cn(
-                                  "w-6 h-6",
-                                  MATERIAL_TYPES.find((t) => t.id === item.type)
-                                    ?.color,
-                                )}
-                              />
-                            );
-                          })()}
-                        </div>
-                        <div>
-                          <p className="font-black text-slate-800 leading-none mb-1">
-                            {item.name}
-                          </p>
-                          <Badge
-                            variant="secondary"
-                            className="text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 border-none px-2 py-0.5"
-                          >
-                            {
-                              MATERIAL_TYPES.find((t) => t.id === item.type)
-                                ?.label
-                            }
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-6">
-                        <div className="text-right">
-                          <p className="text-lg font-black text-emerald-600 leading-none">
-                            {item.quantity}
-                          </p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            {item.unit}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveMaterial(item.id)}
-                          className="h-10 w-10 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors"
-                        >
-                          <X className="w-5 h-5" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  {formData.materials.length === 0 && (
-                    <div className="text-center py-20 border-2 border-dashed border-slate-100 rounded-[40px] bg-slate-50/30">
-                      <div className="bg-white w-20 h-20 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-center mx-auto mb-4 animate-bounce duration-[3s]">
-                        <Package className="w-10 h-10 text-slate-200" />
-                      </div>
-                      <h3 className="text-slate-900 font-black text-lg">
-                        Chưa có vật tư
-                      </h3>
-                      <p className="text-slate-400 text-sm max-w-[200px] mx-auto mt-1 leading-relaxed">
-                        Điều chỉnh danh sách vật tư bên tay phải
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+        <div className="max-w-3xl mx-auto space-y-6">
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-slate-900">
+              Vật tư & Công việc Thực hiện
+            </h3>
+            <p className="text-slate-500 text-sm mt-1 max-w-lg mx-auto">
+              Chỉnh sửa vật tư và phân công nhân sự cho từng giai đoạn công
+              việc.
+            </p>
           </div>
-
-          <div className="space-y-6">
-            <Card className="border-emerald-100 shadow-md ring-1 ring-emerald-50 rounded-[32px] overflow-hidden">
-              <CardHeader className="bg-emerald-50/30 border-b border-emerald-50">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Plus className="w-5 h-5 text-emerald-600" /> Thêm vật tư mới
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6 pt-6">
-                <div className="grid grid-cols-2 gap-3">
-                  {MATERIAL_TYPES.map((type) => {
-                    const Icon = type.icon;
-                    const isSelected = newMaterial.type === type.id;
-                    return (
-                      <div
-                        key={type.id}
-                        onClick={() =>
-                          setNewMaterial((prev) => ({
-                            ...prev,
-                            type: type.id as any,
-                            name: "",
-                            unit: MATERIAL_UNITS[
-                              type.id as keyof typeof MATERIAL_UNITS
-                            ][0],
-                          }))
-                        }
-                        className={cn(
-                          "cursor-pointer rounded-2xl border-2 p-4 flex flex-col items-center gap-2 transition-all relative group overflow-hidden",
-                          isSelected
-                            ? `${type.bg} ${type.border} shadow-sm border-2`
-                            : "hover:bg-slate-50 border-slate-100",
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            "w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110",
-                            isSelected
-                              ? `${type.color.replace("text-", "bg-").replace("500", "500")} text-white`
-                              : "bg-slate-100 text-slate-400",
-                          )}
-                        >
-                          <Icon className="w-5 h-5 shadow-sm" />
-                        </div>
-                        <span
-                          className={cn(
-                            "text-[10px] font-black uppercase tracking-wider",
-                            isSelected ? type.color : "text-slate-500",
-                          )}
-                        >
-                          {type.label}
-                        </span>
-                        {isSelected && (
-                          <div className="absolute top-1 right-1">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="space-y-4 pt-2">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-slate-400 tracking-[1px]">
-                      Tên vật tư
-                    </Label>
-                    <Select
-                      value={newMaterial.name}
-                      onValueChange={(val) => {
-                        const typeOptions =
-                          MATERIAL_OPTIONS[
-                            newMaterial.type as keyof typeof MATERIAL_OPTIONS
-                          ];
-                        const opt = typeOptions.find((o) => o.value === val);
-                        setNewMaterial((prev) => ({
-                          ...prev,
-                          name: val,
-                          unit: opt?.unit || "kg",
-                        }));
-                      }}
-                    >
-                      <SelectTrigger className="h-12 rounded-xl border-slate-200">
-                        <SelectValue placeholder="Chọn vật tư..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {MATERIAL_OPTIONS[
-                          newMaterial.type as keyof typeof MATERIAL_OPTIONS
-                        ].map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase text-slate-400 tracking-[1px]">
-                        Số lượng
-                      </Label>
-                      <Input
-                        type="number"
-                        value={newMaterial.quantity}
-                        onChange={(e) =>
-                          setNewMaterial((prev) => ({
-                            ...prev,
-                            quantity: e.target.value,
-                          }))
-                        }
-                        placeholder="0"
-                        className="h-12 rounded-xl border-slate-200"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase text-slate-400 tracking-[1px]">
-                        Đơn vị
-                      </Label>
-                      <Select
-                        value={newMaterial.unit}
-                        onValueChange={(val) =>
-                          setNewMaterial((prev) => ({ ...prev, unit: val }))
-                        }
-                      >
-                        <SelectTrigger className="h-12 rounded-xl border-slate-200">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {MATERIAL_UNITS[
-                            newMaterial.type as keyof typeof MATERIAL_UNITS
-                          ].map((u) => (
-                            <SelectItem key={u} value={u}>
-                              {u}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <Button
-                    onClick={handleAddMaterial}
-                    className="w-full h-12 shadow-md mt-2 bg-emerald-600 hover:bg-emerald-700 rounded-xl font-black text-sm"
-                    disabled={!newMaterial.name || !newMaterial.quantity}
-                  >
-                    <Plus className="w-4 h-4 mr-2" /> Thêm vào danh sách
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="space-y-4">
+            {(formData.selectedStages.length > 0
+              ? formData.selectedStages
+              : [formData.stage || "Công việc chính"]
+            ).map((stageName, idx) => (
+              <StageAllocation
+                key={stageName}
+                stageName={stageName}
+                index={idx}
+                allocations={(formData.materials as any[]).filter(
+                  (m) => m.stageId === stageName,
+                )}
+                tasks={formData.tasks.filter((t) => t.stageId === stageName)}
+                onAddMaterial={(item) =>
+                  handleAddMaterialFromStage(item as any)
+                }
+                onRemoveMaterial={handleRemoveMaterial}
+                onAddTask={handleAddTask}
+                onRemoveTask={handleRemoveTask}
+              />
+            ))}
           </div>
         </div>
       ),
@@ -1001,7 +1080,7 @@ export default function TaskEditPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-8">
-                <div className="bg-gradient-to-br from-emerald-50 to-teal-50/30 p-8 rounded-[40px] border border-emerald-100 shadow-sm relative overflow-hidden mb-8">
+                <div className="bg-linear-to-br from-emerald-50 to-teal-50/30 p-8 rounded-[40px] border border-emerald-100 shadow-sm relative overflow-hidden mb-8">
                   <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl" />
                   <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="space-y-4">
@@ -1071,49 +1150,83 @@ export default function TaskEditPage() {
                       thực hiện
                     </div>
                     <div className="p-6 rounded-[32px] border border-slate-100 bg-slate-50/50 space-y-4">
-                      <div className="flex items-center -space-x-3 mb-2">
-                        {formData.assignedTo.slice(0, 5).map((name, idx) => {
-                          const item = availableAssignees.find(
-                            (a) => a.name === name,
-                          );
-                          return (
-                            <div
-                              key={idx}
-                              className="w-12 h-12 rounded-[18px] border-4 border-white overflow-hidden bg-white shadow-sm flex items-center justify-center ring-1 ring-slate-100"
-                              title={name}
-                            >
-                              {formData.assignedType === "team" ? (
-                                <Users className="w-6 h-6 text-blue-500" />
-                              ) : item?.avatar ? (
-                                <img
-                                  src={item.avatar}
-                                  alt=""
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <User className="w-6 h-6 text-emerald-500" />
-                              )}
-                            </div>
-                          );
-                        })}
-                        {formData.assignedTo.length > 5 && (
-                          <div className="w-12 h-12 rounded-[18px] border-4 border-white bg-slate-800 text-white flex items-center justify-center text-sm font-black ring-1 ring-slate-100">
-                            +{formData.assignedTo.length - 5}
+                      {/* Top-level assignedTo */}
+                      {formData.assignedTo.length > 0 && (
+                        <>
+                          <div className="flex items-center -space-x-3 mb-2">
+                            {formData.assignedTo
+                              .slice(0, 5)
+                              .map((name, idx) => {
+                                const item = availableAssignees.find(
+                                  (a) => a.name === name,
+                                );
+                                return (
+                                  <div
+                                    key={idx}
+                                    className="w-12 h-12 rounded-[18px] border-4 border-white overflow-hidden bg-white shadow-sm flex items-center justify-center ring-1 ring-slate-100"
+                                    title={name}
+                                  >
+                                    {formData.assignedType === "team" ? (
+                                      <Users className="w-6 h-6 text-blue-500" />
+                                    ) : item?.avatar ? (
+                                      <img
+                                        src={item.avatar}
+                                        alt=""
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <User className="w-6 h-6 text-emerald-500" />
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            {formData.assignedTo.length > 5 && (
+                              <div className="w-12 h-12 rounded-[18px] border-4 border-white bg-slate-800 text-white flex items-center justify-center text-sm font-black ring-1 ring-slate-100">
+                                +{formData.assignedTo.length - 5}
+                              </div>
+                            )}
                           </div>
+                          <div>
+                            <p className="font-black text-slate-800 text-base leading-tight mb-0.5">
+                              {formData.assignedTo.join(", ")}
+                            </p>
+                            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                              {formData.assignedType === "team"
+                                ? "Thực hiện bởi đội nhóm"
+                                : "Phân công cá nhân trực tiếp"}
+                            </p>
+                          </div>
+                        </>
+                      )}
+                      {/* Stage-level tasks personnel */}
+                      {formData.tasks.length > 0 && (
+                        <div className="border-t border-slate-100 pt-4 space-y-2">
+                          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
+                            Nhân sự theo công việc
+                          </p>
+                          {formData.tasks.map((t) => (
+                            <div key={t.id} className="flex items-start gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold text-slate-700 truncate">
+                                  {t.name}
+                                </p>
+                                {t.labor && (
+                                  <p className="text-[11px] text-slate-500">
+                                    {t.labor}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {formData.assignedTo.length === 0 &&
+                        formData.tasks.length === 0 && (
+                          <p className="font-black text-slate-400 text-sm italic">
+                            Chưa phân công
+                          </p>
                         )}
-                      </div>
-                      <div>
-                        <p className="font-black text-slate-800 text-lg leading-tight mb-1">
-                          {formData.assignedTo.length > 0
-                            ? formData.assignedTo.join(", ")
-                            : "Không có ai"}
-                        </p>
-                        <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-                          {formData.assignedType === "team"
-                            ? "Thực hiện bởi đội nhóm"
-                            : "Phân công cá nhân trực tiếp"}
-                        </p>
-                      </div>
                     </div>
                   </div>
                   <div className="space-y-4">

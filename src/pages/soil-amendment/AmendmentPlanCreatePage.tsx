@@ -48,78 +48,26 @@ import useAmendmentPlanStore, {
 } from "../../stores/useAmendmentPlanStore";
 import useRegimenStore from "../../stores/useRegimenStore";
 import usePersonnelStore from "../../stores/usePersonnelStore";
+import useSeasonStore from "@/stores/useSeasonStore";
 import { PersonnelSelectDialog } from "./components/PersonnelSelectDialog";
+import useRegionStore from "@/stores/useRegionStore";
+import { EnterpriseSelector } from "../cultivation-zone/cultivation-area/components";
+import GeographicalSelector from "../plan/components/GeographicalSelector";
+import { cn } from "@tankhang1/eco-shared-ui";
+
+// --- Types ---
+
+export interface GeographicalSelection {
+  id: string;
+  type: "region" | "area" | "plot";
+  regionId: string;
+  areaId?: string;
+  plotId?: string;
+}
 
 // --- Mock Data ---
 
-const LOCATIONS = [
-  {
-    id: "region-1",
-    name: "Vùng A - Bình Phước",
-    crop: "Sầu riêng",
-    variety: "Ri6",
-    zones: [
-      {
-        id: "zone-1-1",
-        name: "Khu vực A1",
-        plots: [
-          {
-            id: "plot-1-1-1",
-            name: "Lô A1-01",
-            area: 1.5,
-            status: "problem",
-            issue: "Nhiễm phèn",
-            ph: 4.5,
-          },
-          {
-            id: "plot-1-1-2",
-            name: "Lô A1-02",
-            area: 2.0,
-            status: "problem",
-            issue: "Bạc màu",
-            ph: 5.2,
-          },
-        ],
-      },
-      {
-        id: "zone-1-2",
-        name: "Khu vực A2",
-        plots: [
-          {
-            id: "plot-1-2-1",
-            name: "Lô A2-01",
-            area: 1.2,
-            status: "ready",
-            issue: "Bình thường",
-            ph: 6.5,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "region-2",
-    name: "Vùng B - Đồng Nai",
-    crop: "Xoài",
-    variety: "Cát Hòa Lộc",
-    zones: [
-      {
-        id: "zone-2-1",
-        name: "Khu vực B1",
-        plots: [
-          {
-            id: "plot-2-1-1",
-            name: "Lô B1-01",
-            area: 2.5,
-            status: "problem",
-            issue: "Nhiễm mặn",
-            ph: 5.8,
-          },
-        ],
-      },
-    ],
-  },
-];
+// --- Process Configs ---
 
 const AMENDMENT_PROCESSES = [
   {
@@ -293,6 +241,8 @@ const StageAllocation = memo(
         name: newTask.name,
         detail: newTask.labor || "1 người",
         subDetail: newTask.duration || "1 ngày",
+        labor: newTask.labor || "1 người",
+        duration: newTask.duration || "1 ngày",
       });
       setNewTask({ name: "", desc: "", labor: "", duration: "" });
     };
@@ -597,8 +547,13 @@ export default function AmendmentPlanCreatePage() {
   const getPlanById = useAmendmentPlanStore((state) => state.getPlanById);
   const regimens = useRegimenStore((state) => state.regimens);
   const personnel = usePersonnelStore((state) => state.personnel);
+  const { seasons } = useSeasonStore();
 
   const [personnelDialogOpen, setPersonnelDialogOpen] = useState(false);
+  const [selections, setSelections] = useState<GeographicalSelection[]>([]);
+  const [selectedEnterpriseId, setSelectedEnterpriseId] = useState<string>("");
+
+  const { regions } = useRegionStore();
 
   const [formData, setFormData] = useState({
     code: "",
@@ -606,6 +561,7 @@ export default function AmendmentPlanCreatePage() {
     technician: "",
     priority: "medium",
     description: "",
+    seasonId: "",
 
     // Scope
     selectedRegionId: "",
@@ -621,6 +577,7 @@ export default function AmendmentPlanCreatePage() {
     targetIssue: "",
 
     // Process
+    purpose: "amendment" as "amendment" | "treatment",
     processId: "",
     regimenId: "", // New State for Treatment Regimen
     selectedStages: [] as string[],
@@ -631,6 +588,152 @@ export default function AmendmentPlanCreatePage() {
     endDate: "",
     budget: "",
   });
+
+  // --- Geographical Selection Helpers ---
+
+  const handleGeographicalConfirm = (
+    newSelections: GeographicalSelection[],
+  ) => {
+    setSelections(newSelections);
+    const regionIds = new Set<string>();
+    const zoneIds = new Set<string>();
+    const plotIds = new Set<string>();
+    let mainCrop = "";
+    let mainVariety = "";
+
+    newSelections.forEach((sel) => {
+      const region = (regions || []).find(
+        (loc) => String(loc.id) === String(sel.regionId),
+      );
+      if (!region) return;
+
+      if (region.cropVarieties && region.cropVarieties.length > 0) {
+        mainCrop = region.cropVarieties[0].name;
+        mainVariety = region.cropVarieties[0].variety;
+      }
+
+      regionIds.add(String(region.id));
+
+      if (sel.type === "region") {
+        region.subAreas?.forEach((zone) => {
+          zoneIds.add(String(zone.id));
+          zone.plots?.forEach((plot) => {
+            plotIds.add(String(plot.id));
+          });
+        });
+      }
+
+      if (sel.type === "area") {
+        const zone = region.subAreas?.find(
+          (z) => String(z.id) === String(sel.areaId),
+        );
+        if (zone) {
+          zoneIds.add(String(zone.id));
+          zone.plots?.forEach((plot) => {
+            plotIds.add(String(plot.id));
+          });
+        }
+      }
+
+      if (sel.type === "plot") {
+        plotIds.add(String(sel.plotId));
+        const zone = region.subAreas?.find(
+          (z) => String(z.id) === String(sel.areaId),
+        );
+        if (zone) {
+          zoneIds.add(String(zone.id));
+        }
+      }
+    });
+
+    setFormData((prev) => ({
+      ...prev,
+      selectedRegionId: Array.from(regionIds)[0] || "",
+      selectedZoneIds: Array.from(zoneIds),
+      selectedPlotIds: Array.from(plotIds),
+      crop: mainCrop || prev.crop,
+      variety: mainVariety || prev.variety,
+    }));
+  };
+
+  const selectionSummary = useMemo(() => {
+    const summary: {
+      regionId: string;
+      regionName: string;
+      items: {
+        type: "region" | "area" | "plot";
+        id: string;
+        name: string;
+        parentName?: string;
+      }[];
+    }[] = [];
+
+    selections.forEach((sel) => {
+      const region = (regions || []).find(
+        (r) => String(r.id) === String(sel.regionId),
+      );
+      if (!region) return;
+
+      let regionGroup = summary.find((s) => s.regionId === String(region.id));
+      if (!regionGroup) {
+        regionGroup = {
+          regionId: String(region.id),
+          regionName: region.name,
+          items: [],
+        };
+        summary.push(regionGroup);
+      }
+
+      if (sel.type === "region") {
+        regionGroup.items.push({
+          type: "region",
+          id: String(region.id),
+          name: "Toàn bộ vùng",
+        });
+      } else if (sel.type === "area") {
+        const area = region.subAreas?.find(
+          (a) => String(a.id) === String(sel.areaId),
+        );
+        if (area) {
+          regionGroup.items.push({
+            type: "area",
+            id: String(area.id),
+            name: area.name,
+          });
+        }
+      } else if (sel.type === "plot") {
+        const area = region.subAreas?.find(
+          (a) => String(a.id) === String(sel.areaId),
+        );
+        const plot = area?.plots?.find(
+          (p) => String(p.id) === String(sel.plotId),
+        );
+        if (plot) {
+          regionGroup.items.push({
+            type: "plot",
+            id: String(plot.id),
+            name: plot.name,
+            parentName: area?.name,
+          });
+        }
+      }
+    });
+
+    return summary;
+  }, [selections, regions]);
+
+  const calculateArea = () => {
+    let totalArea = 0;
+    formData.selectedPlotIds.forEach((pid) => {
+      regions.forEach((r) => {
+        r.subAreas?.forEach((sa) => {
+          const plot = sa.plots?.find((p) => String(p.id) === String(pid));
+          if (plot) totalArea += plot.area || 0;
+        });
+      });
+    });
+    return totalArea.toFixed(1);
+  };
 
   // Load existing plan data if editing
   useEffect(() => {
@@ -643,7 +746,8 @@ export default function AmendmentPlanCreatePage() {
           technician: existingPlan.technician,
           priority: existingPlan.priority || "medium",
           description: existingPlan.description || "",
-          selectedRegionId: existingPlan.selectedRegionId || "", // Assuming this might be stored or derived
+          seasonId: existingPlan.seasonId || "",
+          selectedRegionId: existingPlan.selectedRegionId || "",
           selectedZoneId: "",
           selectedZoneIds: existingPlan.selectedZoneIds || [],
           crop: existingPlan.crop || "",
@@ -652,29 +756,87 @@ export default function AmendmentPlanCreatePage() {
           currentPH: existingPlan.currentPH || "",
           targetPH: existingPlan.targetPH || "",
           targetIssue: existingPlan.target_issue,
+          purpose: existingPlan.processId ? "amendment" : "treatment",
           processId: existingPlan.processId || "",
           regimenId: existingPlan.regimenId || "",
-          selectedStages: [],
+          selectedStages: existingPlan.processId
+            ? AMENDMENT_PROCESSES.find((p) => p.id === existingPlan.processId)
+                ?.stages || []
+            : existingPlan.regimenId
+              ? ([
+                  regimens.find((r) => r.id === existingPlan.regimenId)?.name,
+                ].filter(Boolean) as string[])
+              : [],
           allocations: existingPlan.allocations || [],
           startDate: existingPlan.startDate,
           endDate: existingPlan.endDate,
           budget: String(existingPlan.budget),
         });
+
+        // Reconstruct selections
+        if (
+          existingPlan.selectedPlotIds &&
+          existingPlan.selectedRegionId &&
+          regions.length > 0
+        ) {
+          const initialSelections: GeographicalSelection[] = [];
+          const rid = existingPlan.selectedRegionId;
+          const zoneIds = existingPlan.selectedZoneIds || [];
+          const plotIds = existingPlan.selectedPlotIds || [];
+
+          const region = regions.find((r) => String(r.id) === String(rid));
+          if (region) {
+            setSelectedEnterpriseId(region.enterpriseId || "");
+
+            // Reconstruct based on what was selected
+            const regionZoneIds = region.subAreas?.map((sa) => sa.id) || [];
+            const isWholeRegion =
+              regionZoneIds.length > 0 &&
+              regionZoneIds.every((zid) => zoneIds.includes(zid));
+
+            if (isWholeRegion) {
+              initialSelections.push({
+                id: `region-${rid}`,
+                type: "region",
+                regionId: rid,
+              });
+            } else {
+              region.subAreas?.forEach((sa) => {
+                if (zoneIds.includes(sa.id)) {
+                  const zonePlotIds = sa.plots?.map((p) => p.id) || [];
+                  const isWholeArea =
+                    zonePlotIds.length > 0 &&
+                    zonePlotIds.every((pid) => plotIds.includes(pid));
+
+                  if (isWholeArea) {
+                    initialSelections.push({
+                      id: `area-${sa.id}`,
+                      type: "area",
+                      regionId: rid,
+                      areaId: sa.id,
+                    });
+                  } else {
+                    sa.plots?.forEach((p) => {
+                      if (plotIds.includes(p.id)) {
+                        initialSelections.push({
+                          id: `plot-${p.id}`,
+                          type: "plot",
+                          regionId: rid,
+                          areaId: sa.id,
+                          plotId: p.id,
+                        });
+                      }
+                    });
+                  }
+                }
+              });
+            }
+            setSelections(initialSelections);
+          }
+        }
       }
     }
-  }, [isEdit, params?.id, getPlanById]);
-
-  const calculateArea = () => {
-    let area = 0;
-    LOCATIONS.forEach((r) =>
-      r.zones.forEach((z) =>
-        z.plots.forEach((p) => {
-          if (formData.selectedPlotIds.includes(p.id)) area += p.area;
-        }),
-      ),
-    );
-    return area.toFixed(1);
-  };
+  }, [isEdit, params?.id, getPlanById, regions]);
 
   const selectedProcess = useMemo(
     () => AMENDMENT_PROCESSES.find((p) => p.id === formData.processId),
@@ -689,25 +851,6 @@ export default function AmendmentPlanCreatePage() {
         processId: id,
         selectedStages: proc.stages,
         name: prev.name || `Kế hoạch ${proc.name.toLowerCase()}`, // Auto suggest name
-      }));
-    }
-  };
-
-  const handleRegionChange = (regionId: string) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const region = LOCATIONS.find((r) => r.id === regionId) as any;
-    if (region) {
-      const allZoneIds = region.zones.map((z: any) => z.id);
-      const allPlotIds = region.zones.flatMap((z: any) =>
-        z.plots.map((p: any) => p.id),
-      );
-      setFormData((prev) => ({
-        ...prev,
-        selectedRegionId: regionId,
-        selectedZoneIds: allZoneIds,
-        selectedPlotIds: allPlotIds,
-        crop: region.crop || "",
-        variety: region.variety || "",
       }));
     }
   };
@@ -742,7 +885,8 @@ export default function AmendmentPlanCreatePage() {
       code: formData.code,
       name: formData.name,
       zone:
-        LOCATIONS.find((r) => r.id === formData.selectedRegionId)?.name || "",
+        regions.find((r) => String(r.id) === String(formData.selectedRegionId))
+          ?.name || "",
       target_issue: formData.targetIssue,
       technician: formData.technician,
       startDate: formData.startDate,
@@ -752,6 +896,7 @@ export default function AmendmentPlanCreatePage() {
       budget: Number(formData.budget) || 0,
       methodCount: formData.allocations.length,
       priority: formData.priority,
+      seasonId: formData.seasonId,
       description: formData.description,
       currentPH: formData.currentPH,
       targetPH: formData.targetPH,
@@ -762,6 +907,7 @@ export default function AmendmentPlanCreatePage() {
       selectedPlotIds: formData.selectedPlotIds,
       crop: formData.crop,
       variety: formData.variety,
+      purpose: formData.purpose,
       allocations: formData.allocations,
     };
 
@@ -844,6 +990,27 @@ export default function AmendmentPlanCreatePage() {
             />
           </div>
 
+          <div className="space-y-2">
+            <Label>
+              Mùa vụ <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={formData.seasonId}
+              onValueChange={(v) => setFormData({ ...formData, seasonId: v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn mùa vụ..." />
+              </SelectTrigger>
+              <SelectContent>
+                {seasons.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-slate-700">
@@ -915,7 +1082,6 @@ export default function AmendmentPlanCreatePage() {
         <div className="max-w-4xl mx-auto space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-6">
-              {/* Vùng canh tác Selection */}
               <div className="space-y-4">
                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 text-xs font-bold">
@@ -923,170 +1089,139 @@ export default function AmendmentPlanCreatePage() {
                   </span>
                   Chọn vùng canh tác
                 </h3>
-                <div className="p-5 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm space-y-4">
+                <Label className="text-sm font-medium">
+                  Doanh nghiệp (Enterprise){" "}
+                  <span className="text-red-500">*</span>
+                </Label>
+                <EnterpriseSelector
+                  selectedId={selectedEnterpriseId}
+                  onSelect={(val) => {
+                    setSelectedEnterpriseId(val);
+                    setSelections([]);
+                  }}
+                />
+                <div className="p-5 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm space-y-4 relative">
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Vùng canh tác <span className="text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={formData.selectedRegionId}
-                      onValueChange={handleRegionChange}
-                    >
-                      <SelectTrigger className="bg-white border-emerald-200 h-12 text-base font-medium">
-                        <SelectValue placeholder="Chọn vùng canh tác..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {LOCATIONS.map((loc) => (
-                          <SelectItem key={loc.id} value={loc.id}>
-                            {loc.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
+                        Vùng canh tác <span className="text-red-500">*</span>
+                      </label>
+                      {!selectedEnterpriseId && (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] text-amber-600 border-amber-200 bg-amber-50"
+                        >
+                          Chọn doanh nghiệp trước
+                        </Badge>
+                      )}
+                    </div>
+                    <GeographicalSelector
+                      regions={regions || []}
+                      enterpriseId={selectedEnterpriseId}
+                      existingSelections={selections}
+                      onConfirm={handleGeographicalConfirm}
+                    />
+
+                    {selectionSummary.length > 0 && (
+                      <div className="mt-4 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
+                        <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
+                          <Layers className="w-3 h-3" />
+                          Phạm vi đã chọn ({selections.length} mục)
+                        </div>
+                        <div className="space-y-3">
+                          {selectionSummary.map((group) => (
+                            <div key={group.regionId} className="space-y-2">
+                              <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
+                                <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                                {group.regionName}
+                              </div>
+                              <div className="flex flex-wrap gap-1.5 pl-2.5">
+                                {group.items.map((item, idx) => (
+                                  <Badge
+                                    key={idx}
+                                    variant="outline"
+                                    className={cn(
+                                      "text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm",
+                                      item.type === "region"
+                                        ? "bg-emerald-100 text-emerald-800"
+                                        : item.type === "area"
+                                          ? "bg-blue-50 text-blue-700 border-blue-100"
+                                          : "bg-white text-slate-600 border-slate-200",
+                                    )}
+                                  >
+                                    <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
+                                      {item.type === "region"
+                                        ? "Vùng"
+                                        : item.type === "area"
+                                          ? "Khu"
+                                          : "Lô"}
+                                    </span>
+                                    {item.name}
+                                    {item.parentName && (
+                                      <span className="ml-1 opacity-50 font-normal italic">
+                                        ({item.parentName})
+                                      </span>
+                                    )}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Chi tiết phạm vi - Read Only Hierarchy */}
-              {formData.selectedRegionId && (
-                <div className="space-y-4 animation-fade-in">
-                  <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-emerald-600" />
-                    Chi tiết phạm vi canh tác
-                  </h3>
-                  <div className="p-5 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-6">
-                    {/* Zone & Plot Hierarchy List */}
-                    <div className="space-y-4">
-                      {LOCATIONS.find(
-                        (r) => r.id === formData.selectedRegionId,
-                      )?.zones.map((zone) => (
-                        <div key={zone.id} className="space-y-2">
-                          <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-100 shadow-sm">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                                <Layers className="w-4 h-4" />
-                              </div>
-                              <span className="font-bold text-slate-900">
-                                {zone.name}
-                              </span>
-                            </div>
-                            <Check className="w-4 h-4 text-emerald-500" />
-                          </div>
-
-                          {/* Plots within Zone */}
-                          <div className="grid grid-cols-2 gap-2 pl-4">
-                            {zone.plots.map((plot) => (
-                              <div
-                                key={plot.id}
-                                className="flex items-center justify-between p-2 rounded-lg bg-slate-100/50 border border-slate-200/50"
-                              >
-                                <span className="text-sm text-slate-600 truncate mr-2">
-                                  {plot.name}
-                                </span>
-                                <Badge
-                                  variant="outline"
-                                  className="text-[10px] h-4 px-1.5 bg-white font-normal border-slate-200"
-                                >
-                                  {plot.area} ha
-                                </Badge>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Ghi chú Section */}
               <div className="space-y-2">
-                <Label className="text-slate-700 font-bold">Ghi chú</Label>
+                <Label className="text-slate-700 font-bold">
+                  Ghi chú phạm vi
+                </Label>
                 <Textarea
-                  placeholder="Nhập thông tin ghi chú thêm..."
+                  placeholder="Nhập ghi chú thêm..."
                   value={formData.description}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
-                  className="bg-white border-slate-200 min-h-[100px]"
+                  className="bg-white"
                 />
               </div>
             </div>
 
             <div className="space-y-6">
-              {/* Crop & Variety Selection */}
-              <div className="space-y-4">
-                <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                  <Leaf className="w-4 h-4 text-emerald-600" />
-                  Thông tin cây trồng
-                </h3>
-                <div className="grid grid-cols-1 gap-4 p-5 rounded-2xl border border-slate-100 bg-white shadow-sm">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Loại cây trồng <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      className="h-11 px-3 flex items-center border border-slate-200 rounded-md bg-slate-50 text-slate-600 font-medium"
-                      value={formData.crop}
-                      onChange={(e) =>
-                        setFormData({ ...formData, crop: e.target.value })
-                      }
-                      placeholder="Nhập loại cây trồng..."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Giống (Variety)
-                    </Label>
-                    <Input
-                      className="h-11 px-3 flex items-center border border-slate-200 rounded-md bg-slate-50 text-slate-600 font-medium"
-                      value={formData.variety}
-                      onChange={(e) =>
-                        setFormData({ ...formData, variety: e.target.value })
-                      }
-                      placeholder="Nhập giống cây..."
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Summary Section */}
               <div className="space-y-4">
                 <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
                   <Package className="w-4 h-4 text-emerald-600" />
                   Tóm tắt phạm vi đã chọn
                 </h3>
-                <div className="bg-linear-to-br from-emerald-600 to-teal-700 p-6 rounded-2xl text-white shadow-lg space-y-4">
+                <div className="bg-linear-to-br from-emerald-600 to-teal-700 p-6 rounded-3xl text-white shadow-xl space-y-6">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-inner">
-                      <MapPin className="w-6 h-6 text-white" />
+                    <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center">
+                      <MapPin className="w-7 h-7 text-white" />
                     </div>
-                    <div>
-                      <p className="text-emerald-100 text-xs font-semibold uppercase tracking-widest">
-                        Đang chọn canh tác
+                    <div className="flex-1">
+                      <p className="text-emerald-100 text-[10px] font-bold uppercase tracking-widest mb-1">
+                        Khu vực cải tạo
                       </p>
-                      <h4 className="text-xl font-bold leading-tight">
-                        {LOCATIONS.find(
-                          (r) => r.id === formData.selectedRegionId,
-                        )?.name || "Chưa chọn vùng"}
+                      <h4 className="text-xl font-black leading-tight">
+                        {regions
+                          .filter(
+                            (r) =>
+                              String(r.id) ===
+                              String(formData.selectedRegionId),
+                          )
+                          .map((r) => r.name)
+                          .join(", ") || "Chưa chọn vùng"}
                       </h4>
-                      <p className="text-xs text-emerald-200 mt-0.5">
-                        {formData.selectedPlotIds.length} lô đất •{" "}
-                        {calculateArea()} ha
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 pt-2 border-t border-white/10">
-                    <div className="flex justify-between items-center text-sm font-medium">
-                      <span className="text-emerald-200">Khu vực đã chọn</span>
-                      <span>{formData.selectedZoneIds.length} khu vực</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm font-medium">
-                      <span className="text-emerald-200">Giống cây trồng</span>
-                      <span className="bg-white/10 px-2 py-0.5 rounded text-xs uppercase">
-                        {formData.variety || "Trống"}
-                      </span>
+                      <div className="flex items-center gap-3 mt-2">
+                        <Badge className="bg-white/20 text-white font-bold h-5">
+                          {formData.selectedPlotIds.length} LÔ ĐẤT
+                        </Badge>
+                        <Badge className="bg-white/20 text-white font-bold h-5">
+                          {calculateArea()} HA
+                        </Badge>
+                      </div>
                     </div>
                   </div>
 
@@ -1098,8 +1233,8 @@ export default function AmendmentPlanCreatePage() {
                       </span>
                     </div>
                     <p className="text-sm text-white leading-relaxed font-medium">
-                      Kế hoạch này sẽ áp dụng cho tất cả các lô đất thuộc vùng
-                      đã chọn.
+                      Kế hoạch cải tạo đất này sẽ áp dụng cho tất cả các lô đất
+                      được chọn trong danh sách.
                     </p>
                   </div>
                 </div>
@@ -1112,82 +1247,229 @@ export default function AmendmentPlanCreatePage() {
     },
     {
       id: "process",
-      title: "Quy trình & Nguồn lực",
-      description: "Phương pháp và phân bổ",
+      title: "Quy trình & Giai đoạn",
+      description: "Lộ trình cải tạo",
       content: (
-        <div className="max-w-3xl mx-auto space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <div className="space-y-4">
+            <Label className="text-base font-bold text-slate-800">
+              Mục đích kế hoạch
+            </Label>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((prev) => ({ ...prev, purpose: "amendment" }))
+                }
+                className={cn(
+                  "flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all text-left",
+                  formData.purpose === "amendment"
+                    ? "bg-emerald-50 border-emerald-500 text-emerald-900 shadow-md"
+                    : "bg-white border-slate-100 text-slate-500 hover:border-slate-200",
+                )}
+              >
+                <div
+                  className={cn(
+                    "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
+                    formData.purpose === "amendment"
+                      ? "bg-emerald-500 text-white"
+                      : "bg-slate-100 text-slate-400",
+                  )}
+                >
+                  <Wrench className="w-6 h-6" />
+                </div>
+                <div className="text-center">
+                  <p className="font-bold text-sm">Cải tạo đất</p>
+                  <p className="text-[10px] opacity-60 mt-1">
+                    Sử dụng quy trình cải tạo chuẩn
+                  </p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((prev) => ({ ...prev, purpose: "treatment" }))
+                }
+                className={cn(
+                  "flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all text-left",
+                  formData.purpose === "treatment"
+                    ? "bg-blue-50 border-blue-500 text-blue-900 shadow-md"
+                    : "bg-white border-slate-100 text-slate-500 hover:border-slate-200",
+                )}
+              >
+                <div
+                  className={cn(
+                    "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
+                    formData.purpose === "treatment"
+                      ? "bg-blue-500 text-white"
+                      : "bg-slate-100 text-slate-400",
+                  )}
+                >
+                  <StickyNote className="w-6 h-6" />
+                </div>
+                <div className="text-center">
+                  <p className="font-bold text-sm">Xử lý/Điều trị</p>
+                  <p className="text-[10px] opacity-60 mt-1">
+                    Áp dụng phác đồ cải tạo đặc biệt
+                  </p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-base">Quy trình áp dụng</Label>
+              <Label>Ngày bắt đầu</Label>
+              <Input
+                type="date"
+                value={formData.startDate}
+                onChange={(e) =>
+                  setFormData({ ...formData, startDate: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Ngày kết thúc</Label>
+              <Input
+                type="date"
+                value={formData.endDate}
+                onChange={(e) =>
+                  setFormData({ ...formData, endDate: e.target.value })
+                }
+              />
+            </div>
+          </div>
+
+          {formData.purpose === "amendment" ? (
+            <div className="space-y-4 animation-slide-up">
+              <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
+                Quy trình áp dụng
+              </Label>
               <Select
                 value={formData.processId}
                 onValueChange={handleProcessChange}
               >
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder="Chọn quy trình mẫu..." />
+                <SelectTrigger className="h-14 border-emerald-100 bg-emerald-50/20 focus:ring-emerald-500">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                      <ClipboardList className="w-4 h-4" />
+                    </div>
+                    <SelectValue placeholder="Chọn quy trình cải tạo..." />
+                  </div>
                 </SelectTrigger>
                 <SelectContent>
-                  {AMENDMENT_PROCESSES.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name}
+                  {AMENDMENT_PROCESSES.map((proc) => (
+                    <SelectItem key={proc.id} value={proc.id} className="py-3">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-bold text-slate-900">
+                          {proc.name}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-normal">
+                          {proc.type} • {proc.duration} ngày
+                        </span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+
+              {selectedProcess && (
+                <div className="p-5 rounded-2xl bg-emerald-50/50 border border-emerald-100 flex gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center border border-emerald-200 text-emerald-500 shrink-0 shadow-sm">
+                    <Info className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-emerald-900 uppercase tracking-widest">
+                      Lộ trình các giai đoạn
+                    </p>
+                    <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                      {selectedProcess.stages.map((s, i) => (
+                        <div key={i} className="flex items-center gap-1.5">
+                          <Badge
+                            variant="secondary"
+                            className="bg-white text-emerald-700 border-emerald-100 text-[10px] font-bold"
+                          >
+                            {s}
+                          </Badge>
+                          {i < selectedProcess.stages.length - 1 && (
+                            <span className="text-slate-300">→</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="space-y-2">
-              <Label className="text-base">Phác đồ điều trị (nếu có)</Label>
+          ) : (
+            <div className="space-y-4 animation-slide-up">
+              <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
+                Phác đồ xử lý
+              </Label>
               <Select
                 value={formData.regimenId}
-                onValueChange={(v) =>
-                  setFormData((prev) => ({ ...prev, regimenId: v }))
-                }
+                onValueChange={(v) => {
+                  const regimen = regimens.find((r) => r.id === v);
+                  setFormData((prev) => ({
+                    ...prev,
+                    regimenId: v,
+                    selectedStages: regimen ? [regimen.name] : [],
+                  }));
+                }}
               >
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder="Chọn phác đồ..." />
+                <SelectTrigger className="h-14 border-blue-100 bg-blue-50/20 focus:ring-blue-500">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0">
+                      <FileCheck className="w-4 h-4" />
+                    </div>
+                    <SelectValue placeholder="Chọn phác đồ xử lý..." />
+                  </div>
                 </SelectTrigger>
                 <SelectContent>
                   {regimens
                     .filter((r) => r.type === "cai-tao-dat")
                     .map((r) => (
-                      <SelectItem key={r.id} value={r.id}>
-                        {r.name}
+                      <SelectItem key={r.id} value={r.id} className="py-3">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-bold text-slate-900">
+                            {r.name}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-normal">
+                            {r.description}
+                          </span>
+                        </div>
                       </SelectItem>
                     ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <div className="flex gap-4">
-                <div className="flex-1 space-y-2">
-                  <Label>Bắt đầu</Label>
-                  <Input
-                    type="date"
-                    value={formData.startDate}
-                    onChange={(e) =>
-                      setFormData({ ...formData, startDate: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="flex-1 space-y-2">
-                  <Label>Kết thúc</Label>
-                  <Input
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) =>
-                      setFormData({ ...formData, endDate: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {selectedProcess && (
-            <div className="space-y-4 animation-fade-in">
+              {formData.regimenId && (
+                <div className="p-5 rounded-2xl bg-blue-50/50 border border-blue-100 flex gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center border border-blue-200 text-blue-500 shrink-0 shadow-sm">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-blue-900 uppercase tracking-widest">
+                      Tính chất phác đồ
+                    </p>
+                    <p className="text-[11px] text-blue-700 leading-relaxed mt-1">
+                      Phác đồ này được thiết kế để xử lý vấn đề hiện trạng. Bạn
+                      có thể phân bổ chi tiết vật tư ở bước tiếp theo.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {formData.purpose === "amendment" && selectedProcess && (
+            <div className="space-y-4 pt-4 border-t animation-fade-in">
               <div className="flex items-center justify-between">
-                <Label>Chi tiết các giai đoạn xử lý</Label>
-                <Badge variant="outline">
+                <Label className="text-sm font-bold text-slate-700">
+                  Phân bổ nguồn lực theo giai đoạn
+                </Label>
+                <Badge variant="outline" className="text-[10px]">
                   {formData.selectedStages.length} giai đoạn
                 </Badge>
               </div>
@@ -1208,191 +1490,329 @@ export default function AmendmentPlanCreatePage() {
               </div>
             </div>
           )}
+
+          {formData.purpose === "treatment" && formData.regimenId && (
+            <div className="space-y-4 pt-4 border-t animation-fade-in">
+              <Label className="text-sm font-bold text-slate-700">
+                Phân bổ nguồn lực điều trị
+              </Label>
+              {formData.selectedStages.map((stage, idx) => (
+                <StageAllocation
+                  key={idx}
+                  stageName={stage}
+                  index={idx}
+                  items={formData.allocations.filter((a) => a.stage === stage)}
+                  onAdd={handleAddAllocation}
+                  onRemove={handleRemoveAllocation}
+                />
+              ))}
+            </div>
+          )}
         </div>
       ),
-      isValid: !!formData.processId,
+      isValid:
+        formData.purpose === "amendment"
+          ? !!formData.processId
+          : !!formData.regimenId,
     },
     {
       id: "confirmation",
       title: "Xác nhận & Kích hoạt",
       description: "Tổng quan kế hoạch",
       content: (
-        <div className="max-w-6xl mx-auto space-y-8 animation-fade-in">
+        <div className="max-w-4xl mx-auto space-y-8 animation-fade-in">
           <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-600 mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mb-4">
               <FileCheck className="w-8 h-8" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900">
               Xác nhận Kế hoạch Cải tạo
             </h2>
             <p className="text-slate-500 mt-2">
-              Kiểm tra thông tin trước khi ban hành
+              Kiểm tra thông tin trước khi ban hành kế hoạch.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Step 1: Thông tin chung */}
-            <Card className="h-full">
-              <CardHeader className="pb-3 border-b bg-amber-50/50">
-                <CardTitle className="text-base font-semibold flex items-center gap-2 text-amber-900">
-                  <div className="w-6 h-6 rounded bg-amber-100 flex items-center justify-center text-xs">
-                    1
-                  </div>
-                  Thông tin chung
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4 space-y-4 text-sm">
-                <div>
-                  <span className="text-slate-500 block mb-1">Mã & Tên</span>
-                  <div className="font-medium text-slate-900">
-                    <span className="text-amber-600 font-bold mr-2">
-                      [{formData.code}]
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* 1. General Info & Scope Summary */}
+            <div className="space-y-6">
+              <Card>
+                <CardHeader className="pb-3 border-b bg-slate-50/50">
+                  <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+                    <Info className="w-4 h-4 text-blue-600" />
+                    Tổng quan & Phạm vi
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4 grid grid-cols-2 gap-y-4 text-sm font-medium">
+                  <div className="col-span-2">
+                    <span className="text-slate-400 block text-[10px] uppercase mb-1">
+                      Tên kế hoạch
                     </span>
-                    {formData.name}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-slate-500 block mb-1">Ưu tiên</span>
-                    <Badge
-                      variant="outline"
-                      className={
-                        formData.priority === "urgent"
-                          ? "text-red-600 bg-red-50 border-red-200"
-                          : formData.priority === "high"
-                            ? "text-orange-600 bg-orange-50 border-orange-200"
-                            : "text-slate-600 bg-slate-50"
-                      }
-                    >
-                      {formData.priority === "urgent"
-                        ? "Khẩn cấp"
-                        : formData.priority === "high"
-                          ? "Cao"
-                          : formData.priority === "medium"
-                            ? "Trung bình"
-                            : "Thấp"}
+                    {formData.name}{" "}
+                    <Badge variant="secondary" className="ml-2 font-mono">
+                      {formData.code}
                     </Badge>
                   </div>
                   <div>
-                    <span className="text-slate-500 block mb-1">Phụ trách</span>
-                    <div className="font-medium">
-                      {formData.technician || "N/A"}
+                    <span className="text-slate-400 block text-[10px] uppercase mb-1">
+                      Mùa vụ
+                    </span>
+                    {seasons.find((s) => s.id === formData.seasonId)?.name ||
+                      "---"}
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase mb-1">
+                      Kỹ thuật viên
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="w-5 h-5 border">
+                        <AvatarFallback className="text-[8px] bg-blue-100 text-blue-600">
+                          {formData.technician?.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      {formData.technician || "Chưa phân bổ"}
                     </div>
                   </div>
-                </div>
-                <div>
-                  <span className="text-slate-500 block mb-1">
-                    Kinh phí dự trù
-                  </span>
-                  <div className="font-bold text-slate-900">
-                    {formData.budget
-                      ? `${Number(formData.budget).toLocaleString()} đ`
-                      : "0 đ"}
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase mb-1">
+                      Thời gian
+                    </span>
+                    {formData.startDate} → {formData.endDate}
                   </div>
-                </div>
-                {formData.description && (
-                  <div className="bg-slate-50 p-3 rounded-lg text-slate-600 text-xs italic border border-slate-100">
-                    "{formData.description}"
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase mb-1">
+                      Quy mô
+                    </span>
+                    {formData.selectedPlotIds.length} lô đất • {calculateArea()}{" "}
+                    HA
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                  <div className="col-span-2">
+                    <span className="text-slate-400 block text-[10px] uppercase mb-1">
+                      Vùng áp dụng
+                    </span>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {regions
+                        .filter(
+                          (r) =>
+                            String(r.id) === String(formData.selectedRegionId),
+                        )
+                        .map((r) => (
+                          <Badge
+                            key={r.id}
+                            className="bg-emerald-50 text-emerald-700 border-emerald-100"
+                          >
+                            {r.name}
+                          </Badge>
+                        ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-            {/* Step 2: Phạm vi & Cây trồng */}
-            <Card className="h-full">
-              <CardHeader className="pb-3 border-b bg-emerald-50/50">
-                <CardTitle className="text-base font-semibold flex items-center gap-2 text-emerald-900">
-                  <div className="w-6 h-6 rounded bg-emerald-100 flex items-center justify-center text-xs">
-                    2
+              <Card>
+                <CardHeader className="pb-3 border-b bg-slate-50/50">
+                  <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+                    <Wrench className="w-4 h-4 text-amber-600" />
+                    Quy trình cải tạo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-4">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-500">Quy trình:</span>
+                    <span className="font-bold text-slate-900 border-b-2 border-amber-200">
+                      {AMENDMENT_PROCESSES.find(
+                        (p) => p.id === formData.processId,
+                      )?.name || "Tùy chỉnh"}
+                    </span>
                   </div>
-                  Phạm vi & Cây trồng
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">
+                      Lộ trình giai đoạn:
+                    </span>
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      {formData.selectedStages.map((s, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded border"
+                        >
+                          <span className="text-[10px] font-black opacity-30">
+                            {i + 1}
+                          </span>
+                          <span className="font-medium">{s}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* 2. Detailed Resources Summary */}
+            <Card className="h-full">
+              <CardHeader className="pb-3 border-b bg-slate-50/50">
+                <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+                  <Package className="w-4 h-4 text-purple-600" />
+                  Nguồn lực & Dự trù
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-4 space-y-4 text-sm">
-                <div>
-                  <span className="text-slate-500 block mb-1">
-                    Vùng canh tác
-                  </span>
-                  <div className="font-bold text-emerald-700 text-base">
-                    {LOCATIONS.find((r) => r.id === formData.selectedRegionId)
-                      ?.name || "N/A"}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-slate-500 block mb-1">Quy mô</span>
-                    <div className="font-medium">
-                      {formData.selectedZoneIds.length} khu •{" "}
-                      {formData.selectedPlotIds.length} lô
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block mb-1">Diện tích</span>
-                    <div className="font-medium">{calculateArea()} ha</div>
-                  </div>
-                </div>
-                <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100 space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-emerald-700">Cây trồng:</span>
-                    <span className="font-bold text-emerald-900">
-                      {formData.crop || "N/A"}
+              <CardContent className="pt-4 space-y-6">
+                <div className="grid grid-cols-3 gap-4 pb-4 border-b">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Vật tư
                     </span>
+                    <p className="text-xl font-black text-slate-800">
+                      {
+                        formData.allocations.filter(
+                          (a) => a.type === "material",
+                        ).length
+                      }
+                    </p>
                   </div>
-                  <div className="flex justify-between border-t border-emerald-200 pt-2">
-                    <span className="text-emerald-700">Giống:</span>
-                    <span className="font-medium text-emerald-900">
-                      {formData.variety || "N/A"}
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Nhân lực
                     </span>
+                    <p className="text-xl font-black text-slate-800">
+                      {
+                        new Set(
+                          formData.allocations
+                            .filter((a) => a.type === "task")
+                            .map((t) => t.labor || t.detail)
+                            .filter(Boolean),
+                        ).size
+                      }
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Công việc
+                    </span>
+                    <p className="text-xl font-black text-slate-800">
+                      {
+                        formData.allocations.filter((a) => a.type === "task")
+                          .length
+                      }
+                    </p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Step 3: Quy trình & Nguồn lực */}
-            <Card className="h-full">
-              <CardHeader className="pb-3 border-b bg-blue-50/50">
-                <CardTitle className="text-base font-semibold flex items-center gap-2 text-blue-900">
-                  <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center text-xs">
-                    3
-                  </div>
-                  Quy trình & Nguồn lực
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4 space-y-4 text-sm">
-                <div>
-                  <span className="text-slate-500 block mb-1">
-                    Quy trình áp dụng
-                  </span>
-                  <div className="font-medium text-blue-900">
-                    {selectedProcess?.name || "Tùy chỉnh"}
-                  </div>
-                </div>
-                {formData.regimenId && (
-                  <div>
-                    <span className="text-slate-500 block mb-1">
-                      Phác đồ điều trị
-                    </span>
-                    <div className="font-medium">
-                      {regimens.find((r) => r.id === formData.regimenId)
-                        ?.name || "N/A"}
+                <div className="space-y-4 pt-2">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                      <Package className="w-3 h-3 text-purple-500" />
+                      Danh mục vật tư
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 leading-none">
+                      {formData.allocations.filter((a) => a.type === "material")
+                        .length > 0 ? (
+                        Array.from(
+                          new Set(
+                            formData.allocations
+                              .filter((a) => a.type === "material")
+                              .map((m) => m.name),
+                          ),
+                        ).map((name, i) => (
+                          <Badge
+                            key={i}
+                            variant="secondary"
+                            className="bg-purple-50 text-purple-700 border-purple-100 text-[10px] px-2 h-5 font-bold"
+                          >
+                            {name}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">
+                          Chưa có vật tư
+                        </span>
+                      )}
                     </div>
                   </div>
-                )}
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-2">
-                  <div className="flex items-center gap-2 text-slate-700">
-                    {/* Replaced Calendar with Clock for better semantic if needed, but keeping simple */}
-                    <span className="text-xs">📅</span>
-                    <span>
-                      {formData.startDate} - {formData.endDate}
-                    </span>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                      <Users className="w-3 h-3 text-blue-500" />
+                      Nhân lực huy động
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 leading-none">
+                      {formData.allocations
+                        .filter((a) => a.type === "task")
+                        .some((t) => t.labor || t.detail) ? (
+                        Array.from(
+                          new Set(
+                            formData.allocations
+                              .filter((a) => a.type === "task")
+                              .map((t) => t.labor || t.detail)
+                              .filter(Boolean),
+                          ),
+                        ).map((labor, i) => (
+                          <Badge
+                            key={i}
+                            variant="secondary"
+                            className="bg-blue-50 text-blue-700 border-blue-100 text-[10px] px-2 h-5 font-bold"
+                          >
+                            {labor}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">
+                          Chưa phân bổ nhân lực
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <Layers className="w-4 h-4 text-slate-400" />
-                    <span>{formData.selectedStages.length} giai đoạn</span>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                      <ClipboardList className="w-3 h-3 text-amber-500" />
+                      Đầu việc triển khai
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 leading-none">
+                      {formData.allocations.filter((a) => a.type === "task")
+                        .length > 0 ? (
+                        Array.from(
+                          new Set(
+                            formData.allocations
+                              .filter((a) => a.type === "task")
+                              .map((t) => t.name),
+                          ),
+                        ).map((name, i) => (
+                          <Badge
+                            key={i}
+                            variant="secondary"
+                            className="bg-amber-50 text-amber-700 border-amber-100 text-[10px] px-2 h-5 font-bold"
+                          >
+                            {name}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">
+                          Chưa có đầu việc
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <Package className="w-4 h-4 text-slate-400" />
-                    <span>{formData.allocations.length} hạng mục phân bổ</span>
+                </div>
+
+                <div className="bg-slate-900 text-white p-4 rounded-3xl mt-4 shadow-xl shadow-slate-200/50 overflow-hidden relative group">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-500" />
+                  <div className="relative z-10 flex justify-between items-center">
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                        Tổng kinh phí dự kiến
+                      </p>
+                      <h3 className="text-2xl font-black text-white leading-none">
+                        {formData.budget
+                          ? Number(formData.budget).toLocaleString()
+                          : "0"}{" "}
+                        <span className="text-xs font-normal opacity-60">
+                          VNĐ
+                        </span>
+                      </h3>
+                    </div>
+                    <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-sm">
+                      <Package className="w-5 h-5 text-emerald-400" />
+                    </div>
                   </div>
                 </div>
               </CardContent>

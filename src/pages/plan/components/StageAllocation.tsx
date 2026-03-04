@@ -2,7 +2,13 @@ import { useState, memo } from "react";
 import {
   Badge,
   Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Input,
+  ScrollArea,
   Select,
   SelectContent,
   SelectItem,
@@ -14,11 +20,16 @@ import {
   TabsTrigger,
 } from "@tankhang1/eco-shared-ui";
 import {
+  CheckCircle2,
   Clock,
   Leaf,
   Package,
   Plus,
+  Search,
   StickyNote,
+  ToggleLeft,
+  ToggleRight,
+  User,
   Users,
   Wrench,
   X,
@@ -31,6 +42,7 @@ import {
   LABOR_OPTIONS,
 } from "../mocks";
 import type { MaterialAllocation, TaskAllocation } from "../types";
+import usePersonnelStore from "../../../stores/usePersonnelStore";
 
 export const StageAllocation = memo(
   ({
@@ -62,12 +74,28 @@ export const StageAllocation = memo(
       type: "Phân bón",
     });
 
+    // true  = chọn cụ thể số lượng + nhân sự (mặc định)
+    // false = chọn định lượng nhân sự (LABOR_OPTIONS cũ)
+    const [specificPersonnel, setSpecificPersonnel] = useState(true);
+    const [isPersonnelDialogOpen, setIsPersonnelDialogOpen] = useState(false);
+
     const [newTask, setNewTask] = useState({
       name: "",
       desc: "",
       labor: "",
+      count: "1",
+      assignedPersonnel: [] as string[],
       duration: "",
     });
+
+    const { personnel } = usePersonnelStore();
+    const [personnelSearch, setPersonnelSearch] = useState("");
+
+    const filteredPersonnel = personnelSearch.trim()
+      ? personnel.filter((p) =>
+          p.fullName.toLowerCase().includes(personnelSearch.toLowerCase()),
+        )
+      : personnel;
 
     const handleAddMaterial = () => {
       if (!newItem.name || !newItem.qty) return;
@@ -84,14 +112,42 @@ export const StageAllocation = memo(
 
     const handleAddTask = () => {
       if (!newTask.name) return;
+
+      let laborValue = "";
+      if (specificPersonnel) {
+        const count =
+          parseInt(newTask.count) || newTask.assignedPersonnel.length;
+        const names = newTask.assignedPersonnel.join(", ");
+        laborValue = names ? `${count} người: ${names}` : `${count} người`;
+      } else {
+        laborValue = newTask.labor;
+      }
+
       onAddTask({
         stageId: stageName,
         name: newTask.name,
         description: newTask.desc,
-        labor: newTask.labor,
+        labor: laborValue,
         duration: newTask.duration,
       });
-      setNewTask({ name: "", desc: "", labor: "", duration: "" });
+      setNewTask({
+        name: "",
+        desc: "",
+        labor: "",
+        count: "1",
+        assignedPersonnel: [],
+        duration: "",
+      });
+      setPersonnelSearch("");
+    };
+
+    const togglePersonnel = (name: string) => {
+      setNewTask((prev) => ({
+        ...prev,
+        assignedPersonnel: prev.assignedPersonnel.includes(name)
+          ? prev.assignedPersonnel.filter((n) => n !== name)
+          : [...prev.assignedPersonnel, name],
+      }));
     };
 
     return (
@@ -344,13 +400,14 @@ export const StageAllocation = memo(
                             {t.description}
                           </p>
                         )}
-                        <div className="flex gap-3 mt-1 pt-1 border-t border-slate-200/50">
+                        <div className="flex gap-3 mt-1 pt-1 border-t border-slate-200/50 flex-wrap">
                           {t.labor && (
                             <Badge
                               variant="secondary"
-                              className="text-[10px] h-5 bg-blue-50 text-blue-700 border-blue-100 px-1.5"
+                              className="text-[10px] h-5 bg-blue-50 text-blue-700 border-blue-100 px-1.5 max-w-[220px] truncate"
                             >
-                              <Users className="w-3 h-3 mr-1" /> {t.labor}
+                              <Users className="w-3 h-3 mr-1 shrink-0" />{" "}
+                              {t.labor}
                             </Badge>
                           )}
                           {t.duration && (
@@ -393,6 +450,7 @@ export const StageAllocation = memo(
                       <Plus className="w-3.5 h-3.5 mr-1.5" /> Thêm
                     </Button>
                   </div>
+
                   <Input
                     placeholder="Mô tả kỹ thuật (VD: Cày sâu 30cm, phơi đất 5 ngày)..."
                     className="h-9 text-muted-foreground"
@@ -401,28 +459,118 @@ export const StageAllocation = memo(
                       setNewTask({ ...newTask, desc: e.target.value })
                     }
                   />
+
+                  {/* Personnel mode toggle */}
+                  <div className="flex items-center justify-between py-1">
+                    <span className="text-xs font-medium text-slate-500">
+                      Chọn nhân sự cụ thể
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSpecificPersonnel((v) => !v)}
+                      className="flex items-center gap-1.5 text-xs font-semibold transition-colors"
+                      style={{
+                        color: specificPersonnel ? "#2563eb" : "#94a3b8",
+                      }}
+                    >
+                      {specificPersonnel ? (
+                        <ToggleRight className="w-5 h-5" />
+                      ) : (
+                        <ToggleLeft className="w-5 h-5" />
+                      )}
+                      {specificPersonnel ? "Bật" : "Tắt"}
+                    </button>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="relative">
-                      <Users className="w-3.5 h-3.5 absolute left-2.5 top-3 z-10 text-slate-400" />
-                      <Select
-                        value={newTask.labor}
-                        onValueChange={(v) =>
-                          setNewTask({ ...newTask, labor: v })
-                        }
-                      >
-                        <SelectTrigger className="h-9 pl-8">
-                          <SelectValue placeholder="Nhân sự" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {LABOR_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="relative">
+                    {specificPersonnel ? (
+                      <div className="col-span-2 space-y-1.5">
+                        {/* Number of workers */}
+                        <div className="relative">
+                          <Users className="w-3.5 h-3.5 absolute left-2.5 top-2.5 z-10 text-slate-400" />
+                          <Input
+                            type="number"
+                            min={1}
+                            placeholder="Số lượng người"
+                            className="h-9 pl-8 text-sm"
+                            value={newTask.count}
+                            onChange={(e) =>
+                              setNewTask({ ...newTask, count: e.target.value })
+                            }
+                          />
+                        </div>
+
+                        {/* Personnel picker trigger button */}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full h-9 justify-start text-left font-normal text-sm"
+                          onClick={() => setIsPersonnelDialogOpen(true)}
+                        >
+                          <User className="w-3.5 h-3.5 mr-2 text-slate-400 shrink-0" />
+                          {newTask.assignedPersonnel.length > 0 ? (
+                            <span className="text-slate-700">
+                              Đã chọn{" "}
+                              <span className="font-semibold text-blue-600">
+                                {newTask.assignedPersonnel.length}
+                              </span>{" "}
+                              nhân sự
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">
+                              Chọn nhân sự...
+                            </span>
+                          )}
+                        </Button>
+
+                        {/* Selected chips */}
+                        {newTask.assignedPersonnel.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {newTask.assignedPersonnel.map((name) => (
+                              <span
+                                key={name}
+                                className="inline-flex items-center gap-1 text-[10px] bg-blue-100 text-blue-700 rounded-full px-2 py-0.5 font-medium"
+                              >
+                                {name}
+                                <button
+                                  type="button"
+                                  onClick={() => togglePersonnel(name)}
+                                  className="hover:text-blue-900"
+                                >
+                                  <X className="w-2.5 h-2.5" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <Users className="w-3.5 h-3.5 absolute left-2.5 top-3 z-10 text-slate-400" />
+                        <Select
+                          value={newTask.labor}
+                          onValueChange={(v) =>
+                            setNewTask({ ...newTask, labor: v })
+                          }
+                        >
+                          <SelectTrigger className="h-9 pl-8">
+                            <SelectValue placeholder="Nhân sự" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {LABOR_OPTIONS.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Duration - full width in specific mode */}
+                    <div
+                      className={`relative ${specificPersonnel ? "col-span-2" : ""}`}
+                    >
                       <Clock className="w-3.5 h-3.5 absolute left-2.5 top-3 text-slate-400" />
                       <Input
                         placeholder="Thời gian (ngày/giờ)"
@@ -440,6 +588,98 @@ export const StageAllocation = memo(
             </Tabs>
           </div>
         )}
+
+        {/* Personnel Selection Dialog */}
+        <Dialog
+          open={isPersonnelDialogOpen}
+          onOpenChange={(open) => {
+            setIsPersonnelDialogOpen(open);
+            if (!open) setPersonnelSearch("");
+          }}
+        >
+          <DialogContent className="max-w-md p-0 overflow-hidden">
+            <DialogHeader className="p-5 pb-3">
+              <DialogTitle className="flex items-center gap-2 text-base">
+                <Users className="w-4 h-4 text-primary" />
+                Chọn nhân sự thực hiện
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="px-5 pb-3">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input
+                  placeholder="Tìm theo tên..."
+                  className="pl-9 h-9 text-sm"
+                  value={personnelSearch}
+                  onChange={(e) => setPersonnelSearch(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <ScrollArea className="h-[300px] px-3">
+              <div className="space-y-1 pb-2">
+                {filteredPersonnel.length === 0 && (
+                  <p className="text-sm text-slate-400 italic text-center py-8">
+                    Không tìm thấy nhân sự
+                  </p>
+                )}
+                {filteredPersonnel.map((p) => {
+                  const isSelected = newTask.assignedPersonnel.includes(
+                    p.fullName,
+                  );
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => togglePersonnel(p.fullName)}
+                      className={`w-full flex items-center gap-3 p-2.5 rounded-xl border transition-all ${
+                        isSelected
+                          ? "bg-primary/5 border-primary/20"
+                          : "bg-white border-transparent hover:border-slate-200"
+                      }`}
+                    >
+                      <div className="h-9 w-9 overflow-hidden rounded-full border bg-slate-100 flex items-center justify-center shrink-0">
+                        {p.avatar ? (
+                          <img
+                            src={p.avatar}
+                            alt={p.fullName}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="w-4 h-4 text-slate-400" />
+                        )}
+                      </div>
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 truncate">
+                          {p.fullName}
+                        </p>
+                        <p className="text-[11px] text-slate-400 truncate">
+                          {p.position}
+                        </p>
+                      </div>
+                      {isSelected && (
+                        <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+
+            <DialogFooter className="p-4 bg-slate-50 border-t">
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setIsPersonnelDialogOpen(false);
+                  setPersonnelSearch("");
+                }}
+              >
+                Xác nhận ({newTask.assignedPersonnel.length} người)
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   },

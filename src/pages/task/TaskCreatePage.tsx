@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import {
   Plus,
@@ -21,6 +21,8 @@ import {
   User,
   Users,
   MapPin,
+  Shield,
+  ClipboardCheck,
 } from "lucide-react";
 import {
   AdminLayout,
@@ -51,13 +53,14 @@ import {
   type Step,
 } from "@tankhang1/eco-shared-ui";
 
-import useTaskStore, {
-  type MaterialAllocation,
-} from "../../stores/useTaskStore";
+import useTaskStore from "../../stores/useTaskStore";
+import type { MaterialAllocation, TaskAllocation } from "../plan/types";
 import usePlanStore from "../../stores/usePlanStore";
+import useAmendmentPlanStore from "../../stores/useAmendmentPlanStore";
 import usePersonnelStore from "../../stores/usePersonnelStore";
 import useTeamStore from "../../stores/useTeamStore";
 import useRegimenStore from "../../stores/useRegimenStore";
+import { StageAllocation } from "../plan/components/StageAllocation";
 
 // Danh mục vật tư mẫu
 
@@ -142,6 +145,7 @@ export default function TaskCreatePage() {
   const [, setLocation] = useLocation();
   const addTask = useTaskStore((state) => state.addTask);
   const plans = usePlanStore((state) => state.plans);
+  const amendmentPlans = useAmendmentPlanStore((state) => state.plans);
   const personnel = usePersonnelStore((state) => state.personnel);
   const teams = useTeamStore((state) => state.teams);
   const regimens = useRegimenStore((state) => state.regimens);
@@ -156,19 +160,27 @@ export default function TaskCreatePage() {
       | "tri-benh",
     planId: "",
     planName: "",
-    stage: "",
+    selectedStages: [] as string[],
+    selectedPlotIds: [] as string[],
     regimenId: "",
     assignedType: "individual" as "individual" | "team",
     assignedTo: [] as string[],
+    supervisors: [] as string[],
+    qualityInspectors: [] as string[],
     startDate: new Date().toISOString().split("T")[0],
     endDate: new Date().toISOString().split("T")[0],
     priority: "medium" as "low" | "medium" | "high",
     description: "",
     materials: [] as MaterialAllocation[],
+    tasks: [] as TaskAllocation[],
   });
 
   const [isAssigneeDialogOpen, setIsAssigneeDialogOpen] = useState(false);
   const [searchAssignee, setSearchAssignee] = useState("");
+  const [isSupervisorDialogOpen, setIsSupervisorDialogOpen] = useState(false);
+  const [searchSupervisor, setSearchSupervisor] = useState("");
+  const [isInspectorDialogOpen, setIsInspectorDialogOpen] = useState(false);
+  const [searchInspector, setSearchInspector] = useState("");
 
   const [newMaterial, setNewMaterial] = useState({
     type: "fertilizer" as "fertilizer" | "pesticide" | "tool" | "other",
@@ -177,8 +189,29 @@ export default function TaskCreatePage() {
     unit: "kg",
   });
 
-  const selectedPlan = plans.find((p) => String(p.id) === formData.planId);
-  const availableStages = selectedPlan?.selectedStages || [];
+  const activePlans =
+    formData.objectiveType === "theo-ke-hoach"
+      ? plans.filter((p) => p.purpose === "cultivation")
+      : formData.objectiveType === "tri-benh"
+        ? plans.filter((p) => p.purpose === "treatment")
+        : formData.objectiveType === "cai-tao-dat"
+          ? amendmentPlans
+          : [];
+
+  const selectedPlan = (activePlans as any[]).find(
+    (p) => String(p.id) === formData.planId,
+  );
+
+  const availableStages = useMemo((): string[] => {
+    if (!selectedPlan) return [];
+    if ("selectedStages" in selectedPlan) return selectedPlan.selectedStages;
+    if ("allocations" in selectedPlan) {
+      return Array.from(
+        new Set(selectedPlan.allocations.map((a: any) => a.stage)),
+      );
+    }
+    return [];
+  }, [selectedPlan]);
   const availableAssignees =
     formData.assignedType === "team"
       ? teams.map((t) => ({ id: t.id, name: t.name, code: t.code, avatar: "" }))
@@ -195,7 +228,14 @@ export default function TaskCreatePage() {
       a.code.toLowerCase().includes(searchAssignee.toLowerCase()),
   );
 
-  const handleAddMaterial = () => {
+  const handleAddMaterial = (item?: Omit<MaterialAllocation, "id">) => {
+    if (item) {
+      setFormData((prev) => ({
+        ...prev,
+        materials: [...prev.materials, { id: Date.now(), ...item }],
+      }));
+      return;
+    }
     if (!newMaterial.name || !newMaterial.quantity) return;
     setFormData((prev) => ({
       ...prev,
@@ -203,10 +243,12 @@ export default function TaskCreatePage() {
         ...prev.materials,
         {
           id: Date.now(),
-          name: newMaterial.name,
-          quantity: Number(newMaterial.quantity),
+          stageId: "",
+          materialCategory: newMaterial.type,
+          materialType: newMaterial.type,
+          materialName: newMaterial.name,
+          quantity: newMaterial.quantity,
           unit: newMaterial.unit,
-          type: newMaterial.type,
         },
       ],
     }));
@@ -218,6 +260,20 @@ export default function TaskCreatePage() {
     });
   };
 
+  const handleAddTask = (item: Omit<TaskAllocation, "id">) => {
+    setFormData((prev) => ({
+      ...prev,
+      tasks: [...prev.tasks, { id: Date.now(), ...item }],
+    }));
+  };
+
+  const handleRemoveTask = (id: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      tasks: prev.tasks.filter((t) => t.id !== id),
+    }));
+  };
+
   const handleRemoveMaterial = (id: number) => {
     setFormData((prev) => ({
       ...prev,
@@ -226,31 +282,57 @@ export default function TaskCreatePage() {
   };
 
   const handleComplete = () => {
-    const taskData = {
-      code: formData.code,
-      name: formData.name,
-      plan:
-        formData.objectiveType === "theo-ke-hoach"
-          ? formData.planName
-          : formData.objectiveType === "cai-tao-dat" ||
-              formData.objectiveType === "tri-benh"
-            ? regimens.find((r) => r.id === formData.regimenId)?.name ||
-              "Điều trị/Cải tạo"
+    if (
+      formData.selectedStages.length > 0 &&
+      formData.objectiveType !== "phat-sinh"
+    ) {
+      formData.selectedStages.forEach((stageName, index) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mats = formData.materials as any[];
+        const taskData = {
+          code: `${formData.code}-${index + 1}`,
+          name: `${formData.name} - ${stageName}`,
+          plan: formData.planName || "Công việc theo kế hoạch",
+          stage: stageName,
+          assignedTo: formData.assignedTo,
+          assignedType: formData.assignedType,
+          supervisors: formData.supervisors,
+          qualityInspectors: formData.qualityInspectors,
+          startDate: formData.startDate,
+          endDate: formData.endDate,
+          priority: formData.priority,
+          description: formData.description,
+          materials: mats,
+        };
+        addTask(taskData as any);
+      });
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mats2 = formData.materials as any[];
+      const taskData = {
+        code: formData.code,
+        name: formData.name,
+        plan:
+          formData.objectiveType !== "phat-sinh"
+            ? formData.planName || "Công việc theo kế hoạch"
             : "Công việc phát sinh",
-      stage: formData.stage || "N/A",
-      assignedTo: formData.assignedTo,
-      assignedType: formData.assignedType,
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      priority: formData.priority,
-      description: formData.description,
-      materials: formData.materials,
-    };
+        stage: formData.selectedStages.join(", ") || "N/A",
+        assignedTo: formData.assignedTo,
+        assignedType: formData.assignedType,
+        supervisors: formData.supervisors,
+        qualityInspectors: formData.qualityInspectors,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        priority: formData.priority,
+        description: formData.description,
+        materials: mats2,
+      };
+      addTask(taskData as any);
+    }
 
-    addTask(taskData);
     toast({
       title: "Thành công",
-      description: "Đã phân bổ công việc mới",
+      description: `Đã phân bổ ${formData.objectiveType !== "phat-sinh" ? formData.selectedStages.length || 1 : 1} công việc mới`,
     });
     setLocation("/task");
   };
@@ -296,32 +378,22 @@ export default function TaskCreatePage() {
 
                 <div className="space-y-3">
                   <Label className="text-sm font-bold text-slate-500 uppercase tracking-wider">
-                    Nguồn gốc công việc *
+                    Hạng mục *
                   </Label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[
                       {
                         id: "theo-ke-hoach",
-                        label: "Kế hoạch",
+                        label: "Canh tác",
                         icon: Layers,
                         color: "blue",
                         borderColor: "border-blue-500",
                         bgColor: "bg-blue-50/50",
                         activeColor: "bg-blue-500",
                         textColor: "text-blue-700",
-                        description: "Từ canh tác",
+                        description: "Từ vùng trồng",
                       },
-                      {
-                        id: "phat-sinh",
-                        label: "Phát sinh",
-                        icon: Info,
-                        color: "amber",
-                        borderColor: "border-amber-500",
-                        bgColor: "bg-amber-50/50",
-                        activeColor: "bg-amber-500",
-                        textColor: "text-amber-700",
-                        description: "Ngoài kế hoạch",
-                      },
+
                       {
                         id: "cai-tao-dat",
                         label: "Cải tạo đất",
@@ -335,7 +407,7 @@ export default function TaskCreatePage() {
                       },
                       {
                         id: "tri-benh",
-                        label: "Trị bệnh",
+                        label: "Điều trị bệnh",
                         icon: Bug,
                         color: "red",
                         borderColor: "border-red-500",
@@ -343,6 +415,17 @@ export default function TaskCreatePage() {
                         activeColor: "bg-red-500",
                         textColor: "text-red-700",
                         description: "Xử lý dịch hại",
+                      },
+                      {
+                        id: "phat-sinh",
+                        label: "Phát sinh",
+                        icon: Info,
+                        color: "amber",
+                        borderColor: "border-amber-500",
+                        bgColor: "bg-amber-50/50",
+                        activeColor: "bg-amber-500",
+                        textColor: "text-amber-700",
+                        description: "Ngoài kế hoạch",
                       },
                     ].map((type) => (
                       <div
@@ -352,7 +435,8 @@ export default function TaskCreatePage() {
                             ...formData,
                             objectiveType: type.id as any,
                             planId: "",
-                            stage: "",
+                            selectedStages: [],
+                            selectedPlotIds: [],
                             regimenId: "",
                           })
                         }
@@ -384,299 +468,627 @@ export default function TaskCreatePage() {
                   </div>
                 </div>
 
-                {formData.objectiveType === "theo-ke-hoach" && (
-                  <div className="grid grid-cols-2 gap-4 animation-fade-in">
-                    <div className="space-y-2">
-                      <Label>Chọn kế hoạch *</Label>
-                      <Select
-                        value={formData.planId}
-                        onValueChange={(val) => {
-                          const p = plans.find((p) => String(p.id) === val);
-                          setFormData({
-                            ...formData,
-                            planId: val,
-                            planName: p?.name || "",
-                            stage: "",
-                          });
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Chọn kế hoạch..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {plans.map((p) => (
-                            <SelectItem key={p.id} value={String(p.id)}>
-                              {p.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Chọn giai đoạn *</Label>
-                      <Select
-                        value={formData.stage}
-                        onValueChange={(val) =>
-                          setFormData({ ...formData, stage: val })
-                        }
-                        disabled={!formData.planId}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Chọn giai đoạn..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableStages.map((s) => (
-                            <SelectItem key={s} value={s}>
-                              {s}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                )}
-
-                {(formData.objectiveType === "cai-tao-dat" ||
-                  formData.objectiveType === "tri-benh") && (
-                  <div className="space-y-2 animation-fade-in">
-                    <Label>
-                      {formData.objectiveType === "cai-tao-dat"
-                        ? "Phác đồ cải tạo đất áp dụng *"
-                        : "Phác đồ trị bệnh áp dụng *"}
-                    </Label>
-                    <Select
-                      value={formData.regimenId}
-                      onValueChange={(val) =>
-                        setFormData({ ...formData, regimenId: val })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={`Chọn phác đồ ${formData.objectiveType === "cai-tao-dat" ? "cải tạo" : "trị bệnh"}...`}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {regimens
-                          .filter((r) => r.type === formData.objectiveType)
-                          .map((r) => (
-                            <SelectItem key={r.id} value={r.id}>
-                              {r.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Loại phân công *</Label>
-                    <Select
-                      value={formData.assignedType}
-                      onValueChange={(val: any) =>
-                        setFormData({
-                          ...formData,
-                          assignedType: val,
-                          assignedTo: [],
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="individual">Cá nhân</SelectItem>
-                        <SelectItem value="team">Đội nhóm</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>
-                      {formData.assignedType === "team" ? "Đội nhóm" : "Người"}{" "}
-                      thực hiện *
-                    </Label>
-                    <div className="space-y-3">
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                        onClick={() => setIsAssigneeDialogOpen(true)}
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Chọn{" "}
-                        {formData.assignedType === "team"
-                          ? "đội nhóm"
-                          : "nhân sự"}
-                        ...
-                      </Button>
-
-                      {/* Selected Assignees List */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-                        {formData.assignedTo.map((name) => {
-                          const item = availableAssignees.find(
-                            (a) => a.name === name,
-                          );
-                          return (
-                            <div
-                              key={name}
-                              className="flex items-center justify-between p-3 rounded-2xl border bg-white border-slate-100 group transition-all hover:border-primary/30 hover:shadow-md animate-in fade-in slide-in-from-bottom-2"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 overflow-hidden rounded-xl border bg-slate-50 shadow-sm flex items-center justify-center shrink-0">
-                                  {formData.assignedType === "team" ? (
-                                    <Users className="w-5 h-5 text-blue-500" />
-                                  ) : item?.avatar ? (
-                                    <img
-                                      src={item.avatar}
-                                      alt={name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <User className="w-5 h-5 text-emerald-500" />
-                                  )}
-                                </div>
-                                <div>
-                                  <p className="text-sm font-black text-slate-800">
-                                    {name}
-                                  </p>
-                                  {item && (
-                                    <p className="text-[10px] text-slate-400 font-mono tracking-tighter">
-                                      {item.code}
-                                    </p>
-                                  )}
-                                </div>
+                {formData.objectiveType !== "phat-sinh" && (
+                  <div className="space-y-6 animation-fade-in border-t pt-6 mt-6 border-slate-100">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-bold text-slate-700">
+                          Chọn kế hoạch triển khai *
+                        </Label>
+                        <Select
+                          value={formData.planId}
+                          onValueChange={(val) => {
+                            const p = (activePlans as any[]).find(
+                              (p) => String(p.id) === val,
+                            );
+                            setFormData({
+                              ...formData,
+                              planId: val,
+                              planName: p?.name || "",
+                              selectedStages: [],
+                              selectedPlotIds:
+                                (p?.selectedPlotIds as string[]) || [],
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="h-12">
+                            <SelectValue placeholder="Chọn kế hoạch áp dụng..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {activePlans.map((p) => (
+                              <SelectItem key={p.id} value={String(p.id)}>
+                                {p.name} ({p.code})
+                              </SelectItem>
+                            ))}
+                            {activePlans.length === 0 && (
+                              <div className="p-4 text-center text-xs text-slate-400 italic">
+                                Không tìm thấy kế hoạch phù hợp
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-full"
-                                onClick={() =>
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    assignedTo: prev.assignedTo.filter(
-                                      (n) => n !== name,
-                                    ),
-                                  }))
-                                }
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Multi-select Plots */}
+                        <div className="space-y-2">
+                          <Label className="text-sm font-bold text-slate-700 flex items-center justify-between">
+                            Phạm vi vùng trồng (Lô đất) *
+                            <span className="text-[10px] text-slate-400 font-normal">
+                              Chọn nhiều
+                            </span>
+                          </Label>
+                          <ScrollArea className="h-[150px] border p-3 bg-slate-50/50">
+                            <div className="space-y-2">
+                              {(
+                                (selectedPlan?.selectedPlotIds as string[]) ||
+                                []
+                              ).map((plotId) => (
+                                <div
+                                  key={plotId}
+                                  className="flex items-center space-x-2"
+                                >
+                                  <Checkbox
+                                    id={`plot-${plotId}`}
+                                    checked={formData.selectedPlotIds.includes(
+                                      plotId,
+                                    )}
+                                    onCheckedChange={(checked) => {
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        selectedPlotIds: checked
+                                          ? [...prev.selectedPlotIds, plotId]
+                                          : prev.selectedPlotIds.filter(
+                                              (id) => id !== plotId,
+                                            ),
+                                      }));
+                                    }}
+                                  />
+                                  <label
+                                    htmlFor={`plot-${plotId}`}
+                                    className="text-xs font-medium text-slate-600 cursor-pointer"
+                                  >
+                                    {plotId}
+                                  </label>
+                                </div>
+                              ))}
+                              {(!selectedPlan ||
+                                !selectedPlan.selectedPlotIds ||
+                                selectedPlan.selectedPlotIds.length === 0) && (
+                                <p className="text-[10px] text-slate-400 italic text-center py-10">
+                                  {formData.planId
+                                    ? "Kế hoạch không quy định lô đất"
+                                    : "Hãy chọn kế hoạch trước"}
+                                </p>
+                              )}
                             </div>
-                          );
-                        })}
-                        {formData.assignedTo.length === 0 && (
-                          <div className="md:col-span-2 py-6 border-2 border-dashed border-slate-100 rounded-2xl flex flex-col items-center justify-center bg-slate-50/30">
-                            <Users className="w-8 h-8 text-slate-200 mb-2" />
-                            <p className="text-xs text-slate-400 font-medium italic">
-                              Chưa có người tham gia
-                            </p>
-                          </div>
-                        )}
+                          </ScrollArea>
+                        </div>
+
+                        {/* Multi-select Stages */}
+                        <div className="space-y-2">
+                          <Label className="text-sm font-bold text-slate-700 flex items-center justify-between">
+                            Giai đoạn thực hiện *
+                            <span className="text-[10px] text-slate-400 font-normal">
+                              Chọn nhiều
+                            </span>
+                          </Label>
+                          <ScrollArea className="h-[150px] border p-3 bg-slate-50/50">
+                            <div className="space-y-2">
+                              {availableStages.map((s) => (
+                                <div
+                                  key={s}
+                                  className="flex items-center space-x-2"
+                                >
+                                  <Checkbox
+                                    id={`stage-${s}`}
+                                    checked={formData.selectedStages.includes(
+                                      s,
+                                    )}
+                                    onCheckedChange={(checked) => {
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        selectedStages: checked
+                                          ? [...prev.selectedStages, s]
+                                          : prev.selectedStages.filter(
+                                              (item) => item !== s,
+                                            ),
+                                      }));
+                                    }}
+                                  />
+                                  <label
+                                    htmlFor={`stage-${s}`}
+                                    className="text-xs font-medium text-slate-600 cursor-pointer"
+                                  >
+                                    {s}
+                                  </label>
+                                </div>
+                              ))}
+                              {availableStages.length === 0 && (
+                                <p className="text-[10px] text-slate-400 italic text-center py-10">
+                                  {formData.planId
+                                    ? "Kế hoạch không có giai đoạn"
+                                    : "Hãy chọn kế hoạch trước"}
+                                </p>
+                              )}
+                            </div>
+                          </ScrollArea>
+                        </div>
                       </div>
                     </div>
+
+                    {(formData.objectiveType === "cai-tao-dat" ||
+                      formData.objectiveType === "tri-benh") && (
+                      <div className="space-y-2 pt-2 border-t border-slate-50">
+                        <Label className="text-sm font-bold text-slate-700">
+                          {formData.objectiveType === "cai-tao-dat"
+                            ? "Phác đồ cải tạo đất áp dụng"
+                            : "Phác đồ trị bệnh áp dụng"}
+                        </Label>
+                        <Select
+                          value={formData.regimenId}
+                          onValueChange={(val) =>
+                            setFormData({ ...formData, regimenId: val })
+                          }
+                        >
+                          <SelectTrigger className="h-12">
+                            <SelectValue
+                              placeholder={`Chọn phác đồ ${formData.objectiveType === "cai-tao-dat" ? "cải tạo" : "trị bệnh"}...`}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {regimens
+                              .filter((r) => r.type === formData.objectiveType)
+                              .map((r) => (
+                                <SelectItem key={r.id} value={r.id}>
+                                  {r.name}
+                                </SelectItem>
+                              ))}
+                            {regimens.filter(
+                              (r) => r.type === formData.objectiveType,
+                            ).length === 0 && (
+                              <div className="p-4 text-center text-xs text-slate-400 italic">
+                                Không tìm thấy phác đồ mẫu
+                              </div>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 1. Nhân sự quản lý */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-blue-500" />
+                      Nhân sự quản lý
+                    </Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs rounded-xl border-blue-200 text-blue-600 hover:bg-blue-50"
+                      onClick={() => setIsSupervisorDialogOpen(true)}
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1" /> Thêm
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2">
+                    {formData.supervisors.map((name) => {
+                      const item = personnel.find((p) => p.fullName === name);
+                      return (
+                        <div
+                          key={name}
+                          className="flex items-center justify-between p-3 rounded-2xl border bg-blue-50/30 border-blue-100 group hover:border-blue-200 transition-all animate-in fade-in"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 overflow-hidden rounded-xl border border-blue-100 bg-white shadow-sm flex items-center justify-center shrink-0">
+                              {item?.avatar ? (
+                                <img
+                                  src={item.avatar}
+                                  alt={name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <Shield className="w-4 h-4 text-blue-400" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-slate-800 leading-none">
+                                {name}
+                              </p>
+                              <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                {item?.taxCode || "Quản lý"}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-full"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                supervisors: prev.supervisors.filter(
+                                  (n) => n !== name,
+                                ),
+                              }))
+                            }
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                    {formData.supervisors.length === 0 && (
+                      <div className="py-5 border-2 border-dashed border-blue-100 rounded-2xl flex flex-col items-center justify-center bg-blue-50/20">
+                        <Shield className="w-6 h-6 text-blue-200 mb-1" />
+                        <p className="text-xs text-slate-400 italic">
+                          Chưa có nhân sự quản lý
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Assignee Selection Dialog */}
+                {/* 2. Nhân sự kiểm định chất lượng */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                      <ClipboardCheck className="w-4 h-4 text-violet-500" />
+                      Kiểm định chất lượng
+                    </Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs rounded-xl border-violet-200 text-violet-600 hover:bg-violet-50"
+                      onClick={() => setIsInspectorDialogOpen(true)}
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1" /> Thêm
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2">
+                    {formData.qualityInspectors.map((name) => {
+                      const item = personnel.find((p) => p.fullName === name);
+                      return (
+                        <div
+                          key={name}
+                          className="flex items-center justify-between p-3 rounded-2xl border bg-violet-50/30 border-violet-100 group hover:border-violet-200 transition-all animate-in fade-in"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 overflow-hidden rounded-xl border border-violet-100 bg-white shadow-sm flex items-center justify-center shrink-0">
+                              {item?.avatar ? (
+                                <img
+                                  src={item.avatar}
+                                  alt={name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <ClipboardCheck className="w-4 h-4 text-violet-400" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-slate-800 leading-none">
+                                {name}
+                              </p>
+                              <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                {item?.taxCode || "Kiểm định"}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-full"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                qualityInspectors:
+                                  prev.qualityInspectors.filter(
+                                    (n) => n !== name,
+                                  ),
+                              }))
+                            }
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                    {formData.qualityInspectors.length === 0 && (
+                      <div className="py-5 border-2 border-dashed border-violet-100 rounded-2xl flex flex-col items-center justify-center bg-violet-50/20">
+                        <ClipboardCheck className="w-6 h-6 text-violet-200 mb-1" />
+                        <p className="text-xs text-slate-400 italic">
+                          Chưa có nhân sự kiểm định
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Assignee Selection Dialog (existing - kept for compatibility) */}
                 <Dialog
                   open={isAssigneeDialogOpen}
                   onOpenChange={setIsAssigneeDialogOpen}
                 >
                   <DialogContent className="max-w-md p-0 overflow-hidden">
-                    <DialogHeader className="p-6 pb-2">
-                      <DialogTitle className="flex items-center gap-2">
-                        <Users className="w-5 h-5 text-primary" />
+                    <DialogHeader className="p-5 pb-3">
+                      <DialogTitle className="flex items-center gap-2 text-base">
+                        <Users className="w-4 h-4 text-primary" />
                         Chọn{" "}
                         {formData.assignedType === "team"
                           ? "đội nhóm"
                           : "nhân sự"}
                       </DialogTitle>
                     </DialogHeader>
-
-                    <div className="p-6 pt-2 space-y-4">
+                    <div className="px-5 pb-3">
                       <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                         <Input
                           placeholder="Tìm nhanh theo tên hoặc mã..."
-                          className="pl-10"
+                          className="pl-9 h-9 text-sm"
                           value={searchAssignee}
                           onChange={(e) => setSearchAssignee(e.target.value)}
                         />
                       </div>
-
-                      <ScrollArea className="h-[300px] border rounded-xl p-2 bg-slate-50/30">
-                        <div className="space-y-1">
-                          {filteredAssignees.map((a) => {
-                            const isSelected = formData.assignedTo.includes(
-                              a.name,
-                            );
-                            return (
-                              <div
-                                key={a.id}
-                                className={cn(
-                                  "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border",
-                                  isSelected
-                                    ? "bg-primary/5 border-primary/20"
-                                    : "bg-white border-transparent hover:border-slate-200",
-                                )}
-                                onClick={() => {
-                                  setFormData((prev) => {
-                                    const next = isSelected
-                                      ? prev.assignedTo.filter(
-                                          (n) => n !== a.name,
-                                        )
-                                      : [...prev.assignedTo, a.name];
-                                    return { ...prev, assignedTo: next };
-                                  });
-                                }}
-                              >
-                                <Checkbox
-                                  checked={isSelected}
-                                  onCheckedChange={() => {}} // Handle in parent div click
-                                />
-                                <div className="h-10 w-10 overflow-hidden rounded-full border bg-slate-100 flex items-center justify-center shrink-0">
-                                  {formData.assignedType === "team" ? (
-                                    <Users className="w-5 h-5 text-blue-500" />
-                                  ) : a.avatar ? (
-                                    <img
-                                      src={a.avatar}
-                                      alt={a.name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <User className="w-5 h-5 text-green-500" />
-                                  )}
-                                </div>
-                                <div className="flex-1">
-                                  <p className="text-sm font-bold text-slate-700">
-                                    {a.name}
-                                  </p>
-                                  <p className="text-xs text-slate-400">
-                                    {a.code}
-                                  </p>
-                                </div>
-                                {isSelected && (
-                                  <CheckCircle2 className="w-4 h-4 text-primary" />
+                    </div>
+                    <ScrollArea className="h-[300px] px-3">
+                      <div className="space-y-1 pb-2">
+                        {filteredAssignees.map((a) => {
+                          const isSelected = formData.assignedTo.includes(
+                            a.name,
+                          );
+                          return (
+                            <button
+                              key={a.id}
+                              type="button"
+                              className={cn(
+                                "w-full flex items-center gap-3 p-2.5 rounded-xl border transition-all text-left",
+                                isSelected
+                                  ? "bg-primary/5 border-primary/20"
+                                  : "bg-white border-transparent hover:border-slate-200",
+                              )}
+                              onClick={() =>
+                                setFormData((prev) => {
+                                  const next = isSelected
+                                    ? prev.assignedTo.filter(
+                                        (n) => n !== a.name,
+                                      )
+                                    : [...prev.assignedTo, a.name];
+                                  return { ...prev, assignedTo: next };
+                                })
+                              }
+                            >
+                              <div className="h-9 w-9 overflow-hidden rounded-full border bg-slate-100 flex items-center justify-center shrink-0">
+                                {formData.assignedType === "team" ? (
+                                  <Users className="w-4 h-4 text-blue-500" />
+                                ) : a.avatar ? (
+                                  <img
+                                    src={a.avatar}
+                                    alt={a.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <User className="w-4 h-4 text-green-500" />
                                 )}
                               </div>
-                            );
-                          })}
-                          {filteredAssignees.length === 0 && (
-                            <div className="py-8 text-center text-slate-400">
-                              <p className="text-sm italic">
-                                Không tìm thấy kết quả nào
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </ScrollArea>
-                    </div>
-
-                    <DialogFooter className="p-6 bg-slate-50 border-t">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-slate-800 truncate">
+                                  {a.name}
+                                </p>
+                                <p className="text-[11px] text-slate-400 truncate">
+                                  {a.code}
+                                </p>
+                              </div>
+                              {isSelected && (
+                                <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                              )}
+                            </button>
+                          );
+                        })}
+                        {filteredAssignees.length === 0 && (
+                          <div className="py-8 text-center text-slate-400">
+                            <p className="text-sm italic">
+                              Không tìm thấy kết quả nào
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </ScrollArea>
+                    <DialogFooter className="p-4 bg-slate-50 border-t">
                       <Button
                         className="w-full"
                         onClick={() => setIsAssigneeDialogOpen(false)}
                       >
                         Xác nhận ({formData.assignedTo.length})
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Supervisor Selection Dialog */}
+                <Dialog
+                  open={isSupervisorDialogOpen}
+                  onOpenChange={setIsSupervisorDialogOpen}
+                >
+                  <DialogContent className="max-w-md p-0 overflow-hidden">
+                    <DialogHeader className="p-6 pb-3 border-b">
+                      <DialogTitle className="flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-blue-500" /> Chọn nhân
+                        sự quản lý
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="px-5 pb-3 pt-4">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                        <Input
+                          placeholder="Tìm theo tên hoặc mã..."
+                          className="pl-9 h-9 text-sm"
+                          value={searchSupervisor}
+                          onChange={(e) => setSearchSupervisor(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <ScrollArea className="h-[300px] px-3">
+                      <div className="space-y-1 pb-2">
+                        {personnel
+                          .filter((p) =>
+                            p.fullName
+                              .toLowerCase()
+                              .includes(searchSupervisor.toLowerCase()),
+                          )
+                          .map((p) => {
+                            const isSelected = formData.supervisors.includes(
+                              p.fullName,
+                            );
+                            return (
+                              <button
+                                key={p.id}
+                                type="button"
+                                className={cn(
+                                  "w-full flex items-center gap-3 p-2.5 rounded-xl border transition-all text-left",
+                                  isSelected
+                                    ? "bg-blue-50 border-blue-200"
+                                    : "bg-white border-transparent hover:border-slate-200",
+                                )}
+                                onClick={() =>
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    supervisors: isSelected
+                                      ? prev.supervisors.filter(
+                                          (n) => n !== p.fullName,
+                                        )
+                                      : [...prev.supervisors, p.fullName],
+                                  }))
+                                }
+                              >
+                                <div className="h-9 w-9 overflow-hidden rounded-full border bg-slate-100 flex items-center justify-center shrink-0">
+                                  {p.avatar ? (
+                                    <img
+                                      src={p.avatar}
+                                      alt={p.fullName}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <User className="w-4 h-4 text-blue-400" />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-slate-800 truncate">
+                                    {p.fullName}
+                                  </p>
+                                  <p className="text-[11px] text-slate-400 truncate">
+                                    {p.taxCode || "—"}
+                                  </p>
+                                </div>
+                                {isSelected && (
+                                  <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0" />
+                                )}
+                              </button>
+                            );
+                          })}
+                      </div>
+                    </ScrollArea>
+                    <DialogFooter className="p-4 bg-slate-50 border-t">
+                      <Button
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                        onClick={() => setIsSupervisorDialogOpen(false)}
+                      >
+                        Xác nhận ({formData.supervisors.length})
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Quality Inspector Selection Dialog */}
+                <Dialog
+                  open={isInspectorDialogOpen}
+                  onOpenChange={setIsInspectorDialogOpen}
+                >
+                  <DialogContent className="max-w-md p-0 overflow-hidden">
+                    <DialogHeader className="p-6 pb-3 border-b">
+                      <DialogTitle className="flex items-center gap-2">
+                        <ClipboardCheck className="w-4 h-4 text-violet-500" />{" "}
+                        Chọn nhân sự kiểm định chất lượng
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="px-5 pb-3 pt-4">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                        <Input
+                          placeholder="Tìm theo tên hoặc mã..."
+                          className="pl-9 h-9 text-sm"
+                          value={searchInspector}
+                          onChange={(e) => setSearchInspector(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <ScrollArea className="h-[300px] px-3">
+                      <div className="space-y-1 pb-2">
+                        {personnel
+                          .filter((p) =>
+                            p.fullName
+                              .toLowerCase()
+                              .includes(searchInspector.toLowerCase()),
+                          )
+                          .map((p) => {
+                            const isSelected =
+                              formData.qualityInspectors.includes(p.fullName);
+                            return (
+                              <button
+                                key={p.id}
+                                type="button"
+                                className={cn(
+                                  "w-full flex items-center gap-3 p-2.5 rounded-xl border transition-all text-left",
+                                  isSelected
+                                    ? "bg-violet-50 border-violet-200"
+                                    : "bg-white border-transparent hover:border-slate-200",
+                                )}
+                                onClick={() =>
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    qualityInspectors: isSelected
+                                      ? prev.qualityInspectors.filter(
+                                          (n) => n !== p.fullName,
+                                        )
+                                      : [...prev.qualityInspectors, p.fullName],
+                                  }))
+                                }
+                              >
+                                <div className="h-9 w-9 overflow-hidden rounded-full border bg-slate-100 flex items-center justify-center shrink-0">
+                                  {p.avatar ? (
+                                    <img
+                                      src={p.avatar}
+                                      alt={p.fullName}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <User className="w-4 h-4 text-violet-400" />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-slate-800 truncate">
+                                    {p.fullName}
+                                  </p>
+                                  <p className="text-[11px] text-slate-400 truncate">
+                                    {p.taxCode || "—"}
+                                  </p>
+                                </div>
+                                {isSelected && (
+                                  <CheckCircle2 className="w-4 h-4 text-violet-500 shrink-0" />
+                                )}
+                              </button>
+                            );
+                          })}
+                      </div>
+                    </ScrollArea>
+                    <DialogFooter className="p-4 bg-slate-50 border-t">
+                      <Button
+                        className="w-full bg-violet-600 hover:bg-violet-700"
+                        onClick={() => setIsInspectorDialogOpen(false)}
+                      >
+                        Xác nhận ({formData.qualityInspectors.length})
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -792,253 +1204,108 @@ export default function TaskCreatePage() {
     },
     {
       id: "resources",
-      title: "Nguồn lực vật tư",
-      description: "Phân bổ phân bón, thuốc, dụng cụ",
+      title:
+        formData.objectiveType === "theo-ke-hoach" ||
+        formData.objectiveType === "cai-tao-dat"
+          ? "Phân bổ & Công việc"
+          : formData.objectiveType === "phat-sinh"
+            ? "Vật tư & Nhân sự"
+            : "Vật tư & Phác đồ",
+      description: "Hoạch định nguồn lực chi tiết",
       content: (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Package className="w-5 h-5 text-primary" />
-                  Danh mục vật tư sử dụng
-                </CardTitle>
-                <Badge variant="outline">
-                  {formData.materials.length} hạng mục
-                </Badge>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {formData.materials.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between p-5 bg-white rounded-2xl border border-slate-100 group transition-all hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-500/5 animate-in fade-in zoom-in-95"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={cn(
-                            "w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm",
-                            MATERIAL_TYPES.find((t) => t.id === item.type)?.bg,
-                          )}
-                        >
-                          {(() => {
-                            const Icon =
-                              MATERIAL_TYPES.find((t) => t.id === item.type)
-                                ?.icon || Package;
-                            return (
-                              <Icon
-                                className={cn(
-                                  "w-6 h-6",
-                                  MATERIAL_TYPES.find((t) => t.id === item.type)
-                                    ?.color,
-                                )}
-                              />
-                            );
-                          })()}
-                        </div>
-                        <div>
-                          <p className="font-black text-slate-800 leading-none mb-1">
-                            {item.name}
-                          </p>
-                          <Badge
-                            variant="secondary"
-                            className="text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 border-none"
-                          >
-                            {
-                              MATERIAL_TYPES.find((t) => t.id === item.type)
-                                ?.label
-                            }
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-6">
-                        <div className="text-right">
-                          <p className="text-lg font-black text-emerald-600 leading-none">
-                            {item.quantity}
-                          </p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            {item.unit}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveMaterial(item.id)}
-                          className="h-10 w-10 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors"
-                        >
-                          <X className="w-5 h-5" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  {formData.materials.length === 0 && (
-                    <div className="text-center py-20 border-2 border-dashed border-slate-100 rounded-[32px] bg-slate-50/30">
-                      <div className="bg-white w-20 h-20 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-center mx-auto mb-4 animate-bounce duration-[3s]">
-                        <Package className="w-10 h-10 text-slate-200" />
-                      </div>
-                      <h3 className="text-slate-900 font-black text-lg">
-                        Chưa có vật tư
-                      </h3>
-                      <p className="text-slate-400 text-sm max-w-[200px] mx-auto mt-1 leading-relaxed">
-                        Hãy chọn và thêm vật tư cần thiết ở cột bên phải
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+        <div className="max-w-3xl mx-auto space-y-6">
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-slate-900">
+              {formData.objectiveType === "theo-ke-hoach" ||
+              formData.objectiveType === "cai-tao-dat"
+                ? "Định mức Vật tư & Giai đoạn"
+                : formData.objectiveType === "phat-sinh"
+                  ? "Vật tư & Công việc Phát sinh"
+                  : "Vật tư & Công việc Điều trị"}
+            </h3>
+            <p className="text-slate-500 text-sm mt-1 max-w-lg mx-auto">
+              {formData.objectiveType === "theo-ke-hoach" ||
+              formData.objectiveType === "cai-tao-dat"
+                ? "Thiết lập chi tiết các hạng mục đầu tư và quy trình kỹ thuật cho từng giai đoạn của mùa vụ."
+                : formData.objectiveType === "phat-sinh"
+                  ? "Phân bổ vật tư và nhân sự cần thiết cho công việc phát sinh ngoài kế hoạch."
+                  : "Phân bổ vật tư và công việc cụ thể để thực hiện phác đồ điều trị đã chọn."}
+            </p>
           </div>
 
-          <div className="space-y-6">
-            <Card className="border-primary/20 shadow-md ring-1 ring-primary/5">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Plus className="w-5 h-5 text-primary" />
-                  Thêm vật tư mới
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  {MATERIAL_TYPES.map((type) => {
-                    const Icon = type.icon;
-                    const isSelected = newMaterial.type === type.id;
-                    return (
-                      <div
-                        key={type.id}
-                        onClick={() =>
-                          setNewMaterial((prev) => ({
-                            ...prev,
-                            type: type.id as any,
-                            name: "",
-                            unit: MATERIAL_UNITS[
-                              type.id as keyof typeof MATERIAL_UNITS
-                            ][0],
-                          }))
-                        }
-                        className={cn(
-                          "cursor-pointer rounded-2xl border-2 p-4 flex flex-col items-center gap-2 transition-all relative group overflow-hidden",
-                          isSelected
-                            ? `${type.bg} ${type.border} shadow-sm border-2`
-                            : "hover:bg-slate-50 border-slate-100",
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            "w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110",
-                            isSelected
-                              ? `${type.color.replace("text-", "bg-").replace("500", "500")} text-white`
-                              : "bg-slate-100 text-slate-400",
-                          )}
-                        >
-                          <Icon className="w-5 h-5 shadow-sm" />
-                        </div>
-                        <span
-                          className={cn(
-                            "text-[10px] font-black uppercase tracking-wider",
-                            isSelected ? type.color : "text-slate-500",
-                          )}
-                        >
-                          {type.label}
-                        </span>
-                        {isSelected && (
-                          <div className="absolute top-1 right-1">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="space-y-4 pt-2">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase text-slate-500">
-                      Tên vật tư
-                    </Label>
-                    <Select
-                      value={newMaterial.name}
-                      onValueChange={(val) => {
-                        const typeOptions =
-                          MATERIAL_OPTIONS[
-                            newMaterial.type as keyof typeof MATERIAL_OPTIONS
-                          ];
-                        const opt = typeOptions.find((o) => o.value === val);
-                        setNewMaterial((prev) => ({
-                          ...prev,
-                          name: val,
-                          unit: opt?.unit || "kg",
-                        }));
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn vật tư..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {MATERIAL_OPTIONS[
-                          newMaterial.type as keyof typeof MATERIAL_OPTIONS
-                        ].map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+          <div className="space-y-4">
+            {formData.objectiveType === "theo-ke-hoach" ||
+            formData.objectiveType === "cai-tao-dat" ? (
+              (formData.selectedStages.length > 0
+                ? formData.selectedStages
+                : ["Công việc chính"]
+              ).map((stageName, idx) => (
+                <StageAllocation
+                  key={stageName}
+                  stageName={stageName}
+                  index={idx}
+                  allocations={formData.materials.filter(
+                    (m: any) => m.stageId === stageName,
+                  )}
+                  tasks={formData.tasks.filter(
+                    (t: any) => t.stageId === stageName,
+                  )}
+                  onAddMaterial={(item) => handleAddMaterial(item)}
+                  onRemoveMaterial={handleRemoveMaterial}
+                  onAddTask={handleAddTask}
+                  onRemoveTask={handleRemoveTask}
+                />
+              ))
+            ) : formData.objectiveType === "phat-sinh" ? (
+              <StageAllocation
+                key="phat-sinh"
+                index={0}
+                stageName="Công việc phát sinh"
+                cycleName="Phát sinh"
+                allocations={formData.materials.filter(
+                  (m: any) => m.stageId === "Công việc phát sinh",
+                )}
+                tasks={formData.tasks.filter(
+                  (t: any) => t.stageId === "Công việc phát sinh",
+                )}
+                onAddMaterial={(item) => handleAddMaterial(item)}
+                onRemoveMaterial={handleRemoveMaterial}
+                onAddTask={handleAddTask}
+                onRemoveTask={handleRemoveTask}
+              />
+            ) : (
+              (() => {
+                const regimen = regimens.find(
+                  (r) => r.id === formData.regimenId,
+                );
+                const stageName = regimen?.name || "Điều trị";
+                return regimen ? (
+                  <div className="animation-slide-up">
+                    <StageAllocation
+                      index={0}
+                      stageName={stageName}
+                      cycleName="Phác đồ điều trị"
+                      allocations={formData.materials.filter(
+                        (m: any) => m.stageId === stageName,
+                      )}
+                      tasks={formData.tasks.filter(
+                        (t: any) => t.stageId === stageName,
+                      )}
+                      onAddMaterial={(item) => handleAddMaterial(item)}
+                      onRemoveMaterial={handleRemoveMaterial}
+                      onAddTask={handleAddTask}
+                      onRemoveTask={handleRemoveTask}
+                    />
                   </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-bold uppercase text-slate-500">
-                        Số lượng
-                      </Label>
-                      <Input
-                        type="number"
-                        value={newMaterial.quantity}
-                        onChange={(e) =>
-                          setNewMaterial((prev) => ({
-                            ...prev,
-                            quantity: e.target.value,
-                          }))
-                        }
-                        placeholder="0"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-bold uppercase text-slate-500">
-                        Đơn vị
-                      </Label>
-                      <Select
-                        value={newMaterial.unit}
-                        onValueChange={(val) =>
-                          setNewMaterial((prev) => ({ ...prev, unit: val }))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {MATERIAL_UNITS[
-                            newMaterial.type as keyof typeof MATERIAL_UNITS
-                          ].map((u) => (
-                            <SelectItem key={u} value={u}>
-                              {u}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                ) : (
+                  <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
+                    <p className="text-slate-400 font-medium italic">
+                      Vui lòng chọn phác đồ điều trị ở bước trước.
+                    </p>
                   </div>
-
-                  <Button
-                    onClick={handleAddMaterial}
-                    className="w-full h-11 shadow-sm mt-2"
-                    disabled={!newMaterial.name || !newMaterial.quantity}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Thêm vào danh sách
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                );
+              })()
+            )}
           </div>
         </div>
       ),
@@ -1049,243 +1316,454 @@ export default function TaskCreatePage() {
       description: "Kiểm tra lại toàn bộ thông tin",
       content: (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <FileCheck className="w-5 h-5 text-emerald-500" />
-                  Xác nhận & Hoàn tất
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-gradient-to-br from-emerald-50 to-teal-50/30 p-8 rounded-3xl border border-emerald-100 shadow-sm relative overflow-hidden mb-8">
-                  <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl" />
-                  <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-white shadow-md flex items-center justify-center border border-emerald-100">
-                          {formData.objectiveType === "tri-benh" ? (
-                            <Bug className="w-6 h-6 text-rose-500" />
-                          ) : formData.objectiveType === "cai-tao-dat" ? (
-                            <Sprout className="w-6 h-6 text-emerald-500" />
-                          ) : (
-                            <ClipboardList className="w-6 h-6 text-blue-500" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">
-                            {formData.objectiveType === "theo-ke-hoach"
-                              ? "Theo kế hoạch"
-                              : formData.objectiveType === "cai-tao-dat"
-                                ? "Cải tạo đất"
-                                : formData.objectiveType === "tri-benh"
-                                  ? "Trị bệnh"
-                                  : "Công việc phát sinh"}
-                          </p>
-                          <h4 className="font-black text-slate-900 text-2xl tracking-tight">
-                            {formData.name || "Tên công việc chưa đặt"}
-                          </h4>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        <Badge
-                          variant="outline"
-                          className="bg-white/80 border-emerald-200 text-emerald-700 px-3 py-1 font-bold rounded-lg"
-                        >
-                          <CalendarIcon className="w-3.5 h-3.5 mr-1.5 opacity-60" />
-                          {formData.startDate} - {formData.endDate}
-                        </Badge>
-                        <Badge
-                          className={cn(
-                            "px-3 py-1 font-bold rounded-lg border-transparent",
-                            formData.priority === "high"
-                              ? "bg-rose-500 text-white"
-                              : formData.priority === "medium"
-                                ? "bg-amber-500 text-white"
-                                : "bg-emerald-500 text-white",
-                          )}
-                        >
-                          Ưu tiên:{" "}
-                          {formData.priority === "high"
-                            ? "Cao"
+          {/* ── LEFT COLUMN ── */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Identity banner */}
+            <div className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-teal-50/40 p-6 shadow-sm">
+              <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-emerald-400/10 blur-2xl pointer-events-none" />
+              <div className="relative flex items-start justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-white shadow border border-emerald-100 flex items-center justify-center shrink-0">
+                    {formData.objectiveType === "tri-benh" ? (
+                      <Bug className="w-7 h-7 text-rose-500" />
+                    ) : formData.objectiveType === "cai-tao-dat" ? (
+                      <Sprout className="w-7 h-7 text-emerald-500" />
+                    ) : formData.objectiveType === "phat-sinh" ? (
+                      <Info className="w-7 h-7 text-amber-500" />
+                    ) : (
+                      <ClipboardList className="w-7 h-7 text-blue-500" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-600 mb-0.5">
+                      {formData.objectiveType === "theo-ke-hoach"
+                        ? "Theo kế hoạch"
+                        : formData.objectiveType === "cai-tao-dat"
+                          ? "Cải tạo đất"
+                          : formData.objectiveType === "tri-benh"
+                            ? "Điều trị bệnh"
+                            : "Công việc phát sinh"}
+                    </p>
+                    <h3 className="text-xl font-black text-slate-900 leading-tight">
+                      {formData.name || (
+                        <span className="text-slate-400 italic font-normal">
+                          Chưa đặt tên
+                        </span>
+                      )}
+                    </h3>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      <Badge
+                        variant="outline"
+                        className="bg-white/80 border-slate-200 text-slate-600 text-[11px] px-2 py-0.5 font-medium rounded-md"
+                      >
+                        <CalendarIcon className="w-3 h-3 mr-1 opacity-50" />
+                        {formData.startDate} → {formData.endDate}
+                      </Badge>
+                      <Badge
+                        className={cn(
+                          "text-[11px] px-2 py-0.5 font-bold rounded-md border-transparent",
+                          formData.priority === "high"
+                            ? "bg-rose-500 text-white"
                             : formData.priority === "medium"
-                              ? "Thường"
-                              : "Thấp"}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    <div className="text-right">
-                      <div className="inline-block p-2 bg-white/50 rounded-xl border border-emerald-100">
-                        <p className="text-[10px] font-black text-slate-400 uppercase mb-1">
-                          Mã định danh
-                        </p>
-                        <p className="font-mono font-bold text-slate-800">
-                          {formData.code}
-                        </p>
-                      </div>
+                              ? "bg-amber-500 text-white"
+                              : "bg-emerald-500 text-white",
+                        )}
+                      >
+                        {formData.priority === "high"
+                          ? "Ưu tiên cao"
+                          : formData.priority === "medium"
+                            ? "Ưu tiên thường"
+                            : "Ưu tiên thấp"}
+                      </Badge>
                     </div>
                   </div>
                 </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">
+                    Mã CV
+                  </p>
+                  <p className="font-mono text-sm font-bold text-slate-700 bg-white border border-slate-100 px-2.5 py-1 rounded-lg shadow-sm">
+                    {formData.code}
+                  </p>
+                </div>
+              </div>
+            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm font-bold text-slate-700 uppercase tracking-wider">
-                      <Users className="w-4 h-4 text-emerald-500" />
-                      Nhân sự thực hiện
+            {/* Info rows card */}
+            <Card className="border-slate-100">
+              <CardContent className="p-0 divide-y divide-slate-50">
+                {/* Plan & Stages row */}
+                {formData.objectiveType !== "phat-sinh" && (
+                  <div className="flex items-start gap-4 px-5 py-4">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 mt-0.5">
+                      <Layers className="w-4 h-4 text-blue-500" />
                     </div>
-                    <div className="p-6 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-4">
-                      <div className="flex items-center -space-x-3 mb-2">
-                        {formData.assignedTo.slice(0, 5).map((name, idx) => {
-                          const item = availableAssignees.find(
-                            (a) => a.name === name,
-                          );
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                        Kế hoạch áp dụng
+                      </p>
+                      <p className="text-sm font-bold text-slate-800 truncate">
+                        {formData.planName || (
+                          <span className="text-slate-400 italic font-normal">
+                            Chưa chọn
+                          </span>
+                        )}
+                      </p>
+                      {formData.selectedStages.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {formData.selectedStages.map((s) => (
+                            <Badge
+                              key={s}
+                              variant="secondary"
+                              className="text-[10px] bg-blue-50 text-blue-700 border-none px-2 py-0 h-5 font-medium"
+                            >
+                              {s}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {formData.selectedPlotIds.length > 0 && (
+                      <div className="shrink-0 text-right">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                          Phạm vi lô đất
+                        </p>
+                        <p className="text-xs font-semibold text-slate-700 max-w-[160px] text-right leading-snug">
+                          {formData.selectedPlotIds.join(", ")}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Personnel row */}
+                <div className="flex items-start gap-4 px-5 py-4">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5">
+                    <Users className="w-4 h-4 text-emerald-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                      {formData.assignedType === "team"
+                        ? "Đội nhóm thực hiện"
+                        : "Nhân sự thực hiện"}
+                    </p>
+                    {formData.assignedTo.length > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center -space-x-2.5">
+                          {formData.assignedTo.slice(0, 6).map((name, idx) => {
+                            const item = availableAssignees.find(
+                              (a) => a.name === name,
+                            );
+                            return (
+                              <div
+                                key={idx}
+                                title={name}
+                                className="w-8 h-8 rounded-full border-2 border-white overflow-hidden bg-slate-100 shadow-sm flex items-center justify-center shrink-0"
+                              >
+                                {formData.assignedType === "team" ? (
+                                  <Users className="w-4 h-4 text-blue-500" />
+                                ) : item?.avatar ? (
+                                  <img
+                                    src={item.avatar}
+                                    alt=""
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <User className="w-4 h-4 text-emerald-500" />
+                                )}
+                              </div>
+                            );
+                          })}
+                          {formData.assignedTo.length > 6 && (
+                            <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-700 text-white flex items-center justify-center text-[10px] font-black shadow-sm shrink-0">
+                              +{formData.assignedTo.length - 6}
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-sm font-semibold text-slate-700 truncate">
+                          {formData.assignedTo.slice(0, 3).join(", ")}
+                          {formData.assignedTo.length > 3
+                            ? ` và ${formData.assignedTo.length - 3} người khác`
+                            : ""}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-400 italic">
+                        Chưa phân công
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Supervisors row */}
+                {formData.supervisors.length > 0 && (
+                  <div className="flex items-start gap-4 px-5 py-4">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 mt-0.5">
+                      <Shield className="w-4 h-4 text-blue-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                        Nhân sự quản lý
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {formData.supervisors.map((name) => {
+                          const p = personnel.find((x) => x.fullName === name);
                           return (
                             <div
-                              key={idx}
-                              className="w-12 h-12 rounded-2xl border-4 border-white overflow-hidden bg-white shadow-sm flex items-center justify-center ring-1 ring-slate-100"
-                              title={name}
+                              key={name}
+                              className="flex items-center gap-1.5 bg-blue-50 border border-blue-100 rounded-lg px-2 py-1"
                             >
-                              {formData.assignedType === "team" ? (
-                                <Users className="w-6 h-6 text-blue-500" />
-                              ) : item?.avatar ? (
-                                <img
-                                  src={item.avatar}
-                                  alt=""
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <User className="w-6 h-6 text-emerald-500" />
-                              )}
+                              <div className="w-5 h-5 rounded-full bg-white overflow-hidden flex items-center justify-center shrink-0">
+                                {p?.avatar ? (
+                                  <img
+                                    src={p.avatar}
+                                    alt={name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <Shield className="w-3 h-3 text-blue-400" />
+                                )}
+                              </div>
+                              <span className="text-xs font-semibold text-blue-800">
+                                {name}
+                              </span>
                             </div>
                           );
                         })}
-                        {formData.assignedTo.length > 5 && (
-                          <div className="w-12 h-12 rounded-2xl border-4 border-white bg-slate-800 text-white flex items-center justify-center text-sm font-black shadow-sm ring-1 ring-slate-100">
-                            +{formData.assignedTo.length - 5}
-                          </div>
-                        )}
-                        {formData.assignedTo.length === 0 && (
-                          <div className="w-12 h-12 rounded-2xl border-4 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center">
-                            <Plus className="w-5 h-5 text-slate-300" />
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-black text-slate-800">
-                          {formData.assignedTo.length > 0
-                            ? formData.assignedTo.join(", ")
-                            : "Không có ai được giao"}
-                        </p>
-                        <p className="text-xs text-slate-400 font-medium">
-                          {formData.assignedType === "team"
-                            ? "Thực hiện đại diện bởi đội nhóm"
-                            : "Phân công cá nhân trực tiếp"}
-                        </p>
                       </div>
                     </div>
                   </div>
+                )}
 
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm font-bold text-slate-700 uppercase tracking-wider">
-                      <Layers className="w-4 h-4 text-emerald-500" />
-                      Chi tiết lộ trình
+                {/* Quality Inspectors row */}
+                {formData.qualityInspectors.length > 0 && (
+                  <div className="flex items-start gap-4 px-5 py-4">
+                    <div className="w-8 h-8 rounded-xl bg-violet-50 flex items-center justify-center shrink-0 mt-0.5">
+                      <ClipboardCheck className="w-4 h-4 text-violet-500" />
                     </div>
-                    <div className="p-6 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-4">
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-slate-100">
-                          <MapPin className="w-6 h-6 text-emerald-600" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-400 uppercase mb-0.5">
-                            {formData.objectiveType === "theo-ke-hoach"
-                              ? "Căn cứ kế hoạch"
-                              : "Hình thức áp dụng"}
-                          </p>
-                          <p className="font-black text-slate-800">
-                            {formData.objectiveType === "theo-ke-hoach"
-                              ? formData.planName
-                              : formData.objectiveType === "cai-tao-dat" ||
-                                  formData.objectiveType === "tri-benh"
-                                ? regimens.find(
-                                    (r) => r.id === formData.regimenId,
-                                  )?.name || "Chuyên biệt"
-                                : "Phát sinh đột xuất tại vườn"}
-                          </p>
-                          <Badge
-                            variant="secondary"
-                            className="mt-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-2 py-0"
-                          >
-                            {formData.stage || "Toàn chu kỳ"}
-                          </Badge>
-                        </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                        Kiểm định chất lượng
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {formData.qualityInspectors.map((name) => {
+                          const p = personnel.find((x) => x.fullName === name);
+                          return (
+                            <div
+                              key={name}
+                              className="flex items-center gap-1.5 bg-violet-50 border border-violet-100 rounded-lg px-2 py-1"
+                            >
+                              <div className="w-5 h-5 rounded-full bg-white overflow-hidden flex items-center justify-center shrink-0">
+                                {p?.avatar ? (
+                                  <img
+                                    src={p.avatar}
+                                    alt={name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <ClipboardCheck className="w-3 h-3 text-violet-400" />
+                                )}
+                              </div>
+                              <span className="text-xs font-semibold text-violet-800">
+                                {name}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                )}
 
-          <div className="space-y-6">
-            <Card className="bg-slate-900 text-white border-none shadow-2xl overflow-hidden relative group">
-              <div className="absolute top-0 right-0 p-8 opacity-5 transition-transform group-hover:scale-110">
-                <Package className="w-48 h-48" />
-              </div>
-              <CardHeader className="border-b border-white/10 pb-4">
-                <CardTitle className="text-white flex items-center gap-3">
-                  <div className="p-2 bg-white/10 rounded-lg">
-                    <Package className="w-5 h-5 text-emerald-400" />
-                  </div>
-                  Tóm tắt vật tư
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-4">
-                <div className="space-y-3">
-                  {formData.materials.map((m) => (
-                    <div
-                      key={m.id}
-                      className="flex justify-between items-center py-2.5 border-b border-white/5 last:border-0"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        <span className="text-slate-300 text-sm font-medium">
-                          {m.name}
-                        </span>
-                      </div>
-                      <span className="font-black text-white bg-white/10 px-2 py-0.5 rounded text-xs">
-                        {m.quantity} {m.unit}
-                      </span>
+                {/* Description row */}
+                {formData.description && (
+                  <div className="flex items-start gap-4 px-5 py-4">
+                    <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center shrink-0 mt-0.5">
+                      <StickyNote className="w-4 h-4 text-amber-500" />
                     </div>
-                  ))}
-                  {formData.materials.length === 0 && (
-                    <div className="text-center py-6 bg-white/5 rounded-2xl border border-white/5 border-dashed">
-                      <p className="text-slate-500 italic text-xs">
-                        Không có vật tư đi kèm
+                    <div className="flex-1">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                        Ghi chú
+                      </p>
+                      <p className="text-sm text-slate-600 leading-relaxed">
+                        {formData.description}
                       </p>
                     </div>
-                  )}
+                  </div>
+                )}
+
+                {/* Location row */}
+                {formData.objectiveType === "phat-sinh" && (
+                  <div className="flex items-start gap-4 px-5 py-4">
+                    <div className="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center shrink-0 mt-0.5">
+                      <MapPin className="w-4 h-4 text-orange-500" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                        Loại công việc
+                      </p>
+                      <p className="text-sm font-semibold text-slate-700">
+                        Phát sinh đột xuất — ngoài kế hoạch
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Materials compact list */}
+            {formData.materials.length > 0 && (
+              <Card className="border-slate-100">
+                <CardHeader className="pb-3 pt-4 px-5">
+                  <CardTitle className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                    <Package className="w-4 h-4 text-slate-400" />
+                    Vật tư đi kèm
+                    <Badge
+                      variant="secondary"
+                      className="ml-auto text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-0"
+                    >
+                      {formData.materials.length} mục
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-5 pb-4 pt-0">
+                  <div className="divide-y divide-slate-50">
+                    {formData.materials.map((m) => (
+                      <div
+                        key={m.id}
+                        className="flex items-center justify-between py-2"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                          <span className="text-sm text-slate-700 font-medium">
+                            {m.materialName}
+                          </span>
+                          <span className="text-[11px] text-slate-400 bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded font-mono">
+                            {m.materialType}
+                          </span>
+                        </div>
+                        <span className="text-sm font-bold text-slate-800 bg-white border border-slate-100 px-2.5 py-0.5 rounded-lg shadow-sm">
+                          {m.quantity} {m.unit}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* ── RIGHT COLUMN: CTA + notice ── */}
+          <div className="space-y-4">
+            <Card className="bg-slate-900 border-none text-white shadow-2xl overflow-hidden relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 pointer-events-none" />
+              <div className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
+              <CardHeader className="border-b border-white/10 pb-4 relative">
+                <CardTitle className="text-white text-sm flex items-center gap-2.5">
+                  <div className="p-1.5 bg-emerald-500/20 rounded-lg">
+                    <FileCheck className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  Tóm tắt lệnh
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 pb-5 space-y-3 relative">
+                {/* quick stats */}
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    {
+                      label: "Nhân sự",
+                      value: formData.assignedTo.length || "—",
+                      sub: formData.assignedType === "team" ? "đội" : "người",
+                    },
+                    {
+                      label: "Vật tư",
+                      value: formData.materials.length || "—",
+                      sub: "danh mục",
+                    },
+                    {
+                      label: "Giai đoạn",
+                      value: formData.selectedStages.length || "—",
+                      sub: "áp dụng",
+                    },
+                    {
+                      label: "Lô đất",
+                      value: formData.selectedPlotIds.length || "—",
+                      sub: "phạm vi",
+                    },
+                  ].map((stat) => (
+                    <div
+                      key={stat.label}
+                      className="bg-white/5 rounded-xl px-3 py-2.5 border border-white/5"
+                    >
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                        {stat.label}
+                      </p>
+                      <p className="text-lg font-black text-white leading-none">
+                        {stat.value}
+                      </p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">
+                        {stat.sub}
+                      </p>
+                    </div>
+                  ))}
                 </div>
 
-                <div className="pt-10">
+                {/* divider */}
+                <div className="border-t border-white/10 pt-3">
+                  <div className="space-y-1.5 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400 text-xs">Bắt đầu</span>
+                      <span className="font-semibold text-slate-200 text-xs">
+                        {formData.startDate}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400 text-xs">Kết thúc</span>
+                      <span className="font-semibold text-slate-200 text-xs">
+                        {formData.endDate}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400 text-xs">Ưu tiên</span>
+                      <span
+                        className={cn(
+                          "text-xs font-bold",
+                          formData.priority === "high"
+                            ? "text-rose-400"
+                            : formData.priority === "medium"
+                              ? "text-amber-400"
+                              : "text-emerald-400",
+                        )}
+                      >
+                        {formData.priority === "high"
+                          ? "Cao"
+                          : formData.priority === "medium"
+                            ? "Thường"
+                            : "Thấp"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <div className="pt-1">
                   <Button
                     onClick={handleComplete}
-                    className="w-full bg-emerald-500 hover:bg-emerald-600 text-white border-none h-14 text-lg font-black shadow-[0_10px_20px_-10px_rgba(16,185,129,0.5)] transition-all hover:translate-y-[-2px] active:translate-y-[0px]"
+                    className="w-full bg-emerald-500 hover:bg-emerald-400 text-white border-none h-12 text-base font-black shadow-[0_8px_24px_-8px_rgba(16,185,129,0.6)] transition-all hover:-translate-y-0.5 active:translate-y-0"
                   >
-                    <CheckCircle2 className="w-6 h-6 mr-3" />
-                    Xác nhận & Chốt Lịch
+                    <CheckCircle2 className="w-5 h-5 mr-2" />
+                    Xác nhận & Chốt lịch
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
-            <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            {/* Notice */}
+            <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-xl border border-amber-200">
+              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
               <p className="text-xs text-amber-700 leading-relaxed">
-                Sau khi xác nhận, công việc sẽ được gửi thông báo đến người thực
-                hiện. Bạn vẫn có thể chỉnh sửa sau này trong danh sách công
-                việc.
+                Sau khi xác nhận, thông báo sẽ được gửi đến người thực hiện. Bạn
+                vẫn có thể chỉnh sửa trong danh sách công việc.
               </p>
             </div>
           </div>

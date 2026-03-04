@@ -24,6 +24,8 @@ export interface AmendmentPlan {
   selectedPlotIds?: string[];
   crop?: string;
   variety?: string;
+  seasonId?: string;
+  purpose?: "amendment" | "treatment";
   allocations?: AllocationItem[];
   createdAt: string;
 }
@@ -35,6 +37,8 @@ export interface AllocationItem {
   name: string;
   detail: string;
   subDetail?: string;
+  labor?: string;
+  duration?: string;
 }
 
 interface AmendmentPlanStore {
