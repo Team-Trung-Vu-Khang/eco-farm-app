@@ -55,6 +55,7 @@ export const StageAllocation = memo(
     onRemoveMaterial,
     onAddTask,
     onRemoveTask,
+    isDetail = true,
   }: {
     stageName: string;
     cycleName?: string | null;
@@ -65,6 +66,7 @@ export const StageAllocation = memo(
     onRemoveMaterial: (id: number) => void;
     onAddTask: (item: Omit<TaskAllocation, "id">) => void;
     onRemoveTask: (id: number) => void;
+    isDetail?: boolean;
   }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [newItem, setNewItem] = useState({
@@ -76,7 +78,7 @@ export const StageAllocation = memo(
 
     // true  = chọn cụ thể số lượng + nhân sự (mặc định)
     // false = chọn định lượng nhân sự (LABOR_OPTIONS cũ)
-    const [specificPersonnel, setSpecificPersonnel] = useState(true);
+    const specificPersonnel = isDetail;
     const [isPersonnelDialogOpen, setIsPersonnelDialogOpen] = useState(false);
 
     const [newTask, setNewTask] = useState({
@@ -85,8 +87,9 @@ export const StageAllocation = memo(
       labor: "",
       count: "1",
       assignedPersonnel: [] as string[],
-      duration: "",
     });
+    const [durationValue, setDurationValue] = useState("");
+    const [durationUnit, setDurationUnit] = useState("ngày");
 
     const { personnel } = usePersonnelStore();
     const [personnelSearch, setPersonnelSearch] = useState("");
@@ -128,7 +131,7 @@ export const StageAllocation = memo(
         name: newTask.name,
         description: newTask.desc,
         labor: laborValue,
-        duration: newTask.duration,
+        duration: durationValue ? `${durationValue} ${durationUnit}` : "",
       });
       setNewTask({
         name: "",
@@ -136,8 +139,9 @@ export const StageAllocation = memo(
         labor: "",
         count: "1",
         assignedPersonnel: [],
-        duration: "",
       });
+      setDurationValue("");
+      setDurationUnit("ngày");
       setPersonnelSearch("");
     };
 
@@ -463,23 +467,10 @@ export const StageAllocation = memo(
                   {/* Personnel mode toggle */}
                   <div className="flex items-center justify-between py-1">
                     <span className="text-xs font-medium text-slate-500">
-                      Chọn nhân sự cụ thể
+                      {specificPersonnel
+                        ? "Chọn nhân sự cụ thể"
+                        : "Chọn định mức nhân sự"}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => setSpecificPersonnel((v) => !v)}
-                      className="flex items-center gap-1.5 text-xs font-semibold transition-colors"
-                      style={{
-                        color: specificPersonnel ? "#2563eb" : "#94a3b8",
-                      }}
-                    >
-                      {specificPersonnel ? (
-                        <ToggleRight className="w-5 h-5" />
-                      ) : (
-                        <ToggleLeft className="w-5 h-5" />
-                      )}
-                      {specificPersonnel ? "Bật" : "Tắt"}
-                    </button>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
@@ -568,19 +559,35 @@ export const StageAllocation = memo(
                     )}
 
                     {/* Duration - full width in specific mode */}
+                    {/* Duration */}
                     <div
-                      className={`relative ${specificPersonnel ? "col-span-2" : ""}`}
+                      className={`relative flex gap-1.5 ${specificPersonnel ? "col-span-2" : ""}`}
                     >
-                      <Clock className="w-3.5 h-3.5 absolute left-2.5 top-3 text-slate-400" />
-                      <Input
-                        placeholder="Thời gian (ngày/giờ)"
-                        className="h-9 pl-8"
-                        type="datetime-local"
-                        value={newTask.duration}
-                        onChange={(e) =>
-                          setNewTask({ ...newTask, duration: e.target.value })
-                        }
-                      />
+                      <div className="relative flex-1">
+                        <Clock className="w-3.5 h-3.5 absolute left-2.5 top-3 text-slate-400 z-10" />
+                        <Input
+                          placeholder="Thời lượng"
+                          className="h-9 pl-8 text-sm"
+                          type="number"
+                          min={1}
+                          value={durationValue}
+                          onChange={(e) => setDurationValue(e.target.value)}
+                        />
+                      </div>
+                      <Select
+                        value={durationUnit}
+                        onValueChange={setDurationUnit}
+                      >
+                        <SelectTrigger className="h-9 w-20 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="phút">Phút</SelectItem>
+                          <SelectItem value="giờ">Giờ</SelectItem>
+                          <SelectItem value="ngày">Ngày</SelectItem>
+                          <SelectItem value="tuần">Tuần</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>

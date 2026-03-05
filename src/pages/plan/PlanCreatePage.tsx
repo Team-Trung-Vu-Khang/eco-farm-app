@@ -39,6 +39,7 @@ import {
   Sprout,
   StickyNote,
   Users,
+  Wrench,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useLocation } from "wouter";
@@ -80,7 +81,7 @@ export interface CreatePlanForm {
   selectedPlotIds: string[];
   crop: string;
   variety: string;
-  purpose: "cultivation" | "treatment";
+  purpose: "cultivation" | "treatment" | "amendment";
   growthCycleId: string;
   regimenId: string;
   selectedStages: string[];
@@ -779,7 +780,7 @@ export default function PlanCreatePage() {
             <Label className="text-base font-bold text-slate-800">
               Mục đích kế hoạch
             </Label>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <button
                 type="button"
                 onClick={() =>
@@ -836,6 +837,36 @@ export default function PlanCreatePage() {
                   <p className="font-bold text-sm">Điều trị</p>
                   <p className="text-[10px] opacity-60 mt-1">
                     Áp dụng phác đồ xử lý cụ thể
+                  </p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((prev) => ({ ...prev, purpose: "amendment" }))
+                }
+                className={cn(
+                  "flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all text-left",
+                  formData.purpose === "amendment"
+                    ? "bg-amber-50 border-amber-500 text-amber-900 shadow-md"
+                    : "bg-white border-slate-100 text-slate-500 hover:border-slate-200",
+                )}
+              >
+                <div
+                  className={cn(
+                    "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
+                    formData.purpose === "amendment"
+                      ? "bg-amber-500 text-white"
+                      : "bg-slate-100 text-slate-400",
+                  )}
+                >
+                  <Wrench className="w-6 h-6" />
+                </div>
+                <div className="text-center">
+                  <p className="font-bold text-sm">Cải tạo đất</p>
+                  <p className="text-[10px] opacity-60 mt-1">
+                    Xử lý và phục hồi dinh dưỡng
                   </p>
                 </div>
               </button>
@@ -955,7 +986,9 @@ export default function PlanCreatePage() {
           ) : (
             <div className="space-y-4 animation-slide-up">
               <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
-                Phác đồ điều trị
+                {formData.purpose === "treatment"
+                  ? "Phác đồ điều trị"
+                  : "Phác đồ cải tạo đất"}
               </Label>
               <Select
                 value={formData.regimenId}
@@ -964,22 +997,47 @@ export default function PlanCreatePage() {
                   setFormData((prev) => ({
                     ...prev,
                     regimenId: v,
-                    // If treatment, we might want to set a single default stage for allocations
+                    // If treatment or amendment, we set a default stage
                     selectedStages: regimen ? [regimen.name] : [],
                   }));
                 }}
               >
-                <SelectTrigger className="h-14 border-blue-100 bg-blue-50/20 focus:ring-blue-500">
+                <SelectTrigger
+                  className={cn(
+                    "h-14 border-blue-100 bg-blue-50/20 focus:ring-blue-500",
+                    formData.purpose === "amendment" &&
+                      "border-amber-100 bg-amber-50/20 focus:ring-amber-500",
+                  )}
+                >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0">
-                      <FileCheck className="w-4 h-4" />
+                    <div
+                      className={cn(
+                        "w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0",
+                        formData.purpose === "amendment" && "bg-amber-500",
+                      )}
+                    >
+                      {formData.purpose === "amendment" ? (
+                        <Wrench className="w-4 h-4" />
+                      ) : (
+                        <FileCheck className="w-4 h-4" />
+                      )}
                     </div>
-                    <SelectValue placeholder="Chọn phác đồ điều trị..." />
+                    <SelectValue
+                      placeholder={
+                        formData.purpose === "treatment"
+                          ? "Chọn phác đồ điều trị..."
+                          : "Chọn quy trình cải tạo..."
+                      }
+                    />
                   </div>
                 </SelectTrigger>
                 <SelectContent>
                   {regimens
-                    .filter((r) => r.type === "tri-benh")
+                    .filter((r) =>
+                      formData.purpose === "treatment"
+                        ? r.type === "tri-benh"
+                        : r.type === "cai-tao-dat",
+                    )
                     .map((r) => (
                       <SelectItem key={r.id} value={r.id} className="py-3">
                         <div className="flex flex-col gap-0.5">
@@ -1016,7 +1074,7 @@ export default function PlanCreatePage() {
         </div>
       ),
       isValid:
-        formData.purpose === "treatment"
+        formData.purpose === "treatment" || formData.purpose === "amendment"
           ? !!formData.regimenId
           : formData.selectedStages.length > 0,
     },
@@ -1025,7 +1083,9 @@ export default function PlanCreatePage() {
       title:
         formData.purpose === "cultivation"
           ? "Phân bổ & Công việc"
-          : "Vật tư & Phác đồ",
+          : formData.purpose === "amendment"
+            ? "Vật tư & Cải tạo"
+            : "Vật tư & Phác đồ",
       description: "Hoạch định nguồn lực chi tiết",
       content: (
         <div className="max-w-3xl mx-auto space-y-6">
@@ -1033,12 +1093,16 @@ export default function PlanCreatePage() {
             <h3 className="text-xl font-bold text-slate-900">
               {formData.purpose === "cultivation"
                 ? "Định mức Vật tư & Giai đoạn"
-                : "Vật tư & Công việc Điều trị"}
+                : formData.purpose === "amendment"
+                  ? "Vật tư & Công việc Cải tạo"
+                  : "Vật tư & Công việc Điều trị"}
             </h3>
             <p className="text-slate-500 text-sm mt-1 max-w-lg mx-auto">
               {formData.purpose === "cultivation"
                 ? "Thiết lập chi tiết các hạng mục đầu tư và quy trình kỹ thuật cho từng giai đoạn của mùa vụ."
-                : "Phân bổ vật tư và công việc cụ thể để thực hiện phác đồ điều trị đã chọn."}
+                : formData.purpose === "amendment"
+                  ? "Phân bổ vật tư và công việc cụ thể để thực hiện quy trình cải tạo đất đã chọn."
+                  : "Phân bổ vật tư và công việc cụ thể để thực hiện phác đồ điều trị đã chọn."}
             </p>
           </div>
 
@@ -1054,6 +1118,7 @@ export default function PlanCreatePage() {
 
                   return (
                     <StageAllocation
+                      isDetail={false}
                       key={idx}
                       stageName={stageName}
                       cycleName={cycleName}
@@ -1083,9 +1148,14 @@ export default function PlanCreatePage() {
                   return regimen ? (
                     <div className="animation-slide-up">
                       <StageAllocation
+                        isDetail={false}
                         index={0}
                         stageName={regimen.name}
-                        cycleName="Phác đồ điều trị"
+                        cycleName={
+                          formData.purpose === "amendment"
+                            ? "Quy trình cải tạo"
+                            : "Phác đồ điều trị"
+                        }
                         allocations={formData.materialAllocations.filter(
                           (m) => m.stageId === stageKey,
                         )}
@@ -1105,7 +1175,9 @@ export default function PlanCreatePage() {
                   ) : (
                     <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
                       <p className="text-slate-400 font-medium italic">
-                        Vui lòng chọn phác đồ điều trị ở bước trước.
+                        {formData.purpose === "amendment"
+                          ? "Vui lòng chọn quy trình cải tạo ở bước trước."
+                          : "Vui lòng chọn phác đồ điều trị ở bước trước."}
                       </p>
                     </div>
                   );
@@ -1286,14 +1358,30 @@ export default function PlanCreatePage() {
                         <span className="text-slate-500">Loại kế hoạch</span>
                         <Badge
                           variant="outline"
-                          className="bg-blue-50 text-blue-700 border-blue-200"
+                          className={cn(
+                            "bg-blue-50 text-blue-700 border-blue-200 uppercase",
+                            formData.purpose === "amendment" &&
+                              "bg-amber-50 text-amber-700 border-amber-200",
+                          )}
                         >
-                          ĐIỀU TRỊ
+                          {formData.purpose === "amendment"
+                            ? "CẢI TẠO"
+                            : "ĐIỀU TRỊ"}
                         </Badge>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-slate-500">Phác đồ áp dụng</span>
-                        <span className="font-bold text-blue-900">
+                        <span className="text-slate-500">
+                          {formData.purpose === "amendment"
+                            ? "Phác đồ cải tạo"
+                            : "Phác đồ điều trị"}
+                        </span>
+                        <span
+                          className={cn(
+                            "font-bold text-blue-900",
+                            formData.purpose === "amendment" &&
+                              "text-amber-900",
+                          )}
+                        >
                           {regimens.find((r) => r.id === formData.regimenId)
                             ?.name || "---"}
                         </span>

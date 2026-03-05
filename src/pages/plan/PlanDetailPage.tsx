@@ -322,12 +322,20 @@ export default function PlanDetailPage() {
               <CardTitle className="text-base flex items-center gap-2 text-blue-700">
                 <Sprout className="w-5 h-5" />
                 Thông tin chung
-                {plan.purpose === "treatment" && (
+                {(plan.purpose === "treatment" ||
+                  plan.purpose === "amendment") && (
                   <Badge
                     variant="outline"
-                    className="ml-auto bg-blue-100 text-blue-800 border-blue-200"
+                    className={cn(
+                      "ml-auto font-bold uppercase",
+                      plan.purpose === "treatment"
+                        ? "bg-blue-100 text-blue-800 border-blue-200"
+                        : "bg-amber-100 text-amber-800 border-amber-200",
+                    )}
                   >
-                    KẾ HOẠCH ĐIỀU TRỊ
+                    {plan.purpose === "treatment"
+                      ? "KẾ HOẠCH ĐIỀU TRỊ"
+                      : "KẾ HOẠCH CẢI TẠO"}
                   </Badge>
                 )}
               </CardTitle>
@@ -362,9 +370,18 @@ export default function PlanDetailPage() {
                 ) : (
                   <div>
                     <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                      Phác đồ điều trị
+                      {plan.purpose === "amendment"
+                        ? "Phác đồ cải tạo đất"
+                        : "Phác đồ điều trị"}
                     </label>
-                    <p className="font-bold mt-1 text-blue-900">
+                    <p
+                      className={cn(
+                        "font-bold mt-1",
+                        plan.purpose === "amendment"
+                          ? "text-amber-900"
+                          : "text-blue-900",
+                      )}
+                    >
                       {regimens.find((r) => r.id === plan.regimenId)?.name ||
                         "Chưa chọn phác đồ"}
                     </p>
@@ -487,17 +504,17 @@ export default function PlanDetailPage() {
             <div
               className={cn(
                 "p-2.5 rounded-2xl shadow-sm",
-                plan.purpose === "treatment"
-                  ? "bg-blue-100/50"
-                  : "bg-emerald-100/50",
+                plan.purpose === "treatment" && "bg-blue-100/50",
+                plan.purpose === "amendment" && "bg-amber-100/50",
+                plan.purpose === "cultivation" && "bg-emerald-100/50",
               )}
             >
               <Layers
                 className={cn(
                   "w-7 h-7",
-                  plan.purpose === "treatment"
-                    ? "text-blue-600"
-                    : "text-emerald-600",
+                  plan.purpose === "treatment" && "text-blue-600",
+                  plan.purpose === "amendment" && "text-amber-600",
+                  plan.purpose === "cultivation" && "text-emerald-600",
                 )}
               />
             </div>
@@ -505,7 +522,9 @@ export default function PlanDetailPage() {
               <h3 className="text-lg font-black text-slate-900">
                 {plan.purpose === "treatment"
                   ? "Lộ trình xử lý & Phác đồ"
-                  : "Lộ trình triển khai & Giai đoạn"}
+                  : plan.purpose === "amendment"
+                    ? "Lộ trình cải tạo & Quy trình"
+                    : "Lộ trình triển khai & Giai đoạn"}
               </h3>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5">
                 Chi tiết các hạng mục và kế hoạch hành động
@@ -554,9 +573,18 @@ export default function PlanDetailPage() {
                             </Badge>
                           )}
                         </div>
-                        {plan.purpose === "treatment" && (
-                          <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">
-                            Hoạt động điều trị bệnh
+                        {plan.purpose !== "cultivation" && (
+                          <p
+                            className={cn(
+                              "text-[10px] font-bold uppercase tracking-wider",
+                              plan.purpose === "amendment"
+                                ? "text-amber-600"
+                                : "text-blue-600",
+                            )}
+                          >
+                            {plan.purpose === "amendment"
+                              ? "Hoạt động cải tạo đất"
+                              : "Hoạt động điều trị bệnh"}
                           </p>
                         )}
                       </div>

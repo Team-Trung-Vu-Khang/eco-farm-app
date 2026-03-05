@@ -28,6 +28,7 @@ import {
   Package,
   Sprout,
   Users,
+  Wrench,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
@@ -65,7 +66,7 @@ export interface EditPlanForm {
   selectedPlotIds: string[];
   crop: string;
   variety: string;
-  purpose: "cultivation" | "treatment";
+  purpose: "cultivation" | "treatment" | "amendment";
   growthCycleId: string;
   regimenId: string;
   selectedStages: string[];
@@ -752,7 +753,7 @@ export default function PlanEditPage() {
             <Label className="text-base font-bold text-slate-800">
               Mục đích kế hoạch
             </Label>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <button
                 type="button"
                 onClick={() =>
@@ -783,6 +784,21 @@ export default function PlanEditPage() {
                 <ClipboardList className="w-8 h-8" />
                 <p className="font-bold text-sm">Điều trị</p>
               </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((prev) => ({ ...prev, purpose: "amendment" }))
+                }
+                className={cn(
+                  "flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all",
+                  formData.purpose === "amendment"
+                    ? "bg-amber-50 border-amber-500 text-amber-900 shadow-md"
+                    : "bg-white border-slate-100 text-slate-500",
+                )}
+              >
+                <Wrench className="w-8 h-8" />
+                <p className="font-bold text-sm">Cải tạo đất</p>
+              </button>
             </div>
           </div>
 
@@ -790,7 +806,11 @@ export default function PlanEditPage() {
             <div />
           ) : (
             <div className="space-y-4 animation-fade-in">
-              <Label className="text-base">Phác đồ điều trị bệnh</Label>
+              <Label className="text-base">
+                {formData.purpose === "amendment"
+                  ? "Phác đồ cải tạo đất"
+                  : "Phác đồ điều trị bệnh"}
+              </Label>
               <Select
                 value={formData.regimenId}
                 onValueChange={(v) =>
