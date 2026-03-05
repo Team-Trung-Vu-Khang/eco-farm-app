@@ -68,7 +68,7 @@ export const Step1GeographicalSelection: React.FC<
 
       <div className="grid grid-cols-1 gap-6">
         <div className="grid md:grid-cols-2 gap-6 grid-col-1">
-          <Card className="border-none shadow-sm rounded-2xl overflow-hidden">
+          <Card className="border-none shadow-sm rounded-xl overflow-hidden">
             <CardHeader className="border-b py-4">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <User className="w-4 h-4 text-primary" />
@@ -93,7 +93,7 @@ export const Step1GeographicalSelection: React.FC<
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-sm rounded-2xl overflow-hidden">
+          <Card className="border-none shadow-sm rounded-xl overflow-hidden">
             <CardHeader className="border-b py-4">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Layers className="w-4 h-4 text-primary" />

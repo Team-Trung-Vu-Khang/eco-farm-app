@@ -71,14 +71,9 @@ export default function CropPage() {
     {
       key: "name",
       label: "Tên cây",
-      render: (value: string, item: Crop) => (
+      render: (value: string) => (
         <div className="flex flex-col">
           <span className="font-bold text-foreground">{value}</span>
-          {item.technicalSpecs?.scientificName && (
-            <span className="text-[11px] text-muted-foreground italic font-medium">
-              {item.technicalSpecs.scientificName}
-            </span>
-          )}
         </div>
       ),
     },

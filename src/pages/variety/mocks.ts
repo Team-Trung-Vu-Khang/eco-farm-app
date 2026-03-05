@@ -90,7 +90,7 @@ export const initialData: Variety[] = [
   {
     id: "6",
     illustration:
-      "https://truyenthongkhoahoc.vn/photos/1/Tuan%20sau%202/dt84-min.jpg",
+      "https://media.vietnamplus.vn/images/c14f6479e83e315b4cf3a2906cc6a51e875525f3bbe20f9343607ad07a01c92f147aae408267e18cb342aaa0dd834e734827afe323f4eee8886d1806df7f097c/dautuong.jpg.webp",
     crop: "Đậu nành",
     varietyCode: "VARI07",
     varietyName: "Đậu nành DT84",
@@ -105,7 +105,8 @@ export const initialData: Variety[] = [
   },
   {
     id: "7",
-    illustration: "https://vafs.gov.vn/wp-content/uploads/2018/01/2-3.jpg",
+    illustration:
+      "https://i.ex-cdn.com/nongnghiepmoitruong.vn/files/f1/Image/2009/7/5/05072009145217.jpg",
     crop: "Đậu nành",
     varietyCode: "VARI08",
     varietyName: "Đậu nành DX11",
