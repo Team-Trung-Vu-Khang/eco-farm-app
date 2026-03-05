@@ -24,6 +24,7 @@ import {
   Trash2,
   Shield,
   ClipboardCheck,
+  Clock,
 } from "lucide-react";
 import {
   AdminLayout,
@@ -266,10 +267,14 @@ export default function TaskEditPage() {
         {
           id: Date.now(),
           name: newMaterial.name,
-          quantity: Number(newMaterial.quantity),
+          quantity: String(newMaterial.quantity),
           unit: newMaterial.unit,
           type: newMaterial.type,
-        },
+          stageId: formData.stage || "N/A",
+          materialCategory: newMaterial.type,
+          materialType: newMaterial.type,
+          materialName: newMaterial.name,
+        } as MaterialAllocation,
       ],
     }));
     setNewMaterial({
@@ -280,20 +285,22 @@ export default function TaskEditPage() {
     });
   };
 
-  const handleAddMaterialFromStage = (
-    item: Omit<MaterialAllocation, "id" | "quantity" | "type">,
-  ) => {
+  const handleAddMaterialFromStage = (item: any) => {
     setFormData((prev) => ({
       ...prev,
       materials: [
         ...prev.materials,
         {
           id: Date.now(),
-          name: (item as any).materialName || "",
-          quantity: Number((item as any).quantity) || 0,
-          unit: (item as any).unit || "kg",
-          type: (item as any).materialType || "other",
-        },
+          stageId: item.stageId || "",
+          materialCategory: item.materialCategory || item.type || "other",
+          materialType: item.materialType || item.type || "other",
+          materialName: item.materialName || item.name || "",
+          name: item.materialName || item.name || "",
+          quantity: String(item.quantity) || "0",
+          unit: item.unit || "kg",
+          type: (item.materialType as any) || item.type || "other",
+        } as MaterialAllocation,
       ],
     }));
   };
@@ -723,6 +730,118 @@ export default function TaskEditPage() {
                   </div>
                 </div>
 
+                {/* Personnel responsible */}
+                <div className="space-y-4 pt-4 border-t border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+                      <Users className="w-4 h-4 text-emerald-500" />
+                      Nhân sự thực hiện chính
+                    </Label>
+                    <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                      <button
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            assignedType: "individual",
+                            assignedTo: [],
+                          })
+                        }
+                        className={cn(
+                          "px-3 py-1 text-[10px] font-bold rounded-md transition-all",
+                          formData.assignedType === "individual"
+                            ? "bg-white text-emerald-600 shadow-sm"
+                            : "text-slate-400 hover:text-slate-600",
+                        )}
+                      >
+                        Cá nhân
+                      </button>
+                      <button
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            assignedType: "team",
+                            assignedTo: [],
+                          })
+                        }
+                        className={cn(
+                          "px-3 py-1 text-[10px] font-bold rounded-md transition-all",
+                          formData.assignedType === "team"
+                            ? "bg-white text-blue-600 shadow-sm"
+                            : "text-slate-400 hover:text-slate-600",
+                        )}
+                      >
+                        Đội nhóm
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3">
+                    {formData.assignedTo.length > 0 ? (
+                      <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-between group">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center -space-x-2">
+                            {formData.assignedTo.slice(0, 3).map((name, i) => {
+                              const p = availableAssignees.find(
+                                (x) => x.name === name,
+                              );
+                              return (
+                                <div
+                                  key={i}
+                                  className="w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-slate-200 shadow-sm shrink-0"
+                                >
+                                  {formData.assignedType === "team" ? (
+                                    <Users className="w-5 h-5 m-2.5 text-blue-500" />
+                                  ) : p?.avatar ? (
+                                    <img
+                                      src={p.avatar}
+                                      alt=""
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <User className="w-5 h-5 m-2.5 text-emerald-500" />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-slate-800 leading-none">
+                              {formData.assignedTo.join(", ")}
+                            </p>
+                            <p className="text-[10px] text-emerald-600 font-bold uppercase mt-1">
+                              Đã chọn {formData.assignedTo.length}{" "}
+                              {formData.assignedType === "team"
+                                ? "đội"
+                                : "nhân sự"}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-slate-400 hover:text-primary"
+                          onClick={() => setIsAssigneeDialogOpen(true)}
+                        >
+                          Thay đổi
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        className="w-full h-20 border-2 border-dashed border-emerald-100 rounded-2xl hover:bg-emerald-50/50 hover:border-emerald-200 transition-all flex flex-col items-center justify-center gap-2 group"
+                        onClick={() => setIsAssigneeDialogOpen(true)}
+                      >
+                        <div className="w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Plus className="w-5 h-5 text-emerald-500" />
+                        </div>
+                        <span className="text-xs font-bold text-slate-400">
+                          Chọn người thực hiện...
+                        </span>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
                 {/* Supervisor Dialog */}
                 <Dialog
                   open={isSupervisorDialogOpen}
@@ -1027,32 +1146,69 @@ export default function TaskEditPage() {
     },
     {
       id: "resources",
-      title: "Vật tư & Nhân sự",
-      description: "Phân bổ vật tư và nhân sự theo giai đoạn",
+      title:
+        formData.objectiveType === "theo-ke-hoach" ||
+        formData.objectiveType === "cai-tao-dat"
+          ? "Phân bổ & Công việc"
+          : formData.objectiveType === "phat-sinh"
+            ? "Vật tư & Nhân sự"
+            : "Vật tư & Phác đồ",
+      description: "Hoạch định nguồn lực chi tiết",
       content: (
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="max-w-6xl mx-auto space-y-6">
           <div className="text-center mb-6">
             <h3 className="text-xl font-bold text-slate-900">
-              Vật tư & Công việc Thực hiện
+              {formData.objectiveType === "theo-ke-hoach" ||
+              formData.objectiveType === "cai-tao-dat"
+                ? "Định mức Vật tư & Giai đoạn"
+                : formData.objectiveType === "phat-sinh"
+                  ? "Vật tư & Công việc Phát sinh"
+                  : "Vật tư & Công việc Điều trị"}
             </h3>
             <p className="text-slate-500 text-sm mt-1 max-w-lg mx-auto">
-              Chỉnh sửa vật tư và phân công nhân sự cho từng giai đoạn công
-              việc.
+              {formData.objectiveType === "theo-ke-hoach" ||
+              formData.objectiveType === "cai-tao-dat"
+                ? "Thiết lập chi tiết các hạng mục đầu tư và quy trình kỹ thuật cho từng giai đoạn của mùa vụ."
+                : formData.objectiveType === "phat-sinh"
+                  ? "Phân bổ vật tư và nhân sự cần thiết cho công việc phát sinh ngoài kế hoạch."
+                  : "Phân bổ vật tư và công việc cụ thể để thực hiện phác đồ điều trị đã chọn."}
             </p>
           </div>
+
           <div className="space-y-4">
-            {(formData.selectedStages.length > 0
-              ? formData.selectedStages
-              : [formData.stage || "Công việc chính"]
-            ).map((stageName, idx) => (
+            {formData.objectiveType === "theo-ke-hoach" ? (
+              (formData.selectedStages.length > 0
+                ? formData.selectedStages
+                : [formData.stage || "Công việc chính"]
+              ).map((stageName, idx) => (
+                <StageAllocation
+                  key={stageName}
+                  stageName={stageName}
+                  index={idx}
+                  allocations={formData.materials.filter(
+                    (m) => m.stageId === stageName,
+                  )}
+                  tasks={formData.tasks.filter((t) => t.stageId === stageName)}
+                  onAddMaterial={(item) =>
+                    handleAddMaterialFromStage(item as any)
+                  }
+                  onRemoveMaterial={handleRemoveMaterial}
+                  onAddTask={handleAddTask}
+                  onRemoveTask={handleRemoveTask}
+                />
+              ))
+            ) : formData.objectiveType === "phat-sinh" ? (
               <StageAllocation
-                key={stageName}
-                stageName={stageName}
-                index={idx}
-                allocations={(formData.materials as any[]).filter(
-                  (m) => m.stageId === stageName,
+                key="phat-sinh"
+                index={0}
+                stageName="Công việc phát sinh"
+                cycleName="Phát sinh"
+                allocations={formData.materials.filter(
+                  (m) => m.stageId === "Công việc phát sinh",
                 )}
-                tasks={formData.tasks.filter((t) => t.stageId === stageName)}
+                tasks={formData.tasks.filter(
+                  (t: any) => t.stageId === "Công việc phát sinh",
+                )}
                 onAddMaterial={(item) =>
                   handleAddMaterialFromStage(item as any)
                 }
@@ -1060,7 +1216,197 @@ export default function TaskEditPage() {
                 onAddTask={handleAddTask}
                 onRemoveTask={handleRemoveTask}
               />
-            ))}
+            ) : (
+              (() => {
+                const regimen = regimens.find(
+                  (r) => r.id === formData.regimenId,
+                );
+
+                if (!regimen) {
+                  return (
+                    <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
+                      <p className="text-slate-400 font-medium italic">
+                        Vui lòng chọn{" "}
+                        {formData.objectiveType === "cai-tao-dat"
+                          ? "quy trình cải tạo"
+                          : "phác đồ điều trị"}{" "}
+                        ở bước trước.
+                      </p>
+                    </div>
+                  );
+                }
+
+                const stageName = regimen.name;
+                const relevantMaterials = formData.materials.filter(
+                  (m) => m.stageId === stageName,
+                );
+                const relevantTasks = formData.tasks.filter(
+                  (t: any) => t.stageId === stageName,
+                );
+
+                return (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animation-slide-up">
+                    {/* --- LEFT SIDE: Task Addition --- */}
+                    <div className="lg:col-span-7 space-y-5">
+                      <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-sm space-y-4">
+                        <div className="flex items-center justify-between border-b pb-3">
+                          <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                            Danh mục đề xuất
+                          </h4>
+                          <Badge
+                            variant="outline"
+                            className="text-[9px] bg-slate-50"
+                          >
+                            {regimen.category}
+                          </Badge>
+                        </div>
+
+                        <div className="space-y-2">
+                          {regimen.steps?.map((step) => (
+                            <button
+                              key={step.id}
+                              onClick={() =>
+                                handleAddTask({
+                                  stageId: stageName,
+                                  name: step.title,
+                                  description: step.description,
+                                  labor: "Tùy chỉnh",
+                                  duration: step.day,
+                                })
+                              }
+                              className="w-full text-left p-3 rounded-2xl bg-slate-50 border border-transparent hover:border-primary/30 hover:bg-primary/5 transition-all group relative overflow-hidden"
+                            >
+                              <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Plus className="w-4 h-4 text-primary" />
+                              </div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 rounded uppercase">
+                                  {step.day}
+                                </span>
+                                <span className="text-xs font-black text-slate-800">
+                                  {step.title}
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-slate-500 line-clamp-1">
+                                {step.description}
+                              </p>
+                            </button>
+                          ))}
+                          {(!regimen.steps || regimen.steps.length === 0) && (
+                            <div className="py-8 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                              <p className="text-[10px] text-slate-400 italic">
+                                Không có công việc mẫu
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <StageAllocation
+                        index={0}
+                        stageName={stageName}
+                        cycleName={
+                          formData.objectiveType === "cai-tao-dat"
+                            ? "Cải tạo đất"
+                            : "Phác đồ điều trị"
+                        }
+                        allocations={relevantMaterials}
+                        tasks={relevantTasks}
+                        onAddMaterial={(item) =>
+                          handleAddMaterialFromStage(item)
+                        }
+                        onRemoveMaterial={handleRemoveMaterial}
+                        onAddTask={handleAddTask}
+                        onRemoveTask={handleRemoveTask}
+                      />
+                    </div>
+
+                    {/* --- RIGHT SIDE: Timeline --- */}
+                    <div className="lg:col-span-5 bg-slate-900 rounded-xl p-8 text-white shadow-2xl relative overflow-hidden min-h-[500px]">
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full -mr-32 -mt-32 blur-3xl" />
+
+                      <div className="relative z-10">
+                        <div className="flex items-center gap-4 mb-8">
+                          <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center border border-white/20">
+                            <Clock className="w-6 h-6 text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="text-lg font-black tracking-tight leading-none mb-1">
+                              Timeline chi tiết
+                            </h4>
+                            <p className="text-xs text-slate-400 font-medium">
+                              Lộ trình kỹ thuật chuẩn của hệ thống
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-0 relative">
+                          {/* Timeline Line */}
+                          <div className="absolute left-[23px] top-6 bottom-6 w-0.5 bg-linear-to-b from-primary via-slate-700 to-transparent" />
+
+                          {regimen.steps?.map((step, idx) => (
+                            <div
+                              key={step.id}
+                              className="relative pl-14 pb-10 last:pb-0"
+                            >
+                              <div
+                                className={cn(
+                                  "absolute -left-1 top-0 w-14 h-12 rounded-2xl bg-slate-800 border-4 border-slate-900 flex flex-col items-center justify-center z-10 transition-transform group-hover:scale-110 shadow-lg",
+                                  idx === 0
+                                    ? "bg-primary border-slate-900"
+                                    : "",
+                                )}
+                              >
+                                <span className="text-[8px] font-black uppercase text-white">
+                                  {step.day}
+                                </span>
+                              </div>
+
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <h5 className="font-black text-base text-white">
+                                    {step.title}
+                                  </h5>
+                                  {idx === 0 && (
+                                    <Badge className="bg-primary/20 text-primary border-primary/30 text-[8px] font-black py-0">
+                                      BẮT ĐẦU
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm text-slate-400 font-medium leading-relaxed max-w-md">
+                                  {step.description}
+                                </p>
+
+                                {/* Task Status indicator in timeline */}
+                                <div className="flex items-center gap-4 mt-3">
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                      Sẵn sàng
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+
+                          {(!regimen.steps || regimen.steps.length === 0) && (
+                            <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+                              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                                <CalendarIcon className="w-8 h-8 text-slate-700" />
+                              </div>
+                              <p className="text-sm font-bold italic">
+                                Chưa có dữ liệu timeline
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()
+            )}
           </div>
         </div>
       ),
@@ -1071,259 +1417,414 @@ export default function TaskEditPage() {
       description: "Kiểm tra và hoàn tất chỉnh sửa",
       content: (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-left">
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="border-none shadow-sm rounded-[32px] overflow-hidden">
-              <CardHeader className="bg-slate-50/50 border-b border-slate-100">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <FileCheck className="w-5 h-5 text-emerald-500" /> Xác nhận &
-                  Cập nhật
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-8">
-                <div className="bg-linear-to-br from-emerald-50 to-teal-50/30 p-8 rounded-[40px] border border-emerald-100 shadow-sm relative overflow-hidden mb-8">
-                  <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl" />
-                  <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-[20px] bg-white shadow-md flex items-center justify-center border border-emerald-50 ring-4 ring-emerald-500/5">
-                          {formData.objectiveType === "tri-benh" ? (
-                            <Bug className="w-7 h-7 text-rose-500" />
-                          ) : formData.objectiveType === "cai-tao-dat" ? (
-                            <Sprout className="w-7 h-7 text-emerald-500" />
-                          ) : (
-                            <ClipboardList className="w-7 h-7 text-blue-500" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">
-                            {formData.objectiveType === "theo-ke-hoach"
-                              ? "Theo kế hoạch"
-                              : formData.objectiveType === "cai-tao-dat"
-                                ? "Cải tạo đất"
-                                : formData.objectiveType === "tri-benh"
-                                  ? "Trị bệnh"
-                                  : "Công việc phát sinh"}
-                          </p>
-                          <h4 className="font-black text-slate-900 text-2xl tracking-tighter">
-                            {formData.name || "Tên công việc"}
-                          </h4>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2 pt-2">
-                        <Badge
-                          variant="outline"
-                          className="bg-white/80 border-emerald-200 text-emerald-700 px-3 py-1.5 font-bold rounded-xl shadow-sm"
-                        >
-                          <CalendarIcon className="w-3.5 h-3.5 mr-2 opacity-60" />
-                          {formData.startDate} - {formData.endDate}
-                        </Badge>
-                        <Badge
-                          className={cn(
-                            "px-4 py-1.5 font-black uppercase text-[10px] tracking-widest rounded-xl border-none shadow-md",
-                            formData.priority === "high"
-                              ? "bg-rose-500 text-white"
-                              : formData.priority === "medium"
-                                ? "bg-amber-500 text-white"
-                                : "bg-emerald-500 text-white",
-                          )}
-                        >
-                          Ưu tiên: {formData.priority}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="inline-block p-3 bg-white/50 rounded-2xl border border-emerald-50 backdrop-blur-sm">
-                        <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-widest">
-                          Mã định danh
-                        </p>
-                        <p className="font-mono font-bold text-slate-800 text-lg">
-                          {formData.code}
-                        </p>
-                      </div>
+          {/* ── LEFT COLUMN ── */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Identity banner */}
+            <div className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-teal-50/40 p-6 shadow-sm">
+              <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-emerald-400/10 blur-2xl pointer-events-none" />
+              <div className="relative flex items-start justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-white shadow border border-emerald-100 flex items-center justify-center shrink-0">
+                    {formData.objectiveType === "tri-benh" ? (
+                      <Bug className="w-7 h-7 text-rose-500" />
+                    ) : formData.objectiveType === "cai-tao-dat" ? (
+                      <Sprout className="w-7 h-7 text-emerald-500" />
+                    ) : formData.objectiveType === "phat-sinh" ? (
+                      <Info className="w-7 h-7 text-amber-500" />
+                    ) : (
+                      <ClipboardList className="w-7 h-7 text-blue-500" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-600 mb-0.5">
+                      {formData.objectiveType === "theo-ke-hoach"
+                        ? "Theo kế hoạch"
+                        : formData.objectiveType === "cai-tao-dat"
+                          ? "Cải tạo đất"
+                          : formData.objectiveType === "tri-benh"
+                            ? "Điều trị bệnh"
+                            : "Công việc phát sinh"}
+                    </p>
+                    <h3 className="text-xl font-black text-slate-900 leading-tight">
+                      {formData.name || (
+                        <span className="text-slate-400 italic font-normal">
+                          Chưa đặt tên
+                        </span>
+                      )}
+                    </h3>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      <Badge
+                        variant="outline"
+                        className="bg-white/80 border-slate-200 text-slate-600 text-[11px] px-2 py-0.5 font-medium rounded-md"
+                      >
+                        <CalendarIcon className="w-3 h-3 mr-1 opacity-50" />
+                        {formData.startDate} → {formData.endDate}
+                      </Badge>
+                      <Badge
+                        className={cn(
+                          "text-[11px] px-2 py-0.5 font-bold rounded-md border-transparent",
+                          formData.priority === "high"
+                            ? "bg-rose-500 text-white"
+                            : formData.priority === "medium"
+                              ? "bg-amber-500 text-white"
+                              : "bg-emerald-500 text-white",
+                        )}
+                      >
+                        {formData.priority === "high"
+                          ? "Ưu tiên cao"
+                          : formData.priority === "medium"
+                            ? "Ưu tiên thường"
+                            : "Ưu tiên thấp"}
+                      </Badge>
                     </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm font-black text-slate-400 uppercase tracking-[2px] ml-2">
-                      <Users className="w-4 h-4 text-emerald-500" /> Nhân sự
-                      thực hiện
+                <div className="shrink-0 text-right">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">
+                    Mã CV
+                  </p>
+                  <p className="font-mono text-sm font-bold text-slate-700 bg-white border border-slate-100 px-2.5 py-1 rounded-lg shadow-sm">
+                    {formData.code}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Info rows card */}
+            <Card className="border-slate-100">
+              <CardContent className="p-0 divide-y divide-slate-50">
+                {/* Plan & Stages row */}
+                {formData.objectiveType !== "phat-sinh" && (
+                  <div className="flex items-start gap-4 px-5 py-4">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 mt-0.5">
+                      <Layers className="w-4 h-4 text-blue-500" />
                     </div>
-                    <div className="p-6 rounded-[32px] border border-slate-100 bg-slate-50/50 space-y-4">
-                      {/* Top-level assignedTo */}
-                      {formData.assignedTo.length > 0 && (
-                        <>
-                          <div className="flex items-center -space-x-3 mb-2">
-                            {formData.assignedTo
-                              .slice(0, 5)
-                              .map((name, idx) => {
-                                const item = availableAssignees.find(
-                                  (a) => a.name === name,
-                                );
-                                return (
-                                  <div
-                                    key={idx}
-                                    className="w-12 h-12 rounded-[18px] border-4 border-white overflow-hidden bg-white shadow-sm flex items-center justify-center ring-1 ring-slate-100"
-                                    title={name}
-                                  >
-                                    {formData.assignedType === "team" ? (
-                                      <Users className="w-6 h-6 text-blue-500" />
-                                    ) : item?.avatar ? (
-                                      <img
-                                        src={item.avatar}
-                                        alt=""
-                                        className="w-full h-full object-cover"
-                                      />
-                                    ) : (
-                                      <User className="w-6 h-6 text-emerald-500" />
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            {formData.assignedTo.length > 5 && (
-                              <div className="w-12 h-12 rounded-[18px] border-4 border-white bg-slate-800 text-white flex items-center justify-center text-sm font-black ring-1 ring-slate-100">
-                                +{formData.assignedTo.length - 5}
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-black text-slate-800 text-base leading-tight mb-0.5">
-                              {formData.assignedTo.join(", ")}
-                            </p>
-                            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-                              {formData.assignedType === "team"
-                                ? "Thực hiện bởi đội nhóm"
-                                : "Phân công cá nhân trực tiếp"}
-                            </p>
-                          </div>
-                        </>
-                      )}
-                      {/* Stage-level tasks personnel */}
-                      {formData.tasks.length > 0 && (
-                        <div className="border-t border-slate-100 pt-4 space-y-2">
-                          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
-                            Nhân sự theo công việc
-                          </p>
-                          {formData.tasks.map((t) => (
-                            <div key={t.id} className="flex items-start gap-2">
-                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
-                              <div className="min-w-0">
-                                <p className="text-xs font-bold text-slate-700 truncate">
-                                  {t.name}
-                                </p>
-                                {t.labor && (
-                                  <p className="text-[11px] text-slate-500">
-                                    {t.labor}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {formData.assignedTo.length === 0 &&
-                        formData.tasks.length === 0 && (
-                          <p className="font-black text-slate-400 text-sm italic">
-                            Chưa phân công
-                          </p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                        Kế hoạch áp dụng
+                      </p>
+                      <p className="text-sm font-bold text-slate-800 truncate">
+                        {formData.planName || (
+                          <span className="text-slate-400 italic font-normal">
+                            Chưa chọn
+                          </span>
                         )}
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm font-black text-slate-400 uppercase tracking-[2px] ml-2">
-                      <Layers className="w-4 h-4 text-emerald-500" /> Chi tiết
-                      lộ trình
-                    </div>
-                    <div className="p-6 rounded-[32px] border border-slate-100 bg-slate-50/50 space-y-4">
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-slate-50 ring-1 ring-slate-100">
-                          <MapPin className="w-6 h-6 text-emerald-600" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">
-                            {formData.objectiveType === "theo-ke-hoach"
-                              ? "Căn cứ kế hoạch"
-                              : "Hình thức áp dụng"}
-                          </p>
-                          <p className="font-black text-slate-800 truncate max-w-[180px]">
-                            {formData.objectiveType === "theo-ke-hoach"
-                              ? formData.planName
-                              : formData.objectiveType === "cai-tao-dat" ||
-                                  formData.objectiveType === "tri-benh"
-                                ? regimens.find(
-                                    (r) => r.id === formData.regimenId,
-                                  )?.name || "Chuyên biệt"
-                                : "Phát sinh đột xuất"}
-                          </p>
-                          <Badge className="mt-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-3 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-tighter">
-                            {formData.stage || "Toàn chu kỳ"}
+                      </p>
+                      {formData.stage && (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] bg-blue-50 text-blue-700 border-none px-2 py-0 h-5 font-medium"
+                          >
+                            {formData.stage}
                           </Badge>
                         </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Personnel row */}
+                <div className="flex items-start gap-4 px-5 py-4">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5">
+                    <Users className="w-4 h-4 text-emerald-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                      {formData.assignedType === "team"
+                        ? "Đội nhóm thực hiện"
+                        : "Nhân sự thực hiện"}
+                    </p>
+                    {formData.assignedTo.length > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center -space-x-2.5">
+                          {formData.assignedTo.slice(0, 6).map((name, idx) => {
+                            const item = availableAssignees.find(
+                              (a) => a.name === name,
+                            );
+                            return (
+                              <div
+                                key={idx}
+                                title={name}
+                                className="w-8 h-8 rounded-full border-2 border-white overflow-hidden bg-slate-100 shadow-sm flex items-center justify-center shrink-0"
+                              >
+                                {formData.assignedType === "team" ? (
+                                  <Users className="w-4 h-4 text-blue-500" />
+                                ) : item?.avatar ? (
+                                  <img
+                                    src={item.avatar}
+                                    alt=""
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <User className="w-4 h-4 text-emerald-500" />
+                                )}
+                              </div>
+                            );
+                          })}
+                          {formData.assignedTo.length > 6 && (
+                            <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-700 text-white flex items-center justify-center text-[10px] font-black shadow-sm shrink-0">
+                              +{formData.assignedTo.length - 6}
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-sm font-semibold text-slate-700 truncate">
+                          {formData.assignedTo.slice(0, 3).join(", ")}
+                          {formData.assignedTo.length > 3
+                            ? ` và ${formData.assignedTo.length - 3} người khác`
+                            : ""}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-400 italic">
+                        Chưa phân công
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Supervisors row */}
+                {formData.supervisors.length > 0 && (
+                  <div className="flex items-start gap-4 px-5 py-4">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 mt-0.5">
+                      <Shield className="w-4 h-4 text-blue-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                        Nhân sự quản lý
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {formData.supervisors.map((name) => {
+                          const p = personnel.find((x) => x.fullName === name);
+                          return (
+                            <div
+                              key={name}
+                              className="flex items-center gap-1.5 bg-blue-50 border border-blue-100 rounded-lg px-2 py-1"
+                            >
+                              <div className="w-5 h-5 rounded-full bg-white overflow-hidden flex items-center justify-center shrink-0">
+                                {p?.avatar ? (
+                                  <img
+                                    src={p.avatar}
+                                    alt={name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <Shield className="w-3 h-3 text-blue-400" />
+                                )}
+                              </div>
+                              <span className="text-xs font-semibold text-blue-800">
+                                {name}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                )}
 
-          <div className="space-y-6">
-            <Card className="bg-slate-900 text-white border-none shadow-2xl rounded-[32px] overflow-hidden relative group">
-              <div className="absolute top-0 right-0 p-8 opacity-5 transition-transform group-hover:scale-110 pointer-events-none">
-                <Package className="w-48 h-48" />
-              </div>
-              <CardHeader className="border-b border-white/10 pb-4">
-                <CardTitle className="text-white flex items-center gap-3">
-                  <div className="p-2.5 bg-white/10 rounded-xl">
-                    <Package className="w-5 h-5 text-emerald-400" />
-                  </div>{" "}
-                  Tóm tắt vật tư
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-8 space-y-4 relative z-10">
-                <div className="space-y-3 min-h-[120px]">
-                  {formData.materials.map((m) => (
-                    <div
-                      key={m.id}
-                      className="flex justify-between items-center py-3 border-b border-white/5 last:border-0 hover:bg-white/5 px-2 -mx-2 rounded-lg transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                        <span className="text-slate-200 text-sm font-bold tracking-tight">
-                          {m.name}
-                        </span>
-                      </div>
-                      <span className="font-black text-white bg-white/10 px-3 py-1 rounded-xl text-[10px] uppercase">
-                        {m.quantity} {m.unit}
-                      </span>
+                {/* Quality Inspectors row */}
+                {formData.qualityInspectors.length > 0 && (
+                  <div className="flex items-start gap-4 px-5 py-4">
+                    <div className="w-8 h-8 rounded-xl bg-violet-50 flex items-center justify-center shrink-0 mt-0.5">
+                      <ClipboardCheck className="w-4 h-4 text-violet-500" />
                     </div>
-                  ))}
-                  {formData.materials.length === 0 && (
-                    <div className="text-center py-10 bg-white/5 rounded-3xl border border-white/5 border-dashed">
-                      <p className="text-slate-500 italic text-xs">
-                        Không có vật tư đi kèm
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                        Kiểm định chất lượng
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {formData.qualityInspectors.map((name) => {
+                          const p = personnel.find((x) => x.fullName === name);
+                          return (
+                            <div
+                              key={name}
+                              className="flex items-center gap-1.5 bg-violet-50 border border-violet-100 rounded-lg px-2 py-1"
+                            >
+                              <div className="w-5 h-5 rounded-full bg-white overflow-hidden flex items-center justify-center shrink-0">
+                                {p?.avatar ? (
+                                  <img
+                                    src={p.avatar}
+                                    alt={name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <ClipboardCheck className="w-3 h-3 text-violet-400" />
+                                )}
+                              </div>
+                              <span className="text-xs font-semibold text-violet-800">
+                                {name}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Description row */}
+                {formData.description && (
+                  <div className="flex items-start gap-4 px-5 py-4">
+                    <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center shrink-0 mt-0.5">
+                      <StickyNote className="w-4 h-4 text-amber-500" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                        Ghi chú
+                      </p>
+                      <p className="text-sm text-slate-600 leading-relaxed">
+                        {formData.description}
                       </p>
                     </div>
-                  )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Materials compact list */}
+            {formData.materials.length > 0 && (
+              <Card className="border-slate-100">
+                <CardHeader className="pb-3 pt-4 px-5">
+                  <CardTitle className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                    <Package className="w-4 h-4 text-slate-400" />
+                    Vật tư đi kèm
+                    <Badge
+                      variant="secondary"
+                      className="ml-auto text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-0"
+                    >
+                      {formData.materials.length} mục
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-5 pb-4 pt-0">
+                  <div className="divide-y divide-slate-50">
+                    {formData.materials.map((m) => (
+                      <div
+                        key={m.id}
+                        className="flex items-center justify-between py-2"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                          <span className="text-sm text-slate-700 font-medium">
+                            {m.name}
+                          </span>
+                          <span className="text-[11px] text-slate-400 bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded font-mono text-[9px] uppercase">
+                            {m.type}
+                          </span>
+                        </div>
+                        <span className="text-sm font-bold text-slate-800 bg-white border border-slate-100 px-2.5 py-0.5 rounded-lg shadow-sm">
+                          {m.quantity} {m.unit}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* ── RIGHT COLUMN: CTA + notice ── */}
+          <div className="space-y-4">
+            <Card className="bg-slate-900 border-none text-white shadow-2xl overflow-hidden relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 pointer-events-none" />
+              <div className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
+              <CardHeader className="border-b border-white/10 pb-4 relative">
+                <CardTitle className="text-white text-sm flex items-center gap-2.5">
+                  <div className="p-1.5 bg-emerald-500/20 rounded-lg">
+                    <FileCheck className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  Tóm tắt thay đổi
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 pb-5 space-y-3 relative">
+                {/* quick stats */}
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    {
+                      label: "Nhân sự",
+                      value: formData.assignedTo.length || "—",
+                      sub: formData.assignedType === "team" ? "đội" : "người",
+                    },
+                    {
+                      label: "Vật tư",
+                      value: formData.materials.length || "—",
+                      sub: "danh mục",
+                    },
+                    {
+                      label: "Mã định danh",
+                      value: formData.code,
+                      sub: "mã CV",
+                    },
+                    {
+                      label: "Độ ưu tiên",
+                      value:
+                        formData.priority === "high"
+                          ? "Cao"
+                          : formData.priority === "medium"
+                            ? "Thường"
+                            : "Thấp",
+                      sub: "mức độ",
+                    },
+                  ].map((stat) => (
+                    <div
+                      key={stat.label}
+                      className="bg-white/5 rounded-xl px-3 py-2.5 border border-white/5"
+                    >
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5 overflow-hidden text-ellipsis whitespace-nowrap">
+                        {stat.label}
+                      </p>
+                      <p className="text-lg font-black text-white leading-none truncate">
+                        {stat.value}
+                      </p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">
+                        {stat.sub}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-                <div className="pt-12">
+
+                {/* divider */}
+                <div className="border-t border-white/10 pt-3">
+                  <div className="space-y-1.5 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400 text-xs">Bắt đầu</span>
+                      <span className="font-semibold text-slate-200 text-xs">
+                        {formData.startDate}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400 text-xs">Kết thúc</span>
+                      <span className="font-semibold text-slate-200 text-xs">
+                        {formData.endDate}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <div className="pt-1">
                   <Button
                     onClick={handleComplete}
-                    className="w-full bg-emerald-500 hover:bg-emerald-600 text-white border-none h-16 text-lg font-black rounded-2xl shadow-xl shadow-emerald-500/20 active:translate-y-1 transition-all"
+                    className="w-full bg-emerald-500 hover:bg-emerald-400 text-white border-none h-12 text-base font-black shadow-[0_8px_24px_-8px_rgba(16,185,129,0.6)] transition-all hover:-translate-y-0.5 active:translate-y-0"
                   >
-                    <CheckCircle2 className="w-6 h-6 mr-3" /> Lưu thay đổi
+                    <CheckCircle2 className="w-5 h-5 mr-2" />
+                    Lưu các thay đổi
                   </Button>
                 </div>
               </CardContent>
             </Card>
-            <div className="p-5 bg-amber-50 rounded-[24px] border border-amber-100 flex items-start gap-4 ring-1 ring-amber-500/5 shadow-sm shadow-amber-500/5">
-              <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0" />
+
+            {/* Notice */}
+            <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-xl border border-amber-200">
+              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
               <p className="text-[11px] text-amber-800 font-bold leading-relaxed uppercase tracking-tighter">
                 Lưu ý: Bạn đang ở chế độ chỉnh sửa. Mọi thay đổi về thời gian và
                 phân công sẽ được gửi thông báo cập nhật mới nhất cho nhân sự
                 liên quan.
               </p>
             </div>
+
             <Button
               variant="ghost"
               className="w-full h-12 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl flex items-center justify-center gap-2 group transition-all"

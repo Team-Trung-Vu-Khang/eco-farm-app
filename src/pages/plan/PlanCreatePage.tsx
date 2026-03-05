@@ -55,6 +55,7 @@ import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import { StageAllocation } from "./components/StageAllocation";
 import { EnterpriseSelector } from "../cultivation-zone/cultivation-area/components";
 import GeographicalSelector from "./components/GeographicalSelector";
+import { RegimenSelector } from "./components/RegimenSelector";
 import useRegimenStore from "../../stores/useRegimenStore";
 
 // 1. Location Selection Dialog (Filtered for Cultivation)
@@ -990,68 +991,18 @@ export default function PlanCreatePage() {
                   ? "Phác đồ điều trị"
                   : "Phác đồ cải tạo đất"}
               </Label>
-              <Select
-                value={formData.regimenId}
-                onValueChange={(v) => {
-                  const regimen = regimens.find((r) => r.id === v);
+              <RegimenSelector
+                regimens={regimens}
+                selectedRegimenId={formData.regimenId}
+                type={formData.purpose as "treatment" | "amendment"}
+                onSelect={(regimen) => {
                   setFormData((prev) => ({
                     ...prev,
-                    regimenId: v,
-                    // If treatment or amendment, we set a default stage
-                    selectedStages: regimen ? [regimen.name] : [],
+                    regimenId: regimen.id,
+                    selectedStages: [regimen.name],
                   }));
                 }}
-              >
-                <SelectTrigger
-                  className={cn(
-                    "h-14 border-blue-100 bg-blue-50/20 focus:ring-blue-500",
-                    formData.purpose === "amendment" &&
-                      "border-amber-100 bg-amber-50/20 focus:ring-amber-500",
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={cn(
-                        "w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0",
-                        formData.purpose === "amendment" && "bg-amber-500",
-                      )}
-                    >
-                      {formData.purpose === "amendment" ? (
-                        <Wrench className="w-4 h-4" />
-                      ) : (
-                        <FileCheck className="w-4 h-4" />
-                      )}
-                    </div>
-                    <SelectValue
-                      placeholder={
-                        formData.purpose === "treatment"
-                          ? "Chọn phác đồ điều trị..."
-                          : "Chọn quy trình cải tạo..."
-                      }
-                    />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  {regimens
-                    .filter((r) =>
-                      formData.purpose === "treatment"
-                        ? r.type === "tri-benh"
-                        : r.type === "cai-tao-dat",
-                    )
-                    .map((r) => (
-                      <SelectItem key={r.id} value={r.id} className="py-3">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="font-bold text-slate-900">
-                            {r.name}
-                          </span>
-                          <span className="text-[10px] text-slate-500 font-normal">
-                            {r.description}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              />
 
               {formData.regimenId && (
                 <div className="p-5 rounded-2xl bg-blue-50/50 border border-blue-100 flex gap-4">

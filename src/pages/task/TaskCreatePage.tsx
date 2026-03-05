@@ -23,6 +23,7 @@ import {
   MapPin,
   Shield,
   ClipboardCheck,
+  Clock,
 } from "lucide-react";
 import {
   AdminLayout,
@@ -60,7 +61,9 @@ import useAmendmentPlanStore from "../../stores/useAmendmentPlanStore";
 import usePersonnelStore from "../../stores/usePersonnelStore";
 import useTeamStore from "../../stores/useTeamStore";
 import useRegimenStore from "../../stores/useRegimenStore";
+import useRegionStore from "../../stores/useRegionStore";
 import { StageAllocation } from "../plan/components/StageAllocation";
+import { RegimenSelector } from "../plan/components/RegimenSelector";
 
 // Danh mục vật tư mẫu
 
@@ -202,6 +205,64 @@ export default function TaskCreatePage() {
     (p) => String(p.id) === formData.planId,
   );
 
+  const { getPlotById, getAreaById, getRegionById } = useRegionStore();
+
+  const resolvedLocationNames = useMemo(() => {
+    if (!selectedPlan) return "Toàn vùng";
+
+    const names: string[] = [];
+
+    // Resolve Plots
+    if (
+      selectedPlan.selectedPlotIds &&
+      selectedPlan.selectedPlotIds.length > 0
+    ) {
+      selectedPlan.selectedPlotIds.forEach((id: string) => {
+        const plotData = getPlotById(id);
+        if (plotData?.plot) {
+          names.push(plotData.plot.name);
+        } else {
+          names.push(id);
+        }
+      });
+    }
+
+    // Resolve Zones/Areas if plots are not provided or not resolved
+    if (
+      names.length === 0 &&
+      selectedPlan.selectedZoneIds &&
+      selectedPlan.selectedZoneIds.length > 0
+    ) {
+      selectedPlan.selectedZoneIds.forEach((id: string) => {
+        const areaData = getAreaById(id);
+        if (areaData?.area) {
+          names.push(areaData.area.name);
+        } else {
+          names.push(id);
+        }
+      });
+    }
+
+    // Resolve Regions if still nothing
+    if (
+      names.length === 0 &&
+      selectedPlan.selectedRegionIds &&
+      selectedPlan.selectedRegionIds.length > 0
+    ) {
+      selectedPlan.selectedRegionIds.forEach((id: string) => {
+        const region = getRegionById(Number(id));
+        if (region) {
+          names.push(region.name);
+        } else {
+          names.push(id);
+        }
+      });
+    }
+
+    if (names.length > 0) return names.join(", ");
+    return selectedPlan.zone || "Toàn vùng";
+  }, [selectedPlan, getPlotById, getAreaById, getRegionById]);
+
   const availableStages = useMemo((): string[] => {
     if (!selectedPlan) return [];
     if ("selectedStages" in selectedPlan) return selectedPlan.selectedStages;
@@ -247,8 +308,10 @@ export default function TaskCreatePage() {
           materialCategory: newMaterial.type,
           materialType: newMaterial.type,
           materialName: newMaterial.name,
+          name: newMaterial.name,
           quantity: newMaterial.quantity,
           unit: newMaterial.unit,
+          type: newMaterial.type,
         },
       ],
     }));
@@ -507,13 +570,203 @@ export default function TaskCreatePage() {
                             )}
                           </SelectContent>
                         </Select>
+
+                        {/* Thông tin kế hoạch chi tiết */}
+                        {formData.planId && selectedPlan && (
+                          <div className="p-6 rounded-md bg-white border border-slate-200/60 space-y-5 animation-slide-up shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-primary/10 transition-colors" />
+
+                            <div className="flex items-center justify-between border-b border-slate-100 pb-4 relative z-10">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className={cn(
+                                    "w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm",
+                                    formData.objectiveType === "theo-ke-hoach"
+                                      ? "bg-blue-50 text-blue-600"
+                                      : formData.objectiveType === "cai-tao-dat"
+                                        ? "bg-green-50 text-green-600"
+                                        : "bg-red-50 text-red-600",
+                                  )}
+                                >
+                                  {formData.objectiveType ===
+                                  "theo-ke-hoach" ? (
+                                    <Layers className="w-5 h-5" />
+                                  ) : formData.objectiveType ===
+                                    "cai-tao-dat" ? (
+                                    <Sprout className="w-5 h-5" />
+                                  ) : (
+                                    <Bug className="w-5 h-5" />
+                                  )}
+                                </div>
+                                <div>
+                                  <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] leading-none mb-1.5">
+                                    Chi tiết kế hoạch
+                                  </h4>
+                                  <p className="text-base font-bold text-slate-900 leading-none">
+                                    {selectedPlan.name}
+                                  </p>
+                                </div>
+                              </div>
+                              <Badge
+                                variant="outline"
+                                className="font-mono text-[10px] px-2.5 py-0.5 border-slate-200 text-slate-500 bg-slate-50/50"
+                              >
+                                {selectedPlan.code}
+                              </Badge>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-x-6 gap-y-5 text-sm relative z-10">
+                              <div className="space-y-1.5">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                  Vùng canh tác / Vùng địa lý
+                                </span>
+                                <div className="flex items-center gap-2.5 text-slate-700 bg-slate-50/80 p-2 rounded-xl border border-slate-100/50">
+                                  <MapPin className="w-4 h-4 text-blue-500 shrink-0" />
+                                  <span className="font-bold truncate">
+                                    {resolvedLocationNames}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="space-y-1.5">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                  Thời hạn thực hiện
+                                </span>
+                                <div className="flex items-center gap-2.5 text-slate-700 bg-slate-50/80 p-2 rounded-xl border border-slate-100/50">
+                                  <CalendarIcon className="w-4 h-4 text-amber-500 shrink-0" />
+                                  <span className="font-bold">
+                                    {selectedPlan.startDate} →{" "}
+                                    {selectedPlan.endDate}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Hiển thị thông tin đặc thù theo loại */}
+                              {formData.objectiveType === "theo-ke-hoach" && (
+                                <>
+                                  <div className="space-y-1.5">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                      Cây trồng & Giống
+                                    </span>
+                                    <div className="flex items-center gap-2.5 text-slate-700 bg-blue-50/30 p-2 rounded-xl border border-blue-100/50">
+                                      <Sprout className="w-4 h-4 text-green-500 shrink-0" />
+                                      <span className="font-bold">
+                                        {selectedPlan.crop} -{" "}
+                                        {selectedPlan.variety || "N/A"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="col-span-2 space-y-2 pt-2 border-t border-slate-100">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                      Danh sách giai đoạn canh tác
+                                    </span>
+                                    <div className="flex flex-wrap gap-1.5 mt-1.5 p-3 rounded-2xl bg-blue-50/10 border border-blue-100/30">
+                                      {(selectedPlan.selectedStages || []).map(
+                                        (s: string) => (
+                                          <Badge
+                                            key={s}
+                                            variant="secondary"
+                                            className="bg-white text-blue-600 border-blue-100 shadow-sm text-[10px] px-3 font-bold"
+                                          >
+                                            {s}
+                                          </Badge>
+                                        ),
+                                      )}
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+
+                              {formData.objectiveType === "cai-tao-dat" && (
+                                <>
+                                  <div className="col-span-2 space-y-1.5">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                      Mục tiêu cải tạo / Vấn đề
+                                    </span>
+                                    <div className="flex items-center gap-2.5 text-green-700 bg-green-50/40 p-3 rounded-xl border border-green-100/50">
+                                      <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                                      <span className="font-bold">
+                                        {selectedPlan.target_issue ||
+                                          "Cải tạo định kỳ"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {selectedPlan.technician && (
+                                    <div className="space-y-1.5">
+                                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                        Chuyên gia phụ trách
+                                      </span>
+                                      <div className="flex items-center gap-2.5 text-slate-700 bg-slate-50 p-2 rounded-xl">
+                                        <User className="w-4 h-4 text-blue-400" />
+                                        <span className="font-bold">
+                                          {selectedPlan.technician}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+
+                              {(formData.objectiveType === "tri-benh" ||
+                                formData.objectiveType === "theo-ke-hoach" ||
+                                formData.objectiveType === "cai-tao-dat") &&
+                                (formData.regimenId ||
+                                  selectedPlan.regimenId) && (
+                                  <div className="col-span-2 space-y-2.5 pt-4 border-t border-slate-100">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                      Phác đồ áp dụng hệ thống
+                                    </span>
+                                    {(() => {
+                                      const rId =
+                                        formData.regimenId ||
+                                        selectedPlan.regimenId;
+                                      const regimen = regimens.find(
+                                        (r) => r.id === rId,
+                                      );
+                                      if (!regimen) return null;
+                                      return (
+                                        <div className="p-4 rounded-[1.5rem] bg-white border border-slate-200 shadow-sm flex items-center justify-between hover:border-primary/30 transition-all">
+                                          <div className="flex items-center gap-4">
+                                            <div className="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100 shadow-inner">
+                                              <FileCheck className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                              <div className="flex items-center gap-2 mb-0.5">
+                                                <p className="text-sm font-black text-slate-900 leading-none">
+                                                  {regimen.name}
+                                                </p>
+                                                <Badge className="h-4 text-[8px] bg-blue-100 text-blue-700 border-none font-black px-1.5">
+                                                  {regimen.category}
+                                                </Badge>
+                                              </div>
+                                              <p className="text-[11px] text-slate-500 font-medium leading-tight line-clamp-2 max-w-[300px]">
+                                                {regimen.description}
+                                              </p>
+                                            </div>
+                                          </div>
+                                          <div className="text-right shrink-0">
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                                              Cung cấp bởi
+                                            </span>
+                                            <p className="text-[11px] font-black text-slate-700">
+                                              {regimen.provider}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      );
+                                    })()}
+                                  </div>
+                                )}
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Multi-select Plots */}
                         <div className="space-y-2">
                           <Label className="text-sm font-bold text-slate-700 flex items-center justify-between">
-                            Phạm vi vùng trồng (Lô đất) *
+                            Vùng canh tác / Vùng địa lý *
                             <span className="text-[10px] text-slate-400 font-normal">
                               Chọn nhiều
                             </span>
@@ -546,9 +799,17 @@ export default function TaskCreatePage() {
                                   />
                                   <label
                                     htmlFor={`plot-${plotId}`}
-                                    className="text-xs font-medium text-slate-600 cursor-pointer"
+                                    className="text-xs font-medium text-slate-600 cursor-pointer flex items-center gap-2 flex-1"
                                   >
-                                    {plotId}
+                                    <span className="font-bold">
+                                      {getPlotById(plotId)?.plot?.name ||
+                                        plotId}
+                                    </span>
+                                    {getPlotById(plotId)?.plot?.name && (
+                                      <span className="text-[9px] text-slate-400 font-mono">
+                                        ({plotId})
+                                      </span>
+                                    )}
                                   </label>
                                 </div>
                               ))}
@@ -619,40 +880,27 @@ export default function TaskCreatePage() {
 
                     {(formData.objectiveType === "cai-tao-dat" ||
                       formData.objectiveType === "tri-benh") && (
-                      <div className="space-y-2 pt-2 border-t border-slate-50">
-                        <Label className="text-sm font-bold text-slate-700">
+                      <div className="space-y-4 pt-4 border-t border-slate-100 mt-2 anim-fade-in">
+                        <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
                           {formData.objectiveType === "cai-tao-dat"
                             ? "Phác đồ cải tạo đất áp dụng"
                             : "Phác đồ trị bệnh áp dụng"}
                         </Label>
-                        <Select
-                          value={formData.regimenId}
-                          onValueChange={(val) =>
-                            setFormData({ ...formData, regimenId: val })
+                        <RegimenSelector
+                          regimens={regimens}
+                          selectedRegimenId={formData.regimenId}
+                          type={
+                            formData.objectiveType === "cai-tao-dat"
+                              ? "amendment"
+                              : "treatment"
                           }
-                        >
-                          <SelectTrigger className="h-12">
-                            <SelectValue
-                              placeholder={`Chọn phác đồ ${formData.objectiveType === "cai-tao-dat" ? "cải tạo" : "trị bệnh"}...`}
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {regimens
-                              .filter((r) => r.type === formData.objectiveType)
-                              .map((r) => (
-                                <SelectItem key={r.id} value={r.id}>
-                                  {r.name}
-                                </SelectItem>
-                              ))}
-                            {regimens.filter(
-                              (r) => r.type === formData.objectiveType,
-                            ).length === 0 && (
-                              <div className="p-4 text-center text-xs text-slate-400 italic">
-                                Không tìm thấy phác đồ mẫu
-                              </div>
-                            )}
-                          </SelectContent>
-                        </Select>
+                          onSelect={(regimen) => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              regimenId: regimen.id,
+                            }));
+                          }}
+                        />
                       </div>
                     )}
                   </div>
@@ -803,6 +1051,118 @@ export default function TaskCreatePage() {
                           Chưa có nhân sự kiểm định
                         </p>
                       </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Personnel responsible */}
+                <div className="space-y-4 pt-4 border-t border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+                      <Users className="w-4 h-4 text-emerald-500" />
+                      Nhân sự thực hiện
+                    </Label>
+                    <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                      <button
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            assignedType: "individual",
+                            assignedTo: [],
+                          })
+                        }
+                        className={cn(
+                          "px-3 py-1 text-[10px] font-bold rounded-md transition-all",
+                          formData.assignedType === "individual"
+                            ? "bg-white text-emerald-600 shadow-sm"
+                            : "text-slate-400 hover:text-slate-600",
+                        )}
+                      >
+                        Cá nhân
+                      </button>
+                      <button
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            assignedType: "team",
+                            assignedTo: [],
+                          })
+                        }
+                        className={cn(
+                          "px-3 py-1 text-[10px] font-bold rounded-md transition-all",
+                          formData.assignedType === "team"
+                            ? "bg-white text-blue-600 shadow-sm"
+                            : "text-slate-400 hover:text-slate-600",
+                        )}
+                      >
+                        Đội nhóm
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3">
+                    {formData.assignedTo.length > 0 ? (
+                      <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-between group">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center -space-x-2">
+                            {formData.assignedTo.slice(0, 3).map((name, i) => {
+                              const p = availableAssignees.find(
+                                (x) => x.name === name,
+                              );
+                              return (
+                                <div
+                                  key={i}
+                                  className="w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-slate-200 shadow-sm shrink-0"
+                                >
+                                  {formData.assignedType === "team" ? (
+                                    <Users className="w-5 h-5 m-2.5 text-blue-500" />
+                                  ) : p?.avatar ? (
+                                    <img
+                                      src={p.avatar}
+                                      alt=""
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <User className="w-5 h-5 m-2.5 text-emerald-500" />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-slate-800 leading-none">
+                              {formData.assignedTo.join(", ")}
+                            </p>
+                            <p className="text-[10px] text-emerald-600 font-bold uppercase mt-1">
+                              Đã chọn {formData.assignedTo.length}{" "}
+                              {formData.assignedType === "team"
+                                ? "đội"
+                                : "nhân sự"}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-slate-400 hover:text-primary"
+                          onClick={() => setIsAssigneeDialogOpen(true)}
+                        >
+                          Thay đổi
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        className="w-full h-20 border-2 border-dashed border-emerald-100 rounded-2xl hover:bg-emerald-50/50 hover:border-emerald-200 transition-all flex flex-col items-center justify-center gap-2 group"
+                        onClick={() => setIsAssigneeDialogOpen(true)}
+                      >
+                        <div className="w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Plus className="w-5 h-5 text-emerald-500" />
+                        </div>
+                        <span className="text-xs font-bold text-slate-400">
+                          Chọn người thực hiện...
+                        </span>
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -1234,8 +1594,7 @@ export default function TaskCreatePage() {
           </div>
 
           <div className="space-y-4">
-            {formData.objectiveType === "theo-ke-hoach" ||
-            formData.objectiveType === "cai-tao-dat" ? (
+            {formData.objectiveType === "theo-ke-hoach" ? (
               (formData.selectedStages.length > 0
                 ? formData.selectedStages
                 : ["Công việc chính"]
@@ -1278,30 +1637,186 @@ export default function TaskCreatePage() {
                 const regimen = regimens.find(
                   (r) => r.id === formData.regimenId,
                 );
-                const stageName = regimen?.name || "Điều trị";
-                return regimen ? (
-                  <div className="animation-slide-up">
-                    <StageAllocation
-                      index={0}
-                      stageName={stageName}
-                      cycleName="Phác đồ điều trị"
-                      allocations={formData.materials.filter(
-                        (m: any) => m.stageId === stageName,
-                      )}
-                      tasks={formData.tasks.filter(
-                        (t: any) => t.stageId === stageName,
-                      )}
-                      onAddMaterial={(item) => handleAddMaterial(item)}
-                      onRemoveMaterial={handleRemoveMaterial}
-                      onAddTask={handleAddTask}
-                      onRemoveTask={handleRemoveTask}
-                    />
-                  </div>
-                ) : (
-                  <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
-                    <p className="text-slate-400 font-medium italic">
-                      Vui lòng chọn phác đồ điều trị ở bước trước.
-                    </p>
+
+                if (!regimen) {
+                  return (
+                    <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
+                      <p className="text-slate-400 font-medium italic">
+                        Vui lòng chọn{" "}
+                        {formData.objectiveType === "cai-tao-dat"
+                          ? "quy trình cải tạo"
+                          : "phác đồ điều trị"}{" "}
+                        ở bước trước.
+                      </p>
+                    </div>
+                  );
+                }
+
+                const stageName = regimen.name;
+                const relevantMaterials = formData.materials.filter(
+                  (m: any) => m.stageId === stageName,
+                );
+                const relevantTasks = formData.tasks.filter(
+                  (t: any) => t.stageId === stageName,
+                );
+
+                return (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animation-slide-up">
+                    {/* --- LEFT SIDE: Task Addition --- */}
+                    <div className="lg:col-span-7 space-y-5">
+                      <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-sm space-y-4">
+                        <div className="flex items-center justify-between border-b pb-3">
+                          <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                            Danh mục đề xuất
+                          </h4>
+                          <Badge
+                            variant="outline"
+                            className="text-[9px] bg-slate-50"
+                          >
+                            {regimen.category}
+                          </Badge>
+                        </div>
+
+                        <div className="space-y-2">
+                          {regimen.steps?.map((step) => (
+                            <button
+                              key={step.id}
+                              onClick={() =>
+                                handleAddTask({
+                                  stageId: stageName,
+                                  name: step.title,
+                                  description: step.description,
+                                  labor: "Tùy chỉnh",
+                                  duration: step.day,
+                                })
+                              }
+                              className="w-full text-left p-3 rounded-2xl bg-slate-50 border border-transparent hover:border-primary/30 hover:bg-primary/5 transition-all group relative overflow-hidden"
+                            >
+                              <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Plus className="w-4 h-4 text-primary" />
+                              </div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 rounded uppercase">
+                                  {step.day}
+                                </span>
+                                <span className="text-xs font-black text-slate-800">
+                                  {step.title}
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-slate-500 line-clamp-1">
+                                {step.description}
+                              </p>
+                            </button>
+                          ))}
+                          {(!regimen.steps || regimen.steps.length === 0) && (
+                            <div className="py-8 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                              <p className="text-[10px] text-slate-400 italic">
+                                Không có công việc mẫu
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <StageAllocation
+                        index={0}
+                        stageName={stageName}
+                        cycleName={
+                          formData.objectiveType === "cai-tao-dat"
+                            ? "Cải tạo đất"
+                            : "Phác đồ điều trị"
+                        }
+                        allocations={relevantMaterials}
+                        tasks={relevantTasks}
+                        onAddMaterial={(item) => handleAddMaterial(item)}
+                        onRemoveMaterial={handleRemoveMaterial}
+                        onAddTask={handleAddTask}
+                        onRemoveTask={handleRemoveTask}
+                      />
+                    </div>
+
+                    {/* --- RIGHT SIDE: Timeline --- */}
+                    <div className="lg:col-span-5 bg-slate-900 rounded-xl p-8 text-white shadow-2xl relative overflow-hidden min-h-[500px]">
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full -mr-32 -mt-32 blur-3xl" />
+
+                      <div className="relative z-10">
+                        <div className="flex items-center gap-4 mb-8">
+                          <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center border border-white/20">
+                            <Clock className="w-6 h-6 text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="text-lg font-black tracking-tight leading-none mb-1">
+                              Timeline chi tiết
+                            </h4>
+                            <p className="text-xs text-slate-400 font-medium">
+                              Lộ trình kỹ thuật chuẩn của hệ thống
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-0 relative">
+                          {/* Timeline Line */}
+                          <div className="absolute left-[23px] top-6 bottom-6 w-0.5 bg-gradient-to-b from-primary via-slate-700 to-transparent" />
+
+                          {regimen.steps?.map((step, idx) => (
+                            <div
+                              key={step.id}
+                              className="relative pl-14 pb-10 last:pb-0"
+                            >
+                              <div
+                                className={cn(
+                                  "absolute -left-1 top-0 w-14 h-12 rounded-2xl bg-slate-800 border-4 border-slate-900 flex flex-col items-center justify-center z-10 transition-transform group-hover:scale-110 shadow-lg",
+                                  idx === 0
+                                    ? "bg-primary border-slate-900"
+                                    : "",
+                                )}
+                              >
+                                <span className="text-[8px] font-black uppercase text-white">
+                                  {step.day}
+                                </span>
+                              </div>
+
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <h5 className="font-black text-base text-white">
+                                    {step.title}
+                                  </h5>
+                                  {idx === 0 && (
+                                    <Badge className="bg-primary/20 text-primary border-primary/30 text-[8px] font-black py-0">
+                                      BẮT ĐẦU
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm text-slate-400 font-medium leading-relaxed max-w-md">
+                                  {step.description}
+                                </p>
+
+                                {/* Task Status indicator in timeline */}
+                                <div className="flex items-center gap-4 mt-3">
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                      Sẵn sàng
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+
+                          {(!regimen.steps || regimen.steps.length === 0) && (
+                            <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+                              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                                <CalendarIcon className="w-8 h-8 text-slate-700" />
+                              </div>
+                              <p className="text-sm font-bold italic">
+                                Chưa có dữ liệu timeline
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 );
               })()

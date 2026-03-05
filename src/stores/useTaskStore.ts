@@ -4,9 +4,13 @@ import { devtools, persist } from "zustand/middleware";
 export interface MaterialAllocation {
   id: number;
   name: string;
-  quantity: number;
+  quantity: string;
   unit: string;
   type: "fertilizer" | "pesticide" | "other" | "tool";
+  stageId: string;
+  materialCategory: string;
+  materialType: string;
+  materialName: string;
 }
 
 export interface Task {

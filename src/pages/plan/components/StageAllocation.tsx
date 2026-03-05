@@ -275,99 +275,126 @@ export const StageAllocation = memo(
                 </div>
 
                 {/* Add Material Form */}
-                <div className="flex gap-2 pt-3 border-t mt-auto">
-                  <Select
-                    value={newItem.type}
-                    onValueChange={(v) => {
-                      const defaultUnit =
-                        MATERIAL_UNITS[v as keyof typeof MATERIAL_UNITS]?.[0] ||
-                        "kg";
-                      setNewItem({
-                        ...newItem,
-                        type: v,
-                        name: "",
-                        unit: defaultUnit,
-                      });
-                    }}
-                  >
-                    <SelectTrigger className="w-[120px] h-9 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MATERIAL_TYPES.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select
-                    value={newItem.name}
-                    onValueChange={(v) => {
-                      const category =
-                        MATERIAL_OPTIONS[
-                          newItem.type as keyof typeof MATERIAL_OPTIONS
-                        ] || [];
-                      const item = category.find((i) => i.value === v);
-                      setNewItem({
-                        ...newItem,
-                        name: v,
-                        unit: item?.unit || newItem.unit,
-                      });
-                    }}
-                  >
-                    <SelectTrigger className="h-9 text-xs flex-1">
-                      <SelectValue placeholder="Chọn vật tư..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(
-                        MATERIAL_OPTIONS[
-                          newItem.type as keyof typeof MATERIAL_OPTIONS
-                        ] || []
-                      ).map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="flex gap-1">
-                    <Input
-                      placeholder="SL"
-                      type="number"
-                      className="h-9 text-sm"
-                      value={newItem.qty}
-                      onChange={(e) =>
-                        setNewItem({ ...newItem, qty: e.target.value })
-                      }
-                    />
-                    <Select
-                      value={newItem.unit}
-                      onValueChange={(v) => setNewItem({ ...newItem, unit: v })}
-                    >
-                      <SelectTrigger className="h-9 text-xs px-2 w-20">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(
-                          MATERIAL_UNITS[
-                            newItem.type as keyof typeof MATERIAL_UNITS
-                          ] || ["kg"]
-                        ).map((u) => (
-                          <SelectItem key={u} value={u}>
-                            {u}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                <div className="border-t mt-auto pt-3">
+                  <div className="flex items-center justify-between py-1">
+                    <span className="text-xs font-medium text-slate-500">
+                      Chọn định mức vật tư & thiết bị
+                    </span>
                   </div>
-                  <Button
-                    size="sm"
-                    className="h-9 w-9 p-0 bg-slate-900 hover:bg-slate-800"
-                    onClick={handleAddMaterial}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
+                  <div className="space-y-2">
+                    {/* Row 1: Selections (Material Type & Name) */}
+                    <div className="grid grid-cols-12 gap-2">
+                      <div className="col-span-4">
+                        <Select
+                          value={newItem.type}
+                          onValueChange={(v) => {
+                            const defaultUnit =
+                              MATERIAL_UNITS[
+                                v as keyof typeof MATERIAL_UNITS
+                              ]?.[0] || "kg";
+                            setNewItem({
+                              ...newItem,
+                              type: v,
+                              name: "",
+                              unit: defaultUnit,
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="w-full h-9 text-xs bg-slate-50/50">
+                            <SelectValue placeholder="Loại..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {MATERIAL_TYPES.map((type) => (
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="col-span-8">
+                        <Select
+                          value={newItem.name}
+                          onValueChange={(v) => {
+                            const category =
+                              MATERIAL_OPTIONS[
+                                newItem.type as keyof typeof MATERIAL_OPTIONS
+                              ] || [];
+                            const item = category.find((i) => i.value === v);
+                            setNewItem({
+                              ...newItem,
+                              name: v,
+                              unit: item?.unit || newItem.unit,
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="h-9 text-xs w-full bg-slate-50/50">
+                            <SelectValue placeholder="Chọn vật tư cụ thể..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(
+                              MATERIAL_OPTIONS[
+                                newItem.type as keyof typeof MATERIAL_OPTIONS
+                              ] || []
+                            ).map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Row 2: Configuration (Quantity, Unit & Add Button) */}
+                    <div className="grid grid-cols-12 gap-2">
+                      <div className="col-span-5">
+                        <Input
+                          placeholder="Số lượng"
+                          type="number"
+                          className="h-9 text-sm px-2 bg-white"
+                          value={newItem.qty}
+                          onChange={(e) =>
+                            setNewItem({ ...newItem, qty: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="col-span-4">
+                        <Select
+                          value={newItem.unit}
+                          onValueChange={(v) =>
+                            setNewItem({ ...newItem, unit: v })
+                          }
+                        >
+                          <SelectTrigger className="h-9 text-xs px-2 w-full bg-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(
+                              MATERIAL_UNITS[
+                                newItem.type as keyof typeof MATERIAL_UNITS
+                              ] || ["kg"]
+                            ).map((u) => (
+                              <SelectItem key={u} value={u}>
+                                {u}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="col-span-3">
+                        <Button
+                          size="sm"
+                          className="h-9 w-full p-0 bg-slate-900 hover:bg-slate-800 shadow-sm font-bold flex items-center justify-center gap-1.5"
+                          onClick={handleAddMaterial}
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          THÊM
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
 
@@ -469,7 +496,7 @@ export const StageAllocation = memo(
                     <span className="text-xs font-medium text-slate-500">
                       {specificPersonnel
                         ? "Chọn nhân sự cụ thể"
-                        : "Chọn định mức nhân sự"}
+                        : "Chọn định mức nguồn nhân lực"}
                     </span>
                   </div>
 

@@ -5,7 +5,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Checkbox,
   Input,
   Label,
   Select,
@@ -40,10 +39,10 @@ import type {
 } from "../../stores/usePlanStore";
 import useSeasonStore from "../../stores/useSeasonStore";
 import useRegionStore from "@/stores/useRegionStore";
-import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import { StageAllocation } from "./components/StageAllocation";
 import { EnterpriseSelector } from "../cultivation-zone/cultivation-area/components";
 import GeographicalSelector from "./components/GeographicalSelector";
+import { RegimenSelector } from "./components/RegimenSelector";
 
 export interface GeographicalSelection {
   id: string;
@@ -75,42 +74,6 @@ export interface EditPlanForm {
   taskAllocations: TaskAllocation[];
 }
 
-const StageItem = ({
-  stage,
-  index,
-  checked,
-  onChange,
-}: {
-  stage: string;
-  index: number;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) => (
-  <div
-    className={`flex items-center gap-3 p-3 border rounded-lg transition-colors ${
-      checked ? "bg-primary/5 border-primary/20" : "bg-white hover:bg-slate-50"
-    }`}
-  >
-    <div className="flex items-center justify-center">
-      <Checkbox checked={checked} onCheckedChange={(c) => onChange(!!c)} />
-    </div>
-    <div
-      className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
-        checked ? "bg-primary text-white" : "bg-slate-100 text-slate-500"
-      }`}
-    >
-      {index + 1}
-    </div>
-    <div
-      className={`flex-1 font-medium ${
-        checked ? "text-slate-900" : "text-slate-500"
-      }`}
-    >
-      {stage}
-    </div>
-  </div>
-);
-
 export default function PlanEditPage() {
   const params = useParams();
   const [, setLocation] = useLocation();
@@ -123,7 +86,6 @@ export default function PlanEditPage() {
   const updatePlan = usePlanStore((state) => state.updatePlan);
   const seasons = useSeasonStore((state) => state.seasons);
   const { regions } = useRegionStore();
-  const { growthCycles } = useGrowthCycleStore();
   const regimens = useRegimenStore((state) => state.regimens);
 
   const plan = getPlanById(Number(params.id));
@@ -149,8 +111,6 @@ export default function PlanEditPage() {
     taskAllocations: [],
     status: "active",
   });
-
-  const [dateWarning, setDateWarning] = useState<string | null>(null);
 
   // Initialize form with existing plan data and reconstruct selections
   useEffect(() => {
@@ -388,18 +348,6 @@ export default function PlanEditPage() {
         seasonId: season.id,
         seasonName: season.name,
         duration: season.duration,
-      }));
-      setDateWarning(null);
-    }
-  };
-
-  const handleGrowthCycleChange = (id: string) => {
-    const cycle = growthCycles.find((c) => c.id === id);
-    if (cycle) {
-      setFormData((prev) => ({
-        ...prev,
-        growthCycleId: id,
-        selectedStages: cycle.stages.map((s) => s.name),
       }));
     }
   };
@@ -811,25 +759,18 @@ export default function PlanEditPage() {
                   ? "Phác đồ cải tạo đất"
                   : "Phác đồ điều trị bệnh"}
               </Label>
-              <Select
-                value={formData.regimenId}
-                onValueChange={(v) =>
-                  setFormData((prev) => ({ ...prev, regimenId: v }))
-                }
-              >
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Chọn phác đồ điều trị..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {regimens
-                    .filter((r) => r.type === "tri-benh")
-                    .map((r) => (
-                      <SelectItem key={r.id} value={r.id}>
-                        {r.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <RegimenSelector
+                regimens={regimens}
+                selectedRegimenId={formData.regimenId}
+                type={formData.purpose as "treatment" | "amendment"}
+                onSelect={(regimen) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    regimenId: regimen.id,
+                    selectedStages: [regimen.name],
+                  }));
+                }}
+              />
             </div>
           )}
 
