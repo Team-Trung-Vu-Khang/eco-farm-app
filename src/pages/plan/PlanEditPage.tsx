@@ -20,14 +20,14 @@ import {
   type Step,
 } from "@tankhang1/eco-shared-ui";
 import {
+  Bug,
   ClipboardList,
-  FileCheck,
-  Info,
+  Layers,
   MapPin,
   Package,
   Sprout,
   Users,
-  Wrench,
+  CheckCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
@@ -702,51 +702,83 @@ export default function PlanEditPage() {
               Mục đích kế hoạch
             </Label>
             <div className="grid grid-cols-3 gap-4">
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData((prev) => ({ ...prev, purpose: "cultivation" }))
-                }
-                className={cn(
-                  "flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all",
-                  formData.purpose === "cultivation"
-                    ? "bg-emerald-50 border-emerald-500 text-emerald-900 shadow-md"
-                    : "bg-white border-slate-100 text-slate-500",
-                )}
-              >
-                <Sprout className="w-8 h-8" />
-                <p className="font-bold text-sm">Canh tác</p>
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData((prev) => ({ ...prev, purpose: "treatment" }))
-                }
-                className={cn(
-                  "flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all",
-                  formData.purpose === "treatment"
-                    ? "bg-blue-50 border-blue-500 text-blue-900 shadow-md"
-                    : "bg-white border-slate-100 text-slate-500",
-                )}
-              >
-                <ClipboardList className="w-8 h-8" />
-                <p className="font-bold text-sm">Điều trị</p>
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData((prev) => ({ ...prev, purpose: "amendment" }))
-                }
-                className={cn(
-                  "flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all",
-                  formData.purpose === "amendment"
-                    ? "bg-amber-50 border-amber-500 text-amber-900 shadow-md"
-                    : "bg-white border-slate-100 text-slate-500",
-                )}
-              >
-                <Wrench className="w-8 h-8" />
-                <p className="font-bold text-sm">Cải tạo đất</p>
-              </button>
+              {[
+                {
+                  id: "cultivation",
+                  title: "Canh tác",
+                  desc: "Quy trình trồng trọt",
+                  icon: Layers,
+                  color: "blue",
+                },
+                {
+                  id: "treatment",
+                  title: "Điều trị",
+                  desc: "Xử lý sâu bệnh",
+                  icon: Bug,
+                  color: "red",
+                },
+                {
+                  id: "amendment",
+                  title: "Cải tạo đất",
+                  desc: "Phục hồi dinh dưỡng",
+                  icon: Sprout,
+                  color: "green",
+                },
+              ].map((type) => {
+                const Icon = type.icon;
+                const isActive = formData.purpose === type.id;
+                const colorClasses = {
+                  blue: isActive
+                    ? "bg-blue-50 border-blue-500 text-blue-900 shadow-sm"
+                    : "bg-white border-slate-100 text-slate-400 hover:border-blue-200",
+                  red: isActive
+                    ? "bg-red-50 border-red-500 text-red-900 shadow-sm"
+                    : "bg-white border-slate-100 text-slate-400 hover:border-red-200",
+                  green: isActive
+                    ? "bg-green-50 border-green-500 text-green-900 shadow-sm"
+                    : "bg-white border-slate-100 text-slate-400 hover:border-green-200",
+                }[type.color as "blue" | "red" | "green"];
+
+                const iconClasses = {
+                  blue: isActive ? "text-blue-600" : "text-slate-300",
+                  red: isActive ? "text-red-600" : "text-slate-300",
+                  green: isActive ? "text-green-600" : "text-slate-300",
+                }[type.color as "blue" | "red" | "green"];
+
+                return (
+                  <button
+                    key={type.id}
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        purpose: type.id as any,
+                      }))
+                    }
+                    className={cn(
+                      "group relative flex flex-col items-center gap-3 p-6 rounded-3xl border-2 transition-all duration-300",
+                      colorClasses,
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "p-3 rounded-2xl transition-colors duration-300",
+                        isActive ? "bg-white shadow-sm" : "bg-slate-50",
+                      )}
+                    >
+                      <Icon className={cn("w-7 h-7", iconClasses)} />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-black text-sm uppercase tracking-tight">
+                        {type.title}
+                      </p>
+                      <p className="text-[10px] font-medium opacity-60 mt-0.5">
+                        {type.desc}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -838,16 +870,16 @@ export default function PlanEditPage() {
     },
     {
       id: "confirmation",
-      title: "Xác nhận",
-      description: "Kiểm tra và lưu",
+      title: "Xác nhận thay đổi",
+      description: "Kiểm tra lại trước khi lưu",
       content: (
         <div className="max-w-3xl mx-auto space-y-8">
           <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-600 mb-4">
-              <FileCheck className="w-8 h-8" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600 mb-4">
+              <CheckCircle className="w-8 h-8" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900">
-              Sẵn sàng lưu thay đổi
+              Xác nhận thay đổi kế hoạch
             </h2>
             <p className="text-slate-500">
               Vui lòng kiểm tra kỹ các thông tin đã chỉnh sửa.
@@ -858,7 +890,7 @@ export default function PlanEditPage() {
             <Card>
               <CardHeader className="pb-3 border-b bg-slate-50/50">
                 <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
-                  <Info className="w-4 h-4 text-blue-600" />
+                  <Layers className="w-4 h-4 text-blue-600" />
                   Tổng quan kế hoạch
                 </CardTitle>
               </CardHeader>
@@ -887,6 +919,46 @@ export default function PlanEditPage() {
                   </span>
                   {formData.startDate} → {formData.endDate}
                 </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase mb-1">
+                    Loại kế hoạch
+                  </span>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "font-bold uppercase h-5 text-[10px]",
+                      formData.purpose === "cultivation"
+                        ? "bg-blue-50 text-blue-700 border-blue-200"
+                        : formData.purpose === "amendment"
+                          ? "bg-green-50 text-green-700 border-green-200"
+                          : "bg-red-50 text-red-700 border-red-200",
+                    )}
+                  >
+                    {formData.purpose === "cultivation"
+                      ? "CANH TÁC"
+                      : formData.purpose === "amendment"
+                        ? "CẢI TẠO"
+                        : "ĐIỀU TRỊ"}
+                  </Badge>
+                </div>
+                {formData.purpose !== "cultivation" && (
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase mb-1">
+                      Phác đồ
+                    </span>
+                    <span
+                      className={cn(
+                        "font-bold",
+                        formData.purpose === "amendment"
+                          ? "text-green-700"
+                          : "text-red-700",
+                      )}
+                    >
+                      {regimens.find((r) => r.id === formData.regimenId)
+                        ?.name || "---"}
+                    </span>
+                  </div>
+                )}
                 <div>
                   <span className="text-slate-400 block text-[10px] uppercase mb-1">
                     Cây trồng

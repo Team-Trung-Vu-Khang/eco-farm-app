@@ -51,36 +51,48 @@ export const RegimenSelector = ({
     [regimens, selectedRegimenId],
   );
 
-  // Metadata for filters
+  // 1. First filter by type (amendment vs treatment)
+  const typeFilteredRegimens = useMemo(() => {
+    return regimens.filter(
+      (r) =>
+        (type === "amendment" && r.type === "cai-tao-dat") ||
+        (type === "treatment" && r.type === "tri-benh"),
+    );
+  }, [regimens, type]);
+
+  // 2. Extract metadata from type-filtered list
   const providers = useMemo(
     () => [
       "all",
-      ...Array.from(new Set(regimens.map((r) => r.provider))).filter(Boolean),
+      ...Array.from(
+        new Set(typeFilteredRegimens.map((r) => r.provider)),
+      ).filter(Boolean),
     ],
-    [regimens],
+    [typeFilteredRegimens],
   );
 
   const categories = useMemo(
     () => [
       "all",
-      ...Array.from(new Set(regimens.map((r) => r.category))).filter(Boolean),
+      ...Array.from(
+        new Set(typeFilteredRegimens.map((r) => r.category)),
+      ).filter(Boolean),
     ],
-    [regimens],
+    [typeFilteredRegimens],
   );
 
   const crops = useMemo(
     () => [
       "all",
-      ...Array.from(new Set(regimens.map((r) => r.crop))).filter(Boolean),
+      ...Array.from(new Set(typeFilteredRegimens.map((r) => r.crop))).filter(
+        Boolean,
+      ),
     ],
-    [regimens],
+    [typeFilteredRegimens],
   );
 
   const filteredRegimens = useMemo(() => {
-    return regimens.filter((r) => {
-      const matchType =
-        (type === "amendment" && r.type === "cai-tao-dat") ||
-        (type === "treatment" && r.type === "tri-benh");
+    return typeFilteredRegimens.filter((r) => {
       const matchSearch =
         r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -90,11 +102,15 @@ export const RegimenSelector = ({
         filterCategory === "all" || r.category === filterCategory;
       const matchCrop = filterCrop === "all" || r.crop === filterCrop;
 
-      return (
-        matchType && matchSearch && matchProvider && matchCategory && matchCrop
-      );
+      return matchSearch && matchProvider && matchCategory && matchCrop;
     });
-  }, [regimens, type, searchTerm, filterProvider, filterCategory, filterCrop]);
+  }, [
+    typeFilteredRegimens,
+    searchTerm,
+    filterProvider,
+    filterCategory,
+    filterCrop,
+  ]);
 
   const handleSelect = (regimen: Regimen) => {
     onSelect(regimen);
@@ -232,19 +248,29 @@ export const RegimenSelector = ({
 
               <div className="space-y-1.5">
                 <label className="text-[10px] uppercase tracking-widest font-black text-slate-400 ml-1">
-                  Hiện trạng / Nhóm
+                  {type === "amendment" ? "Hiện trạng đất" : "Nhóm bệnh hại"}
                 </label>
                 <Select
                   value={filterCategory}
                   onValueChange={setFilterCategory}
                 >
                   <SelectTrigger className="h-10 bg-slate-50/50 border-slate-200">
-                    <SelectValue placeholder="Tất cả danh mục" />
+                    <SelectValue
+                      placeholder={
+                        type === "amendment"
+                          ? "Tất cả hiện trạng"
+                          : "Tất cả nhóm bệnh"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((c) => (
                       <SelectItem key={c} value={c}>
-                        {c === "all" ? "Tất cả danh mục" : c}
+                        {c === "all"
+                          ? type === "amendment"
+                            ? "Tất cả hiện trạng"
+                            : "Tất cả nhóm bệnh"
+                          : c}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -271,7 +297,7 @@ export const RegimenSelector = ({
             </div>
           </div>
 
-          <ScrollArea className="flex-1 bg-slate-50/30">
+          <div className="flex-1 overflow-y-scroll bg-slate-50/30">
             <div className="p-6 grid grid-cols-1 gap-4">
               {filteredRegimens.map((regimen) => (
                 <div
@@ -360,7 +386,7 @@ export const RegimenSelector = ({
                 </div>
               )}
             </div>
-          </ScrollArea>
+          </div>
 
           <div className="p-4 bg-white border-t shrink-0 flex justify-center">
             <p className="text-[10px] text-slate-400 font-medium">

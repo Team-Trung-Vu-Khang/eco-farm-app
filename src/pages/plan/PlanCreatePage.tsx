@@ -1,14 +1,11 @@
 import {
   AdminLayout,
   Badge,
-  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   Checkbox,
-  Dialog,
-  DialogContent,
   Input,
   Label,
   Select,
@@ -17,10 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
   StepperForm,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
   Textarea,
   ScrollArea,
   useToast,
@@ -29,6 +22,7 @@ import {
 } from "@tankhang1/eco-shared-ui";
 import {
   AlertTriangle,
+  Bug,
   ClipboardList,
   Clock,
   FileCheck,
@@ -37,9 +31,8 @@ import {
   MapPin,
   Package,
   Sprout,
-  StickyNote,
   Users,
-  Wrench,
+  CheckCircle,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useLocation } from "wouter";
@@ -310,17 +303,6 @@ export default function PlanCreatePage() {
     }));
   };
 
-  const handleGrowthCycleChange = (id: string) => {
-    const cycle = GROWTH_CYCLES.find((c) => c.id === id);
-    if (cycle) {
-      setFormData((prev) => ({
-        ...prev,
-        growthCycleId: id,
-        selectedStages: cycle.stages,
-      }));
-    }
-  };
-
   const calculateArea = () => {
     let total = 0;
     const regionIds = formData.selectedRegionIds || [];
@@ -360,17 +342,6 @@ export default function PlanCreatePage() {
     });
 
     return total.toFixed(1);
-  };
-
-  const toggleStage = (stage: string, checked: boolean) => {
-    setFormData((prev) => {
-      const current = prev.selectedStages;
-      if (checked && !current.includes(stage))
-        return { ...prev, selectedStages: [...current, stage] };
-      if (!checked && current.includes(stage))
-        return { ...prev, selectedStages: current.filter((s) => s !== stage) };
-      return prev;
-    });
   };
 
   const handleAddMaterial = useCallback((item: any) => {
@@ -782,95 +753,72 @@ export default function PlanCreatePage() {
               Mục đích kế hoạch
             </Label>
             <div className="grid grid-cols-3 gap-4">
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData((prev) => ({ ...prev, purpose: "cultivation" }))
-                }
-                className={cn(
-                  "flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all text-left",
-                  formData.purpose === "cultivation"
-                    ? "bg-emerald-50 border-emerald-500 text-emerald-900 shadow-md"
-                    : "bg-white border-slate-100 text-slate-500 hover:border-slate-200",
-                )}
-              >
-                <div
+              {[
+                {
+                  id: "cultivation",
+                  label: "Canh tác",
+                  icon: Layers,
+                  borderColor: "border-blue-500",
+                  bgColor: "bg-blue-50/50",
+                  activeColor: "bg-blue-500",
+                  textColor: "text-blue-700",
+                  description: "Sử dụng quy trình chuẩn",
+                },
+                {
+                  id: "treatment",
+                  label: "Điều trị",
+                  icon: Bug,
+                  borderColor: "border-red-500",
+                  bgColor: "bg-red-50/50",
+                  activeColor: "bg-red-500",
+                  textColor: "text-red-700",
+                  description: "Áp dụng phác đồ xử lý",
+                },
+                {
+                  id: "amendment",
+                  label: "Cải tạo đất",
+                  icon: Sprout,
+                  borderColor: "border-green-500",
+                  bgColor: "bg-green-50/50",
+                  activeColor: "bg-green-500",
+                  textColor: "text-green-700",
+                  description: "Xử lý và phục hồi",
+                },
+              ].map((type) => (
+                <button
+                  key={type.id}
+                  type="button"
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      purpose: type.id as any,
+                    }))
+                  }
                   className={cn(
-                    "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
-                    formData.purpose === "cultivation"
-                      ? "bg-emerald-500 text-white"
-                      : "bg-slate-100 text-slate-400",
+                    "cursor-pointer p-4 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-1 group relative overflow-hidden",
+                    formData.purpose === type.id
+                      ? `${type.borderColor} ${type.bgColor} ${type.textColor} shadow-md`
+                      : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm",
                   )}
                 >
-                  <Sprout className="w-6 h-6" />
-                </div>
-                <div className="text-center">
-                  <p className="font-bold text-sm">Canh tác</p>
-                  <p className="text-[10px] opacity-60 mt-1">
-                    Sử dụng quy trình chuẩn cho mùa vụ
-                  </p>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData((prev) => ({ ...prev, purpose: "treatment" }))
-                }
-                className={cn(
-                  "flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all text-left",
-                  formData.purpose === "treatment"
-                    ? "bg-blue-50 border-blue-500 text-blue-900 shadow-md"
-                    : "bg-white border-slate-100 text-slate-500 hover:border-slate-200",
-                )}
-              >
-                <div
-                  className={cn(
-                    "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
-                    formData.purpose === "treatment"
-                      ? "bg-blue-500 text-white"
-                      : "bg-slate-100 text-slate-400",
-                  )}
-                >
-                  <StickyNote className="w-6 h-6" />
-                </div>
-                <div className="text-center">
-                  <p className="font-bold text-sm">Điều trị</p>
-                  <p className="text-[10px] opacity-60 mt-1">
-                    Áp dụng phác đồ xử lý cụ thể
-                  </p>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData((prev) => ({ ...prev, purpose: "amendment" }))
-                }
-                className={cn(
-                  "flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all text-left",
-                  formData.purpose === "amendment"
-                    ? "bg-amber-50 border-amber-500 text-amber-900 shadow-md"
-                    : "bg-white border-slate-100 text-slate-500 hover:border-slate-200",
-                )}
-              >
-                <div
-                  className={cn(
-                    "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
-                    formData.purpose === "amendment"
-                      ? "bg-amber-500 text-white"
-                      : "bg-slate-100 text-slate-400",
-                  )}
-                >
-                  <Wrench className="w-6 h-6" />
-                </div>
-                <div className="text-center">
-                  <p className="font-bold text-sm">Cải tạo đất</p>
-                  <p className="text-[10px] opacity-60 mt-1">
-                    Xử lý và phục hồi dinh dưỡng
-                  </p>
-                </div>
-              </button>
+                  <div
+                    className={cn(
+                      "w-10 h-10 rounded-xl flex items-center justify-center mb-1 group-hover:scale-110 transition-transform",
+                      formData.purpose === type.id
+                        ? `${type.activeColor} text-white`
+                        : "bg-slate-50 text-slate-400",
+                    )}
+                  >
+                    <type.icon className="w-5 h-5" />
+                  </div>
+                  <span className="text-xs font-black uppercase tracking-tight">
+                    {type.label}
+                  </span>
+                  <span className="text-[10px] opacity-60 font-medium">
+                    {type.description}
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -1160,7 +1108,7 @@ export default function PlanCreatePage() {
             <Card>
               <CardHeader className="pb-3 border-b bg-slate-50/50">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Sprout className="w-4 h-4 text-blue-600" />
+                  <Layers className="w-4 h-4 text-blue-600" />
                   Thông tin chung
                 </CardTitle>
               </CardHeader>
@@ -1310,9 +1258,9 @@ export default function PlanCreatePage() {
                         <Badge
                           variant="outline"
                           className={cn(
-                            "bg-blue-50 text-blue-700 border-blue-200 uppercase",
+                            "bg-red-50 text-red-700 border-red-200 uppercase",
                             formData.purpose === "amendment" &&
-                              "bg-amber-50 text-amber-700 border-amber-200",
+                              "bg-green-50 text-green-700 border-green-200",
                           )}
                         >
                           {formData.purpose === "amendment"
@@ -1328,9 +1276,9 @@ export default function PlanCreatePage() {
                         </span>
                         <span
                           className={cn(
-                            "font-bold text-blue-900",
+                            "font-bold text-red-900",
                             formData.purpose === "amendment" &&
-                              "text-amber-900",
+                              "text-green-900",
                           )}
                         >
                           {regimens.find((r) => r.id === formData.regimenId)
