@@ -1027,7 +1027,7 @@ const SearchCropPage = () => {
                                 <div className="p-4 bg-slate-50/50 border-b font-black text-xs uppercase tracking-widest text-slate-500">
                                   Danh sách cây trồng
                                 </div>
-                                <div className="flex-1 overflow-hidden p-2">
+                                <div className="flex-1 overflow-hidden p-4">
                                   <DataTable
                                     columns={
                                       [

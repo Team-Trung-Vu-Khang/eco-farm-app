@@ -87,6 +87,7 @@ export interface Region {
   subAreas: SubArea[];
   createdAt: string;
   cropVarieties?: RegionCrop[];
+  ward?: string;
 }
 
 export const MOCK_REGIONS: Region[] = [
@@ -104,6 +105,7 @@ export const MOCK_REGIONS: Region[] = [
     note: "Vùng trồng thử nghiệm sầu riêng, áp dụng công nghệ tưới nhỏ giọt Israel.",
     status: "active",
     createdAt: "2024-01-15",
+    ward: "Xã Đức Liễu",
     coordinates: [
       { lat: 11.546, lng: 106.892 },
       { lat: 11.552, lng: 106.905 },
@@ -223,6 +225,7 @@ export const MOCK_REGIONS: Region[] = [
     note: "Chuyên canh rau màu hữu cơ đạt chuẩn GlobalGAP.",
     status: "active",
     createdAt: "2024-02-10",
+    ward: "Xã Gia Kiệm",
     coordinates: [
       { lat: 10.957, lng: 107.22 },
       { lat: 10.97, lng: 107.225 },
@@ -279,6 +282,7 @@ export const MOCK_REGIONS: Region[] = [
     note: "Cà phê Robusta xuất khẩu, địa hình đồi núi dốc.",
     status: "inactive",
     createdAt: "2023-11-05",
+    ward: "N/A",
     coordinates: [
       { lat: 12.66, lng: 108.02 },
       { lat: 12.68, lng: 108.03 },
