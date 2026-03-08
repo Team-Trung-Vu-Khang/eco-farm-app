@@ -35,7 +35,7 @@ import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import polygonToLine from "@turf/polygon-to-line";
 import nearestPointOnLine from "@turf/nearest-point-on-line";
 import { point, polygon } from "@turf/helpers";
-import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-area/components/mapUtils";
+import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
 
 import { type SubArea as Area, type Plot } from "../constants";
 import { MapController } from "../components/DraggableRectangle";

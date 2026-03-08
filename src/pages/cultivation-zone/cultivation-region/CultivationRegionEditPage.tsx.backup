@@ -267,7 +267,7 @@ const ManagerSelector = ({
 
 // --- Main Page Component ---
 
-const CultivationAreaCreatePage = () => {
+const CultivationRegionCreatePage = () => {
   const [, setLocation] = useLocation();
 
   // State
@@ -1245,7 +1245,7 @@ const CultivationAreaCreatePage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation("/cultivation-area")}
+          onClick={() => setLocation("/cultivation-region")}
           className="gap-2 text-muted-foreground hover:text-primary pl-0"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -1272,9 +1272,9 @@ const CultivationAreaCreatePage = () => {
                   selectedManagerId,
                 });
                 // Add toast here in real app
-                setLocation("/cultivation-area");
+                setLocation("/cultivation-region");
               }}
-              onCancel={() => setLocation("/cultivation-area")}
+              onCancel={() => setLocation("/cultivation-region")}
             />
           </div>
         </CardContent>
@@ -1283,4 +1283,4 @@ const CultivationAreaCreatePage = () => {
   );
 };
 
-export default CultivationAreaCreatePage;
+export default CultivationRegionCreatePage;

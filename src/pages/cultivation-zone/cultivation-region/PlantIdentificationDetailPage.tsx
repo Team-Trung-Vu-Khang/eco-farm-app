@@ -40,7 +40,7 @@ import {
 } from "react-leaflet";
 import { Link, useParams, useLocation } from "wouter";
 import usePlantStore from "../../../stores/usePlantStore";
-import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
+import useCultivationRegionStore from "../../../stores/useCultivationRegionStore";
 import usePersonnelStore from "../../../stores/usePersonnelStore";
 import useFarmingMethodStore from "../../../stores/useFarmingMethodStore";
 import useIrrigationSystemStore from "../../../stores/useIrrigationSystemStore";
@@ -85,7 +85,7 @@ const PlantIdentificationDetailPage = () => {
   const [, setLocation] = useLocation();
   const { getPlantById, deletePlant } = usePlantStore();
   const { toast } = useToast();
-  const { areas: cultivationAreas } = useCultivationAreaStore();
+  const { areas: cultivationRegions } = useCultivationRegionStore();
   const { personnel } = usePersonnelStore();
   const { farmingMethods } = useFarmingMethodStore();
   const { irrigationSystems } = useIrrigationSystemStore();
@@ -133,17 +133,17 @@ const PlantIdentificationDetailPage = () => {
   const { plant, plot, area, region } = data;
 
   // Resolve cultivation area technical info
-  const cultivationArea = cultivationAreas.find(
-    (ca) => ca.id === plant.cultivationAreaId,
+  const cultivationRegion = cultivationRegions.find(
+    (ca) => ca.id === plant.cultivationRegionId,
   );
   const manager = personnel.find(
-    (p: any) => String(p.id) === String(cultivationArea?.managerId),
+    (p: any) => String(p.id) === String(cultivationRegion?.managerId),
   );
   const farmingMethod = farmingMethods.find(
-    (m: any) => m.id === cultivationArea?.farmingMethodId,
+    (m: any) => m.id === cultivationRegion?.farmingMethodId,
   );
   const irrigationMethod = irrigationSystems.find(
-    (s: any) => s.id === cultivationArea?.irrigationMethodId,
+    (s: any) => s.id === cultivationRegion?.irrigationMethodId,
   );
 
   const formatAge = () => {
@@ -419,7 +419,7 @@ const PlantIdentificationDetailPage = () => {
               </CardContent>
             </Card>
 
-            {cultivationArea && (
+            {cultivationRegion && (
               <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
                 <CardHeader className="border-b py-4">
                   <CardTitle className="text-sm font-semibold flex items-center gap-2">

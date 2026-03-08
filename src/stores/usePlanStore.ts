@@ -43,7 +43,7 @@ export interface Plan {
 
   // Additional display fields
   zone?: string;
-  cultivationArea?: string;
+  cultivationRegion?: string;
   plot?: string;
   area?: string;
   expectedYield?: string;

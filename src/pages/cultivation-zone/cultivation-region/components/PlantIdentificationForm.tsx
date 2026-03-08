@@ -4,7 +4,7 @@ import * as turf from "@turf/turf";
 import "leaflet/dist/leaflet.css";
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import useCultivationAreaStore from "../../../../stores/useCultivationAreaStore";
+import useCultivationRegionStore from "../../../../stores/useCultivationRegionStore";
 import useFarmingMethodStore from "../../../../stores/useFarmingMethodStore";
 import useIrrigationSystemStore from "../../../../stores/useIrrigationSystemStore";
 import usePersonnelStore from "../../../../stores/usePersonnelStore";
@@ -28,7 +28,7 @@ const PlantIdentificationForm = ({
   initialList,
   onSubmit,
 }: PlantIdentificationFormProps) => {
-  const { areas } = useCultivationAreaStore();
+  const { areas } = useCultivationRegionStore();
   const { personnel } = usePersonnelStore();
   const { farmingMethods } = useFarmingMethodStore();
   const { irrigationSystems } = useIrrigationSystemStore();
@@ -41,8 +41,8 @@ const PlantIdentificationForm = ({
   const [enterpriseId, setEnterpriseId] = useState(
     initialData?.enterpriseId || "",
   );
-  const [cultivationAreaId, setCultivationAreaId] = useState(
-    initialData?.cultivationAreaId || "",
+  const [cultivationRegionId, setCultivationRegionId] = useState(
+    initialData?.cultivationRegionId || "",
   );
   const [selectedScopeIds, setSelectedScopeIds] = useState<string[]>(() => {
     if (initialData?.plotId) return [initialData.plotId];
@@ -102,7 +102,7 @@ const PlantIdentificationForm = ({
   };
 
   // ---- Derived: cultivation area ----
-  const filteredCultivationAreas = useMemo(() => {
+  const filteredCultivationRegions = useMemo(() => {
     if (!enterpriseId) return [];
     return areas.filter(
       (a) =>
@@ -112,11 +112,11 @@ const PlantIdentificationForm = ({
     );
   }, [areas, enterpriseId]);
 
-  const selectedCultivationArea = areas.find((a) => a.id === cultivationAreaId);
+  const selectedCultivationRegion = areas.find((a) => a.id === cultivationRegionId);
 
   // ---- Logic to find smallest geographical units ----
   const geographicalUnits = useMemo(() => {
-    if (!selectedCultivationArea) return [];
+    if (!selectedCultivationRegion) return [];
     const regionStore = useRegionStore.getState();
     const result: {
       id: string;
@@ -128,7 +128,7 @@ const PlantIdentificationForm = ({
 
     const processedIds = new Set<string>();
 
-    selectedCultivationArea.targetIds.forEach((id) => {
+    selectedCultivationRegion.targetIds.forEach((id) => {
       // 1. Check if ID is a plot
       const pc = regionStore.getPlotById(id);
       if (pc && !processedIds.has(pc.plot.id)) {
@@ -243,7 +243,7 @@ const PlantIdentificationForm = ({
     });
 
     return result;
-  }, [selectedCultivationArea]);
+  }, [selectedCultivationRegion]);
 
   const scopedGeographicalUnits = useMemo(() => {
     if (!selectedScopeIds || selectedScopeIds.length === 0)
@@ -312,15 +312,15 @@ const PlantIdentificationForm = ({
 
   // ---- Technical config (based on area only, no per-plant plot needed for Step 1) ----
   const activeConfig = useMemo(() => {
-    if (!selectedCultivationArea) return null;
+    if (!selectedCultivationRegion) return null;
     return {
-      managerId: selectedCultivationArea.managerId,
-      farmingMethodId: selectedCultivationArea.farmingMethodId,
-      irrigationMethodId: selectedCultivationArea.irrigationMethodId,
-      selectedCrops: selectedCultivationArea.selectedCrops || [],
-      seedSelections: selectedCultivationArea.seedSelections || {},
+      managerId: selectedCultivationRegion.managerId,
+      farmingMethodId: selectedCultivationRegion.farmingMethodId,
+      irrigationMethodId: selectedCultivationRegion.irrigationMethodId,
+      selectedCrops: selectedCultivationRegion.selectedCrops || [],
+      seedSelections: selectedCultivationRegion.seedSelections || {},
     };
-  }, [selectedCultivationArea]);
+  }, [selectedCultivationRegion]);
 
   const manager = personnel.find(
     (p: any) => String(p.id) === String(activeConfig?.managerId),
@@ -458,7 +458,7 @@ const PlantIdentificationForm = ({
         plantedDate: p.plantedDate,
         note: p.note,
         plotId: p.plotId,
-        cultivationAreaId,
+        cultivationRegionId,
         coordinate: p.coordinate,
         id:
           initialData?.id ||
@@ -501,17 +501,17 @@ const PlantIdentificationForm = ({
       description: "Chọn doanh nghiệp và vùng canh tác",
       isValid: !!(
         enterpriseId &&
-        cultivationAreaId &&
+        cultivationRegionId &&
         selectedScopeIds.length > 0
       ),
       content: (
         <Step1GeographicalSelection
           enterpriseId={enterpriseId}
           setEnterpriseId={setEnterpriseId}
-          cultivationAreaId={cultivationAreaId}
-          setCultivationAreaId={setCultivationAreaId}
-          filteredCultivationAreas={filteredCultivationAreas}
-          selectedCultivationArea={selectedCultivationArea}
+          cultivationRegionId={cultivationRegionId}
+          setCultivationRegionId={setCultivationRegionId}
+          filteredCultivationRegions={filteredCultivationRegions}
+          selectedCultivationRegion={selectedCultivationRegion}
           geographicalUnits={geographicalUnits}
           selectedScopeIds={selectedScopeIds}
           onScopeChange={setSelectedScopeIds}
@@ -560,7 +560,7 @@ const PlantIdentificationForm = ({
           plants={plants}
           initialData={initialData}
           selectedEnterprise={selectedEnterprise}
-          selectedCultivationArea={selectedCultivationArea}
+          selectedCultivationRegion={selectedCultivationRegion}
           geographicalUnits={geographicalUnits}
           manager={manager}
           farmingMethod={farmingMethod}

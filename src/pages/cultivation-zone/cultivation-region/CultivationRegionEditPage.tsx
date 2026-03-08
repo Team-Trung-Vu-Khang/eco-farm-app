@@ -53,7 +53,7 @@ import {
   ChevronDown,
   X,
 } from "lucide-react";
-import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
+import useCultivationRegionStore from "../../../stores/useCultivationRegionStore";
 import useRegionStore from "../../../stores/useRegionStore";
 import useSeedStore from "../../../stores/useSeedStore";
 import { EnterpriseSelector } from "./components";
@@ -1055,11 +1055,11 @@ const SeedSelectorDialog = ({
 
 // --- Main Page Component ---
 
-const CultivationAreaEditPage = () => {
+const CultivationRegionEditPage = () => {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { getAreaById, updateArea } = useCultivationAreaStore();
+  const { getAreaById, updateArea } = useCultivationRegionStore();
   const { regions } = useRegionStore();
   const { standards } = useEnterpriseCertificateStore();
   const { personnel } = usePersonnelStore();
@@ -1301,7 +1301,7 @@ const CultivationAreaEditPage = () => {
           <Button
             variant="ghost"
             className="mt-4"
-            onClick={() => setLocation("/cultivation-area")}
+            onClick={() => setLocation("/cultivation-region")}
           >
             Quay lại danh sách
           </Button>
@@ -2136,7 +2136,7 @@ const CultivationAreaEditPage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation("/cultivation-area")}
+          onClick={() => setLocation("/cultivation-region")}
           className="gap-2 text-muted-foreground hover:text-primary pl-0"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -2193,9 +2193,9 @@ const CultivationAreaEditPage = () => {
                   title: "Thành công",
                   description: "Đã cập nhật vùng canh tác",
                 });
-                setLocation(`/cultivation-area/${id}`);
+                setLocation(`/cultivation-region/${id}`);
               }}
-              onCancel={() => setLocation(`/cultivation-area/${id}`)}
+              onCancel={() => setLocation(`/cultivation-region/${id}`)}
             />
           </div>
         </CardContent>
@@ -2204,4 +2204,4 @@ const CultivationAreaEditPage = () => {
   );
 };
 
-export default CultivationAreaEditPage;
+export default CultivationRegionEditPage;

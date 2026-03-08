@@ -27,7 +27,7 @@ import {
   CheckCircle,
   MapPin,
 } from "lucide-react";
-import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
+import useCultivationRegionStore from "../../../stores/useCultivationRegionStore";
 import useRegionStore from "../../../stores/useRegionStore";
 import { useMemo } from "react";
 import useEnterpriseCertificateStore from "../../../stores/useEnterpriseCertificateStore";
@@ -38,10 +38,10 @@ import useVarietyStore from "../../../stores/useVarietyStore";
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 import useSeedStore from "../../../stores/useSeedStore";
 
-const CultivationAreaDetailPage = () => {
+const CultivationRegionDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
-  const { getAreaById } = useCultivationAreaStore();
+  const { getAreaById } = useCultivationRegionStore();
   const { regions } = useRegionStore();
   const { standards } = useEnterpriseCertificateStore();
   const { personnel } = usePersonnelStore();
@@ -247,7 +247,7 @@ const CultivationAreaDetailPage = () => {
           <Button
             variant="ghost"
             className="mt-4"
-            onClick={() => setLocation("/cultivation-area")}
+            onClick={() => setLocation("/cultivation-region")}
           >
             Quay lại danh sách
           </Button>
@@ -266,7 +266,7 @@ const CultivationAreaDetailPage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation("/cultivation-area")}
+          onClick={() => setLocation("/cultivation-region")}
           className="gap-2 text-muted-foreground hover:text-primary pl-0"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -282,7 +282,7 @@ const CultivationAreaDetailPage = () => {
             {area.status === "active" ? "Đang hoạt động" : "Tạm ngưng"}
           </Badge>
           <Button
-            onClick={() => setLocation(`/cultivation-area/${area.id}/edit`)}
+            onClick={() => setLocation(`/cultivation-region/${area.id}/edit`)}
             className="gap-2"
           >
             <Edit className="w-4 h-4" />
@@ -1085,4 +1085,4 @@ const CultivationAreaDetailPage = () => {
   );
 };
 
-export default CultivationAreaDetailPage;
+export default CultivationRegionDetailPage;

@@ -46,7 +46,7 @@ import useSeasonStore from "../../stores/useSeasonStore";
 import useRegionStore from "@/stores/useRegionStore";
 import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import { StageAllocation } from "./components/StageAllocation";
-import { EnterpriseSelector } from "../cultivation-zone/cultivation-area/components";
+import { EnterpriseSelector } from "../cultivation-zone/cultivation-region/components";
 import GeographicalSelector from "./components/GeographicalSelector";
 import { RegimenSelector } from "./components/RegimenSelector";
 import useRegimenStore from "../../stores/useRegimenStore";

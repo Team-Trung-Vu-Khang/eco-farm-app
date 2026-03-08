@@ -10,15 +10,19 @@ import {
 } from "@tankhang1/eco-shared-ui";
 import { Plus } from "lucide-react";
 
-import { type CultivationArea } from "../../../stores/useCultivationAreaStore";
-import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
-import useEnterpriseCertificateStore from "../../../stores/useEnterpriseCertificateStore";
+import useCultivationAreaStore, {
+  type CultivationArea,
+} from "../../stores/useCultivationAreaStore";
+import useEnterpriseCertificateStore from "../../stores/useEnterpriseCertificateStore";
+import useEnterpriseStore from "../../stores/useEnterpriseStore";
 
 const CultivationAreaPage = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { areas: data, deleteArea } = useCultivationAreaStore();
+  const { cultivationAreas: data, deleteCultivationArea } =
+    useCultivationAreaStore();
   const { standards } = useEnterpriseCertificateStore();
+  const { enterprises } = useEnterpriseStore();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -37,8 +41,8 @@ const CultivationAreaPage = () => {
 
   const confirmDelete = () => {
     if (deletingId) {
-      deleteArea(deletingId);
-      toast({ title: "Thành công", description: "Đã xóa vùng canh tác" });
+      deleteCultivationArea(deletingId);
+      toast({ title: "Thành công", description: "Đã xóa khu vực canh tác" });
       setDeleteOpen(false);
       setDeletingId(null);
     }
@@ -56,39 +60,55 @@ const CultivationAreaPage = () => {
     },
     {
       key: "name",
-      label: "Tên vùng canh tác",
-      render: (value: string) => <span className="font-medium">{value}</span>,
+      label: "Tên khu vực canh tác",
+      render: (value: string) => (
+        <span className="font-medium">{value}</span>
+      ),
     },
     {
-      key: "scope",
-      label: "Phạm vi",
+      key: "regionName",
+      label: "Vùng trồng",
+      render: (value: string) => (
+        <span className="text-slate-600">{value}</span>
+      ),
+    },
+    {
+      key: "enterpriseId",
+      label: "Doanh nghiệp",
       render: (value: string) => {
-        const map: Record<string, string> = {
-          region: "Vùng trồng",
-          area: "Khu vực",
-          plot: "Lô trồng",
-        };
-        return <Badge variant="outline">{map[value]}</Badge>;
+        const ent = enterprises.find(
+          (e) => e.id.toString() === value,
+        );
+        return (
+          <span className="text-slate-600">{ent?.name || value}</span>
+        );
       },
     },
     {
-      key: "targetName",
-      label: "Đối tượng áp dụng",
-    },
-    {
-      key: "certificateId",
+      key: "certificateIds",
       label: "Chứng nhận",
-      render: (value: string) => {
-        const cert = standards.find((c) => c.code === value);
-        if (!cert) return null;
-
+      render: (value: string[]) => {
+        if (!value || value.length === 0) return null;
         return (
-          <Badge
-            variant="secondary"
-            className="bg-blue-50 text-blue-700 hover:bg-blue-100"
-          >
-            {cert.name}
-          </Badge>
+          <div className="flex flex-wrap gap-1">
+            {value.slice(0, 2).map((certId) => {
+              const cert = standards.find((c) => c.code === certId);
+              return (
+                <Badge
+                  key={certId}
+                  variant="secondary"
+                  className="bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs"
+                >
+                  {cert?.name || certId}
+                </Badge>
+              );
+            })}
+            {value.length > 2 && (
+              <Badge variant="outline" className="text-xs">
+                +{value.length - 2}
+              </Badge>
+            )}
+          </div>
         );
       },
     },
@@ -101,12 +121,16 @@ const CultivationAreaPage = () => {
         </Badge>
       ),
     },
+    {
+      key: "createdAt",
+      label: "Ngày tạo",
+    },
   ];
 
   return (
     <AdminLayout
       title="Khu vực canh tác"
-      description="Quản lý các thiết lập canh tác cho Vùng, Khu vực hoặc Lô"
+      description="Quản lý các thiết lập canh tác theo Vùng trồng"
       actions={
         <Button onClick={handleAdd}>
           <Plus className="w-4 h-4 mr-2" />
@@ -125,7 +149,7 @@ const CultivationAreaPage = () => {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         onConfirm={confirmDelete}
-        description="Bạn có chắc chắn muốn xóa vùng canh tác này? Hành động này không thể hoàn tác."
+        description="Bạn có chắc chắn muốn xóa khu vực canh tác này? Hành động này không thể hoàn tác."
       />
     </AdminLayout>
   );

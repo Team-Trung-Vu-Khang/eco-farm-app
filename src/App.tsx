@@ -55,8 +55,8 @@ import AmendmentTaskPage from "./pages/soil-amendment/AmendmentTaskPage";
 import SoilAmendmentTreatmentPage from "./pages/soil-amendment/SoilAmendmentTreatmentPage";
 
 // Cultivation Zone Sub-pages
-import CultivationAreaPage from "./pages/cultivation-zone/cultivation-area/CultivationAreaPage";
-import CultivationAreaCreatePage from "./pages/cultivation-zone/cultivation-area/CultivationAreaCreatePage";
+import CultivationRegionPage from "./pages/cultivation-zone/cultivation-region/CultivationRegionPage";
+import CultivationRegionCreatePage from "./pages/cultivation-zone/cultivation-region/CultivationRegionCreatePage";
 import DistributionDetailPage from "./pages/cultivation-zone/distribution-detail/DistributionDetailPage";
 import PlantDistributionCreatePage from "./pages/cultivation-zone/distribution-detail/PlantDistributionCreatePage";
 import SearchCropPage from "./pages/cultivation-zone/search-crop/SearchCropPage";
@@ -97,8 +97,8 @@ import TaskCreatePage from "./pages/task/TaskCreatePage";
 import TaskEditPage from "./pages/task/TaskEditPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 import RegionDetailPage from "./pages/region-chart/region-distribution/RegionDetailPage";
-import CultivationAreaDetailPage from "./pages/cultivation-zone/cultivation-area/CultivationAreaDetailPage";
-import CultivationAreaEditPage from "./pages/cultivation-zone/cultivation-area/CultivationAreaEditPage";
+import CultivationRegionDetailPage from "./pages/cultivation-zone/cultivation-region/CultivationRegionDetailPage";
+import CultivationRegionEditPage from "./pages/cultivation-zone/cultivation-region/CultivationRegionEditPage";
 import ContractDetailPage from "./pages/contract/ContractDetailPage";
 import ContractCreatePage from "./pages/contract/ContractCreatePage";
 import ContractEditPage from "./pages/contract/ContractEditPage";
@@ -128,10 +128,14 @@ import MaterialGroupPage from "./pages/material-group/MaterialGroupPage";
 import FertilizerGroupPage from "./pages/fertilizer-group/FertilizerGroupPage";
 import PesticideGroupPage from "./pages/pesticide-group/PesticideGroupPage";
 import EquipmentGroupPage from "./pages/equipment-group/EquipmentGroupPage";
-import PlantIdentificationListPage from "./pages/cultivation-zone/cultivation-area/PlantIdentificationListPage";
-import PlantIdentificationDetailPage from "./pages/cultivation-zone/cultivation-area/PlantIdentificationDetailPage";
-import PlantIdentificationCreatePage from "./pages/cultivation-zone/cultivation-area/PlantIdentificationCreatePage";
-import PlantIdentificationEditPage from "./pages/cultivation-zone/cultivation-area/PlantIdentificationEditPage";
+import PlantIdentificationListPage from "./pages/cultivation-zone/cultivation-region/PlantIdentificationListPage";
+import PlantIdentificationDetailPage from "./pages/cultivation-zone/cultivation-region/PlantIdentificationDetailPage";
+import PlantIdentificationCreatePage from "./pages/cultivation-zone/cultivation-region/PlantIdentificationCreatePage";
+import PlantIdentificationEditPage from "./pages/cultivation-zone/cultivation-region/PlantIdentificationEditPage";
+import CultivationAreaPage from "./pages/cultivation-area/CultivationAreaPage";
+import CultivationAreaCreatePage from "./pages/cultivation-area/CultivationAreaCreatePage";
+import CultivationPlotPage from "./pages/cultivation-plot/CultivationPlotPage";
+import CultivationPlotCreatePage from "./pages/cultivation-plot/CultivationPlotCreatePage";
 
 function Router() {
   return (
@@ -210,18 +214,18 @@ function Router() {
       />
       <Route path="/amendment-task" component={AmendmentTaskPage} />
       {/* Cultivation Zone Sub-Routes */}
-      <Route path="/cultivation-area" component={CultivationAreaPage} />
+      <Route path="/cultivation-region" component={CultivationRegionPage} />
       <Route
-        path="/cultivation-area/create"
-        component={CultivationAreaCreatePage}
+        path="/cultivation-region/create"
+        component={CultivationRegionCreatePage}
       />
       <Route
-        path="/cultivation-area/:id"
-        component={CultivationAreaDetailPage}
+        path="/cultivation-region/:id"
+        component={CultivationRegionDetailPage}
       />
       <Route
-        path="/cultivation-area/:id/edit"
-        component={CultivationAreaEditPage}
+        path="/cultivation-region/:id/edit"
+        component={CultivationRegionEditPage}
       />
       <Route
         path="/distribution-detail"
@@ -235,9 +239,22 @@ function Router() {
         path="/distribution-detail/:id"
         component={DistributionDetailPage}
       />
+      {/* Cultivation Area Routes */}
+      <Route path="/cultivation-area" component={CultivationAreaPage} />
       <Route
-        path="/distribution-detail/:id/edit"
-        component={PlantDistributionCreatePage}
+        path="/cultivation-area/create"
+        component={CultivationAreaCreatePage}
+      />
+      <Route
+        path="/cultivation-area/:id/edit"
+        component={CultivationAreaCreatePage}
+      />
+      {/* Cultivation Plot Routes */}
+      <Route path="/cultivation-plot" component={CultivationPlotPage} />
+      <Route path="/cultivation-plot/create" component={CultivationPlotCreatePage} />
+      <Route
+        path="/cultivation-plot/:id/edit"
+        component={CultivationPlotCreatePage}
       />
       <Route path="/treatment" component={TreatmentPage} />
       <Route path="/search-crop" component={SearchCropPage} />

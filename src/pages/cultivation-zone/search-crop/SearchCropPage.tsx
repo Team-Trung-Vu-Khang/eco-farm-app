@@ -45,7 +45,7 @@ import { PROVINCES, type Region } from "../../region-chart/constants";
 import { type CropDetail } from "../constants";
 import { CultivationZoneDialog } from "./components/CultivationZoneDialog";
 import useGroupCropStore from "@/stores/useGroupCropStore";
-import { getMarkerIcon } from "../cultivation-area/components/mapUtils";
+import { getMarkerIcon } from "../cultivation-region/components/mapUtils";
 
 const activeIcon = getMarkerIcon("green");
 const defaultIcon = getMarkerIcon("blue");

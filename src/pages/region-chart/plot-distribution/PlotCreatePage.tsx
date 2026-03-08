@@ -36,7 +36,7 @@ import { type Plot } from "../constants";
 import { MapController } from "../components/DraggableRectangle";
 import useRegionStore from "../../../stores/useRegionStore";
 import useEnterpriseStore from "@/stores/useEnterpriseStore";
-import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-area/components/mapUtils";
+import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
 
 const customIcon = getMarkerIcon("blue");
 const activeIcon = getMarkerIcon("green");

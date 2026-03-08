@@ -12,8 +12,8 @@ import { GeographicalScopeModal } from "./GeographicalScopeModal";
 import { buildGeographicalTree } from "./GeographicalTree";
 import type { GeographicalUnit } from "./GeographicalTree";
 
-interface CultivationAreaInfoCardProps {
-  selectedCultivationArea: any;
+interface CultivationRegionInfoCardProps {
+  selectedCultivationRegion: any;
   geographicalUnits: GeographicalUnit[];
   selectedScopeIds: string[];
   onScopeChange: (ids: string[]) => void;
@@ -24,8 +24,8 @@ interface CultivationAreaInfoCardProps {
   regionStore: any;
 }
 
-export const CultivationAreaInfoCard = ({
-  selectedCultivationArea,
+export const CultivationRegionInfoCard = ({
+  selectedCultivationRegion,
   geographicalUnits,
   selectedScopeIds,
   onScopeChange,
@@ -34,14 +34,14 @@ export const CultivationAreaInfoCard = ({
   irrigationMethod,
   selectedCropsData,
   regionStore,
-}: CultivationAreaInfoCardProps) => {
+}: CultivationRegionInfoCardProps) => {
   const treeData = useMemo(
     () =>
       buildGeographicalTree(geographicalUnits, selectedScopeIds, regionStore),
     [geographicalUnits, selectedScopeIds, regionStore],
   );
 
-  if (!selectedCultivationArea) return null;
+  if (!selectedCultivationRegion) return null;
 
   return (
     <Card className="border-none shadow-sm rounded-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500 mt-4">
@@ -98,7 +98,7 @@ export const CultivationAreaInfoCard = ({
           </div>
           {geographicalUnits.length > 0 ? (
             <GeographicalScopeModal
-              key={selectedCultivationArea.id}
+              key={selectedCultivationRegion.id}
               selectedScopeIds={selectedScopeIds}
               onSelect={onScopeChange}
               treeData={treeData}

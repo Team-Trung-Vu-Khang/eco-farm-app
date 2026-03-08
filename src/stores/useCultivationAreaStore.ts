@@ -11,10 +11,12 @@ export interface CultivationAreaConfig {
 export interface CultivationArea {
   id: string;
   name: string;
-  scope: "region" | "area" | "plot";
-  targetIds: string[]; // IDs of the selected regions, areas, or plots
-  targetName: string;
-  enterpriseId?: string;
+  // Target: a single Region from useRegionStore
+  regionId: string;
+  regionName: string;
+  areaId?: string;
+  areaName?: string;
+  enterpriseId: string;
   certificateIds: string[];
   managerId: string;
   note: string;
@@ -28,173 +30,66 @@ export interface CultivationArea {
 }
 
 interface CultivationAreaState {
-  areas: CultivationArea[];
+  cultivationAreas: CultivationArea[];
   isLoading: boolean;
   error: string | null;
 
-  addArea: (area: Omit<CultivationArea, "id" | "createdAt" | "status">) => void;
-  updateArea: (id: string, area: Partial<CultivationArea>) => void;
-  deleteArea: (id: string) => void;
-  getAreaById: (id: string) => CultivationArea | undefined;
+  addCultivationArea: (
+    region: Omit<CultivationArea, "id" | "createdAt" | "status">,
+  ) => void;
+  updateCultivationArea: (id: string, region: Partial<CultivationArea>) => void;
+  deleteCultivationArea: (id: string) => void;
+  getCultivationAreaById: (id: string) => CultivationArea | undefined;
 }
 
 const MOCK_DATA: CultivationArea[] = [
   {
-    name: "Vùng canh tác sầu riêng công nghệ cao 3",
-    scope: "area",
-    targetIds: ["sub-1-1", "sub-1-2", "5"],
-    targetName:
-      "Khu A - Sầu riêng Dona, Khu B - Sầu riêng Musang King, Khu Phức hợp Nông nghiệp Công nghệ cao",
+    id: "fr-1",
+    name: "Vùng canh tác Sầu riêng Alpha",
+    regionId: "1",
+    regionName: "Vùng Bình Phước Alpha",
     enterpriseId: "1",
-    certificateIds: ["ISO22000", "Organic"],
+    certificateIds: ["VietGAP", "Organic"],
     managerId: "1",
-    note: "",
+    note: "Vùng canh tác trọng điểm cho sầu riêng xuất khẩu",
     farmingMethodId: "organic",
     irrigationMethodId: "drip",
     selectedCrops: ["1", "4"],
-    seedSelections: {
-      "1": ["6"],
-      "4": ["9"],
-    },
+    seedSelections: { "1": ["6"], "4": ["9"] },
     configs: {
-      "area-config": {
+      "region-config": {
         farmingMethodId: "organic",
+        irrigationMethodId: "drip",
         selectedCrops: ["1", "4"],
-        seedSelections: {
-          "1": ["6"],
-          "4": ["9"],
-        },
-        irrigationMethodId: "drip",
+        seedSelections: { "1": ["6"], "4": ["9"] },
       },
     },
-    id: "ca-1772278404110",
     status: "active",
     createdAt: "2026-02-28",
   },
   {
-    name: "Vùng canh tác sầu riêng công nghệ cao 2",
-    scope: "region",
-    targetIds: ["1", "3"],
-    targetName: "Vùng Bình Phước Alpha, Đồi Cà phê Buôn Ma Thuột",
+    id: "fr-2",
+    name: "Vùng canh tác Cà Phê Đắk Lắk",
+    regionId: "3",
+    regionName: "Đồi Cà phê Buôn Ma Thuột",
     enterpriseId: "1",
-    certificateIds: ["GlobalGAP", "HACCP", "Organic"],
-    managerId: "1",
-    note: "",
-    farmingMethodId: "organic",
-    irrigationMethodId: "drip",
-    selectedCrops: ["1", "2", "3"],
-    seedSelections: {
-      "1": ["6"],
-      "2": ["7"],
-      "3": ["8"],
-    },
-    configs: {
-      "area-config": {
-        farmingMethodId: "organic",
-        irrigationMethodId: "drip",
-        selectedCrops: ["1", "2", "3"],
-        seedSelections: {
-          "1": ["6"],
-          "2": ["7"],
-          "3": ["8"],
-        },
-      },
-    },
-    id: "ca-1772278286585",
-    status: "active",
-    createdAt: "2026-02-28",
-  },
-  {
-    id: "ca-1",
-    name: "Canh tác Sầu riêng Công nghệ cao",
-    scope: "region",
-    targetIds: ["1"],
-    targetName: "Vùng Bình Phước Alpha",
-    certificateIds: ["VietGAP"],
-    enterpriseId: "DN001",
-    managerId: "1",
-    note: "Dự án thử nghiệm công nghệ 4.0",
-    farmingMethodId: "greenhouse",
-    irrigationMethodId: "drip",
-    selectedCrops: ["1", "3"],
-    configs: {
-      "region-main": {
-        farmingMethodId: "greenhouse",
-        irrigationMethodId: "drip",
-        selectedCrops: ["1", "3"],
-      },
-    },
-    status: "active",
-    createdAt: "2024-02-01",
-  },
-  {
-    id: "ca-2",
-    name: "Khu vực trồng Sầu riêng Dona Xuất khẩu",
-    scope: "area",
-    targetIds: ["sub-1-2"],
-    targetName: "Khu vực B - Đồi thấp",
-    certificateIds: ["Organic"],
-    enterpriseId: "DN001",
+    certificateIds: ["GlobalGAP"],
     managerId: "2",
-    note: "Canh tác theo tiêu chuẩn hữu cơ EU",
-    farmingMethodId: "organic",
+    note: "Canh tác cà phê robusta xuất khẩu",
+    farmingMethodId: "vietgap",
     irrigationMethodId: "rain",
     selectedCrops: ["2"],
+    seedSelections: { "2": ["7"] },
     configs: {
-      "sub-1-2": {
-        farmingMethodId: "organic",
+      "region-config": {
+        farmingMethodId: "vietgap",
         irrigationMethodId: "rain",
         selectedCrops: ["2"],
+        seedSelections: { "2": ["7"] },
       },
     },
     status: "active",
-    createdAt: "2024-02-05",
-  },
-  {
-    id: "ca-3",
-    name: "Lô trồng Lúa chất lượng cao",
-    scope: "plot",
-    targetIds: ["plot-1-1-1"],
-    targetName: "Lô A1 - Cánh đồng mẫu lớn",
-    certificateIds: ["GlobalGAP"],
-    enterpriseId: "DN002",
-    managerId: "3",
-    note: "Mô hình lúa tôm kết hợp",
-    farmingMethodId: "vietgap",
-    irrigationMethodId: "flood",
-    selectedCrops: ["5"],
-    configs: {
-      "plot-1-1-1": {
-        farmingMethodId: "vietgap",
-        irrigationMethodId: "flood",
-        selectedCrops: ["5"],
-      },
-    },
-    status: "active",
-    createdAt: "2024-02-10",
-  },
-  {
-    id: "ca-4",
-    name: "Vườn ươm giống Sầu riêng Black Thorn",
-    scope: "area",
-    targetIds: ["sub-1-3"],
-    targetName: "Khu vực C - Vườn ươm",
-    certificateIds: ["HACCP"],
-    enterpriseId: "DN003",
-    managerId: "1",
-    note: "Khu vực nhân giống và bảo tồn gen",
-    farmingMethodId: "greenhouse",
-    irrigationMethodId: "manual",
-    selectedCrops: ["4"],
-    configs: {
-      "sub-1-3": {
-        farmingMethodId: "greenhouse",
-        irrigationMethodId: "manual",
-        selectedCrops: ["4"],
-      },
-    },
-    status: "active",
-    createdAt: "2024-02-15",
+    createdAt: "2026-03-01",
   },
 ];
 
@@ -202,36 +97,37 @@ const useCultivationAreaStore = create<CultivationAreaState>()(
   devtools(
     persist(
       (set, get) => ({
-        areas: MOCK_DATA,
+        cultivationAreas: MOCK_DATA,
         isLoading: false,
         error: null,
 
-        addArea: (areaData) =>
+        addCultivationArea: (regionData) =>
           set((state) => {
-            const newArea: CultivationArea = {
-              ...areaData,
-              id: `ca-${Date.now()}`,
+            const newRegion: CultivationArea = {
+              ...regionData,
+              id: `fr-${Date.now()}`,
               status: "active",
               createdAt: new Date().toISOString().split("T")[0],
             };
             return {
-              areas: [newArea, ...state.areas],
+              cultivationAreas: [newRegion, ...state.cultivationAreas],
             };
           }),
 
-        updateArea: (id, areaData) =>
+        updateCultivationArea: (id, regionData) =>
           set((state) => ({
-            areas: state.areas.map((area) =>
-              area.id === id ? { ...area, ...areaData } : area,
+            cultivationAreas: state.cultivationAreas.map((r) =>
+              r.id === id ? { ...r, ...regionData } : r,
             ),
           })),
 
-        deleteArea: (id) =>
+        deleteCultivationArea: (id) =>
           set((state) => ({
-            areas: state.areas.filter((area) => area.id !== id),
+            cultivationAreas: state.cultivationAreas.filter((r) => r.id !== id),
           })),
 
-        getAreaById: (id) => get().areas.find((area) => area.id === id),
+        getCultivationAreaById: (id) =>
+          get().cultivationAreas.find((r) => r.id === id),
       }),
       {
         name: "cultivation-area-storage",

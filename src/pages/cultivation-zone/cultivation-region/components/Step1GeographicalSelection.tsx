@@ -7,17 +7,17 @@ import {
 } from "@tankhang1/eco-shared-ui";
 import { Layers, User } from "lucide-react";
 import { EnterpriseSelector } from "./EnterpriseSelector";
-import { CultivationAreaSelector } from "./CultivationAreaSelector";
-import { CultivationAreaInfoCard } from "./CultivationAreaInfoCard";
+import { CultivationRegionSelector } from "./CultivationRegionSelector";
+import { CultivationRegionInfoCard } from "./CultivationRegionInfoCard";
 import useRegionStore from "../../../../stores/useRegionStore";
 
 interface Step1GeographicalSelectionProps {
   enterpriseId: string;
   setEnterpriseId: (id: string) => void;
-  cultivationAreaId: string;
-  setCultivationAreaId: (id: string) => void;
-  filteredCultivationAreas: any[];
-  selectedCultivationArea: any;
+  cultivationRegionId: string;
+  setCultivationRegionId: (id: string) => void;
+  filteredCultivationRegions: any[];
+  selectedCultivationRegion: any;
   geographicalUnits: any[];
   selectedScopeIds: string[];
   onScopeChange: (ids: string[]) => void;
@@ -33,10 +33,10 @@ export const Step1GeographicalSelection: React.FC<
 > = ({
   enterpriseId,
   setEnterpriseId,
-  cultivationAreaId,
-  setCultivationAreaId,
-  filteredCultivationAreas,
-  selectedCultivationArea,
+  cultivationRegionId,
+  setCultivationRegionId,
+  filteredCultivationRegions,
+  selectedCultivationRegion,
   geographicalUnits,
   selectedScopeIds,
   onScopeChange,
@@ -80,7 +80,7 @@ export const Step1GeographicalSelection: React.FC<
                 selectedId={enterpriseId}
                 onSelect={(id) => {
                   setEnterpriseId(id);
-                  setCultivationAreaId("");
+                  setCultivationRegionId("");
                   setPlants((prev) =>
                     prev.map((p) => ({
                       ...p,
@@ -101,11 +101,11 @@ export const Step1GeographicalSelection: React.FC<
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-3">
-              <CultivationAreaSelector
-                areas={filteredCultivationAreas}
-                selectedId={cultivationAreaId}
+              <CultivationRegionSelector
+                areas={filteredCultivationRegions}
+                selectedId={cultivationRegionId}
                 onSelect={(val) => {
-                  setCultivationAreaId(val);
+                  setCultivationRegionId(val);
                   onScopeChange([]);
                   setPlants((prev) =>
                     prev.map((p) => ({
@@ -126,8 +126,8 @@ export const Step1GeographicalSelection: React.FC<
           </Card>
         </div>
 
-        <CultivationAreaInfoCard
-          selectedCultivationArea={selectedCultivationArea}
+        <CultivationRegionInfoCard
+          selectedCultivationRegion={selectedCultivationRegion}
           geographicalUnits={geographicalUnits}
           selectedScopeIds={selectedScopeIds}
           onScopeChange={(ids) => {

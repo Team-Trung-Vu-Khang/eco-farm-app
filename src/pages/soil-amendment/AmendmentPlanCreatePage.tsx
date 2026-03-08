@@ -51,7 +51,7 @@ import usePersonnelStore from "../../stores/usePersonnelStore";
 import useSeasonStore from "@/stores/useSeasonStore";
 import { PersonnelSelectDialog } from "./components/PersonnelSelectDialog";
 import useRegionStore from "@/stores/useRegionStore";
-import { EnterpriseSelector } from "../cultivation-zone/cultivation-area/components";
+import { EnterpriseSelector } from "../cultivation-zone/cultivation-region/components";
 import GeographicalSelector from "../plan/components/GeographicalSelector";
 import { cn } from "@tankhang1/eco-shared-ui";
 

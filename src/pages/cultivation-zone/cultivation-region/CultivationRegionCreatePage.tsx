@@ -45,7 +45,7 @@ import {
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
-import useCultivationAreaStore from "../../../stores/useCultivationAreaStore";
+import useCultivationRegionStore from "../../../stores/useCultivationRegionStore";
 import useEnterpriseCertificateStore from "../../../stores/useEnterpriseCertificateStore";
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 import useFarmingMethodStore from "../../../stores/useFarmingMethodStore";
@@ -1053,10 +1053,10 @@ const SeedSelectorDialog = ({
 
 // --- Main Page Component ---
 
-const CultivationAreaCreatePage = () => {
+const CultivationRegionCreatePage = () => {
   const [, setLocation] = useLocation();
   const { regions } = useRegionStore();
-  const { addArea } = useCultivationAreaStore();
+  const { addArea } = useCultivationRegionStore();
   const { standards } = useEnterpriseCertificateStore();
   const { personnel } = usePersonnelStore();
   const { varieties } = useVarietyStore();
@@ -2024,7 +2024,7 @@ const CultivationAreaCreatePage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation("/cultivation-area")}
+          onClick={() => setLocation("/cultivation-region")}
           className="gap-2 text-muted-foreground hover:text-primary pl-0"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -2060,9 +2060,9 @@ const CultivationAreaCreatePage = () => {
                   seedSelections: commonConfig?.seedSelections || {},
                   configs,
                 });
-                setLocation("/cultivation-area");
+                setLocation("/cultivation-region");
               }}
-              onCancel={() => setLocation("/cultivation-area")}
+              onCancel={() => setLocation("/cultivation-region")}
             />
           </div>
         </CardContent>
@@ -2071,4 +2071,4 @@ const CultivationAreaCreatePage = () => {
   );
 };
 
-export default CultivationAreaCreatePage;
+export default CultivationRegionCreatePage;

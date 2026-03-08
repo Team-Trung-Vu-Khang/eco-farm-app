@@ -12,19 +12,19 @@ import {
 } from "@tankhang1/eco-shared-ui";
 import { Layers, Plus, Search } from "lucide-react";
 
-interface CultivationAreaSelectorProps {
+interface CultivationRegionSelectorProps {
   areas: any[];
   selectedId: string;
   onSelect: (id: string) => void;
   disabled?: boolean;
 }
 
-export const CultivationAreaSelector = ({
+export const CultivationRegionSelector = ({
   areas,
   selectedId,
   onSelect,
   disabled,
-}: CultivationAreaSelectorProps) => {
+}: CultivationRegionSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 

@@ -27,7 +27,7 @@ interface Step3ConfirmationProps {
   plants: PlantEntry[];
   initialData: any;
   selectedEnterprise: any;
-  selectedCultivationArea: any;
+  selectedCultivationRegion: any;
   geographicalUnits: any[];
   manager: any;
   farmingMethod: any;
@@ -39,7 +39,7 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
   plants,
   initialData,
   selectedEnterprise,
-  selectedCultivationArea,
+  selectedCultivationRegion,
   geographicalUnits,
   manager,
   farmingMethod,
@@ -60,7 +60,7 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
           <span className="font-bold">{plants.length} cây trồng</span>{" "}
           {initialData ? "thuộc" : "vào"} vùng{" "}
           <span className="font-bold">
-            {selectedCultivationArea?.name || "—"}
+            {selectedCultivationRegion?.name || "—"}
           </span>
           .
         </p>
@@ -136,11 +136,11 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-left font-bold text-slate-900 truncate">
-                {selectedCultivationArea?.name}
+                {selectedCultivationRegion?.name}
               </div>
               <div className="text-[11px] text-muted-foreground flex items-center gap-2">
                 <span className="truncate">
-                  {selectedCultivationArea?.targetName}
+                  {selectedCultivationRegion?.targetName}
                 </span>
               </div>
             </div>
@@ -148,7 +148,7 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
         </div>
       </div>
 
-      {selectedCultivationArea && (
+      {selectedCultivationRegion && (
         <Card className="border-slate-200 shadow-sm overflow-hidden">
           <div className="bg-slate-50 border-b p-4 flex items-center gap-2">
             <Beaker className="w-4 h-4 text-slate-500" />

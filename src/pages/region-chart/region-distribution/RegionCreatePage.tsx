@@ -42,7 +42,7 @@ import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 import useLandStore from "../../../stores/useLandStore";
 import useTerrainStore from "../../../stores/useTerrainStore";
 import { PROVINCES } from "@/constants/province";
-import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-area/components/mapUtils";
+import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
 
 const customIcon = getMarkerIcon("blue");
 const activeIcon = getMarkerIcon("green");

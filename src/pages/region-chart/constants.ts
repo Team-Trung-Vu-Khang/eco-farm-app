@@ -569,7 +569,7 @@ export interface Plant {
   plantedDate: string;
   coordinate: Coordinate;
   plotId: string;
-  cultivationAreaId?: string; // Link to the cultivation area configuration
+  cultivationRegionId?: string; // Link to the cultivation area configuration
   enterpriseId?: string;
   regionName?: string;
   areaName?: string;
