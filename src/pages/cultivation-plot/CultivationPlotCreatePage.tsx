@@ -58,6 +58,7 @@ import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import polygonToLine from "@turf/polygon-to-line";
 import nearestPointOnLine from "@turf/nearest-point-on-line";
 import area from "@turf/area";
+import kinks from "@turf/kinks";
 import { point, polygon } from "@turf/helpers";
 import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
 import { MapController } from "../region-chart/components/DraggableRectangle";
@@ -918,28 +919,45 @@ const CultivationPlotCreatePage = () => {
       .filter((item) => item.polygon !== null);
   }, [selectedArea, selectedPlot]);
 
-  const validatePoint = (latlng: L.LatLng, _index: number) => {
+  const validatePoint = (latlng: L.LatLng, index: number) => {
     const pt = point([latlng.lng, latlng.lat]);
 
-    // Outside Area check
+    // 1. Outside Area check
     if (areaPolygonFeature) {
       if (!booleanPointInPolygon(pt, areaPolygonFeature)) {
         const nearest = getNearestPointOnPolygonBoundary(
           areaPolygonFeature,
           latlng,
         );
-        return { type: "outside", suggested: nearest };
+        return { type: "outside", label: "Ngoài Khu vực", suggested: nearest };
       }
     }
 
-    // Overlap with other plots check
+    // 2. Overlap with other plots check
     for (const plotObj of blockingPlotPolygons) {
       if (plotObj.polygon && booleanPointInPolygon(pt, plotObj.polygon)) {
         const nearest = getNearestPointOnPolygonBoundary(
           plotObj.polygon,
           latlng,
         );
-        return { type: "overlap", suggested: nearest };
+        return { type: "overlap", label: "Trùng lặp với lô khác", suggested: nearest };
+      }
+    }
+
+    // 3. Self-intersection check
+    // Create temporary coordinates for current polygon state
+    const tempCoords = plotPoints.map((p, i) => 
+      i === index ? { lat: latlng.lat, lng: latlng.lng } : { lat: p.lat, lng: p.lng }
+    );
+    const tempPoly = toTurfPolygonFromCoords(tempCoords);
+    if (tempPoly) {
+      const selfIntersections = kinks(tempPoly);
+      if (selfIntersections.features.length > 0) {
+        return { 
+          type: "intersect", 
+          label: "Lỗi tự cắt (Self-intersection)", 
+          suggested: null 
+        };
       }
     }
 

@@ -11,7 +11,7 @@ import {
 } from "react-leaflet";
 import * as turf from "@turf/turf";
 import { getMarkerIcon } from "./mapUtils";
-import { PlantEntry } from "./types";
+import type { PlantEntry } from "./types";
 
 // Component to recenter map when coordinates change manually
 export const RecenterMap = ({ lat, lng }: { lat: number; lng: number }) => {

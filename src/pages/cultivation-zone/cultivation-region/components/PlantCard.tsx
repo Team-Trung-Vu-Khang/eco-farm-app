@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import * as turf from "@turf/turf";
 import useRegionStore from "../../../../stores/useRegionStore";
-import { PlantEntry } from "./types";
+import type { PlantEntry } from "./types";
 
 interface PlantCardProps {
   plant: PlantEntry;

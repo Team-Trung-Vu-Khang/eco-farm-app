@@ -134,8 +134,10 @@ import PlantIdentificationCreatePage from "./pages/cultivation-zone/cultivation-
 import PlantIdentificationEditPage from "./pages/cultivation-zone/cultivation-region/PlantIdentificationEditPage";
 import CultivationAreaPage from "./pages/cultivation-area/CultivationAreaPage";
 import CultivationAreaCreatePage from "./pages/cultivation-area/CultivationAreaCreatePage";
+import CultivationAreaDetailPage from "./pages/cultivation-area/CultivationAreaDetailPage";
 import CultivationPlotPage from "./pages/cultivation-plot/CultivationPlotPage";
 import CultivationPlotCreatePage from "./pages/cultivation-plot/CultivationPlotCreatePage";
+import CultivationPlotDetailPage from "./pages/cultivation-plot/CultivationPlotDetailPage";
 
 function Router() {
   return (
@@ -249,12 +251,20 @@ function Router() {
         path="/cultivation-area/:id/edit"
         component={CultivationAreaCreatePage}
       />
+      <Route
+        path="/cultivation-area/:id"
+        component={CultivationAreaDetailPage}
+      />
       {/* Cultivation Plot Routes */}
       <Route path="/cultivation-plot" component={CultivationPlotPage} />
       <Route path="/cultivation-plot/create" component={CultivationPlotCreatePage} />
       <Route
         path="/cultivation-plot/:id/edit"
         component={CultivationPlotCreatePage}
+      />
+      <Route
+        path="/cultivation-plot/:id"
+        component={CultivationPlotDetailPage}
       />
       <Route path="/treatment" component={TreatmentPage} />
       <Route path="/search-crop" component={SearchCropPage} />

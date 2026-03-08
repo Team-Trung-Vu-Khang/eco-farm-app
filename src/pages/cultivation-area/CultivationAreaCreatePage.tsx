@@ -57,6 +57,7 @@ import "leaflet/dist/leaflet.css";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import polygonToLine from "@turf/polygon-to-line";
 import nearestPointOnLine from "@turf/nearest-point-on-line";
+import kinks from "@turf/kinks";
 import { point, polygon } from "@turf/helpers";
 import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
 import { MapController } from "../region-chart/components/DraggableRectangle";
@@ -897,10 +898,10 @@ const CultivationAreaCreatePage = () => {
       .filter((item) => item.polygon !== null);
   }, [selectedRegion, selectedArea]);
 
-  const validatePoint = (latlng: L.LatLng, _index: number) => {
+  const validatePoint = (latlng: L.LatLng, index: number) => {
     const pt = point([latlng.lng, latlng.lat]);
 
-    // Outside Region check
+    // 1. Outside Region check
     if (
       regionPolygonFeature &&
       !booleanPointInPolygon(pt, regionPolygonFeature)
@@ -909,14 +910,30 @@ const CultivationAreaCreatePage = () => {
         regionPolygonFeature,
         latlng,
       );
-      return { type: "outside", suggested: nearest };
+      return { type: "outside", label: "Ngoài Vùng trồng", suggested: nearest };
     }
 
-    // Overlap with other areas check
-    for (const area of blockingAreaPolygons) {
-      if (area.polygon && booleanPointInPolygon(pt, area.polygon)) {
-        const nearest = getNearestPointOnPolygonBoundary(area.polygon, latlng);
-        return { type: "overlap", suggested: nearest };
+    // 2. Overlap with other areas check
+    for (const areaObj of blockingAreaPolygons) {
+      if (areaObj.polygon && booleanPointInPolygon(pt, areaObj.polygon)) {
+        const nearest = getNearestPointOnPolygonBoundary(areaObj.polygon, latlng);
+        return { type: "overlap", label: "Trùng lặp với khu vực khác", suggested: nearest };
+      }
+    }
+
+    // 3. Self-intersection check
+    const tempCoords = areaPoints.map((p, i) => 
+      i === index ? { lat: latlng.lat, lng: latlng.lng } : { lat: p.lat, lng: p.lng }
+    );
+    const tempPoly = toTurfPolygonFromCoords(tempCoords);
+    if (tempPoly) {
+      const selfIntersections = kinks(tempPoly);
+      if (selfIntersections.features.length > 0) {
+        return { 
+          type: "intersect", 
+          label: "Lỗi tự cắt (Self-intersection)", 
+          suggested: null 
+        };
       }
     }
 
