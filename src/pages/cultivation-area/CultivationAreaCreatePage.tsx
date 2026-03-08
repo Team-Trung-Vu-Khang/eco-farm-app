@@ -790,6 +790,7 @@ const CultivationAreaCreatePage = () => {
   const [, setLocation] = useLocation();
 
   const { addCultivationArea } = useCultivationAreaStore();
+  const { regions } = useRegionStore();
   const { varieties } = useVarietyStore();
   const { farmingMethods } = useFarmingMethodStore();
   const { irrigationSystems } = useIrrigationSystemStore();
@@ -851,6 +852,11 @@ const CultivationAreaCreatePage = () => {
     }
     return list;
   }, [varieties, effectiveConfig.farmingMethodId, cropSearchTerm]);
+
+  const effectiveRegion = useMemo(() => {
+    if (!selectedRegion) return null;
+    return regions.find(r => r.id === selectedRegion.id) || selectedRegion;
+  }, [regions, selectedRegion]);
 
   // Update map when region changes
   useEffect(() => {
@@ -1163,7 +1169,7 @@ const CultivationAreaCreatePage = () => {
               zoom={15}
               className="h-full w-full"
             >
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
               <MapController center={mapCenter} />
 
               {/* Parent Region Boundary (Hidden Background) */}
@@ -1191,10 +1197,10 @@ const CultivationAreaCreatePage = () => {
                 </Polygon>
               )}
 
-              {/* Brother Areas (Read only background) */}
-              {(selectedRegion.subAreas || [])
-                .filter((a) => a.id !== selectedArea?.id) // Don't show if it's the one we're editing
-                .map((area) => (
+              {/* Sibling Areas (Read only background - ORANGE to highlight) */}
+              {(effectiveRegion?.subAreas || [])
+                .filter((a: any) => a.id !== selectedArea?.id) // Don't show if it's the one we're editing
+                .map((area: any) => (
                   <Polygon
                     key={area.id}
                     positions={(area.coordinates || []).map((c: any) => [
@@ -1202,16 +1208,17 @@ const CultivationAreaCreatePage = () => {
                       c.lng,
                     ])}
                     pathOptions={{
-                      color: "#cbd5e1",
-                      weight: 1,
-                      fillColor: "#f8fafc",
+                      color: "#f97316",
+                      weight: 2,
+                      dashArray: "4, 4",
+                      fillColor: "#fb923c",
                       fillOpacity: 0.1,
                     }}
                   >
                     <Tooltip
                       permanent
                       direction="center"
-                      className="bg-transparent border-none shadow-none text-[9px] font-bold text-slate-400"
+                      className="bg-orange-900 border-none shadow-xl text-[9px] font-black text-white px-2 py-0.5 rounded uppercase tracking-tighter"
                     >
                       {area.name}
                     </Tooltip>
@@ -1224,9 +1231,9 @@ const CultivationAreaCreatePage = () => {
                   positions={areaPoints.map((p) => [p.lat, p.lng])}
                   pathOptions={{
                     color: "#22c55e",
-                    weight: 3,
+                    weight: 4,
                     fillColor: "#22c55e",
-                    fillOpacity: 0.3,
+                    fillOpacity: 0.35,
                   }}
                 />
               )}
@@ -1238,12 +1245,13 @@ const CultivationAreaCreatePage = () => {
                   position={p}
                   draggable
                   icon={
-                    activePointIndex === idx
-                      ? pointWarnings[idx]
-                        ? invalidIcon
-                        : activeIcon
-                      : customIcon
+                    pointWarnings[idx]
+                      ? invalidIcon
+                      : activePointIndex === idx
+                        ? activeIcon
+                        : customIcon
                   }
+                  zIndexOffset={activePointIndex === idx ? 1000 : 0}
                   eventHandlers={{
                     drag: (e) =>
                       handlePointDrag(idx, e.target.getLatLng(), false),
@@ -1252,7 +1260,7 @@ const CultivationAreaCreatePage = () => {
                     click: () => setActivePointIndex(idx),
                   }}
                 >
-                  <Tooltip>Điểm {idx + 1}</Tooltip>
+                  <Tooltip direction="top" offset={[0, -10]}>Điểm {idx + 1}</Tooltip>
                 </Marker>
               ))}
 

@@ -796,6 +796,7 @@ const CultivationPlotCreatePage = () => {
   const { varieties } = useVarietyStore();
   const { farmingMethods } = useFarmingMethodStore();
   const { irrigationSystems } = useIrrigationSystemStore();
+  const { regions } = useRegionStore();
   const { seeds } = useSeedStore();
 
   // Dialog state
@@ -858,6 +859,16 @@ const CultivationPlotCreatePage = () => {
     return list;
   }, [varieties, effectiveConfig.farmingMethodId, cropSearchTerm]);
 
+  // Ensure we ALWAYS have the latest plots from the store
+  const effectiveArea = useMemo(() => {
+    if (!selectedArea) return null;
+    for (const r of regions) {
+      const found = (r.subAreas || []).find((a: any) => a.id === selectedArea.id);
+      if (found) return found;
+    }
+    return selectedArea;
+  }, [regions, selectedArea]);
+
   // Update map when area changes
   useEffect(() => {
     if (
@@ -904,19 +915,19 @@ const CultivationPlotCreatePage = () => {
   }, [plotPoints]);
 
   const blockingPlotPolygons = useMemo(() => {
-    if (!selectedArea?.plots) return [];
-    return selectedArea.plots
+    if (!effectiveArea?.plots) return [];
+    return effectiveArea.plots
       .filter(
-        (plot) =>
+        (plot: any) =>
           plot.coordinates &&
           plot.coordinates.length >= 3 &&
           plot.id !== selectedPlot?.id,
       )
-      .map((plot) => ({
+      .map((plot: any) => ({
         id: plot.id,
         polygon: toTurfPolygonFromCoords(plot.coordinates as any),
       }))
-      .filter((item) => item.polygon !== null);
+      .filter((item: any) => item.polygon !== null);
   }, [selectedArea, selectedPlot]);
 
   const validatePoint = (latlng: L.LatLng, index: number) => {
@@ -1192,7 +1203,7 @@ const CultivationPlotCreatePage = () => {
               zoom={17}
               className="h-full w-full"
             >
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
               <MapController center={mapCenter} />
 
               {/* Parent Region Boundary (Deep Background) */}
@@ -1203,52 +1214,54 @@ const CultivationPlotCreatePage = () => {
                     c.lng,
                   ])}
                   pathOptions={{
-                    color: "#94a3b8",
-                    weight: 1,
+                    color: "#f8fafc",
+                    weight: 1.5,
                     dashArray: "10, 10",
-                    fillColor: "#f1f5f9",
-                    fillOpacity: 0.02,
+                    fillColor: "#000",
+                    fillOpacity: 0.1,
                   }}
                 >
                   <Tooltip
                     permanent
                     direction="top"
-                    className="bg-white/80 backdrop-blur-sm border-slate-200 shadow-sm text-[10px] font-bold text-slate-400 rounded-lg px-2 py-1"
+                    className="bg-slate-900 border-none shadow-xl text-[10px] font-black text-white rounded-md px-2 py-1 flex items-center gap-1.5"
                   >
+                    <Layers size={10} className="text-primary" />
                     Vùng: {selectedRegion.name}
                   </Tooltip>
                 </Polygon>
               )}
 
               {/* Parent Area (SubArea) Boundary */}
-              {selectedArea.coordinates && (
+              {selectedArea?.coordinates && (
                 <Polygon
                   positions={selectedArea.coordinates.map((c: any) => [
                     c.lat,
                     c.lng,
                   ])}
                   pathOptions={{
-                    color: "#64748b",
-                    weight: 2,
-                    dashArray: "5, 10",
-                    fillColor: "#f8fafc",
-                    fillOpacity: 0.05,
+                    color: "#38bdf8",
+                    weight: 3,
+                    dashArray: "5, 5",
+                    fillColor: "#0ea5e9",
+                    fillOpacity: 0.1,
                   }}
                 >
                    <Tooltip
                     permanent
                     direction="top"
-                    className="bg-white/80 backdrop-blur-sm border-slate-200 shadow-sm text-[9px] font-bold text-slate-500 rounded-lg px-2 py-1"
+                    className="bg-sky-900 border-none shadow-xl text-[9px] font-bold text-white rounded-md px-2 py-1 flex items-center gap-1.5"
                   >
+                    <MapPin size={10} className="text-sky-400" />
                     Khu vực: {selectedArea.name}
                   </Tooltip>
                 </Polygon>
               )}
 
-              {/* Brother Plots (Read only) */}
-              {(selectedArea.plots || [])
-                .filter((p) => p.id !== selectedPlot?.id) // Don't show if it's the one we're editing
-                .map((plot) => (
+              {/* Sibling Plots (Read only - RED to highlight and avoid overlap) */}
+              {(effectiveArea?.plots || [])
+                .filter((p: any) => p.id !== selectedPlot?.id)
+                .map((plot: any) => (
                   <Polygon
                     key={plot.id}
                     positions={(plot.coordinates || []).map((c: any) => [
@@ -1256,16 +1269,17 @@ const CultivationPlotCreatePage = () => {
                       c.lng,
                     ])}
                     pathOptions={{
-                      color: "#cbd5e1",
-                      weight: 1,
-                      fillColor: "#f1f5f9",
-                      fillOpacity: 0.1,
+                      color: "#ef4444",
+                      weight: 2.5,
+                      dashArray: "4, 4",
+                      fillColor: "#f87171",
+                      fillOpacity: 0.2,
                     }}
                   >
                     <Tooltip
                       permanent
                       direction="center"
-                      className="bg-transparent border-none shadow-none text-[8px] font-bold text-slate-400"
+                      className="bg-red-900 border-none shadow-xl text-[8px] font-black text-white px-2 py-0.5 rounded uppercase tracking-tighter"
                     >
                       {plot.name}
                     </Tooltip>
@@ -1298,6 +1312,7 @@ const CultivationPlotCreatePage = () => {
                         ? activeIcon
                         : customIcon
                   }
+                  zIndexOffset={activePointIndex === idx ? 1000 : 0}
                   eventHandlers={{
                     drag: (e) =>
                       handlePointDrag(idx, e.target.getLatLng(), false),
@@ -1305,7 +1320,9 @@ const CultivationPlotCreatePage = () => {
                       handlePointDrag(idx, e.target.getLatLng(), true),
                     click: () => setActivePointIndex(idx),
                   }}
-                />
+                >
+                   <Tooltip direction="top" offset={[0, -10]}>Điểm {idx + 1}</Tooltip>
+                </Marker>
               ))}
 
               {/* Warning Preview */}
