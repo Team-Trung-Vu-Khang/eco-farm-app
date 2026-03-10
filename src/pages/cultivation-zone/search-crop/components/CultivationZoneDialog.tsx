@@ -160,7 +160,7 @@ export const CultivationZoneDialog = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-2">
-                Doanh nghiệp
+                Đơn vị sở hữu
               </label>
               <Select value={entFilter} onValueChange={setEntFilter}>
                 <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-slate-100">

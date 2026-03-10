@@ -303,7 +303,7 @@ const RegionListItem = ({
             <Building2 size={10} className="text-blue-600" />
           </div>
           <span className="text-[10px] text-slate-500 font-medium truncate max-w-20">
-            {enterprise?.name || "Doanh nghiệp"}
+            {enterprise?.name || "Đơn vị sở hữu"}
           </span>
         </div>
         <div className="flex items-center gap-1.5 justify-end">
@@ -937,7 +937,7 @@ const SearchCropPage = () => {
                                         (e) =>
                                           String(e.id) ===
                                           String(currentRegion?.enterpriseId),
-                                      )?.name || "Doanh nghiệp"}
+                                      )?.name || "Đơn vị sở hữu"}
                                     </h2>
                                     <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
                                       Đang xem: {selectedCropGroup?.name} (

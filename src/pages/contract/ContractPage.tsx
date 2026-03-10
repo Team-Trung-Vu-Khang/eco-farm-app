@@ -161,7 +161,7 @@ const ContractPage = () => {
   return (
     <AdminLayout
       title="Quản lý hợp đồng"
-      description="Quản lý hợp đồng theo doanh nghiệp/nông hộ"
+      description="Quản lý hợp đồng theo đơn vị sở hữu"
     >
       <div className="space-y-6">
         {/* Stats Cards */}

@@ -1300,8 +1300,7 @@ const ContractEditPage = () => {
 
             <div>
               <Label>
-                Chọn doanh nghiệp/nông hộ{" "}
-                <span className="text-red-500">*</span>
+                Đơn vị sở hữu <span className="text-red-500">*</span>
               </Label>
               <div className="mt-2 space-y-3">
                 <div className="relative">
@@ -1381,8 +1380,7 @@ const ContractEditPage = () => {
 
             <div>
               <Label>
-                Chọn doanh nghiệp/nông hộ{" "}
-                <span className="text-red-500">*</span>
+                Đơn vị sở hữu <span className="text-red-500">*</span>
               </Label>
               <div className="mt-2 space-y-3">
                 <div className="relative">

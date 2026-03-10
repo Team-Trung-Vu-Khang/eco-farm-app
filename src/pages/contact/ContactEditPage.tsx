@@ -205,7 +205,7 @@ export default function ContactEditPage() {
             {/* Thông tin công việc */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="entityName">Doanh nghiệp / Nông hộ *</Label>
+                <Label htmlFor="entityName">Đơn vị sở hữu *</Label>
                 <Select
                   value={formData.entityName}
                   onValueChange={(val) =>

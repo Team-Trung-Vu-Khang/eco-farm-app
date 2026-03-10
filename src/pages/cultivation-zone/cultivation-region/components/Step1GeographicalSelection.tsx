@@ -58,7 +58,7 @@ export const Step1GeographicalSelection: React.FC<
               Định vị vùng canh tác
             </h3>
             <p className="text-sm text-green-700/80">
-              Chọn doanh nghiệp và vùng canh tác trước. Vị trí cụ thể của từng
+              Chọn đơn vị sở hữu và vùng canh tác trước. Vị trí cụ thể của từng
               cây sẽ được chọn ở bước tiếp theo.
             </p>
           </div>
@@ -119,7 +119,7 @@ export const Step1GeographicalSelection: React.FC<
               />
               {!enterpriseId && (
                 <p className="text-xs text-muted-foreground italic">
-                  Chọn doanh nghiệp trước để hiển thị các vùng canh tác.
+                  Chọn đơn vị sở hữu trước để hiển thị các vùng canh tác.
                 </p>
               )}
             </CardContent>

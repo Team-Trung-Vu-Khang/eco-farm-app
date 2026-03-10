@@ -638,7 +638,7 @@ export default function BranchFormPage() {
 
             <div className="space-y-2 col-span-2">
               <Label htmlFor="enterprise">
-                Đơn vị chủ quản <span className="text-red-500">*</span>
+                Đơn vị sở hữu <span className="text-red-500">*</span>
               </Label>
               <Select
                 value={formData.enterpriseId}
@@ -652,7 +652,7 @@ export default function BranchFormPage() {
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Chọn doanh nghiệp" />
+                  <SelectValue placeholder="Đơn vị sở hữu" />
                 </SelectTrigger>
                 <SelectContent>
                   {enterprises.map((enterprise) => (

@@ -489,7 +489,7 @@ const PesticideCreatePage = () => {
             Chọn nhà cung cấp
           </h3>
           <p className="text-sm text-muted-foreground">
-            Lựa chọn đối tác cung cấp sản phẩm này (Doanh nghiệp hoặc Nông hộ)
+            Lựa chọn đối tác cung cấp sản phẩm này
           </p>
 
           <ScrollArea className="h-[300px] pr-4">

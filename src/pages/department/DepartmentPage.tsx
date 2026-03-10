@@ -116,7 +116,7 @@ const DepartmentPage = () => {
   return (
     <AdminLayout
       title="Quản lý phòng ban"
-      description="Quản lý phòng ban theo doanh nghiệp/nông hộ"
+      description="Quản lý phòng ban theo đơn vị sở hữu"
       actions={
         <Button onClick={handleAdd}>
           <Plus className="w-4 h-4 mr-2" />

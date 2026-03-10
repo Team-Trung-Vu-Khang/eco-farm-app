@@ -112,7 +112,9 @@ const PlantIdentificationForm = ({
     );
   }, [areas, enterpriseId]);
 
-  const selectedCultivationRegion = areas.find((a) => a.id === cultivationRegionId);
+  const selectedCultivationRegion = areas.find(
+    (a) => a.id === cultivationRegionId,
+  );
 
   // ---- Logic to find smallest geographical units ----
   const geographicalUnits = useMemo(() => {
@@ -498,7 +500,7 @@ const PlantIdentificationForm = ({
     {
       id: "selection",
       title: "Chọn vùng canh tác",
-      description: "Chọn doanh nghiệp và vùng canh tác",
+      description: "Chọn đơn vị sở hữu và vùng canh tác",
       isValid: !!(
         enterpriseId &&
         cultivationRegionId &&

@@ -113,7 +113,6 @@ const getNearestPointOnPolygonBoundary = (
   );
 };
 
-
 const FilterStep = ({
   step,
   label,
@@ -863,7 +862,9 @@ const CultivationPlotCreatePage = () => {
   const effectiveArea = useMemo(() => {
     if (!selectedArea) return null;
     for (const r of regions) {
-      const found = (r.subAreas || []).find((a: any) => a.id === selectedArea.id);
+      const found = (r.subAreas || []).find(
+        (a: any) => a.id === selectedArea.id,
+      );
       if (found) return found;
     }
     return selectedArea;
@@ -951,23 +952,29 @@ const CultivationPlotCreatePage = () => {
           plotObj.polygon,
           latlng,
         );
-        return { type: "overlap", label: "Trùng lặp với lô khác", suggested: nearest };
+        return {
+          type: "overlap",
+          label: "Trùng lặp với lô khác",
+          suggested: nearest,
+        };
       }
     }
 
     // 3. Self-intersection check
     // Create temporary coordinates for current polygon state
-    const tempCoords = plotPoints.map((p, i) => 
-      i === index ? { lat: latlng.lat, lng: latlng.lng } : { lat: p.lat, lng: p.lng }
+    const tempCoords = plotPoints.map((p, i) =>
+      i === index
+        ? { lat: latlng.lat, lng: latlng.lng }
+        : { lat: p.lat, lng: p.lng },
     );
     const tempPoly = toTurfPolygonFromCoords(tempCoords);
     if (tempPoly) {
       const selfIntersections = kinks(tempPoly);
       if (selfIntersections.features.length > 0) {
-        return { 
-          type: "intersect", 
-          label: "Lỗi tự cắt (Self-intersection)", 
-          suggested: null 
+        return {
+          type: "intersect",
+          label: "Lỗi tự cắt (Self-intersection)",
+          suggested: null,
         };
       }
     }
@@ -989,7 +996,10 @@ const CultivationPlotCreatePage = () => {
     const violation = validatePoint(latlng, index);
     if (finalize) {
       if (violation) {
-        setPointWarnings((prev) => ({ ...prev, [index]: { ...violation, index } }));
+        setPointWarnings((prev) => ({
+          ...prev,
+          [index]: { ...violation, index },
+        }));
       } else {
         setPointWarnings((prev) => {
           const next = { ...prev };
@@ -1031,7 +1041,7 @@ const CultivationPlotCreatePage = () => {
 
             <div>
               <Label className="text-sm font-medium">
-                Doanh nghiệp <span className="text-red-500">*</span>
+                Đơn vị sở hữu <span className="text-red-500">*</span>
               </Label>
               <div className="mt-1.5">
                 <EnterpriseSelector
@@ -1122,7 +1132,7 @@ const CultivationPlotCreatePage = () => {
                   <div className="py-3 text-center text-sm text-slate-400 group-hover:text-primary transition-colors">
                     {selectedEnterpriseId
                       ? "Nhấn để chọn lô canh tác"
-                      : "Chọn doanh nghiệp trước"}
+                      : "Chọn đơn vị sở hữu trước"}
                   </div>
                 )}
               </div>
@@ -1247,7 +1257,7 @@ const CultivationPlotCreatePage = () => {
                     fillOpacity: 0.1,
                   }}
                 >
-                   <Tooltip
+                  <Tooltip
                     permanent
                     direction="top"
                     className="bg-sky-900 border-none shadow-xl text-[9px] font-bold text-white rounded-md px-2 py-1 flex items-center gap-1.5"
@@ -1321,7 +1331,9 @@ const CultivationPlotCreatePage = () => {
                     click: () => setActivePointIndex(idx),
                   }}
                 >
-                   <Tooltip direction="top" offset={[0, -10]}>Điểm {idx + 1}</Tooltip>
+                  <Tooltip direction="top" offset={[0, -10]}>
+                    Điểm {idx + 1}
+                  </Tooltip>
                 </Marker>
               ))}
 
@@ -1438,7 +1450,8 @@ const CultivationPlotCreatePage = () => {
               <div className="p-3 rounded-lg bg-red-50 border border-red-100">
                 <div className="text-[11px] font-bold text-red-700 flex items-center gap-1.5">
                   <X className="w-3 h-3" />
-                  Có {Object.keys(pointWarnings).length} điểm không hợp lệ. Vui lòng kiểm tra các điểm màu đỏ.
+                  Có {Object.keys(pointWarnings).length} điểm không hợp lệ. Vui
+                  lòng kiểm tra các điểm màu đỏ.
                 </div>
               </div>
             )}
@@ -1447,12 +1460,20 @@ const CultivationPlotCreatePage = () => {
               <div className="p-3 rounded-lg bg-red-50 border border-red-100 space-y-2">
                 <div className="text-[11px] font-bold text-red-700 flex items-center gap-1.5">
                   <X className="w-3 h-3" />
-                  Vị trí {warning.index !== undefined ? `điểm ${warning.index + 1}` : ""} không hợp lệ
+                  Vị trí{" "}
+                  {warning.index !== undefined
+                    ? `điểm ${warning.index + 1}`
+                    : ""}{" "}
+                  không hợp lệ
                 </div>
                 <Button
                   className="w-full h-7 text-[10px] bg-red-600 hover:bg-red-700"
                   onClick={() =>
-                    handlePointDrag(warning.index ?? activePointIndex!, warning.suggested, true)
+                    handlePointDrag(
+                      warning.index ?? activePointIndex!,
+                      warning.suggested,
+                      true,
+                    )
                   }
                 >
                   Tự động điều chỉnh

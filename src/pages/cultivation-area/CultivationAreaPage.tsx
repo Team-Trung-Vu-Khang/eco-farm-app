@@ -61,9 +61,7 @@ const CultivationAreaPage = () => {
     {
       key: "name",
       label: "Tên khu vực canh tác",
-      render: (value: string) => (
-        <span className="font-medium">{value}</span>
-      ),
+      render: (value: string) => <span className="font-medium">{value}</span>,
     },
     {
       key: "regionName",
@@ -74,14 +72,10 @@ const CultivationAreaPage = () => {
     },
     {
       key: "enterpriseId",
-      label: "Doanh nghiệp",
+      label: "Đơn vị sở hữu",
       render: (value: string) => {
-        const ent = enterprises.find(
-          (e) => e.id.toString() === value,
-        );
-        return (
-          <span className="text-slate-600">{ent?.name || value}</span>
-        );
+        const ent = enterprises.find((e) => e.id.toString() === value);
+        return <span className="text-slate-600">{ent?.name || value}</span>;
       },
     },
     {

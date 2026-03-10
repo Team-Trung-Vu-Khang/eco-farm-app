@@ -1159,7 +1159,7 @@ const CultivationRegionCreatePage = () => {
             />
 
             <Label className="text-sm font-medium">
-              Doanh nghiệp (Enterprise) <span className="text-red-500">*</span>
+              Đơn vị sở hữu <span className="text-red-500">*</span>
             </Label>
             <EnterpriseSelector
               selectedId={selectedEnterpriseId}

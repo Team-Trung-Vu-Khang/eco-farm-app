@@ -557,8 +557,7 @@ export default function PlanEditPage() {
                   Chọn vùng canh tác
                 </h3>
                 <Label className="text-sm font-medium text-slate-700">
-                  Doanh nghiệp (Enterprise){" "}
-                  <span className="text-red-500">*</span>
+                  Đơn vị sở hữu <span className="text-red-500">*</span>
                 </Label>
                 <EnterpriseSelector
                   selectedId={selectedEnterpriseId}
@@ -578,7 +577,7 @@ export default function PlanEditPage() {
                           variant="outline"
                           className="text-[10px] bg-amber-50"
                         >
-                          Chọn doanh nghiệp trước
+                          Chọn đơn vị sở hữu trước
                         </Badge>
                       )}
                     </div>

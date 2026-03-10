@@ -143,7 +143,7 @@ export const EnterpriseSelector = ({
               <Search className="w-6 h-6 opacity-40 group-hover:opacity-100" />
             </div>
             <div className="text-sm font-semibold">
-              Bấm để chọn doanh nghiệp
+              Bấm để chọn đơn vị sở hữu
             </div>
             <div className="text-[11px] opacity-60">
               Thông tin liên hệ và mã số thuế sẽ được tự động cập nhật
@@ -162,7 +162,7 @@ export const EnterpriseSelector = ({
           <DialogHeader className="border-b pb-4">
             <DialogTitle className="flex items-center gap-2">
               <Briefcase className="w-5 h-5 text-primary" />
-              Chọn doanh nghiệp
+              Đơn vị sở hữu
             </DialogTitle>
           </DialogHeader>
 
@@ -171,7 +171,7 @@ export const EnterpriseSelector = ({
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
                 <Input
-                  placeholder="Tìm theo tên, mã doanh nghiệp..."
+                  placeholder="Tìm theo tên, mã đơn vị..."
                   className="pl-10 bg-slate-50 border-slate-200 focus:bg-white transition-all"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -252,9 +252,7 @@ export const EnterpriseSelector = ({
                     <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center">
                       <Search className="w-6 h-6 text-slate-300" />
                     </div>
-                    <div className="text-sm">
-                      Không tìm thấy doanh nghiệp phù hợp
-                    </div>
+                    <div className="text-sm">Không tìm thấy đơn vị phù hợp</div>
                   </div>
                 )}
               </div>

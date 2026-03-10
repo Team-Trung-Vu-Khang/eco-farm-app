@@ -79,10 +79,6 @@ const customIcon = getMarkerIcon("blue");
 const activeIcon = getMarkerIcon("green");
 const invalidIcon = getMarkerIcon("red");
 
-
-
-
-
 const getBoundsFromPoints = (points: L.LatLng[]): L.LatLngBounds => {
   if (points.length === 0) return L.latLngBounds([0, 0], [0, 0]);
   return L.latLngBounds(points);
@@ -134,17 +130,17 @@ const FilterStep = ({
   <div
     className={cn(
       "flex items-center gap-2 text-xs font-bold transition-all",
-      done
-        ? "text-primary"
-        : active
-          ? "text-slate-700"
-          : "text-slate-300",
+      done ? "text-primary" : active ? "text-slate-700" : "text-slate-300",
     )}
   >
     <div
       className={cn(
         "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black transition-colors",
-        done ? "bg-primary text-white" : active ? "bg-slate-200 text-slate-600" : "bg-slate-100 text-slate-300",
+        done
+          ? "bg-primary text-white"
+          : active
+            ? "bg-slate-200 text-slate-600"
+            : "bg-slate-100 text-slate-300",
       )}
     >
       {done ? <Check size={10} /> : step}
@@ -260,8 +256,8 @@ const SubAreaSelectorDialog = ({
                 {filteredRegions.length === 0 ? (
                   <div className="py-4 text-center text-sm text-slate-400">
                     {enterpriseId
-                      ? "Không có vùng nào cho doanh nghiệp này"
-                      : "Chọn doanh nghiệp trước"}
+                      ? "Không có vùng nào cho đơn vị sở hữu này"
+                      : "Chọn đơn vị sở hữu trước"}
                   </div>
                 ) : (
                   filteredRegions.map((r) => (
@@ -373,7 +369,9 @@ const SubAreaSelectorDialog = ({
                                 : "text-slate-400 bg-slate-50",
                             )}
                           >
-                            {area.status === "active" ? "Đang hoạt động" : "Tạm dừng"}
+                            {area.status === "active"
+                              ? "Đang hoạt động"
+                              : "Tạm dừng"}
                           </Badge>
                         </div>
 
@@ -412,7 +410,9 @@ const SubAreaSelectorDialog = ({
               <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
                 <MapPin size={28} className="text-slate-300" />
               </div>
-              <p className="text-sm font-medium">Chọn vùng trồng để xem danh sách khu vực</p>
+              <p className="text-sm font-medium">
+                Chọn vùng trồng để xem danh sách khu vực
+              </p>
             </div>
           )}
         </div>
@@ -855,7 +855,7 @@ const CultivationAreaCreatePage = () => {
 
   const effectiveRegion = useMemo(() => {
     if (!selectedRegion) return null;
-    return regions.find(r => r.id === selectedRegion.id) || selectedRegion;
+    return regions.find((r) => r.id === selectedRegion.id) || selectedRegion;
   }, [regions, selectedRegion]);
 
   // Update map when region changes
@@ -922,23 +922,32 @@ const CultivationAreaCreatePage = () => {
     // 2. Overlap with other areas check
     for (const areaObj of blockingAreaPolygons) {
       if (areaObj.polygon && booleanPointInPolygon(pt, areaObj.polygon)) {
-        const nearest = getNearestPointOnPolygonBoundary(areaObj.polygon, latlng);
-        return { type: "overlap", label: "Trùng lặp với khu vực khác", suggested: nearest };
+        const nearest = getNearestPointOnPolygonBoundary(
+          areaObj.polygon,
+          latlng,
+        );
+        return {
+          type: "overlap",
+          label: "Trùng lặp với khu vực khác",
+          suggested: nearest,
+        };
       }
     }
 
     // 3. Self-intersection check
-    const tempCoords = areaPoints.map((p, i) => 
-      i === index ? { lat: latlng.lat, lng: latlng.lng } : { lat: p.lat, lng: p.lng }
+    const tempCoords = areaPoints.map((p, i) =>
+      i === index
+        ? { lat: latlng.lat, lng: latlng.lng }
+        : { lat: p.lat, lng: p.lng },
     );
     const tempPoly = toTurfPolygonFromCoords(tempCoords);
     if (tempPoly) {
       const selfIntersections = kinks(tempPoly);
       if (selfIntersections.features.length > 0) {
-        return { 
-          type: "intersect", 
-          label: "Lỗi tự cắt (Self-intersection)", 
-          suggested: null 
+        return {
+          type: "intersect",
+          label: "Lỗi tự cắt (Self-intersection)",
+          suggested: null,
         };
       }
     }
@@ -960,7 +969,10 @@ const CultivationAreaCreatePage = () => {
     const violation = validatePoint(latlng, index);
     if (finalize) {
       if (violation) {
-        setPointWarnings((prev) => ({ ...prev, [index]: { ...violation, index } }));
+        setPointWarnings((prev) => ({
+          ...prev,
+          [index]: { ...violation, index },
+        }));
       } else {
         setPointWarnings((prev) => {
           const next = { ...prev };
@@ -1002,7 +1014,7 @@ const CultivationAreaCreatePage = () => {
 
             <div>
               <Label className="text-sm font-medium">
-                Doanh nghiệp <span className="text-red-500">*</span>
+                Đơn vị sở hữu <span className="text-red-500">*</span>
               </Label>
               <div className="mt-1.5">
                 <EnterpriseSelector
@@ -1022,7 +1034,10 @@ const CultivationAreaCreatePage = () => {
                   Khu vực canh tác <span className="text-red-500">*</span>
                 </Label>
                 {selectedArea && (
-                  <Badge variant="secondary" className="bg-primary/10 text-primary border-none">
+                  <Badge
+                    variant="secondary"
+                    className="bg-primary/10 text-primary border-none"
+                  >
                     Đã chọn
                   </Badge>
                 )}
@@ -1031,34 +1046,60 @@ const CultivationAreaCreatePage = () => {
               {/* Breadcrumb preview */}
               <div className="flex items-center gap-2 text-[10px] text-slate-500 bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
                 <Building2 size={10} className="text-slate-400" />
-                <span className={selectedEnterpriseId ? "text-slate-700 font-medium" : ""}>DN</span>
+                <span
+                  className={
+                    selectedEnterpriseId ? "text-slate-700 font-medium" : ""
+                  }
+                >
+                  DN
+                </span>
                 <span className="text-slate-300">›</span>
                 <MapPin size={10} className="text-slate-400" />
-                <span className={selectedRegion ? "text-slate-700 font-medium" : ""}>{selectedRegion?.name || "Vùng"}</span>
+                <span
+                  className={selectedRegion ? "text-slate-700 font-medium" : ""}
+                >
+                  {selectedRegion?.name || "Vùng"}
+                </span>
                 <span className="text-slate-300">›</span>
                 <Layers size={10} className="text-slate-400" />
-                <span className={selectedArea ? "text-primary font-bold" : ""}>{selectedArea?.name || "Khu vực"}</span>
+                <span className={selectedArea ? "text-primary font-bold" : ""}>
+                  {selectedArea?.name || "Khu vực"}
+                </span>
               </div>
 
               <div
                 className={cn(
                   "group border rounded-xl p-4 transition-all hover:shadow-sm cursor-pointer",
-                  selectedArea ? "bg-white border-slate-200" : "bg-slate-50 border-dashed border-slate-300",
-                  !selectedEnterpriseId && "opacity-60 cursor-not-allowed"
+                  selectedArea
+                    ? "bg-white border-slate-200"
+                    : "bg-slate-50 border-dashed border-slate-300",
+                  !selectedEnterpriseId && "opacity-60 cursor-not-allowed",
                 )}
-                onClick={() => selectedEnterpriseId && setAreaSelectorOpen(true)}
+                onClick={() =>
+                  selectedEnterpriseId && setAreaSelectorOpen(true)
+                }
               >
                 {selectedArea ? (
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
                       <Layers className="w-5 h-5 text-primary" />
                     </div>
-                    <div className="flex-1 min-w-0 font-bold text-slate-900 truncate">{selectedArea.name}</div>
-                    <Button variant="ghost" size="sm" className="text-slate-400 group-hover:text-primary">Thay đổi</Button>
+                    <div className="flex-1 min-w-0 font-bold text-slate-900 truncate">
+                      {selectedArea.name}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-slate-400 group-hover:text-primary"
+                    >
+                      Thay đổi
+                    </Button>
                   </div>
                 ) : (
                   <div className="py-3 text-center text-sm text-slate-400 group-hover:text-primary transition-colors">
-                    {selectedEnterpriseId ? "Nhấn để chọn khu vực canh tác" : "Chọn doanh nghiệp trước"}
+                    {selectedEnterpriseId
+                      ? "Nhấn để chọn khu vực canh tác"
+                      : "Chọn đơn vị sở hữu trước"}
                   </div>
                 )}
               </div>
@@ -1260,7 +1301,9 @@ const CultivationAreaCreatePage = () => {
                     click: () => setActivePointIndex(idx),
                   }}
                 >
-                  <Tooltip direction="top" offset={[0, -10]}>Điểm {idx + 1}</Tooltip>
+                  <Tooltip direction="top" offset={[0, -10]}>
+                    Điểm {idx + 1}
+                  </Tooltip>
                 </Marker>
               ))}
 
@@ -1403,7 +1446,11 @@ const CultivationAreaCreatePage = () => {
                 <Button
                   className="w-full mt-3 h-8 bg-red-600 hover:bg-red-700 text-xs"
                   onClick={() => {
-                    handlePointDrag(warning.index ?? activePointIndex!, warning.suggested, true);
+                    handlePointDrag(
+                      warning.index ?? activePointIndex!,
+                      warning.suggested,
+                      true,
+                    );
                   }}
                 >
                   Khắc phục tự động
@@ -1500,42 +1547,44 @@ const CultivationAreaCreatePage = () => {
                 </CardContent>
               </Card>
 
-          {/* Crop Selection Card */}
-          <Card className="border-none shadow-md bg-white flex flex-col h-[420px]">
-            <CardHeader className="pb-3 border-b bg-linear-to-r from-emerald-50/50 to-white">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                  <Leaf className="w-4 h-4 text-emerald-600" />
-                </div>
-                <span>Giống cây trồng</span>
-                {effectiveConfig.farmingMethodId && (
-                  <Badge variant="secondary" className="ml-auto text-xs">
-                    {availableCrops.length} loại
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6 flex-1 flex flex-col min-h-0">
+              {/* Crop Selection Card */}
+              <Card className="border-none shadow-md bg-white flex flex-col h-[420px]">
+                <CardHeader className="pb-3 border-b bg-linear-to-r from-emerald-50/50 to-white">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                      <Leaf className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <span>Giống cây trồng</span>
+                    {effectiveConfig.farmingMethodId && (
+                      <Badge variant="secondary" className="ml-auto text-xs">
+                        {availableCrops.length} loại
+                      </Badge>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6 flex-1 flex flex-col min-h-0">
                   {!effectiveConfig.farmingMethodId ? (
                     <div className="py-8 text-center text-slate-400 text-sm">
                       Chọn loại hình canh tác để xem danh sách cây trồng
                     </div>
                   ) : (
                     <>
-                  <div className="mb-4 relative">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
-                    <Input
-                      value={cropSearchTerm}
-                      onChange={(e) => setCropSearchTerm(e.target.value)}
-                      placeholder="Tìm kiếm giống cây trồng..."
-                      className="pl-10 bg-slate-50/50 border-slate-200 focus:bg-white transition-all rounded-lg"
-                    />
-                  </div>
+                      <div className="mb-4 relative">
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
+                        <Input
+                          value={cropSearchTerm}
+                          onChange={(e) => setCropSearchTerm(e.target.value)}
+                          placeholder="Tìm kiếm giống cây trồng..."
+                          className="pl-10 bg-slate-50/50 border-slate-200 focus:bg-white transition-all rounded-lg"
+                        />
+                      </div>
                       <ScrollArea className="flex-1 overflow-y-auto">
                         <div className="space-y-2 pr-2">
                           {availableCrops.map((crop) => {
-                            const isSelected = effectiveConfig.selectedCrops?.includes(crop.id);
-                            const selectedSeeds = effectiveConfig.seedSelections?.[crop.id] || [];
+                            const isSelected =
+                              effectiveConfig.selectedCrops?.includes(crop.id);
+                            const selectedSeeds =
+                              effectiveConfig.seedSelections?.[crop.id] || [];
                             return (
                               <div
                                 key={crop.id}
@@ -1546,12 +1595,17 @@ const CultivationAreaCreatePage = () => {
                                     : "bg-white border-slate-100 hover:border-green-200 hover:shadow-sm",
                                 )}
                                 onClick={() => {
-                                  const current = effectiveConfig.selectedCrops || [];
+                                  const current =
+                                    effectiveConfig.selectedCrops || [];
                                   if (current.includes(crop.id)) {
-                                    const newCrops = current.filter((i) => i !== crop.id);
-                                    const newSeeds = { ...(effectiveConfig.seedSelections || {}) };
+                                    const newCrops = current.filter(
+                                      (i) => i !== crop.id,
+                                    );
+                                    const newSeeds = {
+                                      ...(effectiveConfig.seedSelections || {}),
+                                    };
                                     delete newSeeds[crop.id];
-                                    
+
                                     setConfigs((prev) => ({
                                       ...prev,
                                       [CONFIG_KEY]: {
@@ -1580,10 +1634,14 @@ const CultivationAreaCreatePage = () => {
                                   )}
                                 </div>
                                 <div className="flex flex-col flex-1 shrink min-w-0">
-                                  <div className={cn(
-                                    "text-sm shrink font-semibold truncate",
-                                    isSelected ? "text-green-900" : "text-slate-700"
-                                  )}>
+                                  <div
+                                    className={cn(
+                                      "text-sm shrink font-semibold truncate",
+                                      isSelected
+                                        ? "text-green-900"
+                                        : "text-slate-700",
+                                    )}
+                                  >
                                     {crop.varietyName}
                                   </div>
                                   <div className="text-[10px] text-muted-foreground mt-0.5 shrink">
@@ -1592,7 +1650,9 @@ const CultivationAreaCreatePage = () => {
                                   {isSelected && selectedSeeds.length > 0 && (
                                     <div className="mt-1.5 flex flex-wrap gap-1.5 min-w-0">
                                       {selectedSeeds.map((seedId) => {
-                                        const seed = seeds.find((s) => s.id === seedId);
+                                        const seed = seeds.find(
+                                          (s) => s.id === seedId,
+                                        );
                                         if (!seed) return null;
                                         return (
                                           <Badge
@@ -1607,11 +1667,17 @@ const CultivationAreaCreatePage = () => {
                                     </div>
                                   )}
                                 </div>
-                                <div className={cn(
-                                  "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
-                                  isSelected ? "bg-green-500 border-green-500" : "border-slate-300"
-                                )}>
-                                  {isSelected && <Check className="w-3 h-3 text-white" />}
+                                <div
+                                  className={cn(
+                                    "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
+                                    isSelected
+                                      ? "bg-green-500 border-green-500"
+                                      : "border-slate-300",
+                                  )}
+                                >
+                                  {isSelected && (
+                                    <Check className="w-3 h-3 text-white" />
+                                  )}
                                 </div>
                               </div>
                             );
@@ -1887,8 +1953,11 @@ const CultivationAreaCreatePage = () => {
                 });
 
                 // 2. Add to RegionStore (Geometry)
-                const finalAreaId = selectedArea?.id || `sub-${selectedRegion.id}-${Date.now()}`;
-                const finalAreaCode = selectedArea?.code || `AREA-${Date.now().toString().slice(-4)}`;
+                const finalAreaId =
+                  selectedArea?.id || `sub-${selectedRegion.id}-${Date.now()}`;
+                const finalAreaCode =
+                  selectedArea?.code ||
+                  `AREA-${Date.now().toString().slice(-4)}`;
 
                 useRegionStore.getState().upsertSubArea(selectedRegion.id, {
                   id: finalAreaId,
@@ -1919,11 +1988,15 @@ const CultivationAreaCreatePage = () => {
           setSelectedArea(area);
           if (!name) setName(area.name);
           if (area.coordinates && area.coordinates.length > 0) {
-            const pts = area.coordinates.map((c: any) => L.latLng(c.lat, c.lng));
+            const pts = area.coordinates.map((c: any) =>
+              L.latLng(c.lat, c.lng),
+            );
             setAreaPoints(pts);
             setMapCenter(pts[0]);
           } else if (region.coordinates && region.coordinates.length > 0) {
-            setMapCenter(L.latLng(region.coordinates[0].lat, region.coordinates[0].lng));
+            setMapCenter(
+              L.latLng(region.coordinates[0].lat, region.coordinates[0].lng),
+            );
           }
         }}
         enterpriseId={selectedEnterpriseId}

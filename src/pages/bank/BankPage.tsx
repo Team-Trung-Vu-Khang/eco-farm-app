@@ -100,7 +100,7 @@ export default function BankPage() {
   return (
     <AdminLayout
       title="Quản lý tài khoản ngân hàng"
-      description="Danh sách tài khoản ngân hàng của doanh nghiệp"
+      description="Danh sách tài khoản ngân hàng của đơn vị sở hữu"
       actions={
         <Link href="/bank/create">
           <Button>

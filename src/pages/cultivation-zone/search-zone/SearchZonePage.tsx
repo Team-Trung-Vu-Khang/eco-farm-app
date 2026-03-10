@@ -549,7 +549,7 @@ const SearchZonePage = () => {
                         <div className="flex items-center gap-2 text-primary">
                           <MapPin className="h-5 w-5" />
                           <h4 className="font-semibold">
-                            2. Doanh nghiệp & Địa điểm
+                            2. Đơn vị sở hữu & Địa điểm
                           </h4>
                         </div>
                         <div className="grid grid-cols-1 gap-4 overflow-y-auto max-h-87.5 pr-2 split-scrollbar">
@@ -789,7 +789,7 @@ const SearchZonePage = () => {
                         enterprises.find(
                           (e) => String(e.id) === selectedEnterpriseId,
                         )?.name ||
-                        "Doanh nghiệp"}
+                        "Đơn vị sở hữu"}
                     </h2>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
                       Chi tiết bản đồ & Danh sách vùng trồng

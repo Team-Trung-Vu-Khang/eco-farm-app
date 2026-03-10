@@ -132,7 +132,7 @@ export default function BranchCreatePage() {
   return (
     <AdminLayout
       title="Thêm mới chi nhánh"
-      description="Tạo chi nhánh mới cho doanh nghiệp/hợp tác xã"
+      description="Tạo chi nhánh mới cho đơn vị sở hữu"
       actions={
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setLocation("/branch")}>
@@ -237,7 +237,7 @@ export default function BranchCreatePage() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Chọn doanh nghiệp / HTX / Nông hộ" />
+                    <SelectValue placeholder="Đơn vị sở hữu" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1">

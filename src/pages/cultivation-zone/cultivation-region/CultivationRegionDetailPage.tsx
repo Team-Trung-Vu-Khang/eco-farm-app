@@ -428,7 +428,7 @@ const CultivationRegionDetailPage = () => {
             {details.enterprise && (
               <Card>
                 <CardHeader className="border-b bg-slate-50 py-3">
-                  <CardTitle className="text-base">Doanh nghiệp</CardTitle>
+                  <CardTitle className="text-base">Đơn vị sở hữu</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
                   <div className="font-semibold text-slate-900">

@@ -224,7 +224,7 @@ export default function BranchEditPage() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Chọn doanh nghiệp / HTX / Nông hộ" />
+                    <SelectValue placeholder="Đơn vị sở hữu" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1">

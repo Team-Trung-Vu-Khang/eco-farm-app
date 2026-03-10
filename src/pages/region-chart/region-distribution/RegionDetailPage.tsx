@@ -120,7 +120,7 @@ const RegionDetailPage = () => {
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-2 py-1 border-b">
-                <span className="text-muted-foreground">Doanh nghiệp</span>
+                <span className="text-muted-foreground">Đơn vị sở hữu</span>
                 <span className="col-span-2 font-medium">{enterpriseName}</span>
               </div>
               <div className="grid grid-cols-3 gap-2 py-1 border-b">

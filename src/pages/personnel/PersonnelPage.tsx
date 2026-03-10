@@ -139,7 +139,7 @@ export default function PersonnelPage() {
   return (
     <AdminLayout
       title="Quản lý nhân sự"
-      description="Danh sách nhân sự của doanh nghiệp / nông hộ"
+      description="Danh sách nhân sự của đơn vị"
       actions={
         <div className="flex items-center gap-2">
           <DropdownMenu>

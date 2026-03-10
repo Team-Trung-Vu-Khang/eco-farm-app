@@ -226,7 +226,7 @@ export default function ContactPage() {
             <div className="space-y-1">
               <h3 className="text-lg font-semibold">Sổ danh bạ</h3>
               <p className="text-sm text-muted-foreground">
-                Danh sách thông tin liên hệ của doanh nghiệp / nông hộ
+                Danh sách thông tin liên hệ của đơn vị
               </p>
             </div>
             <Link href="/contact/create">

@@ -180,7 +180,7 @@ const MaterialDetailPage = () => {
                         </h5>
                         <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                           <span className="bg-slate-100 px-1.5 py-0.5 rounded">
-                            Doanh nghiệp
+                            Đơn vị
                           </span>
                         </div>
                       </div>
