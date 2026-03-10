@@ -39,6 +39,7 @@ import { Plus, Edit, Trash2, ChevronLeft, X } from "lucide-react";
 import { type Region, type SubArea } from "../constants";
 import useRegionStore from "../../../stores/useRegionStore";
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
+import { EnterpriseSelector } from "@/pages/cultivation-zone/cultivation-region/components";
 import useLandStore from "../../../stores/useLandStore";
 import useTerrainStore from "../../../stores/useTerrainStore";
 import { PROVINCES } from "@/constants/province";
@@ -633,7 +634,65 @@ const RegionCreatePage = () => {
                 />
               </div>
             </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">
+                  Doanh nghiệp (Enterprise){" "}
+                  <span className="text-red-500">*</span>
+                </Label>
+                <EnterpriseSelector
+                  selectedId={formData.enterpriseId || ""}
+                  onSelect={(v) => {
+                    const selectedEnt = enterprises.find(
+                      (e) => e.id.toString() === v,
+                    );
+                    if (selectedEnt) {
+                      const normalize = (s: string) =>
+                        s
+                          .toLowerCase()
+                          .replace(/^(tỉnh|thành phố|tp\.)\s+/i, "")
+                          .trim();
 
+                      const province = PROVINCES.find(
+                        (p) =>
+                          normalize(p.name) ===
+                          normalize(selectedEnt.province || ""),
+                      );
+                      const district = province?.districts.find(
+                        (d) =>
+                          normalize(d.name) ===
+                          normalize(selectedEnt.district || ""),
+                      );
+
+                      setFormData({
+                        ...formData,
+                        enterpriseId: v,
+                        provinceId: province?.code || formData.provinceId,
+                        districtId: district?.code || formData.districtId,
+                        address: selectedEnt.address || formData.address,
+                      });
+                    } else {
+                      setFormData({ ...formData, enterpriseId: v });
+                    }
+                  }}
+                />
+              </div>
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Diện tích (ha)</Label>
+                <Input
+                  type="number"
+                  className="h-10 border-slate-300 focus:border-primary focus:ring-primary/20"
+                  value={formData.area || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      area: parseFloat(e.target.value),
+                    })
+                  }
+                  placeholder="Nhập diện tích"
+                />
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Tỉnh / Thành Phố</Label>
@@ -688,49 +747,6 @@ const RegionCreatePage = () => {
                 }
                 placeholder="Số nhà, đường, thôn/xóm..."
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Thuộc đơn vị</Label>
-                <Select
-                  value={formData.enterpriseId}
-                  onValueChange={(v) =>
-                    setFormData({ ...formData, enterpriseId: v })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn đơn vị" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {enterprises.map((e) => (
-                      <SelectItem key={e.id} value={e.id.toString()}>
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={e.image}
-                            alt={e.name}
-                            className="w-5 h-5 rounded-full object-cover border"
-                          />
-                          <span>{e.name}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Diện tích (ha)</Label>
-                <Input
-                  type="number"
-                  value={formData.area || ""}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      area: parseFloat(e.target.value),
-                    })
-                  }
-                />
-              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -1352,98 +1368,253 @@ const RegionCreatePage = () => {
     {
       id: "review",
       title: "Xác nhận",
-      description: "Kiểm tra lại thông tin",
+      description: "Kiểm tra lại toàn bộ thông tin",
       content: (
-        <Card>
-          <CardHeader>
-            <CardTitle>Xác nhận thông tin</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
+        <div className="space-y-5">
+          {/* Bước 1: Thông tin chung */}
+          <Card className="overflow-hidden border-none shadow-sm">
+            <CardHeader className="bg-blue-50/70 border-b border-blue-100 py-3 px-5">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-blue-500/15 flex items-center justify-center text-blue-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                </div>
+                <CardTitle className="text-base font-bold text-slate-800">
                   Thông tin chung
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div className="grid grid-cols-3">
-                    <span className="text-muted-foreground">Mã vùng:</span>
-                    <span className="col-span-2 font-medium">
-                      {formData.code}
-                    </span>
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="py-5 px-5">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
+                <div className="space-y-0.5">
+                  <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">Đơn vị sở hữu</p>
+                  <p className="text-sm font-semibold text-slate-700">
+                    {enterprises.find((e) => String(e.id) === String(formData.enterpriseId))?.name || (
+                      <span className="text-slate-300 italic">Chưa chọn</span>
+                    )}
+                  </p>
+                </div>
+
+                <div className="space-y-0.5">
+                  <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">Mã vùng</p>
+                  <p className="text-sm font-semibold text-slate-700 font-mono">
+                    {formData.code || <span className="text-slate-300 italic">Chưa nhập</span>}
+                  </p>
+                </div>
+
+                <div className="space-y-0.5">
+                  <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">Tên vùng</p>
+                  <p className="text-sm font-semibold text-slate-700">
+                    {formData.name || <span className="text-slate-300 italic">Chưa nhập</span>}
+                  </p>
+                </div>
+
+                <div className="space-y-0.5">
+                  <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">Diện tích</p>
+                  <p className="text-sm font-bold text-blue-600">
+                    {formData.area ? `${formData.area} ha` : <span className="text-slate-300 italic">Chưa nhập</span>}
+                  </p>
+                </div>
+
+                <div className="space-y-0.5">
+                  <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">Tỉnh / Thành phố</p>
+                  <p className="text-sm text-slate-700">
+                    {PROVINCES.find((p) => p.code === formData.provinceId)?.name || (
+                      <span className="text-slate-300 italic">Chưa chọn</span>
+                    )}
+                  </p>
+                </div>
+
+                <div className="space-y-0.5">
+                  <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">Phường / Xã</p>
+                  <p className="text-sm text-slate-700">
+                    {PROVINCES.find((p) => p.code === formData.provinceId)
+                      ?.districts.find((d) => d.code === formData.districtId)?.name || (
+                      <span className="text-slate-300 italic">Chưa chọn</span>
+                    )}
+                  </p>
+                </div>
+
+                <div className="space-y-0.5 md:col-span-2">
+                  <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">Địa chỉ chi tiết</p>
+                  <p className="text-sm text-slate-700">
+                    {formData.address || <span className="text-slate-300 italic">Chưa nhập</span>}
+                  </p>
+                </div>
+
+                <div className="space-y-0.5">
+                  <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">Loại đất</p>
+                  <p className="text-sm text-slate-700">
+                    {lands.find((l) => l.code === formData.landType)?.name || (
+                      <span className="text-slate-300 italic">Chưa chọn</span>
+                    )}
+                  </p>
+                </div>
+
+                <div className="space-y-0.5">
+                  <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">Địa hình</p>
+                  <p className="text-sm text-slate-700">
+                    {terrains.find((t) => t.code === formData.terrain)?.name || (
+                      <span className="text-slate-300 italic">Chưa chọn</span>
+                    )}
+                  </p>
+                </div>
+
+                {formData.note && (
+                  <div className="space-y-0.5 md:col-span-3">
+                    <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">Ghi chú</p>
+                    <p className="text-sm text-slate-600 italic">{formData.note}</p>
                   </div>
-                  <div className="grid grid-cols-3">
-                    <span className="text-muted-foreground">Tên vùng:</span>
-                    <span className="col-span-2 font-medium">
-                      {formData.name}
-                    </span>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Bước 2: Bản đồ */}
+          <Card className="overflow-hidden border-none shadow-sm">
+            <CardHeader className="bg-emerald-50/70 border-b border-emerald-100 py-3 px-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center text-emerald-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
                   </div>
-                  <div className="grid grid-cols-3">
-                    <span className="text-muted-foreground">Diện tích:</span>
-                    <span className="col-span-2 font-medium">
-                      {formData.area} ha
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-3">
-                    <span className="text-muted-foreground">Địa chỉ:</span>
-                    <span className="col-span-2 font-medium">
-                      {formData.address}
-                    </span>
+                  <CardTitle className="text-base font-bold text-slate-800">
+                    Bản đồ vùng trồng
+                  </CardTitle>
+                </div>
+                {regionPoints.length >= 3 && (
+                  <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
+                    {regionPoints.length} điểm ranh giới
+                  </span>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {regionPoints.length >= 3 ? (
+                <div className="h-[300px] w-full relative overflow-hidden">
+                  <MapContainer
+                    bounds={getBoundsFromPoints(regionPoints).pad(0.15)}
+                    style={{ height: "100%", width: "100%" }}
+                    zoomControl={false}
+                    dragging={false}
+                    scrollWheelZoom={false}
+                    doubleClickZoom={false}
+                    touchZoom={false}
+                    keyboard={false}
+                    attributionControl={false}
+                  >
+                    <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
+                    {/* Region polygon */}
+                    <Polygon
+                      positions={regionPoints.map((p) => [p.lat, p.lng] as [number, number])}
+                      pathOptions={{
+                        color: "#10b981",
+                        fillColor: "#10b981",
+                        fillOpacity: 0.15,
+                        weight: 2.5,
+                        dashArray: "6 4",
+                      }}
+                    />
+                    {/* Sub-area polygons */}
+                    {formData.subAreas
+                      ?.filter((sub) => sub.coordinates && sub.coordinates.length >= 3)
+                      .map((sub, idx) => (
+                        <Polygon
+                          key={sub.id || idx}
+                          positions={sub.coordinates!.map(
+                            (c) => [c.lat, c.lng] as [number, number],
+                          )}
+                          pathOptions={{
+                            color: "#f59e0b",
+                            fillColor: "#f59e0b",
+                            fillOpacity: 0.25,
+                            weight: 2,
+                          }}
+                        >
+                          <Tooltip permanent direction="center" className="text-[10px] font-bold">
+                            {sub.name || `Khu ${idx + 1}`}
+                          </Tooltip>
+                        </Polygon>
+                      ))}
+                  </MapContainer>
+                  {/* Legend */}
+                  <div className="absolute bottom-3 left-3 z-[500] flex flex-col gap-1.5 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-2 shadow-md border border-slate-100 text-[11px] font-semibold pointer-events-none">
+                    <div className="flex items-center gap-1.5">
+                      <svg width="16" height="8">
+                        <line x1="0" y1="4" x2="16" y2="4" stroke="#10b981" strokeWidth="2" strokeDasharray="4 3" />
+                      </svg>
+                      <span className="text-slate-600">Ranh giới vùng trồng</span>
+                    </div>
+                    {(formData.subAreas?.filter(
+                      (sub) => sub.coordinates && sub.coordinates.length >= 3,
+                    ).length ?? 0) > 0 && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-4 h-3 bg-amber-400/30 border border-amber-400 rounded-sm inline-block" />
+                        <span className="text-slate-600">Khu vực con</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
-                  Vị trí & Phân bố
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div className="grid grid-cols-3">
-                    <span className="text-muted-foreground">Toạ độ:</span>
-                    <span className="col-span-2 font-medium truncate">
-                      {regionPoints.length > 0
-                        ? regionPoints[0].lat.toFixed(4)
-                        : "0"}
-                      ,{" "}
-                      {regionPoints.length > 0
-                        ? regionPoints[0].lng.toFixed(4)
-                        : "0"}{" "}
-                      ...
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-3">
-                    <span className="text-muted-foreground">Khu vực con:</span>
-                    <span className="col-span-2 font-medium">
-                      {formData.subAreas?.length || 0} khu vực
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-lg border p-4 bg-muted/10">
-              <h4 className="font-medium mb-3">Danh sách khu vực con</h4>
-              {!formData.subAreas || formData.subAreas.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-2">
-                  Chưa có khu vực con nào.
-                </p>
               ) : (
-                <div className="space-y-2">
+                <div className="flex flex-col items-center justify-center py-10 text-center bg-slate-50">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-2 text-slate-200"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+                  <p className="text-sm font-semibold text-amber-600">Chưa xác định ranh giới</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Quay lại bước 2 để vẽ vùng trồng trên bản đồ</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Bước 3: Khu vực con */}
+          <Card className="overflow-hidden border-none shadow-sm">
+            <CardHeader className="bg-amber-50/70 border-b border-amber-100 py-3 px-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center text-amber-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+                  </div>
+                  <CardTitle className="text-base font-bold text-slate-800">
+                    Phân chia khu vực con
+                  </CardTitle>
+                </div>
+                <span className="text-[11px] font-bold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">
+                  {formData.subAreas?.length || 0} khu vực
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent className="py-5 px-5">
+              {formData.subAreas && formData.subAreas.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {formData.subAreas.map((sub, idx) => (
                     <div
-                      key={idx}
-                      className="flex justify-between text-sm border-b last:border-0 pb-2 last:pb-0"
+                      key={sub.id || idx}
+                      className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-sm transition-all"
                     >
-                      <span>{sub.name}</span>
-                      <span className="text-muted-foreground">
-                        {sub.area} ha
+                      <div className="flex items-center gap-3">
+                        <div className="text-[11px] font-extrabold w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                          {idx + 1}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-700">{sub.name || `Khu ${idx + 1}`}</p>
+                          {sub.plots && sub.plots.length > 0 && (
+                            <p className="text-[11px] text-slate-400">{sub.plots.length} lô</p>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-xs font-bold text-slate-400 bg-white border border-slate-100 px-2 py-0.5 rounded-lg">
+                        {sub.area ?? 0} ha
                       </span>
                     </div>
                   ))}
                 </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-slate-100 rounded-2xl">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-2 text-slate-200"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+                  <p className="text-sm italic text-slate-400">Chưa có khu vực con nào được tạo</p>
+                </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       ),
     },
   ];

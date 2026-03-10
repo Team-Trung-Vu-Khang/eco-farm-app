@@ -1,4 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { useLocation, useRoute } from "wouter";
 import {
   AdminLayout,
@@ -17,8 +23,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Combobox,
-  type ComboboxOption,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  ScrollArea,
+  Badge,
+  cn,
 } from "@tankhang1/eco-shared-ui";
 import {
   MapContainer,
@@ -30,19 +41,213 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { ChevronLeft, Plus, Trash2, Edit, X } from "lucide-react";
+import {
+  ChevronLeft,
+  Plus,
+  Trash2,
+  Edit,
+  X,
+  MapPin,
+  Search,
+  CheckCircle2,
+  Map as MapIcon,
+  Layers,
+  Info,
+} from "lucide-react";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import polygonToLine from "@turf/polygon-to-line";
 import nearestPointOnLine from "@turf/nearest-point-on-line";
 import { point, polygon } from "@turf/helpers";
 import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
 
-import { type SubArea as Area, type Plot } from "../constants";
+import {
+  type SubArea as Area,
+  type Plot,
+  PROVINCES,
+  DISTRICTS,
+} from "../constants";
 import { MapController } from "../components/DraggableRectangle";
 import useRegionStore from "../../../stores/useRegionStore";
 import useTerrainStore from "@/stores/useTerrainStore";
 import useLandStore from "@/stores/useLandStore";
 import useEnterpriseStore from "@/stores/useEnterpriseStore";
+import { EnterpriseSelector } from "@/pages/cultivation-zone/cultivation-region/components";
+
+const SelectionCard = ({
+  regionId,
+  regions,
+  onRemove,
+}: {
+  regionId: string;
+  regions: any[];
+  onRemove: () => void;
+}) => {
+  const region = regions.find((r) => r.id.toString() === regionId);
+  if (!region) return null;
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div className="p-4 flex items-center gap-4">
+        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
+          <MapPin className="w-6 h-6 text-primary" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-primary px-1.5 py-0.5 bg-primary/5 rounded">
+              Vùng trồng
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium">
+              #{region.code}
+            </span>
+          </div>
+          <h4 className="font-bold text-slate-800 truncate leading-tight">
+            {region.name}
+          </h4>
+          <p className="text-[11px] text-slate-500 truncate mt-0.5 italic">
+            {region.address}, {region.ward}, {region.districtId},{" "}
+            {region.provinceId}
+          </p>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onRemove}
+          className="h-8 w-8 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+const RegionSelector = ({
+  regions,
+  enterpriseId,
+  onSelect,
+  selectedId,
+}: {
+  regions: any[];
+  enterpriseId: number | null;
+  onSelect: (id: string) => void;
+  selectedId?: string;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredRegions = useMemo(() => {
+    return regions.filter(
+      (r) =>
+        (!enterpriseId || String(r.enterpriseId) === String(enterpriseId)) &&
+        r.name.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
+  }, [regions, enterpriseId, searchTerm]);
+
+  return (
+    <>
+      <Button
+        onClick={() => setIsOpen(true)}
+        disabled={!enterpriseId}
+        className="w-full h-12 cursor-pointer border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 text-primary font-bold gap-2 transition-all rounded-lg shadow-sm hover:shadow-md"
+        variant="outline"
+      >
+        <Plus className="w-5 h-5" />
+        Chọn vùng trồng
+      </Button>
+
+      <Dialog
+        open={isOpen}
+        onOpenChange={(open) => {
+          setIsOpen(open);
+          if (!open) setSearchTerm("");
+        }}
+      >
+        <DialogContent className="max-w-xl p-0 overflow-hidden rounded-2xl border-none shadow-2xl flex flex-col max-h-[90vh]">
+          <DialogHeader className="p-6 bg-slate-50 border-b shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-primary" />
+              Chọn vùng trồng
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Phần khu vực đang tạo sẽ thuộc về vùng trồng được chọn
+            </p>
+          </DialogHeader>
+
+          <div className="px-6 pb-5 border-b shrink-0 bg-white">
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
+              <Input
+                placeholder="Tìm kiếm vùng trồng..."
+                className="pl-10 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <ScrollArea className="flex-1 overflow-y-auto">
+            <div className="p-6 space-y-4">
+              {filteredRegions.map((r) => (
+                <div
+                  key={r.id}
+                  onClick={() => {
+                    onSelect(r.id.toString());
+                    setIsOpen(false);
+                  }}
+                  className={cn(
+                    "flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer",
+                    selectedId === r.id.toString()
+                      ? "bg-primary/10 border-primary/40"
+                      : "bg-white border-slate-100 hover:border-primary/20 hover:bg-slate-50",
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-800 text-sm">
+                        {r.name}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                        Vùng trồng
+                      </div>
+                    </div>
+                  </div>
+                  {selectedId === r.id.toString() ? (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-primary" />
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] bg-primary/10 text-primary border-none"
+                      >
+                        Đã chọn
+                      </Badge>
+                    </div>
+                  ) : (
+                    <div className="w-5 h-5 rounded border-2 border-slate-200 group-hover:border-primary transition-colors flex items-center justify-center">
+                      <Plus className="w-3.5 h-3.5 text-slate-300" />
+                    </div>
+                  )}
+                </div>
+              ))}
+              {filteredRegions.length === 0 && (
+                <div className="text-center py-12">
+                  <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                    <Search className="w-6 h-6 text-slate-300" />
+                  </div>
+                  <div className="text-slate-500 font-medium text-sm">
+                    Không tìm thấy vùng trồng nào
+                  </div>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
 
 const customIcon = getMarkerIcon("blue");
 const activeIcon = getMarkerIcon("green");
@@ -104,9 +309,9 @@ const AreaCreatePage = () => {
   const { toast } = useToast();
   const [match, params] = useRoute("/area-distribution/edit/:id");
   const isEditMode = match && !!params?.id;
-  const { enterprises } = useEnterpriseStore();
   const { lands } = useLandStore();
   const { terrains } = useTerrainStore();
+  const { enterprises } = useEnterpriseStore();
   // States
 
   const [selectEnterpriseId, setSelectEnterpriseId] = useState<number | null>(
@@ -159,28 +364,9 @@ const AreaCreatePage = () => {
   const [isDraggingPlotPoint, setIsDraggingPlotPoint] = useState(false);
 
   const { regions, upsertSubArea, getAreaById } = useRegionStore();
-  const hasInitializedEditData = React.useRef(false);
+  const hasInitializedEditData = useRef(false);
 
-  const enterpriseOptions = React.useMemo(() => {
-    return enterprises.map((item) => ({
-      label: item.name,
-      image: item.image,
-      value: item.id?.toString(),
-    }));
-  }, [enterprises]);
-
-  const regionOptions: ComboboxOption[] = React.useMemo(() => {
-    return regions
-      ?.filter(
-        (item) => String(item?.enterpriseId) === String(selectEnterpriseId),
-      )
-      .map((region) => ({
-        label: region.name,
-        value: region.id?.toString(),
-      }));
-  }, [regions, selectEnterpriseId]);
-
-  const syncMapCenters = React.useCallback(
+  const syncMapCenters = useCallback(
     (points: L.LatLng[]) => {
       if (!points || points.length === 0) return;
       const nextCenter = getBoundsFromPoints(points).getCenter();
@@ -910,30 +1096,73 @@ const AreaCreatePage = () => {
             <CardTitle>Thông tin khu vực</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label>
-                Chọn đơn vị <span className="text-red-500">*</span>
-              </Label>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">
+                  Đơn vị sở hữu <span className="text-red-500">*</span>
+                </Label>
+                <EnterpriseSelector
+                  selectedId={selectEnterpriseId?.toString() ?? ""}
+                  onSelect={(val) => {
+                    setSelectEnterpriseId(val ? Number(val) : null);
+                    setSelectedRegionId(null);
+                    setFormData((prev) => ({
+                      ...prev,
+                      landType: "",
+                      terrain: "",
+                    }));
+                  }}
+                />
+              </div>
 
-              <Combobox
-                options={enterpriseOptions}
-                placeholder="Chọn vùng trồng"
-                value={selectEnterpriseId?.toString() ?? ""}
-                onChange={(value) => setSelectEnterpriseId(Number(value))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>
-                Chọn vùng trồng <span className="text-red-500">*</span>
-              </Label>
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold text-slate-700">
+                  Vùng trồng <span className="text-red-500">*</span>
+                </Label>
 
-              <Combobox
-                options={regionOptions}
-                placeholder="Chọn vùng trồng"
-                disabled={!selectEnterpriseId}
-                value={selectedRegionId?.toString() ?? ""}
-                onChange={(value) => setSelectedRegionId(Number(value))}
-              />
+                <RegionSelector
+                  regions={regions}
+                  enterpriseId={selectEnterpriseId}
+                  selectedId={selectedRegionId?.toString()}
+                  onSelect={(id) => {
+                    const region = regions.find((r) => r.id === Number(id));
+                    setSelectedRegionId(Number(id));
+                    if (region) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        landType: region.landType || "",
+                        terrain: region.terrain || "",
+                      }));
+                    }
+                  }}
+                />
+
+                <div className="mt-1">
+                  {selectedRegionId ? (
+                    <SelectionCard
+                      regionId={selectedRegionId.toString()}
+                      regions={regions}
+                      onRemove={() => {
+                        setSelectedRegionId(null);
+                        setFormData((prev) => ({
+                          ...prev,
+                          landType: "",
+                          terrain: "",
+                        }));
+                      }}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-6 px-4 border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50 text-center gap-2 animate-in fade-in duration-500">
+                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-slate-300">
+                        <MapPin className="w-4 h-4" />
+                      </div>
+                      <div className="text-[11px] font-bold text-slate-500">
+                        Chưa chọn vùng trồng
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -1683,38 +1912,284 @@ const AreaCreatePage = () => {
     {
       id: "review",
       title: "Xác nhận",
-      description: "Kiểm tra lại thông tin",
+      description: "Kiểm tra lại toàn bộ thông tin",
       content: (
-        <Card>
-          <CardHeader>
-            <CardTitle>Xác nhận thông tin</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-muted-foreground">Vùng trồng:</Label>
-                <div className="font-medium">
-                  {regions.find((r) => r.id === selectedRegionId)?.name ||
-                    "Chưa chọn"}
+        <div className="space-y-5">
+          {/* Bước 1: Thông tin chung */}
+          <Card className="overflow-hidden border-none shadow-sm">
+            <CardHeader className="bg-blue-50/70 border-b border-blue-100 py-3 px-5">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-blue-500/15 flex items-center justify-center text-blue-600">
+                  <Info className="w-4 h-4" />
+                </div>
+                <CardTitle className="text-base font-bold text-slate-800">
+                  Thông tin chung
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="py-5 px-5">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
+                {/* Đơn vị sở hữu */}
+                <div className="space-y-0.5">
+                  <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">
+                    Dơn vị sở hữu
+                  </p>
+                  <p className="text-sm font-semibold text-slate-700">
+                    {enterprises.find((e) => e.id === selectEnterpriseId)
+                      ?.name || (
+                      <span className="text-slate-300 italic">Chưa chọn</span>
+                    )}
+                  </p>
+                </div>
+
+                {/* Vùng trồng */}
+                <div className="space-y-0.5">
+                  <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">
+                    Vùng trồng
+                  </p>
+                  <p className="text-sm font-semibold text-slate-700">
+                    {regions.find((r) => r.id === selectedRegionId)?.name || (
+                      <span className="text-slate-300 italic">Chưa chọn</span>
+                    )}
+                  </p>
+                </div>
+
+                {/* Địa chỉ vùng trồng */}
+                <div className="space-y-0.5">
+                  <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">
+                    Địa chỉ vùng trồng
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    {(() => {
+                      const r = regions.find((r) => r.id === selectedRegionId);
+                      if (!r)
+                        return (
+                          <span className="text-slate-300 italic">N/A</span>
+                        );
+                      const prov =
+                        PROVINCES.find((p) => p.id === r.provinceId)?.name ||
+                        r.provinceId;
+                      const dist =
+                        DISTRICTS.find((d) => d.id === r.districtId)?.name ||
+                        r.districtId;
+                      return `${r.address ? r.address + ", " : ""}${dist}, ${prov}`;
+                    })()}
+                  </p>
+                </div>
+
+                {/* Mã khu vực */}
+                <div className="space-y-0.5">
+                  <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">
+                    Mã khu vực
+                  </p>
+                  <p className="text-sm font-semibold text-slate-700 font-mono">
+                    {formData.id || (
+                      <span className="text-slate-300 italic">Chưa nhập</span>
+                    )}
+                  </p>
+                </div>
+
+                {/* Tên khu vực */}
+                <div className="space-y-0.5">
+                  <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">
+                    Tên khu vực
+                  </p>
+                  <p className="text-sm font-semibold text-slate-700">
+                    {formData.name || (
+                      <span className="text-slate-300 italic">Chưa nhập</span>
+                    )}
+                  </p>
+                </div>
+
+                {/* Diện tích */}
+                <div className="space-y-0.5">
+                  <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">
+                    Diện tích
+                  </p>
+                  <p className="text-sm font-bold text-blue-600">
+                    {formData.area ? (
+                      `${formData.area} ha`
+                    ) : (
+                      <span className="text-slate-300 italic">Chưa nhập</span>
+                    )}
+                  </p>
+                </div>
+
+                {/* Loại đất */}
+                <div className="space-y-0.5">
+                  <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">
+                    Loại đất
+                  </p>
+                  <p className="text-sm text-slate-700">
+                    {lands.find((l) => l.code === formData.landType)?.name || (
+                      <span className="text-slate-300 italic">Chưa chọn</span>
+                    )}
+                  </p>
+                </div>
+
+                {/* Địa hình */}
+                <div className="space-y-0.5">
+                  <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">
+                    Địa hình
+                  </p>
+                  <p className="text-sm text-slate-700">
+                    {terrains.find((t) => t.code === formData.terrain)
+                      ?.name || (
+                      <span className="text-slate-300 italic">Chưa chọn</span>
+                    )}
+                  </p>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label className="text-muted-foreground">Tên khu vực:</Label>
-                <div className="font-medium">{formData.name}</div>
+            </CardContent>
+          </Card>
+
+          {/* Bước 2: Bản đồ */}
+          <Card className="overflow-hidden border-none shadow-sm">
+            <CardHeader className="bg-emerald-50/70 border-b border-emerald-100 py-3 px-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center text-emerald-600">
+                    <MapIcon className="w-4 h-4" />
+                  </div>
+                  <CardTitle className="text-base font-bold text-slate-800">
+                    Bản đồ khu vực
+                  </CardTitle>
+                </div>
+                {areaPoints.length >= 3 && (
+                  <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
+                    {areaPoints.length} điểm ranh giới
+                  </span>
+                )}
               </div>
-              <div className="space-y-2">
-                <Label className="text-muted-foreground">Diện tích:</Label>
-                <div className="font-medium">{formData.area} ha</div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-muted-foreground">Số lượng lô:</Label>
-                <div className="font-medium">
+            </CardHeader>
+            <CardContent className="p-0">
+              {areaPoints.length >= 3 ? (
+                <div className="h-[300px] w-full relative overflow-hidden">
+                  <MapContainer
+                    bounds={getBoundsFromPoints(areaPoints).pad(0.15)}
+                    style={{ height: "100%", width: "100%" }}
+                    zoomControl={false}
+                    dragging={false}
+                    scrollWheelZoom={false}
+                    doubleClickZoom={false}
+                    touchZoom={false}
+                    keyboard={false}
+                    attributionControl={false}
+                  >
+                    <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
+                    <Polygon
+                      positions={areaPoints.map((p) => [p.lat, p.lng] as [number, number])}
+                      pathOptions={{
+                        color: "#10b981",
+                        fillColor: "#10b981",
+                        fillOpacity: 0.15,
+                        weight: 2.5,
+                        dashArray: "6 4",
+                      }}
+                    />
+                    {formData.plots
+                      ?.filter((pl) => pl.coordinates && pl.coordinates.length >= 3)
+                      .map((pl, idx) => (
+                        <Polygon
+                          key={pl.id || idx}
+                          positions={pl.coordinates!.map(
+                            (c) => [c.lat, c.lng] as [number, number],
+                          )}
+                          pathOptions={{
+                            color: "#f59e0b",
+                            fillColor: "#f59e0b",
+                            fillOpacity: 0.25,
+                            weight: 2,
+                          }}
+                        >
+                          <Tooltip permanent direction="center" className="text-[10px] font-bold">
+                            {pl.name || `Lô ${idx + 1}`}
+                          </Tooltip>
+                        </Polygon>
+                      ))}
+                  </MapContainer>
+                  <div className="absolute bottom-3 left-3 z-[500] flex flex-col gap-1.5 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-2 shadow-md border border-slate-100 text-[11px] font-semibold pointer-events-none">
+                    <div className="flex items-center gap-1.5">
+                      <svg width="16" height="8">
+                        <line x1="0" y1="4" x2="16" y2="4" stroke="#10b981" strokeWidth="2" strokeDasharray="4 3" />
+                      </svg>
+                      <span className="text-slate-600">Ranh giới khu vực</span>
+                    </div>
+                    {(formData.plots?.filter(
+                      (pl) => pl.coordinates && pl.coordinates.length >= 3,
+                    ).length ?? 0) > 0 && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-4 h-3 bg-amber-400/30 border border-amber-400 rounded-sm inline-block" />
+                        <span className="text-slate-600">Ranh giới lô</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-center bg-slate-50">
+                  <MapIcon className="w-10 h-10 mb-2 text-slate-200" />
+                  <p className="text-sm font-semibold text-amber-600">
+                    Chưa xác định ranh giới
+                  </p>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Quay lại bước 2 để vẽ khu vực trên bản đồ
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Bước 3: Cấu hình lô */}
+          <Card className="overflow-hidden border-none shadow-sm">
+            <CardHeader className="bg-amber-50/70 border-b border-amber-100 py-3 px-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center text-amber-600">
+                    <Layers className="w-4 h-4" />
+                  </div>
+                  <CardTitle className="text-base font-bold text-slate-800">
+                    Cấu hình lô
+                  </CardTitle>
+                </div>
+                <Badge
+                  variant="secondary"
+                  className="bg-amber-100 text-amber-700 border-none font-bold"
+                >
                   {formData.plots?.length || 0} lô
-                </div>
+                </Badge>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="py-5 px-5">
+              {formData.plots && formData.plots.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {formData.plots.map((plot, idx) => (
+                    <div
+                      key={plot.id || idx}
+                      className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-sm transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="text-[11px] font-extrabold w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                          {idx + 1}
+                        </div>
+                        <span className="text-sm font-semibold text-slate-700">
+                          {plot.name || `Lô ${idx + 1}`}
+                        </span>
+                      </div>
+                      <span className="text-xs font-bold text-slate-400 bg-white border border-slate-100 px-2 py-0.5 rounded-lg">
+                        {plot.area ?? 0} ha
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center text-slate-400 border-2 border-dashed border-slate-100 rounded-2xl">
+                  <Layers className="w-8 h-8 mb-2 text-slate-200" />
+                  <p className="text-sm italic">Chưa có lô nào được cấu hình</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       ),
     },
   ];
