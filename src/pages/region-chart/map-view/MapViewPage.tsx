@@ -13,6 +13,9 @@ import {
   ScrollArea,
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
   cn,
 } from "@tankhang1/eco-shared-ui";
 import {
@@ -34,7 +37,14 @@ import {
   Sprout,
   Maximize2,
   Minimize2,
+  FlaskConical,
+  Droplets,
+  Thermometer,
+  Info,
+  Save,
+  Activity,
 } from "lucide-react";
+import { Button } from "@tankhang1/eco-shared-ui";
 
 import { MOCK_REGIONS, MOCK_AREAS } from "../constants";
 
@@ -185,6 +195,58 @@ const MapContent = () => {
     properties: any;
     stats: SelectedEntityStats;
   } | null>(null);
+
+  const [soilData, setSoilData] = useState<Record<string, any>>({});
+  const [isEditingSoil, setIsEditingSoil] = useState(false);
+  const [tempSoil, setTempSoil] = useState<any>(null);
+
+  // Initialize soil data with 0s if empty
+  useEffect(() => {
+    if (Object.keys(soilData).length === 0) {
+      const defaultValues = {
+        ph: 0,
+        nitrogen: 0,
+        phosphorus: 0,
+        potassium: 0,
+        moisture: 0,
+        organicMatter: 0,
+        ec: 0,
+        temperature: 0,
+        compaction: 0,
+        lastTested: new Date().toISOString().split('T')[0],
+      };
+      setSoilData({
+        "PLOT-1-1": { ...defaultValues },
+        "PLOT-1-2": { ...defaultValues },
+      });
+    }
+  }, [soilData]);
+
+  const handleEditSoil = () => {
+    const currentId = selectedEntity?.properties?.code || selectedEntity?.properties?.id;
+    setTempSoil(soilData[currentId] || {
+      ph: 0,
+      nitrogen: 0,
+      phosphorus: 0,
+      potassium: 0,
+      moisture: 0,
+      organicMatter: 0,
+      ec: 0,
+      temperature: 0,
+      compaction: 0,
+      lastTested: new Date().toISOString().split('T')[0],
+    });
+    setIsEditingSoil(true);
+  };
+
+  const handleSaveSoil = () => {
+    const currentId = selectedEntity?.properties?.code || selectedEntity?.properties?.id;
+    setSoilData(prev => ({
+      ...prev,
+      [currentId]: tempSoil
+    }));
+    setIsEditingSoil(false);
+  };
 
   // Process Plant Data with Random Status
   const processedPlantData = useMemo(() => {
@@ -546,6 +608,123 @@ const MapContent = () => {
                       </CardContent>
                     </Card>
                   </div>
+                </div>
+
+                {/* Soil Health Section */}
+                <div className="mb-6 px-2">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold flex items-center gap-2 text-sm text-slate-700">
+                      <FlaskConical className="w-4 h-4 text-indigo-500" />
+                      Chỉ số sức khỏe đất
+                    </h4>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-xs text-primary"
+                      onClick={handleEditSoil}
+                    >
+                      <Activity className="w-3 h-3 mr-1" />
+                      Cập nhật
+                    </Button>
+                  </div>
+
+                  <Card className="border-none shadow-sm overflow-hidden bg-white">
+                    <CardContent className="p-4">
+                      <div className="space-y-4">
+                          {(() => {
+                            const currentId = selectedEntity?.properties?.code || selectedEntity?.properties?.id;
+                            const currentSoil = soilData[currentId] || {
+                              ph: 0,
+                              moisture: 0,
+                              temperature: 0,
+                              compaction: 0,
+                              nitrogen: 0,
+                              phosphorus: 0,
+                              potassium: 0,
+                              organicMatter: 0,
+                              lastTested: 'Chưa có dữ liệu'
+                            };
+                            return (
+                              <>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="bg-indigo-50/50 rounded-xl p-3 border border-indigo-100/50">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Activity className="w-3.5 h-3.5 text-indigo-500" />
+                                      <span className="text-[10px] font-bold uppercase text-indigo-600">Độ pH</span>
+                                    </div>
+                                    <div className="text-xl font-bold text-indigo-900 leading-none">
+                                      {currentSoil.ph}
+                                    </div>
+                                    <div className="text-[9px] text-indigo-500 mt-1">
+                                      Mức: {currentSoil.ph === 0 ? 'N/A' : (currentSoil.ph > 7 ? 'Kiềm' : currentSoil.ph < 6 ? 'Chua' : 'Tối ưu')}
+                                    </div>
+                                  </div>
+                                  <div className="bg-blue-50/50 rounded-xl p-3 border border-blue-100/50">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Droplets className="w-3.5 h-3.5 text-blue-500" />
+                                      <span className="text-[10px] font-bold uppercase text-blue-600">Độ ẩm</span>
+                                    </div>
+                                    <div className="text-xl font-bold text-blue-900 leading-none">
+                                      {currentSoil.moisture}%
+                                    </div>
+                                    <div className="text-[9px] text-blue-500 mt-1">Trạng thái: {currentSoil.moisture === 0 ? 'N/A' : 'Tốt'}</div>
+                                  </div>
+                                  <div className="bg-orange-50/50 rounded-xl p-3 border border-orange-100/50">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Thermometer className="w-3.5 h-3.5 text-orange-500" />
+                                      <span className="text-[10px] font-bold uppercase text-orange-600">Nhiệt độ</span>
+                                    </div>
+                                    <div className="text-xl font-bold text-orange-900 leading-none">
+                                      {currentSoil.temperature}°C
+                                    </div>
+                                    <div className="text-[9px] text-orange-500 mt-1">{currentSoil.temperature === 0 ? 'N/A' : 'Ổn định'}</div>
+                                  </div>
+                                  <div className="bg-emerald-50/50 rounded-xl p-3 border border-emerald-100/50">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Activity className="w-3.5 h-3.5 text-emerald-500" />
+                                      <span className="text-[10px] font-bold uppercase text-emerald-600">Độ nén</span>
+                                    </div>
+                                    <div className="text-xl font-bold text-emerald-900 leading-none">
+                                      {currentSoil.compaction}
+                                    </div>
+                                    <div className="text-[9px] text-emerald-500 mt-1">psi ({currentSoil.compaction === 0 ? 'N/A' : 'Tốt'})</div>
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-4 gap-2">
+                                  <div className="text-center p-1.5 rounded-lg bg-slate-50 border border-slate-100">
+                                    <div className="text-[9px] font-bold text-slate-400">N</div>
+                                    <div className="text-xs font-bold text-slate-700">{currentSoil.nitrogen}</div>
+                                  </div>
+                                  <div className="text-center p-1.5 rounded-lg bg-slate-50 border border-slate-100">
+                                    <div className="text-[9px] font-bold text-slate-400">P</div>
+                                    <div className="text-xs font-bold text-slate-700">{currentSoil.phosphorus}</div>
+                                  </div>
+                                  <div className="text-center p-1.5 rounded-lg bg-slate-50 border border-slate-100">
+                                    <div className="text-[9px] font-bold text-slate-400">K</div>
+                                    <div className="text-xs font-bold text-slate-700">{currentSoil.potassium}</div>
+                                  </div>
+                                  <div className="text-center p-1.5 rounded-lg bg-slate-50 border border-slate-100">
+                                    <div className="text-[9px] font-bold text-slate-400">OM</div>
+                                    <div className="text-xs font-bold text-slate-700">{currentSoil.organicMatter}%</div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <Info className="w-3 h-3" />
+                                    Lần đo cuối:
+                                  </span>
+                                  <span className="text-xs font-medium text-slate-600">
+                                    {currentSoil.lastTested}
+                                  </span>
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                    </CardContent>
+                  </Card>
                 </div>
 
                 {/* Plant Types List */}
@@ -1100,6 +1279,136 @@ const MapContent = () => {
           )}
         </DialogContent>
       </Dialog> */}
+      <Dialog open={isEditingSoil} onOpenChange={setIsEditingSoil}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FlaskConical className="w-5 h-5 text-primary" />
+              Cập nhật chỉ số thổ nhưỡng
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-5">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase text-slate-500">Độ pH</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={tempSoil?.ph}
+                  onChange={(e) => setTempSoil({ ...tempSoil, ph: parseFloat(e.target.value) })}
+                  className="bg-slate-50/50"
+                  placeholder="Ví dụ: 6.5"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase text-slate-500">Độ ẩm (%)</Label>
+                <Input
+                  type="number"
+                  value={tempSoil?.moisture}
+                  onChange={(e) => setTempSoil({ ...tempSoil, moisture: parseFloat(e.target.value) })}
+                  className="bg-slate-50/50"
+                  placeholder="Ví dụ: 70"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-xs font-bold uppercase text-slate-500">Chỉ số NPK (mg/kg)</Label>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <div className="text-[10px] font-bold text-center text-red-500 px-1 border border-red-100 rounded bg-red-50/50">N</div>
+                  <Input
+                    type="number"
+                    value={tempSoil?.nitrogen}
+                    onChange={(e) => setTempSoil({ ...tempSoil, nitrogen: parseFloat(e.target.value) })}
+                    className="h-9 text-center"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="text-[10px] font-bold text-center text-blue-500 px-1 border border-blue-100 rounded bg-blue-50/50">P</div>
+                  <Input
+                    type="number"
+                    value={tempSoil?.phosphorus}
+                    onChange={(e) => setTempSoil({ ...tempSoil, phosphorus: parseFloat(e.target.value) })}
+                    className="h-9 text-center"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="text-[10px] font-bold text-center text-orange-500 px-1 border border-orange-100 rounded bg-orange-50/50">K</div>
+                  <Input
+                    type="number"
+                    value={tempSoil?.potassium}
+                    onChange={(e) => setTempSoil({ ...tempSoil, potassium: parseFloat(e.target.value) })}
+                    className="h-9 text-center"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase text-slate-500">Hữu cơ (%)</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={tempSoil?.organicMatter}
+                  onChange={(e) => setTempSoil({ ...tempSoil, organicMatter: parseFloat(e.target.value) })}
+                  className="bg-slate-50/50"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase text-slate-500">EC (mS/cm)</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={tempSoil?.ec}
+                  onChange={(e) => setTempSoil({ ...tempSoil, ec: parseFloat(e.target.value) })}
+                  className="bg-slate-50/50"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase text-slate-500">Nhiệt độ (°C)</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={tempSoil?.temperature}
+                  onChange={(e) => setTempSoil({ ...tempSoil, temperature: parseFloat(e.target.value) })}
+                  className="bg-slate-50/50"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase text-slate-500">Độ nén (psi)</Label>
+                <Input
+                  type="number"
+                  value={tempSoil?.compaction}
+                  onChange={(e) => setTempSoil({ ...tempSoil, compaction: parseFloat(e.target.value) })}
+                  className="bg-slate-50/50"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setIsEditingSoil(false)}
+              className="flex-1 sm:flex-none"
+            >
+              Hủy bỏ
+            </Button>
+            <Button
+              variant="default"
+              onClick={handleSaveSoil}
+              className="flex-1 sm:flex-none bg-primary hover:bg-primary/90"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Lưu thông tin
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

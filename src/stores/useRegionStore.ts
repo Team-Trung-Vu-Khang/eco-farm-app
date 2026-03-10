@@ -159,6 +159,7 @@ const useRegionStore = create<RegionState>()(
 
                     const mappedPlot = {
                       id: String(plot.id),
+                      code: plot.code,
                       name: plot.name,
                       area: plot.area,
                       contour: plot.contour,
