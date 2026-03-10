@@ -385,6 +385,7 @@ const PlotCreatePage = () => {
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<Partial<Plot>>({
+    code: "",
     name: "",
     area: 0,
     contour: "",
@@ -480,6 +481,7 @@ const PlotCreatePage = () => {
         }
 
         setFormData({
+          code: plot.code,
           name: plot.name,
           area: plot.area,
           contour: plot.contour,
@@ -791,6 +793,7 @@ const PlotCreatePage = () => {
       upsertPlot(selectedRegionId, selectedAreaId, {
         ...formData,
         id: finalPlotId,
+        code: formData.code || "",
         coordinates: coords,
       });
     }
@@ -799,7 +802,11 @@ const PlotCreatePage = () => {
       title: "Thành công",
       description: isEditMode ? "Đã cập nhật lô" : "Đã tạo lô mới",
     });
-    setLocation("/plot-distribution");
+
+    // Short delay to ensure state persists before navigation
+    setTimeout(() => {
+      setLocation("/plot-distribution");
+    }, 150);
   };
 
   const steps: Step[] = [
@@ -978,7 +985,7 @@ const PlotCreatePage = () => {
                               }}
                             />
                           </MapContainer>
-                          <div className="absolute bottom-2 left-2 z-[500] text-[10px] font-bold bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-emerald-700 pointer-events-none shadow-sm">
+                          <div className="absolute bottom-2 left-2 z-500 text-[10px] font-bold bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-emerald-700 pointer-events-none shadow-sm">
                             Khu vực đã chọn
                           </div>
                         </div>
@@ -1012,24 +1019,38 @@ const PlotCreatePage = () => {
       id: "info",
       title: "Thông tin lô",
       description: "Điền thông tin chi tiết lô",
-      isValid: !!formData.name && !!formData.area,
+      isValid: !!formData.code && !!formData.name && !!formData.area,
       content: (
         <Card>
           <CardHeader>
             <CardTitle>Thông tin chi tiết</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>
-                Tên lô <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="Ví dụ: Lô Sầu Riêng 1"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>
+                  Mã lô <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  value={formData.code || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, code: e.target.value })
+                  }
+                  placeholder="Ví dụ: LO-001"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>
+                  Tên lô <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  value={formData.name || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  placeholder="Ví dụ: Lô Sầu Riêng 1"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
@@ -1420,6 +1441,16 @@ const PlotCreatePage = () => {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
                 <div className="space-y-0.5">
                   <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">
+                    Mã lô
+                  </p>
+                  <p className="text-sm font-semibold text-slate-700 font-mono">
+                    {formData.code || (
+                      <span className="text-slate-300 italic">Chưa nhập</span>
+                    )}
+                  </p>
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">
                     Tên lô
                   </p>
                   <p className="text-sm font-semibold text-slate-700">
@@ -1541,7 +1572,7 @@ const PlotCreatePage = () => {
                       />
                     </MapContainer>
                     {/* Legend */}
-                    <div className="absolute bottom-3 left-3 z-[500] flex flex-col gap-1.5 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-2 shadow-md border border-slate-100 text-[11px] font-semibold pointer-events-none">
+                    <div className="absolute bottom-3 left-3 z-500 flex flex-col gap-1.5 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-2 shadow-md border border-slate-100 text-[11px] font-semibold pointer-events-none">
                       <div className="flex items-center gap-1.5">
                         <svg width="16" height="8">
                           <line

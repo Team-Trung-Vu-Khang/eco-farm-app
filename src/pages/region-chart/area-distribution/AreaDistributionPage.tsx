@@ -59,7 +59,7 @@ const AreaDistributionPage = () => {
       <DataTable
         columns={[
           {
-            key: "id",
+            key: "code",
             label: "Mã khu vực",
             render: (value, row) => (
               <span

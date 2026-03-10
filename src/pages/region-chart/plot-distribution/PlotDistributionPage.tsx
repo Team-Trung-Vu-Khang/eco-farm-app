@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { Plus } from "lucide-react";
 import {
@@ -60,7 +60,7 @@ const PlotDistributionPage = () => {
       <DataTable
         columns={[
           {
-            key: "id",
+            key: "code",
             label: "Mã lô",
             render: (value, row) => (
               <span

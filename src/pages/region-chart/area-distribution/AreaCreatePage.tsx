@@ -782,7 +782,15 @@ const AreaCreatePage = () => {
       return;
     }
 
-    const areaData: Omit<Area, "id" | "code"> = {
+    // Determine the internal ID: use params.id for edit, or generate a unique one
+    const finalAreaId =
+      isEditMode && params?.id
+        ? String(params.id)
+        : `sub-${selectedRegionId}-${Date.now()}`;
+
+    const areaData: Area = {
+      id: finalAreaId,
+      code: formData.code || "", // This is "Mã khu vực" from Step 1
       name: formData.name || "",
       regionId: selectedRegionId,
       area: formData.area || 0,
@@ -797,16 +805,8 @@ const AreaCreatePage = () => {
           : new Date().toISOString(),
     };
 
-    const finalAreaId =
-      isEditMode && params?.id
-        ? String(params.id)
-        : `sub-${selectedRegionId}-${Date.now()}`;
-
-    // Upsert only the current area to the selected region in Region Store
-    upsertSubArea(selectedRegionId, {
-      ...areaData,
-      id: finalAreaId,
-    });
+    // Upsert the current area to the selected region in Region Store
+    upsertSubArea(selectedRegionId, areaData);
 
     toast({
       title: "Thành công",
@@ -814,7 +814,11 @@ const AreaCreatePage = () => {
         ? "Cập nhật khu vực thành công"
         : "Tạo khu vực mới thành công",
     });
-    setLocation("/area-distribution");
+
+    // Short delay to ensure state persists before navigation
+    setTimeout(() => {
+      setLocation("/area-distribution");
+    }, 150);
   };
 
   const getNearestValidPlotPosition = (latlng: L.LatLng) => {
@@ -1027,6 +1031,7 @@ const AreaCreatePage = () => {
   const addPlot = () => {
     const newPlot: Plot = {
       id: `plot-${Date.now()}`,
+      code: "",
       name: "Lô mới",
       area: 0,
       coordinates: [],
@@ -1053,6 +1058,15 @@ const AreaCreatePage = () => {
       toast({
         title: "Lỗi",
         description: "Lô cần ít nhất 3 điểm",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!editingPlot.code || !editingPlot.name) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng nhập đầy đủ mã lô và tên lô",
         variant: "destructive",
       });
       return;
@@ -1089,7 +1103,7 @@ const AreaCreatePage = () => {
       id: "info",
       title: "Thông tin chung",
       description: "Chọn vùng và thông tin cơ bản",
-      isValid: !!selectedRegionId && !!formData.id && !!formData.name,
+      isValid: !!selectedRegionId && !!formData.code && !!formData.name,
       content: (
         <Card>
           <CardHeader>
@@ -1171,9 +1185,9 @@ const AreaCreatePage = () => {
                   Mã khu vực <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  value={formData.id || ""}
+                  value={formData.code || ""}
                   onChange={(e) =>
-                    setFormData({ ...formData, id: e.target.value })
+                    setFormData({ ...formData, code: e.target.value })
                   }
                   placeholder="VD: KHU-A"
                 />
@@ -1690,18 +1704,33 @@ const AreaCreatePage = () => {
                     </div>
 
                     <div className="space-y-3">
-                      <div className="space-y-1">
-                        <Label>Tên lô</Label>
-                        <Input
-                          value={editingPlot.name || ""}
-                          onChange={(e) =>
-                            setEditingPlot({
-                              ...editingPlot,
-                              name: e.target.value,
-                            })
-                          }
-                          placeholder="Nhập tên lô..."
-                        />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label>Mã lô</Label>
+                          <Input
+                            value={editingPlot.code || ""}
+                            onChange={(e) =>
+                              setEditingPlot({
+                                ...editingPlot,
+                                code: e.target.value,
+                              })
+                            }
+                            placeholder="Mã lô..."
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Tên lô</Label>
+                          <Input
+                            value={editingPlot.name || ""}
+                            onChange={(e) =>
+                              setEditingPlot({
+                                ...editingPlot,
+                                name: e.target.value,
+                              })
+                            }
+                            placeholder="Tên lô..."
+                          />
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
@@ -1858,9 +1887,16 @@ const AreaCreatePage = () => {
                             className="bg-white p-3 border rounded-lg hover:border-orange-300 transition-colors shadow-sm group"
                           >
                             <div className="flex justify-between items-start mb-2">
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 bg-orange-500 rounded-full" />
-                                <span className="font-medium">{plot.name}</span>
+                              <div className="flex flex-col">
+                                {plot.code && (
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                                    {plot.code}
+                                  </span>
+                                )}
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 bg-orange-500 rounded-full" />
+                                  <span className="font-medium">{plot.name}</span>
+                                </div>
                               </div>
                               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Button
@@ -1932,7 +1968,7 @@ const AreaCreatePage = () => {
                 {/* Đơn vị sở hữu */}
                 <div className="space-y-0.5">
                   <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">
-                    Dơn vị sở hữu
+                    Đơn vị sở hữu
                   </p>
                   <p className="text-sm font-semibold text-slate-700">
                     {enterprises.find((e) => e.id === selectEnterpriseId)
@@ -1983,7 +2019,7 @@ const AreaCreatePage = () => {
                     Mã khu vực
                   </p>
                   <p className="text-sm font-semibold text-slate-700 font-mono">
-                    {formData.id || (
+                    {formData.code || (
                       <span className="text-slate-300 italic">Chưa nhập</span>
                     )}
                   </p>
@@ -2171,9 +2207,16 @@ const AreaCreatePage = () => {
                         <div className="text-[11px] font-extrabold w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
                           {idx + 1}
                         </div>
-                        <span className="text-sm font-semibold text-slate-700">
-                          {plot.name || `Lô ${idx + 1}`}
-                        </span>
+                        <div className="flex flex-col">
+                          {plot.code && (
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-0.5">
+                              {plot.code}
+                            </span>
+                          )}
+                          <span className="text-sm font-semibold text-slate-700">
+                            {plot.name || `Lô ${idx + 1}`}
+                          </span>
+                        </div>
                       </div>
                       <span className="text-xs font-bold text-slate-400 bg-white border border-slate-100 px-2 py-0.5 rounded-lg">
                         {plot.area ?? 0} ha

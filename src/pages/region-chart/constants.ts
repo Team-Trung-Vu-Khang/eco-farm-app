@@ -145,6 +145,7 @@ export const MOCK_REGIONS: Region[] = [
         plots: [
           {
             id: "plot-1-1",
+            code: "PLOT-1-1",
             name: "Lô A1 - Dona",
             area: 8.5,
             altitude: 150,
@@ -158,6 +159,7 @@ export const MOCK_REGIONS: Region[] = [
           },
           {
             id: "plot-1-2",
+            code: "PLOT-1-2",
             name: "Lô A2 - Dona",
             area: 11.5,
             altitude: 145,
@@ -190,6 +192,7 @@ export const MOCK_REGIONS: Region[] = [
         plots: [
           {
             id: "plot-1-3",
+            code: "PLOT-1-3",
             name: "Lô B1 - Musang King",
             area: 15.5,
             altitude: 155,
@@ -247,6 +250,7 @@ export const MOCK_REGIONS: Region[] = [
         plots: [
           {
             id: "plot-2-1",
+            code: "PLOT-2-1",
             name: "Lô C1 - Thủy canh",
             area: 40,
             altitude: 10,
@@ -385,6 +389,7 @@ export const MOCK_REGIONS: Region[] = [
 
 export interface Plot {
   id: string;
+  code: string;
   name: string;
   area: number;
   coordinates: Coordinate[];
@@ -395,6 +400,7 @@ export interface Plot {
 export const MOCK_PLOTS: Plot[] = [
   {
     id: "plot-1-1",
+    code: "PLOT-1-1",
     name: "Lô A1 - Musang King",
     area: 8.5,
     altitude: 150,
@@ -408,6 +414,7 @@ export const MOCK_PLOTS: Plot[] = [
   },
   {
     id: "plot-1-2",
+    code: "PLOT-1-2",
     name: "Lô A2 - Ri6",
     area: 10.0,
     altitude: 145,
@@ -421,6 +428,7 @@ export const MOCK_PLOTS: Plot[] = [
   },
   {
     id: "plot-2-1",
+    code: "PLOT-2-1",
     name: "Lô B1 - Bơ 034",
     area: 7.5,
     altitude: 130,
@@ -468,6 +476,7 @@ export const MOCK_AREAS: Area[] = [
     plots: [
       {
         id: "plot-1-1",
+        code: "PLOT-1-1",
         name: "Lô A1 - Musang King",
         area: 8.5,
         altitude: 150,
@@ -481,6 +490,7 @@ export const MOCK_AREAS: Area[] = [
       },
       {
         id: "plot-1-2",
+        code: "PLOT-1-2",
         name: "Lô A2 - Ri6",
         area: 10.0,
         altitude: 145,
@@ -494,6 +504,7 @@ export const MOCK_AREAS: Area[] = [
       },
       {
         id: "plot-1-3",
+        code: "PLOT-1-3",
         name: "Lô A3 - Dona",
         area: 7.0,
         altitude: 140,
@@ -526,6 +537,7 @@ export const MOCK_AREAS: Area[] = [
     plots: [
       {
         id: "plot-2-1",
+        code: "PLOT-2-1",
         name: "Lô B1 - Bơ 034",
         area: 7.5,
         altitude: 130,
@@ -539,6 +551,7 @@ export const MOCK_AREAS: Area[] = [
       },
       {
         id: "plot-2-2",
+        code: "PLOT-2-2",
         name: "Lô B2 - Bơ Booth",
         area: 7.5,
         altitude: 135,
