@@ -814,7 +814,12 @@ const PlotCreatePage = () => {
       id: "selection",
       title: "Chọn khu vực",
       description: "Chọn vùng trồng và khu vực",
-      isValid: !!selectedRegionId && !!selectedAreaId,
+      isValid:
+        !!selectedRegionId &&
+        !!selectedAreaId &&
+        !!formData.code &&
+        !!formData.name &&
+        !!formData.area,
       content: (
         <Card className="overflow-hidden border-none shadow-md bg-white">
           <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-4">
@@ -822,134 +827,138 @@ const PlotCreatePage = () => {
               Chọn vị trí lô
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6 flex gap-4">
-            {/* EnterpriseSelector */}
-            <div className="space-y-2 flex-1">
-              <Label className="text-sm font-bold text-slate-700">
-                Đơn vị sở hữu <span className="text-red-500">*</span>
-              </Label>
-              <EnterpriseSelector
-                selectedId={selectEnterpriseId?.toString() ?? ""}
-                onSelect={(val) => {
-                  setSelectEnterpriseId(val ? Number(val) : null);
-                  setSelectedRegionId(null);
-                  setSelectedAreaId(null);
-                }}
-              />
-            </div>
-
-            <div className="space-y-4 flex-1">
-              {/* Location tree dialog */}
-              <div className="space-y-2">
+          <CardContent className="p-6 space-y-4">
+            <div className="flex gap-4">
+              {/* EnterpriseSelector */}
+              <div className="space-y-2 flex-1">
                 <Label className="text-sm font-bold text-slate-700">
-                  Vùng trồng &amp; Khu vực{" "}
-                  <span className="text-red-500">*</span>
+                  Đơn vị sở hữu <span className="text-red-500">*</span>
                 </Label>
-                <_LocationSelector
-                  regions={regions}
-                  enterpriseId={selectEnterpriseId}
-                  selectedRegionId={selectedRegionId}
-                  selectedAreaId={selectedAreaId}
-                  onSelect={(regionId, areaId) => {
-                    if (!regionId) {
-                      setSelectedRegionId(null);
-                      setSelectedAreaId(null);
-                    } else {
-                      setSelectedRegionId(regionId);
-                      setSelectedAreaId(areaId);
-                    }
+                <EnterpriseSelector
+                  selectedId={selectEnterpriseId?.toString() ?? ""}
+                  onSelect={(val) => {
+                    setSelectEnterpriseId(val ? Number(val) : null);
+                    setSelectedRegionId(null);
+                    setSelectedAreaId(null);
                   }}
                 />
               </div>
 
-              {/* Selection card + map preview */}
-              {selectedRegionId &&
-                selectedAreaId &&
-                (() => {
-                  const region = regions.find((r) => r.id === selectedRegionId);
-                  const area = region?.subAreas?.find(
-                    (a: any) => String(a.id) === String(selectedAreaId),
-                  );
-                  return (
-                    <div className="space-y-3">
-                      {/* SelectionCard */}
-                      <div className="bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-all group animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
-                        <div className="p-4">
-                          <div className="flex items-start gap-4">
-                            <div className="p-2.5 rounded-xl shrink-0 bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors duration-300">
-                              <Layers className="w-5 h-5" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between mb-1">
-                                <Badge
-                                  variant="outline"
-                                  className="text-[10px] uppercase font-bold tracking-wider py-0 px-1.5 h-4 border-primary/20 text-primary bg-primary/5"
-                                >
-                                  Khu vực
-                                </Badge>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full"
-                                  onClick={() => {
-                                    setSelectedRegionId(null);
-                                    setSelectedAreaId(null);
-                                  }}
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </Button>
-                              </div>
-                              <div className="font-bold text-slate-900 text-sm mb-1">
-                                {area?.name || "—"}
-                              </div>
-                              <div className="text-[10px] text-muted-foreground truncate uppercase tracking-wider font-medium">
-                                ID: {selectedAreaId}
-                              </div>
-                            </div>
-                          </div>
+              <div className="space-y-4 flex-1">
+                {/* Location tree dialog */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-slate-700">
+                    Vùng trồng &amp; Khu vực{" "}
+                    <span className="text-red-500">*</span>
+                  </Label>
+                  <_LocationSelector
+                    regions={regions}
+                    enterpriseId={selectEnterpriseId}
+                    selectedRegionId={selectedRegionId}
+                    selectedAreaId={selectedAreaId}
+                    onSelect={(regionId, areaId) => {
+                      if (!regionId) {
+                        setSelectedRegionId(null);
+                        setSelectedAreaId(null);
+                      } else {
+                        setSelectedRegionId(regionId);
+                        setSelectedAreaId(areaId);
+                      }
+                    }}
+                  />
+                </div>
 
-                          {/* Hierarchy tree */}
-                          <div className="mt-4 pt-3 border-t border-slate-100">
-                            <div className="mt-2 ml-3 relative">
-                              <div className="absolute left-0 top-0 bottom-4 w-px bg-slate-200" />
-                              <div className="space-y-4">
-                                {/* Region Level */}
-                                <div className="flex items-center gap-3 relative z-10 pl-4">
-                                  <div className="absolute left-0 w-4 h-px bg-slate-200 top-1/2" />
-                                  <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shadow-xs shrink-0">
-                                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                                  </div>
-                                  <div>
-                                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-none mb-1">
-                                      Vùng trồng
-                                    </div>
-                                    <div className="text-xs font-bold text-slate-700">
-                                      {region?.name}
-                                    </div>
-                                  </div>
+                {/* Selection card + map preview */}
+                {selectedRegionId &&
+                  selectedAreaId &&
+                  (() => {
+                    const region = regions.find(
+                      (r) => r.id === selectedRegionId,
+                    );
+                    const area = region?.subAreas?.find(
+                      (a: any) => String(a.id) === String(selectedAreaId),
+                    );
+                    return (
+                      <div className="space-y-3">
+                        {/* SelectionCard */}
+                        <div className="bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-all group animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+                          <div className="p-4">
+                            <div className="flex items-start gap-4">
+                              <div className="p-2.5 rounded-xl shrink-0 bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors duration-300">
+                                <Layers className="w-5 h-5" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-1">
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] uppercase font-bold tracking-wider py-0 px-1.5 h-4 border-primary/20 text-primary bg-primary/5"
+                                  >
+                                    Khu vực
+                                  </Badge>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full"
+                                    onClick={() => {
+                                      setSelectedRegionId(null);
+                                      setSelectedAreaId(null);
+                                    }}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
                                 </div>
+                                <div className="font-bold text-slate-900 text-sm mb-1">
+                                  {area?.name || "—"}
+                                </div>
+                                <div className="text-[10px] text-muted-foreground truncate uppercase tracking-wider font-medium">
+                                  ID: {selectedAreaId}
+                                </div>
+                              </div>
+                            </div>
 
-                                {/* Area Level */}
-                                <div className="relative pl-4">
-                                  <div className="absolute left-0 w-4 h-px bg-slate-200 top-4" />
-                                  <div className="pl-4">
-                                    <div className="flex items-center gap-3 relative z-10 py-1">
-                                      <div className="w-8 h-8 rounded-lg border bg-primary/5 border-primary/20 flex items-center justify-center shadow-xs shrink-0">
-                                        <Layers className="w-3.5 h-3.5 text-primary" />
+                            {/* Hierarchy tree */}
+                            <div className="mt-4 pt-3 border-t border-slate-100">
+                              <div className="mt-2 ml-3 relative">
+                                <div className="absolute left-0 top-0 bottom-4 w-px bg-slate-200" />
+                                <div className="space-y-4">
+                                  {/* Region Level */}
+                                  <div className="flex items-center gap-3 relative z-10 pl-4">
+                                    <div className="absolute left-0 w-4 h-px bg-slate-200 top-1/2" />
+                                    <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shadow-xs shrink-0">
+                                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                                    </div>
+                                    <div>
+                                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-none mb-1">
+                                        Vùng trồng
                                       </div>
-                                      <div>
-                                        <div className="text-[10px] text-primary/60 font-bold uppercase tracking-wider leading-none mb-1">
-                                          Khu vực
-                                        </div>
-                                        <div className="text-xs font-bold text-slate-900">
-                                          {area?.name}
-                                        </div>
+                                      <div className="text-xs font-bold text-slate-700">
+                                        {region?.name}
                                       </div>
-                                      {area?.area != null && (
-                                        <Badge className="ml-auto bg-emerald-100 text-emerald-700 border-none text-[10px]">
-                                          {area.area} ha
-                                        </Badge>
-                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Area Level */}
+                                  <div className="relative pl-4">
+                                    <div className="absolute left-0 w-4 h-px bg-slate-200 top-4" />
+                                    <div className="pl-4">
+                                      <div className="flex items-center gap-3 relative z-10 py-1">
+                                        <div className="w-8 h-8 rounded-lg border bg-primary/5 border-primary/20 flex items-center justify-center shadow-xs shrink-0">
+                                          <Layers className="w-3.5 h-3.5 text-primary" />
+                                        </div>
+                                        <div>
+                                          <div className="text-[10px] text-primary/60 font-bold uppercase tracking-wider leading-none mb-1">
+                                            Khu vực
+                                          </div>
+                                          <div className="text-xs font-bold text-slate-900">
+                                            {area?.name}
+                                          </div>
+                                        </div>
+                                        {area?.area != null && (
+                                          <Badge className="ml-auto bg-emerald-100 text-emerald-700 border-none text-[10px]">
+                                            {area.area} ha
+                                          </Badge>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
@@ -958,74 +967,27 @@ const PlotCreatePage = () => {
                           </div>
                         </div>
                       </div>
+                    );
+                  })()}
 
-                      {/* Satellite map */}
-                      {areaPolygon.length >= 2 && (
-                        <div className="h-[220px] rounded-xl border border-slate-200 overflow-hidden relative z-0!">
-                          <MapContainer
-                            bounds={getBoundsFromPoints(areaPolygon).pad(0.1)}
-                            style={{ height: "100%", width: "100%" }}
-                            zoomControl={false}
-                            dragging={false}
-                            scrollWheelZoom={false}
-                            doubleClickZoom={false}
-                            touchZoom={false}
-                            keyboard={false}
-                            attributionControl={false}
-                          >
-                            <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-                            <Polygon
-                              positions={areaPolygon}
-                              pathOptions={{
-                                color: "#10b981",
-                                fillColor: "#10b981",
-                                fillOpacity: 0.15,
-                                weight: 2.5,
-                                dashArray: "6 4",
-                              }}
-                            />
-                          </MapContainer>
-                          <div className="absolute bottom-2 left-2 z-500 text-[10px] font-bold bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-emerald-700 pointer-events-none shadow-sm">
-                            Khu vực đã chọn
-                          </div>
-                        </div>
-                      )}
+                {/* Empty state when nothing selected */}
+                {!selectedAreaId && (
+                  <div className="flex flex-col items-center justify-center py-12 px-6 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50 text-center gap-2 animate-in fade-in duration-500">
+                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm text-slate-300">
+                      <MapPin className="w-6 h-6" />
                     </div>
-                  );
-                })()}
-
-              {/* Empty state when nothing selected */}
-              {!selectedAreaId && (
-                <div className="flex flex-col items-center justify-center py-12 px-6 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50 text-center gap-2 animate-in fade-in duration-500">
-                  <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm text-slate-300">
-                    <MapPin className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-slate-600">
-                      Chưa có lựa chọn nào
-                    </div>
-                    <div className="text-[11px] text-slate-400 max-w-[200px] mx-auto mt-1">
-                      Vui lòng thêm vị trí để tiếp tục
+                    <div>
+                      <div className="text-sm font-bold text-slate-600">
+                        Chưa có lựa chọn nào
+                      </div>
+                      <div className="text-[11px] text-slate-400 max-w-[200px] mx-auto mt-1">
+                        Vui lòng thêm vị trí để tiếp tục
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      ),
-    },
-    {
-      id: "info",
-      title: "Thông tin lô",
-      description: "Điền thông tin chi tiết lô",
-      isValid: !!formData.code && !!formData.name && !!formData.area,
-      content: (
-        <Card>
-          <CardHeader>
-            <CardTitle>Thông tin chi tiết</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>
@@ -1096,6 +1058,7 @@ const PlotCreatePage = () => {
         </Card>
       ),
     },
+
     {
       id: "map",
       title: "Bản đồ",
@@ -1600,7 +1563,9 @@ const PlotCreatePage = () => {
                               strokeDasharray="4 3"
                             />
                           </svg>
-                          <span className="text-slate-600">Ranh giới khu vực</span>
+                          <span className="text-slate-600">
+                            Ranh giới khu vực
+                          </span>
                         </div>
                       )}
                     </div>
