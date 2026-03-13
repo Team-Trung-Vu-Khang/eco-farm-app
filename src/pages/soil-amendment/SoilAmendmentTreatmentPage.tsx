@@ -56,7 +56,7 @@ import {
 } from "@tankhang1/eco-shared-ui";
 
 // Phác đồ cải tạo đất (Treatment Plan)
-interface TreatmentPlan {
+export interface TreatmentPlan {
   id: number;
   code: string;
   name: string;
@@ -123,7 +123,7 @@ interface VideoTutorial {
   description: string;
 }
 
-interface TreatmentMethod {
+export interface TreatmentMethod {
   id: number;
   name: string;
   type: "physical" | "chemical" | "biological" | "integrated";
@@ -135,7 +135,7 @@ interface TreatmentMethod {
   difficulty: "easy" | "moderate" | "difficult";
 }
 
-interface TreatmentProcedure {
+export interface TreatmentProcedure {
   id: number;
   stepNumber: number;
   name: string;
@@ -172,7 +172,7 @@ interface SeasonalPhase {
   criticalTasks?: string[];
 }
 
-const mockMethods: TreatmentMethod[] = [
+export const mockMethods: TreatmentMethod[] = [
   {
     id: 1,
     name: "Cày xới sâu",
@@ -301,7 +301,7 @@ const mockMethods: TreatmentMethod[] = [
   },
 ];
 
-const initialData: TreatmentPlan[] = [
+export const initialTreatmentPlans: TreatmentPlan[] = [
   {
     id: 1,
     code: "PD-001",
@@ -782,7 +782,7 @@ const initialData: TreatmentPlan[] = [
 
 export default function SoilAmendmentTreatmentPage() {
   const { toast } = useToast();
-  const [data, setData] = useState<TreatmentPlan[]>(initialData);
+  const [data, setData] = useState<TreatmentPlan[]>(initialTreatmentPlans);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<TreatmentPlan | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
