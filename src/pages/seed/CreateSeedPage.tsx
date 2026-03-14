@@ -91,34 +91,58 @@ const varieties: Record<
 > = {
   durian: [
     {
-      id: "ri6",
+      id: "VARI01",
       name: "Sầu riêng Ri6",
-      code: "SR-RI6",
+      code: "VARI01",
       image:
         "https://bizweb.dktcdn.net/thumb/grande/100/396/015/products/logovietfruit-7fc573e9-36f8-44a5-80ba-e2ce2bd998ca.jpg?v=1671522040127",
     },
     {
-      id: "dona",
+      id: "VARI02",
       name: "Sầu riêng Dona",
-      code: "SR-DONA",
+      code: "VARI02",
       image:
         "https://traicaytonyteo.com/uploads/source/sau-rieng-dona-thai-2.jpg",
     },
     {
-      id: "musang",
+      id: "VARI03",
       name: "Sầu riêng Musang King",
-      code: "SR-MUSANG",
+      code: "VARI03",
       image:
         "https://sauriengoi.vn/wp-content/uploads/2023/08/SAU-RIENG-MUSANG-KING-1-1.jpg",
     },
+    {
+      id: "VARI04",
+      name: "Sầu riêng Black Thorn",
+      code: "VARI04",
+      image:
+        "https://vinadurian.com/wp-content/uploads/2023/11/sau-rieng-black-thorn-05-i.jpg",
+    },
   ],
   rice: [
-    { id: "st25", name: "Lúa ST25", code: "L-ST25" },
-    { id: "om5451", name: "Lúa OM5451", code: "L-OM5451" },
+    {
+      id: "VARI06",
+      name: "Lúa OM5451",
+      code: "VARI06",
+      image:
+        "https://lh4.googleusercontent.com/proxy/MLacA6_LHyfmPvTfcrouV2QTLptGspn7YeqqJ9pAjtfQIl262TRrvqXI5nMWlZuSLoOKCs3pwfShUOALa0aEKTu8ATDBIrKX07oDdVXW6fdSHTlsi6vflJMhwO5QILIl3Dz5GLaveQ",
+    },
   ],
-  corn: [
-    { id: "lvn10", name: "Bắp LVN10", code: "B-LVN10" },
-    { id: "nk66", name: "Bắp NK66", code: "B-NK66" },
+  soybeans: [
+    {
+      id: "VARI07",
+      name: "Đậu nành DT84",
+      code: "VARI07",
+      image:
+        "https://media.vietnamplus.vn/images/c14f6479e83e315b4cf3a2906cc6a51e875525f3bbe20f9343607ad07a01c92f147aae408267e18cb342aaa0dd834e734827afe323f4eee8886d1806df7f097c/dautuong.jpg.webp",
+    },
+    {
+      id: "VARI08",
+      name: "Đậu nành DX11",
+      code: "VARI08",
+      image:
+        "https://i.ex-cdn.com/nongnghiepmoitruong.vn/files/f1/Image/2009/7/5/05072009145217.jpg",
+    },
   ],
   // Add other mappings as needed or use default empty array
 };

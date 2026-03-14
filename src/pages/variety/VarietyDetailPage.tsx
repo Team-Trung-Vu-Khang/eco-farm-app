@@ -1,4 +1,5 @@
 import {
+  AdminLayout,
   Badge,
   Button,
   Card,
@@ -8,6 +9,7 @@ import {
 } from "@tankhang1/eco-shared-ui";
 import {
   Archive,
+  ArrowLeft,
   BookOpen,
   Calendar,
   CloudUpload,
@@ -19,19 +21,24 @@ import {
   Scale,
   Sprout,
 } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useParams } from "wouter";
 import useVarietyStore from "../../stores/useVarietyStore";
 
 interface VarietyDetailPageProps {
-  id: string;
+  id?: string;
+  [key: string]: any;
 }
 
-export default function VarietyDetailPage({ id }: VarietyDetailPageProps) {
+export default function VarietyDetailPage({ id: propId }: VarietyDetailPageProps) {
+  const params = useParams<{ id: string }>();
+  const id = propId ?? params?.id;
+  const isStandalone = !!params?.id;
+
   const { getVarietyById } = useVarietyStore();
-  const variety = getVarietyById(id);
+  const variety = getVarietyById(id || "");
 
   if (!variety) {
-    return (
+    const errorContent = (
       <div className="flex flex-col items-center justify-center py-20">
         <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
           <Sprout className="w-10 h-10 text-slate-400" />
@@ -46,18 +53,35 @@ export default function VarietyDetailPage({ id }: VarietyDetailPageProps) {
         </Link>
       </div>
     );
+
+    return isStandalone ? (
+      <AdminLayout title="Chi tiết giống cây" description="Không tìm thấy thông tin">
+        {errorContent}
+      </AdminLayout>
+    ) : (
+      errorContent
+    );
   }
 
-  return (
+  const content = (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Chi tiết giống cây
-          </h2>
-          <p className="text-slate-500 text-sm">
-            Xem và quản lý thông tin chi tiết của giống {variety.varietyName}
-          </p>
+        <div className="flex items-center gap-4">
+          {isStandalone && (
+            <Link href="/variety">
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            </Link>
+          )}
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+              Chi tiết giống cây
+            </h2>
+            <p className="text-slate-500 text-sm">
+              Xem và quản lý thông tin chi tiết của giống {variety.varietyName}
+            </p>
+          </div>
         </div>
         <Link href={`/variety/${variety.id}/edit`}>
           <Button className="bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg transition-all">
@@ -292,5 +316,16 @@ export default function VarietyDetailPage({ id }: VarietyDetailPageProps) {
         </div>
       </div>
     </div>
+  );
+
+  return isStandalone ? (
+    <AdminLayout
+      title="Chi tiết giống cây"
+      description={`Thông tin chi tiết về ${variety.varietyName}`}
+    >
+      {content}
+    </AdminLayout>
+  ) : (
+    content
   );
 }

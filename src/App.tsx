@@ -85,6 +85,7 @@ import TeamPage from "./pages/team/TeamPage";
 import TeamCreatePage from "./pages/team/TeamCreatePage";
 import TeamDetailPage from "./pages/team/TeamDetailPage";
 import VarietyPage from "./pages/variety/VarietyPage";
+import VarietyDetailPage from "./pages/variety/VarietyDetailPage";
 import CreateVarietyPage from "./pages/variety/CreateVarietyPage";
 import VarietyEditPage from "./pages/variety/VarietyEditPage";
 import MaterialPage from "./pages/material/MaterialPage";
@@ -295,6 +296,7 @@ function Router() {
       <Route path="/docs/:id" component={DocsDetailPage} />
       <Route path="/variety" component={VarietyPage} />
       <Route path="/variety/create" component={CreateVarietyPage} />
+      <Route path="/variety/:id" component={VarietyDetailPage} />
       <Route path="/variety/:id/edit" component={VarietyEditPage} />
       <Route path="/seed" component={SeedPage} />
       <Route path="/seed/create" component={CreateSeedPage} />

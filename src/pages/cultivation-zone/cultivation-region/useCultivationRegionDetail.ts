@@ -15,6 +15,12 @@ import type { Region } from "../../region-chart/constants";
 export interface CultivationRegionDetails {
   manager: any;
   selectedCerts: any[];
+  regionStats: {
+    total: number;
+    healthy: number;
+    treating: number;
+    diseased: number;
+  };
   region: Region | null;
   selectedEntities: any[];
   groupedSelections: Record<string, any>;
@@ -31,6 +37,21 @@ export interface CultivationRegionDetails {
     irrigationMethod: any;
     crops: any[];
   };
+  harvestStats: {
+    totalVolume: number;
+    lastVolume: number;
+    lastChange: number;
+    avgVolume: number;
+    avgChange: number;
+  };
+  harvestBatches: Array<{
+    id: string;
+    date: string;
+    volume: number;
+    quality: string;
+    staff: string;
+    notes?: string;
+  }>;
 }
 
 export const useCultivationRegionDetail = (id?: string | null) => {
@@ -108,7 +129,7 @@ export const useCultivationRegionDetail = (id?: string | null) => {
 
     const firstEntity = selectedEntities[0];
     const region = firstEntity
-      ? regions.find((r) => r.id.toString() === firstEntity.regionId)
+      ? regions.find((r) => r.id.toString() === firstEntity.regionId) ?? null
       : null;
 
     const totalAreaValue = selectedEntities.reduce(
@@ -166,6 +187,65 @@ export const useCultivationRegionDetail = (id?: string | null) => {
           .filter(Boolean),
       }));
 
+    // Mock region-level plant statistics
+    const regionStats = {
+      total: 12500,
+      healthy: 11800,
+      treating: 450,
+      diseased: 250,
+    };
+
+    // Mock harvest statistics
+    const harvestStats = {
+      totalVolume: 8540,
+      lastVolume: 1250,
+      lastChange: 12.5, // 12.5% increase
+      avgVolume: 1067,
+      avgChange: 5.2, // 5.2% increase
+    };
+
+    // Mock harvest batches
+    const harvestBatches = [
+      {
+        id: "HB001",
+        date: "2024-03-10",
+        volume: 1250,
+        quality: "Loại A",
+        staff: "Nguyễn Văn A",
+        notes: "Thu hoạch đúng tiến độ, chất lượng tốt",
+      },
+      {
+        id: "HB002",
+        date: "2024-02-15",
+        volume: 1100,
+        quality: "Loại A",
+        staff: "Trần Thị B",
+        notes: "Thời tiết thuận lợi",
+      },
+      {
+        id: "HB003",
+        date: "2024-01-20",
+        volume: 950,
+        quality: "Loại B",
+        staff: "Lê Văn C",
+        notes: "Có một số cây bị ảnh hưởng bởi sâu bệnh nhẹ",
+      },
+      {
+        id: "HB004",
+        date: "2023-12-15",
+        volume: 1150,
+        quality: "Loại A",
+        staff: "Nguyễn Văn A",
+      },
+      {
+        id: "HB005",
+        date: "2023-11-10",
+        volume: 1000,
+        quality: "Loại A",
+        staff: "Trần Thị B",
+      },
+    ];
+
     // Legacy Entity Configurations (Compatibility or fallback)
     const entityConfigs = selectedEntities.map((entity) => {
       // Prioritize area-wide config if available, fallback to legacy per-entity config
@@ -200,12 +280,15 @@ export const useCultivationRegionDetail = (id?: string | null) => {
     return {
       manager,
       selectedCerts,
+      regionStats,
       region,
       selectedEntities,
       groupedSelections,
       totalArea: totalAreaValue,
       enterprise,
       entityConfigs,
+      harvestStats,
+      harvestBatches,
       technicalConfig: {
         farmingMethod,
         irrigationMethod,

@@ -1336,6 +1336,9 @@ const CultivationRegionCreatePage = () => {
       // Return all active varieties, bypassing mock constraint
       let list = varieties.filter((v) => v.status === "active");
 
+      console.log("list", list);
+      console.log("varieties", varieties);
+
       if (cropSearchTerm) {
         const lowerSearch = cropSearchTerm.toLowerCase();
         list = list.filter(

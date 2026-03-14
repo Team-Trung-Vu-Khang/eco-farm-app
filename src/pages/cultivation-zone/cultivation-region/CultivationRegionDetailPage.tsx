@@ -19,11 +19,12 @@ import {
   TabsTrigger,
   Input,
   Label,
+  DataTable,
+  type Column,
   cn,
 } from "@tankhang1/eco-shared-ui";
 import {
   ChevronLeft,
-  ChevronDown,
   ChevronRight,
   Edit,
   Award,
@@ -54,26 +55,43 @@ import {
   Lightbulb,
   CheckCircle2,
   Wind,
+  Contact,
+  ShieldCheck,
+  TrendingUp,
+  TrendingDown,
+  ShoppingBag,
+  ArrowUpRight,
+  Bug,
+  Users,
+  Wrench,
+  Package,
 } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapContainer, Polygon, TileLayer, Tooltip } from "react-leaflet";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as ChartTooltip,
+  ResponsiveContainer,
+} from "recharts";
 import useCultivationRegionStore from "../../../stores/useCultivationRegionStore";
 import useRegionStore from "../../../stores/useRegionStore";
 import { useMemo, useRef, useState } from "react";
-import useEnterpriseCertificateStore from "../../../stores/useEnterpriseCertificateStore";
-import usePersonnelStore from "../../../stores/usePersonnelStore";
-import useFarmingMethodStore from "../../../stores/useFarmingMethodStore";
-import useIrrigationSystemStore from "../../../stores/useIrrigationSystemStore";
-import useVarietyStore from "../../../stores/useVarietyStore";
-import useEnterpriseStore from "../../../stores/useEnterpriseStore";
-import useSeedStore from "../../../stores/useSeedStore";
+import usePersonnelStore, {
+  type Personnel,
+} from "../../../stores/usePersonnelStore";
 import usePlanStore, { type Plan } from "../../../stores/usePlanStore";
 import {
   initialTreatmentPlans,
   mockMethods,
   type TreatmentPlan,
 } from "../../soil-amendment/SoilAmendmentTreatmentPage";
+import useGrowthCycleStore from "../../../stores/useGrowthCycleStore";
+import { useCultivationRegionDetail } from "./useCultivationRegionDetail";
 
 export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
   const params = useParams<{ id: string }>();
@@ -85,14 +103,54 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
   };
 
   const [isScopeMapExpanded, setIsScopeMapExpanded] = useState(false);
-  const [expandedTaskKeys, setExpandedTaskKeys] = useState<
-    Record<string, boolean>
-  >({});
-  const [expandedPlanKeys, setExpandedPlanKeys] = useState<
-    Record<string, boolean>
-  >({});
   const scopeMapRef = useRef<L.Map | null>(null);
   const expandedScopeMapRef = useRef<L.Map | null>(null);
+
+  const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
+  const { growthCycles } = useGrowthCycleStore();
+
+  const staffColumns: Column<Personnel>[] = [
+    {
+      key: "avatar",
+      label: "Thợ",
+      render: (value: string, item: Personnel) => (
+        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold overflow-hidden border border-slate-200">
+          {value ? (
+            <img
+              src={value}
+              alt={item.fullName}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            item.fullName.charAt(0)
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "fullName",
+      label: "Họ và tên",
+      render: (value: string) => (
+        <span className="font-semibold text-slate-700">{value}</span>
+      ),
+    },
+    {
+      key: "position",
+      label: "Chức vụ",
+      render: (value: string) => (
+        <Badge variant="outline" className="text-[10px] font-medium">
+          {value}
+        </Badge>
+      ),
+    },
+    {
+      key: "phone",
+      label: "Số điện thoại",
+      render: (value: string) => (
+        <span className="text-xs text-muted-foreground">{value}</span>
+      ),
+    },
+  ];
 
   const getActiveScopeMap = () => {
     if (isScopeMapExpanded) return expandedScopeMapRef.current;
@@ -111,24 +169,11 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
     map.flyToBounds(bounds, { padding: [40, 40], duration: 1.1 });
   };
 
-  const toggleTaskExpanded = (key: string) => {
-    setExpandedTaskKeys((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  const { area, details } = useCultivationRegionDetail(resolvedId);
 
-  const togglePlanExpanded = (key: string) => {
-    setExpandedPlanKeys((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
-  };
-
-  const { getAreaById } = useCultivationRegionStore();
   const { regions } = useRegionStore();
-  const { standards } = useEnterpriseCertificateStore();
-  const { personnel } = usePersonnelStore();
-  const { farmingMethods } = useFarmingMethodStore();
-
-  const { irrigationSystems } = useIrrigationSystemStore();
-  const { varieties } = useVarietyStore();
-  const { enterprises } = useEnterpriseStore();
   const { plans } = usePlanStore();
+  const { personnel } = usePersonnelStore();
 
   const regionIndex = useMemo(() => {
     const regionById = new Map<string, any>();
@@ -148,187 +193,18 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
     return { regionById, areaById, plotById };
   }, [regions]);
 
-  const area = useMemo(() => {
-    if (!resolvedId) return null;
-    return getAreaById(resolvedId);
-  }, [resolvedId, getAreaById]);
-
-  const { seeds } = useSeedStore();
-
-  const details = useMemo(() => {
-    if (!area) return null;
-
-    const manager = personnel.find((m) => m.id.toString() === area.managerId);
-
-    // Resolve multiple certificates
-    const selectedCerts = standards.filter(
-      (c) =>
-        (area.certificateIds || []).includes(c.code) ||
-        (area as any).certificateId === c.code,
-    );
-
-    // Flexible entity resolution
-    const selectedEntities = area.targetIds
-      .map((id) => {
-        // Find Region
-        const reg = regions.find((r) => r.id.toString() === id);
-        if (reg)
-          return {
-            ...reg,
-            type: "Vùng trồng",
-            typeCode: "region",
-            regionId: reg.id,
-          };
-
-        // Find Area
-        for (const r of regions) {
-          const sa = r.subAreas?.find((a: any) => a.id.toString() === id);
-          if (sa)
-            return {
-              ...sa,
-              type: "Khu vực",
-              typeCode: "area",
-              regionId: r.id,
-              areaId: sa.id,
-            };
-        }
-
-        // Find Plot
-        for (const r of regions) {
-          for (const sa of r.subAreas || []) {
-            const p = sa.plots?.find((p: any) => p.id.toString() === id);
-            if (p)
-              return {
-                ...p,
-                type: "Lô đất",
-                typeCode: "plot",
-                regionId: r.id,
-                areaId: sa.id,
-                plotId: p.id,
-              };
-          }
-        }
-        return null;
-      })
-      .filter((e): e is any => e !== null);
-
-    const firstEntity = selectedEntities[0];
-    const region = firstEntity
-      ? regions.find((r) => r.id.toString() === firstEntity.regionId)
-      : null;
-
-    const totalAreaValue = selectedEntities.reduce(
-      (sum, e) => sum + (e.area || 0),
-      0,
-    );
-
-    const groupedSelections = selectedEntities.reduce((acc: any, entity) => {
-      const rId = entity.regionId.toString();
-      const aId = entity.areaId?.toString() || "none";
-
-      if (!acc[rId]) {
-        acc[rId] = {
-          region: regions.find((r) => r.id.toString() === rId),
-          areas: {},
-        };
-      }
-
-      if (!acc[rId].areas[aId]) {
-        const reg = acc[rId].region;
-        acc[rId].areas[aId] = {
-          area:
-            aId === "none"
-              ? null
-              : reg?.subAreas?.find((sa: any) => sa.id.toString() === aId),
-          entities: [],
-        };
-      }
-
-      acc[rId].areas[aId].entities.push(entity);
-      return acc;
-    }, {});
-
-    // Unified Configuration (New Model)
-    const commonConfig = {
-      farmingMethodId: area.farmingMethodId || "",
-      irrigationMethodId: area.irrigationMethodId || "",
-      selectedCrops: area.selectedCrops || [],
-      seedSelections: area.seedSelections || {},
-    };
-
-    // Technical Config for display
-    const farmingMethod = farmingMethods.find(
-      (m) => m.id === commonConfig.farmingMethodId,
-    );
-    const irrigationMethod = irrigationSystems.find(
-      (m) => m.id === commonConfig.irrigationMethodId,
-    );
-    const commonCrops = varieties
-      .filter((v) => commonConfig.selectedCrops?.includes(v.id))
-      .map((crop) => ({
-        ...crop,
-        selectedSeeds: (commonConfig.seedSelections?.[crop.id] || [])
-          .map((sid: string) => seeds.find((s) => s.id === sid))
-          .filter(Boolean),
-      }));
-
-    // Legacy Entity Configurations (Compatibility or fallback)
-    const entityConfigs = selectedEntities.map((entity) => {
-      // Prioritize area-wide config if available, fallback to legacy per-entity config
-      const config =
-        commonConfig.farmingMethodId || commonConfig.selectedCrops.length > 0
-          ? commonConfig
-          : area.configs?.[entity.id] || area.configs?.[entity.plotId];
-
-      return {
-        entity,
-        farmingMethod: farmingMethods.find(
-          (m) => m.id === config?.farmingMethodId,
-        ),
-        irrigationMethod: irrigationSystems.find(
-          (m) => m.id === config?.irrigationMethodId,
-        ),
-        crops: varieties
-          .filter((v) => config?.selectedCrops?.includes(v.id))
-          .map((crop) => ({
-            ...crop,
-            selectedSeeds: (config?.seedSelections?.[crop.id] || [])
-              .map((sid: string) => seeds.find((s) => s.id === sid))
-              .filter(Boolean),
-          })),
-      };
-    });
-
-    let enterprise = enterprises.find(
-      (e) => e.id.toString() === area.enterpriseId,
-    );
-
-    return {
-      manager,
-      selectedCerts,
-      region,
-      selectedEntities,
-      groupedSelections,
-      totalArea: totalAreaValue,
-      enterprise,
-      entityConfigs,
-      technicalConfig: {
-        farmingMethod,
-        irrigationMethod,
-        crops: commonCrops,
+  const groupedCrops = useMemo(() => {
+    if (!details?.technicalConfig?.crops) return {};
+    return details.technicalConfig.crops.reduce(
+      (acc: Record<string, any[]>, crop: any) => {
+        const cropName = crop.crop || "Khác";
+        if (!acc[cropName]) acc[cropName] = [];
+        acc[cropName].push(crop);
+        return acc;
       },
-    };
-  }, [
-    area,
-    regions,
-    personnel,
-    standards,
-    farmingMethods,
-    irrigationSystems,
-    varieties,
-    enterprises,
-    seeds,
-  ]);
+      {} as Record<string, any[]>,
+    );
+  }, [details?.technicalConfig?.crops]);
 
   const scopeMapData = useMemo(() => {
     if (!area) return null;
@@ -601,32 +477,6 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
     return <Badge className={cn("border-none", c.className)}>{c.label}</Badge>;
   };
 
-  const purposeBadge = (purpose: Plan["purpose"]) => {
-    const config: Record<
-      Plan["purpose"],
-      { label: string; className: string }
-    > = {
-      cultivation: {
-        label: "Canh tác",
-        className: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      },
-      treatment: {
-        label: "Xử lý",
-        className: "bg-amber-50 text-amber-700 border-amber-200",
-      },
-      amendment: {
-        label: "Cải tạo",
-        className: "bg-sky-50 text-sky-700 border-sky-200",
-      },
-    };
-    const c = config[purpose];
-    return (
-      <Badge variant="outline" className={cn("capitalize", c.className)}>
-        {c.label}
-      </Badge>
-    );
-  };
-
   const scopeNameKeywords = useMemo(() => {
     const keys = new Set<string>();
     if (area?.name) keys.add(area.name);
@@ -663,14 +513,10 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
   }, [scopeNameKeywords]);
 
   const [historyQuery, setHistoryQuery] = useState("");
-  const [historyMonth, setHistoryMonth] = useState("");
   const [historyFromDate, setHistoryFromDate] = useState("");
   const [historyToDate, setHistoryToDate] = useState("");
   const [historyDetailPlan, setHistoryDetailPlan] =
     useState<TreatmentPlan | null>(null);
-
-  const hasMonthFilter = !!historyMonth;
-  const hasRangeFilter = !!historyFromDate || !!historyToDate;
 
   const getTreatmentIntensityConfig = (intensity: string) => {
     switch (intensity) {
@@ -712,16 +558,6 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
     const endInclusive = rangeEnd ? new Date(rangeEnd.getTime()) : null;
     if (endInclusive) endInclusive.setHours(23, 59, 59, 999);
 
-    let monthStart: Date | null = null;
-    let monthEnd: Date | null = null;
-    if (historyMonth) {
-      const [y, m] = historyMonth.split("-").map((v) => Number(v));
-      if (Number.isFinite(y) && Number.isFinite(m)) {
-        monthStart = new Date(y, m - 1, 1);
-        monthEnd = new Date(y, m, 0, 23, 59, 59, 999);
-      }
-    }
-
     return relevantTreatments.filter((t) => {
       if (query) {
         const hay =
@@ -732,11 +568,6 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
       const planStart = parseDate(t.startDate) || new Date(0);
       const planEnd = parseDate(t.endDate) || planStart;
 
-      // Filter by month/year if provided (overlap with the month).
-      if (monthStart && monthEnd) {
-        if (planStart > monthEnd || planEnd < monthStart) return false;
-      }
-
       // Filter by explicit date range if provided (overlap with the range).
       if (rangeStart || endInclusive) {
         const s = rangeStart || new Date(-8640000000000000);
@@ -746,13 +577,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
 
       return true;
     });
-  }, [
-    relevantTreatments,
-    historyQuery,
-    historyFromDate,
-    historyToDate,
-    historyMonth,
-  ]);
+  }, [relevantTreatments, historyQuery, historyFromDate, historyToDate]);
 
   const historyGroups = useMemo(() => {
     const parseDate = (value: string) => {
@@ -816,500 +641,375 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
         <TabsTrigger value="staff">Nhân viên</TabsTrigger>
         <TabsTrigger value="certificates">Chứng nhận</TabsTrigger>
         <TabsTrigger value="plans">Kế hoạch</TabsTrigger>
-        <TabsTrigger value="amendment-history">Lịch sử cải tạo đất</TabsTrigger>
+        <TabsTrigger value="amendment-history">Lịch sử canh tác</TabsTrigger>
         <TabsTrigger value="statistics">Thống kê</TabsTrigger>
       </TabsList>
 
       {/* Overview Tab (Info) */}
       <TabsContent value="overview" className="space-y-6">
-        <Card className="overflow-hidden border">
-          <CardHeader className="border-b bg-slate-50">
-            <CardTitle className="text-lg">Thông tin chi tiết</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <div className="text-sm text-muted-foreground">Tên vùng</div>
-                <div className="font-medium mt-1 text-slate-900">
-                  {area.name}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Mã số</div>
-                <div className="font-mono mt-1 text-slate-900">{area.id}</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Địa chỉ</div>
-                <div className="font-medium mt-1 text-slate-900">
-                  {details.region?.address ||
-                    details.enterprise?.address ||
-                    "Đang cập nhật"}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">
-                  Phạm vi vùng canh tác
-                </div>
-                <Badge variant="outline" className="mt-1 capitalize">
-                  {area.scope === "region"
-                    ? "Vùng trồng"
-                    : area.scope === "area"
-                      ? "Khu vực"
-                      : "Lô đất"}
-                </Badge>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">
-                  Tổng diện tích
-                </div>
-                <div className="font-medium mt-1 text-lg text-blue-600">
-                  {details.totalArea} ha
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">DT canh tác</div>
-                <div className="font-medium mt-1 text-lg text-green-600">
-                  {/* Mock calculation or same as total if not specified */}
-                  {(details.totalArea * 0.9).toFixed(1)} ha
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">
-                  Cây trồng chính
-                </div>
-                <div className="font-medium mt-1 text-slate-900">
-                  {Array.from(
-                    new Set(details.technicalConfig.crops.map((c) => c.crop)),
-                  ).join(", ") || "Chưa xác định"}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Loại đất</div>
-                <div className="font-medium mt-1 text-slate-900">
-                  {/* Mock data as it's not in store yet */}
-                  Đất đỏ Bazan
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">
-                  Hệ thống tưới
-                </div>
-                <div className="font-medium mt-1 text-slate-900">
-                  {details.technicalConfig.irrigationMethod?.name ||
-                    "Chưa thiết lập"}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">
-                  Người quản lý
-                </div>
-                <div className="font-medium mt-1 text-slate-900">
-                  {details.manager?.fullName || "Chưa phân công"}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Ngày tạo</div>
-                <div className="font-medium mt-1 text-slate-900">
-                  {new Date(area.createdAt).toLocaleDateString("vi-VN")}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Trạng thái</div>
-                <div className="mt-1">
-                  <Badge
-                    variant={area.status === "active" ? "default" : "secondary"}
-                  >
-                    {area.status === "active" ? "Đang hoạt động" : "Tạm ngưng"}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            {area.note && (
-              <div className="pt-4 border-t">
-                <div className="text-sm text-muted-foreground">Ghi chú</div>
-                <p className="mt-1 text-slate-700">{area.note}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Additional Context Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {details.enterprise && (
-            <Card className="overflow-hidden relative shadow-md">
-              <div className="h-32 bg-gray-100 flex items-center justify-center relative">
-                <img
-                  src={
-                    details.enterprise.image ||
-                    "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80"
-                  }
-                  alt="Cover"
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute top-0 right-0 z-10">
-                  <div
-                    className={cn(
-                      "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg rounded-bl-xl",
-                      details.enterprise.status === "active"
-                        ? "bg-green-600"
-                        : "bg-gray-500",
-                    )}
-                  >
-                    {details.enterprise.status === "active"
-                      ? "Đang hoạt động"
-                      : "Dừng hoạt động"}
-                  </div>
-                </div>
-              </div>
-              <CardHeader className="text-center pb-2">
-                <div className="mx-auto w-20 h-20 -mt-12 rounded-full border-4 border-background bg-white shadow-sm flex items-center justify-center mb-2 overflow-hidden relative">
-                  {details.enterprise.image ? (
-                    <img
-                      src={details.enterprise.image}
-                      alt="Logo"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-2xl font-bold text-primary">
-                      {(
-                        details.enterprise.brandName ||
-                        details.enterprise.name ||
-                        "?"
-                      ).charAt(0)}
-                    </span>
-                  )}
-                </div>
-                <CardTitle className="text-xl flex items-center justify-center gap-2">
-                  {details.enterprise.brandName || details.enterprise.name}
-                  {details.enterprise.status === "active" && (
-                    <span className="relative flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
-                    </span>
-                  )}
-                </CardTitle>
-                <CardDescription>{details.enterprise.name}</CardDescription>
-                <div className="flex flex-wrap justify-center gap-2 mt-3">
-                  {Array.isArray(details.enterprise.classification) ? (
-                    details.enterprise.classification.map((item: string) => (
-                      <Badge
-                        key={item}
-                        variant="outline"
-                        className="capitalize"
-                      >
-                        {item === "production"
-                          ? "Sản xuất"
-                          : item === "processing"
-                            ? "Chế biến"
-                            : item === "trading"
-                              ? "Thương mại"
-                              : "Dịch vụ"}
-                      </Badge>
-                    ))
-                  ) : (
-                    <Badge variant="outline" className="capitalize">
-                      {details.enterprise.classification === "production"
-                        ? "Sản xuất"
-                        : details.enterprise.classification === "processing"
-                          ? "Chế biến"
-                          : details.enterprise.classification === "trading"
-                            ? "Thương mại"
-                            : "Dịch vụ"}
-                    </Badge>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-4">
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-center gap-3">
-                    <CreditCard className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-medium">
-                      {details.enterprise.code}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <User className="w-4 h-4 text-muted-foreground" />
-                    <span>
-                      Đại diện:{" "}
-                      <span className="font-medium">
-                        {details.enterprise.representative || "---"}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span>
-                      Thành lập:{" "}
-                      {details.enterprise.foundedDate
-                        ? new Date(
-                            details.enterprise.foundedDate,
-                          ).toLocaleDateString("vi-VN")
-                        : "---"}
-                    </span>
-                  </div>
-                </div>
-                <Separator />
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-start gap-3">
-                    <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
-                    <span>
-                      {details.enterprise.address}
-                      {details.enterprise.ward
-                        ? `, ${details.enterprise.ward}`
-                        : ""}
-                      {details.enterprise.district
-                        ? `, ${details.enterprise.district}`
-                        : ""}
-                      {details.enterprise.province
-                        ? `, ${details.enterprise.province}`
-                        : ""}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Phone className="w-4 h-4 text-muted-foreground" />
-                    {details.enterprise.phone ? (
-                      <a
-                        href={`tel:${details.enterprise.phone}`}
-                        className="hover:underline hover:text-primary transition-colors"
-                      >
-                        {details.enterprise.phone}
-                      </a>
-                    ) : (
-                      <span className="text-muted-foreground">---</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Mail className="w-4 h-4 text-muted-foreground" />
-                    {details.enterprise.email ? (
-                      <a
-                        href={`mailto:${details.enterprise.email}`}
-                        className="hover:underline hover:text-primary transition-colors"
-                      >
-                        {details.enterprise.email}
-                      </a>
-                    ) : (
-                      <span className="text-muted-foreground">---</span>
-                    )}
-                  </div>
-                  {details.enterprise.website && (
-                    <div className="flex items-center gap-3">
-                      <Globe className="w-4 h-4 text-muted-foreground" />
-                      <a
-                        href={details.enterprise.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:underline hover:text-primary transition-colors text-blue-600"
-                      >
-                        {details.enterprise.website}
-                      </a>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {details.selectedEntities.length > 0 && (
-            <Card className="border-slate-200 shadow-sm overflow-hidden">
-              <CardHeader className="border-b bg-slate-50/50 py-3 px-4 flex flex-row items-center justify-between">
-                <CardTitle className="text-sm font-bold flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-primary" />
+        {details.selectedEntities.length > 0 && (
+          <Card className="border-slate-200 shadow-sm overflow-hidden">
+            <CardHeader className="border-b bg-slate-50/50 py-3 px-4 flex flex-row items-center justify-between">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-primary" />
+                <span className="text-lg">
                   Phạm vi vùng canh tác ({details.selectedEntities.length} mục)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="p-6">
-                  <div className="h-[260px] rounded-xl overflow-hidden border border-slate-100 bg-slate-50 mb-6 relative">
-                    <MapContainer
-                      ref={scopeMapRef}
-                      center={[11.53, 106.88]}
-                      zoom={13}
-                      bounds={scopeMapBounds ?? undefined}
-                      boundsOptions={{ padding: [40, 40] }}
-                      style={{ height: "100%", width: "100%" }}
-                    >
-                      <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-                      <ScopeMapPolygons />
-                    </MapContainer>
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="p-6 flex">
+                <div className="space-y-8 flex-4">
+                  {Object.values(details.groupedSelections).map(
+                    (group: any) => (
+                      <div key={group.region.id} className="relative">
+                        {/* Region Level */}
+                        <button
+                          type="button"
+                          className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
+                          onClick={() =>
+                            focusScopeMapToCoordinates(
+                              group.region?.coordinates,
+                            )
+                          }
+                        >
+                          <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm">
+                            <MapPin className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="text-[10px] text-primary font-bold uppercase tracking-wider leading-none mb-1">
+                              Vùng trồng
+                            </div>
+                            <div className="text-sm font-bold text-slate-900">
+                              {group.region.name}
+                            </div>
+                          </div>
+                        </button>
 
-                    <button
-                      type="button"
-                      onClick={() => setIsScopeMapExpanded(true)}
-                      className="absolute top-3 right-3 z-[1000] p-2.5 rounded-xl bg-white/90 backdrop-blur-md shadow-lg hover:bg-white text-slate-600 transition-all active:scale-95"
-                      aria-label="Mở rộng bản đồ"
-                    >
-                      <Maximize2 size={18} />
-                    </button>
-                  </div>
+                        {/* Area & Plot Level Tree */}
+                        {area.scope !== "region" && (
+                          <div className="ml-5 border-l-2 border-slate-100 pl-6 space-y-8">
+                            {Object.values(group.areas).map(
+                              (areaGroup: any) => (
+                                <div
+                                  key={areaGroup.area?.id || "none"}
+                                  className="relative"
+                                >
+                                  {/* Horizontal branch from main stem to Area/Entity */}
+                                  <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-5" />
 
-                  <Dialog
-                    open={isScopeMapExpanded}
-                    onOpenChange={setIsScopeMapExpanded}
+                                  {areaGroup.area ? (
+                                    <>
+                                      <button
+                                        type="button"
+                                        className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
+                                        onClick={() =>
+                                          focusScopeMapToCoordinates(
+                                            areaGroup.area?.coordinates,
+                                          )
+                                        }
+                                      >
+                                        <div className="w-9 h-9 rounded-lg bg-blue-500 text-white flex items-center justify-center shadow-sm">
+                                          <Layers className="w-4.5 h-4.5" />
+                                        </div>
+                                        <div>
+                                          <div className="text-[10px] text-blue-500 font-bold uppercase tracking-wider leading-none mb-1">
+                                            Khu vực
+                                          </div>
+                                          <div className="text-sm font-bold text-slate-900">
+                                            {areaGroup.area.name}
+                                          </div>
+                                        </div>
+                                      </button>
+
+                                      {/* Plots under this Area */}
+                                      <div className="ml-4.5 border-l-2 border-slate-100 pl-6 space-y-4">
+                                        {(areaGroup.entities || [])
+                                          .filter(
+                                            (e: any) => e?.typeCode === "plot",
+                                          )
+                                          .map((plot: any) => (
+                                            <button
+                                              type="button"
+                                              key={plot.id}
+                                              className="relative flex items-center gap-3 py-1 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
+                                              onClick={() =>
+                                                focusScopeMapToCoordinates(
+                                                  plot.coordinates,
+                                                )
+                                              }
+                                            >
+                                              <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
+                                              <div className="w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center shadow-xs shrink-0">
+                                                <Target className="w-4 h-4" />
+                                              </div>
+                                              <div className="min-w-0">
+                                                <div className="text-[10px] text-green-600 font-bold uppercase tracking-wider leading-none mb-1">
+                                                  Lô đất
+                                                </div>
+                                                <div className="text-xs font-bold text-slate-800 truncate">
+                                                  {plot.name}
+                                                </div>
+                                              </div>
+                                            </button>
+                                          ))}
+                                        {areaGroup.entities.some(
+                                          (e: any) => e.typeCode === "area",
+                                        ) && (
+                                          <div className="flex items-center gap-3 py-1 relative">
+                                            <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
+                                            <Badge
+                                              variant="outline"
+                                              className="text-[9px] uppercase font-bold border-blue-200 text-blue-600 bg-blue-50/50"
+                                            >
+                                              Đã chọn toàn bộ khu vực
+                                            </Badge>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </>
+                                  ) : (
+                                    /* No Area (Region or direct Plot) */
+                                    <div className="space-y-4">
+                                      {areaGroup.entities.map((entity: any) => (
+                                        <button
+                                          type="button"
+                                          key={entity.id}
+                                          className="relative flex items-center gap-3 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
+                                          onClick={() =>
+                                            focusScopeMapToCoordinates(
+                                              entity.coordinates,
+                                            )
+                                          }
+                                        >
+                                          <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
+                                          <div
+                                            className={cn(
+                                              "w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-xs",
+                                              entity.typeCode === "region"
+                                                ? "bg-primary"
+                                                : "bg-green-500",
+                                            )}
+                                          >
+                                            {entity.typeCode === "region" ? (
+                                              <MapPin className="w-4 h-4" />
+                                            ) : (
+                                              <Target className="w-4 h-4" />
+                                            )}
+                                          </div>
+                                          <div>
+                                            <div
+                                              className={cn(
+                                                "text-[10px] font-bold uppercase tracking-wider leading-none mb-1",
+                                                entity.typeCode === "region"
+                                                  ? "text-primary"
+                                                  : "text-green-600",
+                                              )}
+                                            >
+                                              {entity.type}
+                                            </div>
+                                            <div className="text-xs font-bold text-slate-800">
+                                              {entity.name}
+                                            </div>
+                                          </div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ),
+                  )}
+                </div>
+
+                <div className="flex-8 h-125 rounded-xl overflow-hidden border border-slate-100 bg-slate-50 mb-6 relative">
+                  <MapContainer
+                    ref={scopeMapRef}
+                    center={[11.53, 106.88]}
+                    zoom={13}
+                    bounds={scopeMapBounds ?? undefined}
+                    boundsOptions={{ padding: [40, 40] }}
+                    style={{ height: "100%", width: "100%" }}
                   >
-                    <DialogContent className="max-w-[96vw] w-[96vw] h-[92vh] p-0 overflow-hidden border-none shadow-2xl rounded-3xl z-10000">
-                      <DialogHeader className="sr-only">
-                        <DialogTitle>Bản đồ phạm vi vùng canh tác</DialogTitle>
-                      </DialogHeader>
-                      <div className="flex h-full">
-                        <div className="flex-1 relative bg-slate-100">
-                          <MapContainer
-                            ref={expandedScopeMapRef}
-                            center={[11.53, 106.88]}
-                            zoom={13}
-                            bounds={scopeMapBounds ?? undefined}
-                            boundsOptions={{ padding: [60, 60] }}
-                            style={{ height: "100%", width: "100%" }}
-                          >
-                            <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-                            <ScopeMapPolygons />
-                          </MapContainer>
+                    <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
+                    <ScopeMapPolygons />
+                  </MapContainer>
 
-                          <button
-                            type="button"
-                            onClick={() => setIsScopeMapExpanded(false)}
-                            className="absolute top-4 right-4 z-[1000] p-3 rounded-2xl bg-white/90 backdrop-blur-md shadow-xl hover:bg-white text-slate-600 transition-all active:scale-95"
-                            aria-label="Đóng"
-                          >
-                            <X size={20} />
-                          </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsScopeMapExpanded(true)}
+                    className="absolute top-3 right-3 z-[1000] p-2.5 rounded-xl bg-white/90 backdrop-blur-md shadow-lg hover:bg-white text-slate-600 transition-all active:scale-95"
+                    aria-label="Mở rộng bản đồ"
+                  >
+                    <Maximize2 size={18} />
+                  </button>
+                </div>
+
+                <Dialog
+                  open={isScopeMapExpanded}
+                  onOpenChange={setIsScopeMapExpanded}
+                >
+                  <DialogContent className="max-w-[96vw] w-[96vw] h-[92vh] p-0 overflow-hidden border-none shadow-2xl rounded-3xl z-10000">
+                    <DialogHeader className="sr-only">
+                      <DialogTitle>Bản đồ phạm vi vùng canh tác</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex h-full">
+                      <div className="flex-1 relative bg-slate-100">
+                        <MapContainer
+                          ref={expandedScopeMapRef}
+                          center={[11.53, 106.88]}
+                          zoom={13}
+                          bounds={scopeMapBounds ?? undefined}
+                          boundsOptions={{ padding: [60, 60] }}
+                          style={{ height: "100%", width: "100%" }}
+                        >
+                          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
+                          <ScopeMapPolygons />
+                        </MapContainer>
+
+                        <button
+                          type="button"
+                          onClick={() => setIsScopeMapExpanded(false)}
+                          className="absolute top-4 right-4 z-[1000] p-3 rounded-2xl bg-white/90 backdrop-blur-md shadow-xl hover:bg-white text-slate-600 transition-all active:scale-95"
+                          aria-label="Đóng"
+                        >
+                          <X size={20} />
+                        </button>
+                      </div>
+
+                      <div className="w-[360px] bg-white border-l border-slate-100 flex flex-col overflow-hidden shrink-0">
+                        <div className="px-5 pt-5 pb-4 border-b bg-slate-50/60">
+                          <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                            <MapPin size={14} className="text-primary" />
+                            Phạm vi địa lý
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-2">
+                            Bấm vào từng cấp để tự zoom bản đồ.
+                          </p>
                         </div>
 
-                        <div className="w-[360px] bg-white border-l border-slate-100 flex flex-col overflow-hidden shrink-0">
-                          <div className="px-5 pt-5 pb-4 border-b bg-slate-50/60">
-                            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                              <MapPin size={14} className="text-primary" />
-                              Phạm vi địa lý
-                            </h3>
-                            <p className="text-xs text-slate-500 mt-2">
-                              Bấm vào từng cấp để tự zoom bản đồ.
-                            </p>
-                          </div>
-
-                          <div className="flex-1 overflow-y-auto split-scrollbar p-5">
-                            <div className="space-y-8">
-                              {Object.values(details.groupedSelections).map(
-                                (group: any) => (
-                                  <div
-                                    key={group.region.id}
-                                    className="relative"
+                        <div className="flex-1 overflow-y-auto split-scrollbar p-5">
+                          <div className="space-y-8">
+                            {Object.values(details.groupedSelections).map(
+                              (group: any) => (
+                                <div key={group.region.id} className="relative">
+                                  {/* Region Level */}
+                                  <button
+                                    type="button"
+                                    className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
+                                    onClick={() =>
+                                      focusScopeMapToCoordinates(
+                                        group.region?.coordinates,
+                                      )
+                                    }
                                   >
-                                    {/* Region Level */}
-                                    <button
-                                      type="button"
-                                      className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
-                                      onClick={() =>
-                                        focusScopeMapToCoordinates(
-                                          group.region?.coordinates,
-                                        )
-                                      }
-                                    >
-                                      <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm">
-                                        <MapPin className="w-5 h-5" />
+                                    <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm">
+                                      <MapPin className="w-5 h-5" />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <div className="text-[10px] text-primary font-bold uppercase tracking-wider leading-none mb-1">
+                                        Vùng trồng
                                       </div>
-                                      <div className="min-w-0">
-                                        <div className="text-[10px] text-primary font-bold uppercase tracking-wider leading-none mb-1">
-                                          Vùng trồng
-                                        </div>
-                                        <div className="text-sm font-bold text-slate-900 truncate">
-                                          {group.region.name}
-                                        </div>
+                                      <div className="text-sm font-bold text-slate-900 truncate">
+                                        {group.region.name}
                                       </div>
-                                    </button>
+                                    </div>
+                                  </button>
 
-                                    {/* Area & Plot Level Tree */}
-                                    {area.scope !== "region" && (
-                                      <div className="ml-5 border-l-2 border-slate-100 pl-6 space-y-8">
-                                        {Object.values(group.areas).map(
-                                          (areaGroup: any) => (
-                                            <div
-                                              key={areaGroup.area?.id || "none"}
-                                              className="relative"
-                                            >
-                                              <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-5" />
+                                  {/* Area & Plot Level Tree */}
+                                  {area.scope !== "region" && (
+                                    <div className="ml-5 border-l-2 border-slate-100 pl-6 space-y-8">
+                                      {Object.values(group.areas).map(
+                                        (areaGroup: any) => (
+                                          <div
+                                            key={areaGroup.area?.id || "none"}
+                                            className="relative"
+                                          >
+                                            <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-5" />
 
-                                              {areaGroup.area ? (
-                                                <>
-                                                  <button
-                                                    type="button"
-                                                    className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
-                                                    onClick={() =>
-                                                      focusScopeMapToCoordinates(
-                                                        areaGroup.area
-                                                          ?.coordinates,
-                                                      )
-                                                    }
-                                                  >
-                                                    <div className="w-9 h-9 rounded-lg bg-blue-500 text-white flex items-center justify-center shadow-sm">
-                                                      <Layers className="w-4.5 h-4.5" />
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                      <div className="text-[10px] text-blue-500 font-bold uppercase tracking-wider leading-none mb-1">
-                                                        Khu vực
-                                                      </div>
-                                                      <div className="text-sm font-bold text-slate-900 truncate">
-                                                        {areaGroup.area.name}
-                                                      </div>
-                                                    </div>
-                                                  </button>
-
-                                                  <div className="ml-4.5 border-l-2 border-slate-100 pl-6 space-y-4">
-                                                    {(areaGroup.entities || [])
-                                                      .filter(
-                                                        (e: any) =>
-                                                          e?.typeCode ===
-                                                          "plot",
-                                                      )
-                                                      .map((plot: any) => (
-                                                        <button
-                                                          type="button"
-                                                          key={plot.id}
-                                                          className="relative flex items-center gap-3 py-1 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
-                                                          onClick={() =>
-                                                            focusScopeMapToCoordinates(
-                                                              plot.coordinates,
-                                                            )
-                                                          }
-                                                        >
-                                                          <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
-                                                          <div className="w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center shadow-xs shrink-0">
-                                                            <Target className="w-4 h-4" />
-                                                          </div>
-                                                          <div className="min-w-0">
-                                                            <div className="text-[10px] text-green-600 font-bold uppercase tracking-wider leading-none mb-1">
-                                                              Lô đất
-                                                            </div>
-                                                            <div className="text-xs font-bold text-slate-800 truncate">
-                                                              {plot.name}
-                                                            </div>
-                                                          </div>
-                                                        </button>
-                                                      ))}
-
-                                                    {(
-                                                      areaGroup.entities || []
-                                                    ).some(
-                                                      (e: any) =>
-                                                        e?.typeCode === "area",
-                                                    ) && (
-                                                      <div className="flex items-center gap-3 py-1 relative">
-                                                        <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
-                                                        <Badge
-                                                          variant="outline"
-                                                          className="text-[9px] uppercase font-bold border-blue-200 text-blue-600 bg-blue-50/50"
-                                                        >
-                                                          Đã chọn toàn bộ khu
-                                                          vực
-                                                        </Badge>
-                                                      </div>
-                                                    )}
+                                            {areaGroup.area ? (
+                                              <>
+                                                <button
+                                                  type="button"
+                                                  className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
+                                                  onClick={() =>
+                                                    focusScopeMapToCoordinates(
+                                                      areaGroup.area
+                                                        ?.coordinates,
+                                                    )
+                                                  }
+                                                >
+                                                  <div className="w-9 h-9 rounded-lg bg-blue-500 text-white flex items-center justify-center shadow-sm">
+                                                    <Layers className="w-4.5 h-4.5" />
                                                   </div>
-                                                </>
-                                              ) : (
-                                                <div className="space-y-4">
+                                                  <div className="min-w-0">
+                                                    <div className="text-[10px] text-blue-500 font-bold uppercase tracking-wider leading-none mb-1">
+                                                      Khu vực
+                                                    </div>
+                                                    <div className="text-sm font-bold text-slate-900 truncate">
+                                                      {areaGroup.area.name}
+                                                    </div>
+                                                  </div>
+                                                </button>
+
+                                                <div className="ml-4.5 border-l-2 border-slate-100 pl-6 space-y-4">
+                                                  {(areaGroup.entities || [])
+                                                    .filter(
+                                                      (e: any) =>
+                                                        e?.typeCode === "plot",
+                                                    )
+                                                    .map((plot: any) => (
+                                                      <button
+                                                        type="button"
+                                                        key={plot.id}
+                                                        className="relative flex items-center gap-3 py-1 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
+                                                        onClick={() =>
+                                                          focusScopeMapToCoordinates(
+                                                            plot.coordinates,
+                                                          )
+                                                        }
+                                                      >
+                                                        <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
+                                                        <div className="w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center shadow-xs shrink-0">
+                                                          <Target className="w-4 h-4" />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                          <div className="text-[10px] text-green-600 font-bold uppercase tracking-wider leading-none mb-1">
+                                                            Lô đất
+                                                          </div>
+                                                          <div className="text-xs font-bold text-slate-800 truncate">
+                                                            {plot.name}
+                                                          </div>
+                                                        </div>
+                                                      </button>
+                                                    ))}
+
                                                   {(
                                                     areaGroup.entities || []
-                                                  ).map((entity: any) => (
+                                                  ).some(
+                                                    (e: any) =>
+                                                      e?.typeCode === "area",
+                                                  ) && (
+                                                    <div className="flex items-center gap-3 py-1 relative">
+                                                      <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
+                                                      <Badge
+                                                        variant="outline"
+                                                        className="text-[9px] uppercase font-bold border-blue-200 text-blue-600 bg-blue-50/50"
+                                                      >
+                                                        Đã chọn toàn bộ khu vực
+                                                      </Badge>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </>
+                                            ) : (
+                                              <div className="space-y-4">
+                                                {(areaGroup.entities || []).map(
+                                                  (entity: any) => (
                                                     <button
                                                       type="button"
                                                       key={entity.id}
@@ -1354,199 +1054,327 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                                                         </div>
                                                       </div>
                                                     </button>
-                                                  ))}
-                                                </div>
-                                              )}
-                                            </div>
-                                          ),
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                ),
-                              )}
-                            </div>
+                                                  ),
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        ),
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              ),
+                            )}
                           </div>
                         </div>
                       </div>
-                    </DialogContent>
-                  </Dialog>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-                  <div className="space-y-8">
-                    {Object.values(details.groupedSelections).map(
-                      (group: any) => (
-                        <div key={group.region.id} className="relative">
-                          {/* Region Level */}
-                          <button
-                            type="button"
-                            className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
-                            onClick={() =>
-                              focusScopeMapToCoordinates(
-                                group.region?.coordinates,
-                              )
-                            }
-                          >
-                            <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm">
-                              <MapPin className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <div className="text-[10px] text-primary font-bold uppercase tracking-wider leading-none mb-1">
-                                Vùng trồng
-                              </div>
-                              <div className="text-sm font-bold text-slate-900">
-                                {group.region.name}
-                              </div>
-                            </div>
-                          </button>
-
-                          {/* Area & Plot Level Tree */}
-                          {area.scope !== "region" && (
-                            <div className="ml-5 border-l-2 border-slate-100 pl-6 space-y-8">
-                              {Object.values(group.areas).map(
-                                (areaGroup: any) => (
-                                  <div
-                                    key={areaGroup.area?.id || "none"}
-                                    className="relative"
-                                  >
-                                    {/* Horizontal branch from main stem to Area/Entity */}
-                                    <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-5" />
-
-                                    {areaGroup.area ? (
-                                      <>
-                                        <button
-                                          type="button"
-                                          className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
-                                          onClick={() =>
-                                            focusScopeMapToCoordinates(
-                                              areaGroup.area?.coordinates,
-                                            )
-                                          }
-                                        >
-                                          <div className="w-9 h-9 rounded-lg bg-blue-500 text-white flex items-center justify-center shadow-sm">
-                                            <Layers className="w-4.5 h-4.5" />
-                                          </div>
-                                          <div>
-                                            <div className="text-[10px] text-blue-500 font-bold uppercase tracking-wider leading-none mb-1">
-                                              Khu vực
-                                            </div>
-                                            <div className="text-sm font-bold text-slate-900">
-                                              {areaGroup.area.name}
-                                            </div>
-                                          </div>
-                                        </button>
-
-                                        {/* Plots under this Area */}
-                                        <div className="ml-4.5 border-l-2 border-slate-100 pl-6 space-y-4">
-                                          {(areaGroup.entities || [])
-                                            .filter(
-                                              (e: any) =>
-                                                e?.typeCode === "plot",
-                                            )
-                                            .map((plot: any) => (
-                                              <button
-                                                type="button"
-                                                key={plot.id}
-                                                className="relative flex items-center gap-3 py-1 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
-                                                onClick={() =>
-                                                  focusScopeMapToCoordinates(
-                                                    plot.coordinates,
-                                                  )
-                                                }
-                                              >
-                                                <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
-                                                <div className="w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center shadow-xs shrink-0">
-                                                  <Target className="w-4 h-4" />
-                                                </div>
-                                                <div className="min-w-0">
-                                                  <div className="text-[10px] text-green-600 font-bold uppercase tracking-wider leading-none mb-1">
-                                                    Lô đất
-                                                  </div>
-                                                  <div className="text-xs font-bold text-slate-800 truncate">
-                                                    {plot.name}
-                                                  </div>
-                                                </div>
-                                              </button>
-                                            ))}
-                                          {areaGroup.entities.some(
-                                            (e: any) => e.typeCode === "area",
-                                          ) && (
-                                            <div className="flex items-center gap-3 py-1 relative">
-                                              <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
-                                              <Badge
-                                                variant="outline"
-                                                className="text-[9px] uppercase font-bold border-blue-200 text-blue-600 bg-blue-50/50"
-                                              >
-                                                Đã chọn toàn bộ khu vực
-                                              </Badge>
-                                            </div>
-                                          )}
-                                        </div>
-                                      </>
-                                    ) : (
-                                      /* No Area (Region or direct Plot) */
-                                      <div className="space-y-4">
-                                        {areaGroup.entities.map(
-                                          (entity: any) => (
-                                            <button
-                                              type="button"
-                                              key={entity.id}
-                                              className="relative flex items-center gap-3 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
-                                              onClick={() =>
-                                                focusScopeMapToCoordinates(
-                                                  entity.coordinates,
-                                                )
-                                              }
-                                            >
-                                              <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
-                                              <div
-                                                className={cn(
-                                                  "w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-xs",
-                                                  entity.typeCode === "region"
-                                                    ? "bg-primary"
-                                                    : "bg-green-500",
-                                                )}
-                                              >
-                                                {entity.typeCode ===
-                                                "region" ? (
-                                                  <MapPin className="w-4 h-4" />
-                                                ) : (
-                                                  <Target className="w-4 h-4" />
-                                                )}
-                                              </div>
-                                              <div>
-                                                <div
-                                                  className={cn(
-                                                    "text-[10px] font-bold uppercase tracking-wider leading-none mb-1",
-                                                    entity.typeCode === "region"
-                                                      ? "text-primary"
-                                                      : "text-green-600",
-                                                  )}
-                                                >
-                                                  {entity.type}
-                                                </div>
-                                                <div className="text-xs font-bold text-slate-800">
-                                                  {entity.name}
-                                                </div>
-                                              </div>
-                                            </button>
-                                          ),
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                ),
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ),
-                    )}
+        <Card className="overflow-hidden border">
+          <CardHeader className="border-b bg-slate-50 py-3 px-4">
+            <CardTitle className="text-sm font-bold flex items-center gap-2">
+              <Contact className="w-4 h-4 text-primary" />
+              <span className="text-lg">Thông tin chi tiết</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-3 gap-4 pt-6">
+            {details.enterprise && (
+              <Card className="overflow-hidden relative shadow-md">
+                <div className="h-32 bg-gray-100 flex items-center justify-center relative">
+                  <img
+                    src={
+                      details.enterprise.image ||
+                      "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80"
+                    }
+                    alt="Cover"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-0 right-0 z-10">
+                    <div
+                      className={cn(
+                        "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg rounded-bl-xl",
+                        details.enterprise.status === "active"
+                          ? "bg-green-600"
+                          : "bg-gray-500",
+                      )}
+                    >
+                      {details.enterprise.status === "active"
+                        ? "Đang hoạt động"
+                        : "Dừng hoạt động"}
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+                <CardHeader className="text-center pb-2">
+                  <div className="mx-auto w-20 h-20 -mt-12 rounded-full border-4 border-background bg-white shadow-sm flex items-center justify-center mb-2 overflow-hidden relative">
+                    {details.enterprise.image ? (
+                      <img
+                        src={details.enterprise.image}
+                        alt="Logo"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-2xl font-bold text-primary">
+                        {(
+                          details.enterprise.brandName ||
+                          details.enterprise.name ||
+                          "?"
+                        ).charAt(0)}
+                      </span>
+                    )}
+                  </div>
+                  <CardTitle className="text-xl flex items-center justify-center gap-2">
+                    {details.enterprise.brandName || details.enterprise.name}
+                    {details.enterprise.status === "active" && (
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                      </span>
+                    )}
+                  </CardTitle>
+                  <CardDescription>{details.enterprise.name}</CardDescription>
+                  <div className="flex flex-wrap justify-center gap-2 mt-3">
+                    {Array.isArray(details.enterprise.classification) ? (
+                      details.enterprise.classification.map((item: string) => (
+                        <Badge
+                          key={item}
+                          variant="outline"
+                          className="capitalize"
+                        >
+                          {item === "production"
+                            ? "Sản xuất"
+                            : item === "processing"
+                              ? "Chế biến"
+                              : item === "trading"
+                                ? "Thương mại"
+                                : "Dịch vụ"}
+                        </Badge>
+                      ))
+                    ) : (
+                      <Badge variant="outline" className="capitalize">
+                        {details.enterprise.classification === "production"
+                          ? "Sản xuất"
+                          : details.enterprise.classification === "processing"
+                            ? "Chế biến"
+                            : details.enterprise.classification === "trading"
+                              ? "Thương mại"
+                              : "Dịch vụ"}
+                      </Badge>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4 pt-4">
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center gap-3">
+                      <CreditCard className="w-4 h-4 text-muted-foreground" />
+                      <span className="font-medium">
+                        {details.enterprise.code}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <User className="w-4 h-4 text-muted-foreground" />
+                      <span>
+                        Đại diện:{" "}
+                        <span className="font-medium">
+                          {details.enterprise.representative || "---"}
+                        </span>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                      <span>
+                        Thành lập:{" "}
+                        {details.enterprise.foundedDate
+                          ? new Date(
+                              details.enterprise.foundedDate,
+                            ).toLocaleDateString("vi-VN")
+                          : "---"}
+                      </span>
+                    </div>
+                  </div>
+                  <Separator />
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-start gap-3">
+                      <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
+                      <span>
+                        {details.enterprise.address}
+                        {details.enterprise.ward
+                          ? `, ${details.enterprise.ward}`
+                          : ""}
+                        {details.enterprise.district
+                          ? `, ${details.enterprise.district}`
+                          : ""}
+                        {details.enterprise.province
+                          ? `, ${details.enterprise.province}`
+                          : ""}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Phone className="w-4 h-4 text-muted-foreground" />
+                      {details.enterprise.phone ? (
+                        <a
+                          href={`tel:${details.enterprise.phone}`}
+                          className="hover:underline hover:text-primary transition-colors"
+                        >
+                          {details.enterprise.phone}
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground">---</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-4 h-4 text-muted-foreground" />
+                      {details.enterprise.email ? (
+                        <a
+                          href={`mailto:${details.enterprise.email}`}
+                          className="hover:underline hover:text-primary transition-colors"
+                        >
+                          {details.enterprise.email}
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground">---</span>
+                      )}
+                    </div>
+                    {details.enterprise.website && (
+                      <div className="flex items-center gap-3">
+                        <Globe className="w-4 h-4 text-muted-foreground" />
+                        <a
+                          href={details.enterprise.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline hover:text-primary transition-colors text-blue-600"
+                        >
+                          {details.enterprise.website}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <div className="text-sm text-muted-foreground">Tên vùng</div>
+                  <div className="font-medium mt-1 text-slate-900">
+                    {area.name}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Mã số</div>
+                  <div className="font-mono mt-1 text-slate-900">{area.id}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Địa chỉ</div>
+                  <div className="font-medium mt-1 text-slate-900">
+                    {details.region?.address ||
+                      details.enterprise?.address ||
+                      "Đang cập nhật"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">
+                    Phạm vi vùng canh tác
+                  </div>
+                  <Badge variant="outline" className="mt-1 capitalize">
+                    {area.scope === "region"
+                      ? "Vùng trồng"
+                      : area.scope === "area"
+                        ? "Khu vực"
+                        : "Lô đất"}
+                  </Badge>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">
+                    Tổng diện tích
+                  </div>
+                  <div className="font-medium mt-1 text-lg text-blue-600">
+                    {details.totalArea} ha
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">
+                    DT canh tác
+                  </div>
+                  <div className="font-medium mt-1 text-lg text-green-600">
+                    {/* Mock calculation or same as total if not specified */}
+                    {(details.totalArea * 0.9).toFixed(1)} ha
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">
+                    Cây trồng chính
+                  </div>
+                  <div className="font-medium mt-1 text-slate-900">
+                    {Array.from(
+                      new Set(details.technicalConfig.crops.map((c) => c.crop)),
+                    ).join(", ") || "Chưa xác định"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Loại đất</div>
+                  <div className="font-medium mt-1 text-slate-900">
+                    {/* Mock data as it's not in store yet */}
+                    Đất đỏ Bazan
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">
+                    Hệ thống tưới
+                  </div>
+                  <div className="font-medium mt-1 text-slate-900">
+                    {details.technicalConfig.irrigationMethod?.name ||
+                      "Chưa thiết lập"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">
+                    Người quản lý
+                  </div>
+                  <div className="font-medium mt-1 text-slate-900">
+                    {details.manager?.fullName || "Chưa phân công"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Ngày tạo</div>
+                  <div className="font-medium mt-1 text-slate-900">
+                    {new Date(area.createdAt).toLocaleDateString("vi-VN")}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">
+                    Trạng thái
+                  </div>
+                  <div className="mt-1">
+                    <Badge
+                      variant={
+                        area.status === "active" ? "default" : "secondary"
+                      }
+                    >
+                      {area.status === "active"
+                        ? "Đang hoạt động"
+                        : "Tạm ngưng"}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {area.note && (
+                <div className="pt-4 border-t">
+                  <div className="text-sm text-muted-foreground">Ghi chú</div>
+                  <p className="mt-1 text-slate-700">{area.note}</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </TabsContent>
 
       {/* Crops & Configurations Tab */}
@@ -1566,6 +1394,85 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
             </div>
           </CardHeader>
           <CardContent className="p-8">
+            {/* Region-Level Crop Health Overview */}
+            <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-700">
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+                Tổng quan tình trạng cây trồng (Toàn vùng)
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-5 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+                  <div className="absolute -right-4 -top-4 w-16 h-16 bg-blue-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500" />
+                  <div className="relative z-10">
+                    <div className="text-[10px] text-blue-500 font-black uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5" />
+                      Tổng số cây
+                    </div>
+                    <div className="text-3xl font-black text-slate-800 tabular-nums mb-1">
+                      {details?.regionStats.total.toLocaleString()}
+                    </div>
+                    <div className="text-[9px] text-slate-400 font-medium">
+                      Toàn bộ diện tích canh tác
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+                  <div className="absolute -right-4 -top-4 w-16 h-16 bg-green-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500" />
+                  <div className="relative z-10">
+                    <div className="text-[10px] text-green-500 font-black uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Số cây khỏe
+                    </div>
+                    <div className="text-3xl font-black text-green-600 tabular-nums mb-1">
+                      {details?.regionStats.healthy.toLocaleString()}
+                    </div>
+                    <Badge className="bg-green-50 text-green-600 border-green-100 text-[9px] font-black h-4 px-1.5">
+                      {details &&
+                        Math.round(
+                          (details.regionStats.healthy /
+                            details.regionStats.total) *
+                            100,
+                        )}
+                      %
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+                  <div className="absolute -right-4 -top-4 w-16 h-16 bg-blue-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500" />
+                  <div className="relative z-10">
+                    <div className="text-[10px] text-blue-400 font-black uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                      <Beaker className="w-3.5 h-3.5" />
+                      Đang chữa trị
+                    </div>
+                    <div className="text-3xl font-black text-blue-500 tabular-nums mb-1">
+                      {details?.regionStats.treating.toLocaleString()}
+                    </div>
+                    <div className="text-[9px] text-slate-400 font-medium">
+                      Theo dõi phục hồi
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+                  <div className="absolute -right-4 -top-4 w-16 h-16 bg-orange-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500" />
+                  <div className="relative z-10">
+                    <div className="text-[10px] text-orange-500 font-black uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      Số cây bệnh
+                    </div>
+                    <div className="text-3xl font-black text-orange-600 tabular-nums mb-1">
+                      {details?.regionStats.diseased.toLocaleString()}
+                    </div>
+                    <Badge className="bg-orange-50 text-orange-600 border-orange-100 text-[9px] font-black h-4 px-1.5">
+                      Cảnh báo
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* Left: Technical Configs */}
               <div className="lg:col-span-4 space-y-6">
@@ -1620,74 +1527,121 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
               </div>
 
               {/* Right: Selected Crops */}
-              <div className="lg:col-span-8">
-                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
+              <div className="lg:col-span-8 space-y-8">
+                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
                   <span className="w-1 h-1 rounded-full bg-green-500" />
                   Danh sách giống cây trồng & Hạt giống (
                   {details.technicalConfig.crops.length})
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {details.technicalConfig.crops.map((crop) => (
-                    <div
-                      key={crop.id}
-                      className="group flex items-start gap-4 p-4 border rounded-2xl bg-white hover:border-primary/40 hover:bg-slate-50/50 transition-all shadow-sm hover:shadow-md"
-                    >
-                      <div className="w-16 h-16 rounded-2xl bg-slate-50 overflow-hidden shrink-0 border relative">
-                        {crop.illustration ? (
-                          <img
-                            src={crop.illustration as string}
-                            alt={crop.varietyName}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Leaf className="w-6 h-6 text-slate-300 m-auto absolute inset-0" />
-                        )}
+                {Object.entries(groupedCrops).map(([cropName, crops]) => (
+                  <div key={cropName} className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-widest">
+                        {cropName}
                       </div>
-                      <div className="flex-1 pt-1">
-                        <div className="font-bold text-slate-900 leading-tight mb-1 group-hover:text-primary transition-colors">
-                          {crop.varietyName}
-                        </div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge
-                            variant="secondary"
-                            className="text-[9px] px-1.5 py-0 h-4 bg-slate-100 text-slate-600 font-bold uppercase tracking-tight"
-                          >
-                            {crop.crop}
-                          </Badge>
-                          {crop.seedType && (
-                            <Badge
-                              variant="outline"
-                              className="text-[9px] px-1.5 py-0 h-4 border-primary/20 text-primary font-medium"
-                            >
-                              {crop.seedType}
-                            </Badge>
-                          )}
-                        </div>
+                      <div className="h-px flex-1 bg-slate-100" />
+                    </div>
 
-                        {crop.selectedSeeds &&
-                          crop.selectedSeeds.length > 0 && (
-                            <div className="mt-2 space-y-1.5">
-                              <div className="text-[10px] text-muted-foreground font-semibold italic">
-                                Hạt giống sử dụng:
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pl-4">
+                      {crops.map((crop) => (
+                        <div key={crop.id} className="relative group">
+                          {/* Connector for Crop Category */}
+                          <div className="absolute -left-4 top-8 w-4 h-px bg-slate-200" />
+                          <div className="absolute -left-4 top-0 w-px h-8 bg-slate-200" />
+
+                          <div className="flex flex-col border rounded-2xl bg-white hover:border-primary/40 hover:bg-slate-50/50 transition-all shadow-sm hover:shadow-md overflow-hidden">
+                            <div className="flex items-start gap-4 p-4 relative">
+                              <div className="w-16 h-16 rounded-2xl bg-slate-50 overflow-hidden shrink-0 border relative">
+                                {crop.illustration ? (
+                                  <img
+                                    src={crop.illustration as string}
+                                    alt={crop.varietyName}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <Leaf className="w-6 h-6 text-slate-300 m-auto absolute inset-0" />
+                                )}
                               </div>
-                              <div className="flex flex-wrap gap-1.5">
-                                {crop.selectedSeeds.map((seed: any) => (
-                                  <Badge
-                                    key={seed.id}
-                                    variant="secondary"
-                                    className="text-[10px] px-2 py-0.5 bg-green-50 text-green-700 border-green-100 font-medium"
+                              <div className="flex-1 pt-1">
+                                <div className="flex justify-between items-start">
+                                  <div className="font-bold text-slate-900 leading-tight mb-1 group-hover:text-primary transition-colors">
+                                    {crop.varietyName}
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-slate-400 hover:text-primary -mt-1 -mr-1"
+                                    onClick={() =>
+                                      setLocation(`/variety/${crop.id}`)
+                                    }
                                   >
-                                    {seed.varietyName}
-                                  </Badge>
-                                ))}
+                                    <Maximize2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {crop.seedType && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[9px] px-1.5 py-0 h-4 border-primary/20 text-primary font-medium"
+                                    >
+                                      {crop.seedType}
+                                    </Badge>
+                                  )}
+                                  <span className="text-[10px] text-muted-foreground italic">
+                                    Mã: {crop.varietyCode || crop.id}
+                                  </span>
+                                </div>
                               </div>
                             </div>
-                          )}
-                      </div>
+
+                            {crop.selectedSeeds &&
+                              crop.selectedSeeds.length > 0 && (
+                                <div className="bg-slate-50/80 border-t border-slate-100 p-4 space-y-3">
+                                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-2">
+                                    <Layers className="w-3 h-3 text-primary" />
+                                    Hạt giống sử dụng
+                                  </div>
+                                  <div className="space-y-2">
+                                    {crop.selectedSeeds.map((seed: any) => (
+                                      <div
+                                        key={seed.id}
+                                        className="flex items-center gap-3 p-2 rounded-xl bg-white border border-slate-100 group/seed hover:border-primary/30 transition-all cursor-pointer"
+                                        onClick={() =>
+                                          setLocation(`/seed/${seed.id}`)
+                                        }
+                                      >
+                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
+                                        <div className="flex-1">
+                                          <div className="text-xs font-bold text-slate-800 group-hover/seed:text-primary transition-colors">
+                                            {seed.varietyName}
+                                          </div>
+                                          {seed.origin && (
+                                            <div className="text-[9px] text-muted-foreground">
+                                              Nguồn gốc: {seed.origin}
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <Badge
+                                            variant="secondary"
+                                            className="text-[8px] bg-slate-50 border h-4 px-1 text-slate-500"
+                                          >
+                                            Chi tiết
+                                          </Badge>
+                                          <ChevronRight className="w-3 h-3 text-slate-300 group-hover/seed:text-primary transition-colors" />
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
 
                 {details.technicalConfig.crops.length === 0 && (
                   <div className="py-12 text-center text-muted-foreground italic border-2 border-dashed rounded-3xl bg-slate-50/50">
@@ -1702,167 +1656,418 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
 
       {/* Staff Tab */}
       <TabsContent value="staff" className="space-y-6">
-        <Card className="overflow-hidden border">
-          <CardHeader className="border-b bg-slate-50">
-            <div className="flex justify-between items-center">
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-5 h-5 text-primary" />
-                Nhân sự quản lý
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-6">
-            {details.manager ? (
-              <div className="flex items-start gap-4 p-4 border rounded-lg bg-primary/5 border-primary/20">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold overflow-hidden text-2xl">
-                  {details.manager.avatar ? (
-                    <img
-                      src={details.manager.avatar}
-                      alt={details.manager.fullName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    details.manager.fullName.charAt(0)
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="font-bold text-lg text-slate-900">
-                    {details.manager.fullName}
+        <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
+          {/* Left Column - Management & List (6/10) */}
+          <div className="lg:col-span-6 space-y-6">
+            <Card className="overflow-hidden border shadow-sm">
+              <CardHeader className="border-b bg-slate-50/50 py-4">
+                <CardTitle className="flex items-center gap-2 text-base font-bold">
+                  <User className="w-4 h-4 text-primary" />
+                  Nhân sự quản lý
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {details.manager ? (
+                  <div className="flex items-start gap-4 p-5 hover:bg-slate-50 transition-colors">
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-bold overflow-hidden text-2xl border border-primary/20 shrink-0">
+                      {details.manager.avatar ? (
+                        <img
+                          src={details.manager.avatar}
+                          alt={details.manager.fullName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        details.manager.fullName.charAt(0)
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex justify-between items-start">
+                        <div className="font-bold text-lg text-slate-900 leading-tight">
+                          {details.manager.fullName}
+                        </div>
+                        <Badge className="bg-primary/10 text-primary border-none text-[10px] px-2 py-0 h-5">
+                          Quản lý vùng
+                        </Badge>
+                      </div>
+                      <div className="text-primary font-bold text-sm tracking-wide">
+                        {details.manager.position}
+                      </div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+                        <MapPin className="w-3 h-3" />
+                        {details.manager.department} • {details.manager.team}
+                      </div>
+                      <div className="flex flex-wrap gap-x-6 gap-y-1 mt-3">
+                        <div className="flex items-center gap-2 text-xs text-slate-600">
+                          <Phone className="w-3.5 h-3.5 text-slate-400" />
+                          {details.manager.phone || "N/A"}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-slate-600">
+                          <Mail className="w-3.5 h-3.5 text-slate-400" />
+                          {details.manager.email || "N/A"}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-primary font-medium">
-                    {details.manager.position}
+                ) : (
+                  <div className="text-center py-10 text-muted-foreground italic text-sm">
+                    Chưa phân công người quản lý
                   </div>
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {details.manager.department}
-                  </div>
-                  <div className="flex gap-4 mt-2 text-sm text-slate-600">
-                    <span>Phone: {details.manager.phone || "N/A"}</span>
-                    <span>Email: {details.manager.email || "N/A"}</span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                Chưa phân công người quản lý
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                )}
+              </CardContent>
+            </Card>
 
-        <Card className="overflow-hidden border">
-          <CardHeader className="border-b bg-slate-50">
-            <CardTitle className="text-base">
-              Danh sách nhân viên (Mẫu)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="divide-y">
-              {/* Mock list since we don't have direct relation yet */}
-              {[1, 2, 3].map((_, i) => (
-                <div key={i} className="py-4 flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-                      <User className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="font-medium">
-                        Nhân viên kỹ thuật {i + 1}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Bộ phận Kỹ thuật
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    0987 654 32{i}
-                  </div>
+            <Card className="overflow-hidden border shadow-sm">
+              <CardHeader className="border-b bg-slate-50/50 py-4 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-base font-bold flex items-center gap-2">
+                    <Contact className="w-4 h-4 text-primary" />
+                    Danh sách nhân viên
+                  </CardTitle>
+                  <CardDescription className="text-xs mt-0.5">
+                    Chọn nhân viên để xem chi tiết thông tin
+                  </CardDescription>
                 </div>
-              ))}
+              </CardHeader>
+              <CardContent>
+                <div className="mt-4">
+                  <DataTable
+                    columns={staffColumns}
+                    data={personnel.filter(
+                      (p: Personnel) => p.id !== details?.manager?.id,
+                    )}
+                    onView={(item) => setSelectedStaffId(item.id)}
+                    searchPlaceholder="Tìm kiếm nhân viên..."
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column - Details (4/10) */}
+          <div className="lg:col-span-4">
+            <div className="sticky top-1">
+              {selectedStaffId ? (
+                (() => {
+                  const staff = personnel.find(
+                    (p: Personnel) => p.id === selectedStaffId,
+                  );
+                  if (!staff) return null;
+                  return (
+                    <Card>
+                      <div className="p-6 border-b bg-slate-50/30 relative">
+                        <div className="flex items-center gap-5">
+                          {/* Avatar */}
+                          <div className="w-16 h-16 rounded-2xl bg-white p-1 shadow-lg border border-slate-100 shrink-0">
+                            <div className="w-full h-full rounded-xl bg-primary/5 flex items-center justify-center text-primary font-bold overflow-hidden text-2xl select-none">
+                              {staff.avatar ? (
+                                <img
+                                  src={staff.avatar}
+                                  alt={staff.fullName}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                staff.fullName.charAt(0)
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Name & Title */}
+                          <div>
+                            <h3 className="text-xl font-black text-slate-900 tracking-tight leading-tight">
+                              {staff.fullName}
+                            </h3>
+                            <div className="flex items-center gap-1.5 text-primary font-bold text-[10px] tracking-widest uppercase mt-1">
+                              <Badge className="bg-primary/10 text-primary border-none text-[9px] px-2 py-0 h-4 font-black">
+                                {staff.position}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <CardContent className="p-8 space-y-8">
+                        {/* Info Sections */}
+                        <div className="grid gap-7">
+                          {/* Unit Info */}
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-2 text-[10px] uppercase font-black text-slate-400 tracking-[0.2em]">
+                              <Layers className="w-3 h-3" />
+                              Đơn vị công tác
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 transition-colors hover:border-primary/20">
+                                <span className="block text-[10px] text-slate-400 font-bold mb-1 uppercase tracking-tight">
+                                  Bộ phận
+                                </span>
+                                <span className="text-sm font-bold text-slate-800 tracking-tight">
+                                  {staff.department}
+                                </span>
+                              </div>
+                              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 transition-colors hover:border-primary/20">
+                                <span className="block text-[10px] text-slate-400 font-bold mb-1 uppercase tracking-tight">
+                                  Tổ đội
+                                </span>
+                                <span className="text-sm font-bold text-slate-800 tracking-tight">
+                                  {staff.team}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Contact Info */}
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-2 text-[10px] uppercase font-black text-slate-400 tracking-[0.2em]">
+                              <Contact className="w-3 h-3" />
+                              Thông tin liên hệ
+                            </div>
+                            <div className="space-y-3">
+                              <div className="group flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-100 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
+                                <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10 group-hover:scale-110 transition-transform">
+                                  <Phone className="w-4.5 h-4.5" />
+                                </div>
+                                <div>
+                                  <span className="block text-[10px] text-slate-400 font-bold uppercase mb-0.5 tracking-tight">
+                                    Số điện thoại
+                                  </span>
+                                  <span className="text-[15px] font-bold text-slate-800 tracking-tight select-all">
+                                    {staff.phone}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="group flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-100 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
+                                <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10 group-hover:scale-110 transition-transform">
+                                  <Mail className="w-4.5 h-4.5" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <span className="block text-[10px] text-slate-400 font-bold uppercase mb-0.5 tracking-tight">
+                                    Địa chỉ Email
+                                  </span>
+                                  <span className="text-[15px] font-bold text-slate-800 truncate block tracking-tight select-all">
+                                    {staff.email}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Address */}
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 text-[10px] uppercase font-black text-slate-400 tracking-[0.2em]">
+                              <MapPin className="w-3 h-3" />
+                              Địa chỉ thường trú
+                            </div>
+                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex gap-3 text-slate-600 leading-relaxed text-sm font-medium">
+                              <MapPin className="w-4 h-4 text-slate-300 shrink-0 mt-0.5" />
+                              <span className="text-slate-700">
+                                {staff.address}, {staff.district},{" "}
+                                {staff.province}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })()
+              ) : (
+                <Card className="border-2 border-dashed border-slate-200 bg-slate-50/30 h-125 flex flex-col items-center justify-center p-12 text-center group">
+                  <div className="relative mb-8">
+                    <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-all duration-500 scale-150" />
+                    <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center text-slate-200 relative z-10 border border-slate-100 shadow-xl group-hover:scale-110 transition-all duration-500">
+                      <User className="w-12 h-12 text-slate-100" />
+                    </div>
+                  </div>
+                  <div className="relative z-10 space-y-3 max-w-70">
+                    <h4 className="font-black text-xl text-slate-300 tracking-tight">
+                      HỒ SƠ NHÂN SỰ
+                    </h4>
+                    <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                      Thông tin chi tiết của nhân viên sẽ được hiển thị tại đây
+                      khi bạn chọn từ danh sách bên trái.
+                    </p>
+                    <div className="pt-4 flex justify-center gap-1.5 opacity-30">
+                      {[1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className="w-8 h-1 rounded-full bg-slate-200"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+              )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </TabsContent>
 
       {/* Certificates Tab */}
-      <TabsContent value="certificates" className="space-y-6">
-        <Card className="border overflow-hidden">
-          <CardHeader className="border-b bg-slate-50">
-            <CardTitle className="flex items-center gap-2">
-              <Award className="w-5 h-5 text-orange-600" />
-              Chứng nhận tiêu chuẩn ({details.selectedCerts.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-6">
-            {details.selectedCerts.length > 0 ? (
-              details.selectedCerts.map((cert) => (
-                <div
-                  key={cert.code}
-                  className="border rounded-xl overflow-hidden"
-                >
-                  <div className="bg-orange-50 p-4 border-b border-orange-100 flex justify-between items-start">
-                    <div>
-                      <h3 className="font-bold text-lg text-orange-900">
-                        {cert.name}
-                      </h3>
-                      <p className="text-orange-700 text-sm">{cert.code}</p>
+      <TabsContent
+        value="certificates"
+        className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
+      >
+        <div className="flex items-center justify-between mb-2 px-1">
+          <div>
+            <h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+              <Award className="w-7 h-7 text-orange-500" />
+              Chứng nhận tiêu chuẩn
+              <Badge className="bg-orange-100 text-orange-600 border-orange-200 h-6 px-2 font-black text-xs">
+                {details.selectedCerts.length}
+              </Badge>
+            </h2>
+            <p className="text-sm text-slate-500 mt-1 font-medium">
+              Các tiêu chuẩn chất lượng và an toàn thực phẩm được áp dụng tại
+              vùng trồng này.
+            </p>
+          </div>
+        </div>
+
+        {details.selectedCerts.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {details.selectedCerts.map((cert) => (
+              <Card
+                key={cert.code}
+                className="group overflow-hidden border border-slate-200 hover:border-orange-300 hover:shadow-2xl hover:shadow-orange-100 transition-all duration-500 flex flex-col bg-white rounded-3xl"
+              >
+                {/* Image Section */}
+                <div className="relative h-48 overflow-hidden bg-slate-50">
+                  <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  {cert.imageUrl ? (
+                    <img
+                      src={cert.imageUrl}
+                      alt={cert.name}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-orange-50/50 text-orange-200">
+                      <ImageIcon className="w-16 h-16" />
                     </div>
-                    <Badge className="bg-orange-200 text-orange-800 hover:bg-orange-300">
-                      Hoạt động
+                  )}
+
+                  {/* Status Overlay */}
+                  <div className="absolute top-4 right-4 z-20">
+                    <Badge className="bg-white/90 backdrop-blur-md text-green-600 border-none shadow-lg font-black text-[10px] tracking-wider px-3 py-1 uppercase">
+                      Đang hiệu lực
                     </Badge>
                   </div>
-                  <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 bg-white">
-                    <div>
-                      <div className="text-sm text-muted-foreground">
-                        Tổ chức cấp
-                      </div>
-                      <div className="font-medium">
-                        {cert.organizations?.join(", ") || "N/A"}
+                </div>
+
+                <CardContent className="p-6 flex-1 flex flex-col">
+                  {/* Header */}
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 text-[10px] font-black text-orange-500 uppercase tracking-[0.2em] mb-2">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      Tiêu chuẩn nông nghiệp
+                    </div>
+                    <h3 className="text-xl font-black text-slate-900 leading-tight group-hover:text-orange-600 transition-colors">
+                      {cert.name}
+                    </h3>
+                    <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">
+                      {cert.code}
+                    </p>
+                  </div>
+
+                  <Separator className="mb-6 opacity-40" />
+
+                  {/* Info Metadata */}
+                  <div className="space-y-5 flex-1">
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] items-center gap-1.5 uppercase font-black text-slate-400 tracking-wider flex">
+                        <Globe className="w-3 h-3" />
+                        Tổ chức chứng nhận
+                      </Label>
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {cert.organizations?.length > 0 ? (
+                          cert.organizations.map((org: string, idx: number) => (
+                            <Badge
+                              key={idx}
+                              variant="outline"
+                              className="bg-slate-50 border-slate-200 text-slate-600 text-[10px] font-bold py-0.5"
+                            >
+                              {org}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs font-bold text-slate-400">
+                            Đang cập nhật...
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">
-                        Ngày cấp
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-3 rounded-2xl bg-orange-50/30 border border-orange-100/50">
+                        <span className="block text-[9px] text-orange-400 font-bold uppercase mb-1 tracking-wider">
+                          Ngày cấp
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-3.5 h-3.5 text-orange-300" />
+                          <span className="text-xs font-black text-slate-700">
+                            01/01/2024
+                          </span>
+                        </div>
                       </div>
-                      <div className="font-medium">01/01/2024</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">
-                        Ngày hết hạn
-                      </div>
-                      <div className="font-medium">01/01/2025</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">
-                        Trạng thái
-                      </div>
-                      <div className="font-medium text-green-600">
-                        Còn hiệu lực
+                      <div className="p-3 rounded-2xl bg-orange-50/30 border border-orange-100/50">
+                        <span className="block text-[9px] text-orange-400 font-bold uppercase mb-1 tracking-wider">
+                          Hết hạn
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-3.5 h-3.5 text-orange-300" />
+                          <span className="text-xs font-black text-slate-700">
+                            01/01/2025
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                Chưa có thông tin chứng nhận
+
+                  {/* Footer Action */}
+                  <div className="mt-8 pt-2">
+                    <Button
+                      variant="outline"
+                      className="w-full border-2 border-slate-100 hover:border-orange-200 hover:bg-orange-50 text-slate-600 hover:text-orange-600 font-black text-xs uppercase tracking-widest rounded-2xl transition-all h-11"
+                    >
+                      Xem tài liệu <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="border-2 border-dashed border-slate-200 bg-slate-50/30 h-80 flex flex-col items-center justify-center p-12 text-center group rounded-3xl">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 bg-orange-200/20 rounded-full blur-2xl scale-150" />
+              <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center text-slate-200 relative z-10 border border-slate-100 shadow-xl">
+                <Award className="w-10 h-10 text-orange-100" />
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+            <div className="relative z-10 space-y-2 max-w-xs">
+              <h4 className="font-black text-lg text-slate-400 tracking-tight uppercase">
+                Chưa có chứng nhận
+              </h4>
+              <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                Vùng trồng này hiện chưa cập nhật các chứng nhận tiêu chuẩn kỹ
+                thuật.
+              </p>
+            </div>
+          </Card>
+        )}
       </TabsContent>
 
       {/* Plans Tab */}
       <TabsContent value="plans" className="space-y-6 overflow-hidden">
-        <Card className="overflow-hidden border">
-          <CardHeader className="border-b bg-slate-50">
+        <Card className="overflow-hidden border shadow-sm">
+          <CardHeader className="border-b bg-slate-50/50 py-4">
             <div className="flex justify-between items-center">
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-purple-600" />
+              <CardTitle className="flex items-center gap-2 text-lg font-bold">
+                <FileText className="w-5 h-5 text-blue-600" />
                 Kế hoạch canh tác
               </CardTitle>
               <Button
                 variant="outline"
                 size="sm"
+                className="h-8 rounded-lg"
                 onClick={() => setLocation("/plan")}
               >
                 Xem tất cả
@@ -1870,297 +2075,391 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
             </div>
           </CardHeader>
           <CardContent className="pt-6">
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {relevantPlans.length === 0 ? (
-                <div className="text-sm text-muted-foreground italic">
+                <div className="text-sm text-muted-foreground italic text-center py-8">
                   Chưa có kế hoạch nào phù hợp với phạm vi vùng canh tác này.
                 </div>
               ) : (
                 relevantPlans.map((plan) => {
-                  const planKey = String(plan.id);
-                  const isPlanExpanded = expandedPlanKeys[planKey] ?? true;
-                  const materialsByStage = (
-                    plan.materialAllocations || []
-                  ).reduce((acc: Record<string, any[]>, m) => {
-                    const key = m.stageId || "Khác";
-                    acc[key] = acc[key] || [];
-                    acc[key].push(m);
-                    return acc;
-                  }, {});
-
-                  const tasksByStage = (plan.taskAllocations || []).reduce(
-                    (acc: Record<string, any[]>, t) => {
-                      const key = t.stageId || "Khác";
-                      acc[key] = acc[key] || [];
-                      acc[key].push(t);
-                      return acc;
-                    },
-                    {},
-                  );
-
                   const stageOrder =
                     plan.selectedStages && plan.selectedStages.length > 0
                       ? plan.selectedStages
                       : Array.from(
                           new Set([
-                            ...Object.keys(tasksByStage),
-                            ...Object.keys(materialsByStage),
+                            ...(plan.taskAllocations || []).map(
+                              (t: any) => t.stageId || "Khác",
+                            ),
+                            ...(plan.materialAllocations || []).map(
+                              (m: any) => m.stageId || "Khác",
+                            ),
                           ]),
                         );
 
-                  const uniqueLabor = Array.from(
-                    new Set(
-                      (plan.taskAllocations || [])
-                        .map((t) => t.labor)
-                        .filter(Boolean),
-                    ),
-                  );
+                  const isCultivation = plan.purpose === "cultivation";
+                  const isTreatment = plan.purpose === "treatment";
+                  const isAmendment = plan.purpose === "amendment";
 
                   return (
                     <div
                       key={plan.id}
-                      className="border rounded-lg p-4 hover:shadow-sm transition-shadow"
+                      className="border rounded-2xl p-6 bg-white shadow-sm hover:shadow-md transition-all duration-300 border-slate-100"
                     >
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div className="min-w-0">
-                          <div className="flex items-start gap-2">
-                            <button
-                              type="button"
-                              className="mt-0.5 shrink-0 text-slate-400 hover:text-slate-700 transition-colors"
-                              onClick={() => togglePlanExpanded(planKey)}
-                              aria-label={
-                                isPlanExpanded
-                                  ? "Thu gọn kế hoạch"
-                                  : "Mở rộng kế hoạch"
-                              }
-                              aria-expanded={isPlanExpanded}
+                      <div className="grid grid-cols-1 lg:grid-cols-[1fr,1.2fr] gap-8">
+                        {/* Left Column: Info & Purpose */}
+                        <div className="space-y-8">
+                          {/* 1. Header with General Info */}
+                          <div className="flex flex-col gap-4">
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-3">
+                                <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">
+                                  {plan.name}
+                                </h3>
+                                {planStatusBadge(plan.status)}
+                              </div>
+                              <div className="flex flex-wrap items-center gap-y-1.5 gap-x-4 text-xs text-slate-500">
+                                <div className="flex items-center gap-1.5 font-medium">
+                                  <span className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
+                                    <FileText className="w-3 h-3 text-slate-500" />
+                                  </span>
+                                  <span className="font-mono">{plan.code}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 font-medium">
+                                  <span className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
+                                    <Calendar className="w-3 h-3 text-slate-500" />
+                                  </span>
+                                  <span>{plan.seasonName}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 font-medium">
+                                  <span className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
+                                    <Clock className="w-3 h-3 text-slate-500" />
+                                  </span>
+                                  <span>
+                                    {new Date(
+                                      plan.startDate,
+                                    ).toLocaleDateString("vi-VN")}{" "}
+                                    -{" "}
+                                    {new Date(plan.endDate).toLocaleDateString(
+                                      "vi-VN",
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-slate-500 hover:text-primary rounded-xl self-start px-0 h-auto"
+                              onClick={() => setLocation(`/plan/${plan.id}`)}
                             >
-                              {isPlanExpanded ? (
-                                <ChevronDown className="w-4 h-4" />
-                              ) : (
-                                <ChevronRight className="w-4 h-4" />
+                              Xem chi tiết{" "}
+                              <ChevronRight className="w-4 h-4 ml-1" />
+                            </Button>
+                          </div>
+
+                          {/* 2. Simplified Purpose Display */}
+                          <div className="space-y-4">
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                              Mục đích kế hoạch
+                            </h4>
+                            <div className="grid grid-cols-1">
+                              {/* CANH TÁC */}
+                              {isCultivation && (
+                                <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/5">
+                                  <div className="w-9 h-9 rounded-lg bg-blue-600 text-white shadow-md shadow-blue-500/20 flex items-center justify-center shrink-0">
+                                    <Layers className="w-5 h-5" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-xs font-bold text-blue-700 uppercase tracking-wider">
+                                      CANH TÁC
+                                    </div>
+                                    <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                                      Áp dụng quy trình sản xuất chuẩn
+                                    </div>
+                                  </div>
+                                  <div className="w-2 h-2 rounded-full bg-blue-500 mr-2" />
+                                </div>
                               )}
-                            </button>
-                            <button
-                              type="button"
-                              className="font-bold text-lg text-slate-900 truncate text-left min-w-0"
-                              onClick={() => togglePlanExpanded(planKey)}
-                              aria-expanded={isPlanExpanded}
-                            >
-                              {plan.name}
-                            </button>
-                          </div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            <span className="font-mono">{plan.code}</span> •{" "}
-                            {plan.seasonName}
-                          </div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            Thời gian:{" "}
-                            {new Date(plan.startDate).toLocaleDateString(
-                              "vi-VN",
-                            )}{" "}
-                            -{" "}
-                            {new Date(plan.endDate).toLocaleDateString("vi-VN")}
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2 mt-2">
-                            {purposeBadge(plan.purpose)}
-                            <Badge variant="outline">{plan.crop}</Badge>
-                            {plan.variety && (
-                              <Badge variant="outline">{plan.variety}</Badge>
-                            )}
-                            {plan.expectedYield && (
-                              <Badge variant="outline">
-                                SL dự kiến: {plan.expectedYield}
-                              </Badge>
-                            )}
+
+                              {/* ĐIỀU TRỊ */}
+                              {isTreatment && (
+                                <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-red-500 bg-red-50/50 ring-2 ring-red-500/5">
+                                  <div className="w-9 h-9 rounded-lg bg-red-600 text-white shadow-md shadow-red-500/20 flex items-center justify-center shrink-0">
+                                    <Bug className="w-5 h-5" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-xs font-bold text-red-700 uppercase tracking-wider">
+                                      ĐIỀU TRỊ
+                                    </div>
+                                    <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                                      Triển khai phác đồ xử lý sâu bệnh
+                                    </div>
+                                  </div>
+                                  <div className="w-2 h-2 rounded-full bg-red-500 mr-2" />
+                                </div>
+                              )}
+
+                              {/* CẢI TẠO ĐẤT */}
+                              {isAmendment && (
+                                <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/5">
+                                  <div className="w-9 h-9 rounded-lg bg-emerald-600 text-white shadow-md shadow-emerald-500/20 flex items-center justify-center shrink-0">
+                                    <Sprout className="w-5 h-5" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
+                                      CẢI TẠO ĐẤT
+                                    </div>
+                                    <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                                      Quy trình xử lý phục hồi đất đai
+                                    </div>
+                                  </div>
+                                  <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2" />
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
-                          {planStatusBadge(plan.status)}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setLocation(`/plan/${plan.id}`);
-                            }}
-                          >
-                            Chi tiết
-                          </Button>
+                        {/* Right Column: Detailed Setup View (Enhanced) */}
+                        <div className="lg:pl-8 lg:border-l border-slate-100 min-w-0">
+                          <div className="flex items-center gap-3 mb-6">
+                            <div
+                              className={cn(
+                                "p-2.5 rounded-2xl shadow-sm",
+                                isTreatment && "bg-red-100/50",
+                                isAmendment && "bg-emerald-100/50",
+                                isCultivation && "bg-emerald-100/50",
+                              )}
+                            >
+                              <Layers
+                                className={cn(
+                                  "w-7 h-7",
+                                  isTreatment && "text-red-600",
+                                  isAmendment && "text-emerald-600",
+                                  isCultivation && "text-emerald-600",
+                                )}
+                              />
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="text-lg font-black text-slate-900 truncate">
+                                {isTreatment
+                                  ? "Lộ trình xử lý & Phác đồ"
+                                  : isAmendment
+                                    ? "Lộ trình cải tạo & Quy trình"
+                                    : "Lộ trình triển khai & Giai đoạn"}
+                              </h3>
+                              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5">
+                                Chi tiết các hạng mục và kế hoạch hành động
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-4 max-h-125 overflow-y-auto pr-2 custom-scrollbar">
+                            {(plan.selectedStages &&
+                            plan.selectedStages.length > 0
+                              ? plan.selectedStages
+                              : stageOrder
+                            ).map((stageKey, index) => {
+                              const [cycleId, stageName] = stageKey.includes(
+                                ":",
+                              )
+                                ? stageKey.split(":")
+                                : [null, stageKey];
+                              const cycle = cycleId
+                                ? growthCycles.find((c) => c.id === cycleId)
+                                : null;
+
+                              // Filter allocations for this stage
+                              const stageMaterials = (
+                                plan.materialAllocations || []
+                              ).filter((m) => m.stageId === stageKey);
+                              const stageTasks =
+                                plan.taskAllocations?.filter(
+                                  (t) => t.stageId === stageKey,
+                                ) || [];
+
+                              return (
+                                <Card
+                                  key={stageKey}
+                                  className="overflow-hidden border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl"
+                                >
+                                  <div className="bg-slate-50/80 px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-4 min-w-0">
+                                      <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 shadow-xs flex items-center justify-center font-black text-sm text-slate-700 shrink-0">
+                                        {index + 1}
+                                      </div>
+                                      <div className="min-w-0">
+                                        <div className="flex items-center gap-2">
+                                          <h4 className="font-bold text-base text-slate-900 truncate">
+                                            {stageName}
+                                          </h4>
+                                          {cycle && (
+                                            <Badge
+                                              variant="outline"
+                                              className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-100 font-normal py-0 px-2 h-4 shrink-0"
+                                            >
+                                              {cycle.name}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                        {plan.purpose !== "cultivation" && (
+                                          <p
+                                            className={cn(
+                                              "text-[10px] font-bold uppercase tracking-wider",
+                                              isAmendment
+                                                ? "text-emerald-600"
+                                                : "text-red-600",
+                                            )}
+                                          >
+                                            {isAmendment
+                                              ? "Hoạt động cải tạo đất"
+                                              : "Hoạt động điều trị bệnh"}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-2 shrink-0">
+                                      <Badge
+                                        variant="outline"
+                                        className="bg-white hover:bg-green-50 transition-colors px-2 py-0.5"
+                                      >
+                                        <Leaf className="w-3 h-3 mr-1 text-green-600" />
+                                        {stageMaterials.length}
+                                      </Badge>
+                                      <Badge
+                                        variant="outline"
+                                        className="bg-white hover:bg-blue-50 transition-colors px-2 py-0.5"
+                                      >
+                                        <Users className="w-3 h-3 mr-1 text-blue-600" />
+                                        {stageTasks.length}
+                                      </Badge>
+                                    </div>
+                                  </div>
+
+                                  <CardContent className="p-0">
+                                    {stageMaterials.length === 0 &&
+                                    stageTasks.length === 0 ? (
+                                      <div className="p-8 text-center text-muted-foreground italic text-sm">
+                                        Chưa có chi tiết nào được lên kế hoạch.
+                                      </div>
+                                    ) : (
+                                      <Tabs
+                                        defaultValue="materials"
+                                        className="w-full"
+                                      >
+                                        <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto">
+                                          <TabsTrigger
+                                            value="materials"
+                                            className="rounded-none border-b-2 border-transparent data-[state=active]:border-green-600 data-[state=active]:text-green-700 data-[state=active]:bg-green-50/50 px-6 py-3 font-medium text-sm flex-1 md:flex-none"
+                                          >
+                                            <Package className="w-4 h-4 mr-2" />
+                                            Vật tư ({stageMaterials.length})
+                                          </TabsTrigger>
+                                          <TabsTrigger
+                                            value="tasks"
+                                            className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 data-[state=active]:bg-blue-50/50 px-6 py-3 font-medium text-sm flex-1 md:flex-none"
+                                          >
+                                            <Users className="w-4 h-4 mr-2" />
+                                            Công việc ({stageTasks.length})
+                                          </TabsTrigger>
+                                        </TabsList>
+
+                                        <TabsContent
+                                          value="materials"
+                                          className="p-4 m-0 bg-white"
+                                        >
+                                          {stageMaterials.length === 0 ? (
+                                            <div className="text-center py-6">
+                                              <p className="text-sm text-slate-400">
+                                                Chưa có vật tư phân bổ
+                                              </p>
+                                            </div>
+                                          ) : (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                              {stageMaterials.map((mat) => (
+                                                <div
+                                                  key={mat.id}
+                                                  className="flex items-center justify-between p-3 rounded-lg border bg-slate-50/30 hover:bg-slate-50 transition-colors"
+                                                >
+                                                  <div className="flex items-center gap-3 overflow-hidden">
+                                                    <div className="bg-white p-2 rounded-md shadow-sm border shrink-0">
+                                                      <Package className="w-4 h-4 text-green-600" />
+                                                    </div>
+                                                    <div className="min-w-0 text-left">
+                                                      <p className="font-semibold text-xs truncate text-slate-800">
+                                                        {mat.materialName}
+                                                      </p>
+                                                      <p className="text-[10px] text-muted-foreground truncate">
+                                                        {mat.materialType}
+                                                      </p>
+                                                    </div>
+                                                  </div>
+                                                  <Badge
+                                                    variant="secondary"
+                                                    className="shrink-0 text-[10px]"
+                                                  >
+                                                    {mat.quantity} {mat.unit}
+                                                  </Badge>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </TabsContent>
+
+                                        <TabsContent
+                                          value="tasks"
+                                          className="p-4 m-0 bg-white"
+                                        >
+                                          {stageTasks.length === 0 ? (
+                                            <div className="text-center py-6 border border-dashed rounded-lg bg-slate-50/50 mx-auto max-w-xs">
+                                              <Wrench className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                                              <p className="text-sm text-slate-500">
+                                                Chưa có công việc phân bổ
+                                              </p>
+                                            </div>
+                                          ) : (
+                                            <div className="grid grid-cols-1 gap-3">
+                                              {stageTasks.map((task) => (
+                                                <div
+                                                  key={task.id}
+                                                  className="flex items-start gap-3 p-4 rounded-lg border bg-blue-50/10 hover:bg-blue-50/30 transition-colors"
+                                                >
+                                                  <div className="bg-blue-100 p-2 rounded-full shrink-0">
+                                                    <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                                                  </div>
+                                                  <div className="flex-1 min-w-0 text-left">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
+                                                      <h5 className="font-bold text-sm text-slate-900 truncate">
+                                                        {task.name}
+                                                      </h5>
+                                                      {task.labor && (
+                                                        <Badge
+                                                          variant="outline"
+                                                          className="text-[10px] h-5 bg-white text-slate-600 border-slate-200"
+                                                        >
+                                                          {task.labor}
+                                                        </Badge>
+                                                      )}
+                                                    </div>
+                                                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed italic">
+                                                      {task.description ||
+                                                        "Chưa có mô tả chi tiết"}
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </TabsContent>
+                                      </Tabs>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              );
+                            })}
+                          </div>
                         </div>
                       </div>
-
-                      {isPlanExpanded && (
-                        <div className="mt-4 pt-4 border-t space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <div className="space-y-1.5">
-                              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                                Người canh tác (ước tính)
-                              </div>
-                              <div className="text-slate-700">
-                                {uniqueLabor.length > 0
-                                  ? uniqueLabor.join(", ")
-                                  : "Chưa cập nhật"}
-                              </div>
-                            </div>
-                            <div className="space-y-1.5">
-                              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                                Nội dung cập nhật
-                              </div>
-                              <div className="text-slate-700">
-                                {plan.description || "—"}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="space-y-3">
-                            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                              Vật tư & Công việc theo giai đoạn
-                            </div>
-
-                            <div className="space-y-3">
-                              {stageOrder.map((stageName, idx) => {
-                                const materials =
-                                  materialsByStage[stageName] || [];
-                                const tasks = tasksByStage[stageName] || [];
-                                return (
-                                  <Card
-                                    key={`${plan.id}-stage-${stageName}-${idx}`}
-                                    className="border-slate-200 shadow-sm"
-                                  >
-                                    <CardHeader className="py-3 px-4 border-b bg-slate-50/50">
-                                      <div className="flex items-center justify-between gap-3">
-                                        <CardTitle className="text-sm font-bold">
-                                          {idx + 1}. {stageName}
-                                        </CardTitle>
-                                        <div className="flex items-center gap-2">
-                                          <Badge
-                                            variant="outline"
-                                            className="text-[10px]"
-                                          >
-                                            {materials.length} vật tư
-                                          </Badge>
-                                          <Badge
-                                            variant="outline"
-                                            className="text-[10px]"
-                                          >
-                                            {tasks.length} công việc
-                                          </Badge>
-                                        </div>
-                                      </div>
-                                    </CardHeader>
-                                    <CardContent className="p-4 space-y-4">
-                                      {materials.length > 0 && (
-                                        <div className="space-y-2">
-                                          <div className="text-xs font-bold text-slate-700">
-                                            Vật tư
-                                          </div>
-                                          <div className="space-y-2">
-                                            {materials.map((m: any) => (
-                                              <div
-                                                key={m.id}
-                                                className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm border rounded-md p-3 bg-white"
-                                              >
-                                                <div className="min-w-0">
-                                                  <div className="font-semibold text-slate-900 truncate">
-                                                    {m.materialName}
-                                                  </div>
-                                                  <div className="text-xs text-muted-foreground">
-                                                    {m.materialCategory} •{" "}
-                                                    {m.materialType}
-                                                  </div>
-                                                </div>
-                                                <div className="font-mono font-bold text-slate-800">
-                                                  {m.quantity} {m.unit}
-                                                </div>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      )}
-
-                                      {tasks.length > 0 && (
-                                        <div className="space-y-2">
-                                          <div className="text-xs font-bold text-slate-700">
-                                            Công việc
-                                          </div>
-                                          <div className="space-y-2">
-                                            {tasks.map((t: any) => (
-                                              <div
-                                                key={t.id}
-                                                className="border rounded-md p-3 bg-white space-y-1"
-                                              >
-                                                {(() => {
-                                                  const taskKey = `${plan.id}:${stageName}:${t.id}`;
-                                                  const isExpanded =
-                                                    !!expandedTaskKeys[taskKey];
-                                                  return (
-                                                    <>
-                                                      <button
-                                                        type="button"
-                                                        className="w-full text-left"
-                                                        onClick={() =>
-                                                          toggleTaskExpanded(
-                                                            taskKey,
-                                                          )
-                                                        }
-                                                        aria-expanded={
-                                                          isExpanded
-                                                        }
-                                                      >
-                                                        <div className="flex items-start justify-between gap-3">
-                                                          <div className="min-w-0">
-                                                            <div className="font-semibold text-slate-900">
-                                                              {t.name}
-                                                            </div>
-                                                            <div className="text-xs font-mono text-slate-700 mt-1">
-                                                              {t.labor}
-                                                              {t.duration
-                                                                ? ` • ${t.duration}`
-                                                                : ""}
-                                                            </div>
-                                                          </div>
-                                                          <div className="shrink-0 mt-0.5 text-slate-400">
-                                                            {isExpanded ? (
-                                                              <ChevronDown className="w-4 h-4" />
-                                                            ) : (
-                                                              <ChevronRight className="w-4 h-4" />
-                                                            )}
-                                                          </div>
-                                                        </div>
-                                                      </button>
-
-                                                      {isExpanded &&
-                                                        t.description && (
-                                                          <div className="text-sm text-slate-700 mt-2">
-                                                            {t.description}
-                                                          </div>
-                                                        )}
-                                                    </>
-                                                  );
-                                                })()}
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      )}
-
-                                      {materials.length === 0 &&
-                                        tasks.length === 0 && (
-                                          <div className="text-sm text-muted-foreground italic">
-                                            Chưa có dữ liệu vật tư/công việc cho
-                                            giai đoạn này.
-                                          </div>
-                                        )}
-                                    </CardContent>
-                                  </Card>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   );
                 })
@@ -2178,7 +2477,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
               <div className="min-w-0">
                 <CardTitle className="flex items-center gap-2">
                   <Leaf className="w-5 h-5 text-emerald-600" />
-                  Lịch sử cải tạo đất
+                  Lịch sử canh tác
                 </CardTitle>
                 <CardDescription>
                   Danh sách lịch sử theo tháng/năm, có tìm kiếm và lọc theo thời
@@ -2194,8 +2493,8 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
               </Button>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 lg:grid-cols-12 gap-3">
-              <div className="lg:col-span-5">
+            <div className="mt-4 flex lg:flex-row gap-4">
+              <div className="flex-1 min-w-0">
                 <div className="space-y-1">
                   <Label className="text-[10px] uppercase tracking-wider text-slate-500">
                     Tìm kiếm
@@ -2212,29 +2511,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                 </div>
               </div>
 
-              <div className="lg:col-span-3">
-                <div className="space-y-1">
-                  <Label className="text-[10px] uppercase tracking-wider text-slate-500">
-                    Tháng/Năm
-                  </Label>
-                  <Input
-                    type="month"
-                    value={historyMonth}
-                    disabled={hasRangeFilter}
-                    onChange={(e) => {
-                      const next = e.target.value;
-                      setHistoryMonth(next);
-                      if (next) {
-                        setHistoryFromDate("");
-                        setHistoryToDate("");
-                      }
-                    }}
-                    className="h-9 text-sm bg-white"
-                  />
-                </div>
-              </div>
-
-              <div className="lg:col-span-2">
+              <div className="lg:w-48 shrink-0">
                 <div className="space-y-1">
                   <Label className="text-[10px] uppercase tracking-wider text-slate-500">
                     Từ ngày
@@ -2242,18 +2519,13 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                   <Input
                     type="date"
                     value={historyFromDate}
-                    disabled={hasMonthFilter}
-                    onChange={(e) => {
-                      const next = e.target.value;
-                      setHistoryFromDate(next);
-                      if (next) setHistoryMonth("");
-                    }}
+                    onChange={(e) => setHistoryFromDate(e.target.value)}
                     className="h-9 text-sm bg-white"
                   />
                 </div>
               </div>
 
-              <div className="lg:col-span-2">
+              <div className="lg:w-48 shrink-0">
                 <div className="space-y-1">
                   <Label className="text-[10px] uppercase tracking-wider text-slate-500">
                     Đến ngày
@@ -2261,12 +2533,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                   <Input
                     type="date"
                     value={historyToDate}
-                    disabled={hasMonthFilter}
-                    onChange={(e) => {
-                      const next = e.target.value;
-                      setHistoryToDate(next);
-                      if (next) setHistoryMonth("");
-                    }}
+                    onChange={(e) => setHistoryToDate(e.target.value)}
                     className="h-9 text-sm bg-white"
                   />
                 </div>
@@ -2292,7 +2559,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                       </Badge>
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {g.items.map((t) => {
                         const statusCfg = getTreatmentStatusConfig(t.status);
                         const intensityCfg = getTreatmentIntensityConfig(
@@ -2530,7 +2797,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                             key={procedure.id}
                             className="relative pl-8 pb-8 border-l-2 border-gray-200 last:border-l-0 last:pb-0"
                           >
-                            <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-green-500 border-2 border-white shadow-sm" />
+                            <div className="absolute -left-2.25 top-0 w-4 h-4 rounded-full bg-green-500 border-2 border-white shadow-sm" />
 
                             <Card className="border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                               <CardContent className="p-5 space-y-4">
@@ -2592,7 +2859,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                                 {procedure.videoUrl && (
                                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                                     <div className="flex items-center gap-3">
-                                      <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+                                      <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
                                         <Play className="w-5 h-5 text-white" />
                                       </div>
                                       <div className="flex-1">
@@ -2685,7 +2952,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                                   procedure.warnings.length > 0 && (
                                     <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
                                       <div className="flex items-start gap-3">
-                                        <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                                        <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
                                         <div className="flex-1">
                                           <h4 className="text-sm font-bold text-red-900 mb-2">
                                             ⚠️ Lưu ý quan trọng
@@ -2714,7 +2981,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                                   procedure.tips.length > 0 && (
                                     <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
                                       <div className="flex items-start gap-3">
-                                        <Lightbulb className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                                        <Lightbulb className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
                                         <div className="flex-1">
                                           <h4 className="text-sm font-bold text-yellow-900 mb-2">
                                             💡 Mẹo hữu ích
@@ -2740,7 +3007,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                                 {procedure.expectedOutcome && (
                                   <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                                     <div className="flex items-start gap-2">
-                                      <Target className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                                      <Target className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
                                       <div>
                                         <p className="text-xs font-medium text-green-900 mb-1">
                                           Kết quả mong đợi
@@ -2767,7 +3034,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                                               key={idx}
                                               className="flex items-start gap-2"
                                             >
-                                              <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                              <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center shrink-0 mt-0.5">
                                                 <CheckCircle2 className="w-3 h-3 text-white" />
                                               </div>
                                               <p className="text-sm text-blue-800 flex-1">
@@ -2880,106 +3147,300 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
 
       {/* Statistics Tab */}
       <TabsContent value="statistics" className="space-y-6 overflow-hidden">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            {
-              label: "Tổng diện tích",
-              value: `${details.totalArea} ha`,
-              icon: Layers,
-              color: "text-blue-600",
-              bg: "bg-blue-50",
-            },
-            {
-              label: "Số lượng thực thể",
-              value: details.selectedEntities.length || 1,
-              icon: Target,
-              color: "text-orange-600",
-              bg: "bg-orange-50",
-            },
-            {
-              label: "Giống cây trồng",
-              value: Array.from(
-                new Set(
-                  details.entityConfigs.flatMap((ec) =>
-                    ec.crops.map((c) => c.id),
-                  ),
-                ),
-              ).length,
-              icon: Sprout,
-              color: "text-green-600",
-              bg: "bg-green-50",
-            },
-            {
-              label: "Cấu hình riêng",
-              value: Object.keys(area.configs || {}).length,
-              icon: FileText,
-              color: "text-purple-600",
-              bg: "bg-purple-50",
-            },
-          ].map((stat) => (
-            <Card key={stat.label}>
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between">
+        {details ? (
+          <>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8 bg-blue-500/5 rounded-full group-hover:scale-110 transition-transform duration-500" />
+                <CardContent className="pt-6 relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
+                      <ShoppingBag className="w-6 h-6" />
+                    </div>
+                  </div>
                   <div>
-                    <div className="text-sm text-muted-foreground mb-1">
-                      {stat.label}
+                    <div className="text-sm font-medium text-slate-500 mb-1">
+                      Tổng SL thu hoạch
                     </div>
-                    <div className="text-2xl font-bold text-slate-900">
-                      {stat.value}
-                    </div>
-                  </div>
-                  <div className={`p-3 rounded-lg ${stat.bg}`}>
-                    <stat.icon className={`w-6 h-6 ${stat.color}`} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Filters & Chart placeholder */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-3 space-y-4">
-            <Card>
-              <CardHeader className="pb-3 border-b">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <CardTitle>
-                    Biểu đồ năng suất thu hoạch (Dữ liệu mẫu)
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Button variant="secondary" size="sm" className="h-8">
-                      Last 30 days
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="h-87.5 flex items-end justify-between gap-2 px-2">
-                  {[45, 60, 30, 75, 50, 80, 65, 90, 70, 55, 60, 40].map(
-                    (h, i) => (
-                      <div
-                        key={i}
-                        className="flex-1 flex flex-col items-center gap-2 group"
-                      >
-                        <div
-                          className="w-full bg-primary/20 hover:bg-primary/40 transition-all rounded-t relative group-hover:bg-primary/60"
-                          style={{ height: `${h}%` }}
-                        ></div>
-                        <span className="text-xs text-muted-foreground">
-                          T{i + 1}
-                        </span>
+                    <div className="flex items-baseline gap-2">
+                      <div className="text-3xl font-black text-slate-900 tracking-tight">
+                        {details.harvestStats.totalVolume.toLocaleString()}
                       </div>
-                    ),
-                  )}
-                </div>
-                <div className="text-center text-sm text-muted-foreground mt-4">
-                  Dữ liệu thống kê đang được cập nhật cho {area.name}
-                </div>
-              </CardContent>
-            </Card>
+                      <span className="text-sm font-bold text-slate-400">
+                        kg
+                      </span>
+                    </div>
+                    <div className="mt-4 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Toàn vùng canh tác
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8 bg-green-500/5 rounded-full group-hover:scale-110 transition-transform duration-500" />
+                <CardContent className="pt-6 relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-2.5 bg-green-50 text-green-600 rounded-xl">
+                      <ArrowUpRight className="w-6 h-6" />
+                    </div>
+                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 rounded-lg flex items-center gap-1">
+                      {details.harvestStats.lastChange >= 0 ? (
+                        <TrendingUp className="w-3 h-3" />
+                      ) : (
+                        <TrendingDown className="w-3 h-3" />
+                      )}
+                    </Badge>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-slate-500 mb-1">
+                      SL thu hoạch gần nhất
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <div className="text-3xl font-black text-slate-900 tracking-tight">
+                        {details.harvestStats.lastVolume.toLocaleString()}
+                      </div>
+                      <span className="text-sm font-bold text-slate-400">
+                        kg
+                      </span>
+                    </div>
+                    <div className="mt-4 flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 uppercase tracking-wider">
+                      <CheckCircle2 className="w-3 h-3" />
+                      {details.harvestStats.lastChange >= 0
+                        ? "Tăng"
+                        : "Giảm"}{" "}
+                      {details.harvestStats.lastChange}% so với đợt trước
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8 bg-orange-500/5 rounded-full group-hover:scale-110 transition-transform duration-500" />
+                <CardContent className="pt-6 relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-2.5 bg-orange-50 text-orange-600 rounded-xl">
+                      <Calendar className="w-6 h-6" />
+                    </div>
+                    <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-none px-2 py-0.5 rounded-lg flex items-center gap-1">
+                      {details.harvestStats.avgChange >= 0 ? (
+                        <TrendingUp className="w-3 h-3" />
+                      ) : (
+                        <TrendingDown className="w-3 h-3" />
+                      )}
+                    </Badge>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-slate-500 mb-1">
+                      SL trung bình mỗi đợt
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <div className="text-3xl font-black text-slate-900 tracking-tight">
+                        {details.harvestStats.avgVolume.toLocaleString()}
+                      </div>
+                      <span className="text-sm font-bold text-slate-400">
+                        kg
+                      </span>
+                    </div>
+                    <div className="mt-4 flex items-center gap-1.5 text-[11px] font-bold text-orange-600 uppercase tracking-wider">
+                      <TrendingUp className="w-3 h-3" />
+                      {details.harvestStats.avgChange >= 0
+                        ? "Tăng"
+                        : "Giảm"}{" "}
+                      {Math.abs(details.harvestStats.avgChange)}% so với trung
+                      bình
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Chart & Table */}
+            <div className="space-y-6">
+              <Card>
+                <CardHeader className="pb-3 border-b">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <CardTitle className="text-lg font-bold">
+                        Biểu đồ năng suất thu hoạch
+                      </CardTitle>
+                      <CardDescription>
+                        Theo dõi biến động sản lượng qua các đợt thu hoạch
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" className="h-8">
+                        Năm 2024
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-8 pb-6">
+                  <div className="h-80 w-full px-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={details.harvestBatches
+                          .slice()
+                          .reverse()
+                          .map((batch) => ({
+                            batch: `Batch ${batch.id.slice(-3)}`,
+                            date: new Date(batch.date).toLocaleDateString(
+                              "vi-VN",
+                              { month: "numeric", day: "numeric" },
+                            ),
+                            volume: batch.volume,
+                          }))}
+                        margin={{ top: 10, right: 20, left: -20, bottom: 0 }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="hsl(140, 15%, 88%)"
+                          vertical={false}
+                        />
+                        <XAxis
+                          dataKey="date"
+                          stroke="hsl(140, 10%, 45%)"
+                          fontSize={11}
+                          tickLine={false}
+                          axisLine={false}
+                          dy={10}
+                        />
+                        <YAxis
+                          stroke="hsl(140, 10%, 45%)"
+                          fontSize={11}
+                          tickLine={false}
+                          axisLine={false}
+                          dx={-10}
+                        />
+                        <ChartTooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(0, 0%, 100%)",
+                            border: "1px solid hsl(140, 15%, 88%)",
+                            borderRadius: "12px",
+                            fontSize: "12px",
+                            boxShadow:
+                              "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+                          }}
+                          itemStyle={{ fontWeight: "bold" }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="volume"
+                          name="Sản lượng"
+                          stroke="hsl(142, 70%, 45%)"
+                          strokeWidth={3}
+                          dot={{
+                            r: 4,
+                            fill: "white",
+                            strokeWidth: 2,
+                            stroke: "hsl(142, 70%, 45%)",
+                          }}
+                          activeDot={{
+                            r: 6,
+                            fill: "hsl(142, 70%, 45%)",
+                            strokeWidth: 0,
+                          }}
+                          animationDuration={1500}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3 border-b">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg font-bold">
+                        Danh sách các đợt thu hoạch
+                      </CardTitle>
+                      <CardDescription>
+                        Chi tiết các lần thu hoạch thành phẩm
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <DataTable
+                    columns={[
+                      {
+                        key: "date",
+                        label: "Ngày thu hoạch",
+                        render: (val: string) => (
+                          <div className="flex items-center gap-2 font-medium text-slate-700">
+                            <Calendar className="w-4 h-4 text-slate-400" />
+                            {new Date(val).toLocaleDateString("vi-VN")}
+                          </div>
+                        ),
+                      },
+                      {
+                        key: "volume",
+                        label: "Sản lượng",
+                        render: (val: number) => (
+                          <div className="flex items-baseline gap-1">
+                            <span className="font-bold text-slate-900">
+                              {val.toLocaleString()}
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">
+                              kg
+                            </span>
+                          </div>
+                        ),
+                      },
+                      {
+                        key: "quality",
+                        label: "Chất lượng",
+                        render: (val: string) => (
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              "font-bold text-[10px] px-2 py-0 h-5 border-none",
+                              val === "Loại A"
+                                ? "bg-emerald-50 text-emerald-600"
+                                : "bg-orange-50 text-orange-600",
+                            )}
+                          >
+                            {val}
+                          </Badge>
+                        ),
+                      },
+                      {
+                        key: "staff",
+                        label: "Người phụ trách",
+                        render: (val: string) => (
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                              {val.charAt(0)}
+                            </div>
+                            <span className="text-sm text-slate-600">
+                              {val}
+                            </span>
+                          </div>
+                        ),
+                      },
+                      {
+                        key: "notes",
+                        label: "Ghi chú",
+                        render: (val: string) => (
+                          <span className="text-xs text-slate-400 truncate max-w-50 block">
+                            {val || "-"}
+                          </span>
+                        ),
+                      },
+                    ]}
+                    data={details.harvestBatches}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        ) : (
+          <div className="p-8 text-center text-muted-foreground bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+            Không có dữ liệu thống kê
           </div>
-        </div>
+        )}
       </TabsContent>
     </Tabs>
   );
