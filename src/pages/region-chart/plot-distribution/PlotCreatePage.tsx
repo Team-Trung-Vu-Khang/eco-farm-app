@@ -844,7 +844,7 @@ const PlotCreatePage = () => {
                 />
               </div>
 
-              <div className="space-y-4 flex-1">
+              <div className="space-y-3 flex-1">
                 {/* Location tree dialog */}
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-slate-700">
@@ -972,17 +972,12 @@ const PlotCreatePage = () => {
 
                 {/* Empty state when nothing selected */}
                 {!selectedAreaId && (
-                  <div className="flex flex-col items-center justify-center py-12 px-6 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50 text-center gap-2 animate-in fade-in duration-500">
-                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm text-slate-300">
-                      <MapPin className="w-6 h-6" />
+                  <div className="flex flex-col items-center justify-center py-6 px-4 border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50 text-center gap-2 animate-in fade-in duration-500">
+                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-slate-300">
+                      <MapPin className="w-4 h-4" />
                     </div>
-                    <div>
-                      <div className="text-sm font-bold text-slate-600">
-                        Chưa có lựa chọn nào
-                      </div>
-                      <div className="text-[11px] text-slate-400 max-w-[200px] mx-auto mt-1">
-                        Vui lòng thêm vị trí để tiếp tục
-                      </div>
+                    <div className="text-[11px] font-bold text-slate-500">
+                      Chưa chọn vùng trồng
                     </div>
                   </div>
                 )}
