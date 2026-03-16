@@ -821,13 +821,11 @@ const PlotCreatePage = () => {
         !!formData.name &&
         !!formData.area,
       content: (
-        <Card className="overflow-hidden border-none shadow-md bg-white">
-          <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-4">
-            <CardTitle className="text-lg font-bold text-slate-800">
-              Chọn vị trí lô
-            </CardTitle>
+        <Card className="overflow-hidden shadow-md bg-white">
+          <CardHeader>
+            <CardTitle>Thông tin lô</CardTitle>
           </CardHeader>
-          <CardContent className="p-6 space-y-4">
+          <CardContent className="space-y-6">
             <div className="flex gap-4">
               {/* EnterpriseSelector */}
               <div className="space-y-2 flex-1">
