@@ -977,7 +977,7 @@ const PlotCreatePage = () => {
                       <MapPin className="w-4 h-4" />
                     </div>
                     <div className="text-[11px] font-bold text-slate-500">
-                      Chưa chọn vùng trồng
+                      Chưa chọn vùng trồng và khu vực
                     </div>
                   </div>
                 )}
