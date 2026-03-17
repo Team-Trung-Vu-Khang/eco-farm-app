@@ -16,7 +16,7 @@ export interface CultivationRegion {
   targetName: string;
   enterpriseId?: string;
   certificateIds: string[];
-  managerId: string;
+  managerIds: string[];
   note: string;
   farmingMethodId: string;
   irrigationMethodId: string;
@@ -47,7 +47,7 @@ const MOCK_DATA: CultivationRegion[] = [
       "Khu A - Sầu riêng Dona, Khu B - Sầu riêng Musang King, Khu Phức hợp Nông nghiệp Công nghệ cao",
     enterpriseId: "1",
     certificateIds: ["ISO22000", "Organic"],
-    managerId: "1",
+    managerIds: ["1"],
     note: "",
     farmingMethodId: "organic",
     irrigationMethodId: "drip",
@@ -78,7 +78,7 @@ const MOCK_DATA: CultivationRegion[] = [
     targetName: "Vùng Bình Phước Alpha, Đồi Cà phê Buôn Ma Thuột",
     enterpriseId: "1",
     certificateIds: ["GlobalGAP", "HACCP", "Organic"],
-    managerId: "1",
+    managerIds: ["1"],
     note: "",
     farmingMethodId: "organic",
     irrigationMethodId: "drip",
@@ -112,7 +112,7 @@ const MOCK_DATA: CultivationRegion[] = [
     targetName: "Vùng Bình Phước Alpha",
     certificateIds: ["VietGAP"],
     enterpriseId: "DN001",
-    managerId: "1",
+    managerIds: ["1"],
     note: "Dự án thử nghiệm công nghệ 4.0",
     farmingMethodId: "greenhouse",
     irrigationMethodId: "drip",
@@ -135,7 +135,7 @@ const MOCK_DATA: CultivationRegion[] = [
     targetName: "Khu vực B - Đồi thấp",
     certificateIds: ["Organic"],
     enterpriseId: "DN001",
-    managerId: "2",
+    managerIds: ["2"],
     note: "Canh tác theo tiêu chuẩn hữu cơ EU",
     farmingMethodId: "organic",
     irrigationMethodId: "rain",
@@ -158,7 +158,7 @@ const MOCK_DATA: CultivationRegion[] = [
     targetName: "Lô A1 - Cánh đồng mẫu lớn",
     certificateIds: ["GlobalGAP"],
     enterpriseId: "DN002",
-    managerId: "3",
+    managerIds: ["3"],
     note: "Mô hình lúa tôm kết hợp",
     farmingMethodId: "vietgap",
     irrigationMethodId: "flood",
@@ -181,7 +181,7 @@ const MOCK_DATA: CultivationRegion[] = [
     targetName: "Khu vực C - Vườn ươm",
     certificateIds: ["HACCP"],
     enterpriseId: "DN003",
-    managerId: "1",
+    managerIds: ["1"],
     note: "Khu vực nhân giống và bảo tồn gen",
     farmingMethodId: "greenhouse",
     irrigationMethodId: "manual",

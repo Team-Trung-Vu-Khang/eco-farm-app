@@ -114,7 +114,7 @@ const initialPlans: Plan[] = [
   {
     id: 2,
     code: "KH002",
-    name: "Phác đồ khử phèn Khu B",
+    name: "Kế hoạch khử phèn Khu B",
     description: "Cải tạo đất bị nhiễm phèn nặng tại Khu vực B",
     seasonId: "S2025-HE",
     seasonName: "Vụ Hè 2025",

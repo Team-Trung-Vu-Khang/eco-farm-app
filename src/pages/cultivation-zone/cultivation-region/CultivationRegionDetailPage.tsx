@@ -92,6 +92,7 @@ import {
 } from "../../soil-amendment/SoilAmendmentTreatmentPage";
 import useGrowthCycleStore from "../../../stores/useGrowthCycleStore";
 import { useCultivationRegionDetail } from "./useCultivationRegionDetail";
+import { HorizontalPersonnelList } from "../../../components/personnel/HorizontalPersonnelList";
 
 export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
   const params = useParams<{ id: string }>();
@@ -640,201 +641,194 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
         <TabsTrigger value="crops">Cây trồng</TabsTrigger>
         <TabsTrigger value="staff">Nhân viên</TabsTrigger>
         <TabsTrigger value="certificates">Chứng nhận</TabsTrigger>
-        <TabsTrigger value="plans">Kế hoạch</TabsTrigger>
-        <TabsTrigger value="amendment-history">Lịch sử canh tác</TabsTrigger>
+        <TabsTrigger value="plans">Lịch sử canh tác</TabsTrigger>
+        <TabsTrigger value="amendment-history">Lịch sử cải tạo đất</TabsTrigger>
         <TabsTrigger value="statistics">Thống kê</TabsTrigger>
       </TabsList>
 
       {/* Overview Tab (Info) */}
       <TabsContent value="overview" className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 min-h-130">
-          {details.selectedEntities.length > 0 && (
-            <Card className="border-slate-200 shadow-sm overflow-hidden">
-              <CardHeader className="border-b bg-slate-50/50 py-3 px-4 flex flex-row items-center justify-between">
-                <CardTitle className="text-sm font-bold flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  <span className="text-lg">
-                    Phạm vi vùng canh tác ({details.selectedEntities.length}{" "}
-                    mục)
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="p-6 flex">
-                  <div className="space-y-8 flex-4">
-                    {Object.values(details.groupedSelections).map(
-                      (group: any) => (
-                        <div key={group.region.id} className="relative">
-                          {/* Region Level */}
-                          <button
-                            type="button"
-                            className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
-                            onClick={() =>
-                              focusScopeMapToCoordinates(
-                                group.region?.coordinates,
-                              )
-                            }
-                          >
-                            <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm">
-                              <MapPin className="w-5 h-5" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[50vh]">
+          <Card className="border-slate-200 shadow-sm overflow-auto">
+            <CardHeader className="border-b bg-slate-50/50 py-3 px-4 flex flex-row items-center justify-between">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-primary" />
+                <span className="text-lg">
+                  Phạm vi vùng canh tác ({details.selectedEntities.length} mục)
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 overflow-y-auto">
+              <div className="p-6 flex">
+                <div className="space-y-8 flex-4">
+                  {Object.values(details.groupedSelections).map(
+                    (group: any) => (
+                      <div key={group.region.id} className="relative">
+                        {/* Region Level */}
+                        <button
+                          type="button"
+                          className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
+                          onClick={() =>
+                            focusScopeMapToCoordinates(
+                              group.region?.coordinates,
+                            )
+                          }
+                        >
+                          <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm">
+                            <MapPin className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="text-[10px] text-primary font-bold uppercase tracking-wider leading-none mb-1">
+                              Vùng trồng
                             </div>
-                            <div>
-                              <div className="text-[10px] text-primary font-bold uppercase tracking-wider leading-none mb-1">
-                                Vùng trồng
-                              </div>
-                              <div className="text-sm font-bold text-slate-900">
-                                {group.region.name}
-                              </div>
+                            <div className="text-sm font-bold text-slate-900">
+                              {group.region.name}
                             </div>
-                          </button>
+                          </div>
+                        </button>
 
-                          {/* Area & Plot Level Tree */}
-                          {area.scope !== "region" && (
-                            <div className="ml-5 border-l-2 border-slate-100 pl-6 space-y-8">
-                              {Object.values(group.areas).map(
-                                (areaGroup: any) => (
-                                  <div
-                                    key={areaGroup.area?.id || "none"}
-                                    className="relative"
-                                  >
-                                    {/* Horizontal branch from main stem to Area/Entity */}
-                                    <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-5" />
+                        {/* Area & Plot Level Tree */}
+                        {area.scope !== "region" && (
+                          <div className="ml-5 border-l-2 border-slate-100 pl-6 space-y-8">
+                            {Object.values(group.areas).map(
+                              (areaGroup: any) => (
+                                <div
+                                  key={areaGroup.area?.id || "none"}
+                                  className="relative"
+                                >
+                                  {/* Horizontal branch from main stem to Area/Entity */}
+                                  <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-5" />
 
-                                    {areaGroup.area ? (
-                                      <>
-                                        <button
-                                          type="button"
-                                          className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
-                                          onClick={() =>
-                                            focusScopeMapToCoordinates(
-                                              areaGroup.area?.coordinates,
-                                            )
-                                          }
-                                        >
-                                          <div className="w-9 h-9 rounded-lg bg-blue-500 text-white flex items-center justify-center shadow-sm">
-                                            <Layers className="w-4.5 h-4.5" />
-                                          </div>
-                                          <div>
-                                            <div className="text-[10px] text-blue-500 font-bold uppercase tracking-wider leading-none mb-1">
-                                              Khu vực
-                                            </div>
-                                            <div className="text-sm font-bold text-slate-900">
-                                              {areaGroup.area.name}
-                                            </div>
-                                          </div>
-                                        </button>
-
-                                        {/* Plots under this Area */}
-                                        <div className="ml-4.5 border-l-2 border-slate-100 pl-6 space-y-4">
-                                          {(areaGroup.entities || [])
-                                            .filter(
-                                              (e: any) =>
-                                                e?.typeCode === "plot",
-                                            )
-                                            .map((plot: any) => (
-                                              <button
-                                                type="button"
-                                                key={plot.id}
-                                                className="relative flex items-center gap-3 py-1 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
-                                                onClick={() =>
-                                                  focusScopeMapToCoordinates(
-                                                    plot.coordinates,
-                                                  )
-                                                }
-                                              >
-                                                <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
-                                                <div className="w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center shadow-xs shrink-0">
-                                                  <Target className="w-4 h-4" />
-                                                </div>
-                                                <div className="min-w-0">
-                                                  <div className="text-[10px] text-green-600 font-bold uppercase tracking-wider leading-none mb-1">
-                                                    Lô đất
-                                                  </div>
-                                                  <div className="text-xs font-bold text-slate-800 truncate">
-                                                    {plot.name}
-                                                  </div>
-                                                </div>
-                                              </button>
-                                            ))}
-                                          {areaGroup.entities.some(
-                                            (e: any) => e.typeCode === "area",
-                                          ) && (
-                                            <div className="flex items-center gap-3 py-1 relative">
-                                              <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
-                                              <Badge
-                                                variant="outline"
-                                                className="text-[9px] uppercase font-bold border-blue-200 text-blue-600 bg-blue-50/50"
-                                              >
-                                                Đã chọn toàn bộ khu vực
-                                              </Badge>
-                                            </div>
-                                          )}
+                                  {areaGroup.area ? (
+                                    <>
+                                      <button
+                                        type="button"
+                                        className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
+                                        onClick={() =>
+                                          focusScopeMapToCoordinates(
+                                            areaGroup.area?.coordinates,
+                                          )
+                                        }
+                                      >
+                                        <div className="w-9 h-9 rounded-lg bg-blue-500 text-white flex items-center justify-center shadow-sm">
+                                          <Layers className="w-4.5 h-4.5" />
                                         </div>
-                                      </>
-                                    ) : (
-                                      /* No Area (Region or direct Plot) */
-                                      <div className="space-y-4">
-                                        {areaGroup.entities.map(
-                                          (entity: any) => (
+                                        <div>
+                                          <div className="text-[10px] text-blue-500 font-bold uppercase tracking-wider leading-none mb-1">
+                                            Khu vực
+                                          </div>
+                                          <div className="text-sm font-bold text-slate-900">
+                                            {areaGroup.area.name}
+                                          </div>
+                                        </div>
+                                      </button>
+
+                                      {/* Plots under this Area */}
+                                      <div className="ml-4.5 border-l-2 border-slate-100 pl-6 space-y-4">
+                                        {(areaGroup.entities || [])
+                                          .filter(
+                                            (e: any) => e?.typeCode === "plot",
+                                          )
+                                          .map((plot: any) => (
                                             <button
                                               type="button"
-                                              key={entity.id}
-                                              className="relative flex items-center gap-3 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
+                                              key={plot.id}
+                                              className="relative flex items-center gap-3 py-1 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
                                               onClick={() =>
                                                 focusScopeMapToCoordinates(
-                                                  entity.coordinates,
+                                                  plot.coordinates,
                                                 )
                                               }
                                             >
                                               <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
-                                              <div
-                                                className={cn(
-                                                  "w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-xs",
-                                                  entity.typeCode === "region"
-                                                    ? "bg-primary"
-                                                    : "bg-green-500",
-                                                )}
-                                              >
-                                                {entity.typeCode ===
-                                                "region" ? (
-                                                  <MapPin className="w-4 h-4" />
-                                                ) : (
-                                                  <Target className="w-4 h-4" />
-                                                )}
+                                              <div className="w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center shadow-xs shrink-0">
+                                                <Target className="w-4 h-4" />
                                               </div>
-                                              <div>
-                                                <div
-                                                  className={cn(
-                                                    "text-[10px] font-bold uppercase tracking-wider leading-none mb-1",
-                                                    entity.typeCode === "region"
-                                                      ? "text-primary"
-                                                      : "text-green-600",
-                                                  )}
-                                                >
-                                                  {entity.type}
+                                              <div className="min-w-0">
+                                                <div className="text-[10px] text-green-600 font-bold uppercase tracking-wider leading-none mb-1">
+                                                  Lô đất
                                                 </div>
-                                                <div className="text-xs font-bold text-slate-800">
-                                                  {entity.name}
+                                                <div className="text-xs font-bold text-slate-800 truncate">
+                                                  {plot.name}
                                                 </div>
                                               </div>
                                             </button>
-                                          ),
+                                          ))}
+                                        {areaGroup.entities.some(
+                                          (e: any) => e.typeCode === "area",
+                                        ) && (
+                                          <div className="flex items-center gap-3 py-1 relative">
+                                            <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
+                                            <Badge
+                                              variant="outline"
+                                              className="text-[9px] uppercase font-bold border-blue-200 text-blue-600 bg-blue-50/50"
+                                            >
+                                              Đã chọn toàn bộ khu vực
+                                            </Badge>
+                                          </div>
                                         )}
                                       </div>
-                                    )}
-                                  </div>
-                                ),
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ),
-                    )}
-                  </div>
+                                    </>
+                                  ) : (
+                                    /* No Area (Region or direct Plot) */
+                                    <div className="space-y-4">
+                                      {areaGroup.entities.map((entity: any) => (
+                                        <button
+                                          type="button"
+                                          key={entity.id}
+                                          className="relative flex items-center gap-3 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
+                                          onClick={() =>
+                                            focusScopeMapToCoordinates(
+                                              entity.coordinates,
+                                            )
+                                          }
+                                        >
+                                          <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
+                                          <div
+                                            className={cn(
+                                              "w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-xs",
+                                              entity.typeCode === "region"
+                                                ? "bg-primary"
+                                                : "bg-green-500",
+                                            )}
+                                          >
+                                            {entity.typeCode === "region" ? (
+                                              <MapPin className="w-4 h-4" />
+                                            ) : (
+                                              <Target className="w-4 h-4" />
+                                            )}
+                                          </div>
+                                          <div>
+                                            <div
+                                              className={cn(
+                                                "text-[10px] font-bold uppercase tracking-wider leading-none mb-1",
+                                                entity.typeCode === "region"
+                                                  ? "text-primary"
+                                                  : "text-green-600",
+                                              )}
+                                            >
+                                              {entity.type}
+                                            </div>
+                                            <div className="text-xs font-bold text-slate-800">
+                                              {entity.name}
+                                            </div>
+                                          </div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ),
+                  )}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="col-span-2">
             <div className="flex-8 h-full rounded-xl overflow-hidden border border-slate-100 bg-slate-50 mb-6 relative">
@@ -1354,7 +1348,9 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                       Người quản lý
                     </div>
                     <div className="font-medium mt-1 text-slate-900">
-                      {details.manager?.fullName || "Chưa phân công"}
+                      {details.managers.length > 0
+                        ? details.managers.map((m) => m.fullName).join(", ")
+                        : "Chưa phân công"}
                     </div>
                   </div>
                   <div>
@@ -1493,7 +1489,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* Left: Technical Configs */}
-              <div className="lg:col-span-4 space-y-6">
+              <div className="lg:col-span-3 space-y-6">
                 <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
                   <span className="w-1 h-1 rounded-full bg-primary" />
                   Cấu hình kỹ thuật
@@ -1545,7 +1541,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
               </div>
 
               {/* Right: Selected Crops */}
-              <div className="lg:col-span-8 space-y-8">
+              <div className="lg:col-span-9 space-y-8">
                 <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
                   <span className="w-1 h-1 rounded-full bg-green-500" />
                   Danh sách giống cây trồng & Hạt giống (
@@ -1564,10 +1560,6 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pl-4">
                       {crops.map((crop) => (
                         <div key={crop.id} className="relative group">
-                          {/* Connector for Crop Category */}
-                          <div className="absolute -left-4 top-8 w-4 h-px bg-slate-200" />
-                          <div className="absolute -left-4 top-0 w-px h-8 bg-slate-200" />
-
                           <div className="flex flex-col border rounded-2xl bg-white hover:border-primary/40 hover:bg-slate-50/50 transition-all shadow-sm hover:shadow-md overflow-hidden">
                             <div className="flex items-start gap-4 p-4 relative">
                               <div className="w-16 h-16 rounded-2xl bg-slate-50 overflow-hidden shrink-0 border relative">
@@ -1591,7 +1583,10 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                                     size="icon"
                                     className="h-8 w-8 text-slate-400 hover:text-primary -mt-1 -mr-1"
                                     onClick={() =>
-                                      setLocation(`/variety/${crop.id}`)
+                                      window.open(
+                                        `/variety/${crop.id}`,
+                                        "_blank",
+                                      )
                                     }
                                   >
                                     <Maximize2 className="w-4 h-4" />
@@ -1626,7 +1621,10 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                                         key={seed.id}
                                         className="flex items-center gap-3 p-2 rounded-xl bg-white border border-slate-100 group/seed hover:border-primary/30 transition-all cursor-pointer"
                                         onClick={() =>
-                                          setLocation(`/seed/${seed.id}`)
+                                          window.open(
+                                            `/seed/${seed.id}`,
+                                            "_blank",
+                                          )
                                         }
                                       >
                                         <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
@@ -1677,62 +1675,12 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
         <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
           {/* Left Column - Management & List (6/10) */}
           <div className="lg:col-span-6 space-y-6">
-            <Card className="overflow-hidden border shadow-sm">
-              <CardHeader className="border-b bg-slate-50/50 py-4">
-                <CardTitle className="flex items-center gap-2 text-base font-bold">
-                  <User className="w-4 h-4 text-primary" />
-                  Nhân sự quản lý
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {details.manager ? (
-                  <div className="flex items-start gap-4 p-5 hover:bg-slate-50 transition-colors">
-                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-bold overflow-hidden text-2xl border border-primary/20 shrink-0">
-                      {details.manager.avatar ? (
-                        <img
-                          src={details.manager.avatar}
-                          alt={details.manager.fullName}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        details.manager.fullName.charAt(0)
-                      )}
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex justify-between items-start">
-                        <div className="font-bold text-lg text-slate-900 leading-tight">
-                          {details.manager.fullName}
-                        </div>
-                        <Badge className="bg-primary/10 text-primary border-none text-[10px] px-2 py-0 h-5">
-                          Quản lý vùng
-                        </Badge>
-                      </div>
-                      <div className="text-primary font-bold text-sm tracking-wide">
-                        {details.manager.position}
-                      </div>
-                      <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
-                        <MapPin className="w-3 h-3" />
-                        {details.manager.department} • {details.manager.team}
-                      </div>
-                      <div className="flex flex-wrap gap-x-6 gap-y-1 mt-3">
-                        <div className="flex items-center gap-2 text-xs text-slate-600">
-                          <Phone className="w-3.5 h-3.5 text-slate-400" />
-                          {details.manager.phone || "N/A"}
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-600">
-                          <Mail className="w-3.5 h-3.5 text-slate-400" />
-                          {details.manager.email || "N/A"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-10 text-muted-foreground italic text-sm">
-                    Chưa phân công người quản lý
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <HorizontalPersonnelList
+              personnel={details.managers}
+              onSelect={(p) => {
+                setSelectedStaffId(p.id);
+              }}
+            />
 
             <Card className="overflow-hidden border shadow-sm">
               <CardHeader className="border-b bg-slate-50/50 py-4 flex flex-row items-center justify-between">
@@ -1751,7 +1699,8 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                   <DataTable
                     columns={staffColumns}
                     data={personnel.filter(
-                      (p: Personnel) => p.id !== details?.manager?.id,
+                      (p: Personnel) =>
+                        !details.managers.some((m) => m.id === p.id),
                     )}
                     onView={(item) => setSelectedStaffId(item.id)}
                     searchPlaceholder="Tìm kiếm nhân viên..."

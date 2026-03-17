@@ -21,7 +21,7 @@ interface Step1GeographicalSelectionProps {
   geographicalUnits: any[];
   selectedScopeIds: string[];
   onScopeChange: (ids: string[]) => void;
-  manager: any;
+  manager: any[];
   farmingMethod: any;
   irrigationMethod: any;
   selectedCropsData: any[];

@@ -17,7 +17,7 @@ interface CultivationRegionInfoCardProps {
   geographicalUnits: GeographicalUnit[];
   selectedScopeIds: string[];
   onScopeChange: (ids: string[]) => void;
-  manager: any;
+  manager: any[];
   farmingMethod: any;
   irrigationMethod: any;
   selectedCropsData: any[];
@@ -60,12 +60,26 @@ export const CultivationRegionInfoCard = ({
             <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-primary shrink-0 border border-slate-100">
               <User className="w-4 h-4" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">
                 Quản lý
               </div>
-              <div className="text-sm font-semibold text-slate-900 truncate">
-                {manager?.fullName || "Chưa phân công"}
+              <div className="text-sm font-semibold text-slate-900">
+                {manager && manager.length > 0 ? (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {manager.map((m: any) => (
+                      <Badge
+                        key={m.id}
+                        variant="outline"
+                        className="text-[10px] py-0 px-1.5 h-4 bg-white font-medium border-slate-200"
+                      >
+                        {m.fullName}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  "Chưa phân công"
+                )}
               </div>
             </div>
           </div>

@@ -13,7 +13,7 @@ import useVarietyStore from "../../../stores/useVarietyStore";
 import type { Region } from "../../region-chart/constants";
 
 export interface CultivationRegionDetails {
-  manager: any;
+  managers: any[];
   selectedCerts: any[];
   regionStats: {
     total: number;
@@ -73,7 +73,7 @@ export const useCultivationRegionDetail = (id?: string | null) => {
   const details: CultivationRegionDetails | null = useMemo(() => {
     if (!area) return null;
 
-    let manager = personnel.find((m) => m.id.toString() === area.managerId);
+    let managers = personnel.filter((m) => (area.managerIds || []).includes(m.id.toString()));
 
     // Resolve multiple certificates
     const selectedCerts = standards.filter(
@@ -278,7 +278,7 @@ export const useCultivationRegionDetail = (id?: string | null) => {
     );
 
     return {
-      manager,
+      managers,
       selectedCerts,
       regionStats,
       region,

@@ -698,18 +698,17 @@ const GeographicalSelector = ({
 };
 
 const ManagerSelector = ({
-  selectedId,
+  selectedIds,
   onSelect,
 }: {
-  selectedId: string;
-  onSelect: (id: string) => void;
+  selectedIds: string[];
+  onSelect: (ids: string[]) => void;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
 
   const { personnel } = usePersonnelStore();
-  const selectedManager = personnel.find((m) => m.id.toString() === selectedId);
   const departmentsFromStore = useDepartmentStore((state) => state.departments);
   const departments = departmentsFromStore
     .filter((d) => d.status === "active")
@@ -729,55 +728,61 @@ const ManagerSelector = ({
   return (
     <>
       <div
-        className={`group border rounded-xl p-4 transition-all hover:shadow-sm cursor-pointer ${
-          selectedManager
+        className={`group border rounded-xl p-4 transition-all hover:shadow-sm cursor-pointer space-y-3 ${
+          selectedIds.length > 0
             ? "bg-white border-slate-200"
             : "bg-slate-50 border-dashed border-slate-300"
         }`}
         onClick={() => setIsOpen(true)}
       >
-        {selectedManager ? (
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 overflow-hidden">
-              {selectedManager.avatar ? (
-                <img
-                  src={selectedManager.avatar}
-                  alt={selectedManager.fullName}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <User className="w-6 h-6 text-primary" />
-              )}
+        {selectedIds.length > 0 ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+               <span className="text-xs font-bold text-primary uppercase tracking-tighter">Đã chọn {selectedIds.length} người</span>
+               <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-slate-400 group-hover:text-primary text-[10px] font-bold uppercase transition-all"
+              >
+                Chỉnh sửa
+              </Button>
             </div>
-            <div className="flex-1">
-              <div className="font-bold text-slate-800">
-                {selectedManager.fullName}
-              </div>
-              <div className="text-sm text-muted-foreground flex items-center gap-1.5 flex-wrap">
-                <Badge
-                  variant="outline"
-                  className="font-normal text-xs bg-slate-100"
-                >
-                  {selectedManager.position}
-                </Badge>
-                <span className="text-xs text-slate-400">&bull;</span>
-                <span className="text-xs">{selectedManager.department}</span>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {selectedIds.map((id) => {
+                const manager = personnel.find((m) => m.id.toString() === id);
+                if (!manager) return null;
+                return (
+                  <div key={id} className="flex items-center gap-3 bg-slate-50/50 p-2 rounded-lg border border-slate-100">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 overflow-hidden">
+                      {manager.avatar ? (
+                        <img
+                          src={manager.avatar}
+                          alt={manager.fullName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-4 h-4 text-primary" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-slate-800 text-xs truncate">
+                        {manager.fullName}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground truncate uppercase font-medium">
+                        {manager.position}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-slate-400 group-hover:text-primary"
-            >
-              Thay đổi
-            </Button>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-4 text-center gap-2 text-muted-foreground group-hover:text-primary transition-colors">
             <div className="w-10 h-10 rounded-full bg-white border border-dashed flex items-center justify-center">
               <Briefcase className="w-5 h-5" />
             </div>
-            <div className="text-sm font-medium">Chọn quản lý vùng trồng</div>
+            <div className="text-sm font-medium">Chọn nhân sự chịu trách nhiệm</div>
           </div>
         )}
       </div>
@@ -822,13 +827,17 @@ const ManagerSelector = ({
                   <div
                     key={m.id}
                     className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${
-                      selectedId === m.id.toString()
+                      selectedIds.includes(m.id.toString())
                         ? "bg-primary/5 border border-primary/20 shadow-sm"
                         : "hover:bg-slate-50 border border-transparent"
                     }`}
                     onClick={() => {
-                      onSelect(m.id.toString());
-                      setIsOpen(false);
+                      const idStr = m.id.toString();
+                      if (selectedIds.includes(idStr)) {
+                        onSelect(selectedIds.filter(id => id !== idStr));
+                      } else {
+                        onSelect([...selectedIds, idStr]);
+                      }
                     }}
                   >
                     <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-sm font-bold overflow-hidden text-slate-600">
@@ -850,7 +859,7 @@ const ManagerSelector = ({
                         {m.position} - {m.department}
                       </div>
                     </div>
-                    {selectedId === m.id.toString() && (
+                    {selectedIds.includes(m.id.toString()) && (
                       <CheckCircle2 className="w-5 h-5 text-primary" />
                     )}
                   </div>
@@ -1077,7 +1086,7 @@ const CultivationRegionCreatePage = () => {
   const [selections, setSelections] = useState<GeographicalSelection[]>([]);
 
   const [selectedCertIds, setSelectedCertIds] = useState<string[]>([]);
-  const [selectedManagerId, setSelectedManagerId] = useState<string>("");
+  const [selectedManagerIds, setSelectedManagerIds] = useState<string[]>([]);
 
   /* Per-entity configuration state */
   const [cropSearchTerm, setCropSearchTerm] = useState("");
@@ -1281,8 +1290,8 @@ const CultivationRegionCreatePage = () => {
                 Nhân viên chịu trách nhiệm
               </Label>
               <ManagerSelector
-                selectedId={selectedManagerId}
-                onSelect={setSelectedManagerId}
+                selectedIds={selectedManagerIds}
+                onSelect={setSelectedManagerIds}
               />
             </div>
 
@@ -1738,8 +1747,8 @@ const CultivationRegionCreatePage = () => {
   };
 
   const renderConfirmation = () => {
-    const manager = personnel.find(
-      (m) => m.id.toString() === selectedManagerId,
+    const selectedManagers = personnel.filter((m) =>
+      selectedManagerIds.includes(m.id.toString()),
     );
     const selectedCerts = standards.filter((c) =>
       selectedCertIds.includes(c.code),
@@ -1810,27 +1819,31 @@ const CultivationRegionCreatePage = () => {
                       </div>
                     </td>
                   </tr> */}
-                  {manager && (
+                  {selectedManagers.length > 0 && (
                     <tr className="border-b border-slate-100">
                       <td className="py-3 px-4 text-muted-foreground">
-                        Quản lý
+                        Nhân sự chịu trách nhiệm
                       </td>
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold overflow-hidden">
-                            {manager.avatar ? (
-                              <img
-                                src={manager.avatar}
-                                alt={manager.fullName}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              manager.fullName.charAt(0)
-                            )}
-                          </div>
-                          <span className="font-medium">
-                            {manager.fullName}
-                          </span>
+                        <div className="flex flex-wrap gap-3">
+                          {selectedManagers.map((m) => (
+                            <div key={m.id} className="flex items-center gap-2 bg-slate-50/50 pr-3 rounded-full border border-slate-100 h-8">
+                              <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold overflow-hidden shrink-0">
+                                {m.avatar ? (
+                                  <img
+                                    src={m.avatar}
+                                    alt={m.fullName}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  m.fullName.charAt(0)
+                                )}
+                              </div>
+                              <span className="font-medium text-xs">
+                                {m.fullName}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       </td>
                     </tr>
@@ -2055,7 +2068,7 @@ const CultivationRegionCreatePage = () => {
                   targetName,
                   enterpriseId: selectedEnterpriseId,
                   certificateIds: selectedCertIds,
-                  managerId: selectedManagerId,
+                  managerIds: selectedManagerIds,
                   note,
                   farmingMethodId: commonConfig?.farmingMethodId || "",
                   irrigationMethodId: commonConfig?.irrigationMethodId || "",

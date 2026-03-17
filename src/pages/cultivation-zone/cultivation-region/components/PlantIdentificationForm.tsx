@@ -316,7 +316,7 @@ const PlantIdentificationForm = ({
   const activeConfig = useMemo(() => {
     if (!selectedCultivationRegion) return null;
     return {
-      managerId: selectedCultivationRegion.managerId,
+      managerIds: selectedCultivationRegion.managerIds || [],
       farmingMethodId: selectedCultivationRegion.farmingMethodId,
       irrigationMethodId: selectedCultivationRegion.irrigationMethodId,
       selectedCrops: selectedCultivationRegion.selectedCrops || [],
@@ -324,9 +324,12 @@ const PlantIdentificationForm = ({
     };
   }, [selectedCultivationRegion]);
 
-  const manager = personnel.find(
-    (p: any) => String(p.id) === String(activeConfig?.managerId),
-  );
+  const managers = useMemo(() => {
+    if (!activeConfig?.managerIds) return [];
+    return personnel.filter((p: any) =>
+      activeConfig.managerIds.includes(String(p.id)),
+    );
+  }, [activeConfig, personnel]);
   const farmingMethod = farmingMethods.find(
     (m: any) => m.id === activeConfig?.farmingMethodId,
   );
@@ -517,7 +520,7 @@ const PlantIdentificationForm = ({
           geographicalUnits={geographicalUnits}
           selectedScopeIds={selectedScopeIds}
           onScopeChange={setSelectedScopeIds}
-          manager={manager}
+          manager={managers}
           farmingMethod={farmingMethod}
           irrigationMethod={irrigationMethod}
           selectedCropsData={selectedCropsData}
@@ -564,7 +567,7 @@ const PlantIdentificationForm = ({
           selectedEnterprise={selectedEnterprise}
           selectedCultivationRegion={selectedCultivationRegion}
           geographicalUnits={geographicalUnits}
-          manager={manager}
+          manager={managers}
           farmingMethod={farmingMethod}
           irrigationMethod={irrigationMethod}
           selectedCropsData={selectedCropsData}

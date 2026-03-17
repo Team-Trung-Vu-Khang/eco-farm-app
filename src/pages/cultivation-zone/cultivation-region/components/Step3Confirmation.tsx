@@ -29,7 +29,7 @@ interface Step3ConfirmationProps {
   selectedEnterprise: any;
   selectedCultivationRegion: any;
   geographicalUnits: any[];
-  manager: any;
+  manager: any[];
   farmingMethod: any;
   irrigationMethod: any;
   selectedCropsData: any[];
@@ -159,15 +159,29 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
           <div className="p-6 space-y-5 bg-white">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex items-start gap-3 p-3 rounded-xl border bg-slate-50/50">
-                <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-primary shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-primary shrink-0 border border-slate-100">
                   <User className="w-4 h-4" />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="text-[10px] text-slate-500 font-medium leading-none mb-1">
-                    Quản lý phụ trách
+                    Nhân sự phụ trách
                   </div>
-                  <div className="text-sm font-semibold text-slate-900 truncate">
-                    {manager?.fullName || "Chưa phân công"}
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {manager && manager.length > 0 ? (
+                      manager.map((m: any) => (
+                        <Badge
+                          key={m.id}
+                          variant="outline"
+                          className="text-[10px] py-0 px-1.5 h-4 bg-white font-medium border-slate-200"
+                        >
+                          {m.fullName}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-sm font-semibold text-slate-900 truncate">
+                        Chưa phân công
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
