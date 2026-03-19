@@ -1,14 +1,15 @@
-import React, { useRef, useState, useMemo } from "react";
+import { Badge, cn, Input } from "@tankhang1/eco-shared-ui";
 import {
-  Search,
   ChevronLeft,
   ChevronRight,
-  User,
+  Mail,
   MapPin,
   Phone,
-  Mail,
+  Search,
+  Star,
+  User,
 } from "lucide-react";
-import { Input, Badge, cn } from "@tankhang1/eco-shared-ui";
+import React, { useMemo, useRef, useState } from "react";
 import { type Personnel } from "../../stores/usePersonnelStore";
 
 interface HorizontalPersonnelListProps {
@@ -17,11 +18,15 @@ interface HorizontalPersonnelListProps {
   onSelect?: (personnel: Personnel) => void;
   selectedIds?: number[];
   className?: string;
+  showSearch?: boolean;
+  showLabel?: boolean;
 }
 
 export const HorizontalPersonnelList: React.FC<
   HorizontalPersonnelListProps
 > = ({
+  showLabel,
+  showSearch,
   onSelect,
   personnel,
   className,
@@ -56,25 +61,33 @@ export const HorizontalPersonnelList: React.FC<
   return (
     <div className={cn("space-y-4", className)}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-            <User className="w-4 h-4" />
+        {showLabel ? (
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+              <User className="w-4 h-4" />
+            </div>
+            <span className="font-bold text-slate-800">{title}</span>
+            <Badge variant="secondary" className="ml-2 font-mono">
+              {filteredPersonnel.length}
+            </Badge>
           </div>
-          <span className="font-bold text-slate-800">{title}</span>
-          <Badge variant="secondary" className="ml-2 font-mono">
-            {filteredPersonnel.length}
-          </Badge>
-        </div>
+        ) : (
+          <></>
+        )}
 
-        <div className="relative max-w-md w-full">
-          <Search className="absolute left-3 top-1/2 z-30 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <Input
-            value={searchQuery}
-            placeholder="Tìm kiếm nhân sự..."
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-9 bg-white border-slate-200 focus:border-primary transition-all rounded-md"
-          />
-        </div>
+        {showSearch ? (
+          <div className="relative max-w-md w-full">
+            <Search className="absolute left-3 top-1/2 z-30 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              value={searchQuery}
+              placeholder="Tìm kiếm nhân sự..."
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-9 bg-white border-slate-200 focus:border-primary transition-all rounded-md"
+            />
+          </div>
+        ) : (
+          <></>
+        )}
       </div>
 
       <div className="relative group">
@@ -97,12 +110,15 @@ export const HorizontalPersonnelList: React.FC<
                 key={person.id}
                 onClick={() => onSelect?.(person)}
                 className={cn(
-                  "flex-none w-87.5 p-5 rounded-2xl border transition-all cursor-pointer",
+                  "flex-none w-87.5 p-5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden",
                   selectedIds.includes(person.id)
                     ? "bg-primary/5 border-primary shadow-sm ring-1 ring-primary/20"
                     : "bg-white border-slate-100 hover:border-primary/30 hover:shadow-md",
                 )}
               >
+                <div className="absolute top-0 right-0 rounded-bl-md bg-amber-400 px-2 py-1 text-sm font-semibold text-white flex gap-1 items-center">
+                  <Star className="w-4 h-4 fill-white" /> <span>Quản lý</span>
+                </div>
                 <div className="flex items-start gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-bold overflow-hidden text-2xl border border-primary/20 shrink-0">
                     {person.avatar ? (

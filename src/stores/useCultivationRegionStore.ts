@@ -32,7 +32,9 @@ interface CultivationRegionState {
   isLoading: boolean;
   error: string | null;
 
-  addArea: (area: Omit<CultivationRegion, "id" | "createdAt" | "status">) => void;
+  addArea: (
+    area: Omit<CultivationRegion, "id" | "createdAt" | "status">,
+  ) => void;
   updateArea: (id: string, area: Partial<CultivationRegion>) => void;
   deleteArea: (id: string) => void;
   getAreaById: (id: string) => CultivationRegion | undefined;
@@ -47,7 +49,7 @@ const MOCK_DATA: CultivationRegion[] = [
       "Khu A - Sầu riêng Dona, Khu B - Sầu riêng Musang King, Khu Phức hợp Nông nghiệp Công nghệ cao",
     enterpriseId: "1",
     certificateIds: ["ISO22000", "Organic"],
-    managerIds: ["1"],
+    managerIds: ["1", "2", "3", "4", "5"],
     note: "",
     farmingMethodId: "organic",
     irrigationMethodId: "drip",

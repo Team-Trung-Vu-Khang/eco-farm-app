@@ -67,6 +67,7 @@ import {
   Package,
   Hash,
   Tag,
+  Scale3d,
 } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -368,7 +369,15 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                   </div>
 
                   <div className="w-full overflow-hidden min-w-0 text-wrap font-bold text-slate-800 text-sm mb-1">
-                    {region.name}
+                    {region.code}: {region.name}
+                  </div>
+
+                  <div className="flex w-full items-start gap-1.5 text-slate-500 text-[11px] leading-relaxed">
+                    <Scale3d className="w-3 h-3 text-red-500 shrink-0 mt-0.5" />
+
+                    <span className="block overflow-hidden text-wrap flex-1 min-w-0">
+                      {region.area} ha
+                    </span>
                   </div>
 
                   <div className="flex w-full items-start gap-1.5 text-slate-500 text-[11px] leading-relaxed">
@@ -411,8 +420,17 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                     Khu vực
                   </div>
                   <div className="w-full overflow-hidden min-w-0 text-wrap font-bold text-slate-800 text-sm mb-1">
-                    {a.name}
+                    {a.code}: {a.name}
                   </div>
+
+                  <div className="flex w-full items-start gap-1.5 text-slate-500 text-[11px] leading-relaxed">
+                    <Scale3d className="w-3 h-3 text-red-500 shrink-0 mt-0.5" />
+
+                    <span className="block overflow-hidden text-wrap flex-1 min-w-0">
+                      {a.area} ha
+                    </span>
+                  </div>
+
                   <div className="flex items-start gap-1.5 text-slate-500 text-[11px] leading-relaxed">
                     <MapPin className="w-3 h-3 text-red-500 shrink-0 mt-0.5" />
                     <span className="block overflow-hidden text-wrap flex-1 min-w-0">
@@ -457,8 +475,17 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                     Lô đất
                   </div>
                   <div className="w-full overflow-hidden min-w-0 text-wrap font-bold text-slate-800 text-sm mb-1">
-                    {plot.name}
+                    {plot.code}: {plot.name}
                   </div>
+
+                  <div className="flex w-full items-start gap-1.5 text-slate-500 text-[11px] leading-relaxed">
+                    <Scale3d className="w-3 h-3 text-red-500 shrink-0 mt-0.5" />
+
+                    <span className="block overflow-hidden text-wrap flex-1 min-w-0">
+                      {plot.area} ha
+                    </span>
+                  </div>
+
                   <div className="flex items-start gap-1.5 text-slate-500 text-[11px] leading-relaxed">
                     <MapPin className="w-3 h-3 text-red-500 shrink-0 mt-0.5" />
                     <span className="block overflow-hidden text-wrap flex-1 min-w-0">
@@ -1673,13 +1700,6 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
         <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
           {/* Left Column - Management & List (6/10) */}
           <div className="lg:col-span-6 space-y-6">
-            <HorizontalPersonnelList
-              personnel={details.managers}
-              onSelect={(p) => {
-                setSelectedStaffId(p.id);
-              }}
-            />
-
             <Card className="overflow-hidden border shadow-sm">
               <CardHeader className="border-b bg-slate-50/50 py-4 flex flex-row items-center justify-between">
                 <div>
@@ -1694,6 +1714,14 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
               </CardHeader>
               <CardContent>
                 <div className="mt-4">
+                  <HorizontalPersonnelList
+                    personnel={details.managers}
+                    onSelect={(p) => {
+                      setSelectedStaffId(p.id);
+                    }}
+                    className="mb-4"
+                  />
+
                   <DataTable
                     columns={staffColumns}
                     data={personnel.filter(
