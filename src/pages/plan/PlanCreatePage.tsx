@@ -387,7 +387,7 @@ export default function PlanCreatePage() {
               <Sprout className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h3 className="font-semibold">Thiết lập kế hoạch canh tác</h3>
+              <h3 className="font-semibold">Thiết lập kế hoạch</h3>
               <p className="text-sm text-blue-700">
                 Bắt đầu bằng việc chọn mùa vụ và đặt tên cho kế hoạch của bạn.
               </p>
@@ -464,7 +464,7 @@ export default function PlanCreatePage() {
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  placeholder="VD: Kế hoạch canh tác Đông Xuân"
+                  placeholder="VD: Kế hoạch Đông Xuân"
                 />
               </div>
             </div>
@@ -982,7 +982,7 @@ export default function PlanCreatePage() {
         formData.purpose === "cultivation"
           ? "Phân bổ & Công việc"
           : formData.purpose === "amendment"
-            ? "Vật tư & Cải tạo"
+            ? "Vật tư & Nhân lực"
             : "Vật tư & Phác đồ",
       description: "Hoạch định nguồn lực chi tiết",
       content: (
@@ -1095,7 +1095,7 @@ export default function PlanCreatePage() {
               <FileCheck className="w-8 h-8" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900">
-              Xác nhận Kế hoạch Canh tác
+              Xác nhận Kế hoạch
             </h2>
             <p className="text-slate-500 mt-2">
               Vui lòng kiểm tra lại thông tin trước khi kích hoạt
@@ -1467,7 +1467,7 @@ export default function PlanCreatePage() {
 
   return (
     <AdminLayout
-      title="Lập kế hoạch canh tác"
+      title="Lập kế hoạch"
       description="Xây dựng lộ trình trồng trọt, phân bổ nguồn lực và giám sát"
     >
       <div className="max-w-5xl mx-auto">

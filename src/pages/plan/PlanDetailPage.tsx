@@ -256,7 +256,7 @@ export default function PlanDetailPage() {
 
   return (
     <AdminLayout
-      title="Chi tiết kế hoạch canh tác"
+      title="Chi tiết kế hoạch"
       description={`Xem thông tin chi tiết kế hoạch ${plan.code}`}
     >
       <div className="space-y-6">

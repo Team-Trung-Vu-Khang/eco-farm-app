@@ -451,7 +451,7 @@ export default function PlanEditPage() {
               <Sprout className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h3 className="font-semibold">Chỉnh sửa kế hoạch canh tác</h3>
+              <h3 className="font-semibold">Chỉnh sửa kế hoạch</h3>
               <p className="text-sm text-blue-700">
                 Điều chỉnh thông tin mùa vụ và thời gian thực hiện.
               </p>
@@ -1113,7 +1113,7 @@ export default function PlanEditPage() {
 
   return (
     <AdminLayout
-      title="Chỉnh sửa Kế hoạch canh tác"
+      title="Chỉnh sửa Kế hoạch"
       description={`Cập nhật thông tin chi tiết cho kế hoạch ${plan.code}`}
     >
       <div className="max-w-5xl mx-auto">

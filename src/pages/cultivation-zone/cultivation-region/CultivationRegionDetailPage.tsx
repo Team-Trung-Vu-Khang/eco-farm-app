@@ -1,108 +1,99 @@
-import { useLocation, useParams } from "wouter";
 import {
   AdminLayout,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  cn,
+  DataTable,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  Badge,
-  Button,
+  Label,
   Separator,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-  Input,
-  Label,
-  DataTable,
   type Column,
-  cn,
 } from "@tankhang1/eco-shared-ui";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Edit,
-  Award,
-  User,
-  Globe,
-  Phone,
-  Mail,
-  Calendar,
-  CreditCard,
-  Sprout,
-  Droplets,
-  Leaf,
-  FileText,
-  Layers,
-  Target,
-  CheckCircle,
-  MapPin,
-  Maximize2,
-  X,
-  Search,
-  Clock,
-  Beaker,
-  ListChecks,
-  Image as ImageIcon,
-  Video,
-  Play,
-  AlertTriangle,
-  Lightbulb,
-  CheckCircle2,
-  Wind,
-  Contact,
-  ShieldCheck,
-  TrendingUp,
-  TrendingDown,
-  ShoppingBag,
-  ArrowUpRight,
-  Bug,
-  Users,
-  Wrench,
-  Package,
-  Hash,
-  Tag,
-  Scale3d,
-} from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import styles from "./styles.module.css";
 import {
+  AlertTriangle,
+  ArrowUpRight,
+  Award,
+  Beaker,
+  Bug,
+  Calendar,
+  CheckCircle,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  Clock,
+  Contact,
+  CreditCard,
+  Droplets,
+  Edit,
+  FileText,
+  Globe,
+  Hash,
+  Image as ImageIcon,
+  Layers,
+  Leaf,
+  Mail,
+  MapPin,
+  Maximize2,
+  Package,
+  Phone,
+  Scale3d,
+  ShieldCheck,
+  ShoppingBag,
+  Sprout,
+  Tag,
+  Target,
+  TrendingDown,
+  TrendingUp,
+  User,
+  Users,
+  Wrench,
+  X,
+} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Tooltip as LeafletTooltip,
   MapContainer,
   Polygon,
   TileLayer,
-  Tooltip as LeafletTooltip,
 } from "react-leaflet";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
   CartesianGrid,
   Tooltip as ChartTooltip,
+  Line,
+  LineChart,
   ResponsiveContainer,
+  XAxis,
+  YAxis,
 } from "recharts";
+import { useLocation, useParams } from "wouter";
+import { HorizontalPersonnelList } from "../../../components/personnel/HorizontalPersonnelList";
 import useCultivationRegionStore from "../../../stores/useCultivationRegionStore";
-import useRegionStore from "../../../stores/useRegionStore";
-import { useMemo, useRef, useState } from "react";
+import useGrowthCycleStore from "../../../stores/useGrowthCycleStore";
 import usePersonnelStore, {
   type Personnel,
 } from "../../../stores/usePersonnelStore";
 import usePlanStore, { type Plan } from "../../../stores/usePlanStore";
-import {
-  initialTreatmentPlans,
-  mockMethods,
-  type TreatmentPlan,
-} from "../../soil-amendment/SoilAmendmentTreatmentPage";
-import useGrowthCycleStore from "../../../stores/useGrowthCycleStore";
+import useRegionStore from "../../../stores/useRegionStore";
+import useTaskStore, { type Task } from "../../../stores/useTaskStore";
+import TaskDetailDialog from "../../task/components/TaskDetailDialog";
+import { DISTRICTS, PROVINCES } from "../../region-chart/constants";
+import styles from "./styles.module.css";
 import { useCultivationRegionDetail } from "./useCultivationRegionDetail";
-import { HorizontalPersonnelList } from "../../../components/personnel/HorizontalPersonnelList";
-import { PROVINCES, DISTRICTS } from "../../region-chart/constants";
 
 export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
   const params = useParams<{ id: string }>();
@@ -521,7 +512,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
     return { regionIds, areaIds, plotIds };
   }, [scopeMapData]);
 
-  const relevantPlans = useMemo(() => {
+  const baseRelevantPlans = useMemo(() => {
     const intersects = (a: string[] | undefined, b: Set<string>) =>
       (a || []).some((id) => b.has(String(id)));
 
@@ -530,6 +521,15 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
       intersects(p.selectedZoneIds, scopeTargetIds.areaIds) ||
       intersects(p.selectedRegionIds, scopeTargetIds.regionIds);
 
+    return plans.filter(matches);
+  }, [plans, scopeTargetIds]);
+
+  const [planFilter, setPlanFilter] = useState<Plan["purpose"]>("cultivation");
+
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
+
+  const relevantPlans = useMemo(() => {
     const statusRank: Record<Plan["status"], number> = {
       active: 0,
       draft: 1,
@@ -537,13 +537,50 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
       cancelled: 3,
     };
 
-    return plans.filter(matches).sort((a, b) => {
-      const ra = statusRank[a.status] ?? 99;
-      const rb = statusRank[b.status] ?? 99;
-      if (ra !== rb) return ra - rb;
-      return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
-    });
-  }, [plans, scopeTargetIds]);
+    return baseRelevantPlans
+      .filter((p) => p.purpose === planFilter)
+      .sort((a, b) => {
+        const ra = statusRank[a.status] ?? 99;
+        const rb = statusRank[b.status] ?? 99;
+        if (ra !== rb) return ra - rb;
+        return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+      });
+  }, [baseRelevantPlans, planFilter]);
+
+  const tasks = useTaskStore((state) => state.tasks);
+
+  const incurredTasks = useMemo(() => {
+    const incurredPlanNames = new Set(
+      baseRelevantPlans
+        .filter((p) => p.purpose === "incurred")
+        .map((p) => p.name),
+    );
+    return tasks.filter((t) => incurredPlanNames.has(t.plan));
+  }, [baseRelevantPlans, tasks]);
+
+  const prevRegionIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!baseRelevantPlans || baseRelevantPlans.length === 0) return;
+
+    // Only auto-switch IF the region just changed or it's the first time data is available
+    if (prevRegionIdRef.current !== resolvedId) {
+      prevRegionIdRef.current = resolvedId;
+      const purposes: Plan["purpose"][] = [
+        "cultivation",
+        "treatment",
+        "amendment",
+        "harvest",
+        "incurred",
+      ];
+      const firstWithData = purposes.find((p) =>
+        baseRelevantPlans.some((plan) => plan.purpose === p),
+      );
+      if (firstWithData) {
+        setPlanFilter(firstWithData);
+      }
+    }
+  }, [baseRelevantPlans, resolvedId]);
 
   const planStatusBadge = (status: Plan["status"]) => {
     const config: Record<Plan["status"], { label: string; className: string }> =
@@ -563,147 +600,147 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
     return <Badge className={cn("border-none", c.className)}>{c.label}</Badge>;
   };
 
-  const scopeNameKeywords = useMemo(() => {
-    const keys = new Set<string>();
-    if (area?.name) keys.add(area.name);
-    for (const r of scopeMapData?.regions || []) keys.add(r.region.name);
-    for (const a of scopeMapData?.areas || []) keys.add(a.area.name);
-    for (const p of scopeMapData?.plots || []) keys.add(p.plot.name);
-    return Array.from(keys)
-      .map((k) => k.trim().toLowerCase())
-      .filter(Boolean);
-  }, [area?.name, scopeMapData]);
+  // const scopeNameKeywords = useMemo(() => {
+  //   const keys = new Set<string>();
+  //   if (area?.name) keys.add(area.name);
+  //   for (const r of scopeMapData?.regions || []) keys.add(r.region.name);
+  //   for (const a of scopeMapData?.areas || []) keys.add(a.area.name);
+  //   for (const p of scopeMapData?.plots || []) keys.add(p.plot.name);
+  //   return Array.from(keys)
+  //     .map((k) => k.trim().toLowerCase())
+  //     .filter(Boolean);
+  // }, [area?.name, scopeMapData]);
 
-  const relevantTreatments = useMemo(() => {
-    const matchesScope = (t: TreatmentPlan) => {
-      const hay = `${t.code} ${t.name} ${t.zone}`.toLowerCase();
-      return scopeNameKeywords.some((k) => hay.includes(k));
-    };
+  // const relevantTreatments = useMemo(() => {
+  //   const matchesScope = (t: TreatmentPlan) => {
+  //     const hay = `${t.code} ${t.name} ${t.zone}`.toLowerCase();
+  //     return scopeNameKeywords.some((k) => hay.includes(k));
+  //   };
 
-    const scoped = initialTreatmentPlans.filter(matchesScope);
-    const list = scoped.length > 0 ? scoped : initialTreatmentPlans;
+  //   const scoped = initialTreatmentPlans.filter(matchesScope);
+  //   const list = scoped.length > 0 ? scoped : initialTreatmentPlans;
 
-    const statusRank: Record<TreatmentPlan["status"], number> = {
-      in_progress: 0,
-      planning: 1,
-      completed: 2,
-      cancelled: 3,
-    };
+  //   const statusRank: Record<TreatmentPlan["status"], number> = {
+  //     in_progress: 0,
+  //     planning: 1,
+  //     completed: 2,
+  //     cancelled: 3,
+  //   };
 
-    return [...list].sort((a, b) => {
-      const ra = statusRank[a.status] ?? 99;
-      const rb = statusRank[b.status] ?? 99;
-      if (ra !== rb) return ra - rb;
-      return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
-    });
-  }, [scopeNameKeywords]);
+  //   return [...list].sort((a, b) => {
+  //     const ra = statusRank[a.status] ?? 99;
+  //     const rb = statusRank[b.status] ?? 99;
+  //     if (ra !== rb) return ra - rb;
+  //     return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+  //   });
+  // }, [scopeNameKeywords]);
 
-  const [historyQuery, setHistoryQuery] = useState("");
-  const [historyFromDate, setHistoryFromDate] = useState("");
-  const [historyToDate, setHistoryToDate] = useState("");
-  const [historyDetailPlan, setHistoryDetailPlan] =
-    useState<TreatmentPlan | null>(null);
+  // const [historyQuery, setHistoryQuery] = useState("");
+  // const [historyFromDate, setHistoryFromDate] = useState("");
+  // const [historyToDate, setHistoryToDate] = useState("");
+  // const [historyDetailPlan, setHistoryDetailPlan] =
+  //   useState<TreatmentPlan | null>(null);
 
-  const getTreatmentIntensityConfig = (intensity: string) => {
-    switch (intensity) {
-      case "light":
-        return { label: "Nhẹ", color: "bg-blue-500" };
-      case "medium":
-        return { label: "Trung bình", color: "bg-yellow-500" };
-      case "deep":
-        return { label: "Sâu", color: "bg-red-500" };
-      default:
-        return { label: "Không xác định", color: "bg-gray-500" };
-    }
-  };
+  // const getTreatmentIntensityConfig = (intensity: string) => {
+  //   switch (intensity) {
+  //     case "light":
+  //       return { label: "Nhẹ", color: "bg-blue-500" };
+  //     case "medium":
+  //       return { label: "Trung bình", color: "bg-yellow-500" };
+  //     case "deep":
+  //       return { label: "Sâu", color: "bg-red-500" };
+  //     default:
+  //       return { label: "Không xác định", color: "bg-gray-500" };
+  //   }
+  // };
 
-  const getTreatmentStatusConfig = (status: string) => {
-    switch (status) {
-      case "planning":
-        return { label: "Đang lập", color: "bg-blue-500" };
-      case "in_progress":
-        return { label: "Đang thực hiện", color: "bg-green-500" };
-      case "completed":
-        return { label: "Hoàn thành", color: "bg-gray-500" };
-      case "cancelled":
-        return { label: "Đã hủy", color: "bg-red-500" };
-      default:
-        return { label: "Không xác định", color: "bg-gray-500" };
-    }
-  };
+  // const getTreatmentStatusConfig = (status: string) => {
+  //   switch (status) {
+  //     case "planning":
+  //       return { label: "Đang lập", color: "bg-blue-500" };
+  //     case "in_progress":
+  //       return { label: "Đang thực hiện", color: "bg-green-500" };
+  //     case "completed":
+  //       return { label: "Hoàn thành", color: "bg-gray-500" };
+  //     case "cancelled":
+  //       return { label: "Đã hủy", color: "bg-red-500" };
+  //     default:
+  //       return { label: "Không xác định", color: "bg-gray-500" };
+  //   }
+  // };
 
-  const filteredHistoryPlans = useMemo(() => {
-    const parseDate = (value: string) => {
-      const d = new Date(value);
-      return Number.isFinite(d.getTime()) ? d : null;
-    };
+  // const filteredHistoryPlans = useMemo(() => {
+  //   const parseDate = (value: string) => {
+  //     const d = new Date(value);
+  //     return Number.isFinite(d.getTime()) ? d : null;
+  //   };
 
-    const query = historyQuery.trim().toLowerCase();
-    const rangeStart = historyFromDate ? parseDate(historyFromDate) : null;
-    const rangeEnd = historyToDate ? parseDate(historyToDate) : null;
-    const endInclusive = rangeEnd ? new Date(rangeEnd.getTime()) : null;
-    if (endInclusive) endInclusive.setHours(23, 59, 59, 999);
+  //   const query = historyQuery.trim().toLowerCase();
+  //   const rangeStart = historyFromDate ? parseDate(historyFromDate) : null;
+  //   const rangeEnd = historyToDate ? parseDate(historyToDate) : null;
+  //   const endInclusive = rangeEnd ? new Date(rangeEnd.getTime()) : null;
+  //   if (endInclusive) endInclusive.setHours(23, 59, 59, 999);
 
-    return relevantTreatments.filter((t) => {
-      if (query) {
-        const hay =
-          `${t.code} ${t.name} ${t.zone} ${t.soilIssue}`.toLowerCase();
-        if (!hay.includes(query)) return false;
-      }
+  //   return relevantTreatments.filter((t) => {
+  //     if (query) {
+  //       const hay =
+  //         `${t.code} ${t.name} ${t.zone} ${t.soilIssue}`.toLowerCase();
+  //       if (!hay.includes(query)) return false;
+  //     }
 
-      const planStart = parseDate(t.startDate) || new Date(0);
-      const planEnd = parseDate(t.endDate) || planStart;
+  //     const planStart = parseDate(t.startDate) || new Date(0);
+  //     const planEnd = parseDate(t.endDate) || planStart;
 
-      // Filter by explicit date range if provided (overlap with the range).
-      if (rangeStart || endInclusive) {
-        const s = rangeStart || new Date(-8640000000000000);
-        const e = endInclusive || new Date(8640000000000000);
-        if (planStart > e || planEnd < s) return false;
-      }
+  //     // Filter by explicit date range if provided (overlap with the range).
+  //     if (rangeStart || endInclusive) {
+  //       const s = rangeStart || new Date(-8640000000000000);
+  //       const e = endInclusive || new Date(8640000000000000);
+  //       if (planStart > e || planEnd < s) return false;
+  //     }
 
-      return true;
-    });
-  }, [relevantTreatments, historyQuery, historyFromDate, historyToDate]);
+  //     return true;
+  //   });
+  // }, [relevantTreatments, historyQuery, historyFromDate, historyToDate]);
 
-  const historyGroups = useMemo(() => {
-    const parseDate = (value: string) => {
-      const d = new Date(value);
-      return Number.isFinite(d.getTime()) ? d : null;
-    };
+  // const historyGroups = useMemo(() => {
+  //   const parseDate = (value: string) => {
+  //     const d = new Date(value);
+  //     return Number.isFinite(d.getTime()) ? d : null;
+  //   };
 
-    const groupMap = new Map<
-      string,
-      { key: string; label: string; sortKey: number; items: TreatmentPlan[] }
-    >();
+  //   const groupMap = new Map<
+  //     string,
+  //     { key: string; label: string; sortKey: number; items: TreatmentPlan[] }
+  //   >();
 
-    for (const t of filteredHistoryPlans) {
-      const d = parseDate(t.startDate) || new Date(0);
-      const year = d.getFullYear();
-      const month = d.getMonth() + 1;
-      const key = `${year}-${String(month).padStart(2, "0")}`;
-      const label = `${String(month).padStart(2, "0")}/${year}`;
-      const sortKey = year * 12 + month;
+  //   for (const t of filteredHistoryPlans) {
+  //     const d = parseDate(t.startDate) || new Date(0);
+  //     const year = d.getFullYear();
+  //     const month = d.getMonth() + 1;
+  //     const key = `${year}-${String(month).padStart(2, "0")}`;
+  //     const label = `${String(month).padStart(2, "0")}/${year}`;
+  //     const sortKey = year * 12 + month;
 
-      const g = groupMap.get(key);
-      if (g) {
-        g.items.push(t);
-      } else {
-        groupMap.set(key, { key, label, sortKey, items: [t] });
-      }
-    }
+  //     const g = groupMap.get(key);
+  //     if (g) {
+  //       g.items.push(t);
+  //     } else {
+  //       groupMap.set(key, { key, label, sortKey, items: [t] });
+  //     }
+  //   }
 
-    const groups = Array.from(groupMap.values()).sort(
-      (a, b) => b.sortKey - a.sortKey,
-    );
-    for (const g of groups) {
-      g.items.sort(
-        (a, b) =>
-          new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
-      );
-    }
+  //   const groups = Array.from(groupMap.values()).sort(
+  //     (a, b) => b.sortKey - a.sortKey,
+  //   );
+  //   for (const g of groups) {
+  //     g.items.sort(
+  //       (a, b) =>
+  //         new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
+  //     );
+  //   }
 
-    return groups;
-  }, [filteredHistoryPlans]);
+  //   return groups;
+  // }, [filteredHistoryPlans]);
 
   if (!area || !details) {
     return (
@@ -726,8 +763,8 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
         <TabsTrigger value="crops">Cây trồng</TabsTrigger>
         <TabsTrigger value="staff">Nhân viên</TabsTrigger>
         <TabsTrigger value="certificates">Chứng nhận</TabsTrigger>
-        <TabsTrigger value="plans">Lịch sử canh tác</TabsTrigger>
-        <TabsTrigger value="amendment-history">Lịch sử cải tạo đất</TabsTrigger>
+        <TabsTrigger value="plans">Kế hoạch & Công việc</TabsTrigger>
+        {/* <TabsTrigger value="amendment-history">Lịch sử cải tạo đất</TabsTrigger> */}
         <TabsTrigger value="statistics">Thống kê</TabsTrigger>
       </TabsList>
 
@@ -1128,7 +1165,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                     </span>
                   </div>
                 </div>
-                <div>
+                {/* <div>
                   <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mb-1.5 uppercase tracking-wider font-bold">
                     <Maximize2 className="w-3.5 h-3.5 text-blue-600/70" />
                     Tổng diện tích
@@ -1139,7 +1176,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                       ha
                     </span>
                   </div>
-                </div>
+                </div> */}
                 <div>
                   <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mb-1.5 uppercase tracking-wider font-bold">
                     <Sprout className="w-3.5 h-3.5 text-green-600/70" />
@@ -2068,8 +2105,170 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
             </div>
           </CardHeader>
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {relevantPlans.length === 0 ? (
+            <div className="mb-6 overflow-x-auto no-scrollbar pb-2">
+              <Tabs
+                value={planFilter}
+                onValueChange={(val: any) => setPlanFilter(val)}
+                className="w-full"
+              >
+                <TabsList className="bg-slate-100/50 p-1 rounded-2xl h-auto flex gap-1 w-max min-w-full">
+                  <TabsTrigger
+                    value="cultivation"
+                    className="rounded-xl px-4 py-2 font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap flex items-center gap-2"
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    Canh tác ({baseRelevantPlans.filter((p) => p.purpose === "cultivation").length})
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="treatment"
+                    className="rounded-xl px-4 py-2 font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-red-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap flex items-center gap-2"
+                  >
+                    <Bug className="w-3.5 h-3.5" />
+                    Điều trị ({baseRelevantPlans.filter((p) => p.purpose === "treatment").length})
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="amendment"
+                    className="rounded-xl px-4 py-2 font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap flex items-center gap-2"
+                  >
+                    <Sprout className="w-3.5 h-3.5" />
+                    Cải tạo ({baseRelevantPlans.filter((p) => p.purpose === "amendment").length})
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="harvest"
+                    className="rounded-xl px-4 py-2 font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap flex items-center gap-2"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    Thu hoạch ({baseRelevantPlans.filter((p) => p.purpose === "harvest").length})
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="incurred"
+                    className="rounded-xl px-4 py-2 font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap flex items-center gap-2"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    Phát sinh ({baseRelevantPlans.filter((p) => p.purpose === "incurred").length})
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+
+            <div className="w-full">
+              {planFilter === "incurred" ? (
+                <Card className="rounded-3xl border border-slate-100 shadow-sm overflow-hidden bg-white/60 backdrop-blur-sm">
+                  <CardHeader className="pb-4 border-b border-slate-50 bg-slate-50/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-2xl bg-amber-100 text-amber-600 shadow-sm shadow-amber-200/50">
+                          <ClipboardList className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-xl font-black text-slate-800 tracking-tight">
+                            Tổng hợp công việc phát sinh
+                          </CardTitle>
+                          <CardDescription className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">
+                            Dữ liệu nhiệm vụ thực tế từ hệ thống quản lý công việc
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 font-black px-4 py-1.5 rounded-xl shadow-sm">
+                        {incurredTasks.length} NHIỆM VỤ
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    {incurredTasks.length === 0 ? (
+                      <div className="py-24 text-center">
+                        <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-6 border border-slate-100 shadow-inner">
+                          <CheckCircle2 className="w-10 h-10 text-slate-200" />
+                        </div>
+                        <h4 className="text-lg font-bold text-slate-800 mb-2">Chưa có dữ liệu công việc</h4>
+                        <p className="text-sm font-medium text-slate-400 max-w-[300px] mx-auto">
+                          Không tìm thấy nhiệm vụ nào được ghi nhận cho các kế hoạch phát sinh trong vùng canh tác này.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-white">
+                        <DataTable
+                          columns={[
+                            { key: "code", label: "Mã" },
+                            { key: "name", label: "Tên công việc" },
+                            { key: "plan", label: "Kế hoạch" },
+                            { key: "stage", label: "Giai đoạn" },
+                            {
+                              key: "assignedTo",
+                              label: "Phân công",
+                              render: (value: any, row: any) => (
+                                <div className="flex items-center gap-2.5">
+                                  <div className={cn(
+                                    "p-1.5 rounded-lg shrink-0",
+                                    row.assignedType === "team" ? "bg-blue-50 text-blue-600" : "bg-green-50 text-green-600"
+                                  )}>
+                                    <Users className="w-3.5 h-3.5" />
+                                  </div>
+                                  <span className="text-[11px] font-bold text-slate-600 truncate max-w-[150px]">
+                                    {Array.isArray(value) ? value.join(", ") : value}
+                                  </span>
+                                </div>
+                              ),
+                            },
+                            {
+                              key: "priority",
+                              label: "Ưu tiên",
+                              render: (value: any) => (
+                                <Badge
+                                  variant={
+                                    value === "high"
+                                      ? "destructive"
+                                      : value === "medium"
+                                        ? "default"
+                                        : "outline"
+                                  }
+                                  className="text-[10px] px-2.5 py-0.5 border-none font-black tracking-wider shadow-sm"
+                                >
+                                  {value === "high"
+                                    ? "CAO"
+                                    : value === "medium"
+                                      ? "TRUNG BÌNH"
+                                      : "THẤP"}
+                                </Badge>
+                              ),
+                            },
+                            {
+                              key: "status",
+                              label: "Trạng thái",
+                              render: (value: any) => {
+                                const statusConfig: any = {
+                                  completed: { label: "HOÀN THÀNH", variant: "secondary" },
+                                  "in-progress": { label: "ĐANG CHẠY", variant: "default" },
+                                  overdue: { label: "QUÁ HẠN", variant: "destructive" },
+                                  pending: { label: "CHỜ DUYỆT", variant: "outline" },
+                                };
+                                const config = statusConfig[value] || statusConfig.pending;
+                                return (
+                                  <Badge
+                                    variant={config.variant}
+                                    className="text-[10px] px-2.5 py-0.5 border-none font-black tracking-wider shadow-sm"
+                                  >
+                                    {config.label}
+                                  </Badge>
+                                );
+                              }
+                            },
+                            { key: "startDate", label: "Bắt đầu" },
+                            { key: "endDate", label: "Kết thúc" },
+                          ]}
+                          data={incurredTasks}
+                          onView={(task) => {
+                            setSelectedTask(task);
+                            setIsTaskDetailOpen(true);
+                          }}
+                        />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {relevantPlans.length === 0 ? (
                 <div className="text-sm text-muted-foreground italic text-center py-8">
                   Chưa có kế hoạch nào phù hợp với phạm vi vùng canh tác này.
                 </div>
@@ -2092,6 +2291,8 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                   const isCultivation = plan.purpose === "cultivation";
                   const isTreatment = plan.purpose === "treatment";
                   const isAmendment = plan.purpose === "amendment";
+                  const isHarvest = plan.purpose === "harvest";
+                  const isIncurred = plan.purpose === "incurred";
 
                   return (
                     <div
@@ -2143,7 +2344,9 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                               variant="ghost"
                               size="sm"
                               className="text-slate-500 hover:text-primary rounded-xl self-start px-0 h-auto"
-                              onClick={() => setLocation(`/plan/${plan.id}`)}
+                              onClick={() => {
+                                window.open(`/plan/${plan.id}`, "_blank");
+                              }}
                             >
                               Xem chi tiết{" "}
                               <ChevronRight className="w-4 h-4 ml-1" />
@@ -2209,6 +2412,42 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                                   <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2" />
                                 </div>
                               )}
+
+                              {/* THU HOẠCH */}
+                              {isHarvest && (
+                                <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/5">
+                                  <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white shadow-md shadow-indigo-500/20 flex items-center justify-center shrink-0">
+                                    <ShoppingBag className="w-5 h-5" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-xs font-bold text-indigo-700 uppercase tracking-wider">
+                                      THU HOẠCH
+                                    </div>
+                                    <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                                      Triển khai thu hoạch và bảo quản
+                                    </div>
+                                  </div>
+                                  <div className="w-2 h-2 rounded-full bg-indigo-500 mr-2" />
+                                </div>
+                              )}
+
+                              {/* PHÁT SINH */}
+                              {isIncurred && (
+                                <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/5">
+                                  <div className="w-9 h-9 rounded-lg bg-amber-600 text-white shadow-md shadow-amber-500/20 flex items-center justify-center shrink-0">
+                                    <AlertTriangle className="w-5 h-5" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-xs font-bold text-amber-700 uppercase tracking-wider">
+                                      PHÁT SINH
+                                    </div>
+                                    <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                                      Công việc phát sinh ngoài kế hoạch
+                                    </div>
+                                  </div>
+                                  <div className="w-2 h-2 rounded-full bg-amber-500 mr-2" />
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -2221,17 +2460,24 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                                 "p-2.5 rounded-2xl shadow-sm",
                                 isTreatment && "bg-red-100/50",
                                 isAmendment && "bg-emerald-100/50",
-                                isCultivation && "bg-emerald-100/50",
+                                isCultivation && "bg-blue-100/50",
+                                isHarvest && "bg-indigo-100/50",
+                                isIncurred && "bg-amber-100/50",
                               )}
                             >
-                              <Layers
-                                className={cn(
-                                  "w-7 h-7",
-                                  isTreatment && "text-red-600",
-                                  isAmendment && "text-emerald-600",
-                                  isCultivation && "text-emerald-600",
-                                )}
-                              />
+                              {isIncurred ? (
+                                <ClipboardList className={cn("w-7 h-7 text-amber-600")} />
+                              ) : (
+                                <Layers
+                                  className={cn(
+                                    "w-7 h-7",
+                                    isTreatment && "text-red-600",
+                                    isAmendment && "text-emerald-600",
+                                    isCultivation && "text-blue-600",
+                                    isHarvest && "text-indigo-600",
+                                  )}
+                                />
+                              )}
                             </div>
                             <div className="min-w-0">
                               <h3 className="text-lg font-black text-slate-900 truncate">
@@ -2239,217 +2485,354 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                                   ? "Lộ trình xử lý & Phác đồ"
                                   : isAmendment
                                     ? "Lộ trình cải tạo & Quy trình"
-                                    : "Lộ trình triển khai & Giai đoạn"}
+                                    : isHarvest
+                                      ? "Lộ trình thu hoạch & Đóng gói"
+                                      : isIncurred
+                                        ? "Danh sách công việc phát sinh"
+                                        : "Lộ trình triển khai & Giai đoạn"}
                               </h3>
                               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5">
-                                Chi tiết các hạng mục và kế hoạch hành động
+                                {isHarvest
+                                  ? "Chi tiết các giai đoạn thu hoạch sản phẩm"
+                                  : isIncurred
+                                    ? "Chi tiết các nhiệm vụ và vật tư phát sinh"
+                                    : "Chi tiết các hạng mục và kế hoạch hành động"}
                               </p>
                             </div>
                           </div>
 
                           <div className="space-y-4 max-h-125 overflow-y-auto pr-2 custom-scrollbar">
-                            {(plan.selectedStages &&
-                            plan.selectedStages.length > 0
-                              ? plan.selectedStages
-                              : stageOrder
-                            ).map((stageKey, index) => {
-                              const [cycleId, stageName] = stageKey.includes(
-                                ":",
-                              )
-                                ? stageKey.split(":")
-                                : [null, stageKey];
-                              const cycle = cycleId
-                                ? growthCycles.find((c) => c.id === cycleId)
-                                : null;
+                            {isIncurred ? (
+                              <Tabs
+                                defaultValue="tasks"
+                                className="w-full"
+                              >
+                                <TabsList className="flex items-center justify-start gap-4 p-0 bg-transparent h-auto border-b rounded-none mb-4 no-scrollbar">
+                                  <TabsTrigger
+                                    value="tasks"
+                                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-amber-600 data-[state=active]:text-amber-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
+                                  >
+                                    <Users className="w-3.5 h-3.5" />
+                                    Nhiệm vụ ({plan.taskAllocations?.length || 0})
+                                  </TabsTrigger>
+                                  <TabsTrigger
+                                    value="materials"
+                                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
+                                  >
+                                    <Package className="w-3.5 h-3.5" />
+                                    Vật tư ({plan.materialAllocations?.length || 0})
+                                  </TabsTrigger>
+                                </TabsList>
 
-                              // Filter allocations for this stage
-                              const stageMaterials = (
-                                plan.materialAllocations || []
-                              ).filter((m) => m.stageId === stageKey);
-                              const stageTasks =
-                                plan.taskAllocations?.filter(
-                                  (t) => t.stageId === stageKey,
-                                ) || [];
-
-                              return (
-                                <Card
-                                  key={stageKey}
-                                  className="overflow-hidden border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl"
+                                <TabsContent
+                                  value="tasks"
+                                  className="m-0 bg-white anim-fade-in"
                                 >
-                                  <div className="bg-slate-50/80 px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-4">
-                                    <div className="flex items-center gap-4 min-w-0">
-                                      <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 shadow-xs flex items-center justify-center font-black text-sm text-slate-700 shrink-0">
-                                        {index + 1}
-                                      </div>
-                                      <div className="min-w-0">
-                                        <div className="flex items-center gap-2">
-                                          <h4 className="font-bold text-base text-slate-900 truncate">
-                                            {stageName}
-                                          </h4>
-                                          {cycle && (
-                                            <Badge
-                                              variant="outline"
-                                              className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-100 font-normal py-0 px-2 h-4 shrink-0"
+                                  {(!plan.taskAllocations || plan.taskAllocations.length === 0) ? (
+                                    <div className="py-12 text-center border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
+                                      <p className="text-xs text-slate-400 italic">Chưa có nhiệm vụ cụ thể</p>
+                                    </div>
+                                  ) : (
+                                    <div className="overflow-hidden rounded-xl border border-slate-100 shadow-sm bg-white">
+                                      <DataTable
+                                        columns={[
+                                          { key: "code", label: "Mã" },
+                                          { key: "name", label: "Tên công việc" },
+                                          {
+                                            key: "labor",
+                                            label: "Phân công",
+                                            render: (value: any) => (
+                                              <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                                <Users className="w-3 h-3 text-slate-400" />
+                                                <span className="text-xs font-bold text-slate-600">{value || "Đội ngũ"}</span>
+                                              </div>
+                                            ),
+                                          },
+                                          {
+                                            key: "priority",
+                                            label: "Ưu tiên",
+                                            render: () => (
+                                              <Badge variant="outline" className="text-[10px] bg-white border-slate-200 text-slate-500 font-bold px-2 py-0">
+                                                Trung bình
+                                              </Badge>
+                                            ),
+                                          },
+                                          {
+                                            key: "status",
+                                            label: "Trạng thái",
+                                            render: () => (
+                                              <Badge variant="default" className="text-[10px] bg-blue-600 text-white font-bold px-2 py-0 border-none">
+                                                Đang thực hiện
+                                              </Badge>
+                                            ),
+                                          },
+                                          {
+                                            key: "startDate",
+                                            label: "Bắt đầu",
+                                          },
+                                          {
+                                            key: "endDate",
+                                            label: "Kết thúc",
+                                          },
+                                        ]}
+                                        data={plan.taskAllocations?.map((task: any) => ({
+                                          ...task,
+                                          code: `${plan.code}-${task.id}`,
+                                          startDate: new Date(plan.startDate).toLocaleDateString("vi-VN"),
+                                          endDate: new Date(plan.endDate).toLocaleDateString("vi-VN"),
+                                        })) || []}
+                                      />
+                                    </div>
+                                  )}
+                                </TabsContent>
+
+                                <TabsContent
+                                  value="materials"
+                                  className="m-0 bg-white anim-fade-in"
+                                >
+                                  {(!plan.materialAllocations || plan.materialAllocations.length === 0) ? (
+                                    <div className="py-12 text-center border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
+                                      <p className="text-xs text-slate-400 italic">Không sử dụng vật tư</p>
+                                    </div>
+                                  ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2">
+                                      {plan.materialAllocations.map((mat) => (
+                                        <div
+                                          key={mat.id}
+                                          className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-white hover:bg-emerald-50/30 transition-all shadow-sm hover:shadow-md"
+                                        >
+                                          <div className="flex items-center gap-3 overflow-hidden">
+                                            <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-100 shrink-0">
+                                              <Package className="w-4 h-4 text-emerald-600" />
+                                            </div>
+                                            <div className="min-w-0">
+                                              <p className="font-extrabold text-xs truncate text-slate-800">
+                                                {mat.materialName}
+                                              </p>
+                                              <p className="text-[10px] font-bold text-emerald-600/70 uppercase tracking-tighter">
+                                                {mat.materialType}
+                                              </p>
+                                            </div>
+                                          </div>
+                                          <div className="text-right pl-2">
+                                            <div className="flex items-baseline gap-0.5">
+                                              <span className="text-sm font-black text-slate-900">{mat.quantity}</span>
+                                              <span className="text-[9px] font-bold text-slate-400 uppercase">{mat.unit}</span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </TabsContent>
+                              </Tabs>
+                            ) : (
+                              (plan.selectedStages &&
+                              plan.selectedStages.length > 0
+                                ? plan.selectedStages
+                                : stageOrder
+                              ).map((stageKey, index) => {
+                                const [cycleId, stageName] = stageKey.includes(
+                                  ":",
+                                )
+                                  ? stageKey.split(":")
+                                  : [null, stageKey];
+                                const cycle = cycleId
+                                  ? growthCycles.find((c) => c.id === cycleId)
+                                  : null;
+
+                                // Filter allocations for this stage
+                                const stageMaterials = (
+                                  plan.materialAllocations || []
+                                ).filter((m) => m.stageId === stageKey);
+                                const stageTasks =
+                                  plan.taskAllocations?.filter(
+                                    (t) => t.stageId === stageKey,
+                                  ) || [];
+
+                                return (
+                                  <Card
+                                    key={stageKey}
+                                    className="overflow-hidden border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl"
+                                  >
+                                    <div className="bg-slate-50/80 px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-4">
+                                      <div className="flex items-center gap-4 min-w-0">
+                                        <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 shadow-xs flex items-center justify-center font-black text-sm text-slate-700 shrink-0">
+                                          {index + 1}
+                                        </div>
+                                        <div className="min-w-0">
+                                          <div className="flex items-center gap-2">
+                                            <h4 className="font-bold text-base text-slate-900 truncate">
+                                              {stageName}
+                                            </h4>
+                                            {cycle && (
+                                              <Badge
+                                                variant="outline"
+                                                className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-100 font-normal py-0 px-2 h-4 shrink-0"
+                                              >
+                                                {cycle.name}
+                                              </Badge>
+                                            )}
+                                          </div>
+                                          {plan.purpose !== "cultivation" && (
+                                            <p
+                                              className={cn(
+                                                "text-[10px] font-bold uppercase tracking-wider",
+                                                isAmendment
+                                                  ? "text-emerald-600"
+                                                  : "text-red-600",
+                                              )}
                                             >
-                                              {cycle.name}
-                                            </Badge>
+                                              {isAmendment
+                                                ? "Hoạt động cải tạo đất"
+                                                : "Hoạt động điều trị bệnh"}
+                                            </p>
                                           )}
                                         </div>
-                                        {plan.purpose !== "cultivation" && (
-                                          <p
-                                            className={cn(
-                                              "text-[10px] font-bold uppercase tracking-wider",
-                                              isAmendment
-                                                ? "text-emerald-600"
-                                                : "text-red-600",
-                                            )}
-                                          >
-                                            {isAmendment
-                                              ? "Hoạt động cải tạo đất"
-                                              : "Hoạt động điều trị bệnh"}
-                                          </p>
-                                        )}
+                                      </div>
+                                      <div className="flex gap-2 shrink-0">
+                                        <Badge
+                                          variant="outline"
+                                          className="bg-white hover:bg-green-50 transition-colors px-2 py-0.5"
+                                        >
+                                          <Leaf className="w-3 h-3 mr-1 text-green-600" />
+                                          {stageMaterials.length}
+                                        </Badge>
+                                        <Badge
+                                          variant="outline"
+                                          className="bg-white hover:bg-blue-50 transition-colors px-2 py-0.5"
+                                        >
+                                          <Users className="w-3 h-3 mr-1 text-blue-600" />
+                                          {stageTasks.length}
+                                        </Badge>
                                       </div>
                                     </div>
-                                    <div className="flex gap-2 shrink-0">
-                                      <Badge
-                                        variant="outline"
-                                        className="bg-white hover:bg-green-50 transition-colors px-2 py-0.5"
-                                      >
-                                        <Leaf className="w-3 h-3 mr-1 text-green-600" />
-                                        {stageMaterials.length}
-                                      </Badge>
-                                      <Badge
-                                        variant="outline"
-                                        className="bg-white hover:bg-blue-50 transition-colors px-2 py-0.5"
-                                      >
-                                        <Users className="w-3 h-3 mr-1 text-blue-600" />
-                                        {stageTasks.length}
-                                      </Badge>
-                                    </div>
-                                  </div>
 
-                                  <CardContent className="p-0">
-                                    {stageMaterials.length === 0 &&
-                                    stageTasks.length === 0 ? (
-                                      <div className="p-8 text-center text-muted-foreground italic text-sm">
-                                        Chưa có chi tiết nào được lên kế hoạch.
-                                      </div>
-                                    ) : (
-                                      <Tabs
-                                        defaultValue="materials"
-                                        className="w-full"
-                                      >
-                                        <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto">
-                                          <TabsTrigger
-                                            value="materials"
-                                            className="rounded-none border-b-2 border-transparent data-[state=active]:border-green-600 data-[state=active]:text-green-700 data-[state=active]:bg-green-50/50 px-6 py-3 font-medium text-sm flex-1 md:flex-none"
-                                          >
-                                            <Package className="w-4 h-4 mr-2" />
-                                            Vật tư ({stageMaterials.length})
-                                          </TabsTrigger>
-                                          <TabsTrigger
+                                    <CardContent className="p-0">
+                                      {stageMaterials.length === 0 &&
+                                      stageTasks.length === 0 ? (
+                                        <div className="p-8 text-center text-muted-foreground italic text-sm">
+                                          Chưa có chi tiết nào được lên kế hoạch.
+                                        </div>
+                                      ) : (
+                                        <Tabs
+                                          defaultValue="tasks"
+                                          className="w-full"
+                                        >
+                                          <TabsList className="flex items-center justify-start gap-4 p-0 bg-transparent h-auto border-b rounded-none mb-4 no-scrollbar">
+                                            <TabsTrigger
+                                              value="tasks"
+                                              className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
+                                            >
+                                              <Users className="w-3.5 h-3.5" />
+                                              Công việc ({stageTasks.length})
+                                            </TabsTrigger>
+                                            <TabsTrigger
+                                              value="materials"
+                                              className="rounded-none border-b-2 border-transparent data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
+                                            >
+                                              <Package className="w-3.5 h-3.5" />
+                                              Vật tư ({stageMaterials.length})
+                                            </TabsTrigger>
+                                          </TabsList>
+
+                                          <TabsContent
                                             value="tasks"
-                                            className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 data-[state=active]:bg-blue-50/50 px-6 py-3 font-medium text-sm flex-1 md:flex-none"
+                                            className="m-0 bg-white anim-fade-in"
                                           >
-                                            <Users className="w-4 h-4 mr-2" />
-                                            Công việc ({stageTasks.length})
-                                          </TabsTrigger>
-                                        </TabsList>
+                                            {stageTasks.length === 0 ? (
+                                              <div className="text-center py-10 border border-dashed rounded-2xl bg-slate-50/50">
+                                                <Wrench className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                                                <p className="text-sm text-slate-500 font-medium">
+                                                  Chưa có công việc phân bổ
+                                                </p>
+                                              </div>
+                                            ) : (
+                                              <div className="overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
+                                                <table className="w-full text-left border-collapse min-w-[600px]">
+                                                  <thead>
+                                                    <tr className="bg-slate-50/80 border-b border-slate-100">
+                                                      <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Nội dung</th>
+                                                      <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Nhân sự</th>
+                                                      <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-right">Thời gian</th>
+                                                    </tr>
+                                                  </thead>
+                                                  <tbody className="divide-y divide-slate-50">
+                                                    {stageTasks.map((task) => (
+                                                      <tr key={task.id} className="hover:bg-blue-50/30 transition-colors group">
+                                                        <td className="px-4 py-3">
+                                                          <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100 group-hover:bg-white transition-colors">
+                                                              <CheckCircle2 className="w-4 h-4" />
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                              <p className="font-bold text-slate-800 text-xs lines-1">{task.name}</p>
+                                                              <p className="text-[10px] text-slate-400 italic truncate max-w-[200px]">{task.description || "Máy móc & Thiết bị..."}</p>
+                                                            </div>
+                                                          </div>
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                          <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                                            <Users className="w-3 h-3 text-slate-400" />
+                                                            <span className="text-xs font-bold text-slate-600">{task.labor || "Đội ngũ"}</span>
+                                                          </div>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right">
+                                                          <Badge variant="outline" className="text-[10px] bg-white border-slate-200 text-slate-500 font-bold px-2 py-0">
+                                                            {task.duration}
+                                                          </Badge>
+                                                        </td>
+                                                      </tr>
+                                                    ))}
+                                                  </tbody>
+                                                </table>
+                                              </div>
+                                            )}
+                                          </TabsContent>
 
-                                        <TabsContent
-                                          value="materials"
-                                          className="p-4 m-0 bg-white"
-                                        >
-                                          {stageMaterials.length === 0 ? (
-                                            <div className="text-center py-6">
-                                              <p className="text-sm text-slate-400">
-                                                Chưa có vật tư phân bổ
-                                              </p>
-                                            </div>
-                                          ) : (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                              {stageMaterials.map((mat) => (
-                                                <div
-                                                  key={mat.id}
-                                                  className="flex items-center justify-between p-3 rounded-lg border bg-slate-50/30 hover:bg-slate-50 transition-colors"
-                                                >
-                                                  <div className="flex items-center gap-3 overflow-hidden">
-                                                    <div className="bg-white p-2 rounded-md shadow-sm border shrink-0">
-                                                      <Package className="w-4 h-4 text-green-600" />
-                                                    </div>
-                                                    <div className="min-w-0 text-left">
-                                                      <p className="font-semibold text-xs truncate text-slate-800">
-                                                        {mat.materialName}
-                                                      </p>
-                                                      <p className="text-[10px] text-muted-foreground truncate">
-                                                        {mat.materialType}
-                                                      </p>
-                                                    </div>
-                                                  </div>
-                                                  <Badge
-                                                    variant="secondary"
-                                                    className="shrink-0 text-[10px]"
+                                          <TabsContent
+                                            value="materials"
+                                            className="m-0 bg-white anim-fade-in"
+                                          >
+                                            {stageMaterials.length === 0 ? (
+                                              <div className="text-center py-10 border border-dashed rounded-2xl bg-slate-50/50">
+                                                <Package className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                                                <p className="text-sm text-slate-500 font-medium">
+                                                  Chưa có vật tư phân bổ
+                                                </p>
+                                              </div>
+                                            ) : (
+                                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2">
+                                                {stageMaterials.map((mat) => (
+                                                  <div
+                                                    key={mat.id}
+                                                    className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-white hover:bg-emerald-50/30 transition-all shadow-sm hover:shadow-md"
                                                   >
-                                                    {mat.quantity} {mat.unit}
-                                                  </Badge>
-                                                </div>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </TabsContent>
-
-                                        <TabsContent
-                                          value="tasks"
-                                          className="p-4 m-0 bg-white"
-                                        >
-                                          {stageTasks.length === 0 ? (
-                                            <div className="text-center py-6 border border-dashed rounded-lg bg-slate-50/50 mx-auto max-w-xs">
-                                              <Wrench className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                                              <p className="text-sm text-slate-500">
-                                                Chưa có công việc phân bổ
-                                              </p>
-                                            </div>
-                                          ) : (
-                                            <div className="grid grid-cols-1 gap-3">
-                                              {stageTasks.map((task) => (
-                                                <div
-                                                  key={task.id}
-                                                  className="flex items-start gap-3 p-4 rounded-lg border bg-blue-50/10 hover:bg-blue-50/30 transition-colors"
-                                                >
-                                                  <div className="bg-blue-100 p-2 rounded-full shrink-0">
-                                                    <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                                                  </div>
-                                                  <div className="flex-1 min-w-0 text-left">
-                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
-                                                      <h5 className="font-bold text-sm text-slate-900 truncate">
-                                                        {task.name}
-                                                      </h5>
-                                                      {task.labor && (
-                                                        <Badge
-                                                          variant="outline"
-                                                          className="text-[10px] h-5 bg-white text-slate-600 border-slate-200"
-                                                        >
-                                                          {task.labor}
-                                                        </Badge>
-                                                      )}
+                                                    <div className="flex items-center gap-3 overflow-hidden">
+                                                      <div className="bg-emerald-50 p-2.5 rounded-xl shadow-sm border border-emerald-100 shrink-0">
+                                                        <Package className="w-4 h-4 text-emerald-600" />
+                                                      </div>
+                                                      <div className="min-w-0 text-left">
+                                                        <p className="font-extrabold text-xs truncate text-slate-800">
+                                                          {mat.materialName}
+                                                        </p>
+                                                        <p className="text-[10px] font-bold text-emerald-600/70 uppercase tracking-tighter">
+                                                          {mat.materialType}
+                                                        </p>
+                                                      </div>
                                                     </div>
-                                                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed italic">
-                                                      {task.description ||
-                                                        "Chưa có mô tả chi tiết"}
-                                                    </p>
                                                   </div>
-                                                </div>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </TabsContent>
-                                      </Tabs>
-                                    )}
-                                  </CardContent>
-                                </Card>
-                              );
-                            })}
+                                                ))}
+                                              </div>
+                                            )}
+                                          </TabsContent>
+                                        </Tabs>
+                                      )}
+                                    </CardContent>
+                                  </Card>
+                                );
+                              })
+                            )}
                           </div>
                         </div>
                       </div>
@@ -2457,13 +2840,15 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                   );
                 })
               )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
       </TabsContent>
 
       {/* Soil Amendment History Tab */}
-      <TabsContent value="amendment-history" className="space-y-6">
+      {/* <TabsContent value="amendment-history" className="space-y-6">
         <Card className="overflow-hidden border">
           <CardHeader className="border-b bg-slate-50">
             <div className="flex items-start justify-between gap-4">
@@ -3136,7 +3521,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
             )}
           </DialogContent>
         </Dialog>
-      </TabsContent>
+      </TabsContent> */}
 
       {/* Statistics Tab */}
       <TabsContent value="statistics" className="space-y-6 overflow-hidden">
@@ -3435,6 +3820,12 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
           </div>
         )}
       </TabsContent>
+
+      <TaskDetailDialog
+        open={isTaskDetailOpen}
+        onOpenChange={setIsTaskDetailOpen}
+        task={selectedTask}
+      />
     </Tabs>
   );
 };

@@ -89,8 +89,8 @@ export default function PlanPage() {
 
   return (
     <AdminLayout
-      title="Quản lý kế hoạch canh tác"
-      description="Lập và quản lý kế hoạch canh tác theo mùa vụ"
+      title="Quản lý  canh tác"
+      description="Lập và quản lý kế hoạch theo mùa vụ"
       actions={
         <Link href="/plan/create">
           <Button data-testid="add-plan">

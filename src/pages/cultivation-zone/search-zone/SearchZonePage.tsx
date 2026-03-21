@@ -1065,7 +1065,7 @@ const SearchZonePage = () => {
                               htmlFor="hasActivePlan"
                               className="text-sm font-medium cursor-pointer"
                             >
-                              Đang có kế hoạch canh tác triển khai
+                              Đang có kế hoạch triển khai
                             </Label>
                           </div>
                         </div>

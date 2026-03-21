@@ -305,7 +305,7 @@ const PlanTypePage = () => {
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              placeholder="VD: Kế hoạch canh tác vụ Đông Xuân..."
+              placeholder="VD: Kế hoạch vụ Đông Xuân..."
             />
           </div>
 
