@@ -1,206 +1,108 @@
-import { useState, useMemo, useEffect } from "react";
-import {
-  AdminLayout,
-  Card,
-  CardContent,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  ScrollArea,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  cn,
-} from "@tankhang1/eco-shared-ui";
-import {
-  MapContainer,
-  TileLayer,
-  GeoJSON,
-  LayersControl,
-  LayerGroup,
-  Marker,
-  useMap,
-  useMapEvents,
-} from "react-leaflet";
-import type { GeoJsonObject, Feature } from "geojson";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import {
-  Search,
-  AlertTriangle,
-  Sprout,
-  Maximize2,
-  Minimize2,
-  FlaskConical,
-  Droplets,
-  Thermometer,
-  Info,
-  Save,
-  Activity,
-} from "lucide-react";
-import { Button } from "@tankhang1/eco-shared-ui";
-
-import { MOCK_REGIONS, MOCK_AREAS } from "../constants";
-
-// Import GeoJSON data directly
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { AdminLayout, cn } from "@tankhang1/eco-shared-ui";
+import { MFMap, MFMarker, MFPolygon } from "react-map4d-map";
+import type { GeoJsonObject } from "geojson";
+import { Maximize2, Minimize2 } from "lucide-react";
+import { MOCK_REGIONS } from "../constants";
+import Tree from "@/assets/tree.webp";
 import zoneData from "../../../assets/map/zone.json";
 import areaData from "../../../assets/map/area.json";
 import plotData from "../../../assets/map/plot.json";
 import plantData from "../../../assets/map/plant.json";
 
-// --- Helpers ---
+import type {
+  SelectedEntityStats,
+  SelectedEntity,
+  LayerVisibility,
+  SoilData,
+} from "./types";
+import {
+  isPointInPolygon,
+  getPolygonCenter,
+  convertGeoJsonToPath,
+} from "./utils";
+import { SidebarFilter } from "./components/SidebarFilter";
+import { SidebarDetail } from "./components/SidebarDetail";
+import { SoilEditDialog } from "./components/SoilEditDialog";
+import { MapLegend } from "./components/MapLegend";
 
-const isPointInPolygon = (point: [number, number], vs: [number, number][]) => {
-  // ray-casting algorithm
-  const x = point[0],
-    y = point[1];
-  let inside = false;
-  for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-    const xi = vs[i][0],
-      yi = vs[i][1];
-    const xj = vs[j][0],
-      yj = vs[j][1];
-    const intersect =
-      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
-    if (intersect) inside = !inside;
-  }
-  return inside;
+const getSafeString = (value: unknown) =>
+  typeof value === "string" ? value.trim() : "";
+
+const isNonEmptyString = (value: unknown) =>
+  typeof value === "string" && value.trim().length > 0;
+
+const isValidLatLng = (value: unknown) =>
+  typeof value === "number" && !Number.isNaN(value) && Number.isFinite(value);
+
+const isValidPointFeature = (feature: any) => {
+  const coords = feature?.geometry?.coordinates;
+  return (
+    feature?.type === "Feature" &&
+    feature?.geometry?.type === "Point" &&
+    Array.isArray(coords) &&
+    coords.length >= 2 &&
+    coords[0] != null &&
+    coords[1] != null &&
+    !Number.isNaN(Number(coords[0])) &&
+    !Number.isNaN(Number(coords[1]))
+  );
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const getPolygonCenter = (feature: any): L.LatLng | null => {
-  if (!feature.geometry) return null;
-
-  try {
-    let layer;
-    if (feature.geometry.type === "Polygon") {
-      // Flip coordinates from GeoJSON [lng, lat] to Leaflet [lat, lng]
-      const latlngs = feature.geometry.coordinates[0].map((c: any) => [
-        c[1],
-        c[0],
-      ]);
-      layer = L.polygon(latlngs);
-    } else if (feature.geometry.type === "MultiPolygon") {
-      // Take the first polygon for simplicity or calculate true center
-      const latlngs = feature.geometry.coordinates[0][0].map((c: any) => [
-        c[1],
-        c[0],
-      ]);
-      layer = L.polygon(latlngs);
-    }
-
-    if (layer) {
-      return layer.getBounds().getCenter();
-    }
-  } catch (e) {
-    console.error("Error calculating center for feature:", feature, e);
-  }
-  return null;
+const getSafePolygonPath = (geometry: any) => {
+  const path = convertGeoJsonToPath(geometry);
+  return Array.isArray(path) && path.length > 0 ? path : null;
 };
 
-const getLocationInfo = (lng: number, lat: number) => {
-  // Helper to find container
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const findContainer = (data: any) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return data.features.find((f: any) => {
-      if (f.geometry.type === "Polygon") {
-        return isPointInPolygon([lng, lat], f.geometry.coordinates[0]);
-      }
-      if (f.geometry.type === "MultiPolygon") {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return f.geometry.coordinates.some((poly: any[]) =>
-          isPointInPolygon([lng, lat], poly[0]),
-        );
-      }
-      return false;
-    });
-  };
-
-  const zone = findContainer(zoneData);
-  const area = findContainer(areaData);
-  const plot = findContainer(plotData);
-
-  return {
-    zoneName: zone?.properties?.name,
-    areaName: area?.properties?.name,
-    plotName: plot?.properties?.name,
-  };
+const getSafeFeatureName = (feature: any, fallback: string) => {
+  const name = getSafeString(feature?.properties?.name);
+  return name || fallback;
 };
+const MAX_VISIBLE_MARKERS = 200;
+const PLANT_ZOOM_THRESHOLD = 18;
+const VIEWPORT_PADDING = 0.003;
 
-const MapUpdater = ({
-  center,
-  zoom,
-}: {
-  center: [number, number];
-  zoom: number;
-}) => {
-  const map = useMap();
-  useEffect(() => {
-    map.flyTo(center, zoom);
-  }, [center, zoom, map]);
-  return null;
-};
-
-// ZoomListener Component to track map zoom changes
-const ZoomListener = ({ onChange }: { onChange: (zoom: number) => void }) => {
-  const map = useMapEvents({
-    zoomend: () => {
-      onChange(map.getZoom());
-    },
-  });
-  return null;
-};
-
-interface SelectedEntityStats {
-  total: number;
-  healthy: number;
-  diseased: number;
-  harvesting: number;
-  types: Record<string, number>;
-}
-
+const MAP_LABEL = new Map([
+  ["healthy", "Khoẻ mạnh"],
+  ["diseased", "Bệnh"],
+  ["harvesting", "Đang thu hoạch"],
+]);
 const MapContent = () => {
   const isFullScreenParam =
     new URLSearchParams(window.location.search).get("fullscreen") === "true";
 
-  // State
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRegion, setFilterRegion] = useState<string>("all");
   const [filterArea, setFilterArea] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
-
-  const [mapCenter, setMapCenter] = useState<[number, number]>([
-    11.558, 107.134,
-  ]);
+  const [selectedTree, setSelectedTree] = useState<any>(null);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({
+    lat: 11.558,
+    lng: 107.134,
+  });
   const [mapZoom, setMapZoom] = useState(15);
-
-  const [visibleLayers, setVisibleLayers] = useState({
+  const [mapBounds, setMapBounds] = useState<{
+    north: number;
+    south: number;
+    east: number;
+    west: number;
+  } | null>(null);
+  const [visibleLayers, setVisibleLayers] = useState<LayerVisibility>({
     zone: true,
     area: false,
     plot: false,
     plant: false,
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [selectedEntity, setSelectedEntity] = useState<{
-    type: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    properties: any;
-    stats: SelectedEntityStats;
-  } | null>(null);
+  const [selectedEntity, setSelectedEntity] = useState<SelectedEntity | null>(
+    null,
+  );
 
-  const [soilData, setSoilData] = useState<Record<string, any>>({});
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [soilData, setSoilData] = useState<Record<string, SoilData>>({});
   const [isEditingSoil, setIsEditingSoil] = useState(false);
-  const [tempSoil, setTempSoil] = useState<any>(null);
+  const [tempSoil, setTempSoil] = useState<SoilData | null>(null);
 
-  // Initialize soil data with 0s if empty
   useEffect(() => {
     if (Object.keys(soilData).length === 0) {
       const defaultValues = {
@@ -213,8 +115,9 @@ const MapContent = () => {
         ec: 0,
         temperature: 0,
         compaction: 0,
-        lastTested: new Date().toISOString().split('T')[0],
+        lastTested: new Date().toISOString().split("T")[0],
       };
+
       setSoilData({
         "PLOT-1-1": { ...defaultValues },
         "PLOT-1-2": { ...defaultValues },
@@ -223,255 +126,510 @@ const MapContent = () => {
   }, [soilData]);
 
   const handleEditSoil = () => {
-    const currentId = selectedEntity?.properties?.code || selectedEntity?.properties?.id;
-    setTempSoil(soilData[currentId] || {
-      ph: 0,
-      nitrogen: 0,
-      phosphorus: 0,
-      potassium: 0,
-      moisture: 0,
-      organicMatter: 0,
-      ec: 0,
-      temperature: 0,
-      compaction: 0,
-      lastTested: new Date().toISOString().split('T')[0],
-    });
+    const currentId =
+      selectedEntity?.properties?.code || selectedEntity?.properties?.id;
+
+    setTempSoil(
+      soilData[currentId] || {
+        ph: 0,
+        nitrogen: 0,
+        phosphorus: 0,
+        potassium: 0,
+        moisture: 0,
+        organicMatter: 0,
+        ec: 0,
+        temperature: 0,
+        compaction: 0,
+        lastTested: new Date().toISOString().split("T")[0],
+      },
+    );
     setIsEditingSoil(true);
   };
 
   const handleSaveSoil = () => {
-    const currentId = selectedEntity?.properties?.code || selectedEntity?.properties?.id;
-    setSoilData(prev => ({
+    const currentId =
+      selectedEntity?.properties?.code || selectedEntity?.properties?.id;
+
+    if (!currentId || !tempSoil) return;
+
+    setSoilData((prev) => ({
       ...prev,
-      [currentId]: tempSoil
+      [currentId]: tempSoil,
     }));
     setIsEditingSoil(false);
   };
 
-  // Process Plant Data with Random Status
   const processedPlantData = useMemo(() => {
     const statuses = ["healthy", "diseased", "harvesting"];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const features = (plantData as any).features.map((feature: any) => {
-      const randomStatus =
-        statuses[Math.floor(Math.random() * statuses.length)];
-      return {
-        ...feature,
-        properties: {
-          ...feature.properties,
-          status: randomStatus,
-        },
-      };
-    });
+
+    const features = (plantData?.features ?? [])
+      .filter((feature: any) => isValidPointFeature(feature))
+      .map((feature: any) => {
+        const randomStatus =
+          statuses[Math.floor(Math.random() * statuses.length)];
+
+        return {
+          ...feature,
+          properties: {
+            ...(feature?.properties || {}),
+            name: getSafeString(feature?.properties?.name),
+            code: getSafeString(feature?.properties?.code),
+            status: randomStatus,
+          },
+        };
+      });
+
     return {
-      ...plantData,
+      type: "FeatureCollection",
       features,
     } as GeoJsonObject;
   }, []);
 
-  // Helpers for Stats Calculation
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const calculateStats = (polyCoords: any[]): SelectedEntityStats => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const plants = (processedPlantData as any).features.filter((f: any) =>
-      isPointInPolygon(f.geometry.coordinates, polyCoords),
-    );
-
-    const stats: SelectedEntityStats = {
-      total: plants.length,
-      healthy: 0,
-      diseased: 0,
-      harvesting: 0,
-      types: {},
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    plants.forEach((p: any) => {
-      // Status
-      if (p.properties.status === "healthy") stats.healthy++;
-      else if (p.properties.status === "diseased") stats.diseased++;
-      else if (p.properties.status === "harvesting") stats.harvesting++;
-
-      // Type/Name
-      const name = p.properties.name || "Unknown";
-      stats.types[name] = (stats.types[name] || 0) + 1;
-    });
-
-    return stats;
-  };
-
-  // Filter Plant Data based on Search and Status
   const filteredPlantData = useMemo(() => {
-    if (!processedPlantData || !("features" in processedPlantData)) {
-      return { type: "FeatureCollection", features: [] } as GeoJsonObject;
+    const sourceFeatures = (processedPlantData as any)?.features;
+
+    if (!Array.isArray(sourceFeatures)) {
+      return {
+        type: "FeatureCollection",
+        features: [],
+      } as GeoJsonObject;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const features = (processedPlantData as any).features.filter((f: any) => {
+    const keyword = searchTerm.trim().toLowerCase();
+
+    const features = sourceFeatures.filter((item: any) => {
+      const name = getSafeString(item?.properties?.name).toLowerCase();
+      const code = getSafeString(item?.properties?.code).toLowerCase();
+
       const nameMatch =
-        f.properties.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        f.properties.code.toLowerCase().includes(searchTerm.toLowerCase());
+        keyword.length === 0 ||
+        name.includes(keyword) ||
+        code.includes(keyword);
+
       const statusMatch =
-        filterStatus === "all" || f.properties.status === filterStatus;
+        filterStatus === "all" || item?.properties?.status === filterStatus;
+
       return nameMatch && statusMatch;
     });
 
     return {
-      ...processedPlantData,
+      type: "FeatureCollection",
       features,
     } as GeoJsonObject;
   }, [processedPlantData, searchTerm, filterStatus]);
+  const calculateStats = useCallback(
+    (polyCoords: any[]): SelectedEntityStats => {
+      const plants = ((processedPlantData as any)?.features || []).filter(
+        (item: any) =>
+          isValidPointFeature(item) &&
+          isPointInPolygon(item.geometry.coordinates, polyCoords),
+      );
 
-  // Statistics
+      const nextStats: SelectedEntityStats = {
+        total: plants.length,
+        healthy: 0,
+        diseased: 0,
+        harvesting: 0,
+        types: {},
+      };
+
+      plants.forEach((item: any) => {
+        if (item?.properties?.status === "healthy") nextStats.healthy++;
+        else if (item?.properties?.status === "diseased") nextStats.diseased++;
+        else if (item?.properties?.status === "harvesting")
+          nextStats.harvesting++;
+
+        const name = getSafeString(item?.properties?.name) || "Unknown";
+        nextStats.types[name] = (nextStats.types[name] || 0) + 1;
+      });
+
+      return nextStats;
+    },
+    [processedPlantData],
+  );
+
   const stats = useMemo(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const plants = (processedPlantData as any).features || [];
+    const plants = ((processedPlantData as any)?.features || []) as any[];
+
     return {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      regions: (zoneData as any).features?.length || 0,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      areas: (areaData as any).features?.length || 0,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      plots: (plotData as any).features?.length || 0,
+      regions: zoneData?.features?.length || 0,
+      areas: areaData?.features?.length || 0,
+      plots: plotData?.features?.length || 0,
       plants: plants.length,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      healthy: plants.filter((p: any) => p.properties.status === "healthy")
+      healthy: plants.filter((item) => item?.properties?.status === "healthy")
         .length,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      diseased: plants.filter((p: any) => p.properties.status === "diseased")
+      diseased: plants.filter((item) => item?.properties?.status === "diseased")
         .length,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       harvesting: plants.filter(
-        (p: any) => p.properties.status === "harvesting",
+        (item) => item?.properties?.status === "harvesting",
       ).length,
     };
   }, [processedPlantData]);
 
-  // Handle auto-focus (Using Mocks for consistent ID lookup for now)
-  useEffect(() => {
-    if (filterRegion !== "all") {
-      const reg = MOCK_REGIONS.find((r) => r.id.toString() === filterRegion);
-      if (reg && reg.coordinates.length > 0) {
-        setMapCenter([reg.coordinates[0].lat, reg.coordinates[0].lng]);
-        setMapZoom(14);
+  const onZoomChange = useCallback((zoom: number) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      let next: LayerVisibility | null = null;
+
+      if (zoom < 14) {
+        next = { zone: true, area: false, plot: false, plant: false };
+      } else if (zoom >= 14 && zoom < 16) {
+        next = { zone: false, area: true, plot: false, plant: false };
+      } else if (zoom >= 16 && zoom < 18) {
+        next = { zone: false, area: false, plot: true, plant: false };
+      } else if (zoom >= 18) {
+        next = { zone: false, area: false, plot: true, plant: true };
       }
+
+      if (!next) return;
+
+      setVisibleLayers((prev) => {
+        if (
+          next.zone !== prev.zone ||
+          next.area !== prev.area ||
+          next.plot !== prev.plot ||
+          next.plant !== prev.plant
+        ) {
+          return next;
+        }
+
+        return prev;
+      });
+    }, 150);
+  }, []);
+
+  useEffect(() => {
+    onZoomChange(mapZoom);
+  }, [mapZoom, onZoomChange]);
+
+  useEffect(() => {
+    if (filterRegion === "all") return;
+
+    const region = MOCK_REGIONS.find(
+      (item) => item.id.toString() === filterRegion,
+    );
+
+    if (region && region.coordinates.length > 0) {
+      setMapCenter({
+        lat: region.coordinates[0].lat,
+        lng: region.coordinates[0].lng,
+      });
+      setMapZoom(14);
     }
   }, [filterRegion]);
 
-  // Handle Zoom Change Logic
-  const onZoomChange = (zoom: number) => {
-    if (zoom < 14) {
-      setVisibleLayers({ zone: true, area: false, plot: false, plant: false });
-    } else if (zoom >= 14 && zoom < 16) {
-      setVisibleLayers({ zone: false, area: true, plot: false, plant: false });
-    } else if (zoom >= 16 && zoom < 18) {
-      setVisibleLayers({ zone: false, area: false, plot: true, plant: false });
-    } else if (zoom >= 18) {
-      setVisibleLayers({ zone: true, area: true, plot: true, plant: true }); // Keep context
-    }
-  };
-
-  // Styling Functions
-  const zoneStyle = {
-    color: "#2b8cbe",
-    weight: 2,
-    fillOpacity: 0.2,
-    dashArray: "5, 5",
-  };
-  const areaStyle = { color: "#f03b20", weight: 2, fillOpacity: 0.1 };
-  const plotStyle = { color: "#31a354", weight: 2, fillOpacity: 0.2 };
-
-  const pointToLayer = (feature: Feature, latlng: L.LatLng) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const status = feature.properties?.status;
-    let color = "#22c55e"; // healthy
-    if (status === "diseased") color = "#ef4444";
-    if (status === "harvesting") color = "#eab308";
-
-    return L.circleMarker(latlng, {
-      radius: 4,
-      fillColor: color,
-      color: "white",
-      weight: 1,
-      opacity: 1,
-      fillOpacity: 0.8,
-    });
-  };
-
-  const onEachFeature = (feature: Feature, layer: L.Layer) => {
-    const buildPopupContent = (extraInfo?: string) => {
-      let popupContent = `<div class="font-bold">${feature.properties?.name || "Unnamed"}</div>`;
-      if (feature.properties?.code)
-        popupContent += `<div class="text-xs">Mã: ${feature.properties.code}</div>`;
-      if (feature.properties?.status) {
-        const labels: Record<string, string> = {
-          healthy: "Khỏe mạnh",
-          diseased: "Sâu bệnh",
-          harvesting: "Đang thu hoạch",
-        };
-        popupContent += `<div class="text-xs mt-1">Trạng thái: ${labels[feature.properties.status]}</div>`;
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
       }
-      if (extraInfo) {
-        popupContent += extraInfo;
-      }
-      return popupContent;
     };
+  }, []);
 
-    if (feature.geometry.type === "Point") {
-      // For plants: existing logic
-      layer.bindPopup(buildPopupContent("<i>Đang tải thông tin...</i>"));
-      layer.on("click", () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const coords = (feature.geometry as any).coordinates;
-        const { zoneName, areaName, plotName } = getLocationInfo(
-          coords[0],
-          coords[1],
+  const handleEntityClick = useCallback(
+    (feature: any) => {
+      let type = "Selected Area";
+
+      if (feature?.properties?.id && feature?.properties?.regionId) {
+        type = "Khu vực (Area)";
+      } else if (feature?.properties?.id && !feature?.properties?.regionId) {
+        type = "Vùng trồng (Zone)";
+      }
+
+      let polyCoords: any[] = [];
+
+      if (feature?.geometry?.type === "MultiPolygon") {
+        polyCoords = feature?.geometry?.coordinates?.[0]?.[0] || [];
+      } else if (feature?.geometry?.type === "Polygon") {
+        polyCoords = feature?.geometry?.coordinates?.[0] || [];
+      }
+
+      const calculatedStats = Array.isArray(polyCoords)
+        ? calculateStats(polyCoords)
+        : {
+            total: 0,
+            healthy: 0,
+            diseased: 0,
+            harvesting: 0,
+            types: {},
+          };
+
+      setSelectedEntity({
+        type: getSafeFeatureName(feature, type),
+        properties: feature?.properties || {},
+        stats: calculatedStats,
+      });
+    },
+    [calculateStats],
+  );
+
+  const zoneLayer = useMemo(() => {
+    if (!visibleLayers.zone) return null;
+
+    return ((zoneData as any)?.features || [])
+      .map((item: any, index: number) => {
+        const path = getSafePolygonPath(item?.geometry);
+        if (!path) return null;
+
+        return (
+          <MFPolygon
+            key={getSafeString(item?.properties?.code) || `zone-${index}`}
+            paths={[path]}
+            fillColor="#2b8cbe"
+            fillOpacity={0.2}
+            strokeColor="#2b8cbe"
+            strokeWidth={2}
+            onClick={() => handleEntityClick(item)}
+            clickable={true}
+            visible={true}
+          />
         );
-        let extra = `<div class="mt-2 text-xs border-t pt-1 space-y-0.5">`;
-        extra += `<div class="text-muted-foreground">📍 ${coords[1].toFixed(6)}, ${coords[0].toFixed(6)}</div>`;
-        if (zoneName) extra += `<div>🏠 Vùng: <b>${zoneName}</b></div>`;
-        if (areaName) extra += `<div>🌳 Khu vực: <b>${areaName}</b></div>`;
-        if (plotName) extra += `<div>🌱 Lô: <b>${plotName}</b></div>`;
-        extra += `</div>`;
-        layer.setPopupContent(buildPopupContent(extra));
-      });
-    } else {
-      // For Polygons (Zone, Area, Plot)
-      layer.bindTooltip(feature.properties?.name, { sticky: true });
-      layer.on("click", (e) => {
-        L.DomEvent.stopPropagation(e); // Stop propagation to avoid map click actions if we had any
-        // Identify layer type loosely based on zoom or property structure, or pass context
-        let type = "Unknown";
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((feature as any).properties["cropGroupId"]) type = "NotSupported"; // Just safety
-        // We can infer type from properties or pass it.
-        // But simply, we can guess based on data source structure or just say "Khu vực / Lô"
-        // Let's assume based on property availability or just generic "Vùng chọn"
-        if (feature.properties?.id && feature.properties?.regionId)
-          type = "Khu vực (Area)";
-        else if (feature.properties?.id && !feature.properties?.regionId)
-          type = "Vùng trồng (Zone)";
-        // Actually best to assume based on loop context, but `onEachFeature` doesn't know it easily without currying.
-        // We'll settle for Generic Name.
+      })
+      .filter(Boolean);
+  }, [visibleLayers.zone, handleEntityClick]);
 
-        // Calculate Stats
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let polyCoords = (feature.geometry as any).coordinates[0];
-        if (feature.geometry.type === "MultiPolygon")
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          polyCoords = (feature.geometry as any).coordinates[0][0];
+  const areaLayer = useMemo(() => {
+    if (!visibleLayers.area) return null;
 
-        const calculatedStats = calculateStats(polyCoords);
+    return ((areaData as any)?.features || [])
+      .map((item: any, index: number) => {
+        const path = getSafePolygonPath(item?.geometry);
+        if (!path) return null;
 
-        setSelectedEntity({
-          type: feature.properties?.name || "Selected Area",
-          properties: feature.properties,
-          stats: calculatedStats,
-        });
-      });
+        return (
+          <MFPolygon
+            key={getSafeString(item?.properties?.code) || `area-${index}`}
+            paths={[path]}
+            fillColor="#f03b20"
+            fillOpacity={0.1}
+            strokeColor="#f03b20"
+            strokeWidth={2}
+            onClick={() => handleEntityClick(item)}
+            clickable={true}
+            visible={true}
+          />
+        );
+      })
+      .filter(Boolean);
+  }, [visibleLayers.area, handleEntityClick]);
+
+  const plotLayer = useMemo(() => {
+    if (!visibleLayers.plot) return null;
+
+    return ((plotData as any)?.features || [])
+      .map((item: any, index: number) => {
+        const path = getSafePolygonPath(item?.geometry);
+        if (!path) return null;
+
+        return (
+          <MFPolygon
+            key={getSafeString(item?.properties?.code) || `plot-${index}`}
+            paths={[path]}
+            fillColor="#31a354"
+            fillOpacity={0.2}
+            strokeColor="#31a354"
+            strokeWidth={2}
+            onClick={() => handleEntityClick(item)}
+            clickable={true}
+            visible={true}
+          />
+        );
+      })
+      .filter(Boolean);
+  }, [visibleLayers.plot, handleEntityClick]);
+  const normalizedPlantFeatures = useMemo(() => {
+    const features = (filteredPlantData as any)?.features;
+    if (!Array.isArray(features)) return [];
+
+    return features
+      .filter((item: any) => isValidPointFeature(item))
+      .map((item: any, index: number) => {
+        const lng = Number(item.geometry.coordinates[0]);
+        const lat = Number(item.geometry.coordinates[1]);
+
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+
+        return {
+          key: getSafeString(item?.properties?.code) || `plant-${index}`,
+          lat,
+          lng,
+          name: getSafeString(item?.properties?.name),
+        };
+      })
+      .filter(Boolean);
+  }, [filteredPlantData]);
+  const visiblePlantFeatures = useMemo(() => {
+    if (!visibleLayers.plant || mapZoom < PLANT_ZOOM_THRESHOLD) return [];
+
+    const latDelta = Math.max(0.0025, 0.03 / Math.pow(2, mapZoom - 15));
+    const lngDelta = Math.max(0.0025, 0.03 / Math.pow(2, mapZoom - 15));
+
+    const minLat = mapCenter.lat - latDelta - VIEWPORT_PADDING;
+    const maxLat = mapCenter.lat + latDelta + VIEWPORT_PADDING;
+    const minLng = mapCenter.lng - lngDelta - VIEWPORT_PADDING;
+    const maxLng = mapCenter.lng + lngDelta + VIEWPORT_PADDING;
+
+    return normalizedPlantFeatures
+      .filter((item: any) => {
+        return (
+          item.lat >= minLat &&
+          item.lat <= maxLat &&
+          item.lng >= minLng &&
+          item.lng <= maxLng
+        );
+      })
+      .slice(0, MAX_VISIBLE_MARKERS);
+  }, [visibleLayers.plant, mapZoom, mapCenter, normalizedPlantFeatures]);
+
+  const plantMarkers = useMemo(() => {
+    if (!visibleLayers.plant || !mapBounds) return null;
+
+    const sourceFeatures = (filteredPlantData as any)?.features;
+    if (!Array.isArray(sourceFeatures)) return null;
+
+    const visibleFeatures = sourceFeatures
+      .filter((item: any) => {
+        if (!isValidPointFeature(item)) return false;
+
+        const lng = Number(item?.geometry?.coordinates?.[0]);
+        const lat = Number(item?.geometry?.coordinates?.[1]);
+
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+
+        return (
+          lat >= mapBounds.south &&
+          lat <= mapBounds.north &&
+          lng >= mapBounds.west &&
+          lng <= mapBounds.east
+        );
+      })
+      .slice(0, MAX_VISIBLE_MARKERS);
+
+    return visibleFeatures.map((item: any, index: number) => {
+      const lng = Number(item.geometry.coordinates[0]);
+      const lat = Number(item.geometry.coordinates[1]);
+      const code = getSafeString(item?.properties?.code);
+      const name = getSafeString(item?.properties?.name);
+
+      return (
+        <MFMarker
+          key={code || `plant-${index}`}
+          position={{ lat, lng }}
+          title={name || undefined}
+          label={""}
+          visible={true}
+          icon={{
+            url: Tree,
+            width: 12,
+            height: 12,
+          }}
+          onClick={() => {
+            setSelectedTree(item);
+          }}
+        />
+      );
+    });
+  }, [visibleLayers.plant, filteredPlantData, mapBounds]);
+
+  const labelMarkers = useMemo(() => {
+    const layers = [
+      { data: zoneData, visible: visibleLayers.zone, prefix: "zone" },
+      { data: areaData, visible: visibleLayers.area, prefix: "area" },
+      { data: plotData, visible: visibleLayers.plot, prefix: "plot" },
+    ];
+
+    return layers.flatMap((layer) => {
+      if (!layer.visible) return [];
+
+      return ((layer.data as any)?.features || [])
+        .map((item: any, index: number) => {
+          const center = getPolygonCenter(item);
+          const name = getSafeString(item?.properties?.name);
+          const code = getSafeString(item?.properties?.code);
+
+          if (
+            !center ||
+            !isValidLatLng(center.lat) ||
+            !isValidLatLng(center.lng) ||
+            !isNonEmptyString(name)
+          ) {
+            return null;
+          }
+
+          return (
+            <MFMarker
+              key={`label-${layer.prefix}-${code || index}`}
+              position={center}
+              title={name}
+              label={name}
+              visible={true}
+            />
+          );
+        })
+        .filter(Boolean);
+    });
+  }, [visibleLayers.zone, visibleLayers.area, visibleLayers.plot]);
+
+  useEffect(() => {
+    const badPolygonFeatures = [
+      ...((zoneData as any)?.features || []).map((item: any) => ({
+        layer: "zone",
+        item,
+      })),
+      ...((areaData as any)?.features || []).map((item: any) => ({
+        layer: "area",
+        item,
+      })),
+      ...((plotData as any)?.features || []).map((item: any) => ({
+        layer: "plot",
+        item,
+      })),
+    ].filter(({ item }) => !getSafePolygonPath(item?.geometry));
+
+    const badLabelFeatures = [
+      ...((zoneData as any)?.features || []).map((item: any) => ({
+        layer: "zone",
+        item,
+      })),
+      ...((areaData as any)?.features || []).map((item: any) => ({
+        layer: "area",
+        item,
+      })),
+      ...((plotData as any)?.features || []).map((item: any) => ({
+        layer: "plot",
+        item,
+      })),
+    ].filter(({ item }) => {
+      const center = getPolygonCenter(item);
+      const name = getSafeString(item?.properties?.name);
+
+      return (
+        !center ||
+        !isValidLatLng(center?.lat) ||
+        !isValidLatLng(center?.lng) ||
+        !isNonEmptyString(name)
+      );
+    });
+
+    const badPlantFeatures = ((plantData as any)?.features || []).filter(
+      (item: any) => !isValidPointFeature(item),
+    );
+
+    if (badPolygonFeatures.length > 0) {
+      console.log("badPolygonFeatures", badPolygonFeatures);
     }
-  };
 
+    if (badLabelFeatures.length > 0) {
+      console.log("badLabelFeatures", badLabelFeatures);
+    }
+
+    if (badPlantFeatures.length > 0) {
+      console.log("badPlantFeatures", badPlantFeatures);
+    }
+  }, []);
   return (
     <>
       <div
@@ -480,623 +638,86 @@ const MapContent = () => {
           isFullScreenParam ? "h-screen w-screen" : "h-[calc(100vh-140px)]",
         )}
       >
-        {/* Sidebar Controls */}
         <div className="shrink-0 border-r bg-card flex flex-col h-full transition-all duration-300">
           {selectedEntity ? (
-            // Detail / Report View
-            <div className="flex flex-col h-full animate-in slide-in-from-left-5 fade-in bg-slate-50">
-              <div className="p-4 border-b bg-white flex items-center justify-between shadow-sm z-10">
-                <div className="flex items-center gap-2">
-                  <div className="bg-primary/10 p-2 rounded-lg">
-                    <Search className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg leading-tight">
-                      Chi tiết kỹ thuật
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Báo cáo tổng hợp
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedEntity(null)}
-                  className="text-sm p-2 hover:bg-slate-100 rounded-full text-slate-500 transition-colors"
-                >
-                  <Search className="w-5 h-5 sr-only" />{" "}
-                  {/* Using generic close icon if available, or just text X */}
-                  Đóng
-                </button>
-              </div>
-
-              <ScrollArea className="flex-1 p-2">
-                {/* General Info Card */}
-                <Card className="border-none shadow-sm mb-6">
-                  <CardContent className="p-4 space-y-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="text-sm text-muted-foreground">
-                          Đối tượng
-                        </div>
-                        <div className="text-xl font-bold text-primary">
-                          {selectedEntity.type}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm text-muted-foreground">
-                          Mã số
-                        </div>
-                        <div className="font-mono font-medium bg-slate-100 px-2 py-0.5 rounded text-sm inline-block">
-                          {selectedEntity.properties?.code || "N/A"}
-                        </div>
-                      </div>
-                    </div>
-
-                    {selectedEntity.properties?.area && (
-                      <div className="bg-primary/5 rounded-lg p-3 flex items-center justify-between border border-primary/10">
-                        <span className="text-sm font-medium flex items-center gap-2">
-                          <AlertTriangle className="w-4 h-4 text-primary" />{" "}
-                          {/* Area Icon */}
-                          Tổng diện tích
-                        </span>
-                        <span className="font-bold text-lg">
-                          {selectedEntity.properties.area}{" "}
-                          <span className="text-sm font-normal text-muted-foreground">
-                            ha
-                          </span>
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Extra metadata if available */}
-                    {selectedEntity.properties?.altitude && (
-                      <div className="flex justify-between text-sm py-1 border-b border-dashed">
-                        <span className="text-muted-foreground">
-                          Độ cao trung bình
-                        </span>
-                        <span>{selectedEntity.properties.altitude}m</span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Statistics Cards */}
-                <div className="mb-6">
-                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm text-slate-700">
-                    <Sprout className="w-4 h-4" />
-                    Thống kê cây trồng
-                  </h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Card className="bg-white border-none shadow-sm">
-                      <CardContent className="p-4 flex flex-col items-center justify-center">
-                        <div className="text-3xl font-bold text-slate-800">
-                          {selectedEntity.stats.total}
-                        </div>
-                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mt-1">
-                          Tổng cộng
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-green-50 border-green-100 shadow-sm">
-                      <CardContent className="p-4 flex flex-col items-center justify-center">
-                        <div className="text-3xl font-bold text-green-600">
-                          {selectedEntity.stats.healthy}
-                        </div>
-                        <div className="text-xs font-medium text-green-700 uppercase tracking-wide mt-1">
-                          Khỏe mạnh
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-red-50 border-red-100 shadow-sm">
-                      <CardContent className="p-4 flex flex-col items-center justify-center">
-                        <div className="text-3xl font-bold text-red-600">
-                          {selectedEntity.stats.diseased}
-                        </div>
-                        <div className="text-xs font-medium text-red-700 uppercase tracking-wide mt-1">
-                          Sâu bệnh
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-yellow-50 border-yellow-100 shadow-sm">
-                      <CardContent className="p-4 flex flex-col items-center justify-center">
-                        <div className="text-3xl font-bold text-yellow-600">
-                          {selectedEntity.stats.harvesting}
-                        </div>
-                        <div className="text-xs font-medium text-yellow-700 uppercase tracking-wide mt-1">
-                          Thu hoạch
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-
-                {/* Soil Health Section */}
-                <div className="mb-6 px-2">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-semibold flex items-center gap-2 text-sm text-slate-700">
-                      <FlaskConical className="w-4 h-4 text-indigo-500" />
-                      Chỉ số sức khỏe đất
-                    </h4>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 text-xs text-primary"
-                      onClick={handleEditSoil}
-                    >
-                      <Activity className="w-3 h-3 mr-1" />
-                      Cập nhật
-                    </Button>
-                  </div>
-
-                  <Card className="border-none shadow-sm overflow-hidden bg-white">
-                    <CardContent className="p-4">
-                      <div className="space-y-4">
-                          {(() => {
-                            const currentId = selectedEntity?.properties?.code || selectedEntity?.properties?.id;
-                            const currentSoil = soilData[currentId] || {
-                              ph: 0,
-                              moisture: 0,
-                              temperature: 0,
-                              compaction: 0,
-                              nitrogen: 0,
-                              phosphorus: 0,
-                              potassium: 0,
-                              organicMatter: 0,
-                              lastTested: 'Chưa có dữ liệu'
-                            };
-                            return (
-                              <>
-                                <div className="grid grid-cols-2 gap-3">
-                                  <div className="bg-indigo-50/50 rounded-xl p-3 border border-indigo-100/50">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <Activity className="w-3.5 h-3.5 text-indigo-500" />
-                                      <span className="text-[10px] font-bold uppercase text-indigo-600">Độ pH</span>
-                                    </div>
-                                    <div className="text-xl font-bold text-indigo-900 leading-none">
-                                      {currentSoil.ph}
-                                    </div>
-                                    <div className="text-[9px] text-indigo-500 mt-1">
-                                      Mức: {currentSoil.ph === 0 ? 'N/A' : (currentSoil.ph > 7 ? 'Kiềm' : currentSoil.ph < 6 ? 'Chua' : 'Tối ưu')}
-                                    </div>
-                                  </div>
-                                  <div className="bg-blue-50/50 rounded-xl p-3 border border-blue-100/50">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <Droplets className="w-3.5 h-3.5 text-blue-500" />
-                                      <span className="text-[10px] font-bold uppercase text-blue-600">Độ ẩm</span>
-                                    </div>
-                                    <div className="text-xl font-bold text-blue-900 leading-none">
-                                      {currentSoil.moisture}%
-                                    </div>
-                                    <div className="text-[9px] text-blue-500 mt-1">Trạng thái: {currentSoil.moisture === 0 ? 'N/A' : 'Tốt'}</div>
-                                  </div>
-                                  <div className="bg-orange-50/50 rounded-xl p-3 border border-orange-100/50">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <Thermometer className="w-3.5 h-3.5 text-orange-500" />
-                                      <span className="text-[10px] font-bold uppercase text-orange-600">Nhiệt độ</span>
-                                    </div>
-                                    <div className="text-xl font-bold text-orange-900 leading-none">
-                                      {currentSoil.temperature}°C
-                                    </div>
-                                    <div className="text-[9px] text-orange-500 mt-1">{currentSoil.temperature === 0 ? 'N/A' : 'Ổn định'}</div>
-                                  </div>
-                                  <div className="bg-emerald-50/50 rounded-xl p-3 border border-emerald-100/50">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <Activity className="w-3.5 h-3.5 text-emerald-500" />
-                                      <span className="text-[10px] font-bold uppercase text-emerald-600">Độ nén</span>
-                                    </div>
-                                    <div className="text-xl font-bold text-emerald-900 leading-none">
-                                      {currentSoil.compaction}
-                                    </div>
-                                    <div className="text-[9px] text-emerald-500 mt-1">psi ({currentSoil.compaction === 0 ? 'N/A' : 'Tốt'})</div>
-                                  </div>
-                                </div>
-
-                                <div className="grid grid-cols-4 gap-2">
-                                  <div className="text-center p-1.5 rounded-lg bg-slate-50 border border-slate-100">
-                                    <div className="text-[9px] font-bold text-slate-400">N</div>
-                                    <div className="text-xs font-bold text-slate-700">{currentSoil.nitrogen}</div>
-                                  </div>
-                                  <div className="text-center p-1.5 rounded-lg bg-slate-50 border border-slate-100">
-                                    <div className="text-[9px] font-bold text-slate-400">P</div>
-                                    <div className="text-xs font-bold text-slate-700">{currentSoil.phosphorus}</div>
-                                  </div>
-                                  <div className="text-center p-1.5 rounded-lg bg-slate-50 border border-slate-100">
-                                    <div className="text-[9px] font-bold text-slate-400">K</div>
-                                    <div className="text-xs font-bold text-slate-700">{currentSoil.potassium}</div>
-                                  </div>
-                                  <div className="text-center p-1.5 rounded-lg bg-slate-50 border border-slate-100">
-                                    <div className="text-[9px] font-bold text-slate-400">OM</div>
-                                    <div className="text-xs font-bold text-slate-700">{currentSoil.organicMatter}%</div>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                    <Info className="w-3 h-3" />
-                                    Lần đo cuối:
-                                  </span>
-                                  <span className="text-xs font-medium text-slate-600">
-                                    {currentSoil.lastTested}
-                                  </span>
-                                </div>
-                              </>
-                            );
-                          })()}
-                        </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Plant Types List */}
-                <div className="mb-6">
-                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm text-slate-700">
-                    <Search className="w-4 h-4" />
-                    Phân loại cây (
-                    {Object.keys(selectedEntity.stats.types).length})
-                  </h4>
-                  <Card className="border-none shadow-sm overflow-hidden">
-                    <div className="divide-y">
-                      {Object.entries(selectedEntity.stats.types).map(
-                        ([name, count]) => (
-                          <div
-                            key={name}
-                            className="p-3 flex items-center justify-between hover:bg-slate-50 transition-colors"
-                          >
-                            <span className="text-sm font-medium text-slate-700">
-                              {name}
-                            </span>
-                            <span className="text-xs font-bold bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
-                              {count} cây
-                            </span>
-                          </div>
-                        ),
-                      )}
-                      {Object.keys(selectedEntity.stats.types).length === 0 && (
-                        <div className="p-8 text-center text-muted-foreground text-sm">
-                          Chưa có dữ liệu cây trồng trong khu vực này.
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                </div>
-              </ScrollArea>
-            </div>
+            <SidebarDetail
+              selectedEntity={selectedEntity}
+              onClose={() => setSelectedEntity(null)}
+              soilData={soilData}
+              onEditSoil={handleEditSoil}
+            />
           ) : (
-            // Standard View
-            <>
-              <div className="p-4 border-b space-y-4">
-                <div>
-                  <Label>Tìm kiếm cây trồng</Label>
-                  <div className="relative mt-1">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Tên, mã cây..."
-                      className="pl-10"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                {/* Note: Filters for Region/Area are visual only now as we load full GeoJSON */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label>Vùng trồng</Label>
-                    <Select
-                      value={filterRegion}
-                      onValueChange={setFilterRegion}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tất cả" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tất cả</SelectItem>
-                        {MOCK_REGIONS.map((r) => (
-                          <SelectItem key={r.id} value={r.id.toString()}>
-                            {r.code}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Khu vực</Label>
-                    <Select value={filterArea} onValueChange={setFilterArea}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tất cả" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tất cả</SelectItem>
-                        {MOCK_AREAS.filter(
-                          (a) =>
-                            filterRegion === "all" ||
-                            a.regionId.toString() === filterRegion,
-                        ).map((a) => (
-                          <SelectItem key={a.id} value={a.id.toString()}>
-                            {a.code}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Trạng thái cây</Label>
-                  <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Tất cả trạng thái" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tất cả</SelectItem>
-                      <SelectItem value="healthy">Khỏe mạnh</SelectItem>
-                      <SelectItem value="diseased">Bị bệnh</SelectItem>
-                      <SelectItem value="harvesting">Đang thu hoạch</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <ScrollArea className="flex-1 p-4">
-                <h3 className="font-medium mb-3 flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4" /> Thống kê nhanh
-                </h3>
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  <Card className="bg-primary/5 border-primary/20">
-                    <CardContent className="p-3 text-center">
-                      <div className="text-2xl font-bold text-primary">
-                        {stats.healthy}
-                      </div>
-                      <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                        <Sprout className="w-3 h-3" /> Cây khỏe
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-red-50 border-red-200">
-                    <CardContent className="p-3 text-center">
-                      <div className="text-2xl font-bold text-red-600">
-                        {stats.diseased}
-                      </div>
-                      <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                        <AlertTriangle className="w-3 h-3" /> Cần xử lý
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="text-sm">
-                    <div className="flex justify-between py-2 border-b">
-                      <span>Tổng diện tích</span>
-                      <span className="font-medium">
-                        {/* Removed filteredRegions, using MOCK_REGIONS directly for sum */}
-                        {MOCK_REGIONS.reduce((acc, r) => acc + r.area, 0)} ha
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b">
-                      <span>Số vùng trồng</span>
-                      <span className="font-medium">{stats.regions}</span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b">
-                      <span>Số khu vực</span>
-                      <span className="font-medium">{stats.areas}</span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b">
-                      <span>Số lô trồng</span>
-                      <span className="font-medium">{stats.plots}</span>
-                    </div>
-                  </div>
-                </div>
-              </ScrollArea>
-            </>
+            <SidebarFilter
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              filterRegion={filterRegion}
+              setFilterRegion={setFilterRegion}
+              filterArea={filterArea}
+              setFilterArea={setFilterArea}
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
+              stats={stats}
+              availablePlants={(filteredPlantData as any)?.features || []}
+              onPlantClick={(lat, lng) => {
+                setMapCenter({ lat, lng });
+                setMapZoom(20);
+              }}
+            />
           )}
         </div>
 
-        {/* Map Area */}
         <div className="flex-1 relative bg-slate-100 -z-0">
-          <MapContainer
+          <MFMap
+            accessKey="37b541da761a2896d03951cf69bc989e"
             center={mapCenter}
             zoom={mapZoom}
-            className="h-full w-full"
-            style={{ background: "#f0f0f0" }}
+            options={{
+              mapType: "raster",
+              controlOptions: {},
+            }}
+            version="2.5"
+            onMapReady={(map) => {
+              map.addListener("idle", () => {
+                const camera = map.getCamera();
+                const zoomValue = camera.zoom;
+                const target = camera.target;
+                const roundedZoom = Math.round(zoomValue);
+
+                setMapZoom((prev) =>
+                  Math.round(prev) !== roundedZoom ? roundedZoom : prev,
+                );
+
+                setMapCenter((prev) => {
+                  if (
+                    Math.abs(target.lat - prev.lat) > 0.0001 ||
+                    Math.abs(target.lng - prev.lng) > 0.0001
+                  ) {
+                    return { lat: target.lat, lng: target.lng };
+                  }
+
+                  return prev;
+                });
+                const bounds = map.getBounds();
+
+                if (bounds) {
+                  setMapBounds({
+                    north: bounds.northeast.lat,
+                    east: bounds.northeast.lng,
+                    south: bounds.southwest.lat,
+                    west: bounds.southwest.lng,
+                  });
+                }
+              });
+            }}
           >
-            <MapUpdater center={mapCenter} zoom={mapZoom} />
-            <ZoomListener onChange={onZoomChange} />
-            <LayersControl position="topright">
-              <LayersControl.BaseLayer checked name="Bản đồ chuẩn">
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-              </LayersControl.BaseLayer>
-              <LayersControl.BaseLayer name="Vệ tinh">
-                <TileLayer
-                  attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
-                  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                />
-              </LayersControl.BaseLayer>
-              {/* Zone Layer (Regions) */}
-              <LayersControl.Overlay
-                checked={visibleLayers.zone}
-                name="Vùng trồng (Regions)"
-              >
-                <LayerGroup>
-                  {visibleLayers.zone && (
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    <GeoJSON
-                      key="layer-zone"
-                      data={zoneData as any}
-                      style={zoneStyle}
-                      onEachFeature={onEachFeature}
-                    />
-                  )}
-                </LayerGroup>
-              </LayersControl.Overlay>
+            {zoneLayer}
+            {areaLayer}
+            {plotLayer}
+            {plantMarkers}
+            {labelMarkers}
+            <MapLegend visibleLayers={visibleLayers} />
+          </MFMap>
 
-              {/* Area Layer */}
-              <LayersControl.Overlay
-                checked={visibleLayers.area}
-                name="Khu vực (Areas)"
-              >
-                <LayerGroup>
-                  {visibleLayers.area && (
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    <GeoJSON
-                      key="layer-area"
-                      data={areaData as any}
-                      style={areaStyle}
-                      onEachFeature={onEachFeature}
-                    />
-                  )}
-                </LayerGroup>
-              </LayersControl.Overlay>
-
-              {/* Plot Layer */}
-              <LayersControl.Overlay
-                checked={visibleLayers.plot}
-                name="Lô trồng (Plots)"
-              >
-                <LayerGroup>
-                  {visibleLayers.plot && (
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    <GeoJSON
-                      key="layer-plot"
-                      data={plotData as any}
-                      style={plotStyle}
-                      onEachFeature={onEachFeature}
-                    />
-                  )}
-                </LayerGroup>
-              </LayersControl.Overlay>
-
-              {/* Plant Layer */}
-              <LayersControl.Overlay
-                checked={visibleLayers.plant}
-                name="Cây trồng (Plants)"
-              >
-                <LayerGroup>
-                  {visibleLayers.plant && (
-                    <GeoJSON
-                      key={`layer-plant-${searchTerm}-${filterStatus}`}
-                      data={filteredPlantData}
-                      pointToLayer={pointToLayer}
-                      onEachFeature={onEachFeature}
-                    />
-                  )}
-                </LayerGroup>
-              </LayersControl.Overlay>
-            </LayersControl>
-
-            {/* Labels */}
-            {visibleLayers.zone &&
-              (zoneData as any).features.map((f: any, i: number) => {
-                const center = getPolygonCenter(f);
-                if (!center) return null;
-                return (
-                  <Marker
-                    key={`label-zone-${i}`}
-                    position={center}
-                    icon={L.divIcon({
-                      className: "bg-transparent border-none",
-                      html: `
-                        <div class="flex flex-col items-center justify-center">
-                          <div class="w-2 h-2 bg-blue-500 rounded-full border border-white shadow-sm"></div>
-                          <div class="text-blue-800 text-xs font-bold whitespace-nowrap drop-shadow-md mt-0.5">${f.properties.name}</div>
-                        </div>
-                      `,
-                      iconSize: [0, 0],
-                    })}
-                  />
-                );
-              })}
-
-            {visibleLayers.area &&
-              (areaData as any).features.map((f: any, i: number) => {
-                const center = getPolygonCenter(f);
-                if (!center) return null;
-                return (
-                  <Marker
-                    key={`label-area-${i}`}
-                    position={center}
-                    icon={L.divIcon({
-                      className: "bg-transparent border-none",
-                      html: `
-                        <div class="flex flex-col items-center justify-center">
-                          <div class="w-1.5 h-1.5 bg-red-500 rounded-full border border-white shadow-sm"></div>
-                          <div class="text-red-700 text-[10px] font-bold whitespace-nowrap drop-shadow-md mt-0.5">${f.properties.name}</div>
-                        </div>
-                      `,
-                      iconSize: [0, 0],
-                    })}
-                  />
-                );
-              })}
-
-            {visibleLayers.plot &&
-              (plotData as any).features.map((f: any, i: number) => {
-                const center = getPolygonCenter(f);
-                if (!center) return null;
-                return (
-                  <Marker
-                    key={`label-plot-${i}`}
-                    position={center}
-                    icon={L.divIcon({
-                      className: "bg-transparent border-none",
-                      html: `
-                        <div class="flex flex-col items-center justify-center">
-                          <div class="w-1.5 h-1.5 bg-green-500 rounded-full border border-white shadow-sm"></div>
-                          <div class="text-green-900 text-[9px] font-bold whitespace-nowrap drop-shadow-md mt-0.5">${f.properties.name}</div>
-                        </div>
-                      `,
-                      iconSize: [0, 0],
-                    })}
-                  />
-                );
-              })}
-
-            {/* Legend - Updated with Dynamic Status */}
-            <div className="absolute bottom-4 left-4 bg-white p-2 rounded shadow-lg z-1000 text-xs text-slate-700">
-              <div className="font-semibold mb-2">Chú thích</div>
-              <div
-                className={`flex items-center gap-2 mb-1 ${visibleLayers.plant ? "opacity-100" : "opacity-40"}`}
-              >
-                <div className="w-3 h-3 rounded-full bg-green-500 border border-white shadow-sm"></div>{" "}
-                Khỏe mạnh
-              </div>
-              <div
-                className={`flex items-center gap-2 mb-1 ${visibleLayers.plant ? "opacity-100" : "opacity-40"}`}
-              >
-                <div className="w-3 h-3 rounded-full bg-yellow-500 border border-white shadow-sm"></div>{" "}
-                Thu hoạch
-              </div>
-              <div
-                className={`flex items-center gap-2 mb-1 ${visibleLayers.plant ? "opacity-100" : "opacity-40"}`}
-              >
-                <div className="w-3 h-3 rounded-full bg-red-500 border border-white shadow-sm"></div>{" "}
-                Sâu bệnh
-              </div>
-              <div
-                className={`flex items-center gap-2 mb-1 ${visibleLayers.zone ? "opacity-100" : "opacity-40"}`}
-              >
-                <div className="w-3 h-3 rounded-full bg-blue-500 border border-white shadow-sm"></div>
-                Vùng
-              </div>
-              <div
-                className={`flex items-center gap-2 mb-1 ${visibleLayers.area ? "opacity-100" : "opacity-40"}`}
-              >
-                <div className="w-3 h-3 rounded-full bg-red-500 border border-white shadow-sm"></div>
-                Khu vực
-              </div>
-              <div
-                className={`flex items-center gap-2 ${visibleLayers.plot ? "opacity-100" : "opacity-40"}`}
-              >
-                <div className="w-3 h-3 rounded-full bg-green-500 border border-white shadow-sm"></div>
-                Lô
-              </div>
-            </div>
-          </MapContainer>
-
-          {/* Full Screen Toggle Button */}
           <div className="absolute top-4 right-16 z-1000">
             <button
               onClick={() => {
@@ -1121,294 +742,24 @@ const MapContent = () => {
             </button>
           </div>
         </div>
-      </div>
-
-      {/* <Dialog
-        open={isFullScreenParam && !!selectedEntity}
-        onOpenChange={(open) => !open && setSelectedEntity(null)}
-      >
-        <DialogContent className="sm:max-w-[400px] p-0 gap-0 overflow-hidden bg-slate-50 max-h-[90vh] flex flex-col">
-          {selectedEntity && (
-            <div className="flex flex-col h-full">
-              <div className="p-4 border-b bg-white flex items-center justify-between shadow-sm z-10">
-                <div className="flex items-center gap-2">
-                  <div className="bg-primary/10 p-2 rounded-lg">
-                    <Search className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg leading-tight">
-                      Chi tiết kỹ thuật
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Báo cáo tổng hợp
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <ScrollArea className="flex-1 p-2">
-                <Card className="border-none shadow-sm mb-6">
-                  <CardContent className="p-4 space-y-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="text-sm text-muted-foreground">
-                          Đối tượng
-                        </div>
-                        <div className="text-xl font-bold text-primary">
-                          {selectedEntity.type}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm text-muted-foreground">
-                          Mã số
-                        </div>
-                        <div className="font-mono font-medium bg-slate-100 px-2 py-0.5 rounded text-sm inline-block">
-                          {selectedEntity.properties?.code || "N/A"}
-                        </div>
-                      </div>
-                    </div>
-
-                    {selectedEntity.properties?.area && (
-                      <div className="bg-primary/5 rounded-lg p-3 flex items-center justify-between border border-primary/10">
-                        <span className="text-sm font-medium flex items-center gap-2">
-                          <AlertTriangle className="w-4 h-4 text-primary" />{" "}
-                          Tổng diện tích
-                        </span>
-                        <span className="font-bold text-lg">
-                          {selectedEntity.properties.area}{" "}
-                          <span className="text-sm font-normal text-muted-foreground">
-                            ha
-                          </span>
-                        </span>
-                      </div>
-                    )}
-
-                    {selectedEntity.properties?.altitude && (
-                      <div className="flex justify-between text-sm py-1 border-b border-dashed">
-                        <span className="text-muted-foreground">
-                          Độ cao trung bình
-                        </span>
-                        <span>{selectedEntity.properties.altitude}m</span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <div className="mb-6">
-                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm text-slate-700">
-                    <Sprout className="w-4 h-4" />
-                    Thống kê cây trồng
-                  </h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Card className="bg-white border-none shadow-sm">
-                      <CardContent className="p-4 flex flex-col items-center justify-center">
-                        <div className="text-3xl font-bold text-slate-800">
-                          {selectedEntity.stats.total}
-                        </div>
-                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mt-1">
-                          Tổng cộng
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-green-50 border-green-100 shadow-sm">
-                      <CardContent className="p-4 flex flex-col items-center justify-center">
-                        <div className="text-3xl font-bold text-green-600">
-                          {selectedEntity.stats.healthy}
-                        </div>
-                        <div className="text-xs font-medium text-green-700 uppercase tracking-wide mt-1">
-                          Khỏe mạnh
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-red-50 border-red-100 shadow-sm">
-                      <CardContent className="p-4 flex flex-col items-center justify-center">
-                        <div className="text-3xl font-bold text-red-600">
-                          {selectedEntity.stats.diseased}
-                        </div>
-                        <div className="text-xs font-medium text-red-700 uppercase tracking-wide mt-1">
-                          Sâu bệnh
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-yellow-50 border-yellow-100 shadow-sm">
-                      <CardContent className="p-4 flex flex-col items-center justify-center">
-                        <div className="text-3xl font-bold text-yellow-600">
-                          {selectedEntity.stats.harvesting}
-                        </div>
-                        <div className="text-xs font-medium text-yellow-700 uppercase tracking-wide mt-1">
-                          Thu hoạch
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-
-                <div className="mb-6">
-                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm text-slate-700">
-                    <Search className="w-4 h-4" />
-                    Phân loại cây (
-                    {Object.keys(selectedEntity.stats.types).length})
-                  </h4>
-                  <Card className="border-none shadow-sm overflow-hidden">
-                    <div className="divide-y">
-                      {Object.entries(selectedEntity.stats.types).map(
-                        ([name, count]) => (
-                          <div
-                            key={name}
-                            className="p-3 flex items-center justify-between hover:bg-slate-50 transition-colors"
-                          >
-                            <span className="text-sm font-medium text-slate-700">
-                              {name}
-                            </span>
-                            <span className="text-xs font-bold bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
-                              {count} cây
-                            </span>
-                          </div>
-                        ),
-                      )}
-                      {Object.keys(selectedEntity.stats.types).length === 0 && (
-                        <div className="p-8 text-center text-muted-foreground text-sm">
-                          Chưa có dữ liệu cây trồng trong khu vực này.
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                </div>
-              </ScrollArea>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog> */}
-      <Dialog open={isEditingSoil} onOpenChange={setIsEditingSoil}>
-        <DialogContent className="sm:max-w-[450px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FlaskConical className="w-5 h-5 text-primary" />
-              Cập nhật chỉ số thổ nhưỡng
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-5">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase text-slate-500">Độ pH</Label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  value={tempSoil?.ph}
-                  onChange={(e) => setTempSoil({ ...tempSoil, ph: parseFloat(e.target.value) })}
-                  className="bg-slate-50/50"
-                  placeholder="Ví dụ: 6.5"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase text-slate-500">Độ ẩm (%)</Label>
-                <Input
-                  type="number"
-                  value={tempSoil?.moisture}
-                  onChange={(e) => setTempSoil({ ...tempSoil, moisture: parseFloat(e.target.value) })}
-                  className="bg-slate-50/50"
-                  placeholder="Ví dụ: 70"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-xs font-bold uppercase text-slate-500">Chỉ số NPK (mg/kg)</Label>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1.5">
-                  <div className="text-[10px] font-bold text-center text-red-500 px-1 border border-red-100 rounded bg-red-50/50">N</div>
-                  <Input
-                    type="number"
-                    value={tempSoil?.nitrogen}
-                    onChange={(e) => setTempSoil({ ...tempSoil, nitrogen: parseFloat(e.target.value) })}
-                    className="h-9 text-center"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <div className="text-[10px] font-bold text-center text-blue-500 px-1 border border-blue-100 rounded bg-blue-50/50">P</div>
-                  <Input
-                    type="number"
-                    value={tempSoil?.phosphorus}
-                    onChange={(e) => setTempSoil({ ...tempSoil, phosphorus: parseFloat(e.target.value) })}
-                    className="h-9 text-center"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <div className="text-[10px] font-bold text-center text-orange-500 px-1 border border-orange-100 rounded bg-orange-50/50">K</div>
-                  <Input
-                    type="number"
-                    value={tempSoil?.potassium}
-                    onChange={(e) => setTempSoil({ ...tempSoil, potassium: parseFloat(e.target.value) })}
-                    className="h-9 text-center"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase text-slate-500">Hữu cơ (%)</Label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  value={tempSoil?.organicMatter}
-                  onChange={(e) => setTempSoil({ ...tempSoil, organicMatter: parseFloat(e.target.value) })}
-                  className="bg-slate-50/50"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase text-slate-500">EC (mS/cm)</Label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  value={tempSoil?.ec}
-                  onChange={(e) => setTempSoil({ ...tempSoil, ec: parseFloat(e.target.value) })}
-                  className="bg-slate-50/50"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase text-slate-500">Nhiệt độ (°C)</Label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  value={tempSoil?.temperature}
-                  onChange={(e) => setTempSoil({ ...tempSoil, temperature: parseFloat(e.target.value) })}
-                  className="bg-slate-50/50"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase text-slate-500">Độ nén (psi)</Label>
-                <Input
-                  type="number"
-                  value={tempSoil?.compaction}
-                  onChange={(e) => setTempSoil({ ...tempSoil, compaction: parseFloat(e.target.value) })}
-                  className="bg-slate-50/50"
-                />
-              </div>
+        {selectedTree && (
+          <div className="absolute top-4 right-4 bg-white p-4 shadow rounded z-50">
+            <div className="font-bold">{selectedTree.properties?.name}</div>
+            <div>Mã: {selectedTree.properties?.code}</div>
+            <div>
+              Trạng thái: {MAP_LABEL.get(selectedTree.properties?.status)}
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={() => setIsEditingSoil(false)}
-              className="flex-1 sm:flex-none"
-            >
-              Hủy bỏ
-            </Button>
-            <Button
-              variant="default"
-              onClick={handleSaveSoil}
-              className="flex-1 sm:flex-none bg-primary hover:bg-primary/90"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              Lưu thông tin
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        )}
+      </div>
+
+      <SoilEditDialog
+        isOpen={isEditingSoil}
+        onOpenChange={setIsEditingSoil}
+        tempSoil={tempSoil}
+        setTempSoil={setTempSoil}
+        onSave={handleSaveSoil}
+      />
     </>
   );
 };
@@ -1430,4 +781,5 @@ const MapViewPage = () => {
     </AdminLayout>
   );
 };
+
 export default MapViewPage;
