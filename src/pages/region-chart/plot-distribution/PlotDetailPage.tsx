@@ -6,7 +6,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft, Edit, MapPin } from "lucide-react";
 import { MapContainer, TileLayer, Polygon, Tooltip } from "react-leaflet";
 import L from "leaflet";

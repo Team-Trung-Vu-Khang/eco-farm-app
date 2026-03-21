@@ -42,7 +42,7 @@ import {
   Avatar,
   AvatarImage,
   AvatarFallback,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useAmendmentPlanStore, {
   type AllocationItem,
 } from "../../stores/useAmendmentPlanStore";
@@ -53,7 +53,7 @@ import { PersonnelSelectDialog } from "./components/PersonnelSelectDialog";
 import useRegionStore from "@/stores/useRegionStore";
 import { EnterpriseSelector } from "../cultivation-zone/cultivation-region/components";
 import GeographicalSelector from "../plan/components/GeographicalSelector";
-import { cn } from "@tankhang1/eco-shared-ui";
+import { cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 // --- Types ---
 

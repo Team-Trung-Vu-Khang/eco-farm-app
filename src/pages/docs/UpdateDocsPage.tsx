@@ -13,7 +13,7 @@ import {
   cn,
   useToast,
   type Step,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useLocation, useParams } from "wouter";
 

@@ -5,7 +5,7 @@ import {
   Button,
   DeleteDialog,
   useToast,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import usePlantStore from "@/stores/usePlantStore";
 import useRegionStore from "@/stores/useRegionStore";
 import { type Plant } from "@/pages/region-chart/constants";

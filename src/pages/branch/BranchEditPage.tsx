@@ -26,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Save, X, Trash2 } from "lucide-react";
 import useBranchStore from "../../stores/useBranchStore";
 import { PROVINCES } from "@/constants/province";

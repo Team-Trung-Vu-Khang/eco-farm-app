@@ -18,7 +18,7 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import {

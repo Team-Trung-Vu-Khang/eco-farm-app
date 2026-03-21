@@ -19,7 +19,7 @@ import {
   Textarea,
   useToast, // Removed cn as it was unused and causing issues if not careful with imports vs usage
   type Step,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { type ChangeEvent, useState } from "react";
 import { useLocation } from "wouter";
 

@@ -24,7 +24,7 @@ import {
   DialogFooter,
   DialogClose,
   Editor,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   ChevronLeft,
   Upload,

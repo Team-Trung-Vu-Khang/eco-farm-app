@@ -23,7 +23,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Building2, Save, X } from "lucide-react";
 import useBranchStore from "../../stores/useBranchStore";
 import { PROVINCES } from "@/constants/province";

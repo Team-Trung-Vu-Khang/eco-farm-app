@@ -1,4 +1,4 @@
-import { Card, CardContent } from "@tankhang1/eco-shared-ui";
+import { Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { AlertCircle } from "lucide-react";
 
 export default function NotFoundPage() {

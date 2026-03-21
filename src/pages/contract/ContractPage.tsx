@@ -9,7 +9,7 @@ import {
   Badge,
   useToast,
   DeleteDialog,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus, FileText } from "lucide-react";
 import { contractTypes } from "./constants";
 

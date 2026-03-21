@@ -11,7 +11,7 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Search, User, FilterX } from "lucide-react";
 import usePersonnelStore from "../../../stores/usePersonnelStore";
 

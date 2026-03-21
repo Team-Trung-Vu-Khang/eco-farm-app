@@ -18,7 +18,7 @@ import {
   Textarea,
   useToast,
   DeleteDialog,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Save, Trash2, X } from "lucide-react";
 import useContactStore from "../../stores/useContactStore";
 import useEnterpriseStore from "../../stores/useEnterpriseStore";

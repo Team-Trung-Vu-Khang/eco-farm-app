@@ -52,7 +52,7 @@ import {
   ScrollArea,
   cn,
   type Step,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 import useTaskStore from "../../stores/useTaskStore";
 import type { MaterialAllocation, TaskAllocation } from "../plan/types";

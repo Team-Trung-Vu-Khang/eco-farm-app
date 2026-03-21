@@ -1,5 +1,5 @@
 import useEnterpriseStore from "@/stores/useEnterpriseStore";
-import { StepperForm, type Step } from "@tankhang1/eco-shared-ui";
+import { StepperForm, type Step } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import * as turf from "@turf/turf";
 import "leaflet/dist/leaflet.css";
 import { useMemo, useState } from "react";

@@ -12,7 +12,7 @@ import {
   Textarea,
   useToast,
   type Column,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useTerrainStore, { type Terrain } from "../../stores/useTerrainStore";
 
 export default function TerrainPage() {

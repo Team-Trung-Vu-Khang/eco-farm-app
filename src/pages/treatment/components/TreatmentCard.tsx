@@ -1,4 +1,9 @@
-import { Badge, Button, Card, CardContent } from "@tankhang1/eco-shared-ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   User,
   Shield,

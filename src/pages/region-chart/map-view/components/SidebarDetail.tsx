@@ -4,7 +4,7 @@ import {
   CardContent,
   ScrollArea,
   Button,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Search,
   AlertTriangle,
@@ -52,7 +52,9 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
             <Search className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h3 className="font-bold text-lg leading-tight">Chi tiết kỹ thuật</h3>
+            <h3 className="font-bold text-lg leading-tight">
+              Chi tiết kỹ thuật
+            </h3>
             <p className="text-xs text-muted-foreground">Báo cáo tổng hợp</p>
           </div>
         </div>
@@ -86,7 +88,8 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
             {selectedEntity.properties?.area && (
               <div className="bg-primary/5 rounded-lg p-3 flex items-center justify-between border border-primary/10">
                 <span className="text-sm font-medium flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-primary" /> Tổng diện tích
+                  <AlertTriangle className="w-4 h-4 text-primary" /> Tổng diện
+                  tích
                 </span>
                 <span className="font-bold text-lg">
                   {selectedEntity.properties.area}{" "}
@@ -263,7 +266,9 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
                     </div>
                   </div>
                   <div className="text-center p-1.5 rounded-lg bg-slate-50 border border-slate-100">
-                    <div className="text-[9px] font-bold text-slate-400">OM</div>
+                    <div className="text-[9px] font-bold text-slate-400">
+                      OM
+                    </div>
                     <div className="text-xs font-bold text-slate-700">
                       {currentSoil.organicMatter}%
                     </div>
@@ -292,17 +297,21 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
           </h4>
           <Card className="border-none shadow-sm overflow-hidden">
             <div className="divide-y">
-              {Object.entries(selectedEntity.stats.types).map(([name, count]) => (
-                <div
-                  key={name}
-                  className="p-3 flex items-center justify-between hover:bg-slate-50 transition-colors"
-                >
-                  <span className="text-sm font-medium text-slate-700">{name}</span>
-                  <span className="text-xs font-bold bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
-                    {count} cây
-                  </span>
-                </div>
-              ))}
+              {Object.entries(selectedEntity.stats.types).map(
+                ([name, count]) => (
+                  <div
+                    key={name}
+                    className="p-3 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                  >
+                    <span className="text-sm font-medium text-slate-700">
+                      {name}
+                    </span>
+                    <span className="text-xs font-bold bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
+                      {count} cây
+                    </span>
+                  </div>
+                ),
+              )}
               {Object.keys(selectedEntity.stats.types).length === 0 && (
                 <div className="p-8 text-center text-muted-foreground text-sm">
                   Chưa có dữ liệu cây trồng trong khu vực này.

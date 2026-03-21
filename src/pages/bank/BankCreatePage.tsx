@@ -17,7 +17,7 @@ import {
   SelectValue,
   Textarea,
   useToast,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CreditCard, Save, X } from "lucide-react";
 import useBankStore from "../../stores/useBankStore";
 

@@ -30,7 +30,7 @@ import {
   ScrollArea,
   Badge,
   cn,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   MapContainer,
   TileLayer,
@@ -1895,7 +1895,9 @@ const AreaCreatePage = () => {
                                 )}
                                 <div className="flex items-center gap-2">
                                   <div className="w-2 h-2 bg-orange-500 rounded-full" />
-                                  <span className="font-medium">{plot.name}</span>
+                                  <span className="font-medium">
+                                    {plot.name}
+                                  </span>
                                 </div>
                               </div>
                               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -2114,7 +2116,9 @@ const AreaCreatePage = () => {
                   >
                     <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                     <Polygon
-                      positions={areaPoints.map((p) => [p.lat, p.lng] as [number, number])}
+                      positions={areaPoints.map(
+                        (p) => [p.lat, p.lng] as [number, number],
+                      )}
                       pathOptions={{
                         color: "#10b981",
                         fillColor: "#10b981",
@@ -2124,7 +2128,9 @@ const AreaCreatePage = () => {
                       }}
                     />
                     {formData.plots
-                      ?.filter((pl) => pl.coordinates && pl.coordinates.length >= 3)
+                      ?.filter(
+                        (pl) => pl.coordinates && pl.coordinates.length >= 3,
+                      )
                       .map((pl, idx) => (
                         <Polygon
                           key={pl.id || idx}
@@ -2138,7 +2144,11 @@ const AreaCreatePage = () => {
                             weight: 2,
                           }}
                         >
-                          <Tooltip permanent direction="center" className="text-[10px] font-bold">
+                          <Tooltip
+                            permanent
+                            direction="center"
+                            className="text-[10px] font-bold"
+                          >
                             {pl.name || `Lô ${idx + 1}`}
                           </Tooltip>
                         </Polygon>
@@ -2147,7 +2157,15 @@ const AreaCreatePage = () => {
                   <div className="absolute bottom-3 left-3 z-[500] flex flex-col gap-1.5 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-2 shadow-md border border-slate-100 text-[11px] font-semibold pointer-events-none">
                     <div className="flex items-center gap-1.5">
                       <svg width="16" height="8">
-                        <line x1="0" y1="4" x2="16" y2="4" stroke="#10b981" strokeWidth="2" strokeDasharray="4 3" />
+                        <line
+                          x1="0"
+                          y1="4"
+                          x2="16"
+                          y2="4"
+                          stroke="#10b981"
+                          strokeWidth="2"
+                          strokeDasharray="4 3"
+                        />
                       </svg>
                       <span className="text-slate-600">Ranh giới khu vực</span>
                     </div>

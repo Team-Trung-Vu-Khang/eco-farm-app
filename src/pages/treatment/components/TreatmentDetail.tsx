@@ -19,7 +19,12 @@ import {
   Building2,
   ShieldCheck,
 } from "lucide-react";
-import { Badge, Card, CardContent, Button } from "@tankhang1/eco-shared-ui";
+import {
+  Badge,
+  Card,
+  CardContent,
+  Button,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { Treatment } from "../types/treatment.types";
 import { severityConfig } from "../data/treatment.data";
 

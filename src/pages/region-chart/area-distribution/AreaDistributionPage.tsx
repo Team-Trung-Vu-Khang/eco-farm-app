@@ -8,7 +8,7 @@ import {
   DataTable,
   DeleteDialog,
   useToast,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 import { type SubArea } from "../constants";
 import useRegionStore from "../../../stores/useRegionStore";

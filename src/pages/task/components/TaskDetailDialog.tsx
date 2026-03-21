@@ -21,7 +21,7 @@ import {
   Card,
   ScrollArea,
   cn,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { type Task } from "../../../stores/useTaskStore";
 
 interface TaskDetailDialogProps {

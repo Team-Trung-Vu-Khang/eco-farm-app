@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
   ScrollArea,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Search, AlertTriangle, Sprout } from "lucide-react";
 import { MOCK_REGIONS, MOCK_AREAS } from "../../constants";
 import type { SelectedEntityStats } from "../types";
@@ -117,12 +117,13 @@ export const SidebarFilter: React.FC<SidebarFilterProps> = ({
         {searchTerm ? (
           <>
             <h3 className="font-medium mb-3 flex items-center gap-2">
-              <Sprout className="w-4 h-4 text-primary" /> Kết quả tìm kiếm ({availablePlants.length})
+              <Sprout className="w-4 h-4 text-primary" /> Kết quả tìm kiếm (
+              {availablePlants.length})
             </h3>
             <div className="space-y-2 mb-6">
               {availablePlants.slice(0, 10).map((p, i) => (
-                <Card 
-                  key={p.properties?.id || i} 
+                <Card
+                  key={p.properties?.id || i}
                   className="cursor-pointer hover:bg-slate-50 border-slate-100 transition-colors"
                   onClick={() => {
                     const lat = p.geometry?.coordinates?.[1];
@@ -133,7 +134,9 @@ export const SidebarFilter: React.FC<SidebarFilterProps> = ({
                   }}
                 >
                   <CardContent className="p-3">
-                    <div className="font-bold text-sm truncate">{p.properties?.name}</div>
+                    <div className="font-bold text-sm truncate">
+                      {p.properties?.name}
+                    </div>
                     <div className="text-[10px] text-muted-foreground flex justify-between">
                       <span>Mã: {p.properties?.code}</span>
                       <span className="text-primary italic">Click để xem</span>

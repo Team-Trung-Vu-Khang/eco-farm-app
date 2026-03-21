@@ -13,7 +13,7 @@ import {
   useToast,
   DeleteDialog,
   Label,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft, Edit, Trash2, Users } from "lucide-react";
 import useTeamStore, { type TeamMember } from "../../stores/useTeamStore";
 

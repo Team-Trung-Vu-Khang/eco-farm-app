@@ -22,17 +22,17 @@ import {
   CardTitle,
   CardDescription,
   Input,
-} from "@tankhang1/eco-shared-ui";
-import { Badge } from "@tankhang1/eco-shared-ui";
-import { AdminLayout } from "@tankhang1/eco-shared-ui";
-import { Button } from "@tankhang1/eco-shared-ui";
-import { Separator } from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Badge } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { AdminLayout } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Separator } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useEnterpriseStore from "../../stores/useEnterpriseStore";
 import { type Branch, type BankAccount } from "./constants";
 

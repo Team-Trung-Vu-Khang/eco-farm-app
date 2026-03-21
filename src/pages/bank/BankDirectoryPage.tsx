@@ -9,7 +9,7 @@ import {
   Label,
   useToast,
   type Column,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { bankList, type Bank } from "../../constants/banks";
 import { Plus, Upload, X } from "lucide-react";
 

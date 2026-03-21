@@ -18,7 +18,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   CheckCircle2,
   Clock,

@@ -7,7 +7,7 @@ import {
   type Column,
   Dialog,
   DialogContent,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { FileText, Hash, Leaf, Sprout } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";

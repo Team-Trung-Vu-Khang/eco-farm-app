@@ -1,4 +1,9 @@
-import { Badge, Button, Card, CardContent } from "@tankhang1/eco-shared-ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { DollarSign, Clock, Shield, AlertTriangle, Info } from "lucide-react";
 import type { TreatmentStep } from "../types/treatment.types";
 

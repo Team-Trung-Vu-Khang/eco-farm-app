@@ -21,7 +21,7 @@ import {
   TabsList,
   TabsTrigger,
   Combobox,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CreditCard, Save, User, X } from "lucide-react";
 import { vietQrBankData } from "@/constants/banks";
 import usePersonnelStore from "../../stores/usePersonnelStore";

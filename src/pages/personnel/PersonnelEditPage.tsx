@@ -21,7 +21,7 @@ import {
   TabsList,
   TabsTrigger,
   DeleteDialog,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CreditCard, Save, User, Trash2, X } from "lucide-react";
 import usePersonnelStore from "../../stores/usePersonnelStore";
 import useTeamStore from "../../stores/useTeamStore";

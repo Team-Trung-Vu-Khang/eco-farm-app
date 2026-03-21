@@ -6,7 +6,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Archive,
   ArrowLeft,
@@ -29,7 +29,9 @@ interface VarietyDetailPageProps {
   [key: string]: any;
 }
 
-export default function VarietyDetailPage({ id: propId }: VarietyDetailPageProps) {
+export default function VarietyDetailPage({
+  id: propId,
+}: VarietyDetailPageProps) {
   const params = useParams<{ id: string }>();
   const id = propId ?? params?.id;
   const isStandalone = !!params?.id;
@@ -55,7 +57,10 @@ export default function VarietyDetailPage({ id: propId }: VarietyDetailPageProps
     );
 
     return isStandalone ? (
-      <AdminLayout title="Chi tiết giống cây" description="Không tìm thấy thông tin">
+      <AdminLayout
+        title="Chi tiết giống cây"
+        description="Không tìm thấy thông tin"
+      >
         {errorContent}
       </AdminLayout>
     ) : (

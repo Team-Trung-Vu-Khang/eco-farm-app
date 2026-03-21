@@ -12,7 +12,7 @@ import {
   AvatarFallback,
   AvatarImage,
   Checkbox,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Search, Sprout, Calendar, FilterX } from "lucide-react";
 import useGrowthCycleStore from "../../../stores/useGrowthCycleStore";
 import useVarietyStore from "../../../stores/useVarietyStore";

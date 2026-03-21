@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
   type Column,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 // --- Types ---
 type MethodType = "chemical" | "biological" | "mechanical" | "cultural";

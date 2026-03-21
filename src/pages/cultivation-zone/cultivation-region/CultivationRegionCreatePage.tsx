@@ -22,7 +22,7 @@ import {
   StepperForm,
   Textarea,
   cn,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Award,
   Briefcase,
@@ -738,8 +738,10 @@ const ManagerSelector = ({
         {selectedIds.length > 0 ? (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-               <span className="text-xs font-bold text-primary uppercase tracking-tighter">Đã chọn {selectedIds.length} người</span>
-               <Button
+              <span className="text-xs font-bold text-primary uppercase tracking-tighter">
+                Đã chọn {selectedIds.length} người
+              </span>
+              <Button
                 variant="ghost"
                 size="sm"
                 className="h-6 px-2 text-slate-400 group-hover:text-primary text-[10px] font-bold uppercase transition-all"
@@ -752,7 +754,10 @@ const ManagerSelector = ({
                 const manager = personnel.find((m) => m.id.toString() === id);
                 if (!manager) return null;
                 return (
-                  <div key={id} className="flex items-center gap-3 bg-slate-50/50 p-2 rounded-lg border border-slate-100">
+                  <div
+                    key={id}
+                    className="flex items-center gap-3 bg-slate-50/50 p-2 rounded-lg border border-slate-100"
+                  >
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 overflow-hidden">
                       {manager.avatar ? (
                         <img
@@ -782,7 +787,9 @@ const ManagerSelector = ({
             <div className="w-10 h-10 rounded-full bg-white border border-dashed flex items-center justify-center">
               <Briefcase className="w-5 h-5" />
             </div>
-            <div className="text-sm font-medium">Chọn nhân sự chịu trách nhiệm</div>
+            <div className="text-sm font-medium">
+              Chọn nhân sự chịu trách nhiệm
+            </div>
           </div>
         )}
       </div>
@@ -834,7 +841,7 @@ const ManagerSelector = ({
                     onClick={() => {
                       const idStr = m.id.toString();
                       if (selectedIds.includes(idStr)) {
-                        onSelect(selectedIds.filter(id => id !== idStr));
+                        onSelect(selectedIds.filter((id) => id !== idStr));
                       } else {
                         onSelect([...selectedIds, idStr]);
                       }
@@ -1827,7 +1834,10 @@ const CultivationRegionCreatePage = () => {
                       <td className="py-3 px-4">
                         <div className="flex flex-wrap gap-3">
                           {selectedManagers.map((m) => (
-                            <div key={m.id} className="flex items-center gap-2 bg-slate-50/50 pr-3 rounded-full border border-slate-100 h-8">
+                            <div
+                              key={m.id}
+                              className="flex items-center gap-2 bg-slate-50/50 pr-3 rounded-full border border-slate-100 h-8"
+                            >
                               <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold overflow-hidden shrink-0">
                                 {m.avatar ? (
                                   <img

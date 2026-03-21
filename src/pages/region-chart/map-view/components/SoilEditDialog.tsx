@@ -8,7 +8,7 @@ import {
   Input,
   Label,
   Button,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { FlaskConical, Save } from "lucide-react";
 import type { SoilData } from "../types";
 
@@ -47,7 +47,8 @@ export const SoilEditDialog: React.FC<SoilEditDialogProps> = ({
                 step="0.1"
                 value={tempSoil?.ph}
                 onChange={(e) =>
-                  tempSoil && setTempSoil({ ...tempSoil, ph: parseFloat(e.target.value) })
+                  tempSoil &&
+                  setTempSoil({ ...tempSoil, ph: parseFloat(e.target.value) })
                 }
                 className="bg-slate-50/50"
                 placeholder="Ví dụ: 6.5"
@@ -61,7 +62,8 @@ export const SoilEditDialog: React.FC<SoilEditDialogProps> = ({
                 type="number"
                 value={tempSoil?.moisture}
                 onChange={(e) =>
-                  tempSoil && setTempSoil({
+                  tempSoil &&
+                  setTempSoil({
                     ...tempSoil,
                     moisture: parseFloat(e.target.value),
                   })
@@ -85,7 +87,8 @@ export const SoilEditDialog: React.FC<SoilEditDialogProps> = ({
                   type="number"
                   value={tempSoil?.nitrogen}
                   onChange={(e) =>
-                    tempSoil && setTempSoil({
+                    tempSoil &&
+                    setTempSoil({
                       ...tempSoil,
                       nitrogen: parseFloat(e.target.value),
                     })
@@ -101,7 +104,8 @@ export const SoilEditDialog: React.FC<SoilEditDialogProps> = ({
                   type="number"
                   value={tempSoil?.phosphorus}
                   onChange={(e) =>
-                    tempSoil && setTempSoil({
+                    tempSoil &&
+                    setTempSoil({
                       ...tempSoil,
                       phosphorus: parseFloat(e.target.value),
                     })
@@ -117,7 +121,8 @@ export const SoilEditDialog: React.FC<SoilEditDialogProps> = ({
                   type="number"
                   value={tempSoil?.potassium}
                   onChange={(e) =>
-                    tempSoil && setTempSoil({
+                    tempSoil &&
+                    setTempSoil({
                       ...tempSoil,
                       potassium: parseFloat(e.target.value),
                     })
@@ -138,7 +143,8 @@ export const SoilEditDialog: React.FC<SoilEditDialogProps> = ({
                 step="0.1"
                 value={tempSoil?.organicMatter}
                 onChange={(e) =>
-                  tempSoil && setTempSoil({
+                  tempSoil &&
+                  setTempSoil({
                     ...tempSoil,
                     organicMatter: parseFloat(e.target.value),
                   })
@@ -155,7 +161,8 @@ export const SoilEditDialog: React.FC<SoilEditDialogProps> = ({
                 step="0.1"
                 value={tempSoil?.ec}
                 onChange={(e) =>
-                  tempSoil && setTempSoil({ ...tempSoil, ec: parseFloat(e.target.value) })
+                  tempSoil &&
+                  setTempSoil({ ...tempSoil, ec: parseFloat(e.target.value) })
                 }
                 className="bg-slate-50/50"
               />
@@ -172,7 +179,8 @@ export const SoilEditDialog: React.FC<SoilEditDialogProps> = ({
                 step="0.1"
                 value={tempSoil?.temperature}
                 onChange={(e) =>
-                  tempSoil && setTempSoil({
+                  tempSoil &&
+                  setTempSoil({
                     ...tempSoil,
                     temperature: parseFloat(e.target.value),
                   })
@@ -188,7 +196,8 @@ export const SoilEditDialog: React.FC<SoilEditDialogProps> = ({
                 type="number"
                 value={tempSoil?.compaction}
                 onChange={(e) =>
-                  tempSoil && setTempSoil({
+                  tempSoil &&
+                  setTempSoil({
                     ...tempSoil,
                     compaction: parseFloat(e.target.value),
                   })

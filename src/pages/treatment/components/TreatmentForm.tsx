@@ -13,7 +13,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { Treatment } from "../types/treatment.types";
 import { cropTypes, crops, varieties, diseases } from "../data/treatment.data";
 

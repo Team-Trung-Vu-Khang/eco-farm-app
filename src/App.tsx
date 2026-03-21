@@ -29,7 +29,7 @@ import EquipmentDetailPage from "./pages/equipment/EquipmentDetailPage";
 import UnitCreatePage from "./pages/unit/UnitCreatePage";
 
 import NotFoundPage from "./pages/NotFoundPage";
-import { Toaster, TooltipProvider } from "@tankhang1/eco-shared-ui";
+import { Toaster, TooltipProvider } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import BankPage from "./pages/bank/BankPage";
 import BankDirectoryPage from "./pages/bank/BankDirectoryPage";
 import BankCreatePage from "./pages/bank/BankCreatePage";
@@ -258,7 +258,10 @@ function Router() {
       />
       {/* Cultivation Plot Routes */}
       <Route path="/cultivation-plot" component={CultivationPlotPage} />
-      <Route path="/cultivation-plot/create" component={CultivationPlotCreatePage} />
+      <Route
+        path="/cultivation-plot/create"
+        component={CultivationPlotCreatePage}
+      />
       <Route
         path="/cultivation-plot/:id/edit"
         component={CultivationPlotCreatePage}

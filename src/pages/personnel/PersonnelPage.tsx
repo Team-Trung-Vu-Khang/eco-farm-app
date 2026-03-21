@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
   useToast,
   type Column,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus, ChevronDown, Upload, FileUser } from "lucide-react";
 import { ImportPersonnelDialog } from "../../components/personnel/ImportPersonnelDialog";
 import usePersonnelStore, {

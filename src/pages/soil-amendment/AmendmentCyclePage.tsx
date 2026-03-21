@@ -25,7 +25,7 @@ import {
   DialogFooter,
   DialogTitle,
   type Column,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Clock,
   Sprout,
