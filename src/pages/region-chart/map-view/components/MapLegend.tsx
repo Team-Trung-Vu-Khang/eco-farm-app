@@ -7,7 +7,7 @@ interface MapLegendProps {
 
 export const MapLegend: React.FC<MapLegendProps> = ({ visibleLayers }) => {
   return (
-    <div className="absolute bottom-4 left-4 bg-white p-2 rounded shadow-lg z-1000 text-xs text-slate-700">
+    <div className="absolute bottom-4 right-4 bg-white p-2 rounded shadow-lg z-1000 text-xs text-slate-700">
       <div className="font-semibold mb-2">Chú thích</div>
       <div
         className={`flex items-center gap-2 mb-1 ${visibleLayers.plant ? "opacity-100" : "opacity-40"}`}
