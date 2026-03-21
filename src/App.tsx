@@ -31,7 +31,7 @@ import UnitCreatePage from "./pages/unit/UnitCreatePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { Toaster, TooltipProvider } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import BankPage from "./pages/bank/BankPage";
-import BankDirectoryPage from "./pages/bank/BankDirectoryPage";
+import BankDirectoryPage from "./pages/bank-directory/BankDirectoryPage";
 import BankCreatePage from "./pages/bank/BankCreatePage";
 import BankEditPage from "./pages/bank/BankEditPage";
 import GeoZonePage from "./pages/geo-zone/GeoZonePage";

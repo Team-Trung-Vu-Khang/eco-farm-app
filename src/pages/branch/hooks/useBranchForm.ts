@@ -1,0 +1,200 @@
+import { useState, useEffect } from "react";
+import { useLocation, useRoute } from "wouter";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import useBranchStore from "@/stores/useBranchStore";
+import useEnterpriseStore from "@/stores/useEnterpriseStore";
+
+export interface ContactPerson {
+  id: string;
+  name: string;
+  position: string;
+  phone: string;
+  email: string;
+  isPrimary: boolean;
+}
+
+export interface ContactInfo {
+  id: string;
+  phone: string;
+  email: string;
+  isPrimary: boolean;
+}
+
+export interface BankAccount {
+  id: string;
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  branch: string;
+  isPrimary: boolean;
+}
+
+export interface BranchFormData {
+  code: string;
+  name: string;
+  enterpriseId: string;
+  enterpriseName: string;
+  taxCode: string;
+  taxAddress: string;
+  website: string;
+  address: string;
+  city: string;
+  district: string;
+  ward: string;
+  imageUrl: string;
+  imageFile?: File;
+  latitude: number;
+  longitude: number;
+  status: "active" | "inactive";
+  contactInfos: ContactInfo[];
+  contacts: ContactPerson[];
+  bankAccounts: BankAccount[];
+}
+
+export function useBranchForm() {
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const [, params] = useRoute("/branch/:id/edit");
+  const isEdit = !!params?.id;
+  const branchId = params?.id ? parseInt(params.id) : undefined;
+
+  const getBranchById = useBranchStore((state) => state.getBranchById);
+  const addBranch = useBranchStore((state) => state.addBranch);
+  const updateBranch = useBranchStore((state) => state.updateBranch);
+  const branches = useBranchStore((state) => state.branches);
+  const branch = branchId ? getBranchById(branchId) : undefined;
+
+  const enterprisesFromStore = useEnterpriseStore((state) => state.enterprises);
+  const enterprises = enterprisesFromStore
+    .filter((e) => e.type === "enterprise")
+    .map((e) => ({
+      id: e.id.toString(),
+      name: e.name,
+    }));
+
+  const [formData, setFormData] = useState<BranchFormData>({
+    code: "",
+    name: "",
+    enterpriseId: "",
+    enterpriseName: "",
+    taxCode: "",
+    taxAddress: "",
+    address: "",
+    city: "",
+    district: "",
+    ward: "",
+    imageUrl: "",
+    latitude: 10.7769,
+    longitude: 106.7009,
+    status: "active",
+    website: "",
+    contactInfos: [],
+    contacts: [],
+    bankAccounts: [],
+  });
+
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
+  useEffect(() => {
+    if (branch) {
+      const contactInfos: ContactInfo[] = [];
+      if (branch.phone || branch.email) {
+        contactInfos.push({
+          id: "1",
+          phone: branch.phone || "",
+          email: branch.email || "",
+          isPrimary: true,
+        });
+      }
+
+      setFormData({
+        code: branch.code,
+        name: branch.name,
+        enterpriseId: "DN001", // Default for now
+        enterpriseName: branch.enterpriseName,
+        taxCode: branch.taxCode || "",
+        taxAddress: branch.taxAddress || "",
+        address: branch.address,
+        city: branch.city || "",
+        district: branch.district || "",
+        ward: branch.ward || "",
+        imageUrl: branch.imageUrl || "",
+        latitude: branch.latitude ? parseFloat(branch.latitude) : 10.7769,
+        longitude: branch.longitude ? parseFloat(branch.longitude) : 106.7009,
+        status: branch.status,
+        website: branch.website || "",
+        contactInfos: contactInfos,
+        contacts: branch.contacts || [],
+        bankAccounts: branch.bankAccounts || [],
+      });
+    }
+  }, [branch]);
+
+  const updateFormData = (updates: Partial<BranchFormData>) => {
+    setFormData((prev) => ({ ...prev, ...updates }));
+  };
+
+  const handleComplete = () => {
+    setShowConfirmDialog(true);
+  };
+
+  const submitForm = () => {
+    setShowConfirmDialog(false);
+    const fullAddress = [
+      formData.address,
+      formData.ward,
+      formData.district,
+      formData.city,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    const branchPayload = {
+      code: formData.code,
+      name: formData.name,
+      enterpriseName: formData.enterpriseName,
+      taxCode: formData.taxCode,
+      taxAddress: formData.taxAddress,
+      website: formData.website,
+      phone: formData.contactInfos[0]?.phone || "",
+      email: formData.contactInfos[0]?.email || "",
+      address: fullAddress || formData.address,
+      city: formData.city,
+      district: formData.district,
+      ward: formData.ward,
+      imageUrl: formData.imageUrl,
+      latitude: formData.latitude.toString(),
+      longitude: formData.longitude.toString(),
+      status: formData.status,
+      contacts: formData.contacts,
+      bankAccounts: formData.bankAccounts,
+    };
+
+    if (isEdit && branchId) {
+      updateBranch(branchId, branchPayload);
+      toast({ title: "Thành công", description: `Đã cập nhật chi nhánh "${formData.name}"` });
+    } else {
+      const newId = branches.length > 0 ? Math.max(...branches.map((b) => b.id)) + 1 : 1;
+      addBranch({
+        ...branchPayload,
+        id: newId,
+        code: formData.code || `CN${String(newId).padStart(3, "0")}`,
+        createdAt: new Date().toISOString(),
+      });
+      toast({ title: "Thành công", description: `Đã thêm chi nhánh mới "${formData.name}"` });
+    }
+    setLocation("/branch");
+  };
+
+  return {
+    formData,
+    updateFormData,
+    enterprises,
+    isEdit,
+    showConfirmDialog,
+    setShowConfirmDialog,
+    handleComplete,
+    submitForm,
+    handleCancel: () => setLocation("/branch"),
+  };
+}
