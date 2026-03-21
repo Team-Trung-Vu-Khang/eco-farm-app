@@ -33,22 +33,9 @@ import {
   User,
 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
-import { MapContainer, TileLayer, Marker } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
 import { useState } from "react";
 import useBranchStore from "../../stores/useBranchStore";
-
-// Fix Leaflet default icon issue
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
+import { MFMap, MFMarker, MFPolygon } from "react-map4d-map";
 
 export default function BranchDetailPage() {
   const [, setLocation] = useLocation();
@@ -229,21 +216,28 @@ export default function BranchDetailPage() {
                 </div>
 
                 <div className="h-64 w-full rounded-lg overflow-hidden border z-0 relative">
-                  <MapContainer
-                    center={[latitude, longitude]}
+                  <MFMap
+                    center={{
+                      lat: latitude,
+                      lng: longitude,
+                    }}
                     zoom={15}
-                    style={{ height: "100%", width: "100%", zIndex: 0 }}
-                    dragging={false}
-                    scrollWheelZoom={false}
-                    doubleClickZoom={false}
-                    zoomControl={false}
+                    accessKey="37b541da761a2896d03951cf69bc989e"
+                    options={{
+                      mapType: "raster",
+                      controlOptions: {},
+                    }}
+                    version="2.5"
                   >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    <MFMarker
+                      position={{
+                        lat: latitude,
+                        lng: longitude,
+                      }}
+                      label={""}
+                      title={`${branch.enterpriseName} - ${branch.name}`}
                     />
-                    <Marker position={[latitude, longitude]} />
-                  </MapContainer>
+                  </MFMap>
                 </div>
               </CardContent>
             </Card>
