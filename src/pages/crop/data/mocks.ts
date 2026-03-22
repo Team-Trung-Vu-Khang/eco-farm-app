@@ -1,5 +1,5 @@
-import type { Crop } from "./types";
-import { initialEditorValue } from "../docs/mocks";
+import type { Crop } from "../types/types";
+import { initialEditorValue } from "../../docs/mocks";
 
 export const CROP_HIERARCHY: Record<string, Record<string, string[]>> = {
   "Cây ăn trái (Fruit Trees)": {
