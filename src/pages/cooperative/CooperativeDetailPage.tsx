@@ -1,137 +1,29 @@
-import { useState, useEffect } from "react";
-import { useLocation, useRoute } from "wouter";
 import {
-  User,
-  MapPin,
-  FileText,
-  Image,
-  Check,
-  Info,
-  Globe,
-  Phone,
-  Mail,
-  Calendar,
-  CreditCard,
-  ChevronLeft,
-  Search,
-} from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  Input,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Badge } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { AdminLayout } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Separator } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
+  AdminLayout,
+  Button,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-
-interface Branch {
-  name: string;
-  taxCode: string;
-  phone: string;
-  taxAddress: string;
-  email: string;
-  address: string;
-  note: string;
-}
-
-interface BankAccount {
-  bankName: string;
-  accountHolder: string;
-  accountNumber: string;
-  branch: string;
-  note: string;
-}
+import { ChevronLeft } from "lucide-react";
+import { useLocation } from "wouter";
+import { useCooperativeDetail } from "./hooks/useCooperativeDetail";
+import { CooperativeDetailSidebar } from "./components/CooperativeDetailSidebar";
+import { GeneralInfoTab } from "./components/tabs/GeneralInfoTab";
+import { BranchesTab } from "./components/tabs/BranchesTab";
+import { BankAccountsTab } from "./components/tabs/BankAccountsTab";
+import { DocumentsTab } from "./components/tabs/DocumentsTab";
 
 export default function CooperativeDetailPage() {
-  const [, params] = useRoute("/cooperative/:id");
   const [, setLocation] = useLocation();
-
-  // Mock data fetching
-  const [data, setData] = useState<any>(null);
-  const [bankSearchQuery, setBankSearchQuery] = useState("");
-  const [branchSearchQuery, setBranchSearchQuery] = useState("");
-
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setData({
-        id: params?.id || "DN2024001",
-        type: "cooperative",
-        code: "DN2024001",
-        name: "Hợp tác xã Nông nghiệp Xanh EcoFarm",
-        brandName: "EcoFarm Vietnam",
-        taxCode: "0101234567",
-        taxAddress: "Tầng 5, Tòa nhà ABC, Cầu Giấy, Hà Nội",
-        classification: ["production", "processing"],
-        foundedDate: "2020-03-15",
-        representative: "Nguyễn Văn Giám Đốc",
-        phone: "02438888999",
-        email: "contact@ecofarm.vn",
-        website: "https://ecofarm.vn",
-        province: "Hà Nội",
-        district: "Cầu Giấy",
-        ward: "Dịch Vọng",
-        address: "Số 123 Đường Xuân Thủy",
-        image:
-          "https://d1csarkz8obe9u.cloudfront.net/posterpreviews/company-logo-design-template-e089327a5c476ce5c70c74f7359c5898_screen.jpg?ts=1672291305",
-        description:
-          "Hợp tác xã tiên phong trong lĩnh vực nông nghiệp công nghệ cao, chuyên sản xuất và cung ứng rau sạch chuẩn VietGAP. Chúng tôi cam kết mang đến những sản phẩm an toàn, chất lượng nhất cho người tiêu dùng.",
-        branches: [
-          {
-            name: "Chi nhánh Miền Nam",
-            taxCode: "0101234567-001",
-            phone: "02839999888",
-            taxAddress: "Quận 1, TP.HCM",
-            email: "hcm@ecofarm.vn",
-            address: "Số 456 Nguyễn Thị Minh Khai, Q1",
-            note: "Văn phòng đại diện phía Nam",
-          },
-        ],
-        bankAccounts: [
-          {
-            bankName: "Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)",
-            accountHolder: "ECOFARM CORP",
-            accountNumber: "0011001234567",
-            branch: "Sở Giao Dịch",
-            note: "Tài khoản chính",
-          },
-          {
-            bankName: "Ngân hàng TMCP Quân Đội (MBBank)",
-            accountHolder: "NGUYEN VAN A",
-            accountNumber: "88889999",
-            branch: "Hoàn Kiếm",
-            note: "Tài khoản cá nhân",
-          },
-        ],
-        documents: [
-          {
-            name: "giay_phep_kinh_doanh.pdf",
-            type: "application/pdf",
-            size: "2.5MB",
-            date: "15/03/2020",
-          },
-          {
-            name: "chung_chi_vietgap.jpg",
-            type: "image/jpeg",
-            size: "1.8MB",
-            date: "20/04/2021",
-          },
-        ],
-        status: "active",
-        createdAt: "2024-01-15T10:30:00Z",
-      });
-    }, 500);
-  }, []);
+  const {
+    data,
+    bankSearchQuery,
+    setBankSearchQuery,
+    branchSearchQuery,
+    setBranchSearchQuery,
+  } = useCooperativeDetail();
 
   if (!data) {
     return (
@@ -146,7 +38,7 @@ export default function CooperativeDetailPage() {
   return (
     <AdminLayout
       title={data.name}
-      description={"Chi tiết thông tin hợp tác xã"}
+      description="Chi tiết thông tin hợp tác xã"
       actions={
         <Button variant="outline" onClick={() => setLocation("/cooperative")}>
           <ChevronLeft className="w-4 h-4 mr-2" />
@@ -156,152 +48,8 @@ export default function CooperativeDetailPage() {
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Overview & Contact - Sticky */}
-        <div className="lg:col-span-1 space-y-6">
-          <Card className="overflow-hidden relative shadow-md">
-            <div className="h-32 bg-gray-100 flex items-center justify-center relative">
-              <img
-                src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80"
-                alt="Cover"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute top-0 right-0 z-10">
-                <div
-                  className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg rounded-bl-xl ${data.status === "active" ? "bg-green-600" : "bg-gray-500"}`}
-                >
-                  {data.status === "active"
-                    ? "Đang hoạt động"
-                    : "Dừng hoạt động"}
-                </div>
-              </div>
-            </div>
-            <CardHeader className="text-center pb-2">
-              <div className="mx-auto w-20 h-20 -mt-12 rounded-full border-4 border-background bg-white shadow-sm flex items-center justify-center mb-2 overflow-hidden relative">
-                {data.image ? (
-                  <img
-                    src={data.image}
-                    alt="Logo"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-2xl font-bold text-primary">
-                    {data.brandName.charAt(0)}
-                  </span>
-                )}
-              </div>
-              <CardTitle className="text-xl flex items-center justify-center gap-2">
-                {data.brandName}
-                {data.status === "active" && (
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
-                  </span>
-                )}
-              </CardTitle>
-              <CardDescription>{data.name}</CardDescription>
-              <div className="flex flex-wrap justify-center gap-2 mt-3">
-                {Array.isArray(data.classification) ? (
-                  data.classification.map((item: string) => (
-                    <Badge key={item} variant="outline" className="capitalize">
-                      {item === "production"
-                        ? "Sản xuất"
-                        : item === "processing"
-                          ? "Chế biến"
-                          : item === "trading"
-                            ? "Thương mại"
-                            : "Dịch vụ"}
-                    </Badge>
-                  ))
-                ) : (
-                  <Badge variant="outline" className="capitalize">
-                    {data.classification === "production"
-                      ? "Sản xuất"
-                      : data.classification === "processing"
-                        ? "Chế biến"
-                        : data.classification === "trading"
-                          ? "Thương mại"
-                          : "Dịch vụ"}
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-4">
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center gap-3">
-                  <CreditCard className="w-4 h-4 text-muted-foreground" />
-                  <span className="font-medium">{data.code}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <User className="w-4 h-4 text-muted-foreground" />
-                  <span>
-                    Đại diện:{" "}
-                    <span className="font-medium">{data.representative}</span>
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span>
-                    Thành lập:{" "}
-                    {new Date(data.foundedDate).toLocaleDateString("vi-VN")}
-                  </span>
-                </div>
-              </div>
-              <Separator />
-              <div className="space-y-3 text-sm">
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
-                  <span>
-                    {data.address}, {data.ward}, {data.district},{" "}
-                    {data.province}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Phone className="w-4 h-4 text-muted-foreground" />
-                  <a
-                    href={`tel:${data.phone}`}
-                    className="hover:underline hover:text-primary transition-colors"
-                  >
-                    {data.phone}
-                  </a>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Mail className="w-4 h-4 text-muted-foreground" />
-                  <a
-                    href={`mailto:${data.email}`}
-                    className="hover:underline hover:text-primary transition-colors"
-                  >
-                    {data.email}
-                  </a>
-                </div>
-                {data.website && (
-                  <div className="flex items-center gap-3">
-                    <Globe className="w-4 h-4 text-muted-foreground" />
-                    <a
-                      href={data.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline hover:text-primary transition-colors text-blue-600"
-                    >
-                      {data.website}
-                    </a>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-          <div className="flex gap-2">
-            <Button
-              className="flex-1"
-              onClick={() => setLocation(`/cooperative/${data.id}/edit`)}
-            >
-              Chỉnh sửa
-            </Button>
-            <Button
-              variant="outline"
-              className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10"
-            >
-              Xóa
-            </Button>
-          </div>
+        <div className="lg:col-span-1">
+          <CooperativeDetailSidebar data={data} />
         </div>
 
         {/* Right Column: Details Tabs */}
@@ -318,7 +66,7 @@ export default function CooperativeDetailPage() {
                 value="branches"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-3"
               >
-                Chi nhánh ({data.branches.length})
+                Chi nhánh ({data.branches?.length || 0})
               </TabsTrigger>
               <TabsTrigger
                 value="bankAccounts"
@@ -330,278 +78,33 @@ export default function CooperativeDetailPage() {
                 value="documents"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-3"
               >
-                Tài liệu ({data.documents.length})
+                Tài liệu ({data.documents?.length || 0})
               </TabsTrigger>
             </TabsList>
 
             <div className="pt-6">
-              <TabsContent value="info" className="m-0 space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Info className="w-5 h-5 text-primary" />
-                      Thông tin thuế & Pháp lý
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div>
-                        <div className="text-sm text-muted-foreground mb-1">
-                          Mã số thuế
-                        </div>
-                        <div className="font-medium text-base">
-                          {data.taxCode}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-muted-foreground mb-1">
-                          Ngày cấp
-                        </div>
-                        <div className="font-medium text-base">15/03/2020</div>
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <div>
-                        <div className="text-sm text-muted-foreground mb-1">
-                          Cơ quan thuế
-                        </div>
-                        <div className="font-medium text-base">
-                          Chi cục thuế Quận Cầu Giấy
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-muted-foreground mb-1">
-                          Địa chỉ đăng ký thuế
-                        </div>
-                        <div className="font-medium text-base">
-                          {data.taxAddress}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Mô tả chi tiết</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-                      {data.description || "Chưa có mô tả chi tiết."}
-                    </p>
-                  </CardContent>
-                </Card>
+              <TabsContent value="info" className="m-0">
+                <GeneralInfoTab data={data} />
               </TabsContent>
 
-              <TabsContent value="branches" className="m-0 space-y-6">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Tìm kiếm chi nhánh..."
-                    className="pl-10"
-                    value={branchSearchQuery}
-                    onChange={(e) => setBranchSearchQuery(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-4">
-                  {data.branches
-                    ?.filter(
-                      (b: Branch) =>
-                        b.name
-                          .toLowerCase()
-                          .includes(branchSearchQuery.toLowerCase()) ||
-                        b.address
-                          .toLowerCase()
-                          .includes(branchSearchQuery.toLowerCase()),
-                    )
-                    .map((branch: Branch, i: number) => (
-                      <Card key={i}>
-                        <CardContent className="p-6">
-                          <div className="flex items-start justify-between mb-4">
-                            <div>
-                              <h3
-                                className="font-bold text-lg cursor-pointer hover:text-primary transition-colors"
-                                onClick={() => setLocation(`/branch/${i}/edit`)}
-                              >
-                                {branch.name}
-                              </h3>
-                              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                                <MapPin className="w-3 h-3" /> {branch.address}
-                              </p>
-                            </div>
-                            <Badge
-                              variant="outline"
-                              className="text-green-600 bg-green-50 shrink-0"
-                            >
-                              Hoạt động
-                            </Badge>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-muted/30 p-4 rounded-lg">
-                            <div>
-                              <span className="text-muted-foreground block text-[10px] uppercase font-bold mb-1">
-                                Mã số thuế:
-                              </span>
-                              <div className="font-medium">
-                                {branch.taxCode || "-"}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground block text-[10px] uppercase font-bold mb-1">
-                                Điện thoại:
-                              </span>
-                              <div className="font-medium">
-                                {branch.phone || "-"}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground block text-[10px] uppercase font-bold mb-1">
-                                Email:
-                              </span>
-                              <div
-                                className="font-medium truncate"
-                                title={branch.email}
-                              >
-                                {branch.email || "-"}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground block text-[10px] uppercase font-bold mb-1">
-                                Ghi chú:
-                              </span>
-                              <div
-                                className="font-medium truncate"
-                                title={branch.note}
-                              >
-                                {branch.note || "-"}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                </div>
+              <TabsContent value="branches" className="m-0">
+                <BranchesTab
+                  branches={data.branches || []}
+                  searchQuery={branchSearchQuery}
+                  setSearchQuery={setBranchSearchQuery}
+                />
               </TabsContent>
 
-              <TabsContent value="bankAccounts" className="m-0 space-y-6">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Tìm kiếm tài khoản ngân hàng..."
-                    className="pl-10"
-                    value={bankSearchQuery}
-                    onChange={(e) => setBankSearchQuery(e.target.value)}
-                  />
-                </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {data.bankAccounts
-                    ?.filter(
-                      (acc: BankAccount) =>
-                        acc.bankName
-                          .toLowerCase()
-                          .includes(bankSearchQuery.toLowerCase()) ||
-                        acc.accountNumber.includes(bankSearchQuery) ||
-                        acc.accountHolder
-                          .toLowerCase()
-                          .includes(bankSearchQuery.toLowerCase()),
-                    )
-                    .map((account: BankAccount, i: number) => (
-                      <Card
-                        key={i}
-                        className="hover:border-primary/50 transition-colors"
-                      >
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                                <CreditCard className="w-5 h-5" />
-                              </div>
-                              <div>
-                                <h3 className="font-bold text-sm line-clamp-1 h-10 flex items-center">
-                                  {account.bankName}
-                                </h3>
-                                <p className="text-sm text-muted-foreground font-mono">
-                                  {account.accountNumber}
-                                </p>
-                              </div>
-                            </div>
-                            <Badge
-                              variant="outline"
-                              className="text-green-600 bg-green-50 shrink-0"
-                            >
-                              Hoạt động
-                            </Badge>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4 text-sm bg-muted/30 p-4 rounded-lg">
-                            <div>
-                              <span className="text-muted-foreground block text-[10px] uppercase font-bold mb-1">
-                                Chủ tài khoản:
-                              </span>
-                              <div className="font-medium uppercase truncate">
-                                {account.accountHolder}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground block text-[10px] uppercase font-bold mb-1">
-                                Chi nhánh:
-                              </span>
-                              <div className="font-medium truncate">
-                                {account.branch || "-"}
-                              </div>
-                            </div>
-                            <div className="col-span-2">
-                              <span className="text-muted-foreground block text-[10px] uppercase font-bold mb-1">
-                                Ghi chú:
-                              </span>
-                              <div className="font-medium truncate">
-                                {account.note || "-"}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                </div>
+              <TabsContent value="bankAccounts" className="m-0">
+                <BankAccountsTab
+                  bankAccounts={data.bankAccounts || []}
+                  searchQuery={bankSearchQuery}
+                  setSearchQuery={setBankSearchQuery}
+                />
               </TabsContent>
 
               <TabsContent value="documents" className="m-0">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {data.documents.map((doc: any, i: number) => (
-                    <Card
-                      key={i}
-                      className="group hover:border-primary/50 transition-colors cursor-pointer"
-                    >
-                      <CardContent className="p-4 flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
-                          {doc.type.includes("image") ? (
-                            <Image className="w-5 h-5 text-blue-600" />
-                          ) : (
-                            <FileText className="w-5 h-5 text-blue-600" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4
-                            className="font-medium text-sm truncate"
-                            title={doc.name}
-                          >
-                            {doc.name}
-                          </h4>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                            <span>{doc.size}</span>
-                            <span>•</span>
-                            <span>{doc.date}</span>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Check className="w-4 h-4 text-green-600" />
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                <DocumentsTab documents={data.documents || []} />
               </TabsContent>
             </div>
           </Tabs>
