@@ -1,13 +1,5 @@
-export interface Equipment {
-  id: number;
-  code: string;
-  name: string;
-  type: string;
-  status: "active" | "maintenance" | "inactive";
-  description: string;
-  maintainanceInterval: string; // e.g., "6 months"
-  createdAt: string;
-}
+import type { Equipment } from "../types";
+export type { Equipment };
 
 export const initialEquipments: Equipment[] = [
   {
