@@ -1,3 +1,6 @@
+import { type Enterprise } from "@/pages/enterprise/data/constants";
+import { type ContactGroup } from "@/stores/useContactStore";
+import { type Department } from "@/stores/useDepartmentStore";
 import {
   Card,
   CardContent,
@@ -13,9 +16,6 @@ import {
   SelectValue,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { type Department } from "@/stores/useDepartmentStore";
-import { type ContactGroup } from "@/stores/useContactStore";
-import { type Enterprise } from "@/pages/enterprise/constants";
 
 interface ContactFormProps {
   formData: any;

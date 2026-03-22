@@ -1,40 +1,38 @@
-import { useState } from "react";
-import { useLocation, useRoute } from "wouter";
 import {
-  User,
-  MapPin,
-  FileText,
-  Image,
-  Check,
-  Info,
-  Globe,
-  Phone,
-  Mail,
-  Calendar,
-  CreditCard,
-  ChevronLeft,
-  Search,
-} from "lucide-react";
-import {
+  AdminLayout,
+  Badge,
+  Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
   Input,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Badge } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { AdminLayout } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Separator } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
+  Separator,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  Calendar,
+  Check,
+  ChevronLeft,
+  CreditCard,
+  FileText,
+  Globe,
+  Image,
+  Info,
+  Mail,
+  MapPin,
+  Phone,
+  Search,
+  User,
+} from "lucide-react";
+import { useState } from "react";
+import { useLocation, useRoute } from "wouter";
 import useEnterpriseStore from "../../stores/useEnterpriseStore";
-import { type BankAccount, type Branch } from "../enterprise/constants";
+import { type BankAccount } from "../enterprise/data/constants";
 
 export default function FarmerDetailPage() {
   const [, params] = useRoute("/farmer/:id");
