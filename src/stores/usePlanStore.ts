@@ -21,6 +21,7 @@ export interface TaskAllocation {
   description: string;
   labor: string;
   duration: string;
+  geographicalSelections?: import("../pages/plan/types").GeographicalSelection[];
 }
 
 export interface Plan {

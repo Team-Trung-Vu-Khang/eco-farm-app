@@ -1,16 +1,21 @@
+import React, { useState } from "react";
 import {
   Calendar as CalendarIcon,
   Package,
-  ChevronRight,
-  ClipboardList,
   FileCheck,
   Sprout,
   Users,
   MapPin,
-  Clock,
-  Layout,
   User,
   Info,
+  Apple,
+  Bug,
+  AlertTriangle,
+  Play,
+  CheckCircle2,
+  AlertCircle,
+  Circle,
+  Search,
   Shield,
   ClipboardCheck,
 } from "lucide-react";
@@ -18,11 +23,12 @@ import {
   Dialog,
   DialogContent,
   Badge,
-  Card,
   ScrollArea,
   cn,
+  Input,
 } from "@tankhang1/eco-shared-ui";
 import { type Task } from "../../../stores/useTaskStore";
+import useRegionStore from "../../../stores/useRegionStore";
 
 interface TaskDetailDialogProps {
   task: Task | null;
@@ -49,303 +55,526 @@ export default function TaskDetailDialog({
   open,
   onOpenChange,
 }: TaskDetailDialogProps) {
+  const { regions } = useRegionStore();
+  const [searchTerm, setSearchTerm] = useState("");
+
   if (!task) return null;
 
   const priorityConfig = {
-    high: { label: "Cao", color: "bg-rose-500", dot: "bg-rose-400" },
-    medium: { label: "Thường", color: "bg-amber-500", dot: "bg-amber-400" },
-    low: { label: "Thấp", color: "bg-emerald-500", dot: "bg-emerald-400" },
+    high: { label: "Cao", color: "bg-rose-500", icon: AlertTriangle },
+    medium: { label: "Thường", color: "bg-amber-500", icon: AlertCircle },
+    low: { label: "Thấp", color: "bg-emerald-500", icon: Info },
   };
 
   const statusConfig = {
-    pending: { label: "Chờ thực hiện", color: "bg-slate-400" },
-    "in-progress": { label: "Đang thực hiện", color: "bg-blue-500" },
-    completed: { label: "Hoàn thành", color: "bg-emerald-500" },
-    overdue: { label: "Quá hạn", color: "bg-rose-600" },
+    pending: {
+      label: "Chờ thực hiện",
+      color: "bg-slate-400 text-white",
+      icon: Circle,
+    },
+    "in-progress": {
+      label: "Đang thực hiện",
+      color: "bg-blue-500 text-white",
+      icon: Play,
+    },
+    completed: {
+      label: "Hoàn thành",
+      color: "bg-emerald-500 text-white",
+      icon: CheckCircle2,
+    },
+    overdue: {
+      label: "Quá hạn",
+      color: "bg-rose-600 text-white",
+      icon: AlertCircle,
+    },
   };
 
   const currentPriority = priorityConfig[task.priority];
   const currentStatus = statusConfig[task.status];
 
-  const hasSupervisors = (task.supervisors?.length ?? 0) > 0;
-  const hasInspectors = (task.qualityInspectors?.length ?? 0) > 0;
+  // Deriving objective type for styling (matching logic from TaskEditPage)
+  const objectiveConfig: Record<
+    string,
+    { label: string; icon: any; color: string }
+  > = {
+    "theo-ke-hoach": {
+      label: "Canh tác",
+      icon: Sprout,
+      color: "text-blue-600 bg-blue-50",
+    },
+    "thu-hoach": {
+      label: "Thu hoạch",
+      icon: Apple,
+      color: "text-orange-600 bg-orange-50",
+    },
+    "cai-tao-dat": {
+      label: "Cải tạo",
+      icon: Sprout,
+      color: "text-emerald-600 bg-emerald-50",
+    },
+    "tri-benh": {
+      label: "Điều trị",
+      icon: Bug,
+      color: "text-rose-600 bg-rose-50",
+    },
+    "phat-sinh": {
+      label: "Phát sinh",
+      icon: Info,
+      color: "text-amber-600 bg-amber-50",
+    },
+  };
+
+  const getObjectiveType = () => {
+    if (
+      !task.plan ||
+      task.plan === "N/A" ||
+      task.plan === "Công việc phát sinh"
+    )
+      return "phat-sinh";
+    const p = task.plan.toLowerCase();
+    if (p.includes("thu hoạch")) return "thu-hoach";
+    if (p.includes("cải tạo")) return "cai-tao-dat";
+    if (p.includes("trị bệnh") || p.includes("điều trị")) return "tri-benh";
+    return "theo-ke-hoach";
+  };
+
+  const objType = getObjectiveType();
+  const currentObj = objectiveConfig[objType];
+
+  const getSelectionSummary = (selections: any[]) => {
+    if (!selections || selections.length === 0) return [];
+
+    const summary: {
+      regionId: string;
+      regionName: string;
+      items: {
+        type: "region" | "area" | "plot";
+        id: string;
+        name: string;
+        parentName?: string;
+      }[];
+    }[] = [];
+
+    selections.forEach((sel) => {
+      const region = regions.find((r) => String(r.id) === String(sel.regionId));
+      if (!region) return;
+
+      let group = summary.find((s) => s.regionId === sel.regionId);
+      if (!group) {
+        group = {
+          regionId: sel.regionId,
+          regionName: region.name,
+          items: [],
+        };
+        summary.push(group);
+      }
+
+      if (sel.type === "region") {
+        group.items.push({
+          type: "region",
+          id: sel.id,
+          name: "Toàn bộ vùng " + region.name,
+        });
+      } else if (sel.type === "area") {
+        const area = region.subAreas?.find(
+          (a: any) => String(a.id) === String(sel.areaId),
+        );
+        group.items.push({
+          type: "area",
+          id: sel.id,
+          name: "Khu vực " + (area?.name || sel.areaId),
+        });
+      } else if (sel.type === "plot") {
+        const area = region.subAreas?.find(
+          (a: any) => String(a.id) === String(sel.areaId),
+        );
+        const plot = area?.plots?.find(
+          (p: any) => String(p.id) === String(sel.plotId),
+        );
+        group.items.push({
+          type: "plot",
+          id: sel.id,
+          name: "Lô " + (plot?.name || sel.plotId),
+          parentName: area?.name,
+        });
+      }
+    });
+
+    return summary;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl p-0 overflow-hidden border-none shadow-2xl rounded-[32px]">
+      <DialogContent className="max-w-4xl p-0 overflow-hidden border-none shadow-2xl rounded-4xl bg-white">
         {/* ── HEADER ── */}
-        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 text-white relative">
-          <div className="absolute top-0 right-0 p-8 opacity-10">
-            <Layout className="w-32 h-32" />
-          </div>
-          <div className="relative z-10 space-y-4">
-            {/* Status + Code badges */}
-            <div className="flex items-center gap-3 flex-wrap">
+        <div className="p-8 border-b border-slate-100 space-y-8 bg-slate-50/20">
+          <div className="flex justify-between items-start">
+            <h2 className="text-3xl font-black text-slate-800 tracking-tight leading-none max-w-2xl">
+              {task.name}
+            </h2>
+            <div className="flex flex-col gap-3 items-end shrink-0">
               <Badge
                 className={cn(
-                  "px-3 py-1 font-black uppercase text-[10px] tracking-widest border-none",
-                  currentStatus.color,
-                )}
-              >
-                {currentStatus.label}
-              </Badge>
-              <Badge
-                variant="outline"
-                className="border-white/20 text-white/60 font-mono"
-              >
-                {task.code}
-              </Badge>
-              <Badge
-                className={cn(
-                  "px-3 py-1 text-[10px] font-black uppercase border-none",
+                  "px-4 py-1.5 font-black uppercase text-[10px] tracking-widest border-none shadow-sm flex items-center gap-2",
                   currentPriority.color,
                 )}
               >
+                <currentPriority.icon className="w-3.5 h-3.5" />
                 Ưu tiên: {currentPriority.label}
               </Badge>
+              <Badge
+                className={cn(
+                  "px-4 py-1.5 font-black uppercase text-[10px] tracking-widest border-none shadow-sm flex items-center gap-2",
+                  currentStatus.color,
+                )}
+              >
+                <currentStatus.icon className="w-3.5 h-3.5" />
+                Trạng thái: {currentStatus.label}
+              </Badge>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="space-y-2">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                Loại hình
+              </p>
+              <div
+                className={cn(
+                  "p-3 rounded-2xl flex items-center gap-3 border border-slate-100 bg-white shadow-sm transition-all",
+                  currentObj.color,
+                )}
+              >
+                <div className="p-2 rounded-lg bg-white shadow-xs">
+                  <currentObj.icon className="w-4 h-4" />
+                </div>
+                <span className="font-bold text-sm tracking-tight">
+                  {currentObj.label}
+                </span>
+              </div>
             </div>
 
-            <h2 className="text-3xl font-black tracking-tight leading-snug">
-              {task.name}
-            </h2>
-
-            {/* Date row */}
-            <div className="flex flex-wrap gap-3 items-center pt-1">
-              <div className="flex items-center gap-2 bg-white/10 px-3 py-2 rounded-xl backdrop-blur-md">
-                <CalendarIcon className="w-4 h-4 text-emerald-400" />
-                <span className="text-sm font-bold">{task.startDate}</span>
-                <ChevronRight className="w-3 h-3 opacity-30" />
-                <span className="text-sm font-bold">{task.endDate}</span>
+            <div className="space-y-2">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                Bắt đầu
+              </p>
+              <div className="p-3 rounded-2xl border border-slate-100 bg-white shadow-sm space-y-1">
+                <div className="flex items-center gap-2 text-sm font-black text-slate-800">
+                  <CalendarIcon className="w-4 h-4 text-emerald-500" />
+                  {task.startDate}
+                </div>
+                <div className="text-[10px] text-slate-400 italic ml-6 opacity-60">
+                  (Dự kiến: {task.startDate})
+                </div>
               </div>
-              <div className="flex items-center gap-2 bg-white/10 px-3 py-2 rounded-xl">
-                <MapPin className="w-4 h-4 text-blue-400" />
-                <span className="text-sm font-bold opacity-80">
-                  {task.plan}
-                </span>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                Kết thúc
+              </p>
+              <div className="p-3 rounded-2xl border border-slate-100 bg-white shadow-sm space-y-1">
+                <div className="flex items-center gap-2 text-sm font-black text-slate-800">
+                  <CalendarIcon className="w-4 h-4 text-rose-500" />
+                  {task.endDate}
+                </div>
+                <div className="text-[10px] text-slate-400 italic ml-6 opacity-60">
+                  (Dự kiến: {task.endDate})
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                Căn cứ / Kế hoạch
+              </p>
+              <div className="p-3 rounded-2xl border border-slate-100 bg-white shadow-sm flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-slate-50 text-slate-400">
+                  <MapPin className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-800 truncate">
+                    {task.plan || "Phát sinh"}
+                  </p>
+                  <p className="text-[9px] text-slate-400 uppercase tracking-wider">
+                    {task.stage || "Toàn chu kỳ"}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* ── BODY ── */}
-        <ScrollArea className="max-h-[70vh] bg-slate-50/50">
-          <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* ── LEFT (2/3) ── */}
-            <div className="md:col-span-2 space-y-8">
-              {/* Thông tin chi tiết */}
-              <section className="space-y-4">
-                <SectionTitle icon={<Info className="w-4 h-4" />}>
-                  Thông tin chi tiết
-                </SectionTitle>
-                <div className="grid grid-cols-2 gap-4">
-                  <Card className="border-none shadow-sm bg-white rounded-2xl p-4">
-                    <p className="text-[10px] font-black text-slate-400 uppercase mb-2">
-                      Căn cứ / Kế hoạch
-                    </p>
-                    <p className="font-bold text-slate-800 text-sm flex items-start gap-2">
-                      <MapPin className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                      {task.plan || "—"}
-                    </p>
-                  </Card>
-                  <Card className="border-none shadow-sm bg-white rounded-2xl p-4">
-                    <p className="text-[10px] font-black text-slate-400 uppercase mb-2">
-                      Giai đoạn thực hiện
-                    </p>
-                    <p className="font-bold text-slate-800 text-sm flex items-start gap-2">
-                      <Clock className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-                      {task.stage || "Toàn chu kỳ"}
-                    </p>
-                  </Card>
-                </div>
-              </section>
+        <ScrollArea className="max-h-[70vh]">
+          <div className="p-8 space-y-12">
+            {(
+              task.tasks || [
+                {
+                  id: 0,
+                  name: task.name,
+                  startDate: task.startDate,
+                  endDate: task.endDate,
+                  geographicalSelections: task.geographicalSelections,
+                  labor: task.assignedTo.join(", "),
+                },
+              ]
+            ).map((t: any, idx: number) => {
+              const itemMaterials =
+                task.materials?.filter(
+                  (m) => String((m as any).taskId) === String(t.id),
+                ) || [];
+              const taskPersonnel = t.labor
+                ? t.labor.split(", ").filter(Boolean)
+                : [];
+              const geoSummary = getSelectionSummary(
+                t.geographicalSelections || [],
+              );
 
-              {/* Mô tả */}
-              <section className="space-y-4">
-                <SectionTitle icon={<ClipboardList className="w-4 h-4" />}>
-                  Mô tả công việc
-                </SectionTitle>
-                <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm leading-relaxed text-slate-600 italic text-sm">
-                  {task.description ||
-                    "Không có mô tả chi tiết cho công việc này."}
-                </div>
-              </section>
+              return (
+                <div
+                  key={t.id || idx}
+                  className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start border-b border-slate-100 pb-12 last:border-none last:pb-0"
+                >
+                  {/* Left Column - Main Details */}
+                  <div className="md:col-span-8 space-y-6">
+                    <div className="space-y-4">
+                      <h4 className="text-lg font-black text-slate-800 leading-tight">
+                        {t.name}
+                      </h4>
 
-              {/* Vật tư */}
-              <section className="space-y-4">
-                <SectionTitle icon={<Package className="w-4 h-4" />}>
-                  Vật tư phân bổ ({task.materials?.length ?? 0})
-                </SectionTitle>
-                <div className="grid grid-cols-1 gap-3">
-                  {task.materials && task.materials.length > 0 ? (
-                    task.materials.map((m) => {
-                      const matName =
-                        (m as any).materialName ?? (m as any).name ?? "—";
-                      const matType =
-                        (m as any).materialType ??
-                        (m as any).materialCategory ??
-                        (m as any).type ??
-                        "other";
-                      const colorCls =
-                        MATERIAL_TYPE_COLORS[matType] ??
-                        MATERIAL_TYPE_COLORS.other;
-                      return (
-                        <div
-                          key={m.id}
-                          className="flex justify-between items-center p-4 bg-white rounded-2xl border border-slate-100 hover:border-emerald-200 transition-all group"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={cn(
-                                "w-10 h-10 rounded-xl flex items-center justify-center",
-                                colorCls,
-                              )}
-                            >
-                              <Package className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <p className="font-black text-slate-800 text-sm leading-none mb-1">
-                                {matName}
-                              </p>
-                              <Badge
-                                variant="secondary"
-                                className="text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 border-none px-2 py-0 h-4"
-                              >
-                                {MATERIAL_TYPE_LABELS[matType] ?? matType}
-                              </Badge>
-                            </div>
+                      <div className="space-y-3">
+                        <div className="flex flex-col gap-1.5 text-xs font-medium text-slate-500">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-emerald-500" />
+                            Phạm vi thực hiện
                           </div>
-                          <div className="text-right">
-                            <span className="text-lg font-black text-emerald-600">
-                              {m.quantity}
-                            </span>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase ml-1">
-                              {m.unit}
-                            </span>
+                          <div className="flex flex-wrap gap-2 pl-6">
+                            {geoSummary.length > 0 ? (
+                              geoSummary.map((group) => (
+                                <div
+                                  key={group.regionId}
+                                  className="flex flex-wrap gap-1.5"
+                                >
+                                  {group.items.map((item, iIdx) => (
+                                    <Badge
+                                      key={iIdx}
+                                      variant="outline"
+                                      className={cn(
+                                        "text-[10px] py-0 h-5 font-bold border-slate-100",
+                                        item.type === "region"
+                                          ? "bg-emerald-50 text-emerald-600"
+                                          : "bg-blue-50 text-blue-600",
+                                      )}
+                                    >
+                                      {item.name}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              ))
+                            ) : (
+                              <span className="text-slate-400 italic">
+                                Chưa xác định
+                              </span>
+                            )}
                           </div>
                         </div>
-                      );
-                    })
-                  ) : (
-                    <div className="p-8 border-2 border-dashed border-slate-200 rounded-3xl text-center">
-                      <Package className="w-8 h-8 text-slate-200 mx-auto mb-2" />
-                      <p className="text-slate-400 text-sm italic">
-                        Không sử dụng vật tư trong nhiệm vụ này
-                      </p>
+                        <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                          <CalendarIcon className="w-4 h-4" />
+                          Từ ngày:{" "}
+                          <span className="font-bold text-slate-700">
+                            {t.startDate || task.startDate}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                          <CalendarIcon className="w-4 h-4" />
+                          Đến ngày:{" "}
+                          <span className="font-bold text-slate-700">
+                            {t.endDate || task.endDate}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </section>
-            </div>
 
-            {/* ── RIGHT (1/3) ── */}
-            <div className="space-y-6">
-              {/* Nhân sự thực hiện */}
-              <section className="space-y-3">
-                <SectionTitle icon={<Users className="w-4 h-4" />}>
-                  Thực hiện
-                </SectionTitle>
-                <div className="space-y-2">
-                  {task.assignedTo.length > 0 ? (
-                    task.assignedTo.map((name, idx) => (
-                      <PersonRow
-                        key={idx}
-                        name={name}
-                        sub={
-                          task.assignedType === "team" ? "Đội nhóm" : "Cá nhân"
-                        }
-                        icon={
-                          task.assignedType === "team" ? (
-                            <Users className="w-4 h-4 text-blue-400" />
-                          ) : (
-                            <User className="w-4 h-4 text-emerald-400" />
-                          )
-                        }
-                      />
-                    ))
-                  ) : (
-                    <EmptyPersonSection label="Chưa phân công" />
-                  )}
-                </div>
-              </section>
-
-              {/* Nhân sự quản lý */}
-              <section className="space-y-3">
-                <SectionTitle
-                  icon={<Shield className="w-4 h-4 text-blue-500" />}
-                >
-                  Nhân sự quản lý
-                </SectionTitle>
-                <div className="space-y-2">
-                  {hasSupervisors ? (
-                    task.supervisors!.map((name, idx) => (
-                      <PersonRow
-                        key={idx}
-                        name={name}
-                        sub="Quản lý"
-                        icon={<Shield className="w-4 h-4 text-blue-400" />}
-                        accentBg="bg-blue-50"
-                        accentBorder="border-blue-100"
-                      />
-                    ))
-                  ) : (
-                    <EmptyPersonSection label="Chưa có nhân sự quản lý" />
-                  )}
-                </div>
-              </section>
-
-              {/* Kiểm định chất lượng */}
-              <section className="space-y-3">
-                <SectionTitle
-                  icon={<ClipboardCheck className="w-4 h-4 text-violet-500" />}
-                >
-                  Kiểm định chất lượng
-                </SectionTitle>
-                <div className="space-y-2">
-                  {hasInspectors ? (
-                    task.qualityInspectors!.map((name, idx) => (
-                      <PersonRow
-                        key={idx}
-                        name={name}
-                        sub="Kiểm định"
-                        icon={
-                          <ClipboardCheck className="w-4 h-4 text-violet-400" />
-                        }
-                        accentBg="bg-violet-50"
-                        accentBorder="border-violet-100"
-                      />
-                    ))
-                  ) : (
-                    <EmptyPersonSection label="Chưa có nhân sự kiểm định" />
-                  )}
-                </div>
-              </section>
-
-              {/* Nhật ký hệ thống */}
-              <div className="bg-emerald-900 rounded-3xl p-5 text-white relative overflow-hidden shadow-xl shadow-emerald-900/10">
-                <div className="absolute -bottom-4 -right-4 opacity-10">
-                  <FileCheck className="w-24 h-24" />
-                </div>
-                <h4 className="font-black text-emerald-300 text-[10px] uppercase tracking-widest mb-4">
-                  Nhật ký hệ thống
-                </h4>
-                <div className="space-y-3 relative z-10">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="opacity-60">Ngày tạo</span>
-                    <span className="font-bold">{task.createdAt}</span>
+                    {/* Materials Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {itemMaterials.map((m) => {
+                        const matName =
+                          (m as any).materialName ?? (m as any).name ?? "—";
+                        const matType =
+                          (m as any).materialType ??
+                          (m as any).materialCategory ??
+                          "other";
+                        const colorCls =
+                          MATERIAL_TYPE_COLORS[matType] ??
+                          MATERIAL_TYPE_COLORS.other;
+                        return (
+                          <div
+                            key={m.id}
+                            className="p-4 rounded-2xl border border-slate-100 bg-white space-y-3 shadow-sm"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={cn(
+                                  "w-10 h-10 rounded-xl flex items-center justify-center",
+                                  colorCls,
+                                )}
+                              >
+                                <Package className="w-5 h-5" />
+                              </div>
+                              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                                {MATERIAL_TYPE_LABELS[matType] || matType}
+                              </span>
+                            </div>
+                            <div className="pt-2 border-t border-slate-50">
+                              <p className="font-bold text-slate-800 text-sm mb-1">
+                                {matName}
+                              </p>
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-slate-400">
+                                  Số lượng:
+                                </span>
+                                <span className="font-black text-emerald-600 text-sm">
+                                  {m.quantity} {m.unit}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {itemMaterials.length === 0 && (
+                        <div className="col-span-full py-6 border-2 border-dashed border-slate-50 rounded-2xl text-center">
+                          <p className="text-xs text-slate-400 italic">
+                            Không phân bổ vật tư cho hạng mục này
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="opacity-60">Trạng thái</span>
-                    <span className="font-bold">{currentStatus.label}</span>
-                  </div>
-                  <div className="pt-2">
-                    <Badge className="w-full justify-center bg-white/20 hover:bg-white/30 border-none text-white py-1.5 flex items-center gap-2 text-[10px]">
-                      <Sprout className="w-3 h-3" />
-                      Canh tác hữu cơ
-                    </Badge>
+
+                  {/* Right Column - Personnel & Action */}
+                  <div className="md:col-span-4 space-y-6">
+                    <section className="space-y-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <SectionTitle icon={<Users className="w-4 h-4" />}>
+                          Danh sách nhân sự
+                        </SectionTitle>
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] font-bold bg-slate-100 text-slate-500 border-none"
+                        >
+                          {taskPersonnel.length +
+                            (task.supervisors?.length || 0) +
+                            (task.qualityInspectors?.length || 0)}
+                        </Badge>
+                      </div>
+
+                      <div className="relative group">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                        <Input
+                          placeholder="Tìm kiếm nhân sự..."
+                          className="pl-10 h-10 text-[11px] font-medium border-slate-100 bg-slate-50/50 focus:bg-white transition-all rounded-xl"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="space-y-2 overflow-auto max-h-80">
+                        {/* Unified Personnel List Construction */}
+                        {(() => {
+                          const allPersonnel = [
+                            ...(task.supervisors || []).map(
+                              (pName: string) => ({
+                                name: pName,
+                                role: "Quản lý",
+                                icon: (
+                                  <Shield className="w-4 h-4 text-blue-500" />
+                                ),
+                                bg: "bg-blue-50",
+                                border: "border-blue-100",
+                              }),
+                            ),
+                            ...(task.qualityInspectors || []).map(
+                              (pName: string) => ({
+                                name: pName,
+                                role: "Giám sát",
+                                icon: (
+                                  <ClipboardCheck className="w-4 h-4 text-amber-500" />
+                                ),
+                                bg: "bg-amber-50",
+                                border: "border-amber-100",
+                              }),
+                            ),
+                            ...taskPersonnel.map((pName: string) => ({
+                              name: pName,
+                              role:
+                                task.assignedType === "team"
+                                  ? "Đội nhóm"
+                                  : "Cá nhân",
+                              icon:
+                                task.assignedType === "team" ? (
+                                  <Users className="w-4 h-4 text-emerald-500" />
+                                ) : (
+                                  <User className="w-4 h-4 text-emerald-500" />
+                                ),
+                              bg: "bg-emerald-50",
+                              border: "border-emerald-100",
+                            })),
+                          ];
+
+                          const filtered = allPersonnel.filter(
+                            (p) =>
+                              p.name
+                                .toLowerCase()
+                                .includes(searchTerm.toLowerCase()) ||
+                              p.role
+                                .toLowerCase()
+                                .includes(searchTerm.toLowerCase()),
+                          );
+
+                          if (filtered.length === 0) {
+                            return (
+                              <EmptyPersonSection
+                                label={
+                                  searchTerm
+                                    ? "Không tìm thấy kết quả"
+                                    : "Chưa phân công"
+                                }
+                              />
+                            );
+                          }
+
+                          return filtered.map((p: any, pIdx: number) => (
+                            <PersonRow
+                              key={pIdx}
+                              name={p.name}
+                              sub={p.role}
+                              icon={p.icon}
+                              accentBg={p.bg}
+                              accentBorder={p.border}
+                            />
+                          ));
+                        })()}
+                      </div>
+                    </section>
+
+                    <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex flex-col items-center justify-center text-center gap-2 group cursor-pointer hover:bg-emerald-50 hover:border-emerald-200 transition-all">
+                      <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                        <FileCheck className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs font-black text-slate-800">
+                          Chi tiết canh tác
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-medium">
+                          (Sổ tay ra đồng)
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
         </ScrollArea>
       </DialogContent>

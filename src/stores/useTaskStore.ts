@@ -30,6 +30,8 @@ export interface Task {
   description: string;
   createdAt: string;
   materials?: MaterialAllocation[];
+  tasks?: any[];
+  geographicalSelections?: any[];
 }
 
 interface TaskStore {

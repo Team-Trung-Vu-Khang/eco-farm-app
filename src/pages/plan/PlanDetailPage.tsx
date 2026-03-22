@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import {
   ArrowLeft,
+  Apple,
+  Bug,
   Calendar,
   CheckCircle2,
   Clock,
@@ -97,6 +99,54 @@ export default function PlanDetailPage() {
       statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
+
+  const getTaskSelectionSummary = useCallback(
+    (taskSelections: any[] | undefined) => {
+      if (!regions || !taskSelections) return [];
+
+      const summary: {
+        regionId: string;
+        regionName: string;
+        items: { type: "region" | "area" | "plot"; name: string }[];
+      }[] = [];
+
+      taskSelections.forEach((sel) => {
+        const region = regions.find(
+          (r) => String(r.id) === String(sel.regionId),
+        );
+        if (!region) return;
+
+        let regionGroup = summary.find((s) => s.regionId === String(region.id));
+        if (!regionGroup) {
+          regionGroup = {
+            regionId: String(region.id),
+            regionName: region.name,
+            items: [],
+          };
+          summary.push(regionGroup);
+        }
+
+        if (sel.type === "region") {
+          regionGroup.items.push({ type: "region", name: "Toàn bộ vùng" });
+        } else if (sel.type === "area") {
+          const area = region.subAreas?.find(
+            (a) => String(a.id) === String(sel.areaId),
+          );
+          if (area) regionGroup.items.push({ type: "area", name: area.name });
+        } else if (sel.type === "plot") {
+          const area = region.subAreas?.find(
+            (a) => String(a.id) === String(sel.areaId),
+          );
+          const plot = area?.plots?.find(
+            (p) => String(p.id) === String(sel.plotId),
+          );
+          if (plot) regionGroup.items.push({ type: "plot", name: plot.name });
+        }
+      });
+      return summary;
+    },
+    [regions],
+  );
 
   // Enhanced Location Details using selectionSummary logic
   const selectionSummary = useMemo(() => {
@@ -323,19 +373,24 @@ export default function PlanDetailPage() {
                 <Sprout className="w-5 h-5" />
                 Thông tin chung
                 {(plan.purpose === "treatment" ||
-                  plan.purpose === "amendment") && (
+                  plan.purpose === "amendment" ||
+                  plan.purpose === "harvest") && (
                   <Badge
                     variant="outline"
                     className={cn(
                       "ml-auto font-bold uppercase",
                       plan.purpose === "treatment"
                         ? "bg-blue-100 text-blue-800 border-blue-200"
-                        : "bg-amber-100 text-amber-800 border-amber-200",
+                        : plan.purpose === "harvest"
+                          ? "bg-orange-100 text-orange-800 border-orange-200"
+                          : "bg-amber-100 text-amber-800 border-amber-200",
                     )}
                   >
                     {plan.purpose === "treatment"
                       ? "KẾ HOẠCH ĐIỀU TRỊ"
-                      : "KẾ HOẠCH CẢI TẠO"}
+                      : plan.purpose === "harvest"
+                        ? "KẾ HOẠCH THU HOẠCH"
+                        : "KẾ HOẠCH CẢI TẠO"}
                   </Badge>
                 )}
               </CardTitle>
@@ -372,18 +427,24 @@ export default function PlanDetailPage() {
                     <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                       {plan.purpose === "amendment"
                         ? "Phác đồ cải tạo đất"
-                        : "Phác đồ điều trị"}
+                        : plan.purpose === "harvest"
+                          ? "Mục đích"
+                          : "Phác đồ điều trị"}
                     </label>
                     <p
                       className={cn(
                         "font-bold mt-1",
                         plan.purpose === "amendment"
                           ? "text-amber-900"
-                          : "text-blue-900",
+                          : plan.purpose === "harvest"
+                            ? "text-orange-900"
+                            : "text-blue-900",
                       )}
                     >
-                      {regimens.find((r) => r.id === plan.regimenId)?.name ||
-                        "Chưa chọn phác đồ"}
+                      {plan.purpose === "harvest"
+                        ? "Kế hoạch thu hoạch"
+                        : regimens.find((r) => r.id === plan.regimenId)?.name ||
+                          "Chưa chọn phác đồ"}
                     </p>
                   </div>
                 )}
@@ -501,30 +562,46 @@ export default function PlanDetailPage() {
         {/* Quy trình canh tác (Stages) */}
         <div className="space-y-4 pt-4">
           <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                "p-2.5 rounded-2xl shadow-sm",
-                plan.purpose === "treatment" && "bg-blue-100/50",
-                plan.purpose === "amendment" && "bg-amber-100/50",
-                plan.purpose === "cultivation" && "bg-emerald-100/50",
-              )}
-            >
-              <Layers
-                className={cn(
-                  "w-7 h-7",
-                  plan.purpose === "treatment" && "text-blue-600",
-                  plan.purpose === "amendment" && "text-amber-600",
-                  plan.purpose === "cultivation" && "text-emerald-600",
-                )}
-              />
-            </div>
+            {(() => {
+              const Icon =
+                plan.purpose === "treatment"
+                  ? Bug
+                  : plan.purpose === "amendment"
+                    ? Sprout
+                    : plan.purpose === "harvest"
+                      ? Apple
+                      : Layers;
+              return (
+                <div
+                  className={cn(
+                    "p-2.5 rounded-2xl shadow-sm",
+                    plan.purpose === "treatment" && "bg-blue-100/50",
+                    plan.purpose === "amendment" && "bg-amber-100/50",
+                    plan.purpose === "harvest" && "bg-orange-100/50",
+                    plan.purpose === "cultivation" && "bg-emerald-100/50",
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      "w-7 h-7",
+                      plan.purpose === "treatment" && "text-blue-600",
+                      plan.purpose === "amendment" && "text-amber-600",
+                      plan.purpose === "harvest" && "text-orange-600",
+                      plan.purpose === "cultivation" && "text-emerald-600",
+                    )}
+                  />
+                </div>
+              );
+            })()}
             <div>
               <h3 className="text-lg font-black text-slate-900">
                 {plan.purpose === "treatment"
                   ? "Lộ trình xử lý & Phác đồ"
                   : plan.purpose === "amendment"
                     ? "Lộ trình cải tạo & Quy trình"
-                    : "Lộ trình triển khai & Giai đoạn"}
+                    : plan.purpose === "harvest"
+                      ? "Lịch trình thu hoạch"
+                      : "Lộ trình triển khai & Giai đoạn"}
               </h3>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5">
                 Chi tiết các hạng mục và kế hoạch hành động
@@ -579,12 +656,16 @@ export default function PlanDetailPage() {
                               "text-[10px] font-bold uppercase tracking-wider",
                               plan.purpose === "amendment"
                                 ? "text-amber-600"
-                                : "text-blue-600",
+                                : plan.purpose === "harvest"
+                                  ? "text-orange-600"
+                                  : "text-blue-600",
                             )}
                           >
                             {plan.purpose === "amendment"
                               ? "Hoạt động cải tạo đất"
-                              : "Hoạt động điều trị bệnh"}
+                              : plan.purpose === "harvest"
+                                ? "Hoạt động thu hoạch"
+                                : "Hoạt động điều trị bệnh"}
                           </p>
                         )}
                       </div>
@@ -728,6 +809,46 @@ export default function PlanDetailPage() {
                                       {task.description ||
                                         "Chưa có mô tả chi tiết"}
                                     </p>
+                                    {/* Geographical summary for the task item */}
+                                    {task.geographicalSelections &&
+                                      task.geographicalSelections.length >
+                                        0 && (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 pt-2 border-t border-blue-50/50 mt-2">
+                                          {getTaskSelectionSummary(
+                                            task.geographicalSelections,
+                                          ).map((group) => (
+                                            <div
+                                              key={group.regionId}
+                                              className="flex flex-col gap-1 border-l-2 border-blue-100 pl-2 py-0.5"
+                                            >
+                                              <div className="text-[10px] font-bold text-slate-500 flex items-center gap-1.5 uppercase tracking-wide">
+                                                <MapPin className="w-3 h-3 text-slate-400" />
+                                                {group.regionName}
+                                              </div>
+                                              <div className="flex flex-wrap gap-1">
+                                                {group.items.map(
+                                                  (item, idx) => (
+                                                    <Badge
+                                                      key={idx}
+                                                      variant="outline"
+                                                      className={cn(
+                                                        "text-[9px] py-0 px-1.5 h-4 font-medium border-slate-200 shadow-none bg-white",
+                                                        item.type ===
+                                                          "region" &&
+                                                          "text-emerald-700 bg-emerald-50/50",
+                                                        item.type === "area" &&
+                                                          "text-blue-700 bg-blue-50/50",
+                                                      )}
+                                                    >
+                                                      {item.name}
+                                                    </Badge>
+                                                  ),
+                                                )}
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
                                   </div>
                                 </div>
                               ))}

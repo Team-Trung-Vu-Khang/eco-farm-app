@@ -1,5 +1,4 @@
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -30,16 +29,13 @@ import {
   Beaker,
   Bug,
   Calendar,
-  CheckCircle,
   CheckCircle2,
-  ChevronLeft,
   ChevronRight,
   ClipboardList,
   Clock,
   Contact,
   CreditCard,
   Droplets,
-  Edit,
   FileText,
   Globe,
   Hash,
@@ -68,6 +64,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Tooltip as LeafletTooltip,
   MapContainer,
+  Marker,
   Polygon,
   TileLayer,
 } from "react-leaflet";
@@ -81,27 +78,37 @@ import {
   YAxis,
 } from "recharts";
 import { useLocation, useParams } from "wouter";
-import { HorizontalPersonnelList } from "../../../components/personnel/HorizontalPersonnelList";
-import useCultivationRegionStore from "../../../stores/useCultivationRegionStore";
-import useGrowthCycleStore from "../../../stores/useGrowthCycleStore";
+import { HorizontalPersonnelList } from "../../../../components/personnel/HorizontalPersonnelList";
+import useCropDetailStore from "../../../../stores/useCropDetailStore";
+import useCultivationRegionStore from "../../../../stores/useCultivationRegionStore";
+import useGrowthCycleStore from "../../../../stores/useGrowthCycleStore";
 import usePersonnelStore, {
   type Personnel,
-} from "../../../stores/usePersonnelStore";
-import usePlanStore, { type Plan } from "../../../stores/usePlanStore";
-import useRegionStore from "../../../stores/useRegionStore";
-import useTaskStore, { type Task } from "../../../stores/useTaskStore";
-import TaskDetailDialog from "../../task/components/TaskDetailDialog";
-import { DISTRICTS, PROVINCES } from "../../region-chart/constants";
+} from "../../../../stores/usePersonnelStore";
+import usePlanStore, { type Plan } from "../../../../stores/usePlanStore";
+import useRegionStore from "../../../../stores/useRegionStore";
+import useTaskStore, { type Task } from "../../../../stores/useTaskStore";
+import { DISTRICTS, PROVINCES } from "../../../region-chart/constants";
+import TaskDetailDialog from "../../../task/components/TaskDetailDialog";
+import type { CropDetail } from "../../constants";
 import styles from "./styles.module.css";
-import { useCultivationRegionDetail } from "./useCultivationRegionDetail";
+import { useCultivationRegionDetail } from "../../cultivation-region/useCultivationRegionDetail";
 
-export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
+type LeafletMapInternal = L.Map & { _loaded?: boolean };
+
+interface CropDetailDialogProps {
+  crop: CropDetail | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+const InnerView = ({ id, crop }: { id?: string; crop?: CropDetail }) => {
   const params = useParams<{ id: string }>();
   const resolvedId = id ?? params?.id;
   const [, setLocation] = useLocation();
 
   const handleBack = () => {
-    setLocation("/cultivation-region");
+    setLocation("/search-crop");
   };
 
   const [isScopeMapExpanded, setIsScopeMapExpanded] = useState(false);
@@ -110,6 +117,68 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
 
   const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
   const { growthCycles } = useGrowthCycleStore();
+  const cultivationAreas = useCultivationRegionStore((state) => state.areas);
+  const { getCropById } = useCropDetailStore();
+  const { regions } = useRegionStore();
+
+  const regionIndex = useMemo(() => {
+    const regionById = new Map<string, any>();
+    const areaById = new Map<string, { area: any; region: any }>();
+    const plotById = new Map<string, { plot: any; area: any; region: any }>();
+
+    for (const r of regions) {
+      regionById.set(String(r.id), r);
+      for (const a of r.subAreas || []) {
+        areaById.set(String(a.id), { area: a, region: r });
+        for (const p of a.plots || []) {
+          plotById.set(String(p.id), { plot: p, area: a, region: r });
+        }
+      }
+    }
+
+    return { regionById, areaById, plotById };
+  }, [regions]);
+
+  const activeCrop = useMemo(() => {
+    if (crop) return crop;
+    if (resolvedId) {
+      return getCropById(resolvedId) ?? null;
+    }
+    return null;
+  }, [crop, resolvedId, getCropById]);
+
+  const cropGeoRefs = useMemo(() => {
+    if (!activeCrop) {
+      return { region: null, area: null, plot: null };
+    }
+
+    if (activeCrop.plotId) {
+      const plotRef = regionIndex.plotById.get(String(activeCrop.plotId));
+      if (plotRef) {
+        return {
+          region: plotRef.region,
+          area: plotRef.area,
+          plot: plotRef.plot,
+        };
+      }
+    }
+
+    if (activeCrop.areaId) {
+      const areaRef = regionIndex.areaById.get(String(activeCrop.areaId));
+      if (areaRef) {
+        return { region: areaRef.region, area: areaRef.area, plot: null };
+      }
+    }
+
+    if (activeCrop.regionId) {
+      const regionRef = regionIndex.regionById.get(String(activeCrop.regionId));
+      if (regionRef) {
+        return { region: regionRef, area: null, plot: null };
+      }
+    }
+
+    return { region: null, area: null, plot: null };
+  }, [activeCrop, regionIndex]);
 
   const staffColumns: Column<Personnel>[] = [
     {
@@ -180,33 +249,78 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
     map.flyToBounds(bounds, { padding: [40, 40], duration: 1.1 });
   };
 
-  const { area, details } = useCultivationRegionDetail(resolvedId);
+  const areaDetailId = useMemo(() => {
+    if (activeCrop) {
+      const candidateIds = new Set<string>();
+      const pushCandidate = (value?: string | number | null) => {
+        if (value === undefined || value === null) return;
+        const str = String(value);
+        if (!str) return;
+        candidateIds.add(str);
+      };
 
-  const { regions } = useRegionStore();
-  const { plans } = usePlanStore();
-  const { personnel } = usePersonnelStore();
+      pushCandidate(activeCrop.plotId);
+      pushCandidate(activeCrop.areaId);
+      pushCandidate(activeCrop.regionId);
+      pushCandidate(cropGeoRefs.plot?.id);
+      pushCandidate(cropGeoRefs.area?.id);
+      pushCandidate(cropGeoRefs.region?.id);
 
-  const regionIndex = useMemo(() => {
-    const regionById = new Map<string, any>();
-    const areaById = new Map<string, { area: any; region: any }>();
-    const plotById = new Map<string, { plot: any; area: any; region: any }>();
-
-    for (const r of regions) {
-      regionById.set(String(r.id), r);
-      for (const a of r.subAreas || []) {
-        areaById.set(String(a.id), { area: a, region: r });
-        for (const p of a.plots || []) {
-          plotById.set(String(p.id), { plot: p, area: a, region: r });
+      if (candidateIds.size > 0) {
+        const matchedArea = cultivationAreas.find((ca) =>
+          (ca.targetIds || []).some((tid) => candidateIds.has(String(tid))),
+        );
+        if (matchedArea) {
+          return matchedArea.id;
         }
       }
     }
 
-    return { regionById, areaById, plotById };
-  }, [regions]);
+    return resolvedId;
+  }, [activeCrop, cultivationAreas, cropGeoRefs, resolvedId]);
+
+  const { area, details } = useCultivationRegionDetail(areaDetailId);
+  const { plans } = usePlanStore();
+  const { personnel } = usePersonnelStore();
+
+  const technicalCrops = details?.technicalConfig?.crops || [];
+
+  const filteredTechnicalCrops = useMemo(() => {
+    if (!activeCrop) return technicalCrops;
+
+    const normalizedVariety = (activeCrop.variety || "").toLowerCase();
+    const normalizedName = (activeCrop.name || "").toLowerCase();
+    const normalizedCode = (activeCrop.code || "").toLowerCase();
+
+    const matched = technicalCrops.filter((c: any) => {
+      const displayName = (c.varietyName || c.crop || "").toLowerCase();
+      const displayCode = (c.varietyCode || c.id || "")
+        .toString()
+        .toLowerCase();
+      return (
+        (!!normalizedVariety && displayName.includes(normalizedVariety)) ||
+        (!!normalizedName && displayName.includes(normalizedName)) ||
+        (!!normalizedCode && displayCode.includes(normalizedCode))
+      );
+    });
+
+    if (matched.length > 0) return matched;
+
+    return [
+      {
+        id: activeCrop.id,
+        crop: activeCrop.groupCropName,
+        varietyName: activeCrop.name,
+        seedType: activeCrop.seedType,
+        varietyCode: activeCrop.code,
+        illustration: activeCrop.image,
+        selectedSeeds: [],
+      },
+    ];
+  }, [technicalCrops, activeCrop]);
 
   const groupedCrops = useMemo(() => {
-    if (!details?.technicalConfig?.crops) return {};
-    return details.technicalConfig.crops.reduce(
+    return filteredTechnicalCrops.reduce(
       (acc: Record<string, any[]>, crop: any) => {
         const cropName = crop.crop || "Khác";
         if (!acc[cropName]) acc[cropName] = [];
@@ -215,10 +329,194 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
       },
       {} as Record<string, any[]>,
     );
-  }, [details?.technicalConfig?.crops]);
+  }, [filteredTechnicalCrops]);
+
+  const { scopedGroupedSelections, scopedSelectionCount } = useMemo(() => {
+    const buildFallbackFromCrop = () => {
+      if (!cropGeoRefs.region) {
+        return { scopedGroupedSelections: {}, scopedSelectionCount: 0 };
+      }
+
+      const regionKey = String(cropGeoRefs.region.id);
+      const areaKey = cropGeoRefs.area ? String(cropGeoRefs.area.id) : "none";
+      const entities: any[] = [];
+
+      if (cropGeoRefs.plot) {
+        entities.push({
+          ...cropGeoRefs.plot,
+          regionId: cropGeoRefs.region.id,
+          areaId: cropGeoRefs.area?.id,
+          type: "Lô đất",
+          typeCode: "plot",
+        });
+      } else if (cropGeoRefs.area) {
+        entities.push({
+          id: cropGeoRefs.area.id,
+          name: cropGeoRefs.area.name,
+          regionId: cropGeoRefs.region.id,
+          areaId: cropGeoRefs.area.id,
+          type: "Khu vực",
+          typeCode: "area",
+          coordinates: cropGeoRefs.area.coordinates,
+        });
+      } else {
+        entities.push({
+          id: cropGeoRefs.region.id,
+          name: cropGeoRefs.region.name,
+          regionId: cropGeoRefs.region.id,
+          type: "Vùng trồng",
+          typeCode: "region",
+          coordinates: cropGeoRefs.region.coordinates,
+        });
+      }
+
+      const areasPayload =
+        cropGeoRefs.area || cropGeoRefs.plot
+          ? {
+              [areaKey]: {
+                area: cropGeoRefs.area,
+                entities,
+              },
+            }
+          : {
+              none: {
+                area: null,
+                entities,
+              },
+            };
+
+      return {
+        scopedGroupedSelections: {
+          [regionKey]: {
+            region: cropGeoRefs.region,
+            areas: areasPayload,
+          },
+        },
+        scopedSelectionCount: entities.length || 1,
+      };
+    };
+
+    const countFromGroups = (groups: Record<string, any>) => {
+      let count = 0;
+      Object.values(groups || {}).forEach((group: any) => {
+        const areaGroups = Object.values(group?.areas || {});
+        if (areaGroups.length === 0) {
+          count += 1;
+          return;
+        }
+        areaGroups.forEach((ag: any) => {
+          const entityCount = (ag?.entities || []).length;
+          count += entityCount > 0 ? entityCount : 1;
+        });
+      });
+      return count;
+    };
+
+    if (!details) {
+      return buildFallbackFromCrop();
+    }
+
+    if (!activeCrop) {
+      return {
+        scopedGroupedSelections: details.groupedSelections,
+        scopedSelectionCount:
+          details.selectedEntities?.length ||
+          countFromGroups(details.groupedSelections) ||
+          0,
+      };
+    }
+
+    const regionGroups = Object.values(details.groupedSelections || {});
+    const resolvedRegionId = cropGeoRefs.region
+      ? String(cropGeoRefs.region.id)
+      : activeCrop.regionId
+        ? String(activeCrop.regionId)
+        : null;
+
+    const targetRegionGroup = resolvedRegionId
+      ? regionGroups.find((g: any) => String(g.region?.id) === resolvedRegionId)
+      : regionGroups[0];
+
+    if (!targetRegionGroup) {
+      return buildFallbackFromCrop();
+    }
+
+    const filteredAreas: Record<string, any> = {};
+    const areaEntries = Object.entries(targetRegionGroup.areas || {});
+
+    if (cropGeoRefs.plot?.id) {
+      const plotIdStr = String(cropGeoRefs.plot.id);
+      const targetAreaEntry = areaEntries.find(([, ag]: any) =>
+        (ag.entities || []).some((ent: any) => {
+          const entPlotId = ent.plotId ?? ent.id;
+          return ent.typeCode === "plot" && String(entPlotId) === plotIdStr;
+        }),
+      );
+
+      if (targetAreaEntry) {
+        const [areaKey, ag] = targetAreaEntry;
+        const filteredEntities = (ag.entities || []).filter((ent: any) => {
+          const entPlotId = ent.plotId ?? ent.id;
+          return ent.typeCode === "plot" && String(entPlotId) === plotIdStr;
+        });
+        filteredAreas[areaKey] = { ...ag, entities: filteredEntities };
+      }
+    } else if (cropGeoRefs.area?.id) {
+      const areaIdStr = String(cropGeoRefs.area.id);
+      const targetAreaEntry = areaEntries.find(
+        ([, ag]: any) => ag.area && String(ag.area.id) === areaIdStr,
+      );
+
+      if (targetAreaEntry) {
+        const [areaKey, ag] = targetAreaEntry;
+        const filteredEntities = (ag.entities || []).filter((ent: any) => {
+          if (ent.typeCode === "area") {
+            const entAreaId = ent.areaId ?? ent.id;
+            return String(entAreaId) === areaIdStr;
+          }
+          return ent.typeCode !== "plot";
+        });
+        filteredAreas[areaKey] = { ...ag, entities: filteredEntities };
+      }
+    }
+
+    const hasFilteredAreas = Object.keys(filteredAreas).length > 0;
+
+    if ((cropGeoRefs.area || cropGeoRefs.plot) && !hasFilteredAreas) {
+      return buildFallbackFromCrop();
+    }
+
+    const scopedGroup = {
+      ...targetRegionGroup,
+      areas:
+        cropGeoRefs.area || cropGeoRefs.plot
+          ? filteredAreas
+          : (targetRegionGroup.areas ?? {}),
+    };
+
+    const scopedRegionKey =
+      targetRegionGroup.region?.id !== undefined
+        ? String(targetRegionGroup.region.id)
+        : resolvedRegionId || "region";
+
+    const scoped = {
+      [scopedRegionKey]: scopedGroup,
+    };
+
+    const selectionCount = countFromGroups(scoped);
+
+    if (!selectionCount) {
+      return buildFallbackFromCrop();
+    }
+
+    return {
+      scopedGroupedSelections: scoped,
+      scopedSelectionCount: selectionCount,
+    };
+  }, [details, activeCrop, cropGeoRefs]);
 
   const scopeMapData = useMemo(() => {
-    if (!area) return null;
+    if (!activeCrop) return null;
 
     const explicitRegionIds = new Set<string>();
     const explicitAreaIds = new Set<string>();
@@ -258,39 +556,104 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
       plotsMap.set(key, { plot: p, explicit });
     };
 
-    const ids = (area.targetIds || []).map(String);
-    for (const id of ids) {
-      const reg = regionIndex.regionById.get(id);
-      if (reg) {
-        explicitRegionIds.add(String(reg.id));
-        addRegion(reg, true);
-        for (const a of reg.subAreas || []) {
-          addArea(a, false);
-          for (const p of a.plots || []) {
-            addPlot(p, false);
+    const registerRegionExplicit = (reg: any) => {
+      if (!reg) return;
+      explicitRegionIds.add(String(reg.id));
+      addRegion(reg, true);
+    };
+
+    const registerAreaExplicit = (
+      areaRef: { area: any; region: any } | undefined,
+    ) => {
+      if (!areaRef) return;
+      addRegion(areaRef.region, false);
+      addArea(areaRef.area, true);
+      explicitAreaIds.add(String(areaRef.area.id));
+    };
+
+    const registerPlotExplicit = (
+      plotRef: { plot: any; area: any; region: any } | undefined,
+    ) => {
+      if (!plotRef) return;
+      addRegion(plotRef.region, false);
+      addArea(plotRef.area, false);
+      addPlot(plotRef.plot, true);
+      explicitPlotIds.add(String(plotRef.plot.id));
+    };
+
+    if (cropGeoRefs.region) {
+      registerRegionExplicit(cropGeoRefs.region);
+    } else if (activeCrop?.regionId) {
+      const reg = regionIndex.regionById.get(String(activeCrop.regionId));
+      registerRegionExplicit(reg);
+    }
+
+    if (cropGeoRefs.area) {
+      registerAreaExplicit({
+        area: cropGeoRefs.area,
+        region:
+          cropGeoRefs.region ||
+          regionIndex.regionById.get(String(cropGeoRefs.area.regionId)),
+      });
+    } else if (activeCrop?.areaId) {
+      const areaRef = regionIndex.areaById.get(String(activeCrop.areaId));
+      registerAreaExplicit(areaRef);
+    }
+
+    if (cropGeoRefs.plot) {
+      registerPlotExplicit(
+        cropGeoRefs.area && cropGeoRefs.region
+          ? {
+              plot: cropGeoRefs.plot,
+              area: cropGeoRefs.area,
+              region: cropGeoRefs.region,
+            }
+          : regionIndex.plotById.get(String(cropGeoRefs.plot.id)),
+      );
+    } else if (activeCrop?.plotId) {
+      const plotRef = regionIndex.plotById.get(String(activeCrop.plotId));
+      registerPlotExplicit(plotRef);
+    }
+
+    const includeAreaTargets = (ids: string[], explicit = false) => {
+      for (const id of ids) {
+        const reg = regionIndex.regionById.get(id);
+        if (reg) {
+          addRegion(reg, explicit);
+          if (explicit) explicitRegionIds.add(String(reg.id));
+          for (const a of reg.subAreas || []) {
+            addArea(a, false);
+            for (const p of a.plots || []) addPlot(p, false);
           }
+          continue;
         }
-        continue;
-      }
 
-      const areaHit = regionIndex.areaById.get(id);
-      if (areaHit) {
-        explicitAreaIds.add(String(areaHit.area.id));
-        addRegion(areaHit.region, false);
-        addArea(areaHit.area, true);
-        for (const p of areaHit.area.plots || []) {
-          addPlot(p, false);
+        const areaHit = regionIndex.areaById.get(id);
+        if (areaHit) {
+          addRegion(areaHit.region, false);
+          addArea(areaHit.area, explicit);
+          if (explicit) explicitAreaIds.add(String(areaHit.area.id));
+          for (const p of areaHit.area.plots || []) addPlot(p, false);
+          continue;
         }
-        continue;
-      }
 
-      const plotHit = regionIndex.plotById.get(id);
-      if (plotHit) {
-        explicitPlotIds.add(String(plotHit.plot.id));
-        addRegion(plotHit.region, false);
-        addArea(plotHit.area, false);
-        addPlot(plotHit.plot, true);
+        const plotHit = regionIndex.plotById.get(id);
+        if (plotHit) {
+          addRegion(plotHit.region, false);
+          addArea(plotHit.area, false);
+          addPlot(plotHit.plot, explicit);
+          if (explicit) explicitPlotIds.add(String(plotHit.plot.id));
+        }
       }
+    };
+
+    if (
+      regionsMap.size === 0 &&
+      areasMap.size === 0 &&
+      plotsMap.size === 0 &&
+      area?.targetIds?.length
+    ) {
+      includeAreaTargets(area.targetIds.map(String), false);
     }
 
     const regionsToRender = Array.from(regionsMap.values());
@@ -304,6 +667,9 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
       allCoords.push(...(a.area.coordinates || []));
     for (const p of plotsToRender)
       allCoords.push(...(p.plot.coordinates || []));
+    if (activeCrop?.coordinate) {
+      allCoords.push(activeCrop.coordinate);
+    }
 
     const bounds =
       allCoords.length > 0
@@ -319,9 +685,41 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
       explicitAreaIds,
       explicitPlotIds,
     };
-  }, [area, regionIndex]);
+  }, [activeCrop, area?.targetIds, regionIndex, cropGeoRefs]);
 
   const scopeMapBounds = scopeMapData?.bounds ?? null;
+
+  useEffect(() => {
+    const coords = cropGeoRefs.region?.coordinates;
+    if (!coords || coords.length === 0) return;
+
+    const targetMap = isScopeMapExpanded
+      ? expandedScopeMapRef.current
+      : scopeMapRef.current;
+    if (!targetMap) return;
+
+    const points = coords.map((c) => [c.lat, c.lng] as [number, number]);
+    const bounds =
+      points.length === 1
+        ? L.latLngBounds(points[0], points[0])
+        : L.latLngBounds(points);
+    const padding = isScopeMapExpanded ? [60, 60] : [40, 40];
+
+    const flyToRegion = () => {
+      targetMap.flyToBounds(bounds, { padding, duration: 0.9 });
+    };
+
+    const mapWithLoaded = targetMap as LeafletMapInternal;
+    if (mapWithLoaded._loaded) {
+      flyToRegion();
+      return;
+    }
+
+    targetMap.once("load", flyToRegion);
+    return () => {
+      targetMap.off("load", flyToRegion);
+    };
+  }, [cropGeoRefs.region?.id, isScopeMapExpanded]);
 
   const ScopeMapPolygons = () => {
     if (!scopeMapData) return null;
@@ -494,6 +892,39 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
     );
   };
 
+  const cropMarkerIcon = useMemo(() => {
+    if (!activeCrop) return undefined;
+    return L.divIcon({
+      className: "",
+      html: `<div style="
+          width:18px;
+          height:18px;
+          border-radius:9999px;
+          background:#22c55e;
+          border:2px solid #fff;
+          box-shadow:0 0 10px rgba(34,197,94,0.6);
+        "></div>`,
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
+    });
+  }, [activeCrop?.id]);
+
+  const CropMarker = () => {
+    if (!activeCrop?.coordinate) return null;
+    return (
+      <Marker
+        position={[activeCrop.coordinate.lat, activeCrop.coordinate.lng]}
+        icon={cropMarkerIcon || undefined}
+      >
+        <LeafletTooltip direction="top" offset={[0, -10]}>
+          <div className="text-[10px] font-bold text-primary">
+            {activeCrop.code || activeCrop.name}
+          </div>
+        </LeafletTooltip>
+      </Marker>
+    );
+  };
+
   const scopeTargetIds = useMemo(() => {
     const regionIds = new Set<string>();
     const areaIds = new Set<string>();
@@ -543,7 +974,9 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
         const ra = statusRank[a.status] ?? 99;
         const rb = statusRank[b.status] ?? 99;
         if (ra !== rb) return ra - rb;
-        return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+        return (
+          new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+        );
       });
   }, [baseRelevantPlans, planFilter]);
 
@@ -577,8 +1010,11 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
     if (!baseRelevantPlans || baseRelevantPlans.length === 0) return;
 
     // Only auto-switch IF the region just changed or it's the first time data is available
-    if (prevRegionIdRef.current !== resolvedId) {
-      prevRegionIdRef.current = resolvedId;
+    const compareKey =
+      areaDetailId || (activeCrop ? String(activeCrop.id) : resolvedId) || null;
+
+    if (prevRegionIdRef.current !== compareKey) {
+      prevRegionIdRef.current = compareKey;
       const purposes: Plan["purpose"][] = [
         "cultivation",
         "treatment",
@@ -593,7 +1029,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
         setPlanFilter(firstWithData);
       }
     }
-  }, [baseRelevantPlans, resolvedId]);
+  }, [baseRelevantPlans, areaDetailId, activeCrop, resolvedId]);
 
   const planStatusBadge = (status: Plan["status"]) => {
     const config: Record<Plan["status"], { label: string; className: string }> =
@@ -817,12 +1253,26 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
   //   return groups;
   // }, [filteredHistoryPlans]);
 
+  if (!activeCrop) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <Sprout className="w-16 h-16 text-slate-300 mb-4" />
+        <h2 className="text-xl font-bold text-slate-900">
+          Không tìm thấy dữ liệu cây trồng
+        </h2>
+        <Button variant="ghost" className="mt-4" onClick={handleBack}>
+          Quay lại danh sách
+        </Button>
+      </div>
+    );
+  }
+
   if (!area || !details) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Target className="w-16 h-16 text-slate-300 mb-4" />
         <h2 className="text-xl font-bold text-slate-900">
-          Không tìm thấy vùng canh tác
+          Không tìm thấy dữ liệu vùng canh tác cho cây
         </h2>
         <Button variant="ghost" className="mt-4" onClick={handleBack}>
           Quay lại danh sách
@@ -1034,188 +1484,182 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
               <CardTitle className="text-sm font-bold flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-primary" />
                 <span className="text-lg">
-                  Phạm vi vùng canh tác ({details.selectedEntities.length} mục)
+                  Phạm vi vùng canh tác ({scopedSelectionCount} mục)
                 </span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0 overflow-y-auto flex-1">
               <div className="p-6 flex">
                 <div className="space-y-8 flex-4">
-                  {Object.values(details.groupedSelections).map(
-                    (group: any) => (
-                      <div key={group.region.id} className="relative">
-                        {/* Region Level */}
-                        <button
-                          type="button"
-                          className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
-                          onClick={() =>
-                            focusScopeMapToCoordinates(
-                              group.region?.coordinates,
-                            )
-                          }
-                        >
-                          <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm">
-                            <MapPin className="w-5 h-5" />
+                  {Object.values(scopedGroupedSelections).map((group: any) => (
+                    <div key={group.region.id} className="relative">
+                      {/* Region Level */}
+                      <button
+                        type="button"
+                        className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
+                        onClick={() =>
+                          focusScopeMapToCoordinates(group.region?.coordinates)
+                        }
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm">
+                          <MapPin className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-primary font-bold uppercase tracking-wider leading-none mb-1">
+                            Vùng trồng
                           </div>
-                          <div>
-                            <div className="text-[10px] text-primary font-bold uppercase tracking-wider leading-none mb-1">
-                              Vùng trồng
-                            </div>
-                            <div className="text-sm font-bold text-slate-900">
-                              {group.region.name}
-                            </div>
+                          <div className="text-sm font-bold text-slate-900">
+                            {group.region.name}
                           </div>
-                        </button>
+                        </div>
+                      </button>
 
-                        {/* Area & Plot Level Tree */}
-                        {area.scope !== "region" && (
-                          <div className="ml-5 border-l-2 border-slate-100 pl-6 space-y-8">
-                            {Object.values(group.areas).map(
-                              (areaGroup: any) => (
-                                <div
-                                  key={areaGroup.area?.id || "none"}
-                                  className="relative"
-                                >
-                                  {/* Horizontal branch from main stem to Area/Entity */}
-                                  <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-5" />
+                      {/* Area & Plot Level Tree */}
+                      {area.scope !== "region" && (
+                        <div className="ml-5 border-l-2 border-slate-100 pl-6 space-y-8">
+                          {Object.values(group.areas).map((areaGroup: any) => (
+                            <div
+                              key={areaGroup.area?.id || "none"}
+                              className="relative"
+                            >
+                              {/* Horizontal branch from main stem to Area/Entity */}
+                              <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-5" />
 
-                                  {areaGroup.area ? (
-                                    <>
-                                      <button
-                                        type="button"
-                                        className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
-                                        onClick={() =>
-                                          focusScopeMapToCoordinates(
-                                            areaGroup.area?.coordinates,
-                                          )
-                                        }
-                                      >
-                                        <div className="w-9 h-9 rounded-lg bg-blue-500 text-white flex items-center justify-center shadow-sm">
-                                          <Layers className="w-4.5 h-4.5" />
-                                        </div>
-                                        <div>
-                                          <div className="text-[10px] text-blue-500 font-bold uppercase tracking-wider leading-none mb-1">
-                                            Khu vực
-                                          </div>
-                                          <div className="text-sm font-bold text-slate-900">
-                                            {areaGroup.area.name}
-                                          </div>
-                                        </div>
-                                      </button>
-
-                                      {/* Plots under this Area */}
-                                      <div className="ml-4.5 border-l-2 border-slate-100 pl-6 space-y-4">
-                                        {(areaGroup.entities || [])
-                                          .filter(
-                                            (e: any) => e?.typeCode === "plot",
-                                          )
-                                          .map((plot: any) => (
-                                            <button
-                                              key={plot.id}
-                                              type="button"
-                                              className="relative flex items-center gap-3 py-1 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
-                                              onClick={() =>
-                                                focusScopeMapToCoordinates(
-                                                  plot.coordinates,
-                                                )
-                                              }
-                                            >
-                                              <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
-                                              <div className="w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center shadow-xs shrink-0">
-                                                <Target className="w-4 h-4" />
-                                              </div>
-                                              <div className="min-w-0">
-                                                <div className="text-[10px] text-green-600 font-bold uppercase tracking-wider leading-none mb-1">
-                                                  Lô đất
-                                                </div>
-                                                <div className="text-xs font-bold text-slate-800 truncate">
-                                                  {plot.name}
-                                                </div>
-                                              </div>
-                                            </button>
-                                          ))}
-                                        {areaGroup.entities.some(
-                                          (e: any) => e.typeCode === "area",
-                                        ) && (
-                                          <div className="flex items-center gap-3 py-1 relative">
-                                            <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
-                                            <Badge
-                                              variant="outline"
-                                              className="text-[9px] uppercase font-bold border-blue-200 text-blue-600 bg-blue-50/50"
-                                            >
-                                              Đã chọn toàn bộ khu vực
-                                            </Badge>
-                                          </div>
-                                        )}
+                              {areaGroup.area ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
+                                    onClick={() =>
+                                      focusScopeMapToCoordinates(
+                                        areaGroup.area?.coordinates,
+                                      )
+                                    }
+                                  >
+                                    <div className="w-9 h-9 rounded-lg bg-blue-500 text-white flex items-center justify-center shadow-sm">
+                                      <Layers className="w-4.5 h-4.5" />
+                                    </div>
+                                    <div>
+                                      <div className="text-[10px] text-blue-500 font-bold uppercase tracking-wider leading-none mb-1">
+                                        Khu vực
                                       </div>
-                                    </>
-                                  ) : (
-                                    /* No Area (Region or direct Plot) */
-                                    <div className="space-y-4">
-                                      {areaGroup.entities.map((entity: any) => (
+                                      <div className="text-sm font-bold text-slate-900">
+                                        {areaGroup.area.name}
+                                      </div>
+                                    </div>
+                                  </button>
+
+                                  {/* Plots under this Area */}
+                                  <div className="ml-4.5 border-l-2 border-slate-100 pl-6 space-y-4">
+                                    {(areaGroup.entities || [])
+                                      .filter(
+                                        (e: any) => e?.typeCode === "plot",
+                                      )
+                                      .map((plot: any) => (
                                         <button
-                                          key={entity.id}
+                                          key={plot.id}
                                           type="button"
-                                          className="relative flex items-center gap-3 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
+                                          className="relative flex items-center gap-3 py-1 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
                                           onClick={() =>
                                             focusScopeMapToCoordinates(
-                                              entity.coordinates,
+                                              plot.coordinates,
                                             )
                                           }
                                         >
                                           <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
-                                          <div
-                                            className={cn(
-                                              "w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-xs",
-                                              entity.typeCode === "region"
-                                                ? "bg-primary"
-                                                : "bg-green-500",
-                                            )}
-                                          >
-                                            {entity.typeCode === "region" ? (
-                                              <MapPin className="w-4 h-4" />
-                                            ) : (
-                                              <Target className="w-4 h-4" />
-                                            )}
+                                          <div className="w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center shadow-xs shrink-0">
+                                            <Target className="w-4 h-4" />
                                           </div>
-                                          <div>
-                                            <div
-                                              className={cn(
-                                                "text-[10px] font-bold uppercase tracking-wider leading-none mb-1",
-                                                entity.typeCode === "region"
-                                                  ? "text-primary"
-                                                  : "text-green-600",
-                                              )}
-                                            >
-                                              {entity.type}
+                                          <div className="min-w-0">
+                                            <div className="text-[10px] text-green-600 font-bold uppercase tracking-wider leading-none mb-1">
+                                              Lô đất
                                             </div>
-                                            <div className="text-xs font-bold text-slate-800">
-                                              {entity.name}
+                                            <div className="text-xs font-bold text-slate-800 truncate">
+                                              {plot.name}
                                             </div>
                                           </div>
                                         </button>
                                       ))}
-                                    </div>
-                                  )}
+                                    {areaGroup.entities.some(
+                                      (e: any) => e.typeCode === "area",
+                                    ) && (
+                                      <div className="flex items-center gap-3 py-1 relative">
+                                        <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
+                                        <Badge
+                                          variant="outline"
+                                          className="text-[9px] uppercase font-bold border-blue-200 text-blue-600 bg-blue-50/50"
+                                        >
+                                          Đã chọn toàn bộ khu vực
+                                        </Badge>
+                                      </div>
+                                    )}
+                                  </div>
+                                </>
+                              ) : (
+                                /* No Area (Region or direct Plot) */
+                                <div className="space-y-4">
+                                  {areaGroup.entities.map((entity: any) => (
+                                    <button
+                                      key={entity.id}
+                                      type="button"
+                                      className="relative flex items-center gap-3 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
+                                      onClick={() =>
+                                        focusScopeMapToCoordinates(
+                                          entity.coordinates,
+                                        )
+                                      }
+                                    >
+                                      <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
+                                      <div
+                                        className={cn(
+                                          "w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-xs",
+                                          entity.typeCode === "region"
+                                            ? "bg-primary"
+                                            : "bg-green-500",
+                                        )}
+                                      >
+                                        {entity.typeCode === "region" ? (
+                                          <MapPin className="w-4 h-4" />
+                                        ) : (
+                                          <Target className="w-4 h-4" />
+                                        )}
+                                      </div>
+                                      <div>
+                                        <div
+                                          className={cn(
+                                            "text-[10px] font-bold uppercase tracking-wider leading-none mb-1",
+                                            entity.typeCode === "region"
+                                              ? "text-primary"
+                                              : "text-green-600",
+                                          )}
+                                        >
+                                          {entity.type}
+                                        </div>
+                                        <div className="text-xs font-bold text-slate-800">
+                                          {entity.name}
+                                        </div>
+                                      </div>
+                                    </button>
+                                  ))}
                                 </div>
-                              ),
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ),
-                  )}
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Thông tin chi tiết (Info) */}
+          {/* Thông tin vị trí cây trồng */}
           <Card className={cn(styles.areaInfo, "overflow-hidden border")}>
             <CardHeader className="border-b bg-slate-50 py-3 px-4">
               <CardTitle className="text-sm font-bold flex items-center gap-2">
                 <Contact className="w-4 h-4 text-primary" />
-                <span className="text-lg">Thông tin chi tiết vùng trồng</span>
+                <span className="text-lg">Thông tin vị trí cây trồng</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
@@ -1223,55 +1667,97 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                 <div>
                   <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mb-1.5 uppercase tracking-wider font-bold">
                     <Tag className="w-3.5 h-3.5 text-primary/70" />
-                    Tên vùng
+                    Cây trồng
                   </div>
                   <div className="font-bold text-slate-900 leading-tight">
-                    {area.name}
+                    {activeCrop.name}
                   </div>
                 </div>
                 <div>
                   <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mb-1.5 uppercase tracking-wider font-bold">
                     <Hash className="w-3.5 h-3.5 text-blue-500/70" />
-                    Mã số ID
+                    Mã số cây
                   </div>
                   <div className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-100 text-blue-700 shadow-sm transition-all hover:bg-blue-100/50">
                     <span className="font-mono text-xs font-bold">
-                      {area.id}
+                      {activeCrop.code}
                     </span>
                   </div>
                 </div>
-                {/* <div>
-                  <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mb-1.5 uppercase tracking-wider font-bold">
-                    <Maximize2 className="w-3.5 h-3.5 text-blue-600/70" />
-                    Tổng diện tích
-                  </div>
-                  <div className="font-bold text-lg text-blue-600 flex items-baseline gap-1">
-                    {details.totalArea}
-                    <span className="text-xs font-medium text-muted-foreground">
-                      ha
-                    </span>
-                  </div>
-                </div> */}
                 <div>
                   <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mb-1.5 uppercase tracking-wider font-bold">
-                    <Sprout className="w-3.5 h-3.5 text-green-600/70" />
-                    Diện tích canh tác
+                    <MapPin className="w-3.5 h-3.5 text-red-500/70" />
+                    Vùng trồng
                   </div>
-                  <div className="font-bold text-lg text-green-600 flex items-baseline gap-1">
-                    {(details.totalArea * 0.9).toFixed(1)}
-                    <span className="text-xs font-medium text-muted-foreground">
-                      ha
-                    </span>
+                  <div className="font-bold text-slate-900 leading-tight">
+                    {cropGeoRefs.region?.name || activeCrop.regionName || "---"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mb-1.5 uppercase tracking-wider font-bold">
+                    <Layers className="w-3.5 h-3.5 text-blue-500/70" />
+                    Khu vực
+                  </div>
+                  <div className="font-bold text-slate-900 leading-tight">
+                    {cropGeoRefs.area?.name ||
+                      activeCrop.areaName ||
+                      "Chưa xác định"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mb-1.5 uppercase tracking-wider font-bold">
+                    <Target className="w-3.5 h-3.5 text-green-600/70" />
+                    Lô đất
+                  </div>
+                  <div className="font-bold text-slate-900 leading-tight">
+                    {cropGeoRefs.plot?.name ||
+                      activeCrop.plotName ||
+                      "Chưa xác định"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mb-1.5 uppercase tracking-wider font-bold">
+                    <Sprout className="w-3.5 h-3.5 text-emerald-600/70" />
+                    Hàng trồng
+                  </div>
+                  <div className="font-bold text-slate-900 leading-tight">
+                    {activeCrop.rowNumber
+                      ? `Hàng ${activeCrop.rowNumber}`
+                      : "Chưa cập nhật"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mb-1.5 uppercase tracking-wider font-bold">
+                    <Globe className="w-3.5 h-3.5 text-slate-500/70" />
+                    Tọa độ
+                  </div>
+                  <div className="font-mono text-xs font-bold text-slate-900 leading-tight">
+                    {activeCrop.coordinate
+                      ? `${activeCrop.coordinate.lat.toFixed(5)}, ${activeCrop.coordinate.lng.toFixed(5)}`
+                      : "Chưa cập nhật"}
+                  </div>
+                </div>
+                <div className="lg:col-span-2">
+                  <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mb-1.5 uppercase tracking-wider font-bold">
+                    <MapPin className="w-3.5 h-3.5 text-orange-500/70" />
+                    Địa chỉ vùng
+                  </div>
+                  <div className="text-sm font-semibold text-slate-900 leading-tight">
+                    {cropGeoRefs.region
+                      ? formatFullAddress(cropGeoRefs.region)
+                      : "Chưa cập nhật"}
                   </div>
                 </div>
               </div>
 
-              {area.note && (
+              {activeCrop.notes && (
                 <div className="mt-6 pt-4 border-t border-slate-100">
                   <div className="text-sm text-muted-foreground mb-1">
-                    Ghi chú
+                    Ghi chú cây trồng
                   </div>
-                  <p className="mt-1 text-slate-700 text-sm">{area.note}</p>
+                  <p className="mt-1 text-slate-700 text-sm">
+                    {activeCrop.notes}
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -1294,6 +1780,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
             >
               <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
               <ScopeMapPolygons />
+              <CropMarker />
             </MapContainer>
 
             <button
@@ -1326,6 +1813,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                   >
                     <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                     <ScopeMapPolygons />
+                    <CropMarker />
                   </MapContainer>
 
                   <button
@@ -1351,7 +1839,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
 
                   <div className="flex-1 overflow-y-auto split-scrollbar p-5">
                     <div className="space-y-8">
-                      {Object.values(details.groupedSelections).map(
+                      {Object.values(scopedGroupedSelections).map(
                         (group: any) => (
                           <div key={group.region.id} className="relative">
                             {/* Region Level */}
@@ -1545,85 +2033,6 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
             </div>
           </CardHeader>
           <CardContent className="p-8">
-            {/* Region-Level Crop Health Overview */}
-            <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-700">
-              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
-                Tổng quan tình trạng cây trồng (Toàn vùng)
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-5 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-                  <div className="absolute -right-4 -top-4 w-16 h-16 bg-blue-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500" />
-                  <div className="relative z-10">
-                    <div className="text-[10px] text-blue-500 font-black uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                      <Globe className="w-3.5 h-3.5" />
-                      Tổng số cây
-                    </div>
-                    <div className="text-3xl font-black text-slate-800 tabular-nums mb-1">
-                      {details?.regionStats.total.toLocaleString()}
-                    </div>
-                    <div className="text-[9px] text-slate-400 font-medium">
-                      Toàn bộ diện tích canh tác
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-5 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-                  <div className="absolute -right-4 -top-4 w-16 h-16 bg-green-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500" />
-                  <div className="relative z-10">
-                    <div className="text-[10px] text-green-500 font-black uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Số cây khỏe
-                    </div>
-                    <div className="text-3xl font-black text-green-600 tabular-nums mb-1">
-                      {details?.regionStats.healthy.toLocaleString()}
-                    </div>
-                    <Badge className="bg-green-50 text-green-600 border-green-100 text-[9px] font-black h-4 px-1.5">
-                      {details &&
-                        Math.round(
-                          (details.regionStats.healthy /
-                            details.regionStats.total) *
-                            100,
-                        )}
-                      %
-                    </Badge>
-                  </div>
-                </div>
-
-                <div className="p-5 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-                  <div className="absolute -right-4 -top-4 w-16 h-16 bg-blue-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500" />
-                  <div className="relative z-10">
-                    <div className="text-[10px] text-blue-400 font-black uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                      <Beaker className="w-3.5 h-3.5" />
-                      Đang chữa trị
-                    </div>
-                    <div className="text-3xl font-black text-blue-500 tabular-nums mb-1">
-                      {details?.regionStats.treating.toLocaleString()}
-                    </div>
-                    <div className="text-[9px] text-slate-400 font-medium">
-                      Theo dõi phục hồi
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-5 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-                  <div className="absolute -right-4 -top-4 w-16 h-16 bg-orange-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500" />
-                  <div className="relative z-10">
-                    <div className="text-[10px] text-orange-500 font-black uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5" />
-                      Số cây bệnh
-                    </div>
-                    <div className="text-3xl font-black text-orange-600 tabular-nums mb-1">
-                      {details?.regionStats.diseased.toLocaleString()}
-                    </div>
-                    <Badge className="bg-orange-50 text-orange-600 border-orange-100 text-[9px] font-black h-4 px-1.5">
-                      Cảnh báo
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* Left: Technical Configs */}
               <div className="lg:col-span-3 space-y-6">
@@ -1682,7 +2091,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                 <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
                   <span className="w-1 h-1 rounded-full bg-green-500" />
                   Danh sách giống cây trồng & Hạt giống (
-                  {details.technicalConfig.crops.length})
+                  {filteredTechnicalCrops.length})
                 </div>
 
                 {Object.entries(groupedCrops).map(([cropName, crops]) => (
@@ -1796,7 +2205,7 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                   </div>
                 ))}
 
-                {details.technicalConfig.crops.length === 0 && (
+                {filteredTechnicalCrops.length === 0 && (
                   <div className="py-12 text-center text-muted-foreground italic border-2 border-dashed rounded-3xl bg-slate-50/50">
                     Chưa chọn giống cây trồng cho vùng này
                   </div>
@@ -2192,35 +2601,61 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                     className="rounded-xl px-4 py-2 font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap flex items-center gap-2"
                   >
                     <Layers className="w-3.5 h-3.5" />
-                    Canh tác ({baseRelevantPlans.filter((p) => p.purpose === "cultivation").length})
+                    Canh tác (
+                    {
+                      baseRelevantPlans.filter(
+                        (p) => p.purpose === "cultivation",
+                      ).length
+                    }
+                    )
                   </TabsTrigger>
                   <TabsTrigger
                     value="treatment"
                     className="rounded-xl px-4 py-2 font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-red-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap flex items-center gap-2"
                   >
                     <Bug className="w-3.5 h-3.5" />
-                    Điều trị ({baseRelevantPlans.filter((p) => p.purpose === "treatment").length})
+                    Điều trị (
+                    {
+                      baseRelevantPlans.filter((p) => p.purpose === "treatment")
+                        .length
+                    }
+                    )
                   </TabsTrigger>
                   <TabsTrigger
                     value="amendment"
                     className="rounded-xl px-4 py-2 font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap flex items-center gap-2"
                   >
                     <Sprout className="w-3.5 h-3.5" />
-                    Cải tạo ({baseRelevantPlans.filter((p) => p.purpose === "amendment").length})
+                    Cải tạo (
+                    {
+                      baseRelevantPlans.filter((p) => p.purpose === "amendment")
+                        .length
+                    }
+                    )
                   </TabsTrigger>
                   <TabsTrigger
                     value="harvest"
                     className="rounded-xl px-4 py-2 font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap flex items-center gap-2"
                   >
                     <ShoppingBag className="w-3.5 h-3.5" />
-                    Thu hoạch ({baseRelevantPlans.filter((p) => p.purpose === "harvest").length})
+                    Thu hoạch (
+                    {
+                      baseRelevantPlans.filter((p) => p.purpose === "harvest")
+                        .length
+                    }
+                    )
                   </TabsTrigger>
                   <TabsTrigger
                     value="incurred"
                     className="rounded-xl px-4 py-2 font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap flex items-center gap-2"
                   >
                     <AlertTriangle className="w-3.5 h-3.5" />
-                    Phát sinh ({baseRelevantPlans.filter((p) => p.purpose === "incurred").length})
+                    Phát sinh (
+                    {
+                      baseRelevantPlans.filter((p) => p.purpose === "incurred")
+                        .length
+                    }
+                    )
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -2240,11 +2675,15 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                             Tổng hợp công việc phát sinh
                           </CardTitle>
                           <CardDescription className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">
-                            Dữ liệu nhiệm vụ thực tế từ hệ thống quản lý công việc
+                            Dữ liệu nhiệm vụ thực tế từ hệ thống quản lý công
+                            việc
                           </CardDescription>
                         </div>
                       </div>
-                      <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 font-black px-4 py-1.5 rounded-xl shadow-sm">
+                      <Badge
+                        variant="outline"
+                        className="bg-amber-50 text-amber-700 border-amber-200 font-black px-4 py-1.5 rounded-xl shadow-sm"
+                      >
                         {incurredTasks.length} NHIỆM VỤ
                       </Badge>
                     </div>
@@ -2255,9 +2694,12 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                         <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-6 border border-slate-100 shadow-inner">
                           <CheckCircle2 className="w-10 h-10 text-slate-200" />
                         </div>
-                        <h4 className="text-lg font-bold text-slate-800 mb-2">Chưa có dữ liệu công việc</h4>
+                        <h4 className="text-lg font-bold text-slate-800 mb-2">
+                          Chưa có dữ liệu công việc
+                        </h4>
                         <p className="text-sm font-medium text-slate-400 max-w-[300px] mx-auto">
-                          Không tìm thấy nhiệm vụ nào được ghi nhận cho các kế hoạch phát sinh trong vùng canh tác này.
+                          Không tìm thấy nhiệm vụ nào được ghi nhận cho các kế
+                          hoạch phát sinh trong vùng canh tác này.
                         </p>
                       </div>
                     ) : (
@@ -2270,7 +2712,9 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                               key: "geographicalSelections",
                               label: "Phạm vi",
                               render: (value: any) => {
-                                const geoSummary = getSelectionSummary(value || []);
+                                const geoSummary = getSelectionSummary(
+                                  value || [],
+                                );
                                 if (geoSummary.length === 0) {
                                   return (
                                     <span className="text-slate-400 italic text-[10px]">
@@ -2397,695 +2841,753 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {relevantPlans.length === 0 ? (
-                <div className="text-sm text-muted-foreground italic text-center py-8">
-                  Chưa có kế hoạch nào phù hợp với phạm vi vùng canh tác này.
-                </div>
-              ) : (
-                relevantPlans.map((plan) => {
-                  const stageOrder =
-                    plan.selectedStages && plan.selectedStages.length > 0
-                      ? plan.selectedStages
-                      : Array.from(
-                          new Set([
-                            ...(plan.taskAllocations || []).map(
-                              (t: any) => t.stageId || "Khác",
-                            ),
-                            ...(plan.materialAllocations || []).map(
-                              (m: any) => m.stageId || "Khác",
-                            ),
-                          ]),
-                        );
+                    <div className="text-sm text-muted-foreground italic text-center py-8">
+                      Chưa có kế hoạch nào phù hợp với phạm vi vùng canh tác
+                      này.
+                    </div>
+                  ) : (
+                    relevantPlans.map((plan) => {
+                      const stageOrder =
+                        plan.selectedStages && plan.selectedStages.length > 0
+                          ? plan.selectedStages
+                          : Array.from(
+                              new Set([
+                                ...(plan.taskAllocations || []).map(
+                                  (t: any) => t.stageId || "Khác",
+                                ),
+                                ...(plan.materialAllocations || []).map(
+                                  (m: any) => m.stageId || "Khác",
+                                ),
+                              ]),
+                            );
 
-                  const isCultivation = plan.purpose === "cultivation";
-                  const isTreatment = plan.purpose === "treatment";
-                  const isAmendment = plan.purpose === "amendment";
-                  const isHarvest = plan.purpose === "harvest";
-                  const isIncurred = plan.purpose === "incurred";
+                      const isCultivation = plan.purpose === "cultivation";
+                      const isTreatment = plan.purpose === "treatment";
+                      const isAmendment = plan.purpose === "amendment";
+                      const isHarvest = plan.purpose === "harvest";
+                      const isIncurred = plan.purpose === "incurred";
 
-                  return (
-                    <div
-                      key={plan.id}
-                      className="border rounded-2xl p-6 bg-white shadow-sm hover:shadow-md transition-all duration-300 border-slate-100"
-                    >
-                      <div className="grid grid-cols-1 lg:grid-cols-[1fr,1.2fr] gap-8">
-                        {/* Left Column: Info & Purpose */}
-                        <div className="space-y-8">
-                          {/* 1. Header with General Info */}
-                          <div className="flex flex-col gap-4">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-3">
-                                <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">
-                                  {plan.name}
-                                </h3>
-                                {planStatusBadge(plan.status)}
+                      return (
+                        <div
+                          key={plan.id}
+                          className="border rounded-2xl p-6 bg-white shadow-sm hover:shadow-md transition-all duration-300 border-slate-100"
+                        >
+                          <div className="grid grid-cols-1 lg:grid-cols-[1fr,1.2fr] gap-8">
+                            {/* Left Column: Info & Purpose */}
+                            <div className="space-y-8">
+                              {/* 1. Header with General Info */}
+                              <div className="flex flex-col gap-4">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-3">
+                                    <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">
+                                      {plan.name}
+                                    </h3>
+                                    {planStatusBadge(plan.status)}
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-y-1.5 gap-x-4 text-xs text-slate-500">
+                                    <div className="flex items-center gap-1.5 font-medium">
+                                      <span className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
+                                        <FileText className="w-3 h-3 text-slate-500" />
+                                      </span>
+                                      <span className="font-mono">
+                                        {plan.code}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 font-medium">
+                                      <span className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
+                                        <Calendar className="w-3 h-3 text-slate-500" />
+                                      </span>
+                                      <span>{plan.seasonName}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 font-medium">
+                                      <span className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
+                                        <Clock className="w-3 h-3 text-slate-500" />
+                                      </span>
+                                      <span>
+                                        {new Date(
+                                          plan.startDate,
+                                        ).toLocaleDateString("vi-VN")}{" "}
+                                        -{" "}
+                                        {new Date(
+                                          plan.endDate,
+                                        ).toLocaleDateString("vi-VN")}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-slate-500 hover:text-primary rounded-xl self-start px-0 h-auto"
+                                  onClick={() => {
+                                    window.open(`/plan/${plan.id}`, "_blank");
+                                  }}
+                                >
+                                  Xem chi tiết{" "}
+                                  <ChevronRight className="w-4 h-4 ml-1" />
+                                </Button>
                               </div>
-                              <div className="flex flex-wrap items-center gap-y-1.5 gap-x-4 text-xs text-slate-500">
-                                <div className="flex items-center gap-1.5 font-medium">
-                                  <span className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
-                                    <FileText className="w-3 h-3 text-slate-500" />
-                                  </span>
-                                  <span className="font-mono">{plan.code}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 font-medium">
-                                  <span className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
-                                    <Calendar className="w-3 h-3 text-slate-500" />
-                                  </span>
-                                  <span>{plan.seasonName}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 font-medium">
-                                  <span className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
-                                    <Clock className="w-3 h-3 text-slate-500" />
-                                  </span>
-                                  <span>
-                                    {new Date(
-                                      plan.startDate,
-                                    ).toLocaleDateString("vi-VN")}{" "}
-                                    -{" "}
-                                    {new Date(plan.endDate).toLocaleDateString(
-                                      "vi-VN",
-                                    )}
-                                  </span>
+
+                              {/* 2. Simplified Purpose Display */}
+                              <div className="space-y-4">
+                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                  Mục đích kế hoạch
+                                </h4>
+                                <div className="grid grid-cols-1">
+                                  {/* CANH TÁC */}
+                                  {isCultivation && (
+                                    <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/5">
+                                      <div className="w-9 h-9 rounded-lg bg-blue-600 text-white shadow-md shadow-blue-500/20 flex items-center justify-center shrink-0">
+                                        <Layers className="w-5 h-5" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-bold text-blue-700 uppercase tracking-wider">
+                                          CANH TÁC
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                                          Áp dụng quy trình sản xuất chuẩn
+                                        </div>
+                                      </div>
+                                      <div className="w-2 h-2 rounded-full bg-blue-500 mr-2" />
+                                    </div>
+                                  )}
+
+                                  {/* ĐIỀU TRỊ */}
+                                  {isTreatment && (
+                                    <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-red-500 bg-red-50/50 ring-2 ring-red-500/5">
+                                      <div className="w-9 h-9 rounded-lg bg-red-600 text-white shadow-md shadow-red-500/20 flex items-center justify-center shrink-0">
+                                        <Bug className="w-5 h-5" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-bold text-red-700 uppercase tracking-wider">
+                                          ĐIỀU TRỊ
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                                          Triển khai phác đồ xử lý sâu bệnh
+                                        </div>
+                                      </div>
+                                      <div className="w-2 h-2 rounded-full bg-red-500 mr-2" />
+                                    </div>
+                                  )}
+
+                                  {/* CẢI TẠO ĐẤT */}
+                                  {isAmendment && (
+                                    <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/5">
+                                      <div className="w-9 h-9 rounded-lg bg-emerald-600 text-white shadow-md shadow-emerald-500/20 flex items-center justify-center shrink-0">
+                                        <Sprout className="w-5 h-5" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
+                                          CẢI TẠO ĐẤT
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                                          Quy trình xử lý phục hồi đất đai
+                                        </div>
+                                      </div>
+                                      <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2" />
+                                    </div>
+                                  )}
+
+                                  {/* THU HOẠCH */}
+                                  {isHarvest && (
+                                    <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/5">
+                                      <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white shadow-md shadow-indigo-500/20 flex items-center justify-center shrink-0">
+                                        <ShoppingBag className="w-5 h-5" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-bold text-indigo-700 uppercase tracking-wider">
+                                          THU HOẠCH
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                                          Triển khai thu hoạch và bảo quản
+                                        </div>
+                                      </div>
+                                      <div className="w-2 h-2 rounded-full bg-indigo-500 mr-2" />
+                                    </div>
+                                  )}
+
+                                  {/* PHÁT SINH */}
+                                  {isIncurred && (
+                                    <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/5">
+                                      <div className="w-9 h-9 rounded-lg bg-amber-600 text-white shadow-md shadow-amber-500/20 flex items-center justify-center shrink-0">
+                                        <AlertTriangle className="w-5 h-5" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-bold text-amber-700 uppercase tracking-wider">
+                                          PHÁT SINH
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                                          Công việc phát sinh ngoài kế hoạch
+                                        </div>
+                                      </div>
+                                      <div className="w-2 h-2 rounded-full bg-amber-500 mr-2" />
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-slate-500 hover:text-primary rounded-xl self-start px-0 h-auto"
-                              onClick={() => {
-                                window.open(`/plan/${plan.id}`, "_blank");
-                              }}
-                            >
-                              Xem chi tiết{" "}
-                              <ChevronRight className="w-4 h-4 ml-1" />
-                            </Button>
-                          </div>
 
-                          {/* 2. Simplified Purpose Display */}
-                          <div className="space-y-4">
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                              Mục đích kế hoạch
-                            </h4>
-                            <div className="grid grid-cols-1">
-                              {/* CANH TÁC */}
-                              {isCultivation && (
-                                <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/5">
-                                  <div className="w-9 h-9 rounded-lg bg-blue-600 text-white shadow-md shadow-blue-500/20 flex items-center justify-center shrink-0">
-                                    <Layers className="w-5 h-5" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="text-xs font-bold text-blue-700 uppercase tracking-wider">
-                                      CANH TÁC
-                                    </div>
-                                    <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
-                                      Áp dụng quy trình sản xuất chuẩn
-                                    </div>
-                                  </div>
-                                  <div className="w-2 h-2 rounded-full bg-blue-500 mr-2" />
-                                </div>
-                              )}
-
-                              {/* ĐIỀU TRỊ */}
-                              {isTreatment && (
-                                <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-red-500 bg-red-50/50 ring-2 ring-red-500/5">
-                                  <div className="w-9 h-9 rounded-lg bg-red-600 text-white shadow-md shadow-red-500/20 flex items-center justify-center shrink-0">
-                                    <Bug className="w-5 h-5" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="text-xs font-bold text-red-700 uppercase tracking-wider">
-                                      ĐIỀU TRỊ
-                                    </div>
-                                    <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
-                                      Triển khai phác đồ xử lý sâu bệnh
-                                    </div>
-                                  </div>
-                                  <div className="w-2 h-2 rounded-full bg-red-500 mr-2" />
-                                </div>
-                              )}
-
-                              {/* CẢI TẠO ĐẤT */}
-                              {isAmendment && (
-                                <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/5">
-                                  <div className="w-9 h-9 rounded-lg bg-emerald-600 text-white shadow-md shadow-emerald-500/20 flex items-center justify-center shrink-0">
-                                    <Sprout className="w-5 h-5" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
-                                      CẢI TẠO ĐẤT
-                                    </div>
-                                    <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
-                                      Quy trình xử lý phục hồi đất đai
-                                    </div>
-                                  </div>
-                                  <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2" />
-                                </div>
-                              )}
-
-                              {/* THU HOẠCH */}
-                              {isHarvest && (
-                                <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/5">
-                                  <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white shadow-md shadow-indigo-500/20 flex items-center justify-center shrink-0">
-                                    <ShoppingBag className="w-5 h-5" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="text-xs font-bold text-indigo-700 uppercase tracking-wider">
-                                      THU HOẠCH
-                                    </div>
-                                    <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
-                                      Triển khai thu hoạch và bảo quản
-                                    </div>
-                                  </div>
-                                  <div className="w-2 h-2 rounded-full bg-indigo-500 mr-2" />
-                                </div>
-                              )}
-
-                              {/* PHÁT SINH */}
-                              {isIncurred && (
-                                <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/5">
-                                  <div className="w-9 h-9 rounded-lg bg-amber-600 text-white shadow-md shadow-amber-500/20 flex items-center justify-center shrink-0">
-                                    <AlertTriangle className="w-5 h-5" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="text-xs font-bold text-amber-700 uppercase tracking-wider">
-                                      PHÁT SINH
-                                    </div>
-                                    <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
-                                      Công việc phát sinh ngoài kế hoạch
-                                    </div>
-                                  </div>
-                                  <div className="w-2 h-2 rounded-full bg-amber-500 mr-2" />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Right Column: Detailed Setup View (Enhanced) */}
-                        <div className="lg:pl-8 lg:border-l border-slate-100 min-w-0">
-                          <div className="flex items-center gap-3 mb-6">
-                            <div
-                              className={cn(
-                                "p-2.5 rounded-2xl shadow-sm",
-                                isTreatment && "bg-red-100/50",
-                                isAmendment && "bg-emerald-100/50",
-                                isCultivation && "bg-blue-100/50",
-                                isHarvest && "bg-indigo-100/50",
-                                isIncurred && "bg-amber-100/50",
-                              )}
-                            >
-                              {isIncurred ? (
-                                <ClipboardList className={cn("w-7 h-7 text-amber-600")} />
-                              ) : (
-                                <Layers
+                            {/* Right Column: Detailed Setup View (Enhanced) */}
+                            <div className="lg:pl-8 lg:border-l border-slate-100 min-w-0">
+                              <div className="flex items-center gap-3 mb-6">
+                                <div
                                   className={cn(
-                                    "w-7 h-7",
-                                    isTreatment && "text-red-600",
-                                    isAmendment && "text-emerald-600",
-                                    isCultivation && "text-blue-600",
-                                    isHarvest && "text-indigo-600",
+                                    "p-2.5 rounded-2xl shadow-sm",
+                                    isTreatment && "bg-red-100/50",
+                                    isAmendment && "bg-emerald-100/50",
+                                    isCultivation && "bg-blue-100/50",
+                                    isHarvest && "bg-indigo-100/50",
+                                    isIncurred && "bg-amber-100/50",
                                   )}
-                                />
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <h3 className="text-lg font-black text-slate-900 truncate">
-                                {isTreatment
-                                  ? "Lộ trình xử lý & Phác đồ"
-                                  : isAmendment
-                                    ? "Lộ trình cải tạo & Quy trình"
-                                    : isHarvest
-                                      ? "Lộ trình thu hoạch & Đóng gói"
+                                >
+                                  {isIncurred ? (
+                                    <ClipboardList
+                                      className={cn("w-7 h-7 text-amber-600")}
+                                    />
+                                  ) : (
+                                    <Layers
+                                      className={cn(
+                                        "w-7 h-7",
+                                        isTreatment && "text-red-600",
+                                        isAmendment && "text-emerald-600",
+                                        isCultivation && "text-blue-600",
+                                        isHarvest && "text-indigo-600",
+                                      )}
+                                    />
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <h3 className="text-lg font-black text-slate-900 truncate">
+                                    {isTreatment
+                                      ? "Lộ trình xử lý & Phác đồ"
+                                      : isAmendment
+                                        ? "Lộ trình cải tạo & Quy trình"
+                                        : isHarvest
+                                          ? "Lộ trình thu hoạch & Đóng gói"
+                                          : isIncurred
+                                            ? "Danh sách công việc phát sinh"
+                                            : "Lộ trình triển khai & Giai đoạn"}
+                                  </h3>
+                                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5">
+                                    {isHarvest
+                                      ? "Chi tiết các giai đoạn thu hoạch sản phẩm"
                                       : isIncurred
-                                        ? "Danh sách công việc phát sinh"
-                                        : "Lộ trình triển khai & Giai đoạn"}
-                              </h3>
-                              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5">
-                                {isHarvest
-                                  ? "Chi tiết các giai đoạn thu hoạch sản phẩm"
-                                  : isIncurred
-                                    ? "Chi tiết các nhiệm vụ và vật tư phát sinh"
-                                    : "Chi tiết các hạng mục và kế hoạch hành động"}
-                              </p>
-                            </div>
-                          </div>
+                                        ? "Chi tiết các nhiệm vụ và vật tư phát sinh"
+                                        : "Chi tiết các hạng mục và kế hoạch hành động"}
+                                  </p>
+                                </div>
+                              </div>
 
-                          <div className="space-y-4 max-h-125 overflow-y-auto pr-2 custom-scrollbar">
-                            {isIncurred ? (
-                              <Tabs
-                                defaultValue="tasks"
-                                className="w-full"
-                              >
-                                <TabsList className="flex items-center justify-start gap-4 p-0 bg-transparent h-auto border-b rounded-none mb-4 no-scrollbar">
-                                  <TabsTrigger
-                                    value="tasks"
-                                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-amber-600 data-[state=active]:text-amber-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
-                                  >
-                                    <Users className="w-3.5 h-3.5" />
-                                    Nhiệm vụ ({plan.taskAllocations?.length || 0})
-                                  </TabsTrigger>
-                                  <TabsTrigger
-                                    value="materials"
-                                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
-                                  >
-                                    <Package className="w-3.5 h-3.5" />
-                                    Vật tư ({plan.materialAllocations?.length || 0})
-                                  </TabsTrigger>
-                                </TabsList>
+                              <div className="space-y-4 max-h-125 overflow-y-auto pr-2 custom-scrollbar">
+                                {isIncurred ? (
+                                  <Tabs defaultValue="tasks" className="w-full">
+                                    <TabsList className="flex items-center justify-start gap-4 p-0 bg-transparent h-auto border-b rounded-none mb-4 no-scrollbar">
+                                      <TabsTrigger
+                                        value="tasks"
+                                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-amber-600 data-[state=active]:text-amber-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
+                                      >
+                                        <Users className="w-3.5 h-3.5" />
+                                        Nhiệm vụ (
+                                        {plan.taskAllocations?.length || 0})
+                                      </TabsTrigger>
+                                      <TabsTrigger
+                                        value="materials"
+                                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
+                                      >
+                                        <Package className="w-3.5 h-3.5" />
+                                        Vật tư (
+                                        {plan.materialAllocations?.length || 0})
+                                      </TabsTrigger>
+                                    </TabsList>
 
-                                <TabsContent
-                                  value="tasks"
-                                  className="m-0 bg-white anim-fade-in"
-                                >
-                                  {(!plan.taskAllocations || plan.taskAllocations.length === 0) ? (
-                                    <div className="py-12 text-center border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
-                                      <p className="text-xs text-slate-400 italic">Chưa có nhiệm vụ cụ thể</p>
-                                    </div>
-                                  ) : (
-                                    <div className="overflow-hidden rounded-xl border border-slate-100 shadow-sm bg-white">
-                                      <DataTable
-                                        columns={[
-                                          { key: "code", label: "Mã" },
-                                          {
-                                            key: "name",
-                                            label: "Tên công việc",
-                                          },
-                                          {
-                                            key: "geographicalSelections",
-                                            label: "Phạm vi",
-                                            render: (value: any) => {
-                                              const geoSummary =
-                                                getSelectionSummary(
-                                                  value || [],
-                                                );
-                                              if (geoSummary.length === 0) {
-                                                return (
-                                                  <span className="text-slate-400 italic text-[10px]">
-                                                    Toàn bộ kế hoạch
-                                                  </span>
-                                                );
-                                              }
-                                              return (
-                                                <div className="flex flex-wrap gap-1">
-                                                  {geoSummary.map((group) =>
-                                                    group.items.map(
-                                                      (item, idx) => (
-                                                        <Badge
-                                                          key={`${group.regionId}-${idx}`}
-                                                          variant="outline"
-                                                          className={cn(
-                                                            "text-[9px] py-0 h-4 font-bold border-slate-100",
-                                                            item.type ===
-                                                              "region"
-                                                              ? "bg-emerald-50 text-emerald-600"
-                                                              : "bg-blue-50 text-blue-600",
-                                                          )}
-                                                        >
-                                                          {item.name}
-                                                        </Badge>
-                                                      ),
-                                                    ),
-                                                  )}
-                                                </div>
-                                              );
-                                            },
-                                          },
-                                          {
-                                            key: "assignedTo",
-                                            label: "Phân công",
-                                            render: (value: any, row: any) => (
-                                              <div className="flex items-center gap-2.5">
-                                                <div
-                                                  className={cn(
-                                                    "p-1.5 rounded-lg shrink-0",
-                                                    row.assignedType === "team"
-                                                      ? "bg-blue-50 text-blue-600"
-                                                      : "bg-green-50 text-green-600",
-                                                  )}
-                                                >
-                                                  <Users className="w-3.5 h-3.5" />
-                                                </div>
-                                                <span className="text-[11px] font-bold text-slate-600 truncate max-w-[120px]">
-                                                  {Array.isArray(value)
-                                                    ? value.join(", ")
-                                                    : value}
-                                                </span>
-                                              </div>
-                                            ),
-                                          },
-                                          {
-                                            key: "priority",
-                                            label: "Ưu tiên",
-                                            render: () => (
-                                              <Badge variant="outline" className="text-[10px] bg-white border-slate-200 text-slate-500 font-bold px-2 py-0">
-                                                Trung bình
-                                              </Badge>
-                                            ),
-                                          },
-                                          {
-                                            key: "status",
-                                            label: "Trạng thái",
-                                            render: () => (
-                                              <Badge variant="default" className="text-[10px] bg-blue-600 text-white font-bold px-2 py-0 border-none">
-                                                Đang thực hiện
-                                              </Badge>
-                                            ),
-                                          },
-                                          {
-                                            key: "startDate",
-                                            label: "Bắt đầu",
-                                          },
-                                          {
-                                            key: "endDate",
-                                            label: "Kết thúc",
-                                          },
-                                        ]}
-                                        data={plan.taskAllocations?.map((task: any) => ({
-                                          ...task,
-                                          code: `${plan.code}-${task.id}`,
-                                          startDate: new Date(plan.startDate).toLocaleDateString("vi-VN"),
-                                          endDate: new Date(plan.endDate).toLocaleDateString("vi-VN"),
-                                        })) || []}
-                                      />
-                                    </div>
-                                  )}
-                                </TabsContent>
-
-                                <TabsContent
-                                  value="materials"
-                                  className="m-0 bg-white anim-fade-in"
-                                >
-                                  {(!plan.materialAllocations || plan.materialAllocations.length === 0) ? (
-                                    <div className="py-12 text-center border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
-                                      <p className="text-xs text-slate-400 italic">Không sử dụng vật tư</p>
-                                    </div>
-                                  ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2">
-                                      {plan.materialAllocations.map((mat) => (
-                                        <div
-                                          key={mat.id}
-                                          className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-white hover:bg-emerald-50/30 transition-all shadow-sm hover:shadow-md"
-                                        >
-                                          <div className="flex items-center gap-3 overflow-hidden">
-                                            <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-100 shrink-0">
-                                              <Package className="w-4 h-4 text-emerald-600" />
-                                            </div>
-                                            <div className="min-w-0">
-                                              <p className="font-extrabold text-xs truncate text-slate-800">
-                                                {mat.materialName}
-                                              </p>
-                                              <p className="text-[10px] font-bold text-emerald-600/70 uppercase tracking-tighter">
-                                                {mat.materialType}
-                                              </p>
-                                            </div>
-                                          </div>
-                                          <div className="text-right pl-2">
-                                            <div className="flex items-baseline gap-0.5">
-                                              <span className="text-sm font-black text-slate-900">{mat.quantity}</span>
-                                              <span className="text-[9px] font-bold text-slate-400 uppercase">{mat.unit}</span>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </TabsContent>
-                              </Tabs>
-                            ) : (
-                              (plan.selectedStages &&
-                              plan.selectedStages.length > 0
-                                ? plan.selectedStages
-                                : stageOrder
-                              ).map((stageKey, index) => {
-                                const [cycleId, stageName] = stageKey.includes(
-                                  ":",
-                                )
-                                  ? stageKey.split(":")
-                                  : [null, stageKey];
-                                const cycle = cycleId
-                                  ? growthCycles.find((c) => c.id === cycleId)
-                                  : null;
-
-                                // Filter allocations for this stage
-                                const stageMaterials = (
-                                  plan.materialAllocations || []
-                                ).filter((m) => m.stageId === stageKey);
-                                const stageTasks =
-                                  plan.taskAllocations?.filter(
-                                    (t) => t.stageId === stageKey,
-                                  ) || [];
-
-                                return (
-                                  <Card
-                                    key={stageKey}
-                                    className="overflow-hidden border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl"
-                                  >
-                                    <div className="bg-slate-50/80 px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-4">
-                                      <div className="flex items-center gap-4 min-w-0">
-                                        <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 shadow-xs flex items-center justify-center font-black text-sm text-slate-700 shrink-0">
-                                          {index + 1}
-                                        </div>
-                                        <div className="min-w-0">
-                                          <div className="flex items-center gap-2">
-                                            <h4 className="font-bold text-base text-slate-900 truncate">
-                                              {stageName}
-                                            </h4>
-                                            {cycle && (
-                                              <Badge
-                                                variant="outline"
-                                                className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-100 font-normal py-0 px-2 h-4 shrink-0"
-                                              >
-                                                {cycle.name}
-                                              </Badge>
-                                            )}
-                                          </div>
-                                          {plan.purpose !== "cultivation" && (
-                                            <p
-                                              className={cn(
-                                                "text-[10px] font-bold uppercase tracking-wider",
-                                                isAmendment
-                                                  ? "text-emerald-600"
-                                                  : "text-red-600",
-                                              )}
-                                            >
-                                              {isAmendment
-                                                ? "Hoạt động cải tạo đất"
-                                                : "Hoạt động điều trị bệnh"}
-                                            </p>
-                                          )}
-                                        </div>
-                                      </div>
-                                      <div className="flex gap-2 shrink-0">
-                                        <Badge
-                                          variant="outline"
-                                          className="bg-white hover:bg-green-50 transition-colors px-2 py-0.5"
-                                        >
-                                          <Leaf className="w-3 h-3 mr-1 text-green-600" />
-                                          {stageMaterials.length}
-                                        </Badge>
-                                        <Badge
-                                          variant="outline"
-                                          className="bg-white hover:bg-blue-50 transition-colors px-2 py-0.5"
-                                        >
-                                          <Users className="w-3 h-3 mr-1 text-blue-600" />
-                                          {stageTasks.length}
-                                        </Badge>
-                                      </div>
-                                    </div>
-
-                                    <CardContent className="p-0">
-                                      {stageMaterials.length === 0 &&
-                                      stageTasks.length === 0 ? (
-                                        <div className="p-8 text-center text-muted-foreground italic text-sm">
-                                          Chưa có chi tiết nào được lên kế hoạch.
+                                    <TabsContent
+                                      value="tasks"
+                                      className="m-0 bg-white anim-fade-in"
+                                    >
+                                      {!plan.taskAllocations ||
+                                      plan.taskAllocations.length === 0 ? (
+                                        <div className="py-12 text-center border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
+                                          <p className="text-xs text-slate-400 italic">
+                                            Chưa có nhiệm vụ cụ thể
+                                          </p>
                                         </div>
                                       ) : (
-                                        <Tabs
-                                          defaultValue="tasks"
-                                          className="w-full"
-                                        >
-                                          <TabsList className="flex items-center justify-start gap-4 p-0 bg-transparent h-auto border-b rounded-none mb-4 no-scrollbar">
-                                            <TabsTrigger
-                                              value="tasks"
-                                              className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
-                                            >
-                                              <Users className="w-3.5 h-3.5" />
-                                              Công việc ({stageTasks.length})
-                                            </TabsTrigger>
-                                            <TabsTrigger
-                                              value="materials"
-                                              className="rounded-none border-b-2 border-transparent data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
-                                            >
-                                              <Package className="w-3.5 h-3.5" />
-                                              Vật tư ({stageMaterials.length})
-                                            </TabsTrigger>
-                                          </TabsList>
-
-                                          <TabsContent
-                                            value="tasks"
-                                            className="m-0 bg-white anim-fade-in"
-                                          >
-                                            {stageTasks.length === 0 ? (
-                                              <div className="text-center py-10 border border-dashed rounded-2xl bg-slate-50/50">
-                                                <Wrench className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                                                <p className="text-sm text-slate-500 font-medium">
-                                                  Chưa có công việc phân bổ
-                                                </p>
-                                              </div>
-                                            ) : (
-                                              <div className="overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
-                                                <table className="w-full text-left border-collapse min-w-[600px]">
-                                                  <thead>
-                                                    <tr className="bg-slate-50/80 border-b border-slate-100">
-                                                      <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
-                                                        Nội dung
-                                                      </th>
-                                                      <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
-                                                        Phạm vi
-                                                      </th>
-                                                      <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
-                                                        Nhân sự
-                                                      </th>
-                                                      <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-right">
-                                                        Thời gian
-                                                      </th>
-                                                    </tr>
-                                                  </thead>
-                                                  <tbody className="divide-y divide-slate-50">
-                                                    {stageTasks.map((task) => {
-                                                      const geoSummary = getSelectionSummary(task.geographicalSelections || []);
-                                                      return (
-                                                        <tr
-                                                          key={task.id}
-                                                          className="hover:bg-blue-50/30 transition-colors group"
-                                                        >
-                                                          <td className="px-4 py-3">
-                                                            <div className="flex items-center gap-3">
-                                                              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100 group-hover:bg-white transition-colors">
-                                                                <CheckCircle2 className="w-4 h-4" />
-                                                              </div>
-                                                              <div className="min-w-0">
-                                                                <p className="font-bold text-slate-800 text-xs lines-1">
-                                                                  {task.name}
-                                                                </p>
-                                                                <p className="text-[10px] text-slate-400 italic truncate max-w-[200px]">
-                                                                  {task.description ||
-                                                                    "Máy móc & Thiết bị..."}
-                                                                </p>
-                                                              </div>
-                                                            </div>
-                                                          </td>
-                                                          <td className="px-4 py-3">
-                                                            <div className="flex flex-wrap gap-1">
-                                                              {geoSummary.length >
-                                                              0 ? (
-                                                                geoSummary.map(
-                                                                  (group) =>
-                                                                    group.items.map(
-                                                                      (
-                                                                        item,
-                                                                        idx,
-                                                                      ) => (
-                                                                        <Badge
-                                                                          key={`${group.regionId}-${idx}`}
-                                                                          variant="outline"
-                                                                          className={cn(
-                                                                            "text-[9px] py-0 h-4 font-bold border-slate-100",
-                                                                            item.type ===
-                                                                              "region"
-                                                                              ? "bg-emerald-50 text-emerald-600"
-                                                                              : "bg-blue-50 text-blue-600",
-                                                                          )}
-                                                                        >
-                                                                          {
-                                                                            item.name
-                                                                          }
-                                                                        </Badge>
-                                                                      ),
-                                                                    ),
-                                                                )
-                                                              ) : (
-                                                                <span className="text-slate-400 italic text-[10px]">
-                                                                  Toàn vùng
-                                                                </span>
-                                                              )}
-                                                            </div>
-                                                          </td>
-                                                          <td className="px-4 py-3">
-                                                            <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                                              <Users className="w-3 h-3 text-slate-400" />
-                                                              <span className="text-xs font-bold text-slate-600">
-                                                                {task.labor ||
-                                                                  "Đội ngũ"}
-                                                              </span>
-                                                            </div>
-                                                          </td>
-                                                          <td className="px-4 py-3 text-right">
+                                        <div className="overflow-hidden rounded-xl border border-slate-100 shadow-sm bg-white">
+                                          <DataTable
+                                            columns={[
+                                              { key: "code", label: "Mã" },
+                                              {
+                                                key: "name",
+                                                label: "Tên công việc",
+                                              },
+                                              {
+                                                key: "geographicalSelections",
+                                                label: "Phạm vi",
+                                                render: (value: any) => {
+                                                  const geoSummary =
+                                                    getSelectionSummary(
+                                                      value || [],
+                                                    );
+                                                  if (geoSummary.length === 0) {
+                                                    return (
+                                                      <span className="text-slate-400 italic text-[10px]">
+                                                        Toàn bộ kế hoạch
+                                                      </span>
+                                                    );
+                                                  }
+                                                  return (
+                                                    <div className="flex flex-wrap gap-1">
+                                                      {geoSummary.map((group) =>
+                                                        group.items.map(
+                                                          (item, idx) => (
                                                             <Badge
+                                                              key={`${group.regionId}-${idx}`}
                                                               variant="outline"
-                                                              className="text-[10px] bg-white border-slate-200 text-slate-500 font-bold px-2 py-0"
+                                                              className={cn(
+                                                                "text-[9px] py-0 h-4 font-bold border-slate-100",
+                                                                item.type ===
+                                                                  "region"
+                                                                  ? "bg-emerald-50 text-emerald-600"
+                                                                  : "bg-blue-50 text-blue-600",
+                                                              )}
                                                             >
-                                                              {task.duration}
+                                                              {item.name}
                                                             </Badge>
-                                                          </td>
-                                                        </tr>
-                                                      );
-                                                    })}
-                                                  </tbody>
-                                                </table>
-                                              </div>
-                                            )}
-                                          </TabsContent>
-
-                                          <TabsContent
-                                            value="materials"
-                                            className="m-0 bg-white anim-fade-in"
-                                          >
-                                            {stageMaterials.length === 0 ? (
-                                              <div className="text-center py-10 border border-dashed rounded-2xl bg-slate-50/50">
-                                                <Package className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                                                <p className="text-sm text-slate-500 font-medium">
-                                                  Chưa có vật tư phân bổ
-                                                </p>
-                                              </div>
-                                            ) : (
-                                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2">
-                                                {stageMaterials.map((mat) => (
-                                                  <div
-                                                    key={mat.id}
-                                                    className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-white hover:bg-emerald-50/30 transition-all shadow-sm hover:shadow-md"
-                                                  >
-                                                    <div className="flex items-center gap-3 overflow-hidden">
-                                                      <div className="bg-emerald-50 p-2.5 rounded-xl shadow-sm border border-emerald-100 shrink-0">
-                                                        <Package className="w-4 h-4 text-emerald-600" />
-                                                      </div>
-                                                      <div className="min-w-0 text-left">
-                                                        <p className="font-extrabold text-xs truncate text-slate-800">
-                                                          {mat.materialName}
-                                                        </p>
-                                                        <p className="text-[10px] font-bold text-emerald-600/70 uppercase tracking-tighter">
-                                                          {mat.materialType}
-                                                        </p>
-                                                      </div>
+                                                          ),
+                                                        ),
+                                                      )}
                                                     </div>
+                                                  );
+                                                },
+                                              },
+                                              {
+                                                key: "assignedTo",
+                                                label: "Phân công",
+                                                render: (
+                                                  value: any,
+                                                  row: any,
+                                                ) => (
+                                                  <div className="flex items-center gap-2.5">
+                                                    <div
+                                                      className={cn(
+                                                        "p-1.5 rounded-lg shrink-0",
+                                                        row.assignedType ===
+                                                          "team"
+                                                          ? "bg-blue-50 text-blue-600"
+                                                          : "bg-green-50 text-green-600",
+                                                      )}
+                                                    >
+                                                      <Users className="w-3.5 h-3.5" />
+                                                    </div>
+                                                    <span className="text-[11px] font-bold text-slate-600 truncate max-w-[120px]">
+                                                      {Array.isArray(value)
+                                                        ? value.join(", ")
+                                                        : value}
+                                                    </span>
                                                   </div>
-                                                ))}
-                                              </div>
-                                            )}
-                                          </TabsContent>
-                                        </Tabs>
+                                                ),
+                                              },
+                                              {
+                                                key: "priority",
+                                                label: "Ưu tiên",
+                                                render: () => (
+                                                  <Badge
+                                                    variant="outline"
+                                                    className="text-[10px] bg-white border-slate-200 text-slate-500 font-bold px-2 py-0"
+                                                  >
+                                                    Trung bình
+                                                  </Badge>
+                                                ),
+                                              },
+                                              {
+                                                key: "status",
+                                                label: "Trạng thái",
+                                                render: () => (
+                                                  <Badge
+                                                    variant="default"
+                                                    className="text-[10px] bg-blue-600 text-white font-bold px-2 py-0 border-none"
+                                                  >
+                                                    Đang thực hiện
+                                                  </Badge>
+                                                ),
+                                              },
+                                              {
+                                                key: "startDate",
+                                                label: "Bắt đầu",
+                                              },
+                                              {
+                                                key: "endDate",
+                                                label: "Kết thúc",
+                                              },
+                                            ]}
+                                            data={
+                                              plan.taskAllocations?.map(
+                                                (task: any) => ({
+                                                  ...task,
+                                                  code: `${plan.code}-${task.id}`,
+                                                  startDate: new Date(
+                                                    plan.startDate,
+                                                  ).toLocaleDateString("vi-VN"),
+                                                  endDate: new Date(
+                                                    plan.endDate,
+                                                  ).toLocaleDateString("vi-VN"),
+                                                }),
+                                              ) || []
+                                            }
+                                          />
+                                        </div>
                                       )}
-                                    </CardContent>
-                                  </Card>
-                                );
-                              })
-                            )}
+                                    </TabsContent>
+
+                                    <TabsContent
+                                      value="materials"
+                                      className="m-0 bg-white anim-fade-in"
+                                    >
+                                      {!plan.materialAllocations ||
+                                      plan.materialAllocations.length === 0 ? (
+                                        <div className="py-12 text-center border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
+                                          <p className="text-xs text-slate-400 italic">
+                                            Không sử dụng vật tư
+                                          </p>
+                                        </div>
+                                      ) : (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2">
+                                          {plan.materialAllocations.map(
+                                            (mat) => (
+                                              <div
+                                                key={mat.id}
+                                                className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-white hover:bg-emerald-50/30 transition-all shadow-sm hover:shadow-md"
+                                              >
+                                                <div className="flex items-center gap-3 overflow-hidden">
+                                                  <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-100 shrink-0">
+                                                    <Package className="w-4 h-4 text-emerald-600" />
+                                                  </div>
+                                                  <div className="min-w-0">
+                                                    <p className="font-extrabold text-xs truncate text-slate-800">
+                                                      {mat.materialName}
+                                                    </p>
+                                                    <p className="text-[10px] font-bold text-emerald-600/70 uppercase tracking-tighter">
+                                                      {mat.materialType}
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                                <div className="text-right pl-2">
+                                                  <div className="flex items-baseline gap-0.5">
+                                                    <span className="text-sm font-black text-slate-900">
+                                                      {mat.quantity}
+                                                    </span>
+                                                    <span className="text-[9px] font-bold text-slate-400 uppercase">
+                                                      {mat.unit}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            ),
+                                          )}
+                                        </div>
+                                      )}
+                                    </TabsContent>
+                                  </Tabs>
+                                ) : (
+                                  (plan.selectedStages &&
+                                  plan.selectedStages.length > 0
+                                    ? plan.selectedStages
+                                    : stageOrder
+                                  ).map((stageKey, index) => {
+                                    const [cycleId, stageName] =
+                                      stageKey.includes(":")
+                                        ? stageKey.split(":")
+                                        : [null, stageKey];
+                                    const cycle = cycleId
+                                      ? growthCycles.find(
+                                          (c) => c.id === cycleId,
+                                        )
+                                      : null;
+
+                                    // Filter allocations for this stage
+                                    const stageMaterials = (
+                                      plan.materialAllocations || []
+                                    ).filter((m) => m.stageId === stageKey);
+                                    const stageTasks =
+                                      plan.taskAllocations?.filter(
+                                        (t) => t.stageId === stageKey,
+                                      ) || [];
+
+                                    return (
+                                      <Card
+                                        key={stageKey}
+                                        className="overflow-hidden border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl"
+                                      >
+                                        <div className="bg-slate-50/80 px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-4">
+                                          <div className="flex items-center gap-4 min-w-0">
+                                            <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 shadow-xs flex items-center justify-center font-black text-sm text-slate-700 shrink-0">
+                                              {index + 1}
+                                            </div>
+                                            <div className="min-w-0">
+                                              <div className="flex items-center gap-2">
+                                                <h4 className="font-bold text-base text-slate-900 truncate">
+                                                  {stageName}
+                                                </h4>
+                                                {cycle && (
+                                                  <Badge
+                                                    variant="outline"
+                                                    className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-100 font-normal py-0 px-2 h-4 shrink-0"
+                                                  >
+                                                    {cycle.name}
+                                                  </Badge>
+                                                )}
+                                              </div>
+                                              {plan.purpose !==
+                                                "cultivation" && (
+                                                <p
+                                                  className={cn(
+                                                    "text-[10px] font-bold uppercase tracking-wider",
+                                                    isAmendment
+                                                      ? "text-emerald-600"
+                                                      : "text-red-600",
+                                                  )}
+                                                >
+                                                  {isAmendment
+                                                    ? "Hoạt động cải tạo đất"
+                                                    : "Hoạt động điều trị bệnh"}
+                                                </p>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="flex gap-2 shrink-0">
+                                            <Badge
+                                              variant="outline"
+                                              className="bg-white hover:bg-green-50 transition-colors px-2 py-0.5"
+                                            >
+                                              <Leaf className="w-3 h-3 mr-1 text-green-600" />
+                                              {stageMaterials.length}
+                                            </Badge>
+                                            <Badge
+                                              variant="outline"
+                                              className="bg-white hover:bg-blue-50 transition-colors px-2 py-0.5"
+                                            >
+                                              <Users className="w-3 h-3 mr-1 text-blue-600" />
+                                              {stageTasks.length}
+                                            </Badge>
+                                          </div>
+                                        </div>
+
+                                        <CardContent className="p-0">
+                                          {stageMaterials.length === 0 &&
+                                          stageTasks.length === 0 ? (
+                                            <div className="p-8 text-center text-muted-foreground italic text-sm">
+                                              Chưa có chi tiết nào được lên kế
+                                              hoạch.
+                                            </div>
+                                          ) : (
+                                            <Tabs
+                                              defaultValue="tasks"
+                                              className="w-full"
+                                            >
+                                              <TabsList className="flex items-center justify-start gap-4 p-0 bg-transparent h-auto border-b rounded-none mb-4 no-scrollbar">
+                                                <TabsTrigger
+                                                  value="tasks"
+                                                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
+                                                >
+                                                  <Users className="w-3.5 h-3.5" />
+                                                  Công việc ({stageTasks.length}
+                                                  )
+                                                </TabsTrigger>
+                                                <TabsTrigger
+                                                  value="materials"
+                                                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
+                                                >
+                                                  <Package className="w-3.5 h-3.5" />
+                                                  Vật tư (
+                                                  {stageMaterials.length})
+                                                </TabsTrigger>
+                                              </TabsList>
+
+                                              <TabsContent
+                                                value="tasks"
+                                                className="m-0 bg-white anim-fade-in"
+                                              >
+                                                {stageTasks.length === 0 ? (
+                                                  <div className="text-center py-10 border border-dashed rounded-2xl bg-slate-50/50">
+                                                    <Wrench className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                                                    <p className="text-sm text-slate-500 font-medium">
+                                                      Chưa có công việc phân bổ
+                                                    </p>
+                                                  </div>
+                                                ) : (
+                                                  <div className="overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
+                                                    <table className="w-full text-left border-collapse min-w-[600px]">
+                                                      <thead>
+                                                        <tr className="bg-slate-50/80 border-b border-slate-100">
+                                                          <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
+                                                            Nội dung
+                                                          </th>
+                                                          <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
+                                                            Phạm vi
+                                                          </th>
+                                                          <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
+                                                            Nhân sự
+                                                          </th>
+                                                          <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-right">
+                                                            Thời gian
+                                                          </th>
+                                                        </tr>
+                                                      </thead>
+                                                      <tbody className="divide-y divide-slate-50">
+                                                        {stageTasks.map(
+                                                          (task) => {
+                                                            const geoSummary =
+                                                              getSelectionSummary(
+                                                                task.geographicalSelections ||
+                                                                  [],
+                                                              );
+                                                            return (
+                                                              <tr
+                                                                key={task.id}
+                                                                className="hover:bg-blue-50/30 transition-colors group"
+                                                              >
+                                                                <td className="px-4 py-3">
+                                                                  <div className="flex items-center gap-3">
+                                                                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100 group-hover:bg-white transition-colors">
+                                                                      <CheckCircle2 className="w-4 h-4" />
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                      <p className="font-bold text-slate-800 text-xs lines-1">
+                                                                        {
+                                                                          task.name
+                                                                        }
+                                                                      </p>
+                                                                      <p className="text-[10px] text-slate-400 italic truncate max-w-[200px]">
+                                                                        {task.description ||
+                                                                          "Máy móc & Thiết bị..."}
+                                                                      </p>
+                                                                    </div>
+                                                                  </div>
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                  <div className="flex flex-wrap gap-1">
+                                                                    {geoSummary.length >
+                                                                    0 ? (
+                                                                      geoSummary.map(
+                                                                        (
+                                                                          group,
+                                                                        ) =>
+                                                                          group.items.map(
+                                                                            (
+                                                                              item,
+                                                                              idx,
+                                                                            ) => (
+                                                                              <Badge
+                                                                                key={`${group.regionId}-${idx}`}
+                                                                                variant="outline"
+                                                                                className={cn(
+                                                                                  "text-[9px] py-0 h-4 font-bold border-slate-100",
+                                                                                  item.type ===
+                                                                                    "region"
+                                                                                    ? "bg-emerald-50 text-emerald-600"
+                                                                                    : "bg-blue-50 text-blue-600",
+                                                                                )}
+                                                                              >
+                                                                                {
+                                                                                  item.name
+                                                                                }
+                                                                              </Badge>
+                                                                            ),
+                                                                          ),
+                                                                      )
+                                                                    ) : (
+                                                                      <span className="text-slate-400 italic text-[10px]">
+                                                                        Toàn
+                                                                        vùng
+                                                                      </span>
+                                                                    )}
+                                                                  </div>
+                                                                </td>
+                                                                <td className="px-4 py-3">
+                                                                  <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                                                    <Users className="w-3 h-3 text-slate-400" />
+                                                                    <span className="text-xs font-bold text-slate-600">
+                                                                      {task.labor ||
+                                                                        "Đội ngũ"}
+                                                                    </span>
+                                                                  </div>
+                                                                </td>
+                                                                <td className="px-4 py-3 text-right">
+                                                                  <Badge
+                                                                    variant="outline"
+                                                                    className="text-[10px] bg-white border-slate-200 text-slate-500 font-bold px-2 py-0"
+                                                                  >
+                                                                    {
+                                                                      task.duration
+                                                                    }
+                                                                  </Badge>
+                                                                </td>
+                                                              </tr>
+                                                            );
+                                                          },
+                                                        )}
+                                                      </tbody>
+                                                    </table>
+                                                  </div>
+                                                )}
+                                              </TabsContent>
+
+                                              <TabsContent
+                                                value="materials"
+                                                className="m-0 bg-white anim-fade-in"
+                                              >
+                                                {stageMaterials.length === 0 ? (
+                                                  <div className="text-center py-10 border border-dashed rounded-2xl bg-slate-50/50">
+                                                    <Package className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                                                    <p className="text-sm text-slate-500 font-medium">
+                                                      Chưa có vật tư phân bổ
+                                                    </p>
+                                                  </div>
+                                                ) : (
+                                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2">
+                                                    {stageMaterials.map(
+                                                      (mat) => (
+                                                        <div
+                                                          key={mat.id}
+                                                          className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-white hover:bg-emerald-50/30 transition-all shadow-sm hover:shadow-md"
+                                                        >
+                                                          <div className="flex items-center gap-3 overflow-hidden">
+                                                            <div className="bg-emerald-50 p-2.5 rounded-xl shadow-sm border border-emerald-100 shrink-0">
+                                                              <Package className="w-4 h-4 text-emerald-600" />
+                                                            </div>
+                                                            <div className="min-w-0 text-left">
+                                                              <p className="font-extrabold text-xs truncate text-slate-800">
+                                                                {
+                                                                  mat.materialName
+                                                                }
+                                                              </p>
+                                                              <p className="text-[10px] font-bold text-emerald-600/70 uppercase tracking-tighter">
+                                                                {
+                                                                  mat.materialType
+                                                                }
+                                                              </p>
+                                                            </div>
+                                                          </div>
+                                                        </div>
+                                                      ),
+                                                    )}
+                                                  </div>
+                                                )}
+                                              </TabsContent>
+                                            </Tabs>
+                                          )}
+                                        </CardContent>
+                                      </Card>
+                                    );
+                                  })
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
+                      );
+                    })
+                  )}
                 </div>
               )}
             </div>
@@ -4076,62 +4578,43 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
   );
 };
 
-const CultivationRegionDetailPage = () => {
-  const { id } = useParams<{ id: string }>();
-
-  const { getAreaById } = useCultivationRegionStore();
-  const [, setLocation] = useLocation();
-
-  const area = useMemo(() => {
-    if (!id) return null;
-    return getAreaById(id);
-  }, [id, getAreaById]);
-
-  const handleBack = () => {
-    setLocation("/cultivation-region");
-  };
-
+export const CropDetailDialog = ({
+  crop,
+  open,
+  onOpenChange,
+}: CropDetailDialogProps) => {
   return (
-    <AdminLayout
-      title={area?.name || "Không tìm thấy"}
-      description={
-        area
-          ? `Mã: ${area.id} • Tạo: ${new Date(area.createdAt).toLocaleDateString("vi-VN")}`
-          : "Vùng canh tác không tồn tại"
-      }
-    >
-      <div className="flex items-center justify-between">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleBack}
-          className="gap-2 text-muted-foreground hover:text-primary pl-0"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          Quay lại danh sách
-        </Button>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[96vw] w-[96vw] h-[92vh] p-0 overflow-hidden border-none shadow-2xl rounded-3xl z-10000">
+        <div className="h-full overflow-y-auto p-6 flex flex-col bg-slate-50/50">
+          <div className="flex items-center gap-4 mb-4 shrink-0">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white shrink-0 shadow-lg bg-emerald-500">
+              <Sprout size={24} />
+            </div>
+            <div>
+              <DialogTitle className="text-xl font-bold text-slate-800">
+                Chi tiết cây trồng: {crop?.name}
+              </DialogTitle>
+            </div>
+          </div>
 
-        <div className="flex gap-2">
-          <Badge
-            variant={area?.status === "active" ? "default" : "secondary"}
-            className="px-3 py-1"
-          >
-            <CheckCircle className="w-3 h-3 mr-1" />
-            {area?.status === "active" ? "Đang hoạt động" : "Tạm ngưng"}
-          </Badge>
-          <Button
-            onClick={() => setLocation(`/cultivation-region/${area?.id}/edit`)}
-            className="gap-2"
-          >
-            <Edit className="w-4 h-4" />
-            Chỉnh sửa
-          </Button>
+          <div className="flex-1 mt-6">
+            {/* Pass crop.regionId if it exists, otherwise crop.id, letting it render the heavy UI */}
+            <InnerView
+              id={
+                crop?.areaId
+                  ? String(crop.areaId)
+                  : crop?.regionId
+                    ? String(crop.regionId)
+                    : crop?.id
+                      ? String(crop.id)
+                      : undefined
+              }
+              crop={crop}
+            />
+          </div>
         </div>
-      </div>
-
-      <CultivationRegionDetailView />
-    </AdminLayout>
+      </DialogContent>
+    </Dialog>
   );
 };
-
-export default CultivationRegionDetailPage;

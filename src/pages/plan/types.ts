@@ -30,6 +30,7 @@ export interface CreatePlanForm {
 export interface MaterialAllocation {
   id: number;
   stageId: string;
+  taskId?: number;
   materialCategory: string;
   materialType: string;
   materialName: string;
@@ -44,4 +45,7 @@ export interface TaskAllocation {
   description: string;
   labor: string;
   duration: string;
+  startDate?: string;
+  endDate?: string;
+  geographicalSelections?: GeographicalSelection[];
 }

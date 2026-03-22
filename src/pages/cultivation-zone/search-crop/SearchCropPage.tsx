@@ -44,6 +44,7 @@ import useRegionStore from "../../../stores/useRegionStore";
 import { PROVINCES, type Region } from "../../region-chart/constants";
 import { type CropDetail } from "../constants";
 import { CultivationZoneDialog } from "./components/CultivationZoneDialog";
+import { CropDetailDialog } from "./components/CropDetailDialog";
 import useGroupCropStore from "@/stores/useGroupCropStore";
 import { getMarkerIcon } from "../cultivation-region/components/mapUtils";
 
@@ -344,6 +345,7 @@ const SearchCropPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCropInDialog, setActiveCropInDialog] =
     useState<CropDetail | null>(null);
+  const [isCropDetailOpen, setIsCropDetailOpen] = useState(false);
 
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({});
@@ -1015,6 +1017,15 @@ const SearchCropPage = () => {
                                           {activeCropInDialog.plotName}
                                         </span>
                                       </div>
+                                      <Button
+                                        className="w-full h-11 rounded-xl font-black shadow-lg shadow-primary/20 mt-4 gap-2"
+                                        onClick={() =>
+                                          setIsCropDetailOpen(true)
+                                        }
+                                      >
+                                        <Maximize2 size={16} />
+                                        Xem chi tiết
+                                      </Button>
                                     </div>
                                   ) : (
                                     <div className="h-full flex flex-col items-center justify-center text-slate-300 italic text-center text-sm">
@@ -1211,6 +1222,14 @@ const SearchCropPage = () => {
                             </div>
                           </div>
                         </div>
+
+                        <Button
+                          className="w-full h-12 rounded-2xl font-black shadow-xl shadow-primary/20 gap-2 mt-4"
+                          onClick={() => setIsCropDetailOpen(true)}
+                        >
+                          <Maximize2 size={18} />
+                          XEM CHI TIẾT CÂY TRỒNG
+                        </Button>
                       </div>
                     </div>
                   ) : (
@@ -1224,6 +1243,11 @@ const SearchCropPage = () => {
             )}
           </DialogContent>
         </Dialog>
+        <CropDetailDialog
+          open={isCropDetailOpen}
+          onOpenChange={setIsCropDetailOpen}
+          crop={activeCropInDialog}
+        />
       </div>
     </AdminLayout>
   );
