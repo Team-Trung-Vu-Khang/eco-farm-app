@@ -32,13 +32,13 @@ import {
   TabsList,
   TabsTrigger,
   useToast,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import usePlanStore from "../../stores/usePlanStore";
 import useRegionStore from "@/stores/useRegionStore";
 import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import useSeasonStore from "@/stores/useSeasonStore";
 import useRegimenStore from "../../stores/useRegimenStore";
-import { cn } from "@tankhang1/eco-shared-ui";
+import { cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 export default function PlanDetailPage() {
   const params = useParams();

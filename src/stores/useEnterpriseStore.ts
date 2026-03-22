@@ -3,7 +3,7 @@ import { devtools, persist } from "zustand/middleware";
 import {
   initialEnterprises,
   type Enterprise,
-} from "../pages/enterprise/constants";
+} from "../pages/enterprise/data/constants";
 
 interface EnterpriseState {
   // State

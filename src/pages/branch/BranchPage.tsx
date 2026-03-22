@@ -1,71 +1,31 @@
-import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { Plus } from "lucide-react";
 import {
   AdminLayout,
-  Badge,
   Button,
   DataTable,
   DeleteDialog,
-  useToast,
-  type Column,
-} from "@tankhang1/eco-shared-ui";
-import useBranchStore, { type Branch } from "../../stores/useBranchStore";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import useBranchStore from "../../stores/useBranchStore";
+import { useBranchTable } from "./hooks/useBranchTable";
 
+/**
+ * Branch management page component.
+ * Displays a list of branches with filtering, viewing, editing, and deletion capabilities.
+ */
 export default function BranchPage() {
-  const { toast } = useToast();
-  const [, setLocation] = useLocation();
-
   const branches = useBranchStore((state) => state.branches);
-  const deleteBranch = useBranchStore((state) => state.deleteBranch);
 
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<Branch | null>(null);
-
-  const columns: Column<Branch>[] = [
-    { key: "code", label: "Mã" },
-    { key: "name", label: "Tên chi nhánh" },
-    { key: "enterpriseName", label: "Đơn vị chủ quản" },
-    { key: "phone", label: "Điện thoại" },
-    { key: "email", label: "Email" },
-    { key: "address", label: "Địa chỉ" },
-    {
-      key: "status",
-      label: "Trạng thái",
-      render: (value) => (
-        <Badge variant={value === "active" ? "default" : "outline"}>
-          {value === "active" ? "Hoạt động" : "Không hoạt động"}
-        </Badge>
-      ),
-    },
-  ];
-
-  const filters = [
-    {
-      key: "status",
-      label: "Trạng thái",
-      options: [
-        { label: "Hoạt động", value: "active" },
-        { label: "Không hoạt động", value: "inactive" },
-      ],
-    },
-  ];
-
-  const handleDelete = (item: Branch) => {
-    setDeleteItem(item);
-    setDeleteOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (deleteItem) {
-      deleteBranch(deleteItem.id);
-      toast({
-        title: "Thành công",
-        description: "Đã xóa chi nhánh khỏi hệ thống",
-      });
-    }
-    setDeleteOpen(false);
-  };
+  const {
+    columns,
+    filters,
+    deleteOpen,
+    setDeleteOpen,
+    handleDelete,
+    handleConfirmDelete,
+    handleView,
+    handleEdit,
+  } = useBranchTable();
 
   return (
     <AdminLayout
@@ -83,8 +43,8 @@ export default function BranchPage() {
       <DataTable
         columns={columns}
         data={branches}
-        onView={(item) => setLocation(`/branch/${item.id}/detail`)}
-        onEdit={(item) => setLocation(`/branch/${item.id}/edit`)}
+        onView={handleView}
+        onEdit={handleEdit}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm chi nhánh..."
         filters={filters}

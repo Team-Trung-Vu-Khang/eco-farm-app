@@ -25,7 +25,7 @@ import {
   useToast,
   cn,
   DialogFooter,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 import useEnterpriseCertificateStore from "../../../stores/useEnterpriseCertificateStore";
 import usePersonnelStore from "../../../stores/usePersonnelStore";

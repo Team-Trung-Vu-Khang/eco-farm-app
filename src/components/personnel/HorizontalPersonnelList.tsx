@@ -1,4 +1,4 @@
-import { Badge, cn, Input } from "@tankhang1/eco-shared-ui";
+import { Badge, cn, Input } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   ChevronLeft,
   ChevronRight,

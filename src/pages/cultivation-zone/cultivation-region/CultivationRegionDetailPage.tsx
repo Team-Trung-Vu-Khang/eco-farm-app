@@ -20,7 +20,7 @@ import {
   TabsList,
   TabsTrigger,
   type Column,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import {
@@ -543,7 +543,9 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
         const ra = statusRank[a.status] ?? 99;
         const rb = statusRank[b.status] ?? 99;
         if (ra !== rb) return ra - rb;
-        return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+        return (
+          new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+        );
       });
   }, [baseRelevantPlans, planFilter]);
 
@@ -2192,35 +2194,61 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                     className="rounded-xl px-4 py-2 font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap flex items-center gap-2"
                   >
                     <Layers className="w-3.5 h-3.5" />
-                    Canh tác ({baseRelevantPlans.filter((p) => p.purpose === "cultivation").length})
+                    Canh tác (
+                    {
+                      baseRelevantPlans.filter(
+                        (p) => p.purpose === "cultivation",
+                      ).length
+                    }
+                    )
                   </TabsTrigger>
                   <TabsTrigger
                     value="treatment"
                     className="rounded-xl px-4 py-2 font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-red-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap flex items-center gap-2"
                   >
                     <Bug className="w-3.5 h-3.5" />
-                    Điều trị ({baseRelevantPlans.filter((p) => p.purpose === "treatment").length})
+                    Điều trị (
+                    {
+                      baseRelevantPlans.filter((p) => p.purpose === "treatment")
+                        .length
+                    }
+                    )
                   </TabsTrigger>
                   <TabsTrigger
                     value="amendment"
                     className="rounded-xl px-4 py-2 font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap flex items-center gap-2"
                   >
                     <Sprout className="w-3.5 h-3.5" />
-                    Cải tạo ({baseRelevantPlans.filter((p) => p.purpose === "amendment").length})
+                    Cải tạo (
+                    {
+                      baseRelevantPlans.filter((p) => p.purpose === "amendment")
+                        .length
+                    }
+                    )
                   </TabsTrigger>
                   <TabsTrigger
                     value="harvest"
                     className="rounded-xl px-4 py-2 font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap flex items-center gap-2"
                   >
                     <ShoppingBag className="w-3.5 h-3.5" />
-                    Thu hoạch ({baseRelevantPlans.filter((p) => p.purpose === "harvest").length})
+                    Thu hoạch (
+                    {
+                      baseRelevantPlans.filter((p) => p.purpose === "harvest")
+                        .length
+                    }
+                    )
                   </TabsTrigger>
                   <TabsTrigger
                     value="incurred"
                     className="rounded-xl px-4 py-2 font-bold text-[11px] uppercase tracking-wider data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all whitespace-nowrap flex items-center gap-2"
                   >
                     <AlertTriangle className="w-3.5 h-3.5" />
-                    Phát sinh ({baseRelevantPlans.filter((p) => p.purpose === "incurred").length})
+                    Phát sinh (
+                    {
+                      baseRelevantPlans.filter((p) => p.purpose === "incurred")
+                        .length
+                    }
+                    )
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -2240,11 +2268,15 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                             Tổng hợp công việc phát sinh
                           </CardTitle>
                           <CardDescription className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">
-                            Dữ liệu nhiệm vụ thực tế từ hệ thống quản lý công việc
+                            Dữ liệu nhiệm vụ thực tế từ hệ thống quản lý công
+                            việc
                           </CardDescription>
                         </div>
                       </div>
-                      <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 font-black px-4 py-1.5 rounded-xl shadow-sm">
+                      <Badge
+                        variant="outline"
+                        className="bg-amber-50 text-amber-700 border-amber-200 font-black px-4 py-1.5 rounded-xl shadow-sm"
+                      >
                         {incurredTasks.length} NHIỆM VỤ
                       </Badge>
                     </div>
@@ -2255,9 +2287,12 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                         <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-6 border border-slate-100 shadow-inner">
                           <CheckCircle2 className="w-10 h-10 text-slate-200" />
                         </div>
-                        <h4 className="text-lg font-bold text-slate-800 mb-2">Chưa có dữ liệu công việc</h4>
+                        <h4 className="text-lg font-bold text-slate-800 mb-2">
+                          Chưa có dữ liệu công việc
+                        </h4>
                         <p className="text-sm font-medium text-slate-400 max-w-[300px] mx-auto">
-                          Không tìm thấy nhiệm vụ nào được ghi nhận cho các kế hoạch phát sinh trong vùng canh tác này.
+                          Không tìm thấy nhiệm vụ nào được ghi nhận cho các kế
+                          hoạch phát sinh trong vùng canh tác này.
                         </p>
                       </div>
                     ) : (
@@ -2397,260 +2432,264 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {relevantPlans.length === 0 ? (
-                <div className="text-sm text-muted-foreground italic text-center py-8">
-                  Chưa có kế hoạch nào phù hợp với phạm vi vùng canh tác này.
-                </div>
-              ) : (
-                relevantPlans.map((plan) => {
-                  const stageOrder =
-                    plan.selectedStages && plan.selectedStages.length > 0
-                      ? plan.selectedStages
-                      : Array.from(
-                          new Set([
-                            ...(plan.taskAllocations || []).map(
-                              (t: any) => t.stageId || "Khác",
-                            ),
-                            ...(plan.materialAllocations || []).map(
-                              (m: any) => m.stageId || "Khác",
-                            ),
-                          ]),
-                        );
+                    <div className="text-sm text-muted-foreground italic text-center py-8">
+                      Chưa có kế hoạch nào phù hợp với phạm vi vùng canh tác
+                      này.
+                    </div>
+                  ) : (
+                    relevantPlans.map((plan) => {
+                      const stageOrder =
+                        plan.selectedStages && plan.selectedStages.length > 0
+                          ? plan.selectedStages
+                          : Array.from(
+                              new Set([
+                                ...(plan.taskAllocations || []).map(
+                                  (t: any) => t.stageId || "Khác",
+                                ),
+                                ...(plan.materialAllocations || []).map(
+                                  (m: any) => m.stageId || "Khác",
+                                ),
+                              ]),
+                            );
 
-                  const isCultivation = plan.purpose === "cultivation";
-                  const isTreatment = plan.purpose === "treatment";
-                  const isAmendment = plan.purpose === "amendment";
-                  const isHarvest = plan.purpose === "harvest";
-                  const isIncurred = plan.purpose === "incurred";
+                      const isCultivation = plan.purpose === "cultivation";
+                      const isTreatment = plan.purpose === "treatment";
+                      const isAmendment = plan.purpose === "amendment";
+                      const isHarvest = plan.purpose === "harvest";
+                      const isIncurred = plan.purpose === "incurred";
 
-                  return (
-                    <div
-                      key={plan.id}
-                      className="border rounded-2xl p-6 bg-white shadow-sm hover:shadow-md transition-all duration-300 border-slate-100"
-                    >
-                      <div className="grid grid-cols-1 lg:grid-cols-[1fr,1.2fr] gap-8">
-                        {/* Left Column: Info & Purpose */}
-                        <div className="space-y-8">
-                          {/* 1. Header with General Info */}
-                          <div className="flex flex-col gap-4">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-3">
-                                <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">
-                                  {plan.name}
-                                </h3>
-                                {planStatusBadge(plan.status)}
+                      return (
+                        <div
+                          key={plan.id}
+                          className="border rounded-2xl p-6 bg-white shadow-sm hover:shadow-md transition-all duration-300 border-slate-100"
+                        >
+                          <div className="grid grid-cols-1 lg:grid-cols-[1fr,1.2fr] gap-8">
+                            {/* Left Column: Info & Purpose */}
+                            <div className="space-y-8">
+                              {/* 1. Header with General Info */}
+                              <div className="flex flex-col gap-4">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-3">
+                                    <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">
+                                      {plan.name}
+                                    </h3>
+                                    {planStatusBadge(plan.status)}
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-y-1.5 gap-x-4 text-xs text-slate-500">
+                                    <div className="flex items-center gap-1.5 font-medium">
+                                      <span className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
+                                        <FileText className="w-3 h-3 text-slate-500" />
+                                      </span>
+                                      <span className="font-mono">
+                                        {plan.code}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 font-medium">
+                                      <span className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
+                                        <Calendar className="w-3 h-3 text-slate-500" />
+                                      </span>
+                                      <span>{plan.seasonName}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 font-medium">
+                                      <span className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
+                                        <Clock className="w-3 h-3 text-slate-500" />
+                                      </span>
+                                      <span>
+                                        {new Date(
+                                          plan.startDate,
+                                        ).toLocaleDateString("vi-VN")}{" "}
+                                        -{" "}
+                                        {new Date(
+                                          plan.endDate,
+                                        ).toLocaleDateString("vi-VN")}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-slate-500 hover:text-primary rounded-xl self-start px-0 h-auto"
+                                  onClick={() => {
+                                    window.open(`/plan/${plan.id}`, "_blank");
+                                  }}
+                                >
+                                  Xem chi tiết{" "}
+                                  <ChevronRight className="w-4 h-4 ml-1" />
+                                </Button>
                               </div>
-                              <div className="flex flex-wrap items-center gap-y-1.5 gap-x-4 text-xs text-slate-500">
-                                <div className="flex items-center gap-1.5 font-medium">
-                                  <span className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
-                                    <FileText className="w-3 h-3 text-slate-500" />
-                                  </span>
-                                  <span className="font-mono">{plan.code}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 font-medium">
-                                  <span className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
-                                    <Calendar className="w-3 h-3 text-slate-500" />
-                                  </span>
-                                  <span>{plan.seasonName}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 font-medium">
-                                  <span className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
-                                    <Clock className="w-3 h-3 text-slate-500" />
-                                  </span>
-                                  <span>
-                                    {new Date(
-                                      plan.startDate,
-                                    ).toLocaleDateString("vi-VN")}{" "}
-                                    -{" "}
-                                    {new Date(plan.endDate).toLocaleDateString(
-                                      "vi-VN",
-                                    )}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-slate-500 hover:text-primary rounded-xl self-start px-0 h-auto"
-                              onClick={() => {
-                                window.open(`/plan/${plan.id}`, "_blank");
-                              }}
-                            >
-                              Xem chi tiết{" "}
-                              <ChevronRight className="w-4 h-4 ml-1" />
-                            </Button>
-                          </div>
 
-                          {/* 2. Simplified Purpose Display */}
-                          <div className="space-y-4">
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                              Mục đích kế hoạch
-                            </h4>
-                            <div className="grid grid-cols-1">
-                              {/* CANH TÁC */}
-                              {isCultivation && (
-                                <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/5">
-                                  <div className="w-9 h-9 rounded-lg bg-blue-600 text-white shadow-md shadow-blue-500/20 flex items-center justify-center shrink-0">
-                                    <Layers className="w-5 h-5" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="text-xs font-bold text-blue-700 uppercase tracking-wider">
-                                      CANH TÁC
+                              {/* 2. Simplified Purpose Display */}
+                              <div className="space-y-4">
+                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                  Mục đích kế hoạch
+                                </h4>
+                                <div className="grid grid-cols-1">
+                                  {/* CANH TÁC */}
+                                  {isCultivation && (
+                                    <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/5">
+                                      <div className="w-9 h-9 rounded-lg bg-blue-600 text-white shadow-md shadow-blue-500/20 flex items-center justify-center shrink-0">
+                                        <Layers className="w-5 h-5" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-bold text-blue-700 uppercase tracking-wider">
+                                          CANH TÁC
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                                          Áp dụng quy trình sản xuất chuẩn
+                                        </div>
+                                      </div>
+                                      <div className="w-2 h-2 rounded-full bg-blue-500 mr-2" />
                                     </div>
-                                    <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
-                                      Áp dụng quy trình sản xuất chuẩn
-                                    </div>
-                                  </div>
-                                  <div className="w-2 h-2 rounded-full bg-blue-500 mr-2" />
-                                </div>
-                              )}
-
-                              {/* ĐIỀU TRỊ */}
-                              {isTreatment && (
-                                <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-red-500 bg-red-50/50 ring-2 ring-red-500/5">
-                                  <div className="w-9 h-9 rounded-lg bg-red-600 text-white shadow-md shadow-red-500/20 flex items-center justify-center shrink-0">
-                                    <Bug className="w-5 h-5" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="text-xs font-bold text-red-700 uppercase tracking-wider">
-                                      ĐIỀU TRỊ
-                                    </div>
-                                    <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
-                                      Triển khai phác đồ xử lý sâu bệnh
-                                    </div>
-                                  </div>
-                                  <div className="w-2 h-2 rounded-full bg-red-500 mr-2" />
-                                </div>
-                              )}
-
-                              {/* CẢI TẠO ĐẤT */}
-                              {isAmendment && (
-                                <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/5">
-                                  <div className="w-9 h-9 rounded-lg bg-emerald-600 text-white shadow-md shadow-emerald-500/20 flex items-center justify-center shrink-0">
-                                    <Sprout className="w-5 h-5" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
-                                      CẢI TẠO ĐẤT
-                                    </div>
-                                    <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
-                                      Quy trình xử lý phục hồi đất đai
-                                    </div>
-                                  </div>
-                                  <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2" />
-                                </div>
-                              )}
-
-                              {/* THU HOẠCH */}
-                              {isHarvest && (
-                                <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/5">
-                                  <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white shadow-md shadow-indigo-500/20 flex items-center justify-center shrink-0">
-                                    <ShoppingBag className="w-5 h-5" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="text-xs font-bold text-indigo-700 uppercase tracking-wider">
-                                      THU HOẠCH
-                                    </div>
-                                    <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
-                                      Triển khai thu hoạch và bảo quản
-                                    </div>
-                                  </div>
-                                  <div className="w-2 h-2 rounded-full bg-indigo-500 mr-2" />
-                                </div>
-                              )}
-
-                              {/* PHÁT SINH */}
-                              {isIncurred && (
-                                <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/5">
-                                  <div className="w-9 h-9 rounded-lg bg-amber-600 text-white shadow-md shadow-amber-500/20 flex items-center justify-center shrink-0">
-                                    <AlertTriangle className="w-5 h-5" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="text-xs font-bold text-amber-700 uppercase tracking-wider">
-                                      PHÁT SINH
-                                    </div>
-                                    <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
-                                      Công việc phát sinh ngoài kế hoạch
-                                    </div>
-                                  </div>
-                                  <div className="w-2 h-2 rounded-full bg-amber-500 mr-2" />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Right Column: Detailed Setup View (Enhanced) */}
-                        <div className="lg:pl-8 lg:border-l border-slate-100 min-w-0">
-                          <div className="flex items-center gap-3 mb-6">
-                            <div
-                              className={cn(
-                                "p-2.5 rounded-2xl shadow-sm",
-                                isTreatment && "bg-red-100/50",
-                                isAmendment && "bg-emerald-100/50",
-                                isCultivation && "bg-blue-100/50",
-                                isHarvest && "bg-indigo-100/50",
-                                isIncurred && "bg-amber-100/50",
-                              )}
-                            >
-                              {isIncurred ? (
-                                <ClipboardList className={cn("w-7 h-7 text-amber-600")} />
-                              ) : (
-                                <Layers
-                                  className={cn(
-                                    "w-7 h-7",
-                                    isTreatment && "text-red-600",
-                                    isAmendment && "text-emerald-600",
-                                    isCultivation && "text-blue-600",
-                                    isHarvest && "text-indigo-600",
                                   )}
-                                />
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <h3 className="text-lg font-black text-slate-900 truncate">
-                                {isTreatment
-                                  ? "Lộ trình xử lý & Phác đồ"
-                                  : isAmendment
-                                    ? "Lộ trình cải tạo & Quy trình"
-                                    : isHarvest
-                                      ? "Lộ trình thu hoạch & Đóng gói"
-                                      : isIncurred
-                                        ? "Danh sách công việc phát sinh"
-                                        : "Lộ trình triển khai & Giai đoạn"}
-                              </h3>
-                              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5">
-                                {isHarvest
-                                  ? "Chi tiết các giai đoạn thu hoạch sản phẩm"
-                                  : isIncurred
-                                    ? "Chi tiết các nhiệm vụ và vật tư phát sinh"
-                                    : "Chi tiết các hạng mục và kế hoạch hành động"}
-                              </p>
-                            </div>
-                          </div>
 
-                          <div className="space-y-4 max-h-125 overflow-y-auto pr-2 custom-scrollbar">
-                            {isIncurred ? (
-                              <Tabs
-                                defaultValue="tasks"
-                                className="w-full"
-                              >
-                                <TabsList className="flex items-center justify-start gap-4 p-0 bg-transparent h-auto border-b rounded-none mb-4 no-scrollbar">
-                                  <TabsTrigger
-                                    value="tasks"
-                                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-amber-600 data-[state=active]:text-amber-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
-                                  >
-                                    <Users className="w-3.5 h-3.5" />
-                                    Nhiệm vụ ({plan.taskAllocations?.length || 0})
-                                  </TabsTrigger>
-                                  <TabsTrigger
-                                    value="materials"
-                                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
-                                  >
-                                    <Package className="w-3.5 h-3.5" />
-                                    Vật tư ({plan.materialAllocations?.length || 0})
-                                  </TabsTrigger>
-                                </TabsList>
+                                  {/* ĐIỀU TRỊ */}
+                                  {isTreatment && (
+                                    <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-red-500 bg-red-50/50 ring-2 ring-red-500/5">
+                                      <div className="w-9 h-9 rounded-lg bg-red-600 text-white shadow-md shadow-red-500/20 flex items-center justify-center shrink-0">
+                                        <Bug className="w-5 h-5" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-bold text-red-700 uppercase tracking-wider">
+                                          ĐIỀU TRỊ
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                                          Triển khai phác đồ xử lý sâu bệnh
+                                        </div>
+                                      </div>
+                                      <div className="w-2 h-2 rounded-full bg-red-500 mr-2" />
+                                    </div>
+                                  )}
+
+                                  {/* CẢI TẠO ĐẤT */}
+                                  {isAmendment && (
+                                    <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/5">
+                                      <div className="w-9 h-9 rounded-lg bg-emerald-600 text-white shadow-md shadow-emerald-500/20 flex items-center justify-center shrink-0">
+                                        <Sprout className="w-5 h-5" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
+                                          CẢI TẠO ĐẤT
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                                          Quy trình xử lý phục hồi đất đai
+                                        </div>
+                                      </div>
+                                      <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2" />
+                                    </div>
+                                  )}
+
+                                  {/* THU HOẠCH */}
+                                  {isHarvest && (
+                                    <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/5">
+                                      <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white shadow-md shadow-indigo-500/20 flex items-center justify-center shrink-0">
+                                        <ShoppingBag className="w-5 h-5" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-bold text-indigo-700 uppercase tracking-wider">
+                                          THU HOẠCH
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                                          Triển khai thu hoạch và bảo quản
+                                        </div>
+                                      </div>
+                                      <div className="w-2 h-2 rounded-full bg-indigo-500 mr-2" />
+                                    </div>
+                                  )}
+
+                                  {/* PHÁT SINH */}
+                                  {isIncurred && (
+                                    <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/5">
+                                      <div className="w-9 h-9 rounded-lg bg-amber-600 text-white shadow-md shadow-amber-500/20 flex items-center justify-center shrink-0">
+                                        <AlertTriangle className="w-5 h-5" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-bold text-amber-700 uppercase tracking-wider">
+                                          PHÁT SINH
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                                          Công việc phát sinh ngoài kế hoạch
+                                        </div>
+                                      </div>
+                                      <div className="w-2 h-2 rounded-full bg-amber-500 mr-2" />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Right Column: Detailed Setup View (Enhanced) */}
+                            <div className="lg:pl-8 lg:border-l border-slate-100 min-w-0">
+                              <div className="flex items-center gap-3 mb-6">
+                                <div
+                                  className={cn(
+                                    "p-2.5 rounded-2xl shadow-sm",
+                                    isTreatment && "bg-red-100/50",
+                                    isAmendment && "bg-emerald-100/50",
+                                    isCultivation && "bg-blue-100/50",
+                                    isHarvest && "bg-indigo-100/50",
+                                    isIncurred && "bg-amber-100/50",
+                                  )}
+                                >
+                                  {isIncurred ? (
+                                    <ClipboardList
+                                      className={cn("w-7 h-7 text-amber-600")}
+                                    />
+                                  ) : (
+                                    <Layers
+                                      className={cn(
+                                        "w-7 h-7",
+                                        isTreatment && "text-red-600",
+                                        isAmendment && "text-emerald-600",
+                                        isCultivation && "text-blue-600",
+                                        isHarvest && "text-indigo-600",
+                                      )}
+                                    />
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <h3 className="text-lg font-black text-slate-900 truncate">
+                                    {isTreatment
+                                      ? "Lộ trình xử lý & Phác đồ"
+                                      : isAmendment
+                                        ? "Lộ trình cải tạo & Quy trình"
+                                        : isHarvest
+                                          ? "Lộ trình thu hoạch & Đóng gói"
+                                          : isIncurred
+                                            ? "Danh sách công việc phát sinh"
+                                            : "Lộ trình triển khai & Giai đoạn"}
+                                  </h3>
+                                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5">
+                                    {isHarvest
+                                      ? "Chi tiết các giai đoạn thu hoạch sản phẩm"
+                                      : isIncurred
+                                        ? "Chi tiết các nhiệm vụ và vật tư phát sinh"
+                                        : "Chi tiết các hạng mục và kế hoạch hành động"}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="space-y-4 max-h-125 overflow-y-auto pr-2 custom-scrollbar">
+                                {isIncurred ? (
+                                  <Tabs defaultValue="tasks" className="w-full">
+                                    <TabsList className="flex items-center justify-start gap-4 p-0 bg-transparent h-auto border-b rounded-none mb-4 no-scrollbar">
+                                      <TabsTrigger
+                                        value="tasks"
+                                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-amber-600 data-[state=active]:text-amber-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
+                                      >
+                                        <Users className="w-3.5 h-3.5" />
+                                        Nhiệm vụ (
+                                        {plan.taskAllocations?.length || 0})
+                                      </TabsTrigger>
+                                      <TabsTrigger
+                                        value="materials"
+                                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
+                                      >
+                                        <Package className="w-3.5 h-3.5" />
+                                        Vật tư (
+                                        {plan.materialAllocations?.length || 0})
+                                      </TabsTrigger>
+                                    </TabsList>
 
                                 <TabsContent
                                   value="tasks"
@@ -2770,155 +2809,169 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                                   )}
                                 </TabsContent>
 
-                                <TabsContent
-                                  value="materials"
-                                  className="m-0 bg-white anim-fade-in"
-                                >
-                                  {(!plan.materialAllocations || plan.materialAllocations.length === 0) ? (
-                                    <div className="py-12 text-center border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
-                                      <p className="text-xs text-slate-400 italic">Không sử dụng vật tư</p>
-                                    </div>
-                                  ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2">
-                                      {plan.materialAllocations.map((mat) => (
-                                        <div
-                                          key={mat.id}
-                                          className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-white hover:bg-emerald-50/30 transition-all shadow-sm hover:shadow-md"
-                                        >
-                                          <div className="flex items-center gap-3 overflow-hidden">
-                                            <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-100 shrink-0">
-                                              <Package className="w-4 h-4 text-emerald-600" />
-                                            </div>
-                                            <div className="min-w-0">
-                                              <p className="font-extrabold text-xs truncate text-slate-800">
-                                                {mat.materialName}
-                                              </p>
-                                              <p className="text-[10px] font-bold text-emerald-600/70 uppercase tracking-tighter">
-                                                {mat.materialType}
-                                              </p>
-                                            </div>
-                                          </div>
-                                          <div className="text-right pl-2">
-                                            <div className="flex items-baseline gap-0.5">
-                                              <span className="text-sm font-black text-slate-900">{mat.quantity}</span>
-                                              <span className="text-[9px] font-bold text-slate-400 uppercase">{mat.unit}</span>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </TabsContent>
-                              </Tabs>
-                            ) : (
-                              (plan.selectedStages &&
-                              plan.selectedStages.length > 0
-                                ? plan.selectedStages
-                                : stageOrder
-                              ).map((stageKey, index) => {
-                                const [cycleId, stageName] = stageKey.includes(
-                                  ":",
-                                )
-                                  ? stageKey.split(":")
-                                  : [null, stageKey];
-                                const cycle = cycleId
-                                  ? growthCycles.find((c) => c.id === cycleId)
-                                  : null;
-
-                                // Filter allocations for this stage
-                                const stageMaterials = (
-                                  plan.materialAllocations || []
-                                ).filter((m) => m.stageId === stageKey);
-                                const stageTasks =
-                                  plan.taskAllocations?.filter(
-                                    (t) => t.stageId === stageKey,
-                                  ) || [];
-
-                                return (
-                                  <Card
-                                    key={stageKey}
-                                    className="overflow-hidden border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl"
-                                  >
-                                    <div className="bg-slate-50/80 px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-4">
-                                      <div className="flex items-center gap-4 min-w-0">
-                                        <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 shadow-xs flex items-center justify-center font-black text-sm text-slate-700 shrink-0">
-                                          {index + 1}
-                                        </div>
-                                        <div className="min-w-0">
-                                          <div className="flex items-center gap-2">
-                                            <h4 className="font-bold text-base text-slate-900 truncate">
-                                              {stageName}
-                                            </h4>
-                                            {cycle && (
-                                              <Badge
-                                                variant="outline"
-                                                className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-100 font-normal py-0 px-2 h-4 shrink-0"
-                                              >
-                                                {cycle.name}
-                                              </Badge>
-                                            )}
-                                          </div>
-                                          {plan.purpose !== "cultivation" && (
-                                            <p
-                                              className={cn(
-                                                "text-[10px] font-bold uppercase tracking-wider",
-                                                isAmendment
-                                                  ? "text-emerald-600"
-                                                  : "text-red-600",
-                                              )}
-                                            >
-                                              {isAmendment
-                                                ? "Hoạt động cải tạo đất"
-                                                : "Hoạt động điều trị bệnh"}
-                                            </p>
-                                          )}
-                                        </div>
-                                      </div>
-                                      <div className="flex gap-2 shrink-0">
-                                        <Badge
-                                          variant="outline"
-                                          className="bg-white hover:bg-green-50 transition-colors px-2 py-0.5"
-                                        >
-                                          <Leaf className="w-3 h-3 mr-1 text-green-600" />
-                                          {stageMaterials.length}
-                                        </Badge>
-                                        <Badge
-                                          variant="outline"
-                                          className="bg-white hover:bg-blue-50 transition-colors px-2 py-0.5"
-                                        >
-                                          <Users className="w-3 h-3 mr-1 text-blue-600" />
-                                          {stageTasks.length}
-                                        </Badge>
-                                      </div>
-                                    </div>
-
-                                    <CardContent className="p-0">
-                                      {stageMaterials.length === 0 &&
-                                      stageTasks.length === 0 ? (
-                                        <div className="p-8 text-center text-muted-foreground italic text-sm">
-                                          Chưa có chi tiết nào được lên kế hoạch.
+                                    <TabsContent
+                                      value="materials"
+                                      className="m-0 bg-white anim-fade-in"
+                                    >
+                                      {!plan.materialAllocations ||
+                                      plan.materialAllocations.length === 0 ? (
+                                        <div className="py-12 text-center border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
+                                          <p className="text-xs text-slate-400 italic">
+                                            Không sử dụng vật tư
+                                          </p>
                                         </div>
                                       ) : (
-                                        <Tabs
-                                          defaultValue="tasks"
-                                          className="w-full"
-                                        >
-                                          <TabsList className="flex items-center justify-start gap-4 p-0 bg-transparent h-auto border-b rounded-none mb-4 no-scrollbar">
-                                            <TabsTrigger
-                                              value="tasks"
-                                              className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2">
+                                          {plan.materialAllocations.map(
+                                            (mat) => (
+                                              <div
+                                                key={mat.id}
+                                                className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-white hover:bg-emerald-50/30 transition-all shadow-sm hover:shadow-md"
+                                              >
+                                                <div className="flex items-center gap-3 overflow-hidden">
+                                                  <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-100 shrink-0">
+                                                    <Package className="w-4 h-4 text-emerald-600" />
+                                                  </div>
+                                                  <div className="min-w-0">
+                                                    <p className="font-extrabold text-xs truncate text-slate-800">
+                                                      {mat.materialName}
+                                                    </p>
+                                                    <p className="text-[10px] font-bold text-emerald-600/70 uppercase tracking-tighter">
+                                                      {mat.materialType}
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                                <div className="text-right pl-2">
+                                                  <div className="flex items-baseline gap-0.5">
+                                                    <span className="text-sm font-black text-slate-900">
+                                                      {mat.quantity}
+                                                    </span>
+                                                    <span className="text-[9px] font-bold text-slate-400 uppercase">
+                                                      {mat.unit}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            ),
+                                          )}
+                                        </div>
+                                      )}
+                                    </TabsContent>
+                                  </Tabs>
+                                ) : (
+                                  (plan.selectedStages &&
+                                  plan.selectedStages.length > 0
+                                    ? plan.selectedStages
+                                    : stageOrder
+                                  ).map((stageKey, index) => {
+                                    const [cycleId, stageName] =
+                                      stageKey.includes(":")
+                                        ? stageKey.split(":")
+                                        : [null, stageKey];
+                                    const cycle = cycleId
+                                      ? growthCycles.find(
+                                          (c) => c.id === cycleId,
+                                        )
+                                      : null;
+
+                                    // Filter allocations for this stage
+                                    const stageMaterials = (
+                                      plan.materialAllocations || []
+                                    ).filter((m) => m.stageId === stageKey);
+                                    const stageTasks =
+                                      plan.taskAllocations?.filter(
+                                        (t) => t.stageId === stageKey,
+                                      ) || [];
+
+                                    return (
+                                      <Card
+                                        key={stageKey}
+                                        className="overflow-hidden border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl"
+                                      >
+                                        <div className="bg-slate-50/80 px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-4">
+                                          <div className="flex items-center gap-4 min-w-0">
+                                            <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 shadow-xs flex items-center justify-center font-black text-sm text-slate-700 shrink-0">
+                                              {index + 1}
+                                            </div>
+                                            <div className="min-w-0">
+                                              <div className="flex items-center gap-2">
+                                                <h4 className="font-bold text-base text-slate-900 truncate">
+                                                  {stageName}
+                                                </h4>
+                                                {cycle && (
+                                                  <Badge
+                                                    variant="outline"
+                                                    className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-100 font-normal py-0 px-2 h-4 shrink-0"
+                                                  >
+                                                    {cycle.name}
+                                                  </Badge>
+                                                )}
+                                              </div>
+                                              {plan.purpose !==
+                                                "cultivation" && (
+                                                <p
+                                                  className={cn(
+                                                    "text-[10px] font-bold uppercase tracking-wider",
+                                                    isAmendment
+                                                      ? "text-emerald-600"
+                                                      : "text-red-600",
+                                                  )}
+                                                >
+                                                  {isAmendment
+                                                    ? "Hoạt động cải tạo đất"
+                                                    : "Hoạt động điều trị bệnh"}
+                                                </p>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="flex gap-2 shrink-0">
+                                            <Badge
+                                              variant="outline"
+                                              className="bg-white hover:bg-green-50 transition-colors px-2 py-0.5"
                                             >
-                                              <Users className="w-3.5 h-3.5" />
-                                              Công việc ({stageTasks.length})
-                                            </TabsTrigger>
-                                            <TabsTrigger
-                                              value="materials"
-                                              className="rounded-none border-b-2 border-transparent data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
+                                              <Leaf className="w-3 h-3 mr-1 text-green-600" />
+                                              {stageMaterials.length}
+                                            </Badge>
+                                            <Badge
+                                              variant="outline"
+                                              className="bg-white hover:bg-blue-50 transition-colors px-2 py-0.5"
                                             >
-                                              <Package className="w-3.5 h-3.5" />
-                                              Vật tư ({stageMaterials.length})
-                                            </TabsTrigger>
-                                          </TabsList>
+                                              <Users className="w-3 h-3 mr-1 text-blue-600" />
+                                              {stageTasks.length}
+                                            </Badge>
+                                          </div>
+                                        </div>
+
+                                        <CardContent className="p-0">
+                                          {stageMaterials.length === 0 &&
+                                          stageTasks.length === 0 ? (
+                                            <div className="p-8 text-center text-muted-foreground italic text-sm">
+                                              Chưa có chi tiết nào được lên kế
+                                              hoạch.
+                                            </div>
+                                          ) : (
+                                            <Tabs
+                                              defaultValue="tasks"
+                                              className="w-full"
+                                            >
+                                              <TabsList className="flex items-center justify-start gap-4 p-0 bg-transparent h-auto border-b rounded-none mb-4 no-scrollbar">
+                                                <TabsTrigger
+                                                  value="tasks"
+                                                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
+                                                >
+                                                  <Users className="w-3.5 h-3.5" />
+                                                  Công việc ({stageTasks.length}
+                                                  )
+                                                </TabsTrigger>
+                                                <TabsTrigger
+                                                  value="materials"
+                                                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-emerald-600 data-[state=active]:text-emerald-700 py-3 font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all"
+                                                >
+                                                  <Package className="w-3.5 h-3.5" />
+                                                  Vật tư (
+                                                  {stageMaterials.length})
+                                                </TabsTrigger>
+                                              </TabsList>
 
                                           <TabsContent
                                             value="tasks"
@@ -3036,56 +3089,62 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
                                             )}
                                           </TabsContent>
 
-                                          <TabsContent
-                                            value="materials"
-                                            className="m-0 bg-white anim-fade-in"
-                                          >
-                                            {stageMaterials.length === 0 ? (
-                                              <div className="text-center py-10 border border-dashed rounded-2xl bg-slate-50/50">
-                                                <Package className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                                                <p className="text-sm text-slate-500 font-medium">
-                                                  Chưa có vật tư phân bổ
-                                                </p>
-                                              </div>
-                                            ) : (
-                                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2">
-                                                {stageMaterials.map((mat) => (
-                                                  <div
-                                                    key={mat.id}
-                                                    className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-white hover:bg-emerald-50/30 transition-all shadow-sm hover:shadow-md"
-                                                  >
-                                                    <div className="flex items-center gap-3 overflow-hidden">
-                                                      <div className="bg-emerald-50 p-2.5 rounded-xl shadow-sm border border-emerald-100 shrink-0">
-                                                        <Package className="w-4 h-4 text-emerald-600" />
-                                                      </div>
-                                                      <div className="min-w-0 text-left">
-                                                        <p className="font-extrabold text-xs truncate text-slate-800">
-                                                          {mat.materialName}
-                                                        </p>
-                                                        <p className="text-[10px] font-bold text-emerald-600/70 uppercase tracking-tighter">
-                                                          {mat.materialType}
-                                                        </p>
-                                                      </div>
-                                                    </div>
+                                              <TabsContent
+                                                value="materials"
+                                                className="m-0 bg-white anim-fade-in"
+                                              >
+                                                {stageMaterials.length === 0 ? (
+                                                  <div className="text-center py-10 border border-dashed rounded-2xl bg-slate-50/50">
+                                                    <Package className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                                                    <p className="text-sm text-slate-500 font-medium">
+                                                      Chưa có vật tư phân bổ
+                                                    </p>
                                                   </div>
-                                                ))}
-                                              </div>
-                                            )}
-                                          </TabsContent>
-                                        </Tabs>
-                                      )}
-                                    </CardContent>
-                                  </Card>
-                                );
-                              })
-                            )}
+                                                ) : (
+                                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2">
+                                                    {stageMaterials.map(
+                                                      (mat) => (
+                                                        <div
+                                                          key={mat.id}
+                                                          className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-white hover:bg-emerald-50/30 transition-all shadow-sm hover:shadow-md"
+                                                        >
+                                                          <div className="flex items-center gap-3 overflow-hidden">
+                                                            <div className="bg-emerald-50 p-2.5 rounded-xl shadow-sm border border-emerald-100 shrink-0">
+                                                              <Package className="w-4 h-4 text-emerald-600" />
+                                                            </div>
+                                                            <div className="min-w-0 text-left">
+                                                              <p className="font-extrabold text-xs truncate text-slate-800">
+                                                                {
+                                                                  mat.materialName
+                                                                }
+                                                              </p>
+                                                              <p className="text-[10px] font-bold text-emerald-600/70 uppercase tracking-tighter">
+                                                                {
+                                                                  mat.materialType
+                                                                }
+                                                              </p>
+                                                            </div>
+                                                          </div>
+                                                        </div>
+                                                      ),
+                                                    )}
+                                                  </div>
+                                                )}
+                                              </TabsContent>
+                                            </Tabs>
+                                          )}
+                                        </CardContent>
+                                      </Card>
+                                    );
+                                  })
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
+                      );
+                    })
+                  )}
                 </div>
               )}
             </div>

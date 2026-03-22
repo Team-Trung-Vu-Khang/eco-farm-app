@@ -9,7 +9,7 @@ import {
   DeleteDialog,
   useToast,
   type Column,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { Fertilizer } from "./constants";
 import useFertilizerStore from "../../stores/useFertilizerStore";
 

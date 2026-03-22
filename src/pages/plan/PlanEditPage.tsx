@@ -24,7 +24,7 @@ import {
   cn,
   type Step,
   ScrollArea,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Apple,
   Bug,

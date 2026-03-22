@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
   useToast,
   type Column,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ImportTeamDialog } from "../../components/team/ImportTeamDialog";
 import useTeamStore, { type Team } from "../../stores/useTeamStore";
 

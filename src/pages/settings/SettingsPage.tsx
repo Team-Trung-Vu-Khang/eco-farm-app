@@ -34,7 +34,7 @@ import {
   TabsList,
   TabsTrigger,
   useToast,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 export default function SettingsPage() {
   const { toast } = useToast();

@@ -10,7 +10,7 @@ import {
   DeleteDialog,
   useToast,
   type Column,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 import useRegionStore from "../../../stores/useRegionStore";
 import { type Region } from "../constants";

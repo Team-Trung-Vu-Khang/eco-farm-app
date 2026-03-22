@@ -53,7 +53,7 @@ import {
   SelectValue,
   Textarea,
   FormDialog,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 // Phác đồ cải tạo đất (Treatment Plan)
 export interface TreatmentPlan {

@@ -2,142 +2,24 @@ import {
   AdminLayout,
   Button,
   DataTable,
-  DeleteDialog,
-  useToast,
-  type Column,
-} from "@tankhang1/eco-shared-ui";
-import { FileDown, Image as ImageIcon, Plus } from "lucide-react";
-import { useState } from "react";
-import { Link, useLocation } from "wouter";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { FileDown, Plus } from "lucide-react";
+import { Link } from "wouter";
 
-import useCropStore from "../../stores/useCropStore";
-import { categories, cropTypeOptions } from "./mocks";
-import type { Crop } from "./types";
+import { DeleteCropDialog } from "./components/DeleteCropDialog";
+import { COLUMNS, TABLE_FILTERS } from "./data/tableConfig";
+import { useCropPage } from "./hooks/useCropPage";
 
 export default function CropPage() {
-  const { toast } = useToast();
-  const [, setLocation] = useLocation();
-  const { crops, deleteCrop } = useCropStore();
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<Crop | null>(null);
-
-  const tableFilters = [
-    {
-      key: "cropGroup",
-      label: "Nhóm cây",
-      options: categories.map((c) => ({ label: c, value: c })),
-    },
-    {
-      key: "cropType",
-      label: "Loại cây",
-      options: cropTypeOptions,
-    },
-    // {
-    //   key: "harvestMethod",
-    //   label: "Hình thức thu hoạch",
-    //   options: harvestMethodOptions,
-    // },
-  ];
-
-  const columns: Column<Crop>[] = [
-    {
-      key: "code",
-      label: "Mã cây",
-      render: (value: string, item: Crop) => (
-        <Link href={`/crop/${item.id}`}>
-          <span className="text-green-600 hover:text-green-700 hover:underline cursor-pointer transition-colors">
-            {value}
-          </span>
-        </Link>
-      ),
-    },
-    {
-      key: "illustration",
-      label: "Hình ảnh",
-      render: (value: string | null) => (
-        <div className="w-12 h-12 rounded-lg border bg-muted overflow-hidden flex items-center justify-center shrink-0">
-          {value ? (
-            <img
-              src={value}
-              alt="Crop"
-              className="w-full h-full object-cover transition-transform hover:scale-110"
-            />
-          ) : (
-            <ImageIcon className="w-5 h-5 text-muted-foreground/40" />
-          )}
-        </div>
-      ),
-    },
-    {
-      key: "name",
-      label: "Tên cây",
-      render: (value: string) => (
-        <div className="flex flex-col">
-          <span className="font-bold text-foreground">{value}</span>
-        </div>
-      ),
-    },
-    // {
-    //   key: "cropType",
-    //   label: "Loại cây",
-    //   render: (value: string) => (
-    //     <span className="text-sm font-medium text-muted-foreground">
-    //       {value}
-    //     </span>
-    //   ),
-    // },
-    {
-      key: "cropGroup",
-      label: "Nhóm cây trồng",
-      render: (value: string) => (
-        <span className="text-sm text-muted-foreground">{value}</span>
-      ),
-    },
-    {
-      key: "origin",
-      label: "Nguồn gốc",
-      render: (_: any, item: Crop) => (
-        <span className="text-sm text-foreground">
-          {item.technicalSpecs?.origin || "---"}
-        </span>
-      ),
-    },
-    // {
-    //   key: "harvestMethod",
-    //   label: "Thu hoạch",
-    //   render: (value: string) => {
-    //     const option = harvestMethodOptions.find(
-    //       (opt: any) => opt.value === value,
-    //     );
-    //     return (
-    //       <span className="text-sm text-muted-foreground italic">
-    //         {option ? option.label : value}
-    //       </span>
-    //     );
-    //   },
-    // },
-  ];
-
-  const handleDelete = (item: Crop) => {
-    setDeleteItem(item);
-    setDeleteOpen(true);
-  };
-
-  const handleView = (item: Crop) => {
-    setLocation(`/crop/${item.id}`);
-  };
-
-  const handleEdit = (item: Crop) => {
-    setLocation(`/crop/${item.id}`);
-  };
-
-  const handleConfirmDelete = () => {
-    if (deleteItem) {
-      deleteCrop(deleteItem.id);
-      toast({ title: "Thành công", description: "Đã xóa cây trồng" });
-    }
-    setDeleteOpen(false);
-  };
+  const {
+    crops,
+    deleteOpen,
+    setDeleteOpen,
+    handleDelete,
+    handleView,
+    handleEdit,
+    handleConfirmDelete,
+  } = useCropPage();
 
   return (
     <AdminLayout
@@ -159,17 +41,17 @@ export default function CropPage() {
       }
     >
       <DataTable
-        columns={columns}
+        columns={COLUMNS}
         data={crops}
         onDelete={handleDelete}
         onView={handleView}
         onEdit={handleEdit}
         searchPlaceholder="Tìm kiếm cây trồng..."
         selectable
-        filters={tableFilters}
+        filters={TABLE_FILTERS}
       />
 
-      <DeleteDialog
+      <DeleteCropDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}

@@ -8,7 +8,7 @@ import {
   RadioGroup,
   RadioGroupItem,
   Button,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Trash, Upload, FileText } from "lucide-react";
 import type { GrowthStage } from "../types";
 

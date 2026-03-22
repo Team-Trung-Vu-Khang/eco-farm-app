@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import type { Crop } from "../pages/crop/types";
-import { initialData } from "../pages/crop/mocks";
+import type { Crop } from "../pages/crop/types/types";
+import { initialData } from "../pages/crop/data/mocks";
 
 export interface CropStore {
   crops: Crop[];

@@ -1,4 +1,4 @@
-import { AdminLayout } from "@tankhang1/eco-shared-ui";
+import { AdminLayout } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import usePlantStore from "../../../stores/usePlantStore";
 import PlantIdentificationForm from "./components/PlantIdentificationForm";
 import type { Plant } from "@/pages/region-chart/constants";

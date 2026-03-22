@@ -18,24 +18,12 @@ import {
   Textarea,
   useToast,
   DeleteDialog,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CreditCard, Save, Trash2, X } from "lucide-react";
 import useBankStore from "../../stores/useBankStore";
 
-const BANK_LOGOS: Record<string, string> = {
-  Vietcombank:
-    "https://cdn.haitrieu.com/wp-content/uploads/2022/02/Icon-Vietcombank.png",
-  VietinBank:
-    "https://cdn.haitrieu.com/wp-content/uploads/2022/01/Logo-VietinBank-CTG-Orientation-1.png",
-  BIDV: "https://play-lh.googleusercontent.com/BGXsq66VHM-uuMxFx14aFiHMuW3f9M1VnpAyrh6lRTyKpffwHjp-XqKlt2fnvp0zqpr1",
-  Agribank:
-    "https://cdn.haitrieu.com/wp-content/uploads/2022/01/Logo-Agribank-V.png",
-  MBBank:
-    "https://cdn.haitrieu.com/wp-content/uploads/2022/02/Icon-MB-Bank-MBB.png",
-  Techcombank:
-    "https://play-lh.googleusercontent.com/Ddr3ZQEu6Vef9JV9ITALeyBEXvYwQWZ3kKJXxrdncD9JR0xlsO--J6zo7uGARfuTBmk",
-  ACB: "https://cdn.haitrieu.com/wp-content/uploads/2022/01/Logo-ACB.png",
-};
+import BankLogo from "./components/BankLogo";
+import { BANK_LIST, BANK_LOGOS } from "./data/bank-constants";
 
 export default function BankEditPage() {
   const [, setLocation] = useLocation();
@@ -193,31 +181,21 @@ export default function BankEditPage() {
                     <SelectTrigger>
                       <SelectValue placeholder="Chọn ngân hàng" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Vietcombank">Vietcombank</SelectItem>
-                      <SelectItem value="VietinBank">VietinBank</SelectItem>
-                      <SelectItem value="BIDV">BIDV</SelectItem>
-                      <SelectItem value="Agribank">Agribank</SelectItem>
-                      <SelectItem value="MBBank">MBBank</SelectItem>
-                      <SelectItem value="Techcombank">Techcombank</SelectItem>
-                      <SelectItem value="ACB">ACB</SelectItem>
-                      <SelectItem value="VPBank">VPBank</SelectItem>
+                    <SelectContent className="max-h-56">
+                      {BANK_LIST.map((bank) => (
+                        <SelectItem key={bank.value} value={bank.value}>
+                          {bank.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 {formData.logo && (
-                  <div className="w-10 h-10 rounded-lg border bg-white flex items-center justify-center p-1 overflow-hidden shrink-0">
-                    <img
-                      src={formData.logo}
-                      alt="Bank Logo"
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "https://placehold.co/40x40?text=" +
-                          formData.bankName?.[0];
-                      }}
-                    />
-                  </div>
+                  <BankLogo
+                    bankName={formData.bankName}
+                    logo={formData.logo}
+                    className="rounded-lg"
+                  />
                 )}
               </div>
             </div>

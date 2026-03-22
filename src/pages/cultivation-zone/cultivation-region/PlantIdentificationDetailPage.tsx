@@ -13,7 +13,7 @@ import {
   TabsTrigger,
   DeleteDialog,
   useToast,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import {

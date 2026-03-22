@@ -1,5 +1,5 @@
 import { vietQrBankData } from "@/constants/banks";
-import { convertLexicalToHtml } from "@tankhang1/eco-shared-ui";
+import { convertLexicalToHtml } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 export const dateFormat = (date: string | number | Date) => {
   return new Intl.DateTimeFormat("vi", {

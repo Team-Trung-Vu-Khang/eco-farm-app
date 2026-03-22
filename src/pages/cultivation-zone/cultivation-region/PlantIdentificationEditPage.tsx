@@ -1,4 +1,4 @@
-import { AdminLayout } from "@tankhang1/eco-shared-ui";
+import { AdminLayout } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Trees } from "lucide-react";
 import { useLocation, useParams } from "wouter";
 import usePlantStore from "../../../stores/usePlantStore";

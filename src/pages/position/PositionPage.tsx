@@ -17,7 +17,7 @@ import {
   Textarea,
   useToast,
   type Column,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import usePositionStore, { type Position } from "../../stores/usePositionStore";
 
 const POSITION_GROUPS = [

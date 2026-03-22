@@ -22,7 +22,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { type Unit, UNIT_STANDARDS } from "./constants";
 import useUnitStore from "../../stores/useUnitStore";
 import { ChevronLeft, Save, Scale, ArrowRightLeft } from "lucide-react";

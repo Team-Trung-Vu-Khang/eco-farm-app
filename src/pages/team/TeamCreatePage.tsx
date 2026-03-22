@@ -17,7 +17,7 @@ import {
   SelectValue,
   Textarea,
   useToast,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Save, X } from "lucide-react";
 import useTeamStore from "../../stores/useTeamStore";
 

@@ -29,9 +29,9 @@ import EquipmentDetailPage from "./pages/equipment/EquipmentDetailPage";
 import UnitCreatePage from "./pages/unit/UnitCreatePage";
 
 import NotFoundPage from "./pages/NotFoundPage";
-import { Toaster, TooltipProvider } from "@tankhang1/eco-shared-ui";
+import { Toaster, TooltipProvider } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import BankPage from "./pages/bank/BankPage";
-import BankDirectoryPage from "./pages/bank/BankDirectoryPage";
+import BankDirectoryPage from "./pages/bank-directory/BankDirectoryPage";
 import BankCreatePage from "./pages/bank/BankCreatePage";
 import BankEditPage from "./pages/bank/BankEditPage";
 import GeoZonePage from "./pages/geo-zone/GeoZonePage";
@@ -116,7 +116,7 @@ import CreateTreatmentPage from "./pages/treatment/CreateTreatmentPage";
 import PlantDistributionListPage from "./pages/cultivation-zone/distribution-detail/PlantDistributionListPage";
 import FarmerPage from "./pages/farmer/FarmerPage";
 import FarmerCreatePage from "./pages/farmer/FarmerCreatePage";
-import FarmerEditPage from "./pages/farmer/FarnerEditPage";
+import FarmerEditPage from "./pages/farmer/FarmerEditPage";
 import FarmerDetailPage from "./pages/farmer/FarmerDetailPage";
 import CooperativePage from "./pages/cooperative/CooperativePage";
 import CooperativeCreatePage from "./pages/cooperative/CooperativeCreatePage";
@@ -258,7 +258,10 @@ function Router() {
       />
       {/* Cultivation Plot Routes */}
       <Route path="/cultivation-plot" component={CultivationPlotPage} />
-      <Route path="/cultivation-plot/create" component={CultivationPlotCreatePage} />
+      <Route
+        path="/cultivation-plot/create"
+        component={CultivationPlotCreatePage}
+      />
       <Route
         path="/cultivation-plot/:id/edit"
         component={CultivationPlotCreatePage}

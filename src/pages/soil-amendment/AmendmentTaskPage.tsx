@@ -43,7 +43,7 @@ import {
   DialogHeader,
   DialogTitle,
   type Column,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useAmendmentTaskStore, {
   type AmendmentTask,
 } from "../../stores/useAmendmentTaskStore";

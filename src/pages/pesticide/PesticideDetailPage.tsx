@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
   Separator,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   ChevronLeft,
   Edit,

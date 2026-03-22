@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Button } from "@tankhang1/eco-shared-ui";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Upload,
   X,

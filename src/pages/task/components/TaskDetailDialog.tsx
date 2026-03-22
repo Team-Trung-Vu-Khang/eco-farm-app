@@ -26,7 +26,7 @@ import {
   ScrollArea,
   cn,
   Input,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { type Task } from "../../../stores/useTaskStore";
 import useRegionStore from "../../../stores/useRegionStore";
 

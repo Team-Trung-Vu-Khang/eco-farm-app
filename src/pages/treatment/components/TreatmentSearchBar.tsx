@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
   Badge,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { cropTypes, crops, diseases } from "../data/treatment.data";
 import type { SearchFilters } from "../types/treatment.types";
 

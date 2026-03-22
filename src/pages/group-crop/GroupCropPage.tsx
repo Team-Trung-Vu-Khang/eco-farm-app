@@ -9,7 +9,7 @@ import {
   Textarea,
   useToast,
   type Column,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Hash, Leaf, Plus } from "lucide-react";
 import { useState } from "react";
 

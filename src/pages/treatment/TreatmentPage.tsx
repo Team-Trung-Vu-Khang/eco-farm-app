@@ -14,7 +14,7 @@ import {
   CardContent,
   DeleteDialog,
   useToast,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { TreatmentListItem } from "./components/TreatmentListItem";
 import { TreatmentDetail } from "./components/TreatmentDetail";
 import { TreatmentSearchBar } from "./components/TreatmentSearchBar";

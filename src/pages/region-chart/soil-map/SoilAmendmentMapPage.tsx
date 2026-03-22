@@ -19,9 +19,9 @@ import {
   Label,
   Input,
   Textarea,
-} from "@tankhang1/eco-shared-ui"; // Assuming Dialog components exist or I will fallback to simple UI if not.
+} from "@Team-Trung-Vu-Khang/eco-shared-ui"; // Assuming Dialog components exist or I will fallback to simple UI if not.
 // Checking imports, Dialog might be in ui/dialog. If not in shared-ui export, I will stick to sidebar expansion.
-// The user imports suggest @tankhang1/eco-shared-ui has basic components. I'll check if Dialog is available.
+// The user imports suggest @Team-Trung-Vu-Khang/eco-shared-ui has basic components. I'll check if Dialog is available.
 // If not, I'll use a simple conditional rendering for a modal or just expanding the sidebar content.
 // "Label" was removed previously, I should re-add it if I use it. I'll assume standard components.
 

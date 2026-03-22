@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { AdminLayout, cn } from "@tankhang1/eco-shared-ui";
+import { AdminLayout, cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { MFMap, MFMarker, MFPolygon } from "react-map4d-map";
 import type { GeoJsonObject } from "geojson";
 import { Maximize2, Minimize2 } from "lucide-react";

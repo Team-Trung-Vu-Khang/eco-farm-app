@@ -25,7 +25,7 @@ import {
   cn,
   useToast,
   type Step,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   AlertTriangle,
   Apple,
@@ -261,8 +261,8 @@ export default function TaskEditPage() {
         const firstRegionId = (task as any).geographicalSelections[0].regionId;
         const region = regions.find(r => String(r.id) === String(firstRegionId));
         if (region) {
-          const entId = region.enterpriseId.startsWith("ent-") 
-            ? region.enterpriseId.replace("ent-", "") 
+          const entId = region.enterpriseId.startsWith("ent-")
+            ? region.enterpriseId.replace("ent-", "")
             : region.enterpriseId;
           setSelectedEnterpriseId(entId);
         }

@@ -10,7 +10,7 @@ import {
   TabsList,
   TabsTrigger,
   cn,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Award,
   CheckCircle,
@@ -35,7 +35,12 @@ type Props = {
   onEdit: () => void;
 };
 
-const CultivationRegionDetailBody = ({ area, details, onBack, onEdit }: Props) => {
+const CultivationRegionDetailBody = ({
+  area,
+  details,
+  onBack,
+  onEdit,
+}: Props) => {
   return (
     <>
       {/* Header Actions */}
@@ -136,7 +141,9 @@ const CultivationRegionDetailBody = ({ area, details, onBack, onEdit }: Props) =
                   </div>
                   <div className="font-medium mt-1 text-slate-900">
                     {Array.from(
-                      new Set(details.technicalConfig.crops.map((c: any) => c.crop)),
+                      new Set(
+                        details.technicalConfig.crops.map((c: any) => c.crop),
+                      ),
                     ).join(", ") || "Chưa xác định"}
                   </div>
                 </div>
@@ -176,7 +183,9 @@ const CultivationRegionDetailBody = ({ area, details, onBack, onEdit }: Props) =
                   </div>
                   <div className="mt-1">
                     <Badge
-                      variant={area.status === "active" ? "default" : "secondary"}
+                      variant={
+                        area.status === "active" ? "default" : "secondary"
+                      }
                     >
                       {area.status === "active"
                         ? "Đang hoạt động"
@@ -221,103 +230,112 @@ const CultivationRegionDetailBody = ({ area, details, onBack, onEdit }: Props) =
                 <CardHeader className="border-b bg-slate-50/50 py-3 px-4 flex flex-row items-center justify-between">
                   <CardTitle className="text-sm font-bold flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-primary" />
-                    Phạm vi vùng canh tác ({details.selectedEntities.length}{" "}
+                    Phạm vi vùng canh tác ({
+                      details.selectedEntities.length
+                    }{" "}
                     mục)
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="p-6">
                     <div className="space-y-8">
-                      {Object.values(details.groupedSelections).map((group: any) => (
-                        <div key={group.region.id} className="relative">
-                          {/* Region Level */}
-                          <div className="flex items-center gap-3 mb-4 relative z-10">
-                            <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm">
-                              <MapPin className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <div className="text-[10px] text-primary font-bold uppercase tracking-wider leading-none mb-1">
-                                Vùng trồng
+                      {Object.values(details.groupedSelections).map(
+                        (group: any) => (
+                          <div key={group.region.id} className="relative">
+                            {/* Region Level */}
+                            <div className="flex items-center gap-3 mb-4 relative z-10">
+                              <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm">
+                                <MapPin className="w-5 h-5" />
                               </div>
-                              <div className="text-sm font-bold text-slate-900">
-                                {group.region.name}
+                              <div>
+                                <div className="text-[10px] text-primary font-bold uppercase tracking-wider leading-none mb-1">
+                                  Vùng trồng
+                                </div>
+                                <div className="text-sm font-bold text-slate-900">
+                                  {group.region.name}
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          {/* Area & Plot Level Tree */}
-                          {area.scope !== "region" && (
-                            <div className="ml-5 border-l-2 border-slate-100 pl-6 space-y-8">
-                              {Object.values(group.areas).map((areaGroup: any) => (
-                                <div
-                                  key={areaGroup.area?.id || "none"}
-                                  className="relative"
-                                >
-                                  {/* Horizontal branch from main stem to Area/Entity */}
-                                  <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-5" />
+                            {/* Area & Plot Level Tree */}
+                            {area.scope !== "region" && (
+                              <div className="ml-5 border-l-2 border-slate-100 pl-6 space-y-8">
+                                {Object.values(group.areas).map(
+                                  (areaGroup: any) => (
+                                    <div
+                                      key={areaGroup.area?.id || "none"}
+                                      className="relative"
+                                    >
+                                      {/* Horizontal branch from main stem to Area/Entity */}
+                                      <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-5" />
 
-                                  {areaGroup.area ? (
-                                    <>
-                                      <div className="flex items-center gap-3 mb-4 relative z-10">
-                                        <div className="w-9 h-9 rounded-lg bg-blue-500 text-white flex items-center justify-center shadow-sm">
-                                          <Layers className="w-4.5 h-4.5" />
-                                        </div>
-                                        <div>
-                                          <div className="text-[10px] text-blue-500 font-bold uppercase tracking-wider leading-none mb-1">
-                                            Khu vực
-                                          </div>
-                                          <div className="text-sm font-bold text-slate-900">
-                                            {areaGroup.area.name}
-                                          </div>
-                                        </div>
-                                      </div>
-
-                                      {/* Plots under this Area */}
-                                      <div className="ml-4.5 border-l-2 border-slate-100 pl-6 space-y-4">
-                                        {areaGroup.entities
-                                          .filter((e: any) => e.typeCode === "plot")
-                                          .map((plot: any) => (
-                                            <div
-                                              key={plot.id}
-                                              className="relative flex items-center gap-3 py-1"
-                                            >
-                                              <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
-                                              <div className="w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center shadow-xs">
-                                                <Target className="w-4 h-4" />
+                                      {areaGroup.area ? (
+                                        <>
+                                          <div className="flex items-center gap-3 mb-4 relative z-10">
+                                            <div className="w-9 h-9 rounded-lg bg-blue-500 text-white flex items-center justify-center shadow-sm">
+                                              <Layers className="w-4.5 h-4.5" />
+                                            </div>
+                                            <div>
+                                              <div className="text-[10px] text-blue-500 font-bold uppercase tracking-wider leading-none mb-1">
+                                                Khu vực
                                               </div>
-                                              <div className="flex-1">
-                                                <div className="text-[10px] text-green-600 font-bold uppercase tracking-wider leading-none mb-1">
-                                                  Lô đất
-                                                </div>
-                                                <div className="text-sm font-bold text-slate-900">
-                                                  {plot.name}
-                                                </div>
+                                              <div className="text-sm font-bold text-slate-900">
+                                                {areaGroup.area.name}
                                               </div>
                                             </div>
-                                          ))}
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <div className="flex items-center gap-3 relative z-10 py-1">
-                                      <div className="w-9 h-9 rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center shadow-xs">
-                                        <MapPin className="w-4.5 h-4.5" />
-                                      </div>
-                                      <div className="flex-1">
-                                        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider leading-none mb-1">
-                                          Vùng trồng
+                                          </div>
+
+                                          {/* Plots under this Area */}
+                                          <div className="ml-4.5 border-l-2 border-slate-100 pl-6 space-y-4">
+                                            {areaGroup.entities
+                                              .filter(
+                                                (e: any) =>
+                                                  e.typeCode === "plot",
+                                              )
+                                              .map((plot: any) => (
+                                                <div
+                                                  key={plot.id}
+                                                  className="relative flex items-center gap-3 py-1"
+                                                >
+                                                  <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
+                                                  <div className="w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center shadow-xs">
+                                                    <Target className="w-4 h-4" />
+                                                  </div>
+                                                  <div className="flex-1">
+                                                    <div className="text-[10px] text-green-600 font-bold uppercase tracking-wider leading-none mb-1">
+                                                      Lô đất
+                                                    </div>
+                                                    <div className="text-sm font-bold text-slate-900">
+                                                      {plot.name}
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                          </div>
+                                        </>
+                                      ) : (
+                                        <div className="flex items-center gap-3 relative z-10 py-1">
+                                          <div className="w-9 h-9 rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center shadow-xs">
+                                            <MapPin className="w-4.5 h-4.5" />
+                                          </div>
+                                          <div className="flex-1">
+                                            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider leading-none mb-1">
+                                              Vùng trồng
+                                            </div>
+                                            <div className="text-sm font-bold text-slate-900">
+                                              {group.region.name}
+                                            </div>
+                                          </div>
                                         </div>
-                                        <div className="text-sm font-bold text-slate-900">
-                                          {group.region.name}
-                                        </div>
-                                      </div>
+                                      )}
                                     </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                                  ),
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ),
+                      )}
                     </div>
                   </div>
                 </CardContent>

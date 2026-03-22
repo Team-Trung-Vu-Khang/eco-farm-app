@@ -24,7 +24,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { fertilizerTypes, commonHashtags, suppliers, units } from "./constants";
 import useFertilizerStore from "../../stores/useFertilizerStore";
 import {

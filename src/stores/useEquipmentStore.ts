@@ -3,7 +3,7 @@ import { devtools, persist } from "zustand/middleware";
 import {
   initialEquipments,
   type Equipment,
-} from "../pages/equipment/constants";
+} from "../pages/equipment/data/constants";
 
 interface EquipmentState {
   // State

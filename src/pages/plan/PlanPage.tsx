@@ -11,7 +11,7 @@ import {
   DeleteDialog,
   useToast,
   type Column,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import usePlanStore, { type Plan } from "../../stores/usePlanStore";
 
 export default function PlanPage() {

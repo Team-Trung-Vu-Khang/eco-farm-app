@@ -1,101 +1,27 @@
-import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { Plus } from "lucide-react";
 import {
   AdminLayout,
-  Badge,
   Button,
   DataTable,
   DeleteDialog,
-  useToast,
-  type Column,
-} from "@tankhang1/eco-shared-ui";
-import useBankStore, { type BankAccount } from "../../stores/useBankStore";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import useBankStore from "../../stores/useBankStore";
+import { useBankTable } from "./hooks/useBankTable";
 
 export default function BankPage() {
-  const { toast } = useToast();
-  const [, setLocation] = useLocation();
-
-  // Zustand store
   const bankAccounts = useBankStore((state) => state.bankAccounts);
-  const deleteBankAccount = useBankStore((state) => state.deleteBankAccount);
-
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<BankAccount | null>(null);
-
-  const columns: Column<BankAccount>[] = [
-    {
-      key: "bankName",
-      label: "Ngân hàng",
-      render: (value, item) => (
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full border bg-white flex items-center justify-center p-1 overflow-hidden shrink-0">
-            <img
-              src={item.logo}
-              alt={value as string}
-              className="w-full h-full object-contain"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src =
-                  "https://placehold.co/40x40?text=" + (value as string)?.[0];
-              }}
-            />
-          </div>
-          <div className="font-medium">{value}</div>
-        </div>
-      ),
-    },
-    { key: "accountNumber", label: "Số tài khoản" },
-    { key: "accountHolder", label: "Chủ tài khoản" },
-    { key: "branch", label: "Chi nhánh" },
-    { key: "note", label: "Ghi chú" },
-    {
-      key: "status",
-      label: "Trạng thái",
-      render: (value) => (
-        <Badge variant={value === "active" ? "default" : "outline"}>
-          {value === "active" ? "Hoạt động" : "Không hoạt động"}
-        </Badge>
-      ),
-    },
-  ];
-
-  const filters = [
-    {
-      key: "status",
-      label: "Trạng thái",
-      options: [
-        { label: "Hoạt động", value: "active" },
-        { label: "Không hoạt động", value: "inactive" },
-      ],
-    },
-    {
-      key: "bankName",
-      label: "Ngân hàng",
-      options: [
-        { label: "Vietcombank", value: "Vietcombank" },
-        { label: "Agribank", value: "Agribank" },
-        { label: "MBBank", value: "MBBank" },
-        { label: "BIDV", value: "BIDV" },
-        { label: "VietinBank", value: "VietinBank" },
-      ],
-    },
-  ];
-
-  const handleDelete = (item: BankAccount) => {
-    setDeleteItem(item);
-    setDeleteOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (deleteItem) {
-      deleteBankAccount(deleteItem.id);
-      toast({
-        title: "Thành công",
-        description: "Đã xóa tài khoản ngân hàng",
-      });
-    }
-    setDeleteOpen(false);
-  };
+  
+  const {
+    columns,
+    filters,
+    deleteOpen,
+    setDeleteOpen,
+    handleDelete,
+    handleConfirmDelete,
+    handleEdit,
+    handleView,
+  } = useBankTable();
 
   return (
     <AdminLayout
@@ -113,8 +39,8 @@ export default function BankPage() {
       <DataTable
         columns={columns}
         data={bankAccounts}
-        onView={(item) => setLocation(`/bank/${item.id}/edit`)}
-        onEdit={(item) => setLocation(`/bank/${item.id}/edit`)}
+        onView={handleView}
+        onEdit={handleEdit}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm tài khoản..."
         filters={filters}

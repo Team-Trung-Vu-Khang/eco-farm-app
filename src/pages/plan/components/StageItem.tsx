@@ -1,4 +1,4 @@
-import { Checkbox } from "@tankhang1/eco-shared-ui";
+import { Checkbox } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 export const StageItem = ({
   stage,

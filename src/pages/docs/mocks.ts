@@ -1,4 +1,4 @@
-import type { SerializedEditorState } from "@tankhang1/eco-shared-ui";
+import type { SerializedEditorState } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { Docs } from "./types";
 
 const now = Date.now();

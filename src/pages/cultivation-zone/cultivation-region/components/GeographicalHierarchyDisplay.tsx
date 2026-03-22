@@ -1,4 +1,4 @@
-import { cn } from "@tankhang1/eco-shared-ui";
+import { cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Layers, MapPin, Target } from "lucide-react";
 import type { RegionNode } from "./GeographicalTree";
 

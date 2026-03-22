@@ -9,7 +9,7 @@ import {
   cn,
   Button,
   Badge,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Layers, Plus, Search } from "lucide-react";
 
 interface CultivationRegionSelectorProps {

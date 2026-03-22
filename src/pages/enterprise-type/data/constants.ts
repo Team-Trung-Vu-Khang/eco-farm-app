@@ -1,0 +1,60 @@
+import type { EnterpriseGroup } from "../types";
+
+export const INITIAL_DATA: EnterpriseGroup[] = [
+  {
+    id: 1,
+    code: "DN",
+    name: "Nhóm Doanh nghiệp",
+    description: "Bao gồm các loại hình doanh nghiệp (TNHH, CP, DNTN...)",
+    status: "active",
+    createdAt: "2024-01-10",
+  },
+  {
+    id: 2,
+    code: "HTX",
+    name: "Nhóm Hợp tác xã",
+    description: "Bao gồm các Hợp tác xã và Liên hiệp hợp tác xã",
+    status: "active",
+    createdAt: "2024-01-10",
+  },
+  {
+    id: 3,
+    code: "THT",
+    name: "Nhóm Tổ hợp tác",
+    description: "Các tổ hợp tác được chứng thực bởi UBND xã/phường",
+    status: "active",
+    createdAt: "2024-01-11",
+  },
+  {
+    id: 4,
+    code: "HKD",
+    name: "Nhóm Hộ kinh doanh",
+    description: "Hộ kinh doanh cá thể, hộ gia đình sản xuất",
+    status: "active",
+    createdAt: "2024-01-12",
+  },
+  {
+    id: 5,
+    code: "CQNN",
+    name: "Cơ quan nhà nước",
+    description: "Các sở, ban, ngành và đơn vị hành chính sự nghiệp",
+    status: "active",
+    createdAt: "2024-01-13",
+  },
+  {
+    id: 6,
+    code: "HIEPHOI",
+    name: "Hiệp hội / Tổ chức phi chính phủ",
+    description: "Các hiệp hội ngành hàng, tổ chức NGO",
+    status: "active",
+    createdAt: "2024-01-14",
+  },
+  {
+    id: 7,
+    code: "KHAC",
+    name: "Nhóm khác",
+    description: "Các đối tượng tổ chức khác",
+    status: "active",
+    createdAt: "2024-01-15",
+  },
+];

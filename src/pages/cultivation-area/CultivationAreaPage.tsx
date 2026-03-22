@@ -7,7 +7,7 @@ import {
   Badge,
   DeleteDialog,
   useToast,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 
 import useCultivationAreaStore, {
