@@ -116,7 +116,7 @@ import CreateTreatmentPage from "./pages/treatment/CreateTreatmentPage";
 import PlantDistributionListPage from "./pages/cultivation-zone/distribution-detail/PlantDistributionListPage";
 import FarmerPage from "./pages/farmer/FarmerPage";
 import FarmerCreatePage from "./pages/farmer/FarmerCreatePage";
-import FarmerEditPage from "./pages/farmer/FarnerEditPage";
+import FarmerEditPage from "./pages/farmer/FarmerEditPage";
 import FarmerDetailPage from "./pages/farmer/FarmerDetailPage";
 import CooperativePage from "./pages/cooperative/CooperativePage";
 import CooperativeCreatePage from "./pages/cooperative/CooperativeCreatePage";

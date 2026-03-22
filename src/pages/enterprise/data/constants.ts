@@ -1,3 +1,9 @@
+export interface Contact {
+  name: string;
+  phone: string;
+  email: string;
+}
+
 export interface Branch {
   name: string;
   taxCode: string;
@@ -50,6 +56,7 @@ export interface Enterprise {
   taxAuthority?: string;
   issueDate?: string;
   description?: string;
+  contacts?: Contact[];
   branches?: Branch[];
   bankAccounts?: BankAccount[];
 }
