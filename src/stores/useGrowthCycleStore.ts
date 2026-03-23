@@ -1,7 +1,23 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import type { GrowthCycle } from "../pages/growth-cycle/types";
-import { initialGrowthCycles } from "../pages/growth-cycle/mocks";
+import type { GrowthCycle } from "../pages/growth-cycle/types/types";
+import { initialGrowthCycles } from "@/pages/growth-cycle/data/mocks";
+
+function normalizeGrowthCycle(cycle: GrowthCycle): GrowthCycle {
+  const normalizedStages = cycle.stages ?? [];
+  const normalizedCropId =
+    cycle.cropName && cycle.cropId !== cycle.cropName ? cycle.cropName : cycle.cropId;
+
+  return {
+    ...cycle,
+    cropId: normalizedCropId,
+    totalDays: normalizedStages.reduce(
+      (sum, stage) => sum + (Number(stage.duration) || 0),
+      0,
+    ),
+    numStages: normalizedStages.length,
+  };
+}
 
 interface GrowthCycleState {
   growthCycles: GrowthCycle[];
@@ -26,7 +42,7 @@ const useGrowthCycleStore = create<GrowthCycleState>()(
   devtools(
     persist(
       (set, get) => ({
-        growthCycles: initialGrowthCycles,
+        growthCycles: initialGrowthCycles.map(normalizeGrowthCycle),
         isLoading: false,
         error: null,
 
@@ -53,7 +69,7 @@ const useGrowthCycleStore = create<GrowthCycleState>()(
               };
 
               return {
-                growthCycles: [newCycle, ...state.growthCycles],
+                growthCycles: [normalizeGrowthCycle(newCycle), ...state.growthCycles],
               };
             },
             false,
@@ -66,12 +82,12 @@ const useGrowthCycleStore = create<GrowthCycleState>()(
             (state) => ({
               growthCycles: state.growthCycles.map((g) => {
                 if (g.id === id) {
-                  return {
+                  return normalizeGrowthCycle({
                     ...g,
                     ...data,
                     numStages: data.stages ? data.stages.length : g.numStages,
                     updatedAt: Date.now(),
-                  };
+                  });
                 }
                 return g;
               }),
@@ -101,7 +117,20 @@ const useGrowthCycleStore = create<GrowthCycleState>()(
       }),
       {
         name: "growth-cycle-storage",
-        partialize: (state) => ({ growthCycles: state.growthCycles }),
+        partialize: (state) => ({
+          growthCycles: state.growthCycles.map(normalizeGrowthCycle),
+        }),
+        merge: (persistedState, currentState) => {
+          const typedPersistedState = persistedState as Partial<GrowthCycleState>;
+
+          return {
+            ...currentState,
+            ...typedPersistedState,
+            growthCycles: (
+              typedPersistedState.growthCycles ?? currentState.growthCycles
+            ).map(normalizeGrowthCycle),
+          };
+        },
       },
     ),
     { name: "GrowthCycleStore" },

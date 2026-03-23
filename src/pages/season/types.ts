@@ -1,4 +1,4 @@
-import type { GrowthCycle } from "../growth-cycle/types";
+import type { GrowthCycle } from "../growth-cycle/types/types";
 
 export interface SeasonDocument {
   id: string;

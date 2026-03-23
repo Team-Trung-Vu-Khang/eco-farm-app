@@ -10,7 +10,7 @@ import {
   Button,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Trash, Upload, FileText } from "lucide-react";
-import type { GrowthStage } from "../types";
+import type { GrowthStage } from "../types/types";
 
 interface GrowthStageCardProps {
   stage: GrowthStage;
@@ -27,6 +27,11 @@ export const GrowthStageCard = ({
 }: GrowthStageCardProps) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  const pdfFileName =
+    stage.pdfFile && typeof stage.pdfFile === "object" && "name" in stage.pdfFile
+      ? stage.pdfFile.name
+      : null;
 
   const handleFileChange = (file: File | null) => {
     if (file && file.type === "application/pdf") {
@@ -151,17 +156,12 @@ export const GrowthStageCard = ({
               accept=".pdf"
               onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
             />
-            {stage.pdfFile &&
-            (stage.pdfFile instanceof File || (stage.pdfFile as any).name) ? (
+            {stage.pdfFile && pdfFileName ? (
               <div className="flex flex-col items-center animate-in zoom-in duration-300">
                 <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-600 mb-2">
                   <FileText className="w-6 h-6" />
                 </div>
-                <p className="text-sm font-bold text-slate-800">
-                  {stage.pdfFile instanceof File
-                    ? stage.pdfFile.name
-                    : (stage.pdfFile as any).name}
-                </p>
+                <p className="text-sm font-bold text-slate-800">{pdfFileName}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Đã chọn thành công. Nhấn để thay đổi.
                 </p>

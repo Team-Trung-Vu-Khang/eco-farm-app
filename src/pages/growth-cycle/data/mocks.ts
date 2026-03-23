@@ -1,5 +1,5 @@
-import type { GrowthCycle } from "./types";
-import { initialEditorValue } from "../docs/mocks";
+import { initialEditorValue } from "@/pages/docs/mocks";
+import type { GrowthCycle } from "../types/types";
 
 const now = Date.now();
 
@@ -8,7 +8,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
     id: "GC001",
     name: "Quy trình kỹ thuật Sầu riêng (Chung)",
     scope: "crop",
-    cropId: "1", // Sầu riêng
+    cropId: "Sầu riêng",
     cropName: "Sầu riêng",
     totalDays: 365,
     numStages: 4,
@@ -49,7 +49,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
     id: "GC002",
     name: "Quy trình Sầu riêng Ri6 (Đặc thù)",
     scope: "variety",
-    cropId: "1",
+    cropId: "Sầu riêng",
     cropName: "Sầu riêng",
     variety: "1", // ID of Sầu riêng Ri6 in variety mocks
     totalDays: 340,
@@ -84,7 +84,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
     id: "GC003",
     name: "Chu kỳ sinh trưởng Lúa OM5451",
     scope: "variety",
-    cropId: "8", // Lúa mùa OM5451 (from crop mocks)
+    cropId: "Lúa",
     cropName: "Lúa",
     variety: "5", // ID of Lúa OM5451 in variety mocks
     totalDays: 95,
@@ -126,7 +126,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
     id: "GC004",
     name: "Chu kỳ sinh trưởng Đậu nành DT84",
     scope: "variety",
-    cropId: "7", // Đậu nành miền Nam
+    cropId: "Đậu nành",
     cropName: "Đậu nành",
     variety: "6", // ID of Đậu nành DT84 in variety mocks
     totalDays: 90,
@@ -168,7 +168,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
     id: "GC005",
     name: "Quy trình canh tác Đậu nành chuẩn",
     scope: "crop",
-    cropId: "7", // Đậu nành miền Nam
+    cropId: "Đậu nành",
     cropName: "Đậu nành",
     totalDays: 110,
     numStages: 3,
