@@ -13,7 +13,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   CalendarIcon,
   CheckCircle2,
@@ -31,8 +31,7 @@ import type {
   GeographicalSelection,
   MaterialAllocation,
   TaskAllocation,
-}
-from "../types";
+} from "../types";
 import { MATERIAL_OPTIONS, MATERIAL_UNITS, TASK_OPTIONS } from "../mocks";
 
 export const TaskStageAllocation = memo(
@@ -233,7 +232,12 @@ const TaskBlock = ({
     const summary: {
       regionId: string;
       regionName: string;
-      items: { type: "region" | "area" | "plot"; id: string; name: string; parentName?: string }[];
+      items: {
+        type: "region" | "area" | "plot";
+        id: string;
+        name: string;
+        parentName?: string;
+      }[];
     }[] = [];
 
     selections.forEach((sel) => {
@@ -243,18 +247,43 @@ const TaskBlock = ({
       if (!region) return;
       let regionGroup = summary.find((s) => s.regionId === String(region.id));
       if (!regionGroup) {
-        regionGroup = { regionId: String(region.id), regionName: region.name, items: [] };
+        regionGroup = {
+          regionId: String(region.id),
+          regionName: region.name,
+          items: [],
+        };
         summary.push(regionGroup);
       }
       if (sel.type === "region") {
-        regionGroup.items.push({ type: "region", id: String(region.id), name: `Toàn bộ ${region.name}` });
+        regionGroup.items.push({
+          type: "region",
+          id: String(region.id),
+          name: `Toàn bộ ${region.name}`,
+        });
       } else if (sel.type === "area") {
-        const area = region.subAreas?.find((a: any) => String(a.id) === String(sel.areaId));
-        if (area) regionGroup.items.push({ type: "area", id: String(area.id), name: area.name });
+        const area = region.subAreas?.find(
+          (a: any) => String(a.id) === String(sel.areaId),
+        );
+        if (area)
+          regionGroup.items.push({
+            type: "area",
+            id: String(area.id),
+            name: area.name,
+          });
       } else if (sel.type === "plot") {
-        const area = region.subAreas?.find((a: any) => String(a.id) === String(sel.areaId));
-        const plot = area?.plots?.find((p: any) => String(p.id) === String(sel.plotId));
-        if (plot) regionGroup.items.push({ type: "plot", id: String(plot.id), name: plot.name, parentName: area?.name });
+        const area = region.subAreas?.find(
+          (a: any) => String(a.id) === String(sel.areaId),
+        );
+        const plot = area?.plots?.find(
+          (p: any) => String(p.id) === String(sel.plotId),
+        );
+        if (plot)
+          regionGroup.items.push({
+            type: "plot",
+            id: String(plot.id),
+            name: plot.name,
+            parentName: area?.name,
+          });
       }
     });
     return summary;
@@ -269,7 +298,9 @@ const TaskBlock = ({
     // Get the plan-configured duration
     const planTask = availableTasks?.find((t: any) => t.name === task.name);
     const planDurationRaw: string = planTask?.duration || "";
-    const maxDays = planDurationRaw ? parseInt(planDurationRaw.replace(/\D/g, ""), 10) : NaN;
+    const maxDays = planDurationRaw
+      ? parseInt(planDurationRaw.replace(/\D/g, ""), 10)
+      : NaN;
 
     // Calculate duration in days: (end - start) + 1
     const s = new Date(newStart);
@@ -278,7 +309,11 @@ const TaskBlock = ({
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
     const performUpdate = () => {
-      onUpdateTask?.(task.id, { startDate: newStart, endDate: newEnd, duration: `${diffDays} ngày` });
+      onUpdateTask?.(task.id, {
+        startDate: newStart,
+        endDate: newEnd,
+        duration: `${diffDays} ngày`,
+      });
     };
 
     if (!isNaN(maxDays) && diffDays > maxDays) {
@@ -535,7 +570,9 @@ const TaskBlock = ({
                 type="date"
                 className="pl-10 h-10 text-sm"
                 value={task.endDate || ""}
-                onChange={(e) => syncDates(task.startDate || "", e.target.value)}
+                onChange={(e) =>
+                  syncDates(task.startDate || "", e.target.value)
+                }
               />
             </div>
           </div>
