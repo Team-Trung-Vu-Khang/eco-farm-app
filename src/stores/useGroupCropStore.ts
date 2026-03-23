@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import type { GroupCrop } from "../pages/group-crop/types";
-import { initialData } from "../pages/group-crop/mocks";
+import { initialData } from "../pages/group-crop/data/mocks";
+import type { GroupCrop } from "../pages/group-crop/types/types";
 
 interface GroupCropState {
   groupCrops: GroupCrop[];

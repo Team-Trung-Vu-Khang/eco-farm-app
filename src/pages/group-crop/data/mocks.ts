@@ -1,4 +1,4 @@
-import type { GroupCrop } from "./types";
+import type { GroupCrop } from "../types/types";
 
 export const initialData: GroupCrop[] = [
   {
