@@ -22,6 +22,7 @@ import PlanDetailPage from "./pages/plan/PlanDetailPage";
 import PlanEditPage from "./pages/plan/PlanEditPage";
 import PlanTypePage from "./pages/plan-type/PlanTypePage";
 import FertilizerCreatePage from "./pages/fertilizer/FertilizerCreatePage";
+import FertilizerDetailPage from "./pages/fertilizer/FertilizerDetailPage";
 import MaterialCreatePage from "./pages/material/MaterialCreatePage";
 import MaterialDetailPage from "./pages/material/MaterialDetailPage";
 import EquipmentCreatePage from "./pages/equipment/EquipmentCreatePage";
@@ -321,6 +322,7 @@ function Router() {
       <Route path="/fertilizer-group" component={FertilizerGroupPage} />
       <Route path="/fertilizer/create" component={FertilizerCreatePage} />
       <Route path="/fertilizer/:id/edit" component={FertilizerCreatePage} />
+      <Route path="/fertilizer/:id" component={FertilizerDetailPage} />
       <Route path="/material" component={MaterialPage} />
       <Route path="/material-group" component={MaterialGroupPage} />
       <Route path="/material/create" component={MaterialCreatePage} />

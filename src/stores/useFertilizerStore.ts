@@ -3,7 +3,7 @@ import { devtools, persist } from "zustand/middleware";
 import {
   initialFertilizers,
   type Fertilizer,
-} from "../pages/fertilizer/constants";
+} from "../pages/fertilizer/data/constants";
 
 interface FertilizerState {
   // State
