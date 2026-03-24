@@ -1,88 +1,25 @@
-import { useState } from "react";
 import { Plus } from "lucide-react";
-import { useLocation } from "wouter";
 import {
   AdminLayout,
-  Badge,
   Button,
   DataTable,
   DeleteDialog,
-  useToast,
-  type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { Material } from "./constants";
-import useMaterialStore from "../../stores/useMaterialStore";
+import { materialColumns } from "./data/columns";
+import { useMaterialPage } from "./hooks/useMaterialPage";
 
 export default function MaterialPage() {
-  const { toast } = useToast();
-  const [, setLocation] = useLocation();
-
-  // Zustand store
-  const materials = useMaterialStore((state) => state.materials);
-  const deleteMaterial = useMaterialStore((state) => state.deleteMaterial);
-
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<Material | null>(null);
-
-  const columns: Column<Material>[] = [
-    { key: "code", label: "Mã" },
-    {
-      key: "name",
-      label: "Tên vật tư",
-      render: (value, row) => (
-        <span
-          className="font-medium text-primary cursor-pointer hover:underline"
-          onClick={() => setLocation(`/material/${row.id}`)}
-        >
-          {value}
-        </span>
-      ),
-    },
-    {
-      key: "type",
-      label: "Phân loại",
-      render: (value) => <Badge variant="outline">{value}</Badge>,
-    },
-    {
-      key: "description",
-      label: "Mô tả",
-      render: (value) => (
-        <span className="truncate max-w-[200px] inline-block" title={value}>
-          {value}
-        </span>
-      ),
-    },
-    {
-      key: "status",
-      label: "Trạng thái",
-      render: (value) => (
-        <Badge variant={value === "active" ? "default" : "secondary"}>
-          {value === "active" ? "Hoạt động" : "Không hoạt động"}
-        </Badge>
-      ),
-    },
-  ];
-
-  const handleAdd = () => {
-    setLocation("/material/create");
-  };
-
-  const handleEdit = (item: Material) => {
-    setLocation(`/material/${item.id}/edit`);
-  };
-
-  const handleDelete = (item: Material) => {
-    setDeleteItem(item);
-    setDeleteOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (deleteItem) {
-      deleteMaterial(deleteItem.id);
-      toast({ title: "Thành công", description: "Đã xóa vật tư" });
-    }
-    setDeleteOpen(false);
-  };
+  const {
+    materials,
+    deleteOpen,
+    setDeleteOpen,
+    handleAdd,
+    handleEdit,
+    handleView,
+    handleDelete,
+    handleConfirmDelete,
+    navigateToDetail,
+  } = useMaterialPage();
 
   return (
     <AdminLayout
@@ -96,11 +33,9 @@ export default function MaterialPage() {
       }
     >
       <DataTable
-        columns={columns}
+        columns={materialColumns(navigateToDetail)}
         data={materials}
-        onView={(item) =>
-          toast({ title: "Xem chi tiết", description: item.name })
-        }
+        onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm vật tư..."

@@ -20,6 +20,7 @@ import {
   Info,
 } from "lucide-react";
 import useMaterialStore from "../../stores/useMaterialStore";
+import { mockMaterialSuppliers } from "./data/constants";
 
 const MaterialDetailPage = () => {
   const [, params] = useRoute("/material/:id");
@@ -44,26 +45,6 @@ const MaterialDetailPage = () => {
       </AdminLayout>
     );
   }
-
-  // Mock supplier details specifically for this item
-  const itemSuppliers = [
-    {
-      id: "sup1",
-      name: "Công ty Nhựa Rạng Đông",
-      type: "enterprise",
-      quantity: "50",
-      unit: "Cuộn",
-      packaging: "Cuộn 1000m",
-    },
-    {
-      id: "sup2",
-      name: "Đại lý VTNN Hòa Phát",
-      type: "enterprise",
-      quantity: "20",
-      unit: "Cuộn",
-      packaging: "Cuộn 500m",
-    },
-  ];
 
   return (
     <AdminLayout
@@ -161,11 +142,11 @@ const MaterialDetailPage = () => {
               <CardHeader className="pb-3 border-b">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Building2 className="w-5 h-5 text-primary" />
-                  Nhà cung cấp ({itemSuppliers.length})
+                  Nhà cung cấp ({mockMaterialSuppliers.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6 grid gap-4">
-                {itemSuppliers.map((sup, idx) => (
+                {mockMaterialSuppliers.map((sup, idx) => (
                   <div
                     key={idx}
                     className="flex items-center justify-between p-4 border rounded-lg bg-white hover:bg-slate-50 transition-colors"

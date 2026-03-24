@@ -1,12 +1,4 @@
-export interface Material {
-  id: number;
-  code: string;
-  name: string;
-  type: string;
-  description: string;
-  status: "active" | "inactive";
-  createdAt: string;
-}
+import type { Material } from "../types/types";
 
 export const initialMaterials: Material[] = [
   {
@@ -62,3 +54,22 @@ export const suppliers = [
 ];
 
 export const units = ["Cái", "Cuộn", "Mét", "Kg", "Bộ", "Thùng"];
+
+export const mockMaterialSuppliers = [
+  {
+    id: "sup1",
+    name: "Công ty Nhựa Rạng Đông",
+    type: "enterprise",
+    quantity: "50",
+    unit: "Cuộn",
+    packaging: "Cuộn 1000m",
+  },
+  {
+    id: "sup2",
+    name: "Đại lý VTNN Hòa Phát",
+    type: "enterprise",
+    quantity: "20",
+    unit: "Cuộn",
+    packaging: "Cuộn 500m",
+  },
+];

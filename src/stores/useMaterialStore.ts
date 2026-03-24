@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import { initialMaterials, type Material } from "../pages/material/constants";
+import { initialMaterials } from "../pages/material/data/constants";
+import type { Material } from "../pages/material/types/types";
 
 interface MaterialState {
   // State
