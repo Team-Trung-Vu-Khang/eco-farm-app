@@ -11,7 +11,7 @@ import {
 import { Plus, ChevronDown, Upload, FileUser } from "lucide-react";
 import { ImportPersonnelDialog } from "../../components/personnel/ImportPersonnelDialog";
 import { usePersonnel } from "./hooks/usePersonnel";
-import { PERSONNEL_COLUMNS, PERSONNEL_FILTERS } from "./constants/personnelConstants";
+import { personnelColumns, personnelFilters } from "./data/table";
 
 export default function PersonnelPage() {
   const {
@@ -57,13 +57,13 @@ export default function PersonnelPage() {
       }
     >
       <DataTable
-        columns={PERSONNEL_COLUMNS}
+        columns={personnelColumns}
         data={personnel}
         onView={(item) => setLocation(`/personnel/${item.id}/edit`)}
         onEdit={(item) => setLocation(`/personnel/${item.id}/edit`)}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm nhân sự..."
-        filters={PERSONNEL_FILTERS}
+        filters={personnelFilters}
         selectable
       />
 

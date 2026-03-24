@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import usePersonnelStore from "../../../stores/usePersonnelStore";
+import { emptyPersonnelFormData, type PersonnelFormData } from "../types";
 
 export function usePersonnelForm(id?: number) {
   const [, setLocation] = useLocation();
@@ -14,25 +15,9 @@ export function usePersonnelForm(id?: number) {
 
   const personnel = id ? getPersonnelById(id) : null;
 
-  const [formData, setFormData] = useState({
-    fullName: "",
-    phone: "",
-    email: "",
-    province: "",
-    district: "",
-    address: "",
-    taxCode: "",
-    taxAddress: "",
-    avatar: "",
-    department: "",
-    position: "",
-    team: "",
-    status: "active" as "active" | "inactive",
-    bankName: "",
-    accountNumber: "",
-    accountHolder: "",
-    bankBranch: "",
-  });
+  const [formData, setFormData] = useState<PersonnelFormData>(
+    emptyPersonnelFormData,
+  );
 
   useEffect(() => {
     if (personnel) {
@@ -58,7 +43,10 @@ export function usePersonnelForm(id?: number) {
     }
   }, [personnel]);
 
-  const onChange = (field: string, value: any) => {
+  const onChange = <K extends keyof PersonnelFormData>(
+    field: K,
+    value: PersonnelFormData[K],
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 

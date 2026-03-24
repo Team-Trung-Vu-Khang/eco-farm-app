@@ -1,7 +1,7 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { type Personnel } from "../../../stores/usePersonnelStore";
+import type { Personnel } from "../../../stores/usePersonnelStore";
 
-export const PERSONNEL_COLUMNS: Column<Personnel>[] = [
+export const personnelColumns: Column<Personnel>[] = [
   {
     key: "fullName",
     label: "Họ và tên",
@@ -37,7 +37,7 @@ export const PERSONNEL_COLUMNS: Column<Personnel>[] = [
   },
 ];
 
-export const PERSONNEL_FILTERS = [
+export const personnelFilters = [
   {
     key: "status",
     label: "Trạng thái",

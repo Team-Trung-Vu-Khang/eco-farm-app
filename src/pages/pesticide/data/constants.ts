@@ -1,15 +1,4 @@
-export interface Pesticide {
-  id: number;
-  code: string;
-  name: string;
-  group: string;
-  form: string;
-  actionType: string;
-  origin: string;
-  activeIngredient: string;
-  status: "active" | "inactive";
-  createdAt: string;
-}
+import type { Pesticide } from "../types";
 
 export const initialPesticides: Pesticide[] = [
   {

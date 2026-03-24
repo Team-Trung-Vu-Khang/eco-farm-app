@@ -12,10 +12,14 @@ import {
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { PROVINCES } from "@/constants/province";
+import type { PersonnelFormData } from "../types";
 
 interface ContactAddressCardProps {
-  formData: any;
-  onChange: (field: string, value: any) => void;
+  formData: PersonnelFormData;
+  onChange: <K extends keyof PersonnelFormData>(
+    field: K,
+    value: PersonnelFormData[K],
+  ) => void;
 }
 
 export function ContactAddressCard({ formData, onChange }: ContactAddressCardProps) {

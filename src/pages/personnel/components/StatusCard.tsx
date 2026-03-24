@@ -8,10 +8,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import type { PersonnelStatus } from "../types";
 
 interface StatusCardProps {
-  status: string;
-  onChange: (value: "active" | "inactive" | "on_leave") => void;
+  status: PersonnelStatus;
+  onChange: (value: PersonnelStatus) => void;
 }
 
 export function StatusCard({ status, onChange }: StatusCardProps) {
@@ -22,7 +23,7 @@ export function StatusCard({ status, onChange }: StatusCardProps) {
           <Label htmlFor="status">Trạng thái làm việc</Label>
           <Select
             value={status}
-            onValueChange={(val) => onChange(val as "active" | "inactive" | "on_leave")}
+            onValueChange={(val) => onChange(val as PersonnelStatus)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Chọn trạng thái" />
@@ -30,7 +31,6 @@ export function StatusCard({ status, onChange }: StatusCardProps) {
             <SelectContent>
               <SelectItem value="active">Đang làm việc</SelectItem>
               <SelectItem value="inactive">Đã nghỉ việc</SelectItem>
-              <SelectItem value="on_leave">Nghỉ phép</SelectItem>
             </SelectContent>
           </Select>
         </div>

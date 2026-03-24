@@ -10,6 +10,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CreditCard } from "lucide-react";
 import { vietQrBankData } from "@/constants/banks";
+import type { PersonnelFormData } from "../types";
 
 const bankOptions = vietQrBankData.map((bank) => ({
   id: bank.id,
@@ -20,8 +21,11 @@ const bankOptions = vietQrBankData.map((bank) => ({
 }));
 
 interface BankInfoCardProps {
-  formData: any;
-  onChange: (field: string, value: any) => void;
+  formData: PersonnelFormData;
+  onChange: <K extends keyof PersonnelFormData>(
+    field: K,
+    value: PersonnelFormData[K],
+  ) => void;
 }
 
 export function BankInfoCard({ formData, onChange }: BankInfoCardProps) {

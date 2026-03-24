@@ -13,10 +13,14 @@ import {
 import useTeamStore from "../../../stores/useTeamStore";
 import useDepartmentStore from "../../../stores/useDepartmentStore";
 import usePositionStore from "../../../stores/usePositionStore";
+import type { PersonnelFormData } from "../types";
 
 interface JobPositionCardProps {
-  formData: any;
-  onChange: (field: string, value: any) => void;
+  formData: PersonnelFormData;
+  onChange: <K extends keyof PersonnelFormData>(
+    field: K,
+    value: PersonnelFormData[K],
+  ) => void;
 }
 
 export function JobPositionCard({ formData, onChange }: JobPositionCardProps) {

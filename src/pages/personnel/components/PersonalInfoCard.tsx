@@ -6,10 +6,14 @@ import {
   Label,
   Input,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import type { PersonnelFormData } from "../types";
 
 interface PersonalInfoCardProps {
-  formData: any;
-  onChange: (field: string, value: any) => void;
+  formData: PersonnelFormData;
+  onChange: <K extends keyof PersonnelFormData>(
+    field: K,
+    value: PersonnelFormData[K],
+  ) => void;
 }
 
 export function PersonalInfoCard({ formData, onChange }: PersonalInfoCardProps) {

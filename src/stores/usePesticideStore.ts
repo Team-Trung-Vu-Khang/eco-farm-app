@@ -1,9 +1,7 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import {
-  initialPesticides,
-  type Pesticide,
-} from "../pages/pesticide/constants";
+import { initialPesticides } from "../pages/pesticide/data/constants";
+import type { Pesticide } from "../pages/pesticide/types";
 
 interface PesticideState {
   // State
