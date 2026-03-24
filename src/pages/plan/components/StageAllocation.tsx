@@ -44,7 +44,7 @@ import {
   MATERIAL_TYPES,
   MATERIAL_UNITS,
   TASK_OPTIONS,
-} from "../mocks";
+} from "../data/mocks";
 import type { MaterialAllocation, TaskAllocation } from "../types";
 
 export const StageAllocation = memo(

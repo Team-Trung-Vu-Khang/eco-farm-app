@@ -10,11 +10,10 @@ import {
 import PesticidePurposePage from "./PesticidePurposePage";
 import PesticideToxicityPage from "./PesticideToxicityPage";
 import PesticideOriginPage from "./PesticideOriginPage";
-
-type CategoryType = "purpose" | "toxicity" | "origin";
+import type { PesticideGroupTab } from "./types";
 
 const PesticideGroupPage = () => {
-  const [activeTab, setActiveTab] = useState<CategoryType>("purpose");
+  const [activeTab, setActiveTab] = useState<PesticideGroupTab>("purpose");
 
   return (
     <AdminLayout
@@ -23,7 +22,7 @@ const PesticideGroupPage = () => {
     >
       <Tabs
         value={activeTab}
-        onValueChange={(value) => setActiveTab(value as CategoryType)}
+        onValueChange={(value) => setActiveTab(value as PesticideGroupTab)}
         className="w-full"
       >
         <TabsList className="grid w-full grid-cols-3 mb-6">

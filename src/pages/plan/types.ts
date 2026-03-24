@@ -1,3 +1,9 @@
+import type {
+  MaterialAllocation as StoreMaterialAllocation,
+  Plan,
+  TaskAllocation as StoreTaskAllocation,
+} from "../../stores/usePlanStore";
+
 export interface GeographicalSelection {
   id: string;
   type: "region" | "area" | "plot";
@@ -6,7 +12,18 @@ export interface GeographicalSelection {
   plotId?: string;
 }
 
-export interface CreatePlanForm {
+export interface MaterialAllocation extends StoreMaterialAllocation {
+  taskId?: number;
+}
+
+export interface TaskAllocation extends StoreTaskAllocation {
+  geographicalSelections?: GeographicalSelection[];
+}
+
+export type PlanPurpose = Plan["purpose"];
+export type PlanStatus = Plan["status"];
+
+export interface PlanFormData {
   code: string;
   name: string;
   description: string;
@@ -19,33 +36,24 @@ export interface CreatePlanForm {
   selectedPlotIds: string[];
   crop: string;
   variety: string;
+  purpose: PlanPurpose;
   growthCycleId: string;
   regimenId: string;
   selectedStages: string[];
-  status: "active" | "planning" | "completed" | "cancelled";
+  status: PlanStatus;
   materialAllocations: MaterialAllocation[];
   taskAllocations: TaskAllocation[];
 }
 
-export interface MaterialAllocation {
-  id: number;
-  stageId: string;
-  taskId?: number;
-  materialCategory: string;
-  materialType: string;
-  materialName: string;
-  quantity: string;
-  unit: string;
+export interface SelectionSummaryItem {
+  type: "region" | "area" | "plot";
+  id: string;
+  name: string;
+  parentName?: string;
 }
 
-export interface TaskAllocation {
-  id: number;
-  stageId: string;
-  name: string;
-  description: string;
-  labor: string;
-  duration: string;
-  startDate?: string;
-  endDate?: string;
-  geographicalSelections?: GeographicalSelection[];
+export interface SelectionSummaryGroup {
+  regionId: string;
+  regionName: string;
+  items: SelectionSummaryItem[];
 }

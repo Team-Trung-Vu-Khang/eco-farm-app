@@ -32,7 +32,7 @@ import type {
   MaterialAllocation,
   TaskAllocation,
 } from "../types";
-import { MATERIAL_OPTIONS, MATERIAL_UNITS, TASK_OPTIONS } from "../mocks";
+import { MATERIAL_OPTIONS, MATERIAL_UNITS, TASK_OPTIONS } from "../data/mocks";
 
 export const TaskStageAllocation = memo(
   ({

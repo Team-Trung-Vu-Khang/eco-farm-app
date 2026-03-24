@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation, useParams } from "wouter";
+import { useMemo } from "react";
 import {
   ArrowLeft,
   Apple,
@@ -31,234 +30,32 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import usePlanStore from "../../stores/usePlanStore";
-import useRegionStore from "@/stores/useRegionStore";
-import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
-import useSeasonStore from "@/stores/useSeasonStore";
-import useRegimenStore from "../../stores/useRegimenStore";
 import { cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { usePlanDetailPage } from "./hooks/usePlanDetailPage";
+import { getPlanStatusBadge } from "./utils/status";
 
 export default function PlanDetailPage() {
-  const params = useParams();
-  const [, setLocation] = useLocation();
-  const { toast } = useToast();
-
-  // Zustand stores
-  const getPlanById = usePlanStore((state) => state.getPlanById);
-  const deletePlan = usePlanStore((state) => state.deletePlan);
-  const { regions } = useRegionStore();
-  const { growthCycles } = useGrowthCycleStore();
-  const { seasons } = useSeasonStore();
-  const regimens = useRegimenStore((state) => state.regimens);
-
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const plan = getPlanById(Number(params.id));
-
-  useEffect(() => {
-    if (!plan) {
-      toast({
-        title: "Lỗi",
-        description: "Không tìm thấy kế hoạch",
-        variant: "destructive",
-      });
-      setLocation("/plan");
-    }
-  }, [plan, toast, setLocation]);
+  const {
+    params,
+    plan,
+    regions,
+    growthCycles,
+    seasons,
+    regimens,
+    deleteOpen,
+    setDeleteOpen,
+    selectionSummary,
+    summarizeTaskSelections: getTaskSelectionSummary,
+    handleEdit,
+    handleDelete,
+    handleConfirmDelete,
+    goBack,
+  } = usePlanDetailPage();
 
   if (!plan) {
     return null;
   }
-
-  const handleEdit = () => {
-    setLocation(`/plan/${params.id}/edit`);
-  };
-
-  const handleDelete = () => {
-    setDeleteOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    deletePlan(plan.id);
-    toast({
-      title: "Thành công",
-      description: "Đã xóa kế hoạch",
-    });
-    setLocation("/plan");
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      active: { label: "Đang thực hiện", variant: "default" as const },
-      completed: { label: "Hoàn thành", variant: "secondary" as const },
-      pending: { label: "Chờ thực hiện", variant: "outline" as const },
-      cancelled: { label: "Đã hủy", variant: "destructive" as const },
-    };
-    const config =
-      statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
-
-  const getTaskSelectionSummary = useCallback(
-    (taskSelections: any[] | undefined) => {
-      if (!regions || !taskSelections) return [];
-
-      const summary: {
-        regionId: string;
-        regionName: string;
-        items: { type: "region" | "area" | "plot"; name: string }[];
-      }[] = [];
-
-      taskSelections.forEach((sel) => {
-        const region = regions.find(
-          (r) => String(r.id) === String(sel.regionId),
-        );
-        if (!region) return;
-
-        let regionGroup = summary.find((s) => s.regionId === String(region.id));
-        if (!regionGroup) {
-          regionGroup = {
-            regionId: String(region.id),
-            regionName: region.name,
-            items: [],
-          };
-          summary.push(regionGroup);
-        }
-
-        if (sel.type === "region") {
-          regionGroup.items.push({ type: "region", name: "Toàn bộ vùng" });
-        } else if (sel.type === "area") {
-          const area = region.subAreas?.find(
-            (a) => String(a.id) === String(sel.areaId),
-          );
-          if (area) regionGroup.items.push({ type: "area", name: area.name });
-        } else if (sel.type === "plot") {
-          const area = region.subAreas?.find(
-            (a) => String(a.id) === String(sel.areaId),
-          );
-          const plot = area?.plots?.find(
-            (p) => String(p.id) === String(sel.plotId),
-          );
-          if (plot) regionGroup.items.push({ type: "plot", name: plot.name });
-        }
-      });
-      return summary;
-    },
-    [regions],
-  );
-
-  // Enhanced Location Details using selectionSummary logic
-  const selectionSummary = useMemo(() => {
-    if (!plan || !regions) return [];
-    const summary: {
-      regionId: string;
-      regionName: string;
-      items: {
-        type: "region" | "area" | "plot";
-        id: string;
-        name: string;
-        parentName?: string;
-      }[];
-    }[] = [];
-
-    // Reconstruct selections from plan data to reuse summary logic
-    const selections: {
-      regionId: string;
-      type: string;
-      areaId?: string;
-      plotId?: string;
-    }[] = [];
-
-    if (!plan.selectedRegionIds) return [];
-
-    plan.selectedRegionIds.forEach((rid) => {
-      const region = regions.find((r) => String(r.id) === String(rid));
-
-      // Check if whole region was selected
-      const hasZonesSelected = plan.selectedZoneIds?.some((zid) => {
-        return region?.subAreas?.some((sa) => sa.id === zid);
-      });
-
-      if (!hasZonesSelected) {
-        selections.push({ regionId: rid, type: "region" });
-      } else {
-        // Find selected areas and plots
-        // Region is already found above
-        region?.subAreas?.forEach((sa) => {
-          if (plan.selectedZoneIds?.includes(sa.id)) {
-            const hasPlotsSelected = plan.selectedPlotIds?.some((pid) =>
-              sa.plots?.some((p) => p.id === pid),
-            );
-
-            if (!hasPlotsSelected) {
-              selections.push({ regionId: rid, type: "area", areaId: sa.id });
-            } else {
-              sa.plots?.forEach((p) => {
-                if (plan.selectedPlotIds?.includes(p.id)) {
-                  selections.push({
-                    regionId: rid,
-                    type: "plot",
-                    areaId: sa.id,
-                    plotId: p.id,
-                  });
-                }
-              });
-            }
-          }
-        });
-      }
-    });
-
-    selections.forEach((sel) => {
-      const region = regions.find((r) => String(r.id) === String(sel.regionId));
-      if (!region) return;
-
-      let regionGroup = summary.find((s) => s.regionId === String(region.id));
-      if (!regionGroup) {
-        regionGroup = {
-          regionId: String(region.id),
-          regionName: region.name,
-          items: [],
-        };
-        summary.push(regionGroup);
-      }
-
-      if (sel.type === "region") {
-        regionGroup.items.push({
-          type: "region",
-          id: String(region.id),
-          name: "Toàn bộ vùng",
-        });
-      } else if (sel.type === "area") {
-        const area = region.subAreas?.find(
-          (a) => String(a.id) === String(sel.areaId),
-        );
-        if (area)
-          regionGroup.items.push({
-            type: "area",
-            id: String(area.id),
-            name: area.name,
-          });
-      } else if (sel.type === "plot") {
-        const area = region.subAreas?.find(
-          (a) => String(a.id) === String(sel.areaId),
-        );
-        const plot = area?.plots?.find(
-          (p) => String(p.id) === String(sel.plotId),
-        );
-        if (plot)
-          regionGroup.items.push({
-            type: "plot",
-            id: String(plot.id),
-            name: plot.name,
-            parentName: area?.name,
-          });
-      }
-    });
-
-    return summary;
-  }, [plan, regions]);
 
   const totalArea = useMemo(() => {
     if (!plan || !regions || regions.length === 0) return "0.0";
@@ -314,7 +111,7 @@ export default function PlanDetailPage() {
         <div className="flex items-center justify-between">
           <Button
             variant="ghost"
-            onClick={() => setLocation("/plan")}
+            onClick={goBack}
             className="gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -343,7 +140,7 @@ export default function PlanDetailPage() {
               <div>
                 <CardTitle className="text-2xl flex items-center gap-3">
                   {plan.name}
-                  {getStatusBadge(plan.status)}
+                  {getPlanStatusBadge(plan.status)}
                 </CardTitle>
                 <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
@@ -452,7 +249,7 @@ export default function PlanDetailPage() {
                   <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                     Trạng thái
                   </label>
-                  <div className="mt-1">{getStatusBadge(plan.status)}</div>
+                  <div className="mt-1">{getPlanStatusBadge(plan.status)}</div>
                 </div>
               </div>
               <Separator />
@@ -906,7 +703,7 @@ export default function PlanDetailPage() {
                   Trạng thái
                 </p>
                 <div className="flex justify-center md:justify-start">
-                  {getStatusBadge(plan.status)}
+                  {getPlanStatusBadge(plan.status)}
                 </div>
               </div>
             </div>

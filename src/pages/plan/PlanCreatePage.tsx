@@ -1,5 +1,3 @@
-import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
-import useRegionStore from "@/stores/useRegionStore";
 import {
   AdminLayout,
   Badge,
@@ -44,391 +42,42 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
-import { useLocation } from "wouter";
-import type {
-  MaterialAllocation,
-  TaskAllocation,
-} from "../../stores/usePlanStore";
-import usePlanStore from "../../stores/usePlanStore";
-import useRegimenStore from "../../stores/useRegimenStore";
-import useSeasonStore from "../../stores/useSeasonStore";
+import { useMemo } from "react";
 import { EnterpriseSelector } from "../cultivation-zone/cultivation-region/components";
 import GeographicalSelector from "./components/GeographicalSelector";
 import { RegimenSelector } from "./components/RegimenSelector";
 import { StageAllocation } from "./components/StageAllocation";
-
-// 1. Location Selection Dialog (Filtered for Cultivation)
-
-// --- Components ---
-export interface GeographicalSelection {
-  id: string;
-  type: "region" | "area" | "plot";
-  regionId: string;
-  areaId?: string;
-  plotId?: string;
-}
-
-export interface CreatePlanForm {
-  code: string;
-  name: string;
-  description: string;
-  seasonId: string;
-  seasonName: string;
-  startDate: string;
-  endDate: string;
-  selectedRegionIds: string[];
-  selectedZoneIds: string[];
-  selectedPlotIds: string[];
-  crop: string;
-  variety: string;
-  purpose: "cultivation" | "treatment" | "amendment" | "harvest" | "incurred";
-  growthCycleId: string;
-  regimenId: string;
-  selectedStages: string[];
-  status: "active" | "planning" | "completed" | "cancelled";
-  materialAllocations: MaterialAllocation[];
-  taskAllocations: TaskAllocation[];
-}
-// 2. Stage Selection Item
-const StageItem = ({
-  stage,
-  index,
-  checked,
-  onChange,
-}: {
-  stage: string;
-  index: number;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) => (
-  <div
-    className={`flex items-center gap-3 p-3 border rounded-lg transition-colors ${checked ? "bg-primary/5 border-primary/20" : "bg-white hover:bg-slate-50"}`}
-  >
-    <div className="flex items-center justify-center">
-      <Checkbox checked={checked} onCheckedChange={(c) => onChange(!!c)} />
-    </div>
-    <div
-      className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${checked ? "bg-primary text-white" : "bg-slate-100 text-slate-500"}`}
-    >
-      {index + 1}
-    </div>
-    <div
-      className={`flex-1 font-medium ${checked ? "text-slate-900" : "text-slate-500"}`}
-    >
-      {stage}
-    </div>
-  </div>
-);
+import { StageItem } from "./components/StageItem";
+import { usePlanForm } from "./hooks/usePlanForm";
 
 export default function PlanCreatePage() {
-  const [, setLocation] = useLocation();
-  const { toast } = useToast();
-  const [selections, setSelections] = useState<GeographicalSelection[]>([]);
-  const [selectedEnterpriseId, setSelectedEnterpriseId] = useState<string>("");
-
-  // Zustand store
-  const addPlan = usePlanStore((state) => state.addPlan);
-  const seasons = useSeasonStore((state) => state.seasons);
-  const { regions } = useRegionStore();
-  const { growthCycles } = useGrowthCycleStore();
-  const regimens = useRegimenStore((state) => state.regimens);
-
-  const [formData, setFormData] = useState<CreatePlanForm>({
-    code: "",
-    name: "",
-    description: "",
-    seasonId: "",
-    seasonName: "",
-    startDate: "",
-    endDate: "",
-
-    // Location & Crop
-    selectedRegionIds: [] as string[],
-    selectedZoneIds: [] as string[],
-    selectedPlotIds: [],
-    crop: "",
-    variety: "",
-    purpose: "cultivation",
-    growthCycleId: "",
-    regimenId: "",
-    selectedStages: [],
-
-    // Resources
-    materialAllocations: [] as MaterialAllocation[],
-    taskAllocations: [] as TaskAllocation[],
-    status: "planning", // Default status
-  });
-
-  const [dateWarning, setDateWarning] = useState<string | null>(null);
-
-  // --- Helpers & Handlers ---
-
-  const handleSeasonChange = (seasonId: string) => {
-    const season = seasons.find((s) => s.id === seasonId);
-    if (season) {
-      setFormData((prev) => ({
-        ...prev,
-        seasonId: season.id,
-        seasonName: season.name,
-        duration: season.duration,
-      }));
-      setDateWarning(null);
-    }
-  };
-
-  const selectionSummary = useMemo(() => {
-    const summary: {
-      regionId: string;
-      regionName: string;
-      items: {
-        type: "region" | "area" | "plot";
-        id: string;
-        name: string;
-        parentName?: string;
-      }[];
-    }[] = [];
-
-    selections.forEach((sel) => {
-      const region = (regions || []).find(
-        (r) => String(r.id) === String(sel.regionId),
-      );
-      if (!region) return;
-
-      let regionGroup = summary.find((s) => s.regionId === String(region.id));
-      if (!regionGroup) {
-        regionGroup = {
-          regionId: String(region.id),
-          regionName: region.name,
-          items: [],
-        };
-        summary.push(regionGroup);
-      }
-
-      if (sel.type === "region") {
-        regionGroup.items.push({
-          type: "region",
-          id: String(region.id),
-          name: "Toàn bộ vùng",
-        });
-      } else if (sel.type === "area") {
-        const area = region.subAreas?.find(
-          (a) => String(a.id) === String(sel.areaId),
-        );
-        if (area) {
-          regionGroup.items.push({
-            type: "area",
-            id: String(area.id),
-            name: area.name,
-          });
-        }
-      } else if (sel.type === "plot") {
-        const area = region.subAreas?.find(
-          (a) => String(a.id) === String(sel.areaId),
-        );
-        const plot = area?.plots?.find(
-          (p) => String(p.id) === String(sel.plotId),
-        );
-        if (plot) {
-          regionGroup.items.push({
-            type: "plot",
-            id: String(plot.id),
-            name: plot.name,
-            parentName: area?.name,
-          });
-        }
-      }
-    });
-
-    return summary;
-  }, [selections, regions]);
-
-  const handleGeographicalConfirm = (
-    newSelections: GeographicalSelection[],
-  ) => {
-    setSelections(newSelections);
-    const regionIds = new Set<string>();
-    const zoneIds = new Set<string>();
-    const plotIds = new Set<string>();
-    let mainCrop = "";
-    let mainVariety = "";
-
-    newSelections.forEach((sel) => {
-      // Find the region
-      const region = (regions || []).find(
-        (loc) => String(loc.id) === String(sel.regionId),
-      );
-      if (!region) return;
-
-      // Extract crop info if not yet set (or update based on latest region)
-      if (region.cropVarieties && region.cropVarieties.length > 0) {
-        mainCrop = region.cropVarieties[0].name;
-        mainVariety = region.cropVarieties[0].variety;
-      }
-
-      regionIds.add(String(region.id));
-
-      if (sel.type === "region") {
-        region.subAreas?.forEach((zone) => {
-          zoneIds.add(String(zone.id));
-          zone.plots?.forEach((plot) => {
-            plotIds.add(String(plot.id));
-          });
-        });
-      }
-
-      if (sel.type === "area") {
-        const zone = region.subAreas?.find(
-          (z) => String(z.id) === String(sel.areaId),
-        );
-        if (zone) {
-          zoneIds.add(String(zone.id));
-          zone.plots?.forEach((plot) => {
-            plotIds.add(String(plot.id));
-          });
-        }
-      }
-
-      if (sel.type === "plot") {
-        plotIds.add(String(sel.plotId));
-        const zone = region.subAreas?.find(
-          (z) => String(z.id) === String(sel.areaId),
-        );
-        if (zone) {
-          zoneIds.add(String(zone.id));
-        }
-      }
-    });
-
-    setFormData((prev) => ({
-      ...prev,
-      selectedRegionIds: Array.from(regionIds),
-      selectedZoneIds: Array.from(zoneIds),
-      selectedPlotIds: Array.from(plotIds),
-      crop: mainCrop,
-      variety: mainVariety,
-    }));
-  };
-
-  const calculateArea = () => {
-    let total = 0;
-    const regionIds = formData.selectedRegionIds || [];
-    const zoneIds = formData.selectedZoneIds || [];
-    const plotIds = formData.selectedPlotIds || [];
-
-    regions.forEach((region) => {
-      if (!regionIds.includes(String(region.id))) return;
-
-      const regionZoneIds = region.subAreas?.map((sa) => sa.id) || [];
-      const isWholeRegion =
-        regionZoneIds.length > 0 &&
-        regionZoneIds.every((zid) => zoneIds.includes(zid));
-
-      if (isWholeRegion) {
-        total += region.area || 0;
-      } else {
-        region.subAreas?.forEach((sa) => {
-          if (zoneIds.includes(sa.id)) {
-            const zonePlotIds = sa.plots?.map((p) => p.id) || [];
-            const isWholeArea =
-              zonePlotIds.length > 0 &&
-              zonePlotIds.every((pid) => plotIds.includes(pid));
-
-            if (isWholeArea) {
-              total += sa.area || 0;
-            } else {
-              sa.plots?.forEach((p) => {
-                if (plotIds.includes(p.id)) {
-                  total += p.area || 0;
-                }
-              });
-            }
-          }
-        });
-      }
-    });
-
-    return total.toFixed(1);
-  };
-
-  const getTaskSelectionSummary = useCallback(
-    (taskSelections: any[] | undefined) => {
-      if (!regions || !taskSelections) return [];
-
-      const summary: {
-        regionId: string;
-        regionName: string;
-        items: { type: "region" | "area" | "plot"; name: string }[];
-      }[] = [];
-
-      taskSelections.forEach((sel) => {
-        const region = regions.find(
-          (r) => String(r.id) === String(sel.regionId),
-        );
-        if (!region) return;
-
-        let regionGroup = summary.find((s) => s.regionId === String(region.id));
-        if (!regionGroup) {
-          regionGroup = {
-            regionId: String(region.id),
-            regionName: region.name,
-            items: [],
-          };
-          summary.push(regionGroup);
-        }
-
-        if (sel.type === "region") {
-          regionGroup.items.push({ type: "region", name: "Toàn bộ vùng" });
-        } else if (sel.type === "area") {
-          const area = region.subAreas?.find(
-            (a) => String(a.id) === String(sel.areaId),
-          );
-          if (area) regionGroup.items.push({ type: "area", name: area.name });
-        } else if (sel.type === "plot") {
-          const area = region.subAreas?.find(
-            (a) => String(a.id) === String(sel.areaId),
-          );
-          const plot = area?.plots?.find(
-            (p) => String(p.id) === String(sel.plotId),
-          );
-          if (plot) regionGroup.items.push({ type: "plot", name: plot.name });
-        }
-      });
-      return summary;
-    },
-    [regions],
-  );
-
-  const handleAddMaterial = useCallback((item: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      materialAllocations: [
-        ...prev.materialAllocations,
-        { id: Date.now(), ...item },
-      ],
-    }));
-  }, []);
-
-  const handleRemoveMaterial = useCallback((id: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      materialAllocations: prev.materialAllocations.filter((m) => m.id !== id),
-    }));
-  }, []);
-
-  const handleAddTask = useCallback((item: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      taskAllocations: [...prev.taskAllocations, { id: Date.now(), ...item }],
-    }));
-  }, []);
-
-  const handleRemoveTask = useCallback((id: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      taskAllocations: prev.taskAllocations.filter((t) => t.id !== id),
-    }));
-  }, []);
+  const {
+    formData,
+    setFormData,
+    selections,
+    setSelections,
+    selectedEnterpriseId,
+    setSelectedEnterpriseId,
+    seasons,
+    regions,
+    regimens,
+    growthCycles,
+    selectionSummary,
+    dateWarning,
+    calculateArea,
+    summarizeTaskSelections: getTaskSelectionSummary,
+    handleSeasonChange,
+    handleGeographicalConfirm,
+    handleAddMaterial,
+    handleRemoveMaterial,
+    handleAddTask,
+    handleRemoveTask,
+    handleComplete,
+    goBack,
+    pageTitle,
+    pageDescription,
+    completeLabel,
+  } = usePlanForm("create");
 
   const steps: Step[] = [
     {
@@ -1795,51 +1444,17 @@ export default function PlanCreatePage() {
     },
   ];
 
-  const handleComplete = () => {
-    // Create plan data from formData
-    const planData = {
-      code: formData.code,
-      name: formData.name,
-      description: formData.description,
-      seasonId: formData.seasonId,
-      seasonName: formData.seasonName,
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      selectedRegionIds: formData.selectedRegionIds,
-      selectedZoneIds: formData.selectedZoneIds,
-      selectedPlotIds: formData.selectedPlotIds,
-      crop: formData.crop,
-      variety: formData.variety,
-      purpose: formData.purpose,
-      growthCycleId: formData.growthCycleId,
-      regimenId: formData.regimenId,
-      selectedStages: formData.selectedStages,
-      status: "active" as const,
-      materialAllocations: formData.materialAllocations,
-      taskAllocations: formData.taskAllocations,
-      area: calculateArea(),
-    };
-
-    addPlan(planData);
-
-    toast({
-      title: "Thành công",
-      description: `Đã tạo kế hoạch ${formData.name}`,
-    });
-    setLocation("/plan");
-  };
-
   return (
     <AdminLayout
-      title="Lập kế hoạch"
-      description="Xây dựng lộ trình trồng trọt, phân bổ nguồn lực và giám sát"
+      title={pageTitle}
+      description={pageDescription}
     >
       <div className="max-w-5xl mx-auto">
         <StepperForm
           steps={steps}
           onComplete={handleComplete}
-          onCancel={() => setLocation("/plan")}
-          completeLabel="Kích hoạt Kế hoạch"
+          onCancel={goBack}
+          completeLabel={completeLabel}
         />
       </div>
     </AdminLayout>
