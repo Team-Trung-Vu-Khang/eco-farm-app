@@ -1,19 +1,20 @@
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 import { Plus } from "lucide-react";
 import {
   AdminLayout,
-  Badge,
   Button,
   DataTable,
   DeleteDialog,
-  FormDialog,
-  Input,
-  Label,
-  Textarea,
   useToast,
-  type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useLandStore, { type Land } from "../../stores/useLandStore";
+import LandFormDialog from "./components/LandFormDialog";
+import {
+  createEmptyLandFormData,
+  createLandFormDataFromItem,
+  landColumns,
+  type LandFormData,
+} from "./data/land.constants";
 
 export default function LandPage() {
   const { toast } = useToast();
@@ -23,61 +24,39 @@ export default function LandPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editItem, setEditItem] = useState<Land | null>(null);
   const [deleteItem, setDeleteItem] = useState<Land | null>(null);
-  const [formData, setFormData] = useState<Partial<Land>>({
-    code: "",
-    name: "",
-    image: "",
-    description: "",
-  });
+  const [formData, setFormData] = useState<LandFormData>(() =>
+    createEmptyLandFormData(),
+  );
 
-  const columns: Column<Land>[] = [
-    { key: "code", label: "Mã" },
-    {
-      key: "image",
-      label: "Hình ảnh",
-      render: (value) =>
-        value ? (
-          <img
-            src={value as string}
-            alt="item"
-            className="w-10 h-10 object-cover rounded-md border"
-          />
-        ) : null,
-    },
-    { key: "name", label: "Tên loại đất" },
-    { key: "description", label: "Mô tả" },
-    {
-      key: "status",
-      label: "Trạng thái",
-      render: (value) => (
-        <Badge variant={value === "active" ? "default" : "secondary"}>
-          {value === "active" ? "Hoạt động" : "Không hoạt động"}
-        </Badge>
-      ),
-    },
-    { key: "createdAt", label: "Ngày tạo" },
-  ];
+  const handleFormDataChange = (data: Partial<LandFormData>) => {
+    setFormData((current) => ({ ...current, ...data }));
+  };
 
   const handleAdd = () => {
     setEditItem(null);
-    setFormData({ code: "", name: "", image: "", description: "" });
+    setFormData(createEmptyLandFormData());
     setFormOpen(true);
   };
 
   const handleEdit = (item: Land) => {
     setEditItem(item);
-    setFormData({
-      code: item.code,
-      name: item.name,
-      image: item.image || "",
-      description: item.description,
-    });
+    setFormData(createLandFormDataFromItem(item));
     setFormOpen(true);
   };
 
   const handleDelete = (item: Land) => {
     setDeleteItem(item);
     setDeleteOpen(true);
+  };
+
+  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    handleFormDataChange({ image: URL.createObjectURL(file) });
   };
 
   const handleSubmit = () => {
@@ -119,104 +98,22 @@ export default function LandPage() {
       }
     >
       <DataTable
-        columns={columns}
+        columns={landColumns}
         data={data}
         onEdit={handleEdit}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm loại đất..."
       />
 
-      <FormDialog
-        size="lg"
+      <LandFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
-        title={editItem ? "Chỉnh sửa loại đất" : "Thêm loại đất mới"}
+        editItem={editItem}
+        formData={formData}
+        onFormDataChange={handleFormDataChange}
+        onImageUpload={handleImageUpload}
         onSubmit={handleSubmit}
-      >
-        <div className="w-full space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="code">Mã loại đất</Label>
-            <Input
-              id="code"
-              value={formData.code}
-              onChange={(e) =>
-                setFormData({ ...formData, code: e.target.value })
-              }
-              placeholder="VD: DAT001"
-              data-testid="input-code"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="name">Tên loại đất</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              placeholder="VD: Đất phù sa"
-              data-testid="input-name"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="image">Hình ảnh</Label>
-            <div className="flex flex-col gap-4">
-              <Input
-                id="image"
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const url = URL.createObjectURL(file);
-                    setFormData({ ...formData, image: url });
-                  }
-                }}
-                data-testid="input-image"
-              />
-              <div className="text-sm text-gray-500">
-                Hoặc nhập URL hình ảnh:
-              </div>
-              <Input
-                value={formData.image || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, image: e.target.value })
-                }
-                placeholder="https://..."
-              />
-            </div>
-
-            {formData.image && (
-              <div className="mt-2 relative w-full h-40">
-                <img
-                  src={formData.image}
-                  alt="Preview"
-                  className="w-full h-full object-cover rounded-md border"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      "https://placehold.co/400x200?text=Invalid+Image";
-                  }}
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Mô tả</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              placeholder="Mô tả chi tiết về loại đất"
-              rows={3}
-              data-testid="input-description"
-            />
-          </div>
-        </div>
-      </FormDialog>
+      />
 
       <DeleteDialog
         open={deleteOpen}
