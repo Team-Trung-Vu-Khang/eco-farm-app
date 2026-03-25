@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { Link, useParams } from "wouter";
 import useSeedStore from "../../stores/useSeedStore";
-import type { Variety } from "./types";
+import type { Variety } from "./types/types";
 
 // Utility functions to generate random data for missing fields
 const generateRepresentative = (): string => {

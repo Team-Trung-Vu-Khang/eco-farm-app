@@ -1,4 +1,4 @@
-import type { Variety } from "./types";
+import type { Variety } from "../types/types";
 
 export const initialData: Variety[] = [
   {

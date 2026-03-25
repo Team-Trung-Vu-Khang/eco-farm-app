@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import type { Variety, CreateVarietyForm } from "../pages/seed/types";
-import { initialData } from "../pages/seed/mocks";
+import type { Variety, CreateVarietyForm } from "../pages/seed/types/types";
+import { initialData } from "@/pages/seed/data/mocks";
 
 interface SeedState {
   seeds: Variety[];
