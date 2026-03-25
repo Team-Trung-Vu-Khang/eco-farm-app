@@ -12,8 +12,12 @@ import {
   ScrollArea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Search, AlertTriangle, Sprout } from "lucide-react";
-import { MOCK_REGIONS, MOCK_AREAS } from "../../constants";
-import type { SelectedEntityStats } from "../types";
+import type { SelectedEntityStats } from "../types/types";
+
+interface FilterOption {
+  value: string;
+  label: string;
+}
 
 interface SidebarFilterProps {
   searchTerm: string;
@@ -27,6 +31,9 @@ interface SidebarFilterProps {
   stats: SelectedEntityStats | any;
   availablePlants: any[];
   onPlantClick: (lat: number, lng: number) => void;
+  regionOptions: FilterOption[];
+  areaOptions: FilterOption[];
+  totalArea: number;
 }
 
 export const SidebarFilter: React.FC<SidebarFilterProps> = ({
@@ -41,6 +48,9 @@ export const SidebarFilter: React.FC<SidebarFilterProps> = ({
   stats,
   availablePlants,
   onPlantClick,
+  regionOptions,
+  areaOptions,
+  totalArea,
 }) => {
   return (
     <>
@@ -67,9 +77,9 @@ export const SidebarFilter: React.FC<SidebarFilterProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tất cả</SelectItem>
-                {MOCK_REGIONS.map((r) => (
-                  <SelectItem key={r.id} value={r.id.toString()}>
-                    {r.code}
+                {regionOptions.map((region) => (
+                  <SelectItem key={region.value} value={region.value}>
+                    {region.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -83,13 +93,9 @@ export const SidebarFilter: React.FC<SidebarFilterProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tất cả</SelectItem>
-                {MOCK_AREAS.filter(
-                  (a) =>
-                    filterRegion === "all" ||
-                    a.regionId.toString() === filterRegion,
-                ).map((a) => (
-                  <SelectItem key={a.id} value={a.id.toString()}>
-                    {a.code}
+                {areaOptions.map((area) => (
+                  <SelectItem key={area.value} value={area.value}>
+                    {area.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -188,9 +194,7 @@ export const SidebarFilter: React.FC<SidebarFilterProps> = ({
               <div className="text-sm">
                 <div className="flex justify-between py-2 border-b">
                   <span>Tổng diện tích</span>
-                  <span className="font-medium">
-                    {MOCK_REGIONS.reduce((acc, r) => acc + r.area, 0)} ha
-                  </span>
+                  <span className="font-medium">{totalArea} ha</span>
                 </div>
                 <div className="flex justify-between py-2 border-b">
                   <span>Số vùng trồng</span>

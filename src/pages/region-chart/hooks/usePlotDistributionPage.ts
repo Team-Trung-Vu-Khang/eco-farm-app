@@ -2,50 +2,67 @@ import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useRegionStore from "../../../stores/useRegionStore";
-import { createPlotDistributionColumns } from "../data/distributionColumns";
+import {
+  createPlotDistributionRichColumns,
+  type PlotDistributionRow,
+} from "../data/distributionColumns";
 
 export function usePlotDistributionPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { regions, removePlot } = useRegionStore();
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingItem, setDeletingItem] = useState<PlotDistributionRow | null>(
+    null,
+  );
 
   const plots = useMemo(
-    () => regions.flatMap((region) => (region.subAreas || []).flatMap((subArea) => subArea.plots || [])),
+    () =>
+      regions.flatMap((region) =>
+        (region.subAreas || []).flatMap((subArea) =>
+          (subArea.plots || []).map((plot) => ({
+            ...plot,
+            regionName: region.name,
+            areaName: subArea.name,
+          })),
+        ),
+      ),
     [regions],
   );
 
   const columns = useMemo(
     () =>
-      createPlotDistributionColumns((id) =>
-        setLocation(`/plot-distribution/detail/${id}`),
+      createPlotDistributionRichColumns((id) =>
+        setLocation(`/region-chart/plot-distribution/detail/${id}`),
       ),
     [setLocation],
   );
 
   const handleAdd = () => {
-    setLocation("/plot-distribution/create");
+    setLocation("/region-chart/plot-distribution/create");
   };
 
-  const handleEdit = (id: string) => {
-    setLocation(`/plot-distribution/edit/${id}`);
+  const handleEdit = (item: PlotDistributionRow) => {
+    setLocation(`/region-chart/plot-distribution/edit/${item.id}`);
   };
 
-  const handleDelete = (id: string) => {
-    setDeletingId(id);
+  const handleDelete = (item: PlotDistributionRow) => {
+    setDeletingItem(item);
     setDeleteOpen(true);
   };
 
   const confirmDelete = () => {
-    if (!deletingId) {
+    if (!deletingItem) {
       return;
     }
 
-    removePlot(deletingId);
-    toast({ title: "Thành công", description: "Đã xóa lô" });
+    removePlot(deletingItem.id);
+    toast({
+      title: "Thành công",
+      description: `Đã xóa lô ${deletingItem.code}`,
+    });
     setDeleteOpen(false);
-    setDeletingId(null);
+    setDeletingItem(null);
   };
 
   return {
@@ -53,6 +70,7 @@ export function usePlotDistributionPage() {
     columns,
     deleteOpen,
     setDeleteOpen,
+    deletingItem,
     handleAdd,
     handleEdit,
     handleDelete,

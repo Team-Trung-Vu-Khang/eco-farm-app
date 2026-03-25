@@ -3,7 +3,6 @@ import { AdminLayout, cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { MFMap, MFMarker, MFPolygon } from "react-map4d-map";
 import type { GeoJsonObject } from "geojson";
 import { Maximize2, Minimize2 } from "lucide-react";
-import { MOCK_REGIONS } from "../constants";
 import Tree from "@/assets/tree.webp";
 import zoneData from "../../../assets/map/zone.json";
 import areaData from "../../../assets/map/area.json";
@@ -15,12 +14,12 @@ import type {
   SelectedEntity,
   LayerVisibility,
   SoilData,
-} from "./types";
+} from "./types/types";
 import {
   isPointInPolygon,
   getPolygonCenter,
   convertGeoJsonToPath,
-} from "./utils";
+} from "./utils/utils";
 import { SidebarFilter } from "./components/SidebarFilter";
 import { SidebarDetail } from "./components/SidebarDetail";
 import { SoilEditDialog } from "./components/SoilEditDialog";
@@ -58,6 +57,22 @@ const getSafeFeatureName = (feature: any, fallback: string) => {
   const name = getSafeString(feature?.properties?.name);
   return name || fallback;
 };
+
+const getFeatureProperty = (feature: any, key: string) => {
+  const value = feature?.properties?.[key];
+  if (value == null) return "";
+  return String(value).trim();
+};
+
+const getAreaToken = (feature: any) => {
+  const explicitAreaId = getFeatureProperty(feature, "areaId");
+  if (explicitAreaId) return explicitAreaId.toUpperCase();
+
+  const name = getSafeFeatureName(feature, "");
+  const match = name.match(/\b([A-Z])\b/u);
+  return match?.[1]?.toUpperCase() ?? "";
+};
+
 const MAX_VISIBLE_MARKERS = 200;
 const PLANT_ZOOM_THRESHOLD = 18;
 const VIEWPORT_PADDING = 0.003;
@@ -67,6 +82,7 @@ const MAP_LABEL = new Map([
   ["diseased", "Bệnh"],
   ["harvesting", "Đang thu hoạch"],
 ]);
+
 const MapContent = () => {
   const isFullScreenParam =
     new URLSearchParams(window.location.search).get("fullscreen") === "true";
@@ -102,6 +118,24 @@ const MapContent = () => {
   const [soilData, setSoilData] = useState<Record<string, SoilData>>({});
   const [isEditingSoil, setIsEditingSoil] = useState(false);
   const [tempSoil, setTempSoil] = useState<SoilData | null>(null);
+
+  const zoneFeatures = useMemo(() => {
+    return Array.isArray((zoneData as any)?.features)
+      ? (zoneData as any).features
+      : [];
+  }, []);
+
+  const areaFeatures = useMemo(() => {
+    return Array.isArray((areaData as any)?.features)
+      ? (areaData as any).features
+      : [];
+  }, []);
+
+  const plotFeatures = useMemo(() => {
+    return Array.isArray((plotData as any)?.features)
+      ? (plotData as any).features
+      : [];
+  }, []);
 
   useEffect(() => {
     if (Object.keys(soilData).length === 0) {
@@ -185,6 +219,56 @@ const MapContent = () => {
     } as GeoJsonObject;
   }, []);
 
+  const regionOptions = useMemo(() => {
+    return zoneFeatures.map((feature: any, index: number) => {
+      const value =
+        getFeatureProperty(feature, "id") ||
+        getFeatureProperty(feature, "code") ||
+        `zone-${index + 1}`;
+
+      return {
+        value,
+        label:
+          getSafeFeatureName(feature, "") ||
+          getFeatureProperty(feature, "code") ||
+          `Vùng ${index + 1}`,
+      };
+    });
+  }, [zoneFeatures]);
+
+  const areaOptions = useMemo(() => {
+    return areaFeatures
+      .filter((feature: any) => {
+        if (filterRegion === "all") return true;
+        return getFeatureProperty(feature, "zoneId") === filterRegion;
+      })
+      .map((feature: any, index: number) => {
+        const value =
+          getAreaToken(feature) ||
+          getFeatureProperty(feature, "id") ||
+          `area-${index + 1}`;
+
+        return {
+          value,
+          label:
+            getSafeFeatureName(feature, "") ||
+            getFeatureProperty(feature, "code") ||
+            `Khu vực ${index + 1}`,
+        };
+      });
+  }, [areaFeatures, filterRegion]);
+
+  const totalArea = useMemo(() => {
+    return Number(
+      zoneFeatures
+        .reduce((sum: number, feature: any) => {
+          const areaValue = Number(feature?.properties?.area ?? 0);
+          return sum + (Number.isFinite(areaValue) ? areaValue : 0);
+        }, 0)
+        .toFixed(1),
+    );
+  }, [zoneFeatures]);
+
   const filteredPlantData = useMemo(() => {
     const sourceFeatures = (processedPlantData as any)?.features;
 
@@ -200,6 +284,9 @@ const MapContent = () => {
     const features = sourceFeatures.filter((item: any) => {
       const name = getSafeString(item?.properties?.name).toLowerCase();
       const code = getSafeString(item?.properties?.code).toLowerCase();
+      const areaToken = getSafeString(item?.properties?.code)
+        .charAt(0)
+        .toUpperCase();
 
       const nameMatch =
         keyword.length === 0 ||
@@ -209,14 +296,47 @@ const MapContent = () => {
       const statusMatch =
         filterStatus === "all" || item?.properties?.status === filterStatus;
 
-      return nameMatch && statusMatch;
+      const areaMatch = filterArea === "all" || areaToken === filterArea;
+
+      return nameMatch && statusMatch && areaMatch;
     });
 
     return {
       type: "FeatureCollection",
       features,
     } as GeoJsonObject;
-  }, [processedPlantData, searchTerm, filterStatus]);
+  }, [processedPlantData, searchTerm, filterStatus, filterArea]);
+
+  const filteredZoneFeatures = useMemo(() => {
+    return zoneFeatures.filter((feature: any, index: number) => {
+      if (filterRegion === "all") return true;
+
+      return (
+        getFeatureProperty(feature, "id") === filterRegion ||
+        getFeatureProperty(feature, "code") === filterRegion ||
+        `zone-${index + 1}` === filterRegion
+      );
+    });
+  }, [zoneFeatures, filterRegion]);
+
+  const filteredAreaFeatures = useMemo(() => {
+    return areaFeatures.filter((feature: any) => {
+      const regionMatch =
+        filterRegion === "all" ||
+        getFeatureProperty(feature, "zoneId") === filterRegion;
+      const areaMatch =
+        filterArea === "all" || getAreaToken(feature) === filterArea;
+
+      return regionMatch && areaMatch;
+    });
+  }, [areaFeatures, filterRegion, filterArea]);
+
+  const filteredPlotFeatures = useMemo(() => {
+    return plotFeatures.filter((feature: any) => {
+      if (filterArea === "all") return true;
+      return getAreaToken(feature) === filterArea;
+    });
+  }, [plotFeatures, filterArea]);
   const calculateStats = useCallback(
     (polyCoords: any[]): SelectedEntityStats => {
       const plants = ((processedPlantData as any)?.features || []).filter(
@@ -249,12 +369,12 @@ const MapContent = () => {
   );
 
   const stats = useMemo(() => {
-    const plants = ((processedPlantData as any)?.features || []) as any[];
+    const plants = ((filteredPlantData as any)?.features || []) as any[];
 
     return {
-      regions: zoneData?.features?.length || 0,
-      areas: areaData?.features?.length || 0,
-      plots: plotData?.features?.length || 0,
+      regions: filteredZoneFeatures.length,
+      areas: filteredAreaFeatures.length,
+      plots: filteredPlotFeatures.length,
       plants: plants.length,
       healthy: plants.filter((item) => item?.properties?.status === "healthy")
         .length,
@@ -264,7 +384,12 @@ const MapContent = () => {
         (item) => item?.properties?.status === "harvesting",
       ).length,
     };
-  }, [processedPlantData]);
+  }, [
+    filteredPlantData,
+    filteredZoneFeatures,
+    filteredAreaFeatures,
+    filteredPlotFeatures,
+  ]);
 
   const onZoomChange = useCallback((zoom: number) => {
     if (debounceTimerRef.current) {
@@ -306,20 +431,38 @@ const MapContent = () => {
   }, [mapZoom, onZoomChange]);
 
   useEffect(() => {
+    if (
+      filterArea !== "all" &&
+      !areaOptions.some((option: any) => option.value === filterArea)
+    ) {
+      setFilterArea("all");
+    }
+  }, [areaOptions, filterArea]);
+
+  useEffect(() => {
+    if (filterArea !== "all") {
+      const selectedArea = filteredAreaFeatures.find(
+        (feature: any) => getAreaToken(feature) === filterArea,
+      );
+      const center = selectedArea ? getPolygonCenter(selectedArea) : null;
+
+      if (center) {
+        setMapCenter(center);
+        setMapZoom(16);
+      }
+      return;
+    }
+
     if (filterRegion === "all") return;
 
-    const region = MOCK_REGIONS.find(
-      (item) => item.id.toString() === filterRegion,
-    );
+    const selectedRegion = filteredZoneFeatures[0];
+    const center = selectedRegion ? getPolygonCenter(selectedRegion) : null;
 
-    if (region && region.coordinates.length > 0) {
-      setMapCenter({
-        lat: region.coordinates[0].lat,
-        lng: region.coordinates[0].lng,
-      });
+    if (center) {
+      setMapCenter(center);
       setMapZoom(14);
     }
-  }, [filterRegion]);
+  }, [filterRegion, filterArea, filteredAreaFeatures, filteredZoneFeatures]);
 
   useEffect(() => {
     return () => {
@@ -333,9 +476,11 @@ const MapContent = () => {
     (feature: any) => {
       let type = "Selected Area";
 
-      if (feature?.properties?.id && feature?.properties?.regionId) {
+      if (feature?.properties?.areaId) {
+        type = "Lô trồng (Plot)";
+      } else if (feature?.properties?.zoneId) {
         type = "Khu vực (Area)";
-      } else if (feature?.properties?.id && !feature?.properties?.regionId) {
+      } else if (feature?.properties?.id) {
         type = "Vùng trồng (Zone)";
       }
 
@@ -369,7 +514,7 @@ const MapContent = () => {
   const zoneLayer = useMemo(() => {
     if (!visibleLayers.zone) return null;
 
-    return ((zoneData as any)?.features || [])
+    return filteredZoneFeatures
       .map((item: any, index: number) => {
         const path = getSafePolygonPath(item?.geometry);
         if (!path) return null;
@@ -389,12 +534,12 @@ const MapContent = () => {
         );
       })
       .filter(Boolean);
-  }, [visibleLayers.zone, handleEntityClick]);
+  }, [visibleLayers.zone, filteredZoneFeatures, handleEntityClick]);
 
   const areaLayer = useMemo(() => {
     if (!visibleLayers.area) return null;
 
-    return ((areaData as any)?.features || [])
+    return filteredAreaFeatures
       .map((item: any, index: number) => {
         const path = getSafePolygonPath(item?.geometry);
         if (!path) return null;
@@ -414,12 +559,12 @@ const MapContent = () => {
         );
       })
       .filter(Boolean);
-  }, [visibleLayers.area, handleEntityClick]);
+  }, [visibleLayers.area, filteredAreaFeatures, handleEntityClick]);
 
   const plotLayer = useMemo(() => {
     if (!visibleLayers.plot) return null;
 
-    return ((plotData as any)?.features || [])
+    return filteredPlotFeatures
       .map((item: any, index: number) => {
         const path = getSafePolygonPath(item?.geometry);
         if (!path) return null;
@@ -439,7 +584,7 @@ const MapContent = () => {
         );
       })
       .filter(Boolean);
-  }, [visibleLayers.plot, handleEntityClick]);
+  }, [visibleLayers.plot, filteredPlotFeatures, handleEntityClick]);
   const normalizedPlantFeatures = useMemo(() => {
     const features = (filteredPlantData as any)?.features;
     if (!Array.isArray(features)) return [];
@@ -453,10 +598,12 @@ const MapContent = () => {
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
 
         return {
+          feature: item,
           key: getSafeString(item?.properties?.code) || `plant-${index}`,
           lat,
           lng,
           name: getSafeString(item?.properties?.name),
+          status: getSafeString(item?.properties?.status),
         };
       })
       .filter(Boolean);
@@ -485,39 +632,18 @@ const MapContent = () => {
   }, [visibleLayers.plant, mapZoom, mapCenter, normalizedPlantFeatures]);
 
   const plantMarkers = useMemo(() => {
-    if (!visibleLayers.plant || !mapBounds) return null;
+    if (!visibleLayers.plant || mapZoom < PLANT_ZOOM_THRESHOLD || !mapBounds) {
+      return null;
+    }
 
-    const sourceFeatures = (filteredPlantData as any)?.features;
-    if (!Array.isArray(sourceFeatures)) return null;
-
-    const visibleFeatures = sourceFeatures
-      .filter((item: any) => {
-        if (!isValidPointFeature(item)) return false;
-
-        const lng = Number(item?.geometry?.coordinates?.[0]);
-        const lat = Number(item?.geometry?.coordinates?.[1]);
-
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
-
-        return (
-          lat >= mapBounds.south &&
-          lat <= mapBounds.north &&
-          lng >= mapBounds.west &&
-          lng <= mapBounds.east
-        );
-      })
-      .slice(0, MAX_VISIBLE_MARKERS);
-
-    return visibleFeatures.map((item: any, index: number) => {
-      const lng = Number(item.geometry.coordinates[0]);
-      const lat = Number(item.geometry.coordinates[1]);
-      const code = getSafeString(item?.properties?.code);
-      const name = getSafeString(item?.properties?.name);
+    return visiblePlantFeatures.map((item: any, index: number) => {
+      const code = getSafeString(item?.feature?.properties?.code);
+      const name = getSafeString(item?.feature?.properties?.name);
 
       return (
         <MFMarker
           key={code || `plant-${index}`}
-          position={{ lat, lng }}
+          position={{ lat: item.lat, lng: item.lng }}
           title={name || undefined}
           label={""}
           visible={true}
@@ -527,24 +653,36 @@ const MapContent = () => {
             height: 12,
           }}
           onClick={() => {
-            setSelectedTree(item);
+            setSelectedTree(item.feature);
           }}
         />
       );
     });
-  }, [visibleLayers.plant, filteredPlantData, mapBounds]);
+  }, [visibleLayers.plant, visiblePlantFeatures, mapBounds, mapZoom]);
 
   const labelMarkers = useMemo(() => {
     const layers = [
-      { data: zoneData, visible: visibleLayers.zone, prefix: "zone" },
-      { data: areaData, visible: visibleLayers.area, prefix: "area" },
-      { data: plotData, visible: visibleLayers.plot, prefix: "plot" },
+      {
+        data: filteredZoneFeatures,
+        visible: visibleLayers.zone,
+        prefix: "zone",
+      },
+      {
+        data: filteredAreaFeatures,
+        visible: visibleLayers.area,
+        prefix: "area",
+      },
+      {
+        data: filteredPlotFeatures,
+        visible: visibleLayers.plot,
+        prefix: "plot",
+      },
     ];
 
     return layers.flatMap((layer) => {
       if (!layer.visible) return [];
 
-      return ((layer.data as any)?.features || [])
+      return layer.data
         .map((item: any, index: number) => {
           const center = getPolygonCenter(item);
           const name = getSafeString(item?.properties?.name);
@@ -554,7 +692,12 @@ const MapContent = () => {
             !center ||
             !isValidLatLng(center.lat) ||
             !isValidLatLng(center.lng) ||
-            !isNonEmptyString(name)
+            !isNonEmptyString(name) ||
+            (mapBounds != null &&
+              (center.lat < mapBounds.south ||
+                center.lat > mapBounds.north ||
+                center.lng < mapBounds.west ||
+                center.lng > mapBounds.east))
           ) {
             return null;
           }
@@ -571,7 +714,15 @@ const MapContent = () => {
         })
         .filter(Boolean);
     });
-  }, [visibleLayers.zone, visibleLayers.area, visibleLayers.plot]);
+  }, [
+    visibleLayers.zone,
+    visibleLayers.area,
+    visibleLayers.plot,
+    filteredZoneFeatures,
+    filteredAreaFeatures,
+    filteredPlotFeatures,
+    mapBounds,
+  ]);
 
   useEffect(() => {
     const badPolygonFeatures = [
@@ -658,6 +809,9 @@ const MapContent = () => {
               setFilterStatus={setFilterStatus}
               stats={stats}
               availablePlants={(filteredPlantData as any)?.features || []}
+              regionOptions={regionOptions}
+              areaOptions={areaOptions}
+              totalArea={totalArea}
               onPlantClick={(lat, lng) => {
                 setMapCenter({ lat, lng });
                 setMapZoom(20);

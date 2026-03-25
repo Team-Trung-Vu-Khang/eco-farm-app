@@ -15,7 +15,7 @@ import {
   Info,
   Activity,
 } from "lucide-react";
-import type { SelectedEntity, SoilData } from "../types";
+import type { SelectedEntity, SoilData } from "../types/types";
 
 interface SidebarDetailProps {
   selectedEntity: SelectedEntity;

@@ -23,7 +23,7 @@ const PlotDetailPage = () => {
         actions={
           <Button
             variant="outline"
-            onClick={() => setLocation("/plot-distribution")}
+            onClick={() => setLocation("/region-chart/plot-distribution")}
           >
             <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại
           </Button>
@@ -44,13 +44,13 @@ const PlotDetailPage = () => {
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={() => setLocation("/plot-distribution")}
+            onClick={() => setLocation("/region-chart/plot-distribution")}
           >
             <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại
           </Button>
           <Button
             onClick={() =>
-              setLocation(`/plot-distribution/edit/${plot.id}`)
+              setLocation(`/region-chart/plot-distribution/edit/${plot.id}`)
             }
           >
             <Edit className="w-4 h-4 mr-2" /> Chỉnh sửa
@@ -118,7 +118,7 @@ const PlotDetailPage = () => {
           >
             {area && area.coordinates && area.coordinates.length >= 3 && (
               <Polygon
-                positions={area.coordinates.map((c) => [c.lat, c.lng])}
+                positions={area.coordinates.map((c: any) => [c.lat, c.lng])}
                 pathOptions={{
                   color: "blue",
                   fill: false,
@@ -132,7 +132,7 @@ const PlotDetailPage = () => {
 
             {plot.coordinates && plot.coordinates.length >= 3 && (
               <Polygon
-                positions={plot.coordinates.map((c) => [c.lat, c.lng])}
+                positions={plot.coordinates.map((c: any) => [c.lat, c.lng])}
                 pathOptions={{
                   color: "orange",
                   fillColor: "orange",

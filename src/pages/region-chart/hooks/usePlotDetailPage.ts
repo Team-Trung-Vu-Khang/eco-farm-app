@@ -4,10 +4,15 @@ import { getMapCenter } from "../utils/map";
 
 export function usePlotDetailPage() {
   const [, setLocation] = useLocation();
-  const [match, params] = useRoute("/plot-distribution/detail/:id");
+  const [newMatch, newParams] = useRoute(
+    "/region-chart/plot-distribution/detail/:id",
+  );
+  const [legacyMatch, legacyParams] = useRoute("/plot-distribution/detail/:id");
   const { getPlotById } = useRegionStore();
 
-  const id = match && params?.id ? String(params.id) : null;
+  const id =
+    (newMatch && newParams?.id ? String(newParams.id) : null) ||
+    (legacyMatch && legacyParams?.id ? String(legacyParams.id) : null);
   const context = id ? getPlotById(id) : null;
   const plot = context?.plot ?? null;
   const area = context?.area ?? null;

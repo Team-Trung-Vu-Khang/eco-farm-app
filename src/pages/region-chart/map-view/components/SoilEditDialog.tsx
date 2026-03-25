@@ -10,7 +10,7 @@ import {
   Button,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { FlaskConical, Save } from "lucide-react";
-import type { SoilData } from "../types";
+import type { SoilData } from "../types/types";
 
 interface SoilEditDialogProps {
   isOpen: boolean;

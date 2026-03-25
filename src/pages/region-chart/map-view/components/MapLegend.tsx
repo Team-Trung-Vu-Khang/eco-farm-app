@@ -1,5 +1,5 @@
 import React from "react";
-import type { LayerVisibility } from "../types";
+import type { LayerVisibility } from "../types/types";
 
 interface MapLegendProps {
   visibleLayers: LayerVisibility;
