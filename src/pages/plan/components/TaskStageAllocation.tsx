@@ -1,6 +1,8 @@
 import {
   Badge,
   Button,
+  Checkbox,
+  Combobox,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -8,11 +10,7 @@ import {
   DialogTitle,
   Input,
   ScrollArea,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   CalendarIcon,
@@ -26,13 +24,13 @@ import {
   X,
 } from "lucide-react";
 import { memo, useState } from "react";
-import GeographicalSelector from "./GeographicalSelector";
+import { MATERIAL_OPTIONS, TASK_OPTIONS } from "../data/mocks";
 import type {
   GeographicalSelection,
   MaterialAllocation,
   TaskAllocation,
 } from "../types";
-import { MATERIAL_OPTIONS, MATERIAL_UNITS, TASK_OPTIONS } from "../data/mocks";
+import GeographicalSelector from "./GeographicalSelector";
 
 export const TaskStageAllocation = memo(
   ({
@@ -52,6 +50,7 @@ export const TaskStageAllocation = memo(
     availableMaterials,
     personnel = [],
     disableScopeSelection = true,
+    onUpdateMaterial,
   }: {
     stageName: string;
     cycleName?: string | null;
@@ -59,6 +58,7 @@ export const TaskStageAllocation = memo(
     tasks: TaskAllocation[];
     onAddMaterial: (item: Omit<MaterialAllocation, "id">) => void;
     onRemoveMaterial: (id: number) => void;
+    onUpdateMaterial?: (id: number, path: Partial<MaterialAllocation>) => void;
     onAddTask: (item: Omit<TaskAllocation, "id">) => void;
     onRemoveTask: (id: number) => void;
     onUpdateTask?: (id: number, path: Partial<TaskAllocation>) => void;
@@ -138,6 +138,7 @@ export const TaskStageAllocation = memo(
                   availableTasks={availableTasks}
                   availableMaterials={availableMaterials}
                   disableScopeSelection={disableScopeSelection}
+                  onUpdateMaterial={onUpdateMaterial}
                 />
               );
             })
@@ -162,6 +163,7 @@ const TaskBlock = ({
   availableTasks,
   availableMaterials,
   disableScopeSelection,
+  onUpdateMaterial,
 }: any) => {
   const [isPersonnelDialogOpen, setIsPersonnelDialogOpen] = useState(false);
   const [personnelSearch, setPersonnelSearch] = useState("");
@@ -171,61 +173,55 @@ const TaskBlock = ({
       )
     : personnel;
 
-  const [newItem, setNewItem] = useState({
-    name: "",
-    qty: "",
-    unit: "kg",
-    type: "Phân bón",
-    maxQty: undefined as string | undefined,
-  });
-
   const [exceedWarning, setExceedWarning] = useState<{
     message: string;
     onConfirm: () => void;
+    onCancel?: () => void;
   } | null>(null);
 
-  const doAddMaterial = () => {
-    onAddMaterial({
-      stageId: stageName,
-      taskId: task.id,
-      materialCategory: newItem.type,
-      materialType: newItem.type,
-      materialName: newItem.name,
-      quantity: newItem.qty,
-      unit: newItem.unit,
-    });
-    setNewItem({
-      name: "",
-      qty: "",
-      unit: "kg",
-      type: "Phân bón",
-      maxQty: undefined,
-    });
-  };
+  const [confirmedExceedValues, setConfirmedExceedValues] = useState<
+    Record<number, string>
+  >({});
 
-  const handleAddMaterialToTask = () => {
-    if (!newItem.name || !newItem.qty) return;
+  const [materialSearch, setMaterialSearch] = useState("");
 
-    if (newItem.maxQty) {
-      // Sum existing qty of same material name across all materials in this stage
-      const existingTotal = materials
-        .filter((m: any) => m.materialName === newItem.name)
-        .reduce((sum: number, m: any) => sum + Number(m.quantity || 0), 0);
-      const newTotal = existingTotal + Number(newItem.qty);
+  const groupedMaterials =
+    (availableMaterials || []).length > 0
+      ? availableMaterials.reduce((acc: any, m: any) => {
+          if (!acc[m.materialCategory]) acc[m.materialCategory] = [];
+          if (
+            !acc[m.materialCategory].find((i: any) => i.name === m.materialName)
+          ) {
+            acc[m.materialCategory].push({
+              name: m.materialName,
+              unit: m.unit,
+              maxQty: m.quantity,
+              category: m.materialCategory,
+            });
+          }
+          return acc;
+        }, {})
+      : Object.entries(MATERIAL_OPTIONS).reduce((acc: any, [cat, opts]) => {
+          acc[cat] = opts.map((o) => ({
+            name: o.value,
+            unit: o.unit,
+            category: cat,
+          }));
+          return acc;
+        }, {});
 
-      if (newTotal > Number(newItem.maxQty)) {
-        setExceedWarning({
-          message: `Tổng số lượng của "${newItem.name}" sẽ là ${
-            newTotal
-          } ${newItem.unit}, vượt quá định mức kế hoạch là ${newItem.maxQty} ${newItem.unit}. Bạn có muốn tiếp tục không?`,
-          onConfirm: doAddMaterial,
-        });
-        return;
+  const filteredGroupedMaterials = Object.entries(groupedMaterials).reduce(
+    (acc: any, [cat, items]: [string, any]) => {
+      const filteredItems = items.filter((item: any) =>
+        item.name.toLowerCase().includes(materialSearch.toLowerCase()),
+      );
+      if (filteredItems.length > 0) {
+        acc[cat] = filteredItems;
       }
-    }
-
-    doAddMaterial();
-  };
+      return acc;
+    },
+    {},
+  );
 
   const getSelectionSummary = (selections: GeographicalSelection[]) => {
     if (!selections || selections.length === 0) return [];
@@ -390,11 +386,19 @@ const TaskBlock = ({
       <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
         {/* Left Side: Task Info */}
         <div className="p-5 space-y-5">
-          {/* Task Select */}
+          {/* Task Combobox */}
           <div>
-            <Select
+            <Combobox
+              options={
+                availableTasks
+                  ? availableTasks.map((t: any) => ({
+                      value: t.name,
+                      label: t.name,
+                    }))
+                  : (TASK_OPTIONS as any[])
+              }
               value={task.name}
-              onValueChange={(val) => {
+              onChange={(val) => {
                 const selectedTask = availableTasks?.find(
                   (t: any) => t.name === val,
                 );
@@ -407,24 +411,10 @@ const TaskBlock = ({
                     task.geographicalSelections,
                 });
               }}
-            >
-              <SelectTrigger className="w-full font-bold bg-slate-50 border-slate-200">
-                <SelectValue placeholder="Danh sách công việc trong kế hoạch" />
-              </SelectTrigger>
-              <SelectContent>
-                {(availableTasks
-                  ? availableTasks.map((t: any) => ({
-                      value: t.name,
-                      label: t.name,
-                    }))
-                  : TASK_OPTIONS
-                ).map((opt: any) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Danh sách công việc trong kế hoạch"
+              searchPlaceholder="Tìm kiếm công việc..."
+              className="w-full font-bold bg-slate-50 border-slate-200"
+            />
           </div>
 
           <div className="flex flex-col gap-3">
@@ -579,197 +569,170 @@ const TaskBlock = ({
         </div>
 
         {/* Right Side: Material Info */}
-        <div className="p-5 flex flex-col bg-slate-50/50 mt-3">
-          <div className="flex-1 space-y-4">
-            {/* Added Materials List */}
-            {materials.length > 0 && (
-              <div className="space-y-2 mb-4">
-                {materials.map((m: any) => (
-                  <div
-                    key={m.id}
-                    className="flex justify-between items-center bg-white border border-slate-200 p-2 rounded-lg"
-                  >
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">
-                        {m.materialType} :
-                      </span>
-                      <span className="text-sm font-bold text-slate-800 truncate">
-                        {m.materialName}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <span className="text-[10px] text-slate-400 block leading-none w-full">
-                          Số lượng
-                        </span>
-                        <span className="text-sm font-black text-emerald-600">
-                          {m.quantity} {m.unit}
-                        </span>
-                      </div>
-                      <button
-                        className="text-slate-300 hover:text-red-500 transition-colors"
-                        onClick={() => onRemoveMaterial(m.id)}
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Material Addition Form */}
-            <div className="grid grid-cols-12 gap-3 items-end">
-              <div className="col-span-12 xl:col-span-5">
-                <span className="text-xs font-bold text-slate-600 mb-1 block">
-                  Danh sách vật tư
-                </span>
-                <Select
-                  value={newItem.name}
-                  onValueChange={(val) => {
-                    const groupedMaterials = availableMaterials
-                      ? availableMaterials.reduce((acc: any, m: any) => {
-                          if (!acc[m.materialCategory])
-                            acc[m.materialCategory] = [];
-                          acc[m.materialCategory].push({
-                            value: m.materialName,
-                            label: m.materialName,
-                            type: m.materialCategory,
-                            unit: m.unit,
-                            maxQty: m.quantity,
-                          });
-                          return acc;
-                        }, {})
-                      : Object.entries(MATERIAL_OPTIONS).reduce(
-                          (acc: any, [cat, opts]) => {
-                            acc[cat] = opts.map((o) => ({ ...o, type: cat }));
-                            return acc;
-                          },
-                          {},
-                        );
-
-                    const found = Object.values(
-                      groupedMaterials,
-                    ).flat() as any[];
-                    const sel = found.find((i: any) => i.value === val);
-
-                    if (sel) {
-                      setNewItem({
-                        ...newItem,
-                        name: val,
-                        type: sel.type,
-                        unit: sel.unit,
-                        maxQty: sel.maxQty,
-                        qty: "", // Reset quantity on select
-                      });
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-full bg-white h-10">
-                    <SelectValue
-                      placeholder={
-                        availableMaterials?.length === 0
-                          ? "Không có vật tư trong kế hoạch"
-                          : "Chọn vật tư..."
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(
-                      availableMaterials
-                        ? availableMaterials.reduce((acc: any, m: any) => {
-                            if (!acc[m.materialCategory])
-                              acc[m.materialCategory] = [];
-                            acc[m.materialCategory].push({
-                              value: m.materialName,
-                              label: m.materialName,
-                            });
-                            return acc;
-                          }, {})
-                        : MATERIAL_OPTIONS,
-                    ).map(([cat, opts]: [string, any]) => (
-                      <optgroup label={cat} key={cat}>
-                        {opts.map((o: any) => (
-                          <SelectItem key={o.value} value={o.value}>
-                            {o.label}
-                          </SelectItem>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="col-span-6 xl:col-span-3">
-                <span className="text-xs font-bold text-slate-600 mb-1 block">
-                  Số lượng
-                </span>
-                <Input
-                  type="number"
-                  placeholder="SL"
-                  className="h-10 bg-white"
-                  value={newItem.qty}
-                  max={newItem.maxQty}
-                  onChange={(e) => {
-                    let val = e.target.value;
-                    if (
-                      newItem.maxQty &&
-                      Number(val) > Number(newItem.maxQty)
-                    ) {
-                      val = newItem.maxQty;
-                    }
-                    setNewItem({ ...newItem, qty: val });
-                  }}
-                />
-                {newItem.maxQty && (
-                  <span className="text-[10px] text-slate-400 absolute mt-1">
-                    Tối đa: {newItem.maxQty}
-                  </span>
-                )}
-              </div>
-
-              <div className="col-span-6 xl:col-span-4 flex gap-2 items-end">
-                <div className="flex-1">
-                  <span className="text-xs font-bold text-slate-600 mb-1 block">
-                    Quy cách
-                  </span>
-                  {newItem.maxQty ? (
-                    // Locked to plan-configured unit
-                    <div className="h-10 bg-slate-100 border border-slate-200 rounded-md flex items-center px-3 text-sm font-medium text-slate-600 cursor-not-allowed select-none">
-                      {newItem.unit}
-                      {/* <span className="ml-auto text-[9px] text-slate-400 uppercase tracking-wider">Kế hoạch</span> */}
-                    </div>
-                  ) : (
-                    <Select
-                      value={newItem.unit}
-                      onValueChange={(v) => setNewItem({ ...newItem, unit: v })}
-                    >
-                      <SelectTrigger className="h-10 bg-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(
-                          MATERIAL_UNITS[
-                            newItem.type as keyof typeof MATERIAL_UNITS
-                          ] || ["kg"]
-                        ).map((u) => (
-                          <SelectItem key={u} value={u}>
-                            {u}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-                <Button
-                  onClick={handleAddMaterialToTask}
-                  className="h-10 w-10 p-0 mb-0 bg-slate-900 shrink-0"
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
+        <div className="p-0 flex flex-col bg-slate-50/50">
+          <div className="p-4 border-b border-slate-200 mt-1">
+            <div className="relative pr-5">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
+              <Input
+                placeholder="Tìm kiếm vật tư..."
+                className="pl-10 h-9 text-sm bg-white"
+                value={materialSearch}
+                onChange={(e) => setMaterialSearch(e.target.value)}
+              />
             </div>
           </div>
+
+          <ScrollArea className="flex-1 max-h-[400px]">
+            <div className="p-5 space-y-6">
+              {Object.entries(filteredGroupedMaterials).length === 0 ? (
+                <div className="text-center py-10 opacity-50">
+                  <p className="text-sm italic">
+                    {materialSearch
+                      ? "Không tìm thấy vật tư phù hợp"
+                      : "Không có vật tư khả dụng"}
+                  </p>
+                </div>
+              ) : (
+                Object.entries(filteredGroupedMaterials).map(
+                  ([category, items]: [string, any]) => (
+                    <div key={category} className="space-y-3">
+                      <h5 className="text-[10px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-200 pb-1">
+                        {category}
+                      </h5>
+                      <div className="grid grid-cols-1 gap-2">
+                        {items.map((item: any) => {
+                          const allocation = materials.find(
+                            (m: any) => m.materialName === item.name,
+                          );
+                          const isSelected = !!allocation;
+
+                          return (
+                            <div
+                              key={item.name}
+                              className={cn(
+                                "flex items-center gap-3 p-3 rounded-xl border transition-all",
+                                isSelected
+                                  ? "bg-white border-blue-200 shadow-sm"
+                                  : "bg-transparent border-slate-100 opacity-60 hover:opacity-100",
+                              )}
+                            >
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    onAddMaterial({
+                                      stageId: stageName,
+                                      taskId: task.id,
+                                      materialCategory: category,
+                                      materialType: category,
+                                      materialName: item.name,
+                                      quantity: "0",
+                                      unit: item.unit,
+                                    });
+                                  } else if (allocation) {
+                                    onRemoveMaterial(allocation.id);
+                                  }
+                                }}
+                              />
+
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold text-slate-700 truncate">
+                                  {item.name}
+                                </p>
+                                {item.maxQty && (
+                                  <p className="text-[10px] text-slate-400">
+                                    Định mức: {item.maxQty} {item.unit}
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-2 w-32 shrink-0">
+                                <Input
+                                  type="number"
+                                  placeholder="SL"
+                                  min={0}
+                                  className={cn(
+                                    "h-8 text-right font-bold bg-white",
+                                    allocation &&
+                                      item.maxQty &&
+                                      Number(allocation.quantity) >
+                                        Number(item.maxQty)
+                                      ? "text-rose-500 border-rose-200"
+                                      : "text-emerald-600 border-slate-200",
+                                  )}
+                                  value={isSelected ? allocation.quantity : ""}
+                                  disabled={!isSelected}
+                                  onChange={(e) => {
+                                    let val = e.target.value;
+                                    if (Number(val) < 0) val = "0";
+                                    if (allocation && onUpdateMaterial) {
+                                      onUpdateMaterial(allocation.id, {
+                                        quantity: val,
+                                      });
+                                    }
+                                  }}
+                                  onBlur={(e) => {
+                                    const newVal = e.target.value;
+                                    if (isSelected && item.maxQty) {
+                                      const isExceeded =
+                                        Number(newVal) > Number(item.maxQty);
+                                      if (isExceeded) {
+                                        if (
+                                          confirmedExceedValues[
+                                            allocation.id
+                                          ] !== newVal
+                                        ) {
+                                          setExceedWarning({
+                                            message: `Số lượng "${item.name}" là ${newVal} ${item.unit}, vượt quá định mức kế hoạch là ${item.maxQty} ${item.unit}. Bạn có muốn tiếp tục không?`,
+                                            onConfirm: () => {
+                                              setConfirmedExceedValues(
+                                                (prev) => ({
+                                                  ...prev,
+                                                  [allocation.id]: newVal,
+                                                }),
+                                              );
+                                            },
+                                            onCancel: () => {
+                                              if (onUpdateMaterial) {
+                                                onUpdateMaterial(
+                                                  allocation.id,
+                                                  {
+                                                    quantity: item.maxQty,
+                                                  },
+                                                );
+                                              }
+                                            },
+                                          });
+                                        }
+                                      } else {
+                                        // Clear confirmation if it was previously exceeded and now within quota
+                                        if (
+                                          confirmedExceedValues[allocation.id]
+                                        ) {
+                                          setConfirmedExceedValues((prev) => {
+                                            const next = { ...prev };
+                                            delete next[allocation.id];
+                                            return next;
+                                          });
+                                        }
+                                      }
+                                    }
+                                  }}
+                                />
+                                <span className="text-[10px] font-bold text-slate-400 w-8">
+                                  {item.unit}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ),
+                )
+              )}
+            </div>
+          </ScrollArea>
         </div>
       </div>
 
@@ -872,20 +835,26 @@ const TaskBlock = ({
               </DialogTitle>
             </DialogHeader>
             <p className="text-sm text-slate-600 px-1 pb-2">
-              {exceedWarning.message}
+              {exceedWarning?.message}
             </p>
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setExceedWarning(null)}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  exceedWarning?.onCancel?.();
+                  setExceedWarning(null);
+                }}
+              >
                 Hủy bỏ
               </Button>
               <Button
                 className="bg-amber-500 hover:bg-amber-600 text-white"
                 onClick={() => {
-                  exceedWarning.onConfirm();
+                  exceedWarning?.onConfirm();
                   setExceedWarning(null);
                 }}
               >
-                Tiếp tục thêm
+                Tiếp tục
               </Button>
             </DialogFooter>
           </DialogContent>

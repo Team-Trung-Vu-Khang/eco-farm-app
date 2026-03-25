@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
-  ScrollArea,
   Select,
   SelectContent,
   SelectItem,
@@ -32,6 +31,7 @@ interface RegimenSelectorProps {
   onSelect: (regimen: Regimen) => void;
   type: "amendment" | "treatment";
   selectedRegimenId?: string;
+  disabled?: boolean;
 }
 
 export const RegimenSelector = ({
@@ -39,6 +39,7 @@ export const RegimenSelector = ({
   onSelect,
   type,
   selectedRegimenId,
+  disabled,
 }: RegimenSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -123,6 +124,7 @@ export const RegimenSelector = ({
         type="button"
         variant="outline"
         onClick={() => setIsOpen(true)}
+        disabled={disabled}
         className={cn(
           "w-full h-16 justify-between px-4 border-2 transition-all rounded-2xl",
           selectedRegimen
@@ -130,6 +132,7 @@ export const RegimenSelector = ({
               ? "border-amber-500 bg-amber-50/50 hover:bg-amber-50"
               : "border-blue-500 bg-blue-50/50 hover:bg-blue-50"
             : "border-slate-200 border-dashed hover:border-slate-300 hover:bg-slate-50",
+          disabled && "opacity-60 cursor-not-allowed bg-slate-50 border-slate-200",
         )}
       >
         <div className="flex items-center gap-4 text-left">
@@ -178,7 +181,9 @@ export const RegimenSelector = ({
             )}
           </div>
         </div>
-        <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
+        {!disabled && (
+          <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
+        )}
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>

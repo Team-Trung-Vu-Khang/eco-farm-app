@@ -292,7 +292,8 @@ export default function TaskCreatePage() {
       .map((region) => {
         // If the region itself is selected, keep it entire
         const isRegionSelected = selections.some(
-          (s) => s.type === "region" && String(s.regionId) === String(region.id),
+          (s) =>
+            s.type === "region" && String(s.regionId) === String(region.id),
         );
         if (isRegionSelected) return region;
 
@@ -308,7 +309,8 @@ export default function TaskCreatePage() {
             // If not, filter its plots
             const filteredPlots = (area.plots || []).filter((plot) =>
               selections.some(
-                (s) => s.type === "plot" && String(s.plotId) === String(plot.id),
+                (s) =>
+                  s.type === "plot" && String(s.plotId) === String(plot.id),
               ),
             );
 
@@ -403,10 +405,10 @@ export default function TaskCreatePage() {
     return summary;
   };
 
-  const selectionSummary = useMemo(() => getSelectionSummary(selections), [
-    selections,
-    getRegionById,
-  ]);
+  const selectionSummary = useMemo(
+    () => getSelectionSummary(selections),
+    [selections, getRegionById],
+  );
 
   const handleGeographicalConfirm = (
     newSelections: GeographicalSelection[],
@@ -466,10 +468,15 @@ export default function TaskCreatePage() {
     }));
   };
 
-  const handleUpdateTask = (id: number, updatedTask: Partial<TaskAllocation>) => {
+  const handleUpdateTask = (
+    id: number,
+    updatedTask: Partial<TaskAllocation>,
+  ) => {
     setFormData((prev) => ({
       ...prev,
-      tasks: prev.tasks.map((t) => (t.id === id ? { ...t, ...updatedTask } : t)),
+      tasks: prev.tasks.map((t) =>
+        t.id === id ? { ...t, ...updatedTask } : t,
+      ),
     }));
   };
 
@@ -484,6 +491,15 @@ export default function TaskCreatePage() {
     setFormData((prev) => ({
       ...prev,
       materials: prev.materials.filter((m) => m.id !== id),
+    }));
+  };
+
+  const handleUpdateMaterial = (id: number, updatedMaterial: Partial<MaterialAllocation>) => {
+    setFormData((prev) => ({
+      ...prev,
+      materials: prev.materials.map((m) =>
+        m.id === id ? { ...m, ...updatedMaterial } : m,
+      ),
     }));
   };
 
@@ -1065,6 +1081,7 @@ export default function TaskCreatePage() {
                         <RegimenSelector
                           regimens={regimens}
                           selectedRegimenId={formData.regimenId}
+                          disabled={!!selectedPlan?.regimenId}
                           type={
                             formData.objectiveType === "cai-tao-dat"
                               ? "amendment"
@@ -1658,7 +1675,8 @@ export default function TaskCreatePage() {
           </div>
 
           <div className="space-y-4">
-            {formData.objectiveType === "theo-ke-hoach" || formData.objectiveType === "thu-hoach" ? (
+            {formData.objectiveType === "theo-ke-hoach" ||
+            formData.objectiveType === "thu-hoach" ? (
               (formData.selectedStages.length > 0
                 ? formData.selectedStages
                 : formData.objectiveType === "thu-hoach"
@@ -1676,23 +1694,32 @@ export default function TaskCreatePage() {
                   )}
                   onAddMaterial={(item) => handleAddMaterial(item)}
                   onRemoveMaterial={handleRemoveMaterial}
+                  onUpdateMaterial={handleUpdateMaterial}
                   onAddTask={handleAddTask}
                   onRemoveTask={handleRemoveTask}
                   onUpdateTask={handleUpdateTask}
                   regions={regions}
                   personnel={personnel}
-                  enterpriseId={selectedEnterpriseId || (selectedPlan as any)?.enterpriseId || ""}
+                  enterpriseId={
+                    selectedEnterpriseId ||
+                    (selectedPlan as any)?.enterpriseId ||
+                    ""
+                  }
                   disableScopeSelection={false}
                   availableTasks={
                     formData.objectiveType === "theo-ke-hoach"
-                      ? selectedPlan?.taskAllocations.filter((t: any) => t.stageId === stageName)
+                      ? selectedPlan?.taskAllocations.filter(
+                          (t: any) => t.stageId === stageName,
+                        )
                       : formData.objectiveType !== "phat-sinh"
                         ? selectedPlan?.taskAllocations
                         : undefined
                   }
                   availableMaterials={
                     formData.objectiveType === "theo-ke-hoach"
-                      ? selectedPlan?.materialAllocations.filter((m: any) => m.stageId === stageName)
+                      ? selectedPlan?.materialAllocations.filter(
+                          (m: any) => m.stageId === stageName,
+                        )
                       : formData.objectiveType !== "phat-sinh"
                         ? selectedPlan?.materialAllocations
                         : undefined
@@ -1712,6 +1739,7 @@ export default function TaskCreatePage() {
                 )}
                 onAddMaterial={(item) => handleAddMaterial(item)}
                 onRemoveMaterial={handleRemoveMaterial}
+                onUpdateMaterial={handleUpdateMaterial}
                 onAddTask={handleAddTask}
                 onRemoveTask={handleRemoveTask}
                 onUpdateTask={handleUpdateTask}
@@ -1752,8 +1780,8 @@ export default function TaskCreatePage() {
                 return (
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animation-slide-up">
                     {/* --- LEFT SIDE: Task Addition --- */}
-                    <div className="lg:col-span-7 space-y-5">
-                      <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-sm space-y-4">
+                    <div className="lg:col-span-12 space-y-5">
+                      {/* <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-sm space-y-4">
                         <div className="flex items-center justify-between border-b pb-3">
                           <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
                             Danh mục đề xuất
@@ -1805,7 +1833,7 @@ export default function TaskCreatePage() {
                             </div>
                           )}
                         </div>
-                      </div>
+                      </div> */}
 
                       <TaskStageAllocation
                         stageName={stageName}
@@ -1818,30 +1846,38 @@ export default function TaskCreatePage() {
                         tasks={relevantTasks}
                         onAddMaterial={(item) => handleAddMaterial(item)}
                         onRemoveMaterial={handleRemoveMaterial}
+                        onUpdateMaterial={handleUpdateMaterial}
                         onAddTask={handleAddTask}
                         onRemoveTask={handleRemoveTask}
                         onUpdateTask={handleUpdateTask}
                         regions={regions}
                         personnel={personnel}
-                        enterpriseId={selectedEnterpriseId || (selectedPlan as any)?.enterpriseId || ""}
+                        enterpriseId={
+                          selectedEnterpriseId ||
+                          (selectedPlan as any)?.enterpriseId ||
+                          ""
+                        }
                         disableScopeSelection={false}
                         availableTasks={
                           selectedPlan?.taskAllocations ||
                           regimen.steps?.map((step: any) => ({
-                            id: parseInt(step.id.replace(/\D/g, "")) || Date.now(),
+                            id:
+                              parseInt(step.id.replace(/\D/g, "")) ||
+                              Date.now(),
                             name: step.title,
                             description: step.description,
                             duration: step.day,
                             stageId: stageName,
                             labor: "Tùy chỉnh",
-                          })) || []
+                          })) ||
+                          []
                         }
                         availableMaterials={selectedPlan?.materialAllocations}
                       />
                     </div>
 
                     {/* --- RIGHT SIDE: Timeline --- */}
-                    <div className="lg:col-span-5 bg-slate-900 rounded-xl p-8 text-white shadow-2xl relative overflow-hidden min-h-[500px]">
+                    {/* <div className="lg:col-span-5 bg-slate-900 rounded-xl p-8 text-white shadow-2xl relative overflow-hidden min-h-[500px]">
                       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full -mr-32 -mt-32 blur-3xl" />
 
                       <div className="relative z-10">
@@ -1860,7 +1896,6 @@ export default function TaskCreatePage() {
                         </div>
 
                         <div className="space-y-0 relative">
-                          {/* Timeline Line */}
                           <div className="absolute left-[23px] top-6 bottom-6 w-0.5 bg-gradient-to-b from-primary via-slate-700 to-transparent" />
 
                           {regimen.steps?.map((step, idx) => (
@@ -1896,7 +1931,6 @@ export default function TaskCreatePage() {
                                   {step.description}
                                 </p>
 
-                                {/* Task Status indicator in timeline */}
                                 <div className="flex items-center gap-4 mt-3">
                                   <div className="flex items-center gap-1.5">
                                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
@@ -1921,7 +1955,7 @@ export default function TaskCreatePage() {
                           )}
                         </div>
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                 );
               })()
@@ -2081,7 +2115,10 @@ export default function TaskCreatePage() {
                   <ClipboardList className="w-4 h-4 text-emerald-500" />
                   Danh sách công việc chi tiết
                 </h4>
-                <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-bold px-2 py-0">
+                <Badge
+                  variant="secondary"
+                  className="bg-slate-100 text-slate-600 font-bold px-2 py-0"
+                >
                   {formData.tasks.length} công việc
                 </Badge>
               </div>
@@ -2089,21 +2126,31 @@ export default function TaskCreatePage() {
               {formData.tasks.length === 0 ? (
                 <Card className="border-dashed border-slate-200 bg-slate-50/30">
                   <CardContent className="py-8 text-center">
-                    <p className="text-sm text-slate-400 italic">Chưa có công việc nào được cấu hình</p>
+                    <p className="text-sm text-slate-400 italic">
+                      Chưa có công việc nào được cấu hình
+                    </p>
                   </CardContent>
                 </Card>
               ) : (
                 formData.tasks.map((task, taskIdx) => (
-                  <Card key={taskIdx} className="border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                  <Card
+                    key={taskIdx}
+                    className="border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                  >
                     {/* Task Header */}
                     <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="w-6 h-6 rounded-md bg-emerald-500 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
                           {taskIdx + 1}
                         </div>
-                        <span className="font-bold text-slate-800 truncate">{task.name}</span>
+                        <span className="font-bold text-slate-800 truncate">
+                          {task.name}
+                        </span>
                       </div>
-                      <Badge variant="outline" className="text-[10px] bg-white border-slate-200 text-slate-500 py-0.5 px-2">
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] bg-white border-slate-200 text-slate-500 py-0.5 px-2"
+                      >
                         <CalendarIcon className="w-3 h-3 mr-1 opacity-60" />
                         {task.startDate} → {task.endDate}
                       </Badge>
@@ -2115,7 +2162,9 @@ export default function TaskCreatePage() {
                         <div className="flex items-start gap-2.5">
                           <Users className="w-3.5 h-3.5 text-slate-400 mt-0.5" />
                           <div className="min-w-0">
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Nhân sự</p>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                              Nhân sự
+                            </p>
                             <p className="text-xs font-semibold text-slate-700 leading-snug">
                               {task.labor || "Chưa phân công"}
                             </p>
@@ -2124,7 +2173,9 @@ export default function TaskCreatePage() {
                         <div className="flex items-start gap-2.5">
                           <Clock className="w-3.5 h-3.5 text-slate-400 mt-0.5" />
                           <div className="min-w-0">
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Thời gian</p>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                              Thời gian
+                            </p>
                             <p className="text-xs font-semibold text-slate-700">
                               {task.duration || "—"}
                             </p>
@@ -2133,54 +2184,75 @@ export default function TaskCreatePage() {
                       </div>
 
                       {/* Scope MapPin */}
-                      {task.geographicalSelections && task.geographicalSelections.length > 0 && (
-                        <div className="flex items-start gap-2.5 pt-3 border-t border-slate-50">
-                          <MapPin className="w-3.5 h-3.5 text-slate-400 mt-1" />
-                          <div className="flex-1">
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 text-left">Phạm vi thực hiện</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {getSelectionSummary(task.geographicalSelections).map((group) => (
-                                <div key={group.regionId} className="flex flex-wrap gap-1">
-                                  {group.items.map((item, i) => (
-                                    <Badge
-                                      key={`${item.id}-${i}`}
-                                      className={cn(
-                                        "text-[10px] px-2 py-0 border-none font-medium h-5",
-                                        item.type === "region"
-                                          ? "bg-emerald-50 text-emerald-700"
-                                          : item.type === "area"
-                                          ? "bg-blue-50 text-blue-700"
-                                          : "bg-amber-50 text-amber-700",
-                                      )}
-                                    >
-                                      {item.name}
-                                      {item.parentName && (
-                                        <span className="opacity-50 ml-1 font-normal">
-                                          ({item.parentName})
-                                        </span>
-                                      )}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              ))}
+                      {task.geographicalSelections &&
+                        task.geographicalSelections.length > 0 && (
+                          <div className="flex items-start gap-2.5 pt-3 border-t border-slate-50">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400 mt-1" />
+                            <div className="flex-1">
+                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 text-left">
+                                Phạm vi thực hiện
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {getSelectionSummary(
+                                  task.geographicalSelections,
+                                ).map((group) => (
+                                  <div
+                                    key={group.regionId}
+                                    className="flex flex-wrap gap-1"
+                                  >
+                                    {group.items.map((item, i) => (
+                                      <Badge
+                                        key={`${item.id}-${i}`}
+                                        className={cn(
+                                          "text-[10px] px-2 py-0 border-none font-medium h-5",
+                                          item.type === "region"
+                                            ? "bg-emerald-50 text-emerald-700"
+                                            : item.type === "area"
+                                              ? "bg-blue-50 text-blue-700"
+                                              : "bg-amber-50 text-amber-700",
+                                        )}
+                                      >
+                                        {item.name}
+                                        {item.parentName && (
+                                          <span className="opacity-50 ml-1 font-normal">
+                                            ({item.parentName})
+                                          </span>
+                                        )}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       {/* Materials for this task */}
-                      {formData.materials.filter(m => m.taskId === task.id).length > 0 && (
+                      {formData.materials.filter((m) => m.taskId === task.id)
+                        .length > 0 && (
                         <div className="pt-3 border-t border-slate-50">
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-2 text-left">Vật tư sử dụng</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-2 text-left">
+                            Vật tư sử dụng
+                          </p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {formData.materials.filter(m => m.taskId === task.id).map((m, mIdx) => (
-                              <div key={mIdx} className="flex items-center justify-between bg-slate-50/50 border border-slate-100 rounded-lg px-2.5 py-1.5">
-                                <span className="text-xs text-slate-600 font-medium truncate mr-2">{m.materialName}</span>
-                                <Badge variant="secondary" className="bg-white text-slate-900 border-slate-200 text-[10px] font-bold shrink-0">
-                                  {m.quantity} {m.unit}
-                                </Badge>
-                              </div>
-                            ))}
+                            {formData.materials
+                              .filter((m) => m.taskId === task.id)
+                              .map((m, mIdx) => (
+                                <div
+                                  key={mIdx}
+                                  className="flex items-center justify-between bg-slate-50/50 border border-slate-100 rounded-lg px-2.5 py-1.5"
+                                >
+                                  <span className="text-xs text-slate-600 font-medium truncate mr-2">
+                                    {m.materialName}
+                                  </span>
+                                  <Badge
+                                    variant="secondary"
+                                    className="bg-white text-slate-900 border-slate-200 text-[10px] font-bold shrink-0"
+                                  >
+                                    {m.quantity} {m.unit}
+                                  </Badge>
+                                </div>
+                              ))}
                           </div>
                         </div>
                       )}
