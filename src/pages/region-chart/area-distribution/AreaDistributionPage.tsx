@@ -1,49 +1,18 @@
-import React, { useState } from "react";
-import { useLocation } from "wouter";
 import { Plus } from "lucide-react";
-import {
-  AdminLayout,
-  Badge,
-  Button,
-  DataTable,
-  DeleteDialog,
-  useToast,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
-
-import { type SubArea } from "../constants";
-import useRegionStore from "../../../stores/useRegionStore";
+import { AdminLayout, Button, DataTable, DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useAreaDistributionPage } from "../hooks/useAreaDistributionPage";
 
 const AreaDistributionPage = () => {
-  const [, setLocation] = useLocation();
-  const { toast } = useToast();
-  const { regions, removeSubArea } = useRegionStore();
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const areas = React.useMemo(() => {
-    return regions.flatMap((r) => r.subAreas || []);
-  }, [regions]);
-
-  const handleAdd = () => {
-    setLocation("/area-distribution/create");
-  };
-
-  const handleEdit = (item: SubArea) => {
-    setLocation(`/area-distribution/edit/${item.id}`);
-  };
-
-  const handleDelete = (item: SubArea) => {
-    setDeletingId(item.id);
-    setDeleteOpen(true);
-  };
-
-  const confirmDelete = () => {
-    if (deletingId) {
-      removeSubArea(deletingId);
-      toast({ title: "Thành công", description: "Đã xóa khu vực" });
-      setDeleteOpen(false);
-    }
-  };
+  const {
+    areas,
+    columns,
+    deleteOpen,
+    setDeleteOpen,
+    handleAdd,
+    handleEdit,
+    handleDelete,
+    confirmDelete,
+  } = useAreaDistributionPage();
 
   return (
     <AdminLayout
@@ -57,41 +26,10 @@ const AreaDistributionPage = () => {
       }
     >
       <DataTable
-        columns={[
-          {
-            key: "code",
-            label: "Mã khu vực",
-            render: (value, row) => (
-              <span
-                className="font-medium text-primary hover:underline cursor-pointer"
-                onClick={() =>
-                  setLocation(`/area-distribution/detail/${row.id}`)
-                }
-              >
-                {value}
-              </span>
-            ),
-          },
-          { key: "name", label: "Tên khu vực" },
-          {
-            key: "regionId",
-            label: "Thuộc vùng",
-            render: (v) => regions.find((r) => r.id === v)?.name || v,
-          },
-          { key: "area", label: "Diện tích (ha)" },
-          {
-            key: "status",
-            label: "Trạng thái",
-            render: (v) => (
-              <Badge variant={v === "active" ? "default" : "secondary"}>
-                {v === "active" ? "Hoạt động" : "Ngưng"}
-              </Badge>
-            ),
-          },
-        ]}
+        columns={columns}
         data={areas}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        onEdit={(item) => handleEdit(item.id)}
+        onDelete={(item) => handleDelete(item.id)}
       />
 
       <DeleteDialog

@@ -1,50 +1,18 @@
-import { useState, useMemo } from "react";
-import { useLocation } from "wouter";
 import { Plus } from "lucide-react";
-import {
-  AdminLayout,
-  Button,
-  DataTable,
-  DeleteDialog,
-  useToast,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
-
-import { type Plot } from "../constants";
-import useRegionStore from "../../../stores/useRegionStore";
+import { AdminLayout, Button, DataTable, DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { usePlotDistributionPage } from "../hooks/usePlotDistributionPage";
 
 const PlotDistributionPage = () => {
-  const [, setLocation] = useLocation();
-  const { toast } = useToast();
-  const { regions, removePlot } = useRegionStore();
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const data = useMemo(() => {
-    return regions.flatMap((r) =>
-      (r.subAreas || []).flatMap((s) => s.plots || []),
-    );
-  }, [regions]);
-
-  const handleAdd = () => {
-    setLocation("/plot-distribution/create");
-  };
-
-  const handleEdit = (item: Plot) => {
-    setLocation(`/plot-distribution/edit/${item.id}`);
-  };
-
-  const handleDelete = (item: Plot) => {
-    setDeletingId(item.id);
-    setDeleteOpen(true);
-  };
-
-  const confirmDelete = () => {
-    if (deletingId) {
-      removePlot(deletingId);
-      toast({ title: "Thành công", description: "Đã xóa lô" });
-      setDeleteOpen(false);
-    }
-  };
+  const {
+    plots,
+    columns,
+    deleteOpen,
+    setDeleteOpen,
+    handleAdd,
+    handleEdit,
+    handleDelete,
+    confirmDelete,
+  } = usePlotDistributionPage();
 
   return (
     <AdminLayout
@@ -58,29 +26,10 @@ const PlotDistributionPage = () => {
       }
     >
       <DataTable
-        columns={[
-          {
-            key: "code",
-            label: "Mã lô",
-            render: (value, row) => (
-              <span
-                className="font-medium text-primary hover:underline cursor-pointer"
-                onClick={() =>
-                  setLocation(`/plot-distribution/detail/${row.id}`)
-                }
-              >
-                {value}
-              </span>
-            ),
-          },
-          { key: "name", label: "Tên lô" },
-          { key: "area", label: "Diện tích (ha)" },
-          { key: "contour", label: "Đường bình độ" },
-          { key: "altitude", label: "Độ cao (m)" },
-        ]}
-        data={data}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        columns={columns}
+        data={plots}
+        onEdit={(item) => handleEdit(item.id)}
+        onDelete={(item) => handleDelete(item.id)}
       />
 
       <DeleteDialog

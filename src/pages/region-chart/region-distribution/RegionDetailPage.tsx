@@ -1,4 +1,3 @@
-import { useRoute, useLocation } from "wouter";
 import {
   AdminLayout,
   Button,
@@ -6,35 +5,26 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Badge,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { MapContainer, TileLayer, Polygon, Tooltip } from "react-leaflet";
-import L from "leaflet";
+import { Polygon, Tooltip } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { ChevronLeft, Edit } from "lucide-react";
-
-import {
-  PROVINCES,
-  DISTRICTS,
-  ENTERPRISES,
-  LAND_TYPES,
-  TERRAIN_TYPES,
-} from "../constants";
-import { MapController } from "../components/DraggableRectangle";
-import useRegionStore from "../../../stores/useRegionStore";
+import { LAND_TYPES } from "../constants";
+import { RegionChartMapCard } from "../components/RegionChartMapCard";
+import { RegionChartStatusBadge } from "../components/RegionChartStatusBadge";
+import { useRegionDetailPage } from "../hooks/useRegionDetailPage";
 
 const RegionDetailPage = () => {
-  const [, setLocation] = useLocation();
-  const { getRegionById } = useRegionStore();
-
-  const [match, params] = useRoute("/region-distribution/detail/:id");
-
-  if (!match || !params?.id) {
-    return <div>Không tìm thấy trang</div>;
-  }
-
-  const regionId = parseInt(params.id);
-  const region = getRegionById(regionId);
+  const {
+    setLocation,
+    region,
+    center,
+    provinceName,
+    districtName,
+    enterpriseName,
+    landTypeName,
+    terrainName,
+  } = useRegionDetailPage();
 
   if (!region) {
     return (
@@ -48,34 +38,6 @@ const RegionDetailPage = () => {
       </AdminLayout>
     );
   }
-
-  // Calculate Bounds
-  // Default bounds if no coords
-  let bounds = L.latLngBounds([
-    [11.53, 106.88],
-    [11.55, 106.91],
-  ]);
-
-  if (region.coordinates && region.coordinates.length > 0) {
-    const points = region.coordinates.map((c) => L.latLng(c.lat, c.lng));
-    if (points.length >= 1) {
-      bounds = L.latLngBounds(points);
-    }
-  }
-
-  const provinceName =
-    PROVINCES.find((p) => p.id === region.provinceId)?.name ||
-    region.provinceId;
-  const districtName =
-    DISTRICTS.find((d) => d.id === region.districtId)?.name ||
-    region.districtId;
-  const enterpriseName =
-    ENTERPRISES.find((e) => e.id === region.enterpriseId)?.name ||
-    region.enterpriseId;
-  const landTypeName =
-    LAND_TYPES.find((l) => l.id === region.landType)?.name || region.landType;
-  const terrainName =
-    TERRAIN_TYPES.find((t) => t.id === region.terrain)?.name || region.terrain;
 
   return (
     <AdminLayout
@@ -110,13 +72,7 @@ const RegionDetailPage = () => {
               <div className="grid grid-cols-3 gap-2 py-1 border-b">
                 <span className="text-muted-foreground">Trạng thái</span>
                 <span className="col-span-2">
-                  <Badge
-                    variant={
-                      region.status === "active" ? "default" : "secondary"
-                    }
-                  >
-                    {region.status === "active" ? "Hoạt động" : "Ngưng"}
-                  </Badge>
+                  <RegionChartStatusBadge status={region.status} />
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-2 py-1 border-b">
@@ -186,62 +142,41 @@ const RegionDetailPage = () => {
 
         {/* Right Col: Map */}
         <div className="lg:col-span-2">
-          <Card className="h-full min-h-[500px] flex flex-col">
-            <CardHeader>
-              <CardTitle>Bản đồ phân bố</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 p-0 overflow-hidden relative rounded-b-lg">
-              <MapContainer
-                center={[bounds.getCenter().lat, bounds.getCenter().lng]}
-                zoom={14}
-                className="h-[600px] w-full"
+          <RegionChartMapCard title="Bản đồ phân bố" center={center} zoom={14}>
+            {region.coordinates && region.coordinates.length > 0 && (
+              <Polygon
+                positions={region.coordinates.map((c) => [c.lat, c.lng])}
+                pathOptions={{
+                  fill: false,
+                  color: "blue",
+                  dashArray: "5, 5",
+                  bubblingMouseEvents: false,
+                }}
               >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
+                <Tooltip sticky direction="top">
+                  Vùng trồng: {region.name}
+                </Tooltip>
+              </Polygon>
+            )}
 
-                {/* Main Region Polygon */}
-                {region.coordinates && region.coordinates.length > 0 && (
-                  <Polygon
-                    positions={region.coordinates.map((c) => [c.lat, c.lng])}
-                    pathOptions={{
-                      fill: false,
-                      color: "blue",
-                      dashArray: "5, 5",
-                      bubblingMouseEvents: false,
-                    }}
-                  >
-                    <Tooltip sticky direction="top">
-                      Vùng trồng: {region.name}
-                    </Tooltip>
-                  </Polygon>
-                )}
+            {region.subAreas?.map((sub) => {
+              if (!sub.coordinates || sub.coordinates.length < 3) {
+                return null;
+              }
 
-                {/* Sub Areas Polygons */}
-                {region.subAreas?.map((sub) => {
-                  if (!sub.coordinates || sub.coordinates.length < 3)
-                    return null;
-
-                  return (
-                    <Polygon
-                      key={sub.id}
-                      positions={sub.coordinates.map((c) => [c.lat, c.lng])}
-                      pathOptions={{ color: "green", weight: 2 }}
-                    >
-                      <Tooltip sticky direction="top">
-                        Khu vực {sub.name}
-                      </Tooltip>
-                    </Polygon>
-                  );
-                })}
-
-                <MapController
-                  center={[bounds.getCenter().lat, bounds.getCenter().lng]}
-                />
-              </MapContainer>
-            </CardContent>
-          </Card>
+              return (
+                <Polygon
+                  key={sub.id}
+                  positions={sub.coordinates.map((c) => [c.lat, c.lng])}
+                  pathOptions={{ color: "green", weight: 2 }}
+                >
+                  <Tooltip sticky direction="top">
+                    Khu vực {sub.name}
+                  </Tooltip>
+                </Polygon>
+              );
+            })}
+          </RegionChartMapCard>
         </div>
       </div>
     </AdminLayout>
