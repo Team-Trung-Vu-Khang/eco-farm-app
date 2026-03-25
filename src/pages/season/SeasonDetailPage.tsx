@@ -273,7 +273,7 @@ export default function SeasonDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {season.documents.length > 0 ? (
-                season.documents.map((doc) => (
+                season.documents.map((doc: any) => (
                   <div
                     key={doc.id}
                     className="flex items-start gap-3 p-3 rounded-lg border bg-blue-50/50 hover:bg-blue-50 transition-colors cursor-pointer group"

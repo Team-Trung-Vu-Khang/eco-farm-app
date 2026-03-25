@@ -1,4 +1,4 @@
-import type { GrowthCycle } from "../growth-cycle/types/types";
+import type { GrowthCycle } from "@/pages/growth-cycle/types/types";
 
 export interface SeasonDocument {
   id: string;
@@ -33,16 +33,24 @@ export interface Season {
   updatedAt: number;
 }
 
+export type SeasonStatus = "planning" | "active" | "completed" | "cancelled";
+
+export type SeasonScope = "crop" | "variety";
+
 export interface CreateSeasonForm {
   code: string;
   name: string;
   description: string;
   duration: number;
-  status: "planning" | "active" | "completed" | "cancelled";
-  scope: "crop" | "variety";
+  status: SeasonStatus;
+  scope: SeasonScope;
   cropId?: string;
   varietyId?: string;
   growthCycleIds: string[];
   selectedStages: Record<string, Record<string, number>>;
   documents: File[];
+}
+
+export interface SeasonFormData extends Omit<CreateSeasonForm, "documents"> {
+  documents: (File | SeasonDocument)[];
 }

@@ -1,7 +1,7 @@
+import { initialSeasons } from "@/pages/season/data/mocks";
+import type { Season } from "@/pages/season/types/types";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import type { Season } from "../pages/season/types";
-import { initialSeasons } from "../pages/season/mocks";
 
 interface SeasonState {
   seasons: Season[];

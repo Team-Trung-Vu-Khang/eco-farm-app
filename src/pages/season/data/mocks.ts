@@ -1,5 +1,5 @@
-import { initialGrowthCycles } from "../growth-cycle/data/mocks";
-import type { Season } from "./types";
+import { initialGrowthCycles } from "@/pages/growth-cycle/data/mocks";
+import type { Season } from "../types/types";
 
 export const initialSeasons: Season[] = [
   {

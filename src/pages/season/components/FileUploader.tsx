@@ -9,7 +9,7 @@ import {
   Image,
   File as IconFile,
 } from "lucide-react";
-import type { SeasonDocument } from "../types";
+import type { SeasonDocument } from "../types/types";
 
 interface FileUploaderProps {
   files: (File | SeasonDocument)[];
