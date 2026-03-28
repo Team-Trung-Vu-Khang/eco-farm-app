@@ -4,8 +4,8 @@ import useContactStore, {
   type Contact,
   type ContactGroup,
 } from "@/stores/useContactStore";
-
-export type CategoryType = "contacts" | "groups";
+import { emptyContactGroupFormData } from "../data/constants";
+import type { CategoryType, ContactGroupFormData } from "../types/types";
 
 export function useContact() {
   const { toast } = useToast();
@@ -25,23 +25,12 @@ export function useContact() {
 
   const [groupFormOpen, setGroupFormOpen] = useState(false);
   const [editGroup, setEditGroup] = useState<ContactGroup | null>(null);
-  const [groupFormData, setGroupFormData] = useState<
-    Omit<ContactGroup, "id" | "createdAt" | "contactCount">
-  >({
-    code: "",
-    name: "",
-    description: "",
-    status: "active",
-  });
+  const [groupFormData, setGroupFormData] =
+    useState<ContactGroupFormData>(emptyContactGroupFormData);
 
   const handleAddGroup = () => {
     setEditGroup(null);
-    setGroupFormData({
-      code: "",
-      name: "",
-      description: "",
-      status: "active",
-    });
+    setGroupFormData(emptyContactGroupFormData);
     setGroupFormOpen(true);
   };
 

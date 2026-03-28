@@ -15,7 +15,7 @@ export default function ContactCreatePage() {
     enterprises,
     departments,
     handleSubmit,
-    setLocation,
+    goBack,
   } = useContactCreate();
 
   return (
@@ -24,7 +24,7 @@ export default function ContactCreatePage() {
       description="Thêm thông tin liên hệ mới vào hệ thống"
       actions={
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setLocation("/contact")}>
+          <Button variant="outline" onClick={goBack}>
             <X className="w-4 h-4 mr-2" />
             Hủy bỏ
           </Button>

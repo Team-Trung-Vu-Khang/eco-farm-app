@@ -5,7 +5,7 @@ import {
   Button,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus, Trash2, Users } from "lucide-react";
-import type { BranchFormData, ContactPerson } from "../../hooks/useBranchForm";
+import type { BranchFormData, ContactPerson } from "../../types/types";
 
 interface PersonnelStepProps {
   formData: BranchFormData;
@@ -35,7 +35,7 @@ export function PersonnelStep({
   const handleUpdateContact = (
     id: string,
     field: keyof ContactPerson,
-    value: any,
+    value: ContactPerson[keyof ContactPerson],
   ) => {
     updateFormData({
       contacts: formData.contacts.map((c) =>

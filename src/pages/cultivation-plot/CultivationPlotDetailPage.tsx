@@ -1,5 +1,4 @@
-import { useMemo } from "react";
-import { useLocation, useRoute, Link } from "wouter";
+import { Link } from "wouter";
 import {
   AdminLayout,
   Button,
@@ -27,14 +26,7 @@ import { MapContainer, TileLayer, Polygon, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
-import useCultivationPlotStore from "../../stores/useCultivationPlotStore";
-import useRegionStore from "../../stores/useRegionStore";
-import useEnterpriseStore from "../../stores/useEnterpriseStore";
-import useFarmingMethodStore from "../../stores/useFarmingMethodStore";
-import useIrrigationSystemStore from "../../stores/useIrrigationSystemStore";
-import useVarietyStore from "../../stores/useVarietyStore";
-import usePersonnelStore from "../../stores/usePersonnelStore";
-import useEnterpriseCertificateStore from "../../stores/useEnterpriseCertificateStore";
+import { useCultivationPlotDetailPage } from "./hooks/useCultivationPlotDetailPage";
 
 // Map component to fly to the plot
 const MapController = ({ center }: { center: L.LatLngExpression }) => {
@@ -44,36 +36,19 @@ const MapController = ({ center }: { center: L.LatLngExpression }) => {
 };
 
 const CultivationPlotDetailPage = () => {
-  const [, params] = useRoute("/cultivation-plot/:id");
-  const [, setLocation] = useLocation();
-  const { getCultivationPlotById } = useCultivationPlotStore();
-  const { regions } = useRegionStore();
-  const { enterprises } = useEnterpriseStore();
-  const { farmingMethods } = useFarmingMethodStore();
-  const { irrigationSystems } = useIrrigationSystemStore();
-  const { varieties } = useVarietyStore();
-  const { personnel } = usePersonnelStore();
-  const { standards } = useEnterpriseCertificateStore();
-
-  const plotId = params?.id;
-  const data = useMemo(() => {
-    if (!plotId) return undefined;
-    return getCultivationPlotById(plotId);
-  }, [plotId, getCultivationPlotById]);
-
-  // Find geometry from RegionStore
-  const geometry = useMemo(() => {
-    if (!data) return null;
-    for (const region of regions) {
-      for (const area of region.subAreas || []) {
-        const found = (area.plots || []).find(
-          (p: any) => p.id === data.plotId || p.id === data.id,
-        );
-        if (found) return found;
-      }
-    }
-    return null;
-  }, [data, regions]);
+  const {
+    data,
+    geometry,
+    enterprise,
+    manager,
+    farmingMethod,
+    irrigationSystem,
+    varieties,
+    standards,
+    center,
+    goBack,
+    goToEdit,
+  } = useCultivationPlotDetailPage();
 
   if (!data) {
     return (
@@ -84,24 +59,6 @@ const CultivationPlotDetailPage = () => {
       </AdminLayout>
     );
   }
-
-  const enterprise = enterprises.find(
-    (e: any) => e.id.toString() === data.enterpriseId,
-  );
-  const manager = personnel.find(
-    (m: any) => m.id.toString() === data.managerId,
-  );
-  const farmingMethod = farmingMethods.find(
-    (m: any) => m.id === data.farmingMethodId,
-  );
-  const irrigationSystem = irrigationSystems.find(
-    (m: any) => m.id === data.irrigationMethodId,
-  );
-
-  const center = geometry?.coordinates?.[0]
-    ? L.latLng(geometry.coordinates[0].lat, geometry.coordinates[0].lng)
-    : L.latLng(11.54, 106.9);
-
   return (
     <AdminLayout
       title={data.name}
@@ -110,14 +67,12 @@ const CultivationPlotDetailPage = () => {
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={() => setLocation("/cultivation-plot")}
+            onClick={goBack}
           >
             <ChevronLeft className="w-4 h-4 mr-2" />
             Quay lại
           </Button>
-          <Button
-            onClick={() => setLocation(`/cultivation-plot/${data.id}/edit`)}
-          >
+          <Button onClick={goToEdit}>
             <Edit className="w-4 h-4 mr-2" />
             Chỉnh sửa
           </Button>
@@ -139,9 +94,9 @@ const CultivationPlotDetailPage = () => {
                 <MapController center={center} />
                 {geometry?.coordinates && (
                   <Polygon
-                    positions={geometry.coordinates.map((c: any) => [
-                      c.lat,
-                      c.lng,
+                    positions={geometry.coordinates.map((coordinate) => [
+                      coordinate.lat,
+                      coordinate.lng,
                     ])}
                     pathOptions={{
                       color: "#10b981",

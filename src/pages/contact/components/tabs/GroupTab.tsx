@@ -1,12 +1,11 @@
 import { Link } from "wouter";
 import { Plus } from "lucide-react";
 import {
-  Badge,
   Button,
   DataTable,
-  type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { ContactGroup } from "@/stores/useContactStore";
+import { groupColumns } from "../../data/columns";
+import type { ContactGroup } from "../../types/types";
 
 interface GroupTabProps {
   groups: ContactGroup[];
@@ -16,17 +15,6 @@ interface GroupTabProps {
 }
 
 export function GroupTab({ groups, onAdd, onEdit, onDelete }: GroupTabProps) {
-  const groupColumns: Column<ContactGroup>[] = [
-    { key: "code", label: "Mã nhóm" },
-    { key: "name", label: "Tên nhóm" },
-    { key: "description", label: "Mô tả" },
-    {
-      key: "contactCount",
-      label: "Số liên hệ",
-      render: (value) => <Badge variant="secondary">{value} người</Badge>,
-    },
-  ];
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">

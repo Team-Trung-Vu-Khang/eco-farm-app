@@ -4,7 +4,7 @@ import {
   Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Upload, X } from "lucide-react";
-import { type Bank } from "../../../constants/banks";
+import type { Bank } from "../types/types";
 
 interface BankFormDialogProps {
   open: boolean;

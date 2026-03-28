@@ -1,19 +1,17 @@
-import type { ContactGroup } from "@/stores/useContactStore";
 import {
   FormDialog,
   Label,
   Input,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import type { ContactGroup, ContactGroupFormData } from "../types/types";
 
 interface GroupFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editItem: ContactGroup | null;
-  formData: Omit<ContactGroup, "id" | "createdAt" | "contactCount">;
-  setFormData: (
-    data: Omit<ContactGroup, "id" | "createdAt" | "contactCount">,
-  ) => void;
+  formData: ContactGroupFormData;
+  setFormData: (data: ContactGroupFormData) => void;
   onSubmit: () => void;
 }
 

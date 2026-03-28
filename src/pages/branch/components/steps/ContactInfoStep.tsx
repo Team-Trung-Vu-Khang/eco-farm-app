@@ -5,7 +5,7 @@ import {
   Button,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus, Trash2, Users, Upload, Image as ImageIcon } from "lucide-react";
-import type { BranchFormData, ContactInfo } from "../../hooks/useBranchForm";
+import type { BranchFormData, ContactInfo } from "../../types/types";
 
 interface ContactInfoStepProps {
   formData: BranchFormData;
@@ -37,7 +37,7 @@ export function ContactInfoStep({
   const handleUpdateContactInfo = (
     id: string,
     field: keyof ContactInfo,
-    value: any,
+    value: ContactInfo[keyof ContactInfo],
   ) => {
     updateFormData({
       contactInfos: formData.contactInfos.map((c) =>

@@ -4,16 +4,17 @@ import {
   Input,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { CertificationOrganization } from "../hooks/useCertificate";
+import type {
+  CertificationOrganization,
+  OrganizationFormData,
+} from "../types/types";
 
 interface OrganizationFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editItem: CertificationOrganization | null;
-  formData: Omit<CertificationOrganization, "id" | "createdAt">;
-  setFormData: (
-    data: Omit<CertificationOrganization, "id" | "createdAt">,
-  ) => void;
+  formData: OrganizationFormData;
+  setFormData: (data: OrganizationFormData) => void;
   onSubmit: () => void;
 }
 

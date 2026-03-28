@@ -8,12 +8,12 @@ import {
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { FileText } from "lucide-react";
-import type { BranchFormData } from "../../hooks/useBranchForm";
+import type { BranchEnterpriseOption, BranchFormData } from "../../types/types";
 
 interface BasicInfoStepProps {
   formData: BranchFormData;
   updateFormData: (updates: Partial<BranchFormData>) => void;
-  enterprises: Array<{ id: string; name: string }>;
+  enterprises: BranchEnterpriseOption[];
   isEdit: boolean;
 }
 
