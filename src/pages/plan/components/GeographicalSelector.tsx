@@ -185,14 +185,13 @@ const GeographicalSelector = ({
     <>
       <Button
         onClick={() => setIsOpen(true)}
-        disabled={disabled || !enterpriseId}
-        className="h-7 px-2.5 cursor-pointer border border-dashed border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100/50 text-emerald-700 text-[10px] font-bold gap-1.5 transition-all rounded-md shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+        disabled={disabled}
+        className="w-full cursor-pointer border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 text-primary font-bold gap-2 transition-all rounded-lg shadow-sm hover:shadow-md"
         variant="outline"
       >
-        <Plus className="w-3 h-3" />
-        Thêm phạm vi
+        <Plus className="w-5 h-5" />
+        Thêm phạm vi địa lý
       </Button>
-
       <Dialog
         open={isOpen}
         onOpenChange={(open) => {

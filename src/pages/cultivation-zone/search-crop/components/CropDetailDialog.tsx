@@ -4585,7 +4585,7 @@ export const CropDetailDialog = ({
 }: CropDetailDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[96vw] w-[96vw] h-[92vh] p-0 overflow-hidden border-none shadow-2xl rounded-3xl z-10000">
+      <DialogContent className="max-w-[96vw] w-[96vw] h-[92vh] p-0 overflow-hidden border-none shadow-2xl rounded-3xl z-50">
         <div className="h-full overflow-y-auto p-6 flex flex-col bg-slate-50/50">
           <div className="flex items-center gap-4 mb-4 shrink-0">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white shrink-0 shadow-lg bg-emerald-500">

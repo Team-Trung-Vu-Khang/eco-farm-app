@@ -18,6 +18,8 @@ export interface MaterialAllocation extends StoreMaterialAllocation {
 
 export interface TaskAllocation extends StoreTaskAllocation {
   geographicalSelections?: GeographicalSelection[];
+  startDate?: string;
+  endDate?: string;
 }
 
 export type PlanPurpose = Plan["purpose"];

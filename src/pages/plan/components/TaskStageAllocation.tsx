@@ -23,7 +23,7 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { memo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { MATERIAL_OPTIONS, TASK_OPTIONS } from "../data/mocks";
 import type {
   GeographicalSelection,
@@ -49,7 +49,6 @@ export const TaskStageAllocation = memo(
     availableTasks,
     availableMaterials,
     personnel = [],
-    disableScopeSelection = true,
     onUpdateMaterial,
   }: {
     stageName: string;
@@ -68,7 +67,6 @@ export const TaskStageAllocation = memo(
     enterpriseId?: string;
     availableTasks?: TaskAllocation[];
     availableMaterials?: MaterialAllocation[];
-    disableScopeSelection?: boolean;
   }) => {
     // When the user clicks "Thêm" for the stage, we add a blank task
     const handleAddBlankTask = () => {
@@ -137,7 +135,6 @@ export const TaskStageAllocation = memo(
                   stageName={stageName}
                   availableTasks={availableTasks}
                   availableMaterials={availableMaterials}
-                  disableScopeSelection={disableScopeSelection}
                   onUpdateMaterial={onUpdateMaterial}
                 />
               );
@@ -162,7 +159,6 @@ const TaskBlock = ({
   stageName,
   availableTasks,
   availableMaterials,
-  disableScopeSelection,
   onUpdateMaterial,
 }: any) => {
   const [isPersonnelDialogOpen, setIsPersonnelDialogOpen] = useState(false);
@@ -184,6 +180,79 @@ const TaskBlock = ({
   >({});
 
   const [materialSearch, setMaterialSearch] = useState("");
+
+  const allowedRegions = useMemo(() => {
+    const planTask = availableTasks?.find((t: any) => t.name === task.name);
+    if (
+      !planTask ||
+      !planTask.geographicalSelections ||
+      planTask.geographicalSelections.length === 0
+    ) {
+      return regions;
+    }
+
+    const isAllowed = (
+      type: "region" | "area" | "plot",
+      rid: string,
+      aid?: string,
+      pid?: string,
+    ) => {
+      return planTask.geographicalSelections.some((s: any) => {
+        if (s.regionId !== rid) return false;
+        if (s.type === "region") return true;
+        if (s.type === "area" && aid && s.areaId === aid) {
+          return type === "area" || type === "plot";
+        }
+        if (
+          s.type === "plot" &&
+          aid &&
+          pid &&
+          s.areaId === aid &&
+          s.plotId === pid
+        ) {
+          return true;
+        }
+        return false;
+      });
+    };
+
+    return regions
+      .map((r: any) => {
+        const rid = String(r.id);
+        const regionAllowed = isAllowed("region", rid);
+        const hasVisibleArea = r.subAreas?.some((a: any) => {
+          const aid = String(a.id);
+          const areaAllowed = isAllowed("area", rid, aid);
+          const hasVisiblePlot = a.plots?.some((p: any) =>
+            isAllowed("plot", rid, aid, String(p.id)),
+          );
+          return areaAllowed || hasVisiblePlot;
+        });
+
+        if (regionAllowed || hasVisibleArea) {
+          if (regionAllowed) return r;
+
+          const filteredAreas = r.subAreas
+            ?.map((a: any) => {
+              const aid = String(a.id);
+              const areaAllowed = isAllowed("area", rid, aid);
+              const filteredPlots = a.plots?.filter((p: any) =>
+                isAllowed("plot", rid, aid, String(p.id)),
+              );
+
+              if (areaAllowed || filteredPlots?.length > 0) {
+                return areaAllowed ? a : { ...a, plots: filteredPlots };
+              }
+              return null;
+            })
+            .filter(Boolean);
+
+          return { ...r, subAreas: filteredAreas };
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }, [regions, availableTasks, task.name]);
 
   const groupedMaterials =
     (availableMaterials || []).length > 0
@@ -407,8 +476,7 @@ const TaskBlock = ({
                   liter: selectedTask?.liter,
                   labor: selectedTask?.labor || "",
                   geographicalSelections:
-                    selectedTask?.geographicalSelections ||
-                    task.geographicalSelections,
+                    selectedTask?.geographicalSelections || [],
                 });
               }}
               placeholder="Danh sách công việc trong kế hoạch"
@@ -470,15 +538,24 @@ const TaskBlock = ({
               )}
             </div>
 
+            <Button
+              variant="outline"
+              className="w-full justify-center bg-slate-50 text-slate-700 hover:bg-slate-100"
+              onClick={() => setIsPersonnelDialogOpen(true)}
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Chọn nhân sự
+            </Button>
+
             {/* Scope */}
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between gap-2">
+              <div className="space-y-2">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Phạm vi:
                 </span>
                 <GeographicalSelector
-                  regions={regions}
-                  disabled={disableScopeSelection}
+                  regions={allowedRegions}
+                  disabled={false}
                   enterpriseId={enterpriseId}
                   existingSelections={task.geographicalSelections || []}
                   onConfirm={(selections: any) =>
@@ -500,7 +577,7 @@ const TaskBlock = ({
                   );
                 }
                 return (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 pt-1 border-t border-slate-100 mt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 pt-1 border-t border-slate-100 mt-2">
                     {summary.map((group) => (
                       <div
                         key={group.regionId}
@@ -515,13 +592,14 @@ const TaskBlock = ({
                             <Badge
                               key={idx}
                               variant="outline"
-                              className={`text-[9px] py-0 px-1.5 h-4 font-medium border-slate-100 shadow-none ${
+                              className={cn(
+                                "text-[9px] py-0.5 px-1.5 h-auto min-h-4 font-medium border-slate-100 shadow-none whitespace-normal wrap-break-word inline-flex items-center text-left",
                                 item.type === "region"
                                   ? "bg-emerald-50/30 text-emerald-600 border-emerald-100/30"
                                   : item.type === "area"
                                     ? "bg-blue-50/30 text-blue-500 border-blue-100/30"
-                                    : "bg-white text-slate-400 border-slate-100"
-                              }`}
+                                    : "bg-white text-slate-400 border-slate-100",
+                              )}
                             >
                               {item.name}
                             </Badge>
@@ -534,15 +612,6 @@ const TaskBlock = ({
               })()}
             </div>
           </div>
-
-          <Button
-            variant="outline"
-            className="w-full justify-center bg-slate-50 text-slate-700 hover:bg-slate-100"
-            onClick={() => setIsPersonnelDialogOpen(true)}
-          >
-            <Users className="w-4 h-4 mr-2" />
-            Chọn nhân sự
-          </Button>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="relative">

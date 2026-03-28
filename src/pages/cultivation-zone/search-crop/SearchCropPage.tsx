@@ -956,7 +956,12 @@ const SearchCropPage = () => {
                               </div>
 
                               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-100 shrink-0">
-                                <div className="lg:col-span-8 rounded-xl overflow-hidden border-4 border-white bg-white shadow-xl relative">
+                                <div
+                                  className={cn(
+                                    "lg:col-span-8 rounded-xl overflow-hidden border-4 border-white bg-white shadow-xl relative transition-opacity duration-300",
+                                    isCropDetailOpen && "opacity-0",
+                                  )}
+                                >
                                   <MapContainer
                                     center={
                                       activeCropInDialog

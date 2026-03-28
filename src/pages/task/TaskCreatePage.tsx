@@ -25,6 +25,10 @@ import {
   Shield,
   ClipboardCheck,
   Clock,
+  Target,
+  Trash2,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import {
   AdminLayout,
@@ -54,6 +58,234 @@ import {
   cn,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+
+const SelectionCard = ({
+  regionId,
+  areaId,
+  items,
+  regions,
+  onRemove,
+  showRemoveButton = true,
+}: {
+  regionId: string;
+  areaId?: string;
+  items: GeographicalSelection[];
+  regions: any[];
+  onRemove: (ids: string[]) => void;
+  showRemoveButton?: boolean;
+}) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const region = regions.find((r) => r.id.toString() === regionId);
+  const area = region?.subAreas?.find((a: any) => a.id.toString() === areaId);
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case "region":
+        return "Vùng trồng";
+      case "area":
+        return "Khu vực";
+      case "plot":
+        return "Lô đất";
+      default:
+        return "";
+    }
+  };
+
+  const primaryItem =
+    items.find((i) => i.type === "area" || i.type === "region") || items[0];
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-all group animate-in fade-in zoom-in-95 duration-200 overflow-hidden text-left">
+      <div className="p-4">
+        <div className="flex items-start gap-4">
+          <div
+            className={cn(
+              "p-2.5 rounded-xl shrink-0 transition-colors duration-300",
+              primaryItem.type === "region"
+                ? "bg-primary text-white"
+                : "bg-primary/10 text-primary group-hover:bg-primary/20",
+            )}
+          >
+            {primaryItem.type === "region" ? (
+              <MapPin className="w-5 h-5" />
+            ) : (
+              <Layers className="w-5 h-5" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1">
+              <Badge
+                variant="outline"
+                className="text-[10px] uppercase font-bold tracking-wider py-0 px-1.5 h-4 border-primary/20 text-primary bg-primary/5"
+              >
+                {getTypeLabel(primaryItem.type)}
+              </Badge>
+              {showRemoveButton ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full"
+                  onClick={() => onRemove(items.map((i) => i.id))}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              ) : (
+                <></>
+              )}
+            </div>
+            <div className="font-bold text-slate-900 text-sm mb-1">
+              {area?.name || region?.name}
+            </div>
+            <div className="text-[10px] text-muted-foreground truncate uppercase tracking-wider font-medium">
+              ID: {areaId || regionId}
+            </div>
+          </div>
+        </div>
+
+        {(primaryItem.type !== "region" || items.length > 1) && (
+          <div className="mt-4 pt-3 border-t border-slate-100">
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-primary transition-colors mb-2"
+            >
+              {isExpanded ? (
+                <ChevronDown className="w-3 h-3" />
+              ) : (
+                <ChevronRight className="w-3 h-3" />
+              )}
+              <span>Phân cấp quản lý</span>
+            </button>
+
+            {isExpanded && (
+              <div className="mt-4 ml-3 relative">
+                {/* Main vertical stem on the left */}
+                <div className="absolute left-0 top-0 bottom-4 w-px bg-slate-200" />
+
+                <div className="space-y-4">
+                  {/* Region Level */}
+                  <div className="flex items-center gap-3 relative z-10 pl-4">
+                    <div className="absolute left-0 w-4 h-px bg-slate-200 top-1/2" />
+                    <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shadow-xs shrink-0">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-none mb-1">
+                        Vùng trồng
+                      </div>
+                      <div className="text-xs font-bold text-slate-700">
+                        {region?.name}
+                      </div>
+                    </div>
+                    {items.some((i) => i.type === "region") && (
+                      <Badge className="ml-auto bg-primary/10 text-primary border-none text-[10px]">
+                        Đã chọn vùng
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Area Level & Plots */}
+                  {areaId && (
+                    <div className="relative pl-4">
+                      {/* Branch from main stem to Area */}
+                      <div className="absolute left-0 w-4 h-px bg-slate-200 top-4" />
+
+                      <div className="pl-4 relative">
+                        {/* Nested Stem if Plots exist */}
+                        {items.some((i) => i.type === "plot") && (
+                          <div className="absolute left-3.75 top-4 bottom-4 w-px bg-slate-200" />
+                        )}
+
+                        <div className="flex items-center gap-3 relative z-10 py-1">
+                          <div
+                            className={cn(
+                              "w-8 h-8 rounded-lg border flex items-center justify-center shadow-xs shrink-0",
+                              items.some((i) => i.type === "area")
+                                ? "bg-primary/5 border-primary/20"
+                                : "bg-slate-50 border-slate-100",
+                            )}
+                          >
+                            <Layers
+                              className={cn(
+                                "w-3.5 h-3.5",
+                                items.some((i) => i.type === "area")
+                                  ? "text-primary"
+                                  : "text-slate-400",
+                              )}
+                            />
+                          </div>
+                          <div>
+                            <div
+                              className={cn(
+                                "text-[10px] uppercase font-bold tracking-wider leading-none mb-1",
+                                items.some((i) => i.type === "area")
+                                  ? "text-primary/60"
+                                  : "text-slate-400",
+                              )}
+                            >
+                              Khu vực
+                            </div>
+                            <div
+                              className={cn(
+                                "text-xs font-bold",
+                                items.some((i) => i.type === "area")
+                                  ? "text-slate-900"
+                                  : "text-slate-700",
+                              )}
+                            >
+                              {area?.name}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Plots Level */}
+                        <div className="space-y-3 mt-3">
+                          {items
+                            .filter((i) => i.type === "plot")
+                            .map((pSelection) => {
+                              const plot = area?.plots?.find(
+                                (p: any) => p.id === pSelection.plotId,
+                              );
+                              return (
+                                <div
+                                  key={pSelection.id}
+                                  className="flex items-center gap-3 relative z-10 pl-8 group/plot"
+                                >
+                                  <div className="absolute left-3.75 w-4 h-px bg-slate-200 top-1/2" />
+                                  <div className="w-8 h-8 rounded-lg bg-primary/5 border border-primary/10 flex items-center justify-center shadow-xs shrink-0">
+                                    <Target className="w-3.5 h-3.5 text-primary" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="text-[10px] text-primary/60 font-bold uppercase tracking-wider leading-none mb-1">
+                                      Lô đất
+                                    </div>
+                                    <div className="text-xs font-bold text-slate-900">
+                                      {plot?.name || pSelection.plotId}
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => onRemove([pSelection.id])}
+                                    className="h-6 w-6 p-0 opacity-0 group-hover/plot:opacity-100 transition-opacity"
+                                  >
+                                    <X className="w-3 h-3 text-slate-400 hover:text-red-500" />
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 import useTaskStore from "../../stores/useTaskStore";
 import type { MaterialAllocation, TaskAllocation } from "../plan/types";
@@ -405,11 +637,6 @@ export default function TaskCreatePage() {
     return summary;
   };
 
-  const selectionSummary = useMemo(
-    () => getSelectionSummary(selections),
-    [selections, getRegionById],
-  );
-
   const handleGeographicalConfirm = (
     newSelections: GeographicalSelection[],
   ) => {
@@ -494,7 +721,10 @@ export default function TaskCreatePage() {
     }));
   };
 
-  const handleUpdateMaterial = (id: number, updatedMaterial: Partial<MaterialAllocation>) => {
+  const handleUpdateMaterial = (
+    id: number,
+    updatedMaterial: Partial<MaterialAllocation>,
+  ) => {
     setFormData((prev) => ({
       ...prev,
       materials: prev.materials.map((m) =>
@@ -583,7 +813,9 @@ export default function TaskCreatePage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Mã công việc *</Label>
+                    <Label className="text-sm font-bold text-slate-700">
+                      Mã công việc *
+                    </Label>
                     <Input
                       value={formData.code}
                       onChange={(e) =>
@@ -593,7 +825,9 @@ export default function TaskCreatePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Tên công việc *</Label>
+                    <Label className="text-sm font-bold text-slate-700">
+                      Tên công việc *
+                    </Label>
                     <Input
                       value={formData.name}
                       onChange={(e) =>
@@ -605,7 +839,7 @@ export default function TaskCreatePage() {
                 </div>
 
                 <div className="space-y-3">
-                  <Label className="text-sm font-bold text-slate-500 uppercase tracking-wider">
+                  <Label className="text-sm font-bold text-slate-700">
                     Hạng mục *
                   </Label>
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -720,11 +954,20 @@ export default function TaskCreatePage() {
                             const p = (activePlans as any[]).find(
                               (p) => String(p.id) === val,
                             );
+                            const stages =
+                              p?.selectedStages ||
+                              (p?.allocations
+                                ? Array.from(
+                                    new Set(
+                                      p.allocations.map((a: any) => a.stage),
+                                    ),
+                                  )
+                                : []);
                             setFormData({
                               ...formData,
                               planId: val,
                               planName: p?.name || "",
-                              selectedStages: [],
+                              selectedStages: stages as string[],
                               selectedPlotIds:
                                 (p?.selectedPlotIds as string[]) || [],
                               regimenId: p?.regimenId || "",
@@ -781,7 +1024,7 @@ export default function TaskCreatePage() {
                                   )}
                                 </div>
                                 <div>
-                                  <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] leading-none mb-1.5">
+                                  <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider leading-none mb-1.5">
                                     Chi tiết kế hoạch
                                   </h4>
                                   <p className="text-base font-bold text-slate-900 leading-none">
@@ -798,8 +1041,8 @@ export default function TaskCreatePage() {
                             </div>
 
                             <div className="grid grid-cols-2 gap-x-6 gap-y-5 text-sm relative z-10">
-                              <div className="space-y-1.5">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                              {/* <div className="space-y-1.5">
+                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                                   Vùng canh tác / Vùng địa lý
                                 </span>
                                 <div className="flex items-center gap-2.5 text-slate-700 bg-slate-50/80 p-2 rounded-xl border border-slate-100/50">
@@ -808,10 +1051,10 @@ export default function TaskCreatePage() {
                                     {resolvedLocationNames}
                                   </span>
                                 </div>
-                              </div>
+                              </div> */}
 
                               <div className="space-y-1.5">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                                   Thời hạn thực hiện
                                 </span>
                                 <div className="flex items-center gap-2.5 text-slate-700 bg-slate-50/80 p-2 rounded-xl border border-slate-100/50">
@@ -827,7 +1070,7 @@ export default function TaskCreatePage() {
                               {formData.objectiveType === "theo-ke-hoach" && (
                                 <>
                                   <div className="space-y-1.5">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                                       Cây trồng & Giống
                                     </span>
                                     <div className="flex items-center gap-2.5 text-slate-700 bg-blue-50/30 p-2 rounded-xl border border-blue-100/50">
@@ -839,7 +1082,7 @@ export default function TaskCreatePage() {
                                     </div>
                                   </div>
                                   <div className="col-span-2 space-y-2 pt-2 border-t border-slate-100">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                                       Danh sách giai đoạn canh tác
                                     </span>
                                     <div className="flex flex-wrap gap-1.5 mt-1.5 p-3 rounded-2xl bg-blue-50/10 border border-blue-100/30">
@@ -862,7 +1105,7 @@ export default function TaskCreatePage() {
                               {formData.objectiveType === "cai-tao-dat" && (
                                 <>
                                   <div className="col-span-2 space-y-1.5">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                                       Mục tiêu cải tạo / Vấn đề
                                     </span>
                                     <div className="flex items-center gap-2.5 text-green-700 bg-green-50/40 p-3 rounded-xl border border-green-100/50">
@@ -875,7 +1118,7 @@ export default function TaskCreatePage() {
                                   </div>
                                   {selectedPlan.technician && (
                                     <div className="space-y-1.5">
-                                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                                         Chuyên gia phụ trách
                                       </span>
                                       <div className="flex items-center gap-2.5 text-slate-700 bg-slate-50 p-2 rounded-xl">
@@ -946,125 +1189,152 @@ export default function TaskCreatePage() {
 
                       <div
                         className={cn(
-                          "grid gap-6",
-                          formData.objectiveType === "thu-hoach"
-                            ? "grid-cols-1"
-                            : "grid-cols-1 md:grid-cols-2",
+                          "grid gap-6 grid-cols-1",
+                          // formData.objectiveType === "thu-hoach"
+                          //   ? "grid-cols-1"
+                          //   : "grid-cols-1 md:grid-cols-2",
                         )}
                       >
                         {/* Multi-select Plots */}
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                           <Label className="text-sm font-bold text-slate-700 flex items-center justify-between">
                             Vùng canh tác / Vùng địa lý
                             <span className="text-[10px] text-slate-400 font-normal opacity-70">
                               (Khóa chỉnh sửa)
                             </span>
                           </Label>
-                          <ScrollArea className="h-[150px] border p-3 bg-slate-50/50">
-                            <div className="space-y-2">
-                              {(
-                                (selectedPlan?.selectedPlotIds as string[]) ||
-                                []
-                              ).map((plotId) => (
-                                <div
-                                  key={plotId}
-                                  className="flex items-center space-x-2"
-                                >
-                                  <Checkbox
-                                    id={`plot-${plotId}`}
-                                    checked={formData.selectedPlotIds.includes(
-                                      plotId,
-                                    )}
-                                    disabled
-                                    onCheckedChange={(checked) => {
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        selectedPlotIds: checked
-                                          ? [...prev.selectedPlotIds, plotId]
-                                          : prev.selectedPlotIds.filter(
-                                              (id) => id !== plotId,
-                                            ),
-                                      }));
-                                    }}
-                                  />
-                                  <label
-                                    htmlFor={`plot-${plotId}`}
-                                    className="text-xs font-medium text-slate-600 cursor-not-allowed flex items-center gap-2 flex-1"
-                                  >
-                                    <span className="font-bold">
-                                      {getPlotById(plotId)?.plot?.name ||
-                                        plotId}
-                                    </span>
-                                    {getPlotById(plotId)?.plot?.name && (
-                                      <span className="text-[9px] text-slate-400 font-mono">
-                                        ({plotId})
-                                      </span>
-                                    )}
-                                  </label>
+
+                          <div className="grid grid-cols-1 gap-4">
+                            {(() => {
+                              const tempSelections: GeographicalSelection[] =
+                                formData.selectedPlotIds.map((plotId) => {
+                                  const data = getPlotById(plotId);
+                                  return {
+                                    id: Math.random().toString(36).substr(2, 9),
+                                    type: "plot" as const,
+                                    regionId: String(data?.region?.id || ""),
+                                    areaId: String(data?.area?.id || ""),
+                                    plotId: plotId,
+                                  };
+                                });
+
+                              const grouped: Record<
+                                string,
+                                GeographicalSelection[]
+                              > = {};
+                              tempSelections.forEach((s) => {
+                                const key = s.areaId || s.regionId;
+                                if (!grouped[key]) grouped[key] = [];
+                                grouped[key].push(s);
+                              });
+
+                              return Object.entries(grouped).map(
+                                ([key, items]) => {
+                                  const first = items[0];
+                                  return (
+                                    <SelectionCard
+                                      key={key}
+                                      regionId={first.regionId}
+                                      areaId={first.areaId}
+                                      items={items}
+                                      regions={regions}
+                                      showRemoveButton={false}
+                                      onRemove={() => {}} // Disabled in this view
+                                    />
+                                  );
+                                },
+                              );
+                            })()}
+
+                            {formData.selectedPlotIds.length === 0 && (
+                              <div className="flex flex-col items-center justify-center py-12 px-6 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50 text-center gap-2 animate-in fade-in duration-500">
+                                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm text-slate-300">
+                                  <MapPin className="w-6 h-6" />
                                 </div>
-                              ))}
-                              {(!selectedPlan ||
-                                !selectedPlan.selectedPlotIds ||
-                                selectedPlan.selectedPlotIds.length === 0) && (
-                                <p className="text-[10px] text-slate-400 italic text-center py-10">
-                                  {formData.planId
-                                    ? "Kế hoạch không quy định lô đất"
-                                    : "Hãy chọn kế hoạch trước"}
-                                </p>
-                              )}
-                            </div>
-                          </ScrollArea>
+                                <div>
+                                  <div className="text-sm font-bold text-slate-600">
+                                    Chưa có lựa chọn nào
+                                  </div>
+                                  <div className="text-[11px] text-slate-400 max-w-50 mx-auto mt-1">
+                                    {formData.planId
+                                      ? "Kế hoạch không quy định lô đất"
+                                      : "Hãy chọn kế hoạch trước"}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         {/* Multi-select Stages */}
                         {formData.objectiveType !== "thu-hoach" && (
-                          <div className="space-y-2">
+                          <div className="space-y-3">
                             <Label className="text-sm font-bold text-slate-700 flex items-center justify-between">
                               Giai đoạn thực hiện *
                               <span className="text-[10px] text-slate-400 font-normal">
                                 Chọn nhiều
                               </span>
                             </Label>
-                            <ScrollArea className="h-[150px] border p-3 bg-slate-50/50">
-                              <div className="space-y-2">
-                                {availableStages.map((s) => (
-                                  <div
-                                    key={s}
-                                    className="flex items-center space-x-2"
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              {availableStages.map((s) => (
+                                <div
+                                  key={s}
+                                  onClick={() => {
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      selectedStages:
+                                        prev.selectedStages.includes(s)
+                                          ? prev.selectedStages.filter(
+                                              (item) => item !== s,
+                                            )
+                                          : [...prev.selectedStages, s],
+                                    }));
+                                  }}
+                                  className={cn(
+                                    "flex items-center gap-4 p-4 rounded-md border transition-all cursor-pointer group",
+                                    formData.selectedStages.includes(s)
+                                      ? "bg-primary/5 border-primary shadow-sm"
+                                      : "bg-white border-slate-200 hover:border-primary/20 hover:bg-slate-50/50",
+                                  )}
+                                >
+                                  <Checkbox
+                                    id={`stage-${s}`}
+                                    checked={formData.selectedStages.includes(
+                                      s,
+                                    )}
+                                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                    onClick={(e) => e.stopPropagation()}
+                                    onCheckedChange={(checked) => {
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        selectedStages: checked
+                                          ? [...prev.selectedStages, s]
+                                          : prev.selectedStages.filter(
+                                              (item) => item !== s,
+                                            ),
+                                      }));
+                                    }}
+                                  />
+                                  <label
+                                    htmlFor={`stage-${s}`}
+                                    className="text-sm font-bold text-slate-700 cursor-pointer flex-1"
+                                    onClick={(e) => e.stopPropagation()}
                                   >
-                                    <Checkbox
-                                      id={`stage-${s}`}
-                                      checked={formData.selectedStages.includes(
-                                        s,
-                                      )}
-                                      onCheckedChange={(checked) => {
-                                        setFormData((prev) => ({
-                                          ...prev,
-                                          selectedStages: checked
-                                            ? [...prev.selectedStages, s]
-                                            : prev.selectedStages.filter(
-                                                (item) => item !== s,
-                                              ),
-                                        }));
-                                      }}
-                                    />
-                                    <label
-                                      htmlFor={`stage-${s}`}
-                                      className="text-xs font-medium text-slate-600 cursor-pointer"
-                                    >
-                                      {s}
-                                    </label>
-                                  </div>
-                                ))}
-                                {availableStages.length === 0 && (
-                                  <p className="text-[10px] text-slate-400 italic text-center py-10">
+                                    {s}
+                                  </label>
+                                </div>
+                              ))}
+                              {availableStages.length === 0 && (
+                                <div className="col-span-full py-12 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50 flex flex-col items-center justify-center gap-2">
+                                  <Layers className="w-8 h-8 text-slate-200" />
+                                  <p className="text-xs text-slate-400 italic">
                                     {formData.planId
                                       ? "Kế hoạch không có giai đoạn"
                                       : "Hãy chọn kế hoạch trước"}
                                   </p>
-                                )}
-                              </div>
-                            </ScrollArea>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -1072,8 +1342,8 @@ export default function TaskCreatePage() {
 
                     {(formData.objectiveType === "cai-tao-dat" ||
                       formData.objectiveType === "tri-benh") && (
-                      <div className="space-y-4 pt-4 border-t border-slate-100 mt-2 anim-fade-in">
-                        <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
+                      <div className="space-y-4 mt-2 anim-fade-in">
+                        <Label className="text-sm font-bold text-slate-700">
                           {formData.objectiveType === "cai-tao-dat"
                             ? "Phác đồ cải tạo đất áp dụng"
                             : "Phác đồ trị bệnh áp dụng"}
@@ -1100,28 +1370,24 @@ export default function TaskCreatePage() {
                 )}
 
                 {formData.objectiveType === "phat-sinh" && (
-                  <div className="space-y-4 animation-fade-in border-t pt-6 mt-6 border-slate-100">
-                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 text-xs font-bold">
-                        1
-                      </span>
-                      Chọn vùng canh tác
-                    </h3>
-                    <Label className="text-sm font-medium">
+                  <div className="animation-fade-in border-t pt-2 border-slate-100">
+                    <Label className="text-sm font-bold text-slate-700">
                       Đơn vị sở hữu <span className="text-red-500">*</span>
                     </Label>
-                    <EnterpriseSelector
-                      selectedId={selectedEnterpriseId}
-                      onSelect={(val) => {
-                        setSelectedEnterpriseId(val);
-                        setSelections([]);
-                      }}
-                    />
-                    <div className="p-5 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm space-y-4 relative">
+                    <div className="pt-2 pb-4">
+                      <EnterpriseSelector
+                        selectedId={selectedEnterpriseId}
+                        onSelect={(val) => {
+                          setSelectedEnterpriseId(val);
+                          setSelections([]);
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-4 relative">
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                            Vùng canh tác{" "}
+                          <label className="text-sm font-bold text-slate-700">
+                            Phạm vi địa lý{" "}
                             <span className="text-red-500">*</span>
                           </label>
                           {!selectedEnterpriseId && (
@@ -1140,51 +1406,41 @@ export default function TaskCreatePage() {
                           onConfirm={handleGeographicalConfirm}
                         />
 
-                        {selectionSummary.length > 0 && (
-                          <div className="mt-4 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
-                            <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
+                        {selections.length > 0 && (
+                          <div className="mt-4 space-y-3">
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1">
                               <Layers className="w-3 h-3" />
                               Phạm vi đã chọn ({selections.length} mục)
                             </div>
-                            <div className="space-y-3">
-                              {selectionSummary.map((group) => (
-                                <div key={group.regionId} className="space-y-2">
-                                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
-                                    <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                                    {group.regionName}
-                                  </div>
-                                  <div className="flex flex-wrap gap-1.5 pl-2.5">
-                                    {group.items.map((item, idx) => (
-                                      <Badge
-                                        key={idx}
-                                        variant="outline"
-                                        className={cn(
-                                          "text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm",
-                                          item.type === "region"
-                                            ? "bg-emerald-100 text-emerald-800"
-                                            : item.type === "area"
-                                              ? "bg-blue-50 text-blue-700 border-blue-100"
-                                              : "bg-white text-slate-600 border-slate-200",
-                                        )}
-                                      >
-                                        <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
-                                          {item.type === "region"
-                                            ? "Vùng"
-                                            : item.type === "area"
-                                              ? "Khu"
-                                              : "Lô"}
-                                        </span>
-                                        {item.name}
-                                        {item.parentName && (
-                                          <span className="ml-1 opacity-50 font-normal italic">
-                                            ({item.parentName})
-                                          </span>
-                                        )}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </div>
-                              ))}
+                            <div className="grid grid-cols-1 gap-4">
+                              {(() => {
+                                const grouped: Record<
+                                  string,
+                                  GeographicalSelection[]
+                                > = {};
+                                selections.forEach((s) => {
+                                  const key = s.areaId || s.regionId;
+                                  if (!grouped[key]) grouped[key] = [];
+                                  grouped[key].push(s);
+                                });
+
+                                return Object.entries(grouped).map(
+                                  ([key, items]) => {
+                                    const first = items[0];
+                                    return (
+                                      <SelectionCard
+                                        key={key}
+                                        regionId={first.regionId}
+                                        areaId={first.areaId}
+                                        items={items}
+                                        regions={regions}
+                                        showRemoveButton={false}
+                                        onRemove={() => {}} // Read-only in this summary
+                                      />
+                                    );
+                                  },
+                                );
+                              })()}
                             </div>
                           </div>
                         )}
@@ -1195,9 +1451,9 @@ export default function TaskCreatePage() {
 
                 {/* 1. Nhân sự quản lý */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-blue-500" />
+                  <div className="flex items-end justify-between">
+                    <Label className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                      {/* <Shield className="w-4 h-4 text-blue-500" /> */}
                       Nhân sự quản lý
                     </Label>
                     <Button
@@ -1269,9 +1525,9 @@ export default function TaskCreatePage() {
 
                 {/* 2. Nhân sự kiểm định chất lượng */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                      <ClipboardCheck className="w-4 h-4 text-violet-500" />
+                  <div className="flex items-end justify-between">
+                    <Label className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                      {/* <ClipboardCheck className="w-4 h-4 text-violet-500" /> */}
                       Kiểm định chất lượng
                     </Label>
                     <Button
@@ -1542,7 +1798,9 @@ export default function TaskCreatePage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Ngày bắt đầu *</Label>
+                  <Label className="text-sm font-bold text-slate-700">
+                    Ngày bắt đầu *
+                  </Label>
                   <Input
                     type="date"
                     value={formData.startDate}
@@ -1552,7 +1810,9 @@ export default function TaskCreatePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Ngày kết thúc *</Label>
+                  <Label className="text-sm font-bold text-slate-700">
+                    Ngày kết thúc *
+                  </Label>
                   <Input
                     type="date"
                     value={formData.endDate}
@@ -1562,7 +1822,7 @@ export default function TaskCreatePage() {
                   />
                 </div>
                 <div className="space-y-3">
-                  <Label className="text-sm font-bold text-slate-500 uppercase tracking-wider">
+                  <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                     Độ ưu tiên *
                   </Label>
                   <div className="grid grid-cols-3 gap-2">
@@ -1682,7 +1942,7 @@ export default function TaskCreatePage() {
                 : formData.objectiveType === "thu-hoach"
                   ? ["Công việc thu hoạch"]
                   : ["Công việc chính"]
-              ).map((stageName, idx) => (
+              ).map((stageName) => (
                 <TaskStageAllocation
                   key={stageName}
                   stageName={stageName}
@@ -1705,7 +1965,6 @@ export default function TaskCreatePage() {
                     (selectedPlan as any)?.enterpriseId ||
                     ""
                   }
-                  disableScopeSelection={false}
                   availableTasks={
                     formData.objectiveType === "theo-ke-hoach"
                       ? selectedPlan?.taskAllocations.filter(
@@ -1746,7 +2005,6 @@ export default function TaskCreatePage() {
                 regions={filteredRegionsForPhatSinh}
                 personnel={personnel}
                 enterpriseId={selectedEnterpriseId}
-                disableScopeSelection={false}
                 // Phát sinh allows all options, so availableTasks/Materials are undefined
               />
             ) : (
@@ -1857,7 +2115,6 @@ export default function TaskCreatePage() {
                           (selectedPlan as any)?.enterpriseId ||
                           ""
                         }
-                        disableScopeSelection={false}
                         availableTasks={
                           selectedPlan?.taskAllocations ||
                           regimen.steps?.map((step: any) => ({
@@ -1973,7 +2230,7 @@ export default function TaskCreatePage() {
           {/* ── LEFT COLUMN ── */}
           <div className="lg:col-span-2 space-y-4">
             {/* Identity banner */}
-            <div className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-teal-50/40 p-6 shadow-sm">
+            <div className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-linear-to-br from-emerald-50 via-white to-teal-50/40 p-6 shadow-sm">
               <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-emerald-400/10 blur-2xl pointer-events-none" />
               <div className="relative flex items-start justify-between gap-4">
                 <div className="flex items-center gap-4">
@@ -2165,9 +2422,37 @@ export default function TaskCreatePage() {
                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
                               Nhân sự
                             </p>
-                            <p className="text-xs font-semibold text-slate-700 leading-snug">
-                              {task.labor || "Chưa phân công"}
-                            </p>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {task.labor ? (
+                                task.labor.includes(":") ? (
+                                  task.labor
+                                    .split(":")[1]
+                                    .trim()
+                                    .split(", ")
+                                    .filter(Boolean)
+                                    .map((name, i) => (
+                                      <Badge
+                                        key={i}
+                                        variant="secondary"
+                                        className="text-[10px] bg-blue-50 text-blue-700 border-none px-2 py-0 h-5 font-medium"
+                                      >
+                                        {name}
+                                      </Badge>
+                                    ))
+                                ) : (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-[10px] bg-blue-50 text-blue-700 border-none px-2 py-0 h-5 font-medium"
+                                  >
+                                    {task.labor}
+                                  </Badge>
+                                )
+                              ) : (
+                                <span className="text-xs text-slate-400 italic">
+                                  Chưa phân công
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-start gap-2.5">
@@ -2266,7 +2551,7 @@ export default function TaskCreatePage() {
           {/* ── RIGHT COLUMN: CTA + notice ── */}
           <div className="space-y-4">
             <Card className="bg-slate-900 border-none text-white shadow-2xl overflow-hidden relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 pointer-events-none" />
+              <div className="absolute inset-0 bg-linear-to-br from-slate-800 to-slate-950 pointer-events-none" />
               <div className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
               <CardHeader className="border-b border-white/10 pb-4 relative">
                 <CardTitle className="text-white text-sm flex items-center gap-2.5">

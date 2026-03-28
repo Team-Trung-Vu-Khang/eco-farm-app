@@ -32,7 +32,9 @@ import {
   Bug,
   Calendar as CalendarIcon,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
+  ChevronRight,
   ClipboardCheck,
   ClipboardList,
   Clock,
@@ -45,6 +47,7 @@ import {
   Shield,
   Sprout,
   StickyNote,
+  Target,
   Trash2,
   User,
   Users,
@@ -62,11 +65,243 @@ import useTeamStore from "../../stores/useTeamStore";
 import GeographicalSelector from "../plan/components/GeographicalSelector";
 import { EnterpriseSelector } from "../cultivation-zone/cultivation-region/components";
 import { TaskStageAllocation } from "../plan/components/TaskStageAllocation";
+import { RegimenSelector } from "../plan/components/RegimenSelector";
 import type {
   GeographicalSelection,
   MaterialAllocation,
   TaskAllocation,
 } from "../plan/types";
+
+const SelectionCard = ({
+  regionId,
+  areaId,
+  items,
+  regions,
+  onRemove,
+  showRemoveButton = true,
+}: {
+  regionId: string;
+  areaId?: string;
+  items: GeographicalSelection[];
+  regions: any[];
+  onRemove: (ids: string[]) => void;
+  showRemoveButton?: boolean;
+}) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  const region = regions.find((r) => String(r.id) === String(regionId));
+  const area = region?.subAreas?.find(
+    (a: any) => String(a.id) === String(areaId),
+  );
+
+  const primaryItem =
+    items.find((i) => i.type === "area" || i.type === "region") || items[0];
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case "region":
+        return "Vùng trồng";
+      case "area":
+        return "Khu vực";
+      case "plot":
+        return "Lô đất";
+      default:
+        return type;
+    }
+  };
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-all group animate-in fade-in zoom-in-95 duration-200 overflow-hidden text-left">
+      <div className="p-4">
+        <div className="flex items-start gap-4">
+          <div
+            className={cn(
+              "p-2.5 rounded-xl shrink-0 transition-colors duration-300",
+              primaryItem.type === "region"
+                ? "bg-primary text-white"
+                : "bg-primary/10 text-primary group-hover:bg-primary/20",
+            )}
+          >
+            {primaryItem.type === "region" ? (
+              <MapPin className="w-5 h-5" />
+            ) : (
+              <Layers className="w-5 h-5" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1">
+              <Badge
+                variant="outline"
+                className="text-[10px] uppercase font-bold tracking-wider py-0 px-1.5 h-4 border-primary/20 text-primary bg-primary/5"
+              >
+                {getTypeLabel(primaryItem.type)}
+              </Badge>
+              {showRemoveButton ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full"
+                  onClick={() => onRemove(items.map((i) => i.id))}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              ) : (
+                <></>
+              )}
+            </div>
+            <div className="font-bold text-slate-900 text-sm mb-1">
+              {area?.name || region?.name}
+            </div>
+            <div className="text-[10px] text-muted-foreground truncate uppercase tracking-wider font-medium">
+              ID: {areaId || regionId}
+            </div>
+          </div>
+        </div>
+
+        {(primaryItem.type !== "region" || items.length > 1) && (
+          <div className="mt-4 pt-3 border-t border-slate-100">
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-primary transition-colors mb-2"
+            >
+              {isExpanded ? (
+                <ChevronDown className="w-3 h-3" />
+              ) : (
+                <ChevronRight className="w-3 h-3" />
+              )}
+              <span>Phân cấp quản lý</span>
+            </button>
+
+            {isExpanded && (
+              <div className="mt-4 ml-3 relative">
+                {/* Main vertical stem on the left */}
+                <div className="absolute left-0 top-0 bottom-4 w-px bg-slate-200" />
+
+                <div className="space-y-4">
+                  {/* Region Level */}
+                  <div className="flex items-center gap-3 relative z-10 pl-4">
+                    <div className="absolute left-0 w-4 h-px bg-slate-200 top-1/2" />
+                    <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shadow-xs shrink-0">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-none mb-1">
+                        Vùng trồng
+                      </div>
+                      <div className="text-xs font-bold text-slate-700">
+                        {region?.name}
+                      </div>
+                    </div>
+                    {items.some((i) => i.type === "region") && (
+                      <Badge className="ml-auto bg-primary/10 text-primary border-none text-[10px]">
+                        Đã chọn vùng
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Area Level & Plots */}
+                  {areaId && (
+                    <div className="relative pl-4">
+                      {/* Branch from main stem to Area */}
+                      <div className="absolute left-0 w-4 h-px bg-slate-200 top-4" />
+
+                      <div className="pl-4 relative">
+                        {/* Nested Stem if Plots exist */}
+                        {items.some((i) => i.type === "plot") && (
+                          <div className="absolute left-3.75 top-4 bottom-4 w-px bg-slate-200" />
+                        )}
+
+                        <div className="flex items-center gap-3 relative z-10 py-1">
+                          <div
+                            className={cn(
+                              "w-8 h-8 rounded-lg border flex items-center justify-center shadow-xs shrink-0",
+                              items.some((i) => i.type === "area")
+                                ? "bg-primary/5 border-primary/20"
+                                : "bg-slate-50 border-slate-100",
+                            )}
+                          >
+                            <Layers
+                              className={cn(
+                                "w-3.5 h-3.5",
+                                items.some((i) => i.type === "area")
+                                  ? "text-primary"
+                                  : "text-slate-400",
+                              )}
+                            />
+                          </div>
+                          <div>
+                            <div
+                              className={cn(
+                                "text-[10px] uppercase font-bold tracking-wider leading-none mb-1",
+                                items.some((i) => i.type === "area")
+                                  ? "text-primary/60"
+                                  : "text-slate-400",
+                              )}
+                            >
+                              Khu vực
+                            </div>
+                            <div
+                              className={cn(
+                                "text-xs font-bold",
+                                items.some((i) => i.type === "area")
+                                  ? "text-slate-900"
+                                  : "text-slate-700",
+                              )}
+                            >
+                              {area?.name}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Plots Level */}
+                        <div className="space-y-3 mt-3">
+                          {items
+                            .filter((i) => i.type === "plot")
+                            .map((pSelection) => {
+                              const plot = area?.plots?.find(
+                                (p: any) => p.id === pSelection.plotId,
+                              );
+                              return (
+                                <div
+                                  key={pSelection.id}
+                                  className="flex items-center gap-3 relative z-10 pl-8 group/plot"
+                                >
+                                  <div className="absolute left-3.75 w-4 h-px bg-slate-200 top-1/2" />
+                                  <div className="w-8 h-8 rounded-lg bg-primary/5 border border-primary/10 flex items-center justify-center shadow-xs shrink-0">
+                                    <Target className="w-3.5 h-3.5 text-primary" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="text-[10px] text-primary/60 font-bold uppercase tracking-wider leading-none mb-1">
+                                      Lô đất
+                                    </div>
+                                    <div className="text-xs font-bold text-slate-900">
+                                      {plot?.name || pSelection.plotId}
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => onRemove([pSelection.id])}
+                                    className="h-6 w-6 p-0 opacity-0 group-hover/plot:opacity-100 transition-opacity"
+                                  >
+                                    <X className="w-3 h-3 text-slate-400 hover:text-red-500" />
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default function TaskEditPage() {
   const { id } = useParams();
@@ -77,80 +312,12 @@ export default function TaskEditPage() {
   const personnel = usePersonnelStore((state) => state.personnel);
   const teams = useTeamStore((state) => state.teams);
   const regimens = useRegimenStore((state) => state.regimens);
-  const { regions, getRegionById } = useRegionStore();
+  const { regions, getPlotById } = useRegionStore();
 
   const task = getTaskById(Number(id));
 
   const [selectedEnterpriseId, setSelectedEnterpriseId] = useState("");
   const isInitialized = useRef<number | null>(null);
-
-  const getSelectionSummary = (selections: any[]) => {
-    if (!selections || selections.length === 0) return [];
-
-    const summary: {
-      regionId: string;
-      regionName: string;
-      items: {
-        type: "region" | "area" | "plot";
-        id: string;
-        name: string;
-        parentName?: string;
-      }[];
-    }[] = [];
-
-    selections.forEach((sel) => {
-      const region = (regions || []).find(
-        (r: any) => String(r.id) === String(sel.regionId),
-      );
-      if (!region) return;
-
-      let regionGroup = summary.find((s) => s.regionId === String(region.id));
-      if (!regionGroup) {
-        regionGroup = {
-          regionId: String(region.id),
-          regionName: region.name,
-          items: [],
-        };
-        summary.push(regionGroup);
-      }
-
-      if (sel.type === "region") {
-        regionGroup.items.push({
-          type: "region",
-          id: String(region.id),
-          name: `Toàn bộ ${region.name}`,
-        });
-      } else if (sel.type === "area") {
-        const area = region.subAreas?.find(
-          (a: any) => String(a.id) === String(sel.areaId),
-        );
-        if (area) {
-          regionGroup.items.push({
-            type: "area",
-            id: String(area.id),
-            name: area.name,
-          });
-        }
-      } else if (sel.type === "plot") {
-        const area = region.subAreas?.find(
-          (a: any) => String(a.id) === String(sel.areaId),
-        );
-        const plot = area?.plots?.find(
-          (p: any) => String(p.id) === String(sel.plotId),
-        );
-        if (plot) {
-          regionGroup.items.push({
-            type: "plot",
-            id: String(plot.id),
-            name: plot.name,
-            parentName: area?.name,
-          });
-        }
-      }
-    });
-
-    return summary;
-  };
 
   const [formData, setFormData] = useState({
     code: "",
@@ -180,11 +347,6 @@ export default function TaskEditPage() {
     selectedPlotIds: [] as string[],
   });
 
-  const selectionSummary = useMemo(
-    () => getSelectionSummary(formData.geographicalSelections),
-    [formData.geographicalSelections, getRegionById],
-  );
-
   useEffect(() => {
     if (task) {
       if (isInitialized.current === task.id) {
@@ -193,7 +355,9 @@ export default function TaskEditPage() {
 
       // Check if we should wait for stores
       const needsStores = task.plan && task.plan !== "N/A";
-      const storesLoaded = plans.length > 0 && regimens.length > 0;
+      // We also need regions for getPlotById and SelectionCard to show names instead of IDs
+      const storesLoaded =
+        plans.length > 0 && regimens.length > 0 && regions.length > 0;
 
       if (needsStores && !storesLoaded) {
         return;
@@ -230,6 +394,9 @@ export default function TaskEditPage() {
         }
       }
 
+      const taskPlots = (task as any).selectedPlotIds || [];
+      const planPlots = (planMatch?.selectedPlotIds as string[]) || [];
+
       setFormData({
         code: task.code,
         name: task.name,
@@ -253,13 +420,18 @@ export default function TaskEditPage() {
           task.stage && task.stage !== "N/A"
             ? task.stage.split(", ").filter(Boolean)
             : [],
-        selectedPlotIds: (task as any).selectedPlotIds || [],
+        selectedPlotIds: taskPlots.length > 0 ? taskPlots : planPlots,
       });
 
       // Resolve EnterpriseId for "phat-sinh" tasks if not already set
-      if (objType === "phat-sinh" && (task as any).geographicalSelections?.length > 0) {
+      if (
+        objType === "phat-sinh" &&
+        (task as any).geographicalSelections?.length > 0
+      ) {
         const firstRegionId = (task as any).geographicalSelections[0].regionId;
-        const region = regions.find(r => String(r.id) === String(firstRegionId));
+        const region = regions.find(
+          (r) => String(r.id) === String(firstRegionId),
+        );
         if (region) {
           const entId = region.enterpriseId.startsWith("ent-")
             ? region.enterpriseId.replace("ent-", "")
@@ -270,7 +442,7 @@ export default function TaskEditPage() {
 
       isInitialized.current = task.id;
     }
-  }, [task, plans, regimens]);
+  }, [task, plans, regimens, regions]);
 
   const [isAssigneeDialogOpen, setIsAssigneeDialogOpen] = useState(false);
   const [searchAssignee, setSearchAssignee] = useState("");
@@ -465,14 +637,14 @@ export default function TaskEditPage() {
             <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
               <CardHeader className="bg-slate-50/50 border-b border-slate-100">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <ClipboardList className="w-5 h-5 text-emerald-500" />
+                  <ClipboardList className="w-5 h-5 text-primary" />
                   Thông tin cơ bản
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-xs font-black uppercase text-slate-400">
+                    <Label className="text-sm font-bold text-slate-700">
                       Mã công việc *
                     </Label>
                     <Input
@@ -481,11 +653,11 @@ export default function TaskEditPage() {
                         setFormData({ ...formData, code: e.target.value })
                       }
                       placeholder="VD: NV001"
-                      className="rounded-xl border-slate-200"
+                      className="border-slate-200"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs font-black uppercase text-slate-400">
+                    <Label className="text-sm font-bold text-slate-700">
                       Tên công việc *
                     </Label>
                     <Input
@@ -494,13 +666,13 @@ export default function TaskEditPage() {
                         setFormData({ ...formData, name: e.target.value })
                       }
                       placeholder="VD: Bón phân thúc đợt 1"
-                      className="rounded-xl border-slate-200"
+                      className="border-slate-200"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  <Label className="text-sm font-bold text-slate-500 uppercase tracking-wider">
+                  <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                     Hạng mục *
                   </Label>
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -601,178 +773,461 @@ export default function TaskEditPage() {
                 </div>
 
                 {formData.objectiveType === "phat-sinh" && (
-                  <div className="space-y-4 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-top-2">
+                  <div className="space-y-4 pt-2 border-t border-slate-100 animate-in fade-in slide-in-from-top-2">
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
-                        Đơn vị sở hữu *
+                      <Label className="text-sm font-bold text-slate-700">
+                        Đơn vị sở hữu <span className="text-red-500">*</span>
                       </Label>
-                      <EnterpriseSelector
-                        selectedId={selectedEnterpriseId}
-                        onSelect={(val) => {
-                          setSelectedEnterpriseId(val);
-                          setFormData({
-                            ...formData,
-                            geographicalSelections: [],
-                          });
-                        }}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-emerald-500" />
-                          Vùng canh tác / Vùng địa lý *
-                        </Label>
-                        <p className="text-[10px] text-slate-400 font-medium italic">
-                          Chọn phạm vi lô đất thực hiện cho công việc phát sinh
-                        </p>
+                      <div className="pt-2 pb-4">
+                        <EnterpriseSelector
+                          selectedId={selectedEnterpriseId}
+                          onSelect={(val) => {
+                            setSelectedEnterpriseId(val);
+                            setFormData({
+                              ...formData,
+                              geographicalSelections: [],
+                            });
+                          }}
+                        />
                       </div>
-                      <GeographicalSelector
-                        regions={regions}
-                        existingSelections={formData.geographicalSelections}
-                        onConfirm={(selections) =>
-                          setFormData({
-                            ...formData,
-                            geographicalSelections: selections,
-                          })
-                        }
-                        enterpriseId={selectedEnterpriseId || ""}
-                      />
                     </div>
 
-                    {selectionSummary.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {selectionSummary.map((group) => (
-                          <div
-                            key={group.regionId}
-                            className="flex flex-wrap gap-1"
-                          >
-                            {group.items.map((item, i) => (
-                              <Badge
-                                key={`${item.id}-${i}`}
-                                className={cn(
-                                  "text-[10px] px-2.5 py-0 border-none font-bold h-6 shadow-sm shadow-emerald-100/50",
-                                  item.type === "region"
-                                    ? "bg-emerald-50 text-emerald-700"
-                                    : item.type === "area"
-                                      ? "bg-blue-50 text-blue-700"
-                                      : "bg-amber-50 text-amber-700",
-                                )}
-                              >
-                                {item.name}
-                                {item.parentName && (
-                                  <span className="opacity-50 ml-1 font-normal italic">
-                                    ({item.parentName})
-                                  </span>
-                                )}
-                              </Badge>
-                            ))}
+                    <div className="space-y-4 relative">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm font-bold text-slate-700">
+                            Phạm vi địa lý{" "}
+                            <span className="text-red-500">*</span>
+                          </label>
+                          {!selectedEnterpriseId && (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] text-amber-600 border-amber-200 bg-amber-50"
+                            >
+                              Chọn đơn vị sở hữu trước
+                            </Badge>
+                          )}
+                        </div>
+                        <GeographicalSelector
+                          regions={regions}
+                          enterpriseId={selectedEnterpriseId}
+                          existingSelections={formData.geographicalSelections}
+                          onConfirm={(selections) =>
+                            setFormData({
+                              ...formData,
+                              geographicalSelections: selections,
+                            })
+                          }
+                        />
+
+                        {formData.geographicalSelections.length > 0 && (
+                          <div className="mt-4 space-y-3">
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1">
+                              <Layers className="w-3 h-3" />
+                              Phạm vi đã chọn (
+                              {formData.geographicalSelections.length} mục)
+                            </div>
+                            <div className="grid grid-cols-1 gap-4">
+                              {(() => {
+                                const grouped: Record<
+                                  string,
+                                  GeographicalSelection[]
+                                > = {};
+                                formData.geographicalSelections.forEach((s) => {
+                                  const key = s.areaId || s.regionId;
+                                  if (!grouped[key]) grouped[key] = [];
+                                  grouped[key].push(s);
+                                });
+
+                                return Object.entries(grouped).map(
+                                  ([key, items]) => {
+                                    const first = items[0];
+                                    return (
+                                      <SelectionCard
+                                        key={key}
+                                        regionId={first.regionId}
+                                        areaId={first.areaId}
+                                        items={items}
+                                        regions={regions}
+                                        showRemoveButton={false}
+                                        onRemove={() => {}} // Read-only in this summary
+                                      />
+                                    );
+                                  },
+                                );
+                              })()}
+                            </div>
                           </div>
-                        ))}
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 )}
 
                 {formData.objectiveType !== "phat-sinh" && (
-                  <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-black uppercase text-slate-400">
-                        Chọn kế hoạch *
-                      </Label>
-                      <Select
-                        value={formData.planId}
-                        onValueChange={(val) => {
-                          const p = (activePlans as any[]).find(
-                            (p) => String(p.id) === val,
-                          );
-                          setFormData({
-                            ...formData,
-                            planId: val,
-                            planName: p?.name || "",
-                            stage: "",
-                            regimenId: p?.regimenId || formData.regimenId,
-                          });
-                        }}
-                      >
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue placeholder="Chọn kế hoạch..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {activePlans.map((p: any) => (
-                            <SelectItem key={p.id} value={String(p.id)}>
-                              {p.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {formData.objectiveType !== "thu-hoach" && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-top-2 border-t pt-6 mt-6 border-slate-100">
+                    <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label className="text-xs font-black uppercase text-slate-400">
-                          Chọn giai đoạn *
+                        <Label className="text-sm font-bold text-slate-700">
+                          Chọn kế hoạch triển khai *
                         </Label>
                         <Select
-                          value={formData.stage}
-                          onValueChange={(val) =>
-                            setFormData({ ...formData, stage: val })
-                          }
-                          disabled={!formData.planId}
+                          value={formData.planId}
+                          onValueChange={(val) => {
+                            const p = (activePlans as any[]).find(
+                              (p) => String(p.id) === val,
+                            );
+                            const stages =
+                              p?.selectedStages ||
+                              (p?.allocations
+                                ? Array.from(
+                                    new Set(
+                                      p.allocations.map((a: any) => a.stage),
+                                    ),
+                                  )
+                                : []);
+                            setFormData({
+                              ...formData,
+                              planId: val,
+                              planName: p?.name || "",
+                              selectedStages: stages as string[],
+                              selectedPlotIds:
+                                (p?.selectedPlotIds as string[]) || [],
+                              regimenId: p?.regimenId || formData.regimenId,
+                            });
+                          }}
                         >
-                          <SelectTrigger className="rounded-xl">
-                            <SelectValue placeholder="Chọn giai đoạn..." />
+                          <SelectTrigger className="h-12">
+                            <SelectValue placeholder="Chọn kế hoạch áp dụng..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {availableStages.map((s) => (
-                              <SelectItem key={s} value={s}>
-                                {s}
+                            {activePlans.map((p: any) => (
+                              <SelectItem key={p.id} value={String(p.id)}>
+                                {p.name} ({p.code})
                               </SelectItem>
                             ))}
+                            {activePlans.length === 0 && (
+                              <div className="p-4 text-center text-xs text-slate-400 italic">
+                                Không tìm thấy kế hoạch phù hợp
+                              </div>
+                            )}
                           </SelectContent>
                         </Select>
+
+                        {/* Thông tin kế hoạch chi tiết */}
+                        {formData.planId && selectedPlan && (
+                          <div className="p-6 rounded-md bg-white border border-slate-200/60 space-y-5 animate-in slide-in-from-bottom-2 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-primary/10 transition-colors" />
+
+                            <div className="flex items-center justify-between border-b border-slate-100 pb-4 relative z-10">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className={cn(
+                                    "w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm",
+                                    formData.objectiveType === "theo-ke-hoach"
+                                      ? "bg-blue-50 text-blue-600"
+                                      : formData.objectiveType === "thu-hoach"
+                                        ? "bg-orange-50 text-orange-600"
+                                        : formData.objectiveType ===
+                                            "cai-tao-dat"
+                                          ? "bg-green-50 text-green-600"
+                                          : "bg-red-50 text-red-600",
+                                  )}
+                                >
+                                  {formData.objectiveType ===
+                                  "theo-ke-hoach" ? (
+                                    <Layers className="w-5 h-5" />
+                                  ) : formData.objectiveType === "thu-hoach" ? (
+                                    <Apple className="w-5 h-5" />
+                                  ) : formData.objectiveType ===
+                                    "cai-tao-dat" ? (
+                                    <Sprout className="w-5 h-5" />
+                                  ) : (
+                                    <Bug className="w-5 h-5" />
+                                  )}
+                                </div>
+                                <div>
+                                  <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider leading-none mb-1.5">
+                                    Chi tiết kế hoạch
+                                  </h4>
+                                  <p className="text-base font-bold text-slate-900 leading-none">
+                                    {(selectedPlan as any).name}
+                                  </p>
+                                </div>
+                              </div>
+                              <Badge
+                                variant="outline"
+                                className="font-mono text-[10px] px-2.5 py-0.5 border-slate-200 text-slate-500 bg-slate-50/50"
+                              >
+                                {(selectedPlan as any).code}
+                              </Badge>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-x-6 gap-y-5 text-sm relative z-10">
+                              <div className="space-y-1.5">
+                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                                  Thời hạn thực hiện
+                                </span>
+                                <div className="flex items-center gap-2.5 text-slate-700 bg-slate-50/80 p-2 rounded-xl border border-slate-100/50">
+                                  <CalendarIcon className="w-4 h-4 text-amber-500 shrink-0" />
+                                  <span className="font-bold">
+                                    {(selectedPlan as any).startDate} →{" "}
+                                    {(selectedPlan as any).endDate}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {formData.objectiveType === "theo-ke-hoach" && (
+                                <>
+                                  <div className="space-y-1.5">
+                                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                                      Cây trồng & Giống
+                                    </span>
+                                    <div className="flex items-center gap-2.5 text-slate-700 bg-blue-50/30 p-2 rounded-xl border border-blue-100/50">
+                                      <Sprout className="w-4 h-4 text-green-500 shrink-0" />
+                                      <span className="font-bold">
+                                        {(selectedPlan as any).crop} -{" "}
+                                        {(selectedPlan as any).variety || "N/A"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="col-span-2 space-y-2 pt-2 border-t border-slate-100">
+                                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                                      Danh sách giai đoạn canh tác
+                                    </span>
+                                    <div className="flex flex-wrap gap-1.5 mt-1.5 p-3 rounded-2xl bg-blue-50/10 border border-blue-100/30">
+                                      {(
+                                        (selectedPlan as any).selectedStages ||
+                                        []
+                                      ).map((s: string) => (
+                                        <Badge
+                                          key={s}
+                                          variant="secondary"
+                                          className="bg-white text-blue-600 border-blue-100 shadow-sm text-[10px] px-3 font-bold"
+                                        >
+                                          {s}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+
+                              {formData.objectiveType === "cai-tao-dat" && (
+                                <>
+                                  <div className="col-span-2 space-y-1.5">
+                                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                                      Mục tiêu cải tạo / Vấn đề
+                                    </span>
+                                    <div className="flex items-center gap-2.5 text-green-700 bg-green-50/40 p-3 rounded-xl border border-green-100/50">
+                                      <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                                      <span className="font-bold">
+                                        {(selectedPlan as any).target_issue ||
+                                          "Cải tạo định kỳ"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {(selectedPlan as any).technician && (
+                                    <div className="space-y-1.5">
+                                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                                        Chuyên gia phụ trách
+                                      </span>
+                                      <div className="flex items-center gap-2.5 text-slate-700 bg-slate-50 p-2 rounded-xl">
+                                        <User className="w-4 h-4 text-blue-400" />
+                                        <span className="font-bold">
+                                          {(selectedPlan as any).technician}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
+
+                      <div className="grid gap-6 grid-cols-1">
+                        {/* Multi-select Plots Summary */}
+                        <div className="space-y-4">
+                          <Label className="text-sm font-bold text-slate-700 flex items-center justify-between">
+                            Vùng canh tác / Vùng địa lý
+                            <span className="text-[10px] text-slate-400 font-normal opacity-70">
+                              (Khóa chỉnh sửa)
+                            </span>
+                          </Label>
+
+                          <div className="grid grid-cols-1 gap-4">
+                            {(() => {
+                              const tempSelections: GeographicalSelection[] =
+                                formData.selectedPlotIds.map((plotId) => {
+                                  const data = getPlotById(plotId);
+                                  return {
+                                    id: Math.random().toString(36).substr(2, 9),
+                                    type: "plot" as const,
+                                    regionId: String(data?.region?.id || ""),
+                                    areaId: String(data?.area?.id || ""),
+                                    plotId: plotId,
+                                  };
+                                });
+
+                              const grouped: Record<
+                                string,
+                                GeographicalSelection[]
+                              > = {};
+                              tempSelections.forEach((s) => {
+                                const key = s.areaId || s.regionId;
+                                if (!grouped[key]) grouped[key] = [];
+                                grouped[key].push(s);
+                              });
+
+                              return Object.entries(grouped).map(
+                                ([key, items]) => {
+                                  const first = items[0];
+                                  return (
+                                    <SelectionCard
+                                      key={key}
+                                      regionId={first.regionId}
+                                      areaId={first.areaId}
+                                      items={items}
+                                      regions={regions}
+                                      showRemoveButton={false}
+                                      onRemove={() => {}}
+                                    />
+                                  );
+                                },
+                              );
+                            })()}
+
+                            {formData.selectedPlotIds.length === 0 && (
+                              <div className="flex flex-col items-center justify-center py-12 px-6 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50 text-center gap-2 animate-in fade-in duration-500">
+                                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm text-slate-300">
+                                  <MapPin className="w-6 h-6" />
+                                </div>
+                                <div className="text-sm font-bold text-slate-600">
+                                  Chưa có lựa chọn nào
+                                </div>
+                                <div className="text-[11px] text-slate-400 max-w-50 mx-auto mt-1">
+                                  {formData.planId
+                                    ? "Kế hoạch không quy định lô đất"
+                                    : "Hãy chọn kế hoạch trước"}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Multi-select Stages */}
+                        <div className="space-y-3">
+                          <Label className="text-sm font-bold text-slate-700 flex items-center justify-between">
+                            Giai đoạn thực hiện *
+                            <span className="text-[10px] text-slate-400 font-normal">
+                              Chọn nhiều
+                            </span>
+                          </Label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {availableStages.map((s) => {
+                              const isSelected =
+                                formData.selectedStages.includes(s);
+                              return (
+                                <div
+                                  key={s}
+                                  onClick={() => {
+                                    const next = isSelected
+                                      ? formData.selectedStages.filter(
+                                          (item) => item !== s,
+                                        )
+                                      : [...formData.selectedStages, s];
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      selectedStages: next,
+                                      stage: next.join(", "),
+                                    }));
+                                  }}
+                                  className={cn(
+                                    "flex items-center gap-4 p-4 rounded-md border transition-all cursor-pointer group",
+                                    isSelected
+                                      ? "bg-primary/5 border-primary shadow-sm"
+                                      : "bg-white border-slate-200 hover:border-primary/20 hover:bg-slate-50/50",
+                                  )}
+                                >
+                                  <Checkbox
+                                    id={`stage-${s}`}
+                                    checked={isSelected}
+                                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                    onClick={(e) => e.stopPropagation()}
+                                    onCheckedChange={(checked) => {
+                                      const next = checked
+                                        ? [...formData.selectedStages, s]
+                                        : formData.selectedStages.filter(
+                                            (item) => item !== s,
+                                          );
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        selectedStages: next,
+                                        stage: next.join(", "),
+                                      }));
+                                    }}
+                                  />
+                                  <label
+                                    htmlFor={`stage-${s}`}
+                                    className="text-sm font-bold text-slate-700 cursor-pointer flex-1"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {s}
+                                  </label>
+                                </div>
+                              );
+                            })}
+                            {availableStages.length === 0 && (
+                              <div className="col-span-full py-12 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50 flex flex-col items-center justify-center gap-2">
+                                <Layers className="w-8 h-8 text-slate-200" />
+                                <p className="text-xs text-slate-400 italic">
+                                  {formData.planId
+                                    ? "Kế hoạch không có giai đoạn"
+                                    : "Hãy chọn kế hoạch trước"}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 
                 {(formData.objectiveType === "cai-tao-dat" ||
                   formData.objectiveType === "tri-benh") && (
-                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                    <Label className="text-xs font-black uppercase text-slate-400">
+                  <div className="space-y-4 mt-2 animate-in fade-in slide-in-from-top-2">
+                    <Label className="text-sm font-bold text-slate-700">
                       {formData.objectiveType === "cai-tao-dat"
-                        ? "Phác đồ cải tạo đất áp dụng *"
-                        : "Phác đồ trị bệnh áp dụng *"}
+                        ? "Phác đồ cải tạo đất áp dụng"
+                        : "Phác đồ trị bệnh áp dụng"}
                     </Label>
-                    <Select
-                      value={formData.regimenId}
-                      onValueChange={(val) =>
-                        setFormData({ ...formData, regimenId: val })
+                    <RegimenSelector
+                      regimens={regimens}
+                      selectedRegimenId={formData.regimenId}
+                      disabled={!!(selectedPlan as any)?.regimenId}
+                      type={
+                        formData.objectiveType === "cai-tao-dat"
+                          ? "amendment"
+                          : "treatment"
                       }
-                    >
-                      <SelectTrigger className="rounded-xl">
-                        <SelectValue
-                          placeholder={`Chọn phác đồ ${formData.objectiveType === "cai-tao-dat" ? "cải tạo" : "trị bệnh"}...`}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {regimens
-                          .filter((r) => r.type === formData.objectiveType)
-                          .map((r) => (
-                            <SelectItem key={r.id} value={r.id}>
-                              {r.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                      onSelect={(regimen) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          regimenId: regimen.id,
+                        }));
+                      }}
+                    />
                   </div>
                 )}
 
                 {/* Nhân sự quản lý */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-blue-500" />
+                    <Label className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                      {/* <Shield className="w-4 h-4 text-blue-500" /> */}
                       Nhân sự quản lý
                     </Label>
                     <Button
@@ -844,9 +1299,9 @@ export default function TaskEditPage() {
 
                 {/* Kiểm định chất lượng */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                      <ClipboardCheck className="w-4 h-4 text-violet-500" />
+                  <div className="flex items-end justify-between">
+                    <Label className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                      {/* <ClipboardCheck className="w-4 h-4 text-violet-500" /> */}
                       Kiểm định chất lượng
                     </Label>
                     <Button
@@ -940,7 +1395,7 @@ export default function TaskEditPage() {
                         />
                       </div>
                     </div>
-                    <ScrollArea className="h-[300px] px-3">
+                    <ScrollArea className="h-75 px-3">
                       <div className="space-y-1 pb-2">
                         {personnel
                           .filter((p) =>
@@ -1034,7 +1489,7 @@ export default function TaskEditPage() {
                         />
                       </div>
                     </div>
-                    <ScrollArea className="h-[300px] px-3">
+                    <ScrollArea className="h-75 px-3">
                       <div className="space-y-1 pb-2">
                         {personnel
                           .filter((p) =>
@@ -1111,7 +1566,7 @@ export default function TaskEditPage() {
             <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
               <CardHeader className="bg-slate-50/50 border-b border-slate-100">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <CalendarIcon className="w-5 h-5 text-emerald-500" />
+                  <CalendarIcon className="w-5 h-5 text-primary" />
                   Thời gian & Ưu tiên
                 </CardTitle>
               </CardHeader>
@@ -1153,9 +1608,9 @@ export default function TaskEditPage() {
                         label: "Thấp",
                         color: "emerald",
                         activeClass:
-                          "bg-emerald-500 text-white border-emerald-500 shadow-emerald-200",
+                          "bg-primary text-white border-primary shadow-primary/5",
                         inactiveClass:
-                          "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100",
+                          "bg-primary/5 text-primary/60 border-primary/10 hover:bg-primary/10",
                       },
                       {
                         id: "medium",
@@ -1199,7 +1654,7 @@ export default function TaskEditPage() {
             <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
               <CardHeader className="bg-slate-50/50 border-b border-slate-100">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <StickyNote className="w-5 h-5 text-emerald-500" />
+                  <StickyNote className="w-5 h-5 text-primary" />
                   Ghi chú
                 </CardTitle>
               </CardHeader>
@@ -1276,7 +1731,6 @@ export default function TaskEditPage() {
                   regions={regions}
                   personnel={personnel}
                   enterpriseId={selectedEnterpriseId || ""}
-                  disableScopeSelection={false}
                   availableTasks={
                     formData.objectiveType === "theo-ke-hoach"
                       ? selectedPlan?.taskAllocations.filter(
@@ -1318,7 +1772,6 @@ export default function TaskEditPage() {
                 regions={filteredRegionsForPhatSinh}
                 personnel={personnel}
                 enterpriseId={selectedEnterpriseId || ""}
-                disableScopeSelection={false}
               />
             ) : (
               (() => {
@@ -1351,8 +1804,8 @@ export default function TaskEditPage() {
                 return (
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animation-slide-up">
                     {/* --- LEFT SIDE: Task Addition --- */}
-                    <div className="lg:col-span-7 space-y-5">
-                      <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-sm space-y-4">
+                    <div className="lg:col-span-12 space-y-5">
+                      {/* <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-sm space-y-4">
                         <div className="flex items-center justify-between border-b pb-3">
                           <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
                             Danh mục đề xuất
@@ -1404,7 +1857,7 @@ export default function TaskEditPage() {
                             </div>
                           )}
                         </div>
-                      </div>
+                      </div> */}
 
                       <TaskStageAllocation
                         stageName={stageName}
@@ -1437,12 +1890,11 @@ export default function TaskEditPage() {
                           []
                         }
                         availableMaterials={selectedPlan?.materialAllocations}
-                        disableScopeSelection={false}
                       />
                     </div>
 
                     {/* --- RIGHT SIDE: Timeline --- */}
-                    <div className="lg:col-span-5 bg-slate-900 rounded-xl p-8 text-white shadow-2xl relative overflow-hidden min-h-[500px]">
+                    {/* <div className="lg:col-span-5 bg-slate-900 rounded-xl p-8 text-white shadow-2xl relative overflow-hidden min-h-[500px]">
                       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full -mr-32 -mt-32 blur-3xl" />
 
                       <div className="relative z-10">
@@ -1461,7 +1913,6 @@ export default function TaskEditPage() {
                         </div>
 
                         <div className="space-y-0 relative">
-                          {/* Timeline Line */}
                           <div className="absolute left-[23px] top-6 bottom-6 w-0.5 bg-linear-to-b from-primary via-slate-700 to-transparent" />
 
                           {regimen.steps?.map((step, idx) => (
@@ -1497,10 +1948,9 @@ export default function TaskEditPage() {
                                   {step.description}
                                 </p>
 
-                                {/* Task Status indicator in timeline */}
                                 <div className="flex items-center gap-4 mt-3">
                                   <div className="flex items-center gap-1.5">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                                       Sẵn sàng
                                     </span>
@@ -1522,7 +1972,7 @@ export default function TaskEditPage() {
                           )}
                         </div>
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                 );
               })()
@@ -1540,15 +1990,15 @@ export default function TaskEditPage() {
           {/* ── LEFT COLUMN ── */}
           <div className="lg:col-span-2 space-y-4">
             {/* Identity banner */}
-            <div className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-teal-50/40 p-6 shadow-sm">
-              <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-emerald-400/10 blur-2xl pointer-events-none" />
+            <div className="relative overflow-hidden rounded-2xl border border-primary/10 bg-linear-to-br from-primary/5 via-white to-teal-50/40 p-6 shadow-sm">
+              <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-primary/10 blur-2xl pointer-events-none" />
               <div className="relative flex items-start justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-white shadow border border-emerald-100 flex items-center justify-center shrink-0">
+                  <div className="w-14 h-14 rounded-2xl bg-white shadow border border-primary/10 flex items-center justify-center shrink-0">
                     {formData.objectiveType === "tri-benh" ? (
                       <Bug className="w-7 h-7 text-rose-500" />
                     ) : formData.objectiveType === "cai-tao-dat" ? (
-                      <Sprout className="w-7 h-7 text-emerald-500" />
+                      <Sprout className="w-7 h-7 text-primary" />
                     ) : formData.objectiveType === "phat-sinh" ? (
                       <Info className="w-7 h-7 text-amber-500" />
                     ) : (
@@ -1556,7 +2006,7 @@ export default function TaskEditPage() {
                     )}
                   </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-600 mb-0.5">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary/60 mb-0.5">
                       {formData.objectiveType === "theo-ke-hoach"
                         ? "Theo kế hoạch"
                         : formData.objectiveType === "cai-tao-dat"
@@ -1587,7 +2037,7 @@ export default function TaskEditPage() {
                             ? "bg-rose-500 text-white"
                             : formData.priority === "medium"
                               ? "bg-amber-500 text-white"
-                              : "bg-emerald-500 text-white",
+                              : "bg-primary text-white",
                         )}
                       >
                         {formData.priority === "high"
@@ -1644,16 +2094,45 @@ export default function TaskEditPage() {
                         </div>
                       )}
                     </div>
-                    {formData.selectedPlotIds.length > 0 && (
-                      <div className="shrink-0 text-right">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
-                          Phạm vi lô đất
-                        </p>
-                        <p className="text-xs font-semibold text-slate-700 max-w-[160px] text-right leading-snug">
-                          {formData.selectedPlotIds.join(", ")}
-                        </p>
+                    <div className="shrink-0 text-right">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                        Phạm vi lô đất
+                      </p>
+                      <div className="flex justify-end">
+                        <div className="w-75 text-left">
+                          <div className="grid grid-cols-1 gap-2">
+                            {(() => {
+                              const grouped: Record<
+                                string,
+                                GeographicalSelection[]
+                              > = {};
+                              formData.geographicalSelections.forEach((s) => {
+                                const key = s.areaId || s.regionId;
+                                if (!grouped[key]) grouped[key] = [];
+                                grouped[key].push(s);
+                              });
+
+                              return Object.entries(grouped).map(
+                                ([key, items]) => {
+                                  const first = items[0];
+                                  return (
+                                    <SelectionCard
+                                      key={key}
+                                      regionId={first.regionId}
+                                      areaId={first.areaId}
+                                      items={items}
+                                      regions={regions}
+                                      showRemoveButton={false}
+                                      onRemove={() => {}}
+                                    />
+                                  );
+                                },
+                              );
+                            })()}
+                          </div>
+                        </div>
                       </div>
-                    )}
+                    </div>
                   </div>
                 )}
                 {/* Description row */}
@@ -1679,7 +2158,7 @@ export default function TaskEditPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between px-2">
                 <h4 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                  <ClipboardList className="w-4 h-4 text-emerald-500" />
+                  <ClipboardList className="w-4 h-4 text-primary" />
                   Danh sách công việc chi tiết
                 </h4>
                 <Badge
@@ -1707,7 +2186,7 @@ export default function TaskEditPage() {
                     {/* Task Header */}
                     <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                       <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-6 h-6 rounded-md bg-emerald-500 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                        <div className="w-6 h-6 rounded-md bg-primary text-white flex items-center justify-center text-[10px] font-bold shrink-0">
                           {taskIdx + 1}
                         </div>
                         <span className="font-bold text-slate-800 truncate">
@@ -1732,9 +2211,24 @@ export default function TaskEditPage() {
                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
                               Nhân sự
                             </p>
-                            <p className="text-xs font-semibold text-slate-700 leading-snug">
-                              {task.labor || "Chưa phân công"}
-                            </p>
+                            <div className="flex flex-wrap gap-1.5 mt-1">
+                              {task.labor ? (
+                                task.labor.split(",").map((person, idx) => (
+                                  <Badge
+                                    key={idx}
+                                    variant="secondary"
+                                    className="bg-blue-50 text-blue-700 border-none text-[10px] font-bold px-2 py-0 h-5"
+                                  >
+                                    <User className="w-3 h-3 mr-1 opacity-50" />
+                                    {person.trim()}
+                                  </Badge>
+                                ))
+                              ) : (
+                                <span className="text-xs font-semibold text-slate-400 italic">
+                                  Chưa phân công
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-start gap-2.5">
@@ -1759,36 +2253,35 @@ export default function TaskEditPage() {
                               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 text-left">
                                 Phạm vi thực hiện
                               </p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {getSelectionSummary(
-                                  task.geographicalSelections,
-                                ).map((group) => (
-                                  <div
-                                    key={group.regionId}
-                                    className="flex flex-wrap gap-1"
-                                  >
-                                    {group.items.map((item, i) => (
-                                      <Badge
-                                        key={`${item.id}-${i}`}
-                                        className={cn(
-                                          "text-[10px] px-2 py-0 border-none font-medium h-5",
-                                          item.type === "region"
-                                            ? "bg-emerald-50 text-emerald-700"
-                                            : item.type === "area"
-                                              ? "bg-blue-50 text-blue-700"
-                                              : "bg-amber-50 text-amber-700",
-                                        )}
-                                      >
-                                        {item.name}
-                                        {item.parentName && (
-                                          <span className="opacity-50 ml-1 font-normal">
-                                            ({item.parentName})
-                                          </span>
-                                        )}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                ))}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {(() => {
+                                  const grouped: Record<
+                                    string,
+                                    GeographicalSelection[]
+                                  > = {};
+                                  task.geographicalSelections!.forEach((s) => {
+                                    const key = s.areaId || s.regionId;
+                                    if (!grouped[key]) grouped[key] = [];
+                                    grouped[key].push(s);
+                                  });
+
+                                  return Object.entries(grouped).map(
+                                    ([key, items]) => {
+                                      const first = items[0];
+                                      return (
+                                        <SelectionCard
+                                          key={key}
+                                          regionId={first.regionId}
+                                          areaId={first.areaId}
+                                          items={items}
+                                          regions={regions}
+                                          showRemoveButton={false}
+                                          onRemove={() => {}}
+                                        />
+                                      );
+                                    },
+                                  );
+                                })()}
                               </div>
                             </div>
                           </div>
@@ -1833,12 +2326,12 @@ export default function TaskEditPage() {
           {/* ── RIGHT COLUMN: CTA + notice ── */}
           <div className="space-y-4">
             <Card className="bg-slate-900 border-none text-white shadow-2xl overflow-hidden relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 pointer-events-none" />
-              <div className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
+              <div className="absolute inset-0 bg-linear-to-br from-slate-800 to-slate-950 pointer-events-none" />
+              <div className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-primary/10 blur-2xl pointer-events-none" />
               <CardHeader className="border-b border-white/10 pb-4 relative">
                 <CardTitle className="text-white text-sm flex items-center gap-2.5">
-                  <div className="p-1.5 bg-emerald-500/20 rounded-lg">
-                    <FileCheck className="w-4 h-4 text-emerald-400" />
+                  <div className="p-1.5 bg-primary/20 rounded-lg">
+                    <FileCheck className="w-4 h-4 text-primary/40" />
                   </div>
                   Tóm tắt thay đổi
                 </CardTitle>
@@ -1909,7 +2402,7 @@ export default function TaskEditPage() {
                             ? "text-rose-400"
                             : formData.priority === "medium"
                               ? "text-amber-400"
-                              : "text-emerald-400",
+                              : "text-primary/40",
                         )}
                       >
                         {formData.priority === "high"
@@ -1926,7 +2419,7 @@ export default function TaskEditPage() {
                 <div className="pt-1">
                   <Button
                     onClick={handleComplete}
-                    className="w-full bg-emerald-500 hover:bg-emerald-400 text-white border-none h-12 text-base font-black shadow-[0_8px_24px_-8px_rgba(16,185,129,0.6)] transition-all hover:-translate-y-0.5 active:translate-y-0"
+                    className="w-full bg-primary hover:bg-primary/40 text-white border-none h-12 text-base font-black shadow-[0_8px_24px_-8px_rgba(16,185,129,0.6)] transition-all hover:-translate-y-0.5 active:translate-y-0"
                   >
                     <CheckCircle2 className="w-5 h-5 mr-2" />
                     Lưu các thay đổi
@@ -1998,11 +2491,10 @@ export default function TaskEditPage() {
         open={isAssigneeDialogOpen}
         onOpenChange={setIsAssigneeDialogOpen}
       >
-        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-[32px]">
+        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-[32px] bg-white">
           <DialogHeader className="p-8 pb-4 bg-slate-50/50">
-            <DialogTitle className="flex items-center gap-3 text-2xl font-black tracking-tight">
-              <Users className="w-6 h-6 text-emerald-500" /> Chọn người thực
-              hiện
+            <DialogTitle className="flex items-end gap-3 text-2xl font-black tracking-tight">
+              <Users className="w-6 h-6 text-primary" /> Chọn người thực hiện
             </DialogTitle>
             <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">
               Danh sách{" "}
@@ -2013,10 +2505,10 @@ export default function TaskEditPage() {
           </DialogHeader>
           <div className="p-8 pt-4 space-y-6">
             <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors" />
               <Input
                 placeholder="Tìm nhanh theo tên hoặc mã..."
-                className="pl-11 h-12 rounded-xl border-slate-200 focus:border-emerald-500 transition-all font-medium"
+                className="pl-11 h-12 rounded-xl border-slate-200 focus:border-primary transition-all font-medium"
                 value={searchAssignee}
                 onChange={(e) => setSearchAssignee(e.target.value)}
               />
@@ -2031,7 +2523,7 @@ export default function TaskEditPage() {
                       className={cn(
                         "flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all border-2",
                         isSelected
-                          ? "bg-emerald-50 border-emerald-500/20 shadow-sm"
+                          ? "bg-primary/5 border-primary/20 shadow-sm"
                           : "bg-white border-transparent hover:border-slate-100 hover:bg-slate-50",
                       )}
                       onClick={() => {
@@ -2045,7 +2537,7 @@ export default function TaskEditPage() {
                     >
                       <Checkbox
                         checked={isSelected}
-                        className="rounded-md border-slate-300 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-none"
+                        className="rounded-md border-slate-300 data-[state=checked]:bg-primary data-[state=checked]:border-none"
                       />
                       <div className="h-11 w-11 overflow-hidden rounded-[15px] border-2 border-white shadow-sm bg-slate-100 flex items-center justify-center shrink-0">
                         {formData.assignedType === "team" ? (
@@ -2057,7 +2549,7 @@ export default function TaskEditPage() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <User className="w-5 h-5 text-emerald-500" />
+                          <User className="w-5 h-5 text-primary" />
                         )}
                       </div>
                       <div className="flex-1">
@@ -2069,7 +2561,7 @@ export default function TaskEditPage() {
                         </p>
                       </div>
                       {isSelected && (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        <CheckCircle2 className="w-4 h-4 text-primary/60" />
                       )}
                     </div>
                   );
