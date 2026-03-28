@@ -209,12 +209,14 @@ export function reconstructSelectionsFromPlan(plan: Plan, regions: any[]) {
     );
     if (!region) return;
 
-    const regionZoneIds = region.subAreas?.map((item: any) => String(item.id)) || [];
+    const regionZoneIds =
+      region.subAreas?.map((item: any) => String(item.id)) || [];
     const isWholeRegion =
-      regionZoneIds.length > 0 &&
-      regionZoneIds.every((id: string) =>
-        (plan.selectedZoneIds || []).includes(id),
-      );
+      regionZoneIds.length === 0 ||
+      (regionZoneIds.length > 0 &&
+        regionZoneIds.every((id: string) =>
+          (plan.selectedZoneIds || []).includes(id),
+        ));
 
     if (isWholeRegion) {
       selections.push({
@@ -231,10 +233,11 @@ export function reconstructSelectionsFromPlan(plan: Plan, regions: any[]) {
 
       const areaPlotIds = area.plots?.map((item: any) => String(item.id)) || [];
       const isWholeArea =
-        areaPlotIds.length > 0 &&
-        areaPlotIds.every((id: string) =>
-          (plan.selectedPlotIds || []).includes(id),
-        );
+        areaPlotIds.length === 0 ||
+        (areaPlotIds.length > 0 &&
+          areaPlotIds.every((id: string) =>
+            (plan.selectedPlotIds || []).includes(id),
+          ));
 
       if (isWholeArea) {
         selections.push({

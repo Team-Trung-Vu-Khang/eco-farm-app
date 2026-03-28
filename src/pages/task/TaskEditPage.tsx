@@ -58,6 +58,7 @@ import { useLocation, useParams } from "wouter";
 
 import usePersonnelStore from "../../stores/usePersonnelStore";
 import usePlanStore from "../../stores/usePlanStore";
+import useAmendmentPlanStore from "../../stores/useAmendmentPlanStore";
 import useRegimenStore from "../../stores/useRegimenStore";
 import useRegionStore from "../../stores/useRegionStore";
 import useTaskStore from "../../stores/useTaskStore";
@@ -309,6 +310,7 @@ export default function TaskEditPage() {
   const [, setLocation] = useLocation();
   const { getTaskById, updateTask } = useTaskStore();
   const plans = usePlanStore((state) => state.plans);
+  const amendmentPlans = useAmendmentPlanStore((state) => state.plans);
   const personnel = usePersonnelStore((state) => state.personnel);
   const teams = useTeamStore((state) => state.teams);
   const regimens = useRegimenStore((state) => state.regimens);
@@ -368,7 +370,9 @@ export default function TaskEditPage() {
       let pId = "";
       let rId = "";
 
-      const planMatch = plans.find((p) => p.name === task.plan);
+      const planMatch = [...plans, ...amendmentPlans].find(
+        (p) => p.name === task.plan,
+      );
 
       if (planMatch) {
         // Map plan purpose to objectiveType id
@@ -379,7 +383,9 @@ export default function TaskEditPage() {
           cultivation: "theo-ke-hoach",
           incurred: "phat-sinh",
         };
-        objType = purposeMap[planMatch.purpose] || "theo-ke-hoach";
+        objType =
+          (planMatch.purpose ? purposeMap[planMatch.purpose] : undefined) ||
+          "theo-ke-hoach";
         pId = String(planMatch.id);
 
         // Also check if it has a regimen associated
@@ -452,17 +458,38 @@ export default function TaskEditPage() {
   const [searchInspector, setSearchInspector] = useState("");
   if (!task) return <div>Không tìm thấy công việc</div>;
 
-  const activePlans =
-    formData.objectiveType === "theo-ke-hoach"
-      ? plans.filter((p) => p.purpose === "cultivation")
-      : formData.objectiveType === "thu-hoach"
-        ? plans.filter((p) => p.purpose === "harvest")
-        : formData.objectiveType === "tri-benh"
-          ? plans.filter((p) => p.purpose === "treatment")
-          : [];
+  const activePlans = useMemo(() => {
+    const basePlans = plans.filter((p) => {
+      if (formData.objectiveType === "theo-ke-hoach")
+        return p.purpose === "cultivation";
+      if (formData.objectiveType === "thu-hoach")
+        return p.purpose === "harvest";
+      if (formData.objectiveType === "tri-benh")
+        return p.purpose === "treatment";
+      if (formData.objectiveType === "cai-tao-dat")
+        return p.purpose === "amendment";
+      return false;
+    });
 
-  const selectedPlan = plans.find((p) => String(p.id) === formData.planId);
-  const availableStages = selectedPlan?.selectedStages || [];
+    if (formData.objectiveType === "cai-tao-dat") {
+      return [...basePlans, ...amendmentPlans];
+    }
+    return basePlans;
+  }, [formData.objectiveType, plans, amendmentPlans]);
+
+  const selectedPlan = (activePlans as any[]).find(
+    (p) => String(p.id) === formData.planId,
+  );
+  const availableStages = useMemo((): string[] => {
+    if (!selectedPlan) return [];
+    if ("selectedStages" in selectedPlan) return selectedPlan.selectedStages;
+    if ("allocations" in selectedPlan) {
+      return Array.from(
+        new Set(selectedPlan.allocations.map((a: any) => a.stage)),
+      );
+    }
+    return [];
+  }, [selectedPlan]);
   const availableAssignees =
     formData.assignedType === "team"
       ? teams.map((t) => ({ id: t.id, name: t.name, code: t.code, avatar: "" }))
@@ -1707,7 +1734,11 @@ export default function TaskEditPage() {
 
           <div className="space-y-4">
             {formData.objectiveType === "theo-ke-hoach" ||
-            formData.objectiveType === "thu-hoach" ? (
+            formData.objectiveType === "thu-hoach" ||
+            ((formData.objectiveType === "cai-tao-dat" ||
+              formData.objectiveType === "tri-benh") &&
+              formData.selectedStages.length > 0 &&
+              !formData.regimenId) ? (
               (formData.selectedStages.length > 0
                 ? formData.selectedStages
                 : formData.objectiveType === "thu-hoach"
@@ -1717,6 +1748,13 @@ export default function TaskEditPage() {
                 <TaskStageAllocation
                   key={stageName}
                   stageName={stageName}
+                  cycleName={
+                    formData.objectiveType === "cai-tao-dat"
+                      ? "Cải tạo đất"
+                      : formData.objectiveType === "tri-benh"
+                        ? "Điều trị bệnh"
+                        : undefined
+                  }
                   allocations={formData.materials.filter(
                     (m) => m.stageId === stageName,
                   )}
@@ -1730,10 +1768,16 @@ export default function TaskEditPage() {
                   onUpdateTask={handleUpdateTask}
                   regions={regions}
                   personnel={personnel}
-                  enterpriseId={selectedEnterpriseId || ""}
+                  enterpriseId={
+                    selectedEnterpriseId ||
+                    (selectedPlan as any)?.enterpriseId ||
+                    ""
+                  }
                   availableTasks={
-                    formData.objectiveType === "theo-ke-hoach"
-                      ? selectedPlan?.taskAllocations.filter(
+                    formData.objectiveType === "theo-ke-hoach" ||
+                    formData.objectiveType === "cai-tao-dat" ||
+                    formData.objectiveType === "tri-benh"
+                      ? selectedPlan?.taskAllocations?.filter(
                           (t: any) => t.stageId === stageName,
                         )
                       : formData.objectiveType !== "phat-sinh"
@@ -1741,8 +1785,10 @@ export default function TaskEditPage() {
                         : undefined
                   }
                   availableMaterials={
-                    formData.objectiveType === "theo-ke-hoach"
-                      ? selectedPlan?.materialAllocations.filter(
+                    formData.objectiveType === "theo-ke-hoach" ||
+                    formData.objectiveType === "cai-tao-dat" ||
+                    formData.objectiveType === "tri-benh"
+                      ? selectedPlan?.materialAllocations?.filter(
                           (m: any) => m.stageId === stageName,
                         )
                       : formData.objectiveType !== "phat-sinh"

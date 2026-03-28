@@ -431,16 +431,24 @@ export default function TaskCreatePage() {
     unit: "kg",
   });
 
-  const activePlans =
-    formData.objectiveType === "theo-ke-hoach"
-      ? plans.filter((p) => p.purpose === "cultivation")
-      : formData.objectiveType === "thu-hoach"
-        ? plans.filter((p) => p.purpose === "harvest")
-        : formData.objectiveType === "tri-benh"
-          ? plans.filter((p) => p.purpose === "treatment")
-          : formData.objectiveType === "cai-tao-dat"
-            ? amendmentPlans
-            : [];
+  const activePlans = useMemo(() => {
+    const basePlans = plans.filter((p) => {
+      if (formData.objectiveType === "theo-ke-hoach")
+        return p.purpose === "cultivation";
+      if (formData.objectiveType === "thu-hoach")
+        return p.purpose === "harvest";
+      if (formData.objectiveType === "tri-benh")
+        return p.purpose === "treatment";
+      if (formData.objectiveType === "cai-tao-dat")
+        return p.purpose === "amendment";
+      return false;
+    });
+
+    if (formData.objectiveType === "cai-tao-dat") {
+      return [...basePlans, ...amendmentPlans];
+    }
+    return basePlans;
+  }, [formData.objectiveType, plans, amendmentPlans]);
 
   const selectedPlan = (activePlans as any[]).find(
     (p) => String(p.id) === formData.planId,
@@ -1936,7 +1944,11 @@ export default function TaskCreatePage() {
 
           <div className="space-y-4">
             {formData.objectiveType === "theo-ke-hoach" ||
-            formData.objectiveType === "thu-hoach" ? (
+            formData.objectiveType === "thu-hoach" ||
+            ((formData.objectiveType === "cai-tao-dat" ||
+              formData.objectiveType === "tri-benh") &&
+              formData.selectedStages.length > 0 &&
+              !formData.regimenId) ? (
               (formData.selectedStages.length > 0
                 ? formData.selectedStages
                 : formData.objectiveType === "thu-hoach"
@@ -1946,13 +1958,20 @@ export default function TaskCreatePage() {
                 <TaskStageAllocation
                   key={stageName}
                   stageName={stageName}
+                  cycleName={
+                    formData.objectiveType === "cai-tao-dat"
+                      ? "Cải tạo đất"
+                      : formData.objectiveType === "tri-benh"
+                        ? "Điều trị bệnh"
+                        : undefined
+                  }
                   allocations={formData.materials.filter(
                     (m: any) => m.stageId === stageName,
                   )}
                   tasks={formData.tasks.filter(
                     (t: any) => t.stageId === stageName,
                   )}
-                  onAddMaterial={(item) => handleAddMaterial(item)}
+                  onAddMaterial={(item: any) => handleAddMaterial(item)}
                   onRemoveMaterial={handleRemoveMaterial}
                   onUpdateMaterial={handleUpdateMaterial}
                   onAddTask={handleAddTask}
@@ -1966,8 +1985,10 @@ export default function TaskCreatePage() {
                     ""
                   }
                   availableTasks={
-                    formData.objectiveType === "theo-ke-hoach"
-                      ? selectedPlan?.taskAllocations.filter(
+                    formData.objectiveType === "theo-ke-hoach" ||
+                    formData.objectiveType === "cai-tao-dat" ||
+                    formData.objectiveType === "tri-benh"
+                      ? selectedPlan?.taskAllocations?.filter(
                           (t: any) => t.stageId === stageName,
                         )
                       : formData.objectiveType !== "phat-sinh"
@@ -1975,8 +1996,10 @@ export default function TaskCreatePage() {
                         : undefined
                   }
                   availableMaterials={
-                    formData.objectiveType === "theo-ke-hoach"
-                      ? selectedPlan?.materialAllocations.filter(
+                    formData.objectiveType === "theo-ke-hoach" ||
+                    formData.objectiveType === "cai-tao-dat" ||
+                    formData.objectiveType === "tri-benh"
+                      ? selectedPlan?.materialAllocations?.filter(
                           (m: any) => m.stageId === stageName,
                         )
                       : formData.objectiveType !== "phat-sinh"
