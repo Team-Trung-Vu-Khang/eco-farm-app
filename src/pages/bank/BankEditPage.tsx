@@ -1,123 +1,27 @@
-import { useState, useEffect } from "react";
-import { useLocation, useRoute } from "wouter";
 import {
   AdminLayout,
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Textarea,
-  useToast,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { CreditCard, Save, Trash2, X } from "lucide-react";
-import useBankStore from "../../stores/useBankStore";
-
-import BankLogo from "./components/BankLogo";
-import { BANK_LIST, BANK_LOGOS } from "./data/bank-constants";
+import { Save, Trash2, X } from "lucide-react";
+import { BankFormCard } from "./components/BankFormCard";
+import { useBankFormPage } from "./hooks/useBankFormPage";
 
 export default function BankEditPage() {
-  const [, setLocation] = useLocation();
-  const [, params] = useRoute("/bank/:id/edit");
-  const { toast } = useToast();
-  const [deleteOpen, setDeleteOpen] = useState(false);
-
-  // Zustand store
-  const bankAccountId = params?.id ? parseInt(params.id) : undefined;
-  const getBankAccountById = useBankStore((state) => state.getBankAccountById);
-  const updateBankAccount = useBankStore((state) => state.updateBankAccount);
-  const deleteBankAccount = useBankStore((state) => state.deleteBankAccount);
-  const bankAccount = bankAccountId
-    ? getBankAccountById(bankAccountId)
-    : undefined;
-
-  const [formData, setFormData] = useState({
-    bankName: "",
-    accountNumber: "",
-    accountHolder: "",
-    branch: "",
-    status: "active" as "active" | "inactive",
-    note: "",
-    logo: "",
-  });
-
-  // Load bank account data
-  useEffect(() => {
-    if (bankAccount) {
-      setFormData({
-        bankName: bankAccount.bankName,
-        accountNumber: bankAccount.accountNumber,
-        accountHolder: bankAccount.accountHolder,
-        branch: bankAccount.branch,
-        status: bankAccount.status,
-        note: bankAccount.note,
-        logo: bankAccount.logo,
-      });
-    }
-  }, [bankAccount]);
-
-  const handleBankChange = (val: string) => {
-    setFormData({
-      ...formData,
-      bankName: val,
-      logo: BANK_LOGOS[val] || "",
-    });
-  };
-
-  const handleSubmit = () => {
-    if (
-      !formData.bankName ||
-      !formData.accountNumber ||
-      !formData.accountHolder ||
-      !bankAccountId
-    ) {
-      toast({
-        title: "Thiếu thông tin",
-        description: "Vui lòng nhập đầy đủ các trường bắt buộc",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    updateBankAccount(bankAccountId, {
-      bankName: formData.bankName,
-      accountNumber: formData.accountNumber,
-      accountHolder: formData.accountHolder,
-      branch: formData.branch,
-      status: formData.status,
-      note: formData.note,
-      logo: formData.logo,
-    });
-
-    toast({
-      title: "Cập nhật thành công",
-      description: `Đã cập nhật tài khoản "${formData.bankName} - ${formData.accountNumber}"`,
-    });
-    setLocation("/bank");
-  };
-
-  const handleDelete = () => {
-    if (bankAccountId) {
-      deleteBankAccount(bankAccountId);
-      toast({
-        title: "Thành công",
-        description: "Đã xóa tài khoản ngân hàng",
-      });
-      setLocation("/bank");
-    }
-  };
+  const {
+    formData,
+    updateField,
+    handleBankChange,
+    handleSubmit,
+    handleDelete,
+    deleteOpen,
+    setDeleteOpen,
+    goBack,
+    notFound,
+  } = useBankFormPage({ mode: "edit" });
 
   // Show not found if bank account doesn't exist
-  if (bankAccountId && !bankAccount) {
+  if (notFound) {
     return (
       <AdminLayout
         title="Không tìm thấy"
@@ -127,7 +31,7 @@ export default function BankEditPage() {
           <h2 className="text-2xl font-bold mb-4">
             Không tìm thấy tài khoản ngân hàng
           </h2>
-          <Button onClick={() => setLocation("/bank")}>
+          <Button onClick={goBack}>
             <X className="w-4 h-4 mr-2" />
             Quay lại danh sách
           </Button>
@@ -150,7 +54,7 @@ export default function BankEditPage() {
             <Trash2 className="w-4 h-4 mr-2" />
             Xóa
           </Button>
-          <Button variant="outline" onClick={() => setLocation("/bank")}>
+          <Button variant="outline" onClick={goBack}>
             <X className="w-4 h-4 mr-2" />
             Hủy bỏ
           </Button>
@@ -162,125 +66,12 @@ export default function BankEditPage() {
       }
     >
       <div className="max-w-2xl mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle>Thông tin tài khoản</CardTitle>
-            <CardDescription>
-              Chi tiết thông tin tài khoản ngân hàng
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="bankName">Tên ngân hàng *</Label>
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <Select
-                    value={formData.bankName}
-                    onValueChange={handleBankChange}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn ngân hàng" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-56">
-                      {BANK_LIST.map((bank) => (
-                        <SelectItem key={bank.value} value={bank.value}>
-                          {bank.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {formData.logo && (
-                  <BankLogo
-                    bankName={formData.bankName}
-                    logo={formData.logo}
-                    className="rounded-lg"
-                  />
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="accountNumber">Số tài khoản *</Label>
-                <Input
-                  id="accountNumber"
-                  placeholder="Nhập số tài khoản"
-                  value={formData.accountNumber}
-                  onChange={(e) =>
-                    setFormData({ ...formData, accountNumber: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Trạng thái</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(val: "active" | "inactive") =>
-                    setFormData({ ...formData, status: val })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn trạng thái" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Hoạt động</SelectItem>
-                    <SelectItem value="inactive">Ngừng hoạt động</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="accountHolder">Chủ tài khoản *</Label>
-              <Input
-                id="accountHolder"
-                placeholder="NHAP TEN CHU TAI KHOAN"
-                className="uppercase"
-                value={formData.accountHolder}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    accountHolder: e.target.value.toUpperCase(),
-                  })
-                }
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="branch">Chi nhánh ngân hàng</Label>
-              <Input
-                id="branch"
-                placeholder="VD: Chi nhánh Hoàn Kiếm"
-                value={formData.branch}
-                onChange={(e) =>
-                  setFormData({ ...formData, branch: e.target.value })
-                }
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="note">Ghi chú</Label>
-              <Textarea
-                id="note"
-                placeholder="Ghi chú thêm..."
-                rows={3}
-                value={formData.note}
-                onChange={(e) =>
-                  setFormData({ ...formData, note: e.target.value })
-                }
-              />
-            </div>
-
-            <div className="bg-blue-50 p-4 rounded-lg flex gap-3 text-blue-700 text-sm border border-blue-200 mt-2">
-              <CreditCard className="w-5 h-5 shrink-0" />
-              <p>
-                Vui lòng kiểm tra kỹ thông tin số tài khoản và chủ tài khoản để
-                tránh sai sót trong quá trình giao dịch.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <BankFormCard
+          formData={formData}
+          showStatusField
+          onBankChange={handleBankChange}
+          onFieldChange={updateField}
+        />
       </div>
 
       <DeleteDialog

@@ -1,54 +1,49 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useBranchStore from "@/stores/useBranchStore";
 import useEnterpriseStore from "@/stores/useEnterpriseStore";
+import { emptyBranchFormData } from "../data/constants";
+import { buildBranchFullAddress } from "../utils/form";
+import type { BranchEnterpriseOption, BranchFormData, ContactInfo } from "../types/types";
 
-export interface ContactPerson {
-  id: string;
-  name: string;
-  position: string;
-  phone: string;
-  email: string;
-  isPrimary: boolean;
-}
+function getInitialBranchFormData(
+  branch?: ReturnType<typeof useBranchStore.getState>["branches"][number],
+): BranchFormData {
+  if (!branch) {
+    return emptyBranchFormData;
+  }
 
-export interface ContactInfo {
-  id: string;
-  phone: string;
-  email: string;
-  isPrimary: boolean;
-}
+  const contactInfos: ContactInfo[] = [];
+  if (branch.phone || branch.email) {
+    contactInfos.push({
+      id: "1",
+      phone: branch.phone || "",
+      email: branch.email || "",
+      isPrimary: true,
+    });
+  }
 
-export interface BankAccount {
-  id: string;
-  bankName: string;
-  accountNumber: string;
-  accountHolder: string;
-  branch: string;
-  isPrimary: boolean;
-}
-
-export interface BranchFormData {
-  code: string;
-  name: string;
-  enterpriseId: string;
-  enterpriseName: string;
-  taxCode: string;
-  taxAddress: string;
-  website: string;
-  address: string;
-  city: string;
-  district: string;
-  ward: string;
-  imageUrl: string;
-  imageFile?: File;
-  latitude: number;
-  longitude: number;
-  status: "active" | "inactive";
-  contactInfos: ContactInfo[];
-  contacts: ContactPerson[];
-  bankAccounts: BankAccount[];
+  return {
+    code: branch.code,
+    name: branch.name,
+    enterpriseId: "DN001",
+    enterpriseName: branch.enterpriseName,
+    taxCode: branch.taxCode || "",
+    taxAddress: branch.taxAddress || "",
+    address: branch.address,
+    city: branch.city || "",
+    district: branch.district || "",
+    ward: branch.ward || "",
+    imageUrl: branch.imageUrl || "",
+    latitude: branch.latitude ? parseFloat(branch.latitude) : 10.7769,
+    longitude: branch.longitude ? parseFloat(branch.longitude) : 106.7009,
+    status: branch.status,
+    website: branch.website || "",
+    contactInfos,
+    contacts: branch.contacts || [],
+    bankAccounts: branch.bankAccounts || [],
+  };
 }
 
 export function useBranchForm() {
@@ -65,70 +60,18 @@ export function useBranchForm() {
   const branch = branchId ? getBranchById(branchId) : undefined;
 
   const enterprisesFromStore = useEnterpriseStore((state) => state.enterprises);
-  const enterprises = enterprisesFromStore
+  const enterprises: BranchEnterpriseOption[] = enterprisesFromStore
     .filter((e) => e.type === "enterprise")
     .map((e) => ({
       id: e.id.toString(),
       name: e.name,
     }));
 
-  const [formData, setFormData] = useState<BranchFormData>({
-    code: "",
-    name: "",
-    enterpriseId: "",
-    enterpriseName: "",
-    taxCode: "",
-    taxAddress: "",
-    address: "",
-    city: "",
-    district: "",
-    ward: "",
-    imageUrl: "",
-    latitude: 10.7769,
-    longitude: 106.7009,
-    status: "active",
-    website: "",
-    contactInfos: [],
-    contacts: [],
-    bankAccounts: [],
-  });
+  const [formData, setFormData] = useState<BranchFormData>(() =>
+    getInitialBranchFormData(branch),
+  );
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-
-  useEffect(() => {
-    if (branch) {
-      const contactInfos: ContactInfo[] = [];
-      if (branch.phone || branch.email) {
-        contactInfos.push({
-          id: "1",
-          phone: branch.phone || "",
-          email: branch.email || "",
-          isPrimary: true,
-        });
-      }
-
-      setFormData({
-        code: branch.code,
-        name: branch.name,
-        enterpriseId: "DN001", // Default for now
-        enterpriseName: branch.enterpriseName,
-        taxCode: branch.taxCode || "",
-        taxAddress: branch.taxAddress || "",
-        address: branch.address,
-        city: branch.city || "",
-        district: branch.district || "",
-        ward: branch.ward || "",
-        imageUrl: branch.imageUrl || "",
-        latitude: branch.latitude ? parseFloat(branch.latitude) : 10.7769,
-        longitude: branch.longitude ? parseFloat(branch.longitude) : 106.7009,
-        status: branch.status,
-        website: branch.website || "",
-        contactInfos: contactInfos,
-        contacts: branch.contacts || [],
-        bankAccounts: branch.bankAccounts || [],
-      });
-    }
-  }, [branch]);
 
   const updateFormData = (updates: Partial<BranchFormData>) => {
     setFormData((prev) => ({ ...prev, ...updates }));
@@ -140,14 +83,12 @@ export function useBranchForm() {
 
   const submitForm = () => {
     setShowConfirmDialog(false);
-    const fullAddress = [
-      formData.address,
-      formData.ward,
-      formData.district,
-      formData.city,
-    ]
-      .filter(Boolean)
-      .join(", ");
+    const fullAddress = buildBranchFullAddress({
+      address: formData.address,
+      ward: formData.ward,
+      district: formData.district,
+      city: formData.city,
+    });
 
     const branchPayload = {
       code: formData.code,

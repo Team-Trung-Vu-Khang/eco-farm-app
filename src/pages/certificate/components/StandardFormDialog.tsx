@@ -13,14 +13,15 @@ import { Upload, X } from "lucide-react";
 import type {
   Certificate,
   CertificationOrganization,
-} from "../hooks/useCertificate";
+  StandardFormData,
+} from "../types/types";
 
 interface StandardFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editItem: Certificate | null;
-  formData: Omit<Certificate, "id" | "createdAt">;
-  setFormData: (data: Omit<Certificate, "id" | "createdAt">) => void;
+  formData: StandardFormData;
+  setFormData: (data: StandardFormData) => void;
   organizations: CertificationOrganization[];
   onSubmit: () => void;
   searchQuery: string;
@@ -203,7 +204,7 @@ export function StandardFormDialog({
               onValueChange={(val) =>
                 setFormData({
                   ...formData,
-                  contentType: val as "editor" | "file",
+                  contentType: val as StandardFormData["contentType"],
                 })
               }
               className="w-full"

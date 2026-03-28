@@ -6,15 +6,13 @@ import {
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import useBankStore from "../../stores/useBankStore";
+import { bankColumns } from "./data/columns";
+import { bankFilters } from "./data/constants";
 import { useBankTable } from "./hooks/useBankTable";
 
 export default function BankPage() {
-  const bankAccounts = useBankStore((state) => state.bankAccounts);
-  
   const {
-    columns,
-    filters,
+    bankAccounts,
     deleteOpen,
     setDeleteOpen,
     handleDelete,
@@ -37,13 +35,13 @@ export default function BankPage() {
       }
     >
       <DataTable
-        columns={columns}
+        columns={bankColumns}
         data={bankAccounts}
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm tài khoản..."
-        filters={filters}
+        filters={[...bankFilters]}
         selectable
       />
 

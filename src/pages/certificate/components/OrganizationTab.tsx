@@ -1,10 +1,10 @@
 import {
   Button,
   DataTable,
-  type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
-import type { CertificationOrganization } from "../hooks/useCertificate";
+import { organizationColumns } from "../data/columns";
+import type { CertificationOrganization } from "../types/types";
 
 interface OrganizationTabProps {
   organizations: CertificationOrganization[];
@@ -19,14 +19,6 @@ export function OrganizationTab({
   onEdit,
   onDelete,
 }: OrganizationTabProps) {
-  const orgColumns: Column<CertificationOrganization>[] = [
-    { key: "code", label: "Mã tổ chức" },
-    { key: "name", label: "Tên tổ chức" },
-    { key: "phone", label: "Điện thoại" },
-    { key: "email", label: "Email" },
-    { key: "website", label: "Website" },
-  ];
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -42,7 +34,7 @@ export function OrganizationTab({
         </Button>
       </div>
       <DataTable
-        columns={orgColumns}
+        columns={organizationColumns}
         data={organizations}
         onEdit={onEdit}
         onDelete={onDelete}

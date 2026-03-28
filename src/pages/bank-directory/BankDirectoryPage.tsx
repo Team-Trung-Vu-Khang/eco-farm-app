@@ -3,25 +3,23 @@ import {
   Button,
   DataTable,
   DeleteDialog,
-  type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { type Bank } from "../../constants/banks";
 import { Plus } from "lucide-react";
 import { useBankDirectory } from "./hooks/useBankDirectory";
 import BankFormDialog from "./components/BankFormDialog";
-import BankLogo from "../bank/components/BankLogo";
+import { bankDirectoryColumns } from "./data/columns";
 
 export default function BankDirectoryPage() {
   const {
     data,
     formData,
-    setFormData,
     formOpen,
     setFormOpen,
     deleteOpen,
     setDeleteOpen,
     editItem,
     logoPreview,
+    updateFormData,
     handleAdd,
     handleEdit,
     handleDelete,
@@ -30,35 +28,6 @@ export default function BankDirectoryPage() {
     handleSubmit,
     handleConfirmDelete,
   } = useBankDirectory();
-
-  const columns: Column<Bank>[] = [
-    {
-      key: "id",
-      label: "ID",
-      render: (value) => (
-        <span className="font-mono text-muted-foreground">#{value}</span>
-      ),
-    },
-    {
-      key: "name",
-      label: "Ngân hàng",
-      render: (value, item) => (
-        <div className="flex items-center gap-4 py-1">
-          <BankLogo 
-            bankName={value as string} 
-            logo={item.logo} 
-            className="rounded-xl p-2 shadow-sm group-hover:scale-105 transition-transform" 
-          />
-          <div className="flex flex-col">
-            <span className="font-bold text-base leading-tight">{value}</span>
-            <span className="text-sm text-muted-foreground line-clamp-1">
-              {item.fullName}
-            </span>
-          </div>
-        </div>
-      ),
-    },
-  ];
 
   return (
     <AdminLayout
@@ -72,7 +41,7 @@ export default function BankDirectoryPage() {
       }
     >
       <DataTable
-        columns={columns}
+        columns={bankDirectoryColumns}
         data={data}
         pageSize={10}
         searchPlaceholder="Tìm kiếm tên ngân hàng..."
@@ -85,7 +54,7 @@ export default function BankDirectoryPage() {
         onOpenChange={setFormOpen}
         editItem={editItem}
         formData={formData}
-        onFormUpdate={(updates) => setFormData({ ...formData, ...updates })}
+        onFormUpdate={updateFormData}
         logoPreview={logoPreview}
         onLogoUpload={handleLogoUpload}
         onRemoveLogo={handleRemoveLogo}

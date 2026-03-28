@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { bankList, type Bank } from "../../../constants/banks";
+import { bankList } from "../../../constants/banks";
+import { emptyBankFormData } from "../data/constants";
+import type { Bank } from "../types/types";
 
 export function useBankDirectory() {
   const { toast } = useToast();
@@ -11,21 +13,11 @@ export function useBankDirectory() {
   const [deleteItem, setDeleteItem] = useState<Bank | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>("");
 
-  const [formData, setFormData] = useState<Bank>({
-    id: "",
-    name: "",
-    logo: "",
-    fullName: "",
-  });
+  const [formData, setFormData] = useState<Bank>(emptyBankFormData);
 
   const handleAdd = () => {
     setEditItem(null);
-    setFormData({
-      id: "",
-      name: "",
-      logo: "",
-      fullName: "",
-    });
+    setFormData(emptyBankFormData);
     setLogoPreview("");
     setFormOpen(true);
   };
@@ -104,13 +96,14 @@ export function useBankDirectory() {
   return {
     data,
     formData,
-    setFormData,
     formOpen,
     setFormOpen,
     deleteOpen,
     setDeleteOpen,
     editItem,
     logoPreview,
+    updateFormData: (updates: Partial<Bank>) =>
+      setFormData((prev) => ({ ...prev, ...updates })),
     handleAdd,
     handleEdit,
     handleDelete,

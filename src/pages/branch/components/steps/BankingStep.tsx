@@ -11,16 +11,19 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus, Trash2, CreditCard } from "lucide-react";
 import { vietQrBankData } from "@/constants/banks";
-import type { BankAccount, BranchFormData } from "../../hooks/useBranchForm";
+import type {
+  BranchBankAccount,
+  BranchFormData,
+} from "../../types/types";
 
 interface BankingStepProps {
   formData: BranchFormData;
-  updateFormData: (updates: Partial<BranchFormData>) => void;
+    updateFormData: (updates: Partial<BranchFormData>) => void;
 }
 
 export function BankingStep({ formData, updateFormData }: BankingStepProps) {
   const handleAddNewBankAccount = () => {
-    const newAccount: BankAccount = {
+    const newAccount: BranchBankAccount = {
       id: Date.now().toString(),
       bankName: "",
       accountNumber: "",
@@ -39,8 +42,8 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
 
   const handleUpdateBankAccount = (
     id: string,
-    field: keyof BankAccount,
-    value: any,
+    field: keyof BranchBankAccount,
+    value: BranchBankAccount[keyof BranchBankAccount],
   ) => {
     updateFormData({
       bankAccounts: formData.bankAccounts.map((b) =>

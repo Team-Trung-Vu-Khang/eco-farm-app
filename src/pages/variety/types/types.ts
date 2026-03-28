@@ -1,0 +1,39 @@
+export interface VarietyDocument {
+  name: string;
+  url: string;
+}
+
+export interface Variety {
+  id: string;
+  illustration: string | File | null;
+  crop: string;
+  varietyCode: string;
+  varietyName: string;
+  scientificName?: string;
+  origin?: string;
+  growthDuration?: string;
+  averageYield?: string;
+  description: string;
+  seedType?: string;
+  documents: VarietyDocument[];
+  contentType?: "pdf" | "editor";
+  pdfFile?: File | null;
+  editorContent?: string;
+  status: "active" | "inactive";
+  updatedAt: string;
+}
+
+export interface CreateVarietyForm {
+  varietyCode: string;
+  varietyName: string;
+  scientificName: string;
+  crop: string;
+  origin: string;
+  growthDuration: string;
+  averageYield: string;
+  description: string;
+  illustration: File | null;
+  contentType: "pdf" | "editor";
+  pdfFile: File | null;
+  editorContent: string;
+}

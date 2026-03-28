@@ -19,7 +19,6 @@ import { DeleteBranchDialog } from "./components/DeleteBranchDialog";
 export default function BranchDetailPage() {
   const {
     branch,
-    branchId,
     showDeleteDialog,
     setShowDeleteDialog,
     handleDelete,

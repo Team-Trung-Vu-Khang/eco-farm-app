@@ -1,11 +1,8 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import {
-  Badge,
-  useToast,
-  type Column,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useBranchStore, { type Branch } from "../../../stores/useBranchStore";
+import { branchColumns, branchFilters } from "../data/columns";
 
 export function useBranchTable() {
   const { toast } = useToast();
@@ -14,35 +11,6 @@ export function useBranchTable() {
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Branch | null>(null);
-
-  const columns: Column<Branch>[] = [
-    { key: "code", label: "Mã" },
-    { key: "name", label: "Tên chi nhánh" },
-    { key: "enterpriseName", label: "Đơn vị chủ quản" },
-    { key: "phone", label: "Điện thoại" },
-    { key: "email", label: "Email" },
-    { key: "address", label: "Địa chỉ" },
-    {
-      key: "status",
-      label: "Trạng thái",
-      render: (value) => (
-        <Badge variant={value === "active" ? "default" : "outline"}>
-          {value === "active" ? "Hoạt động" : "Không hoạt động"}
-        </Badge>
-      ),
-    },
-  ];
-
-  const filters = [
-    {
-      key: "status",
-      label: "Trạng thái",
-      options: [
-        { label: "Hoạt động", value: "active" },
-        { label: "Không hoạt động", value: "inactive" },
-      ],
-    },
-  ];
 
   const handleDelete = (item: Branch) => {
     setDeleteItem(item);
@@ -69,8 +37,8 @@ export function useBranchTable() {
   };
 
   return {
-    columns,
-    filters,
+    columns: branchColumns,
+    filters: [...branchFilters],
     deleteOpen,
     setDeleteOpen,
     handleDelete,

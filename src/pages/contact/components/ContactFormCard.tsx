@@ -1,6 +1,6 @@
 import { type Enterprise } from "@/pages/enterprise/data/constants";
-import { type ContactGroup } from "@/stores/useContactStore";
 import { type Department } from "@/stores/useDepartmentStore";
+import type { ContactFormData, ContactGroup } from "../types/types";
 import {
   Card,
   CardContent,
@@ -18,8 +18,8 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 interface ContactFormProps {
-  formData: any;
-  setFormData: (data: any) => void;
+  formData: ContactFormData;
+  setFormData: (data: ContactFormData) => void;
   enterprises: Enterprise[];
   groups: ContactGroup[];
   departments: Department[];
@@ -162,7 +162,7 @@ export function ContactFormCard({
           <Label htmlFor="status">Trạng thái</Label>
           <Select
             value={formData.status}
-            onValueChange={(val: any) =>
+            onValueChange={(val: ContactFormData["status"]) =>
               setFormData({ ...formData, status: val })
             }
           >

@@ -7,6 +7,7 @@ import {
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useBranchStore from "../../stores/useBranchStore";
+import { branchColumns, branchFilters } from "./data/columns";
 import { useBranchTable } from "./hooks/useBranchTable";
 
 /**
@@ -17,8 +18,6 @@ export default function BranchPage() {
   const branches = useBranchStore((state) => state.branches);
 
   const {
-    columns,
-    filters,
     deleteOpen,
     setDeleteOpen,
     handleDelete,
@@ -41,13 +40,13 @@ export default function BranchPage() {
       }
     >
       <DataTable
-        columns={columns}
+        columns={branchColumns}
         data={branches}
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm chi nhánh..."
-        filters={filters}
+        filters={[...branchFilters]}
         selectable
       />
 

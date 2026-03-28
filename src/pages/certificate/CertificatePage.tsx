@@ -12,6 +12,7 @@ import { StandardTab } from "./components/StandardTab";
 import { OrganizationTab } from "./components/OrganizationTab";
 import { StandardFormDialog } from "./components/StandardFormDialog";
 import { OrganizationFormDialog } from "./components/OrganizationFormDialog";
+import type { CategoryType } from "./types/types";
 
 /**
  * Certificate page component.
@@ -54,7 +55,7 @@ export default function CertificatePage() {
     >
       <Tabs
         value={activeTab}
-        onValueChange={(val) => setActiveTab(val as any)}
+        onValueChange={(val) => setActiveTab(val as CategoryType)}
         className="w-full"
       >
         <TabsList className="grid w-full grid-cols-2 mb-6">

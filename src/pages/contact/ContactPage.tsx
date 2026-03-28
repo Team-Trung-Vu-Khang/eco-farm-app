@@ -11,6 +11,7 @@ import { useContact } from "./hooks/useContact";
 import { ContactTab } from "./components/tabs/ContactTab";
 import { GroupTab } from "./components/tabs/GroupTab";
 import { GroupFormDialog } from "./components/GroupFormDialog";
+import type { CategoryType } from "./types/types";
 
 /**
  * Contact management page.
@@ -43,7 +44,7 @@ export default function ContactPage() {
     >
       <Tabs
         value={activeTab}
-        onValueChange={(val) => setActiveTab(val as any)}
+        onValueChange={(val) => setActiveTab(val as CategoryType)}
         className="w-full"
       >
         <TabsList className="grid w-full grid-cols-2 mb-6">

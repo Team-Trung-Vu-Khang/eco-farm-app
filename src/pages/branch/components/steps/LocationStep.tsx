@@ -15,10 +15,31 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { PROVINCES } from "@/constants/province";
-import type { BranchFormData } from "../../hooks/useBranchForm";
+import type { BranchFormData } from "../../types/types";
+
+interface AddressSuggestion {
+  lat: string;
+  lon: string;
+  display_name: string;
+  address?: {
+    road?: string;
+    street?: string;
+    house_number?: string;
+    suburb?: string;
+    neighbourhood?: string;
+    quarter?: string;
+    city_district?: string;
+    county?: string;
+    town?: string;
+    city?: string;
+    province?: string;
+    state?: string;
+  };
+}
 
 // Fix Leaflet default icon issue
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+delete (L.Icon.Default.prototype as L.Icon.Default & { _getIconUrl?: unknown })
+  ._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
@@ -60,8 +81,28 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
   const { toast } = useToast();
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const [searchAddress, setSearchAddress] = useState("");
-  const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
+  const [addressSuggestions, setAddressSuggestions] = useState<
+    AddressSuggestion[]
+  >([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const handleSearchAddress = async (query: string) => {
+    if (!query || query.length < 3) {
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    try {
+      const resp = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=vn&limit=5`,
+      );
+      const data: AddressSuggestion[] = await resp.json();
+      setAddressSuggestions(data || []);
+      setShowSuggestions(Boolean(data && data.length > 0));
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -83,25 +124,7 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
     return () => clearTimeout(timer);
   }, [searchAddress]);
 
-  const handleSearchAddress = async (query: string) => {
-    if (!query || query.length < 3) {
-      setAddressSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-    try {
-      const resp = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=vn&limit=5`,
-      );
-      const data = await resp.json();
-      setAddressSuggestions(data || []);
-      setShowSuggestions(!!(data && data.length > 0));
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleSelectAddress = (suggestion: any) => {
+  const handleSelectAddress = (suggestion: AddressSuggestion) => {
     const address = suggestion.address || {};
     const road = address.road || address.street || "";
     const houseNumber = address.house_number || "";

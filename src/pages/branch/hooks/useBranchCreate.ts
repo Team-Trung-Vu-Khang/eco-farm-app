@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useBranchStore from "@/stores/useBranchStore";
+import { branchEnterpriseNames } from "../data/constants";
+import { getBranchLocationName } from "../utils/form";
 
 export function useBranchCreate() {
   const [, setLocation] = useLocation();
@@ -48,32 +50,12 @@ export function useBranchCreate() {
     const newId =
       branches.length > 0 ? Math.max(...branches.map((b) => b.id)) + 1 : 1;
 
-    // Get enterprise name based on selected ID
-    const enterpriseNames: Record<string, string> = {
-      "1": "Công ty CP Nông nghiệp Xanh EcoFarm",
-      "2": "HTX Rau sạch Thanh Hà",
-      "3": "Nông hộ Nguyễn Văn A",
-    };
-
-    // Map province/district/ward codes to names
-    const getLocationName = (
-      code: string,
-      type: "province" | "district" | "ward",
-    ) => {
-      const maps = {
-        province: { hcm: "TP.HCM", hn: "Hà Nội", dn: "Đà Nẵng" },
-        district: { q1: "Quận 1", q3: "Quận 3", badinh: "Ba Đình" },
-        ward: { p1: "Phường 1", p2: "Phường 2", kimma: "Kim Mã" },
-      };
-      return maps[type][code as keyof (typeof maps)[typeof type]] || "";
-    };
-
     // Construct full address
     const fullAddress = [
       formData.address,
-      getLocationName(formData.ward, "ward"),
-      getLocationName(formData.district, "district"),
-      getLocationName(formData.province, "province"),
+      getBranchLocationName(formData.ward, "ward"),
+      getBranchLocationName(formData.district, "district"),
+      getBranchLocationName(formData.province, "province"),
     ]
       .filter(Boolean)
       .join(", ");
@@ -82,13 +64,13 @@ export function useBranchCreate() {
       id: newId,
       code: formData.code || `CN${String(newId).padStart(3, "0")}`,
       name: formData.name,
-      enterpriseName: enterpriseNames[formData.enterpriseId] || "",
+      enterpriseName: branchEnterpriseNames[formData.enterpriseId] || "",
       phone: formData.phone,
       email: formData.email,
       address: fullAddress || formData.address,
-      city: getLocationName(formData.province, "province"),
-      district: getLocationName(formData.district, "district"),
-      ward: getLocationName(formData.ward, "ward"),
+      city: getBranchLocationName(formData.province, "province"),
+      district: getBranchLocationName(formData.district, "district"),
+      ward: getBranchLocationName(formData.ward, "ward"),
       status: "active" as const,
       createdAt: new Date().toISOString(),
       imageUrl: "",
