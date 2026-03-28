@@ -14,7 +14,6 @@ import {
   DialogTitle,
   Input,
   Label,
-  ScrollArea,
   Select,
   SelectContent,
   SelectItem,
@@ -39,16 +38,12 @@ import {
   FileCheck,
   Info,
   Layers,
-  MapPin,
   Plus,
-  Search,
   Shield,
   Sprout,
   StickyNote,
   Trash2,
-  User,
   Users,
-  X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
@@ -67,6 +62,14 @@ import type {
   MaterialAllocation,
   TaskAllocation,
 } from "../plan/types";
+import { TaskPersonnelPickerDialog } from "./components/TaskPersonnelPickerDialog";
+import { TaskPrioritySelector } from "./components/TaskPrioritySelector";
+import { TaskTaskListSummary } from "./components/TaskTaskListSummary";
+import {
+  buildTaskAssigneeOptions,
+  filterRegionsBySelections,
+  getGeographicalSelectionSummary,
+} from "./utils/form-helpers";
 
 export default function TaskEditPage() {
   const { id } = useParams();
@@ -77,80 +80,15 @@ export default function TaskEditPage() {
   const personnel = usePersonnelStore((state) => state.personnel);
   const teams = useTeamStore((state) => state.teams);
   const regimens = useRegimenStore((state) => state.regimens);
-  const { regions, getRegionById } = useRegionStore();
+  const { regions } = useRegionStore();
 
   const task = getTaskById(Number(id));
 
   const [selectedEnterpriseId, setSelectedEnterpriseId] = useState("");
   const isInitialized = useRef<number | null>(null);
 
-  const getSelectionSummary = (selections: any[]) => {
-    if (!selections || selections.length === 0) return [];
-
-    const summary: {
-      regionId: string;
-      regionName: string;
-      items: {
-        type: "region" | "area" | "plot";
-        id: string;
-        name: string;
-        parentName?: string;
-      }[];
-    }[] = [];
-
-    selections.forEach((sel) => {
-      const region = (regions || []).find(
-        (r: any) => String(r.id) === String(sel.regionId),
-      );
-      if (!region) return;
-
-      let regionGroup = summary.find((s) => s.regionId === String(region.id));
-      if (!regionGroup) {
-        regionGroup = {
-          regionId: String(region.id),
-          regionName: region.name,
-          items: [],
-        };
-        summary.push(regionGroup);
-      }
-
-      if (sel.type === "region") {
-        regionGroup.items.push({
-          type: "region",
-          id: String(region.id),
-          name: `Toàn bộ ${region.name}`,
-        });
-      } else if (sel.type === "area") {
-        const area = region.subAreas?.find(
-          (a: any) => String(a.id) === String(sel.areaId),
-        );
-        if (area) {
-          regionGroup.items.push({
-            type: "area",
-            id: String(area.id),
-            name: area.name,
-          });
-        }
-      } else if (sel.type === "plot") {
-        const area = region.subAreas?.find(
-          (a: any) => String(a.id) === String(sel.areaId),
-        );
-        const plot = area?.plots?.find(
-          (p: any) => String(p.id) === String(sel.plotId),
-        );
-        if (plot) {
-          regionGroup.items.push({
-            type: "plot",
-            id: String(plot.id),
-            name: plot.name,
-            parentName: area?.name,
-          });
-        }
-      }
-    });
-
-    return summary;
-  };
+  const getSelectionSummary = (selections?: GeographicalSelection[]) =>
+    getGeographicalSelectionSummary(selections || [], regions);
 
   const [formData, setFormData] = useState({
     code: "",
@@ -182,7 +120,7 @@ export default function TaskEditPage() {
 
   const selectionSummary = useMemo(
     () => getSelectionSummary(formData.geographicalSelections),
-    [formData.geographicalSelections, getRegionById],
+    [formData.geographicalSelections, regions],
   );
 
   useEffect(() => {
@@ -291,15 +229,11 @@ export default function TaskEditPage() {
 
   const selectedPlan = plans.find((p) => String(p.id) === formData.planId);
   const availableStages = selectedPlan?.selectedStages || [];
-  const availableAssignees =
-    formData.assignedType === "team"
-      ? teams.map((t) => ({ id: t.id, name: t.name, code: t.code, avatar: "" }))
-      : personnel.map((p) => ({
-          id: p.id,
-          name: p.fullName,
-          code: p.taxCode || `NV${String(p.id).padStart(3, "0")}`,
-          avatar: p.avatar,
-        }));
+  const availableAssignees = buildTaskAssigneeOptions(
+    formData.assignedType,
+    personnel,
+    teams,
+  );
 
   const filteredAssignees = availableAssignees.filter(
     (a) =>
@@ -372,55 +306,11 @@ export default function TaskEditPage() {
     }));
   };
 
-  const filteredRegionsForPhatSinh = useMemo(() => {
-    if (
-      formData.objectiveType !== "phat-sinh" ||
-      formData.geographicalSelections.length === 0
-    ) {
-      return regions;
-    }
-
-    return regions
-      .map((region) => {
-        // If the region itself is selected, keep it entire
-        const isRegionSelected = formData.geographicalSelections.some(
-          (s: GeographicalSelection) =>
-            s.type === "region" && String(s.regionId) === String(region.id),
-        );
-        if (isRegionSelected) return region;
-
-        // If not, filter its sub-areas
-        const filteredSubAreas = (region.subAreas || [])
-          .map((area) => {
-            // If the area itself is selected, keep it entire
-            const isAreaSelected = formData.geographicalSelections.some(
-              (s: GeographicalSelection) =>
-                s.type === "area" && String(s.areaId) === String(area.id),
-            );
-            if (isAreaSelected) return area;
-
-            // If not, filter its plots
-            const filteredPlots = (area.plots || []).filter((plot) =>
-              formData.geographicalSelections.some(
-                (s: GeographicalSelection) =>
-                  s.type === "plot" && String(s.plotId) === String(plot.id),
-              ),
-            );
-
-            if (filteredPlots.length > 0) {
-              return { ...area, plots: filteredPlots };
-            }
-            return null;
-          })
-          .filter(Boolean) as any[];
-
-        if (filteredSubAreas.length > 0) {
-          return { ...region, subAreas: filteredSubAreas };
-        }
-        return null;
-      })
-      .filter(Boolean) as any[];
-  }, [regions, formData.geographicalSelections, formData.objectiveType]);
+  const filteredRegionsForPhatSinh = filterRegionsBySelections(
+    regions,
+    formData.geographicalSelections,
+    formData.objectiveType === "phat-sinh",
+  );
 
   const handleComplete = () => {
     const updates = {
@@ -1142,57 +1032,12 @@ export default function TaskEditPage() {
                     className="rounded-xl border-slate-200"
                   />
                 </div>
-                <div className="space-y-3">
-                  <Label className="text-sm font-bold text-slate-500 uppercase tracking-wider">
-                    Độ ưu tiên *
-                  </Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      {
-                        id: "low",
-                        label: "Thấp",
-                        color: "emerald",
-                        activeClass:
-                          "bg-emerald-500 text-white border-emerald-500 shadow-emerald-200",
-                        inactiveClass:
-                          "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100",
-                      },
-                      {
-                        id: "medium",
-                        label: "Thường",
-                        color: "amber",
-                        activeClass:
-                          "bg-amber-500 text-white border-amber-500 shadow-amber-200",
-                        inactiveClass:
-                          "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100",
-                      },
-                      {
-                        id: "high",
-                        label: "Cao",
-                        color: "rose",
-                        activeClass:
-                          "bg-rose-500 text-white border-rose-500 shadow-rose-200",
-                        inactiveClass:
-                          "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100",
-                      },
-                    ].map((p) => (
-                      <div
-                        key={p.id}
-                        onClick={() =>
-                          setFormData({ ...formData, priority: p.id as any })
-                        }
-                        className={cn(
-                          "cursor-pointer px-2 py-3 rounded-xl border-2 text-center text-[10px] font-black uppercase transition-all shadow-sm",
-                          formData.priority === p.id
-                            ? `${p.activeClass} scale-105`
-                            : p.inactiveClass,
-                        )}
-                      >
-                        {p.label}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <TaskPrioritySelector
+                  value={formData.priority}
+                  onChange={(priority) =>
+                    setFormData({ ...formData, priority })
+                  }
+                />
               </CardContent>
             </Card>
 
@@ -1676,158 +1521,11 @@ export default function TaskEditPage() {
             </Card>
 
             {/* Tasks and Materials List */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between px-2">
-                <h4 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                  <ClipboardList className="w-4 h-4 text-emerald-500" />
-                  Danh sách công việc chi tiết
-                </h4>
-                <Badge
-                  variant="secondary"
-                  className="bg-slate-100 text-slate-600 font-bold px-2 py-0"
-                >
-                  {formData.tasks.length} công việc
-                </Badge>
-              </div>
-
-              {formData.tasks.length === 0 ? (
-                <Card className="border-dashed border-slate-200 bg-slate-50/30">
-                  <CardContent className="py-8 text-center">
-                    <p className="text-sm text-slate-400 italic">
-                      Chưa có công việc nào được cấu hình
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                formData.tasks.map((task, taskIdx) => (
-                  <Card
-                    key={taskIdx}
-                    className="border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    {/* Task Header */}
-                    <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-6 h-6 rounded-md bg-emerald-500 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
-                          {taskIdx + 1}
-                        </div>
-                        <span className="font-bold text-slate-800 truncate">
-                          {task.name}
-                        </span>
-                      </div>
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] bg-white border-slate-200 text-slate-500 py-0.5 px-2"
-                      >
-                        <CalendarIcon className="w-3 h-3 mr-1 opacity-60" />
-                        {task.startDate} → {task.endDate}
-                      </Badge>
-                    </div>
-
-                    <CardContent className="p-4 space-y-4">
-                      {/* Labor & Duration */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="flex items-start gap-2.5">
-                          <Users className="w-3.5 h-3.5 text-slate-400 mt-0.5" />
-                          <div className="min-w-0">
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                              Nhân sự
-                            </p>
-                            <p className="text-xs font-semibold text-slate-700 leading-snug">
-                              {task.labor || "Chưa phân công"}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <Clock className="w-3.5 h-3.5 text-slate-400 mt-0.5" />
-                          <div className="min-w-0">
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                              Thời gian
-                            </p>
-                            <p className="text-xs font-semibold text-slate-700">
-                              {task.duration || "—"}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Scope MapPin */}
-                      {task.geographicalSelections &&
-                        task.geographicalSelections.length > 0 && (
-                          <div className="flex items-start gap-2.5 pt-3 border-t border-slate-50">
-                            <MapPin className="w-3.5 h-3.5 text-slate-400 mt-1" />
-                            <div className="flex-1">
-                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 text-left">
-                                Phạm vi thực hiện
-                              </p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {getSelectionSummary(
-                                  task.geographicalSelections,
-                                ).map((group) => (
-                                  <div
-                                    key={group.regionId}
-                                    className="flex flex-wrap gap-1"
-                                  >
-                                    {group.items.map((item, i) => (
-                                      <Badge
-                                        key={`${item.id}-${i}`}
-                                        className={cn(
-                                          "text-[10px] px-2 py-0 border-none font-medium h-5",
-                                          item.type === "region"
-                                            ? "bg-emerald-50 text-emerald-700"
-                                            : item.type === "area"
-                                              ? "bg-blue-50 text-blue-700"
-                                              : "bg-amber-50 text-amber-700",
-                                        )}
-                                      >
-                                        {item.name}
-                                        {item.parentName && (
-                                          <span className="opacity-50 ml-1 font-normal">
-                                            ({item.parentName})
-                                          </span>
-                                        )}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                      {/* Materials for this task */}
-                      {formData.materials.filter((m) => m.taskId === task.id)
-                        .length > 0 && (
-                        <div className="pt-3 border-t border-slate-50">
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-2 text-left">
-                            Vật tư sử dụng
-                          </p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {formData.materials
-                              .filter((m) => m.taskId === task.id)
-                              .map((m, mIdx) => (
-                                <div
-                                  key={mIdx}
-                                  className="flex items-center justify-between bg-slate-50/50 border border-slate-100 rounded-lg px-2.5 py-1.5"
-                                >
-                                  <span className="text-xs text-slate-600 font-medium truncate mr-2">
-                                    {m.materialName}
-                                  </span>
-                                  <Badge
-                                    variant="secondary"
-                                    className="bg-white text-slate-900 border-slate-200 text-[10px] font-bold shrink-0"
-                                  >
-                                    {m.quantity} {m.unit}
-                                  </Badge>
-                                </div>
-                              ))}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
+            <TaskTaskListSummary
+              tasks={formData.tasks}
+              materials={formData.materials}
+              getSelectionSummary={getSelectionSummary}
+            />
           </div>
 
           {/* ── RIGHT COLUMN: CTA + notice ── */}
@@ -1993,100 +1691,30 @@ export default function TaskEditPage() {
         />
       </div>
 
-      {/* Dialog Selection (Reuse Assignee Dialog) */}
-      <Dialog
+      <TaskPersonnelPickerDialog
         open={isAssigneeDialogOpen}
         onOpenChange={setIsAssigneeDialogOpen}
-      >
-        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-[32px]">
-          <DialogHeader className="p-8 pb-4 bg-slate-50/50">
-            <DialogTitle className="flex items-center gap-3 text-2xl font-black tracking-tight">
-              <Users className="w-6 h-6 text-emerald-500" /> Chọn người thực
-              hiện
-            </DialogTitle>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">
-              Danh sách{" "}
-              {formData.assignedType === "team"
-                ? "đội nhóm"
-                : "nhân sự kỹ thuật"}
-            </p>
-          </DialogHeader>
-          <div className="p-8 pt-4 space-y-6">
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-              <Input
-                placeholder="Tìm nhanh theo tên hoặc mã..."
-                className="pl-11 h-12 rounded-xl border-slate-200 focus:border-emerald-500 transition-all font-medium"
-                value={searchAssignee}
-                onChange={(e) => setSearchAssignee(e.target.value)}
-              />
-            </div>
-            <ScrollArea className="h-[350px] border-none pr-4">
-              <div className="space-y-2">
-                {filteredAssignees.map((a) => {
-                  const isSelected = formData.assignedTo.includes(a.name);
-                  return (
-                    <div
-                      key={a.id}
-                      className={cn(
-                        "flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all border-2",
-                        isSelected
-                          ? "bg-emerald-50 border-emerald-500/20 shadow-sm"
-                          : "bg-white border-transparent hover:border-slate-100 hover:bg-slate-50",
-                      )}
-                      onClick={() => {
-                        setFormData((prev) => {
-                          const next = isSelected
-                            ? prev.assignedTo.filter((n) => n !== a.name)
-                            : [...prev.assignedTo, a.name];
-                          return { ...prev, assignedTo: next };
-                        });
-                      }}
-                    >
-                      <Checkbox
-                        checked={isSelected}
-                        className="rounded-md border-slate-300 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-none"
-                      />
-                      <div className="h-11 w-11 overflow-hidden rounded-[15px] border-2 border-white shadow-sm bg-slate-100 flex items-center justify-center shrink-0">
-                        {formData.assignedType === "team" ? (
-                          <Users className="w-5 h-5 text-blue-500" />
-                        ) : a.avatar ? (
-                          <img
-                            src={a.avatar}
-                            alt={a.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <User className="w-5 h-5 text-emerald-500" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-black text-slate-800 leading-none mb-1">
-                          {a.name}
-                        </p>
-                        <p className="text-[10px] text-slate-400 font-mono tracking-tighter">
-                          {a.code}
-                        </p>
-                      </div>
-                      {isSelected && (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          </div>
-          <DialogFooter className="p-8 bg-slate-900 border-none">
-            <Button
-              className="w-full h-14 bg-white text-slate-900 hover:bg-slate-100 rounded-2xl font-black text-lg shadow-xl active:translate-y-1 transition-all"
-              onClick={() => setIsAssigneeDialogOpen(false)}
-            >
-              Xác nhận ({formData.assignedTo.length})
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        title="Chọn người thực hiện"
+        description={`Danh sách ${formData.assignedType === "team" ? "đội nhóm" : "nhân sự kỹ thuật"}`}
+        searchPlaceholder="Tìm nhanh theo tên hoặc mã..."
+        searchValue={searchAssignee}
+        onSearchChange={setSearchAssignee}
+        options={filteredAssignees}
+        selectedValues={formData.assignedTo}
+        onToggle={(name) =>
+          setFormData((prev) => ({
+            ...prev,
+            assignedTo: prev.assignedTo.includes(name)
+              ? prev.assignedTo.filter((item) => item !== name)
+              : [...prev.assignedTo, name],
+          }))
+        }
+        confirmLabel="Xác nhận"
+        colorClassName="text-emerald-500"
+        icon={Users}
+        teamMode={formData.assignedType === "team"}
+        large
+      />
     </AdminLayout>
   );
 }
