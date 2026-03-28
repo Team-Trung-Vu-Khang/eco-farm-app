@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import { initialUnits, type Unit } from "../pages/unit/constants";
+import { initialUnits } from "../pages/unit/data/constants";
+import type { Unit } from "../pages/unit/types/types";
 
 interface UnitState {
   // State
