@@ -1180,12 +1180,20 @@ const SearchZonePage = () => {
                 {/* Top Section: Map & Detail Panel */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-125">
                   {/* Map Area */}
-                  <div className="lg:col-span-8 rounded-2xl overflow-hidden border-4 border-white bg-white shadow-xl relative min-h-80 lg:min-h-125">
+                  <div
+                    className={cn(
+                      isCultivationRegionDetailOpen && "opacity-0 invisible",
+                      "lg:col-span-8 rounded-2xl overflow-hidden border-4 border-white bg-white shadow-xl relative min-h-80 lg:min-h-125 transition-all duration-300 ease-in-out",
+                    )}
+                  >
                     <MapContainer
                       zoom={13}
                       ref={mapRef}
                       center={[11.53, 106.88]}
-                      style={{ height: "100%", width: "100%" }}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                      }}
                     >
                       <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                       <ZoneMapContent
@@ -1571,7 +1579,7 @@ const SearchZonePage = () => {
                     open={isCultivationRegionDetailOpen}
                     onOpenChange={setIsCultivationRegionDetailOpen}
                   >
-                    <DialogContent className="max-w-[96vw] w-[96vw] h-[92vh] p-0 overflow-hidden border-none shadow-2xl rounded-3xl z-10000">
+                    <DialogContent className="max-w-[96vw] w-[96vw] h-[92vh] p-0 overflow-hidden border-none shadow-2xl rounded-3xl z-50">
                       <div className="h-full overflow-y-auto p-6">
                         <div className="flex items-center gap-4 mb-4">
                           <div

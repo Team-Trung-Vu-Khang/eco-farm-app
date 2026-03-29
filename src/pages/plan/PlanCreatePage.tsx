@@ -576,10 +576,16 @@ export default function PlanCreatePage() {
                     selectedRegimenId={formData.regimenId}
                     type={formData.purpose as "treatment" | "amendment"}
                     onSelect={(regimen) => {
+                      const stages =
+                        regimen.steps && regimen.steps.length > 0
+                          ? regimen.steps.map(
+                              (step) => `${regimen.id}:${step.title}`,
+                            )
+                          : [`${regimen.id}:${regimen.name}`];
                       setFormData((prev) => ({
                         ...prev,
                         regimenId: regimen.id,
-                        selectedStages: [regimen.name],
+                        selectedStages: stages,
                       }));
                     }}
                   />
@@ -883,13 +889,15 @@ export default function PlanCreatePage() {
                   onRemoveTask={handleRemoveTask}
                 />
               </div>
-            ) : formData.purpose === "cultivation" || !formData.regimenId ? (
+            ) : (
               formData.selectedStages.map((stageKey, idx) => {
                 const [cycleId, stageName] = stageKey.includes(":")
                   ? stageKey.split(":")
                   : [null, stageKey];
+
                 const cycleName = cycleId
-                  ? growthCycles.find((c) => c.id === cycleId)?.name
+                  ? growthCycles.find((c) => c.id === cycleId)?.name ||
+                    regimens.find((r) => r.id === cycleId)?.name
                   : null;
 
                 return (
@@ -919,52 +927,6 @@ export default function PlanCreatePage() {
                   />
                 );
               })
-            ) : (
-              (() => {
-                const regimen = regimens.find(
-                  (r) => r.id === formData.regimenId,
-                );
-                const stageKey = regimen?.name || "Treatment";
-                return regimen ? (
-                  <div className="animation-slide-up">
-                    <StageAllocation
-                      isDetail={false}
-                      index={0}
-                      stageName={regimen.name}
-                      cycleName={
-                        formData.purpose === "amendment"
-                          ? "Quy trình cải tạo"
-                          : "Phác đồ điều trị"
-                      }
-                      allocations={formData.materialAllocations.filter(
-                        (m) => m.stageId === stageKey,
-                      )}
-                      tasks={formData.taskAllocations.filter(
-                        (t) => t.stageId === stageKey,
-                      )}
-                      regions={regions}
-                      masterSelections={selections}
-                      enterpriseId={selectedEnterpriseId}
-                      onAddMaterial={(item) =>
-                        handleAddMaterial({ ...item, stageId: stageKey })
-                      }
-                      onRemoveMaterial={handleRemoveMaterial}
-                      onAddTask={(item) =>
-                        handleAddTask({ ...item, stageId: stageKey })
-                      }
-                      onRemoveTask={handleRemoveTask}
-                    />
-                  </div>
-                ) : (
-                  <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
-                    <p className="text-slate-400 font-medium italic">
-                      {formData.purpose === "amendment"
-                        ? "Vui lòng chọn quy trình cải tạo ở bước trước."
-                        : "Vui lòng chọn phác đồ điều trị ở bước trước."}
-                    </p>
-                  </div>
-                );
-              })()
             )}
           </div>
         </div>

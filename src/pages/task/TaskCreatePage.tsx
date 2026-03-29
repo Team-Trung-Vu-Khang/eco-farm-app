@@ -513,15 +513,33 @@ export default function TaskCreatePage() {
   }, [selectedPlan, getPlotById, getAreaById, getRegionById]);
 
   const availableStages = useMemo((): string[] => {
-    if (!selectedPlan) return [];
-    if ("selectedStages" in selectedPlan) return selectedPlan.selectedStages;
-    if ("allocations" in selectedPlan) {
-      return Array.from(
-        new Set(selectedPlan.allocations.map((a: any) => a.stage)),
-      );
+    // Priority 1: If plan has its own selectedStages, use them (task/material allocations reference these)
+    if (selectedPlan) {
+      if ("selectedStages" in selectedPlan && (selectedPlan as any).selectedStages?.length > 0) {
+        return (selectedPlan as any).selectedStages;
+      }
+      if ("allocations" in selectedPlan && (selectedPlan as any).allocations?.length > 0) {
+        return Array.from(
+          new Set((selectedPlan as any).allocations.map((a: any) => a.stage)),
+        );
+      }
     }
+
+    // Priority 2: If no plan stages but there's a regimen, use regimen step titles
+    const activeRegimenId = (selectedPlan as any)?.regimenId || formData.regimenId;
+    if (
+      (formData.objectiveType === "cai-tao-dat" ||
+        formData.objectiveType === "tri-benh") &&
+      activeRegimenId
+    ) {
+      const regimen = regimens.find((r) => r.id === activeRegimenId);
+      if (regimen?.steps && regimen.steps.length > 0) {
+        return regimen.steps.map((s) => s.title);
+      }
+    }
+
     return [];
-  }, [selectedPlan]);
+  }, [selectedPlan, formData.objectiveType, formData.regimenId, regimens]);
 
   const filteredRegionsForPhatSinh = useMemo(() => {
     if (formData.objectiveType !== "phat-sinh" || selections.length === 0) {
@@ -803,6 +821,62 @@ export default function TaskCreatePage() {
     setLocation("/task");
   };
 
+  const renderStagesGrid = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+      {availableStages.map((s) => (
+        <div
+          key={s}
+          onClick={() => {
+            setFormData((prev) => ({
+              ...prev,
+              selectedStages: prev.selectedStages.includes(s)
+                ? prev.selectedStages.filter((item) => item !== s)
+                : [...prev.selectedStages, s],
+            }));
+          }}
+          className={cn(
+            "flex items-center gap-4 p-4 rounded-md border transition-all cursor-pointer group",
+            formData.selectedStages.includes(s)
+              ? "bg-primary/5 border-primary shadow-sm"
+              : "bg-white border-slate-200 hover:border-primary/20 hover:bg-slate-50/50",
+          )}
+        >
+          <Checkbox
+            id={`stage-${s}`}
+            checked={formData.selectedStages.includes(s)}
+            className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+            onClick={(e) => e.stopPropagation()}
+            onCheckedChange={(checked) => {
+              setFormData((prev) => ({
+                ...prev,
+                selectedStages: checked
+                  ? [...prev.selectedStages, s]
+                  : prev.selectedStages.filter((item) => item !== s),
+              }));
+            }}
+          />
+          <label
+            htmlFor={`stage-${s}`}
+            className="text-sm font-bold text-slate-700 cursor-pointer flex-1"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {s}
+          </label>
+        </div>
+      ))}
+      {availableStages.length === 0 && (
+        <div className="col-span-full py-12 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50 flex flex-col items-center justify-center gap-2">
+          <Layers className="w-8 h-8 text-slate-200" />
+          <p className="text-xs text-slate-400 italic">
+            {formData.planId
+              ? "Kế hoạch không có giai đoạn"
+              : "Hãy chọn kế hoạch trước"}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+
   const steps: Step[] = [
     {
       id: "objective",
@@ -962,15 +1036,28 @@ export default function TaskCreatePage() {
                             const p = (activePlans as any[]).find(
                               (p) => String(p.id) === val,
                             );
-                            const stages =
-                              p?.selectedStages ||
-                              (p?.allocations
-                                ? Array.from(
-                                    new Set(
-                                      p.allocations.map((a: any) => a.stage),
-                                    ),
-                                  )
-                                : []);
+                            let stages: string[] =
+                              p?.selectedStages?.length > 0
+                                ? p.selectedStages
+                                : p?.allocations
+                                  ? Array.from(
+                                      new Set(
+                                        p.allocations.map((a: any) => a.stage),
+                                      ),
+                                    )
+                                  : [];
+                            // Only use regimen steps when plan has NO stages of its own
+                            if (
+                              (stages as string[]).length === 0 &&
+                              p?.regimenId &&
+                              (formData.objectiveType === "cai-tao-dat" ||
+                                formData.objectiveType === "tri-benh")
+                            ) {
+                              const reg = regimens.find((r) => r.id === p.regimenId);
+                              if (reg?.steps && reg.steps.length > 0) {
+                                stages = reg.steps.map((s) => s.title);
+                              }
+                            }
                             setFormData({
                               ...formData,
                               planId: val,
@@ -1274,106 +1361,130 @@ export default function TaskCreatePage() {
                           </div>
                         </div>
 
-                        {/* Multi-select Stages */}
+                        {/* Multi-select Stages & Regimen */}
                         {formData.objectiveType !== "thu-hoach" && (
-                          <div className="space-y-3">
-                            <Label className="text-sm font-bold text-slate-700 flex items-center justify-between">
-                              Giai đoạn thực hiện *
-                              <span className="text-[10px] text-slate-400 font-normal">
-                                Chọn nhiều
-                              </span>
-                            </Label>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                              {availableStages.map((s) => (
-                                <div
-                                  key={s}
-                                  onClick={() => {
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      selectedStages:
-                                        prev.selectedStages.includes(s)
-                                          ? prev.selectedStages.filter(
-                                              (item) => item !== s,
-                                            )
-                                          : [...prev.selectedStages, s],
-                                    }));
-                                  }}
-                                  className={cn(
-                                    "flex items-center gap-4 p-4 rounded-md border transition-all cursor-pointer group",
-                                    formData.selectedStages.includes(s)
-                                      ? "bg-primary/5 border-primary shadow-sm"
-                                      : "bg-white border-slate-200 hover:border-primary/20 hover:bg-slate-50/50",
-                                  )}
-                                >
-                                  <Checkbox
-                                    id={`stage-${s}`}
-                                    checked={formData.selectedStages.includes(
-                                      s,
-                                    )}
-                                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                                    onClick={(e) => e.stopPropagation()}
-                                    onCheckedChange={(checked) => {
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        selectedStages: checked
-                                          ? [...prev.selectedStages, s]
-                                          : prev.selectedStages.filter(
-                                              (item) => item !== s,
-                                            ),
-                                      }));
-                                    }}
-                                  />
-                                  <label
-                                    htmlFor={`stage-${s}`}
-                                    className="text-sm font-bold text-slate-700 cursor-pointer flex-1"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    {s}
-                                  </label>
+                          <div className="space-y-4">
+                            {formData.objectiveType === "cai-tao-dat" || formData.objectiveType === "tri-benh" ? (
+                              (() => {
+                                const hasPlanRegimen = !!(selectedPlan as any)?.regimenId;
+                                const planHasStages = !!(
+                                  selectedPlan &&
+                                  (("selectedStages" in selectedPlan && (selectedPlan as any).selectedStages?.length > 0) ||
+                                   ("allocations" in selectedPlan && (selectedPlan as any).allocations?.length > 0))
+                                );
+                                
+                                if (hasPlanRegimen) {
+                                  return (
+                                    <div className="px-5 py-4 rounded-[1.25rem] border border-blue-100 bg-blue-50/20 space-y-5">
+                                      <div className="space-y-3">
+                                        <Label className="text-sm font-bold text-slate-700">
+                                          {formData.objectiveType === "cai-tao-dat"
+                                            ? "Phác đồ cải tạo đất từ kế hoạch"
+                                            : "Phác đồ trị bệnh từ kế hoạch"}
+                                        </Label>
+                                        <RegimenSelector
+                                          regimens={regimens}
+                                          selectedRegimenId={formData.regimenId}
+                                          disabled={true}
+                                          type={
+                                            formData.objectiveType === "cai-tao-dat"
+                                              ? "amendment"
+                                              : "treatment"
+                                          }
+                                          onSelect={() => {}}
+                                        />
+                                      </div>
+                                      
+                                      <div className="h-px bg-blue-100/50 w-full" />
+                                      
+                                      <div className="space-y-3">
+                                        <Label className="text-sm font-bold text-slate-700 flex items-center justify-between">
+                                          Giai đoạn thực hiện *
+                                          <span className="text-[10px] text-slate-400 font-normal">
+                                            Từ phác đồ
+                                          </span>
+                                        </Label>
+                                        {renderStagesGrid()}
+                                      </div>
+                                    </div>
+                                  );
+                                } else if (planHasStages) {
+                                  return (
+                                    <div className="space-y-3">
+                                      <Label className="text-sm font-bold text-slate-700 flex items-center justify-between">
+                                        Giai đoạn thực hiện *
+                                        <span className="text-[10px] text-slate-400 font-normal">
+                                          Chọn nhiều
+                                        </span>
+                                      </Label>
+                                      {renderStagesGrid()}
+                                    </div>
+                                  );
+                                } else {
+                                  return (
+                                    <div className="space-y-5 mt-2 anim-fade-in">
+                                      <div className="space-y-3">
+                                        <Label className="text-sm font-bold text-slate-700">
+                                          {formData.objectiveType === "cai-tao-dat"
+                                            ? "Phác đồ cải tạo đất áp dụng (tùy chọn)"
+                                            : "Phác đồ trị bệnh áp dụng (tùy chọn)"}
+                                        </Label>
+                                        <RegimenSelector
+                                          regimens={regimens}
+                                          selectedRegimenId={formData.regimenId}
+                                          disabled={false}
+                                          type={
+                                            formData.objectiveType === "cai-tao-dat"
+                                              ? "amendment"
+                                              : "treatment"
+                                          }
+                                          onSelect={(regimen) => {
+                                            if (formData.regimenId !== regimen.id) {
+                                              const stepTitles = regimen.steps?.map((s) => s.title) || [];
+                                              setFormData((prev) => ({
+                                                ...prev,
+                                                regimenId: regimen.id,
+                                                selectedStages: stepTitles,
+                                              }));
+                                            }
+                                          }}
+                                        />
+                                      </div>
+
+                                      {formData.regimenId && availableStages.length > 0 && (
+                                        <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                                          <Label className="text-sm font-bold text-slate-700 flex items-center justify-between">
+                                            Giai đoạn thực hiện *
+                                            <span className="text-[10px] text-slate-400 font-normal">
+                                              Từ phác đồ
+                                            </span>
+                                          </Label>
+                                          {renderStagesGrid()}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                }
+                              })()
+                            ) : (
+                              (availableStages.length > 0 || !formData.regimenId) && (
+                                <div className="space-y-3">
+                                  <Label className="text-sm font-bold text-slate-700 flex items-center justify-between">
+                                    Giai đoạn thực hiện *
+                                    <span className="text-[10px] text-slate-400 font-normal">
+                                      Chọn nhiều
+                                    </span>
+                                  </Label>
+                                  {renderStagesGrid()}
                                 </div>
-                              ))}
-                              {availableStages.length === 0 && (
-                                <div className="col-span-full py-12 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50 flex flex-col items-center justify-center gap-2">
-                                  <Layers className="w-8 h-8 text-slate-200" />
-                                  <p className="text-xs text-slate-400 italic">
-                                    {formData.planId
-                                      ? "Kế hoạch không có giai đoạn"
-                                      : "Hãy chọn kế hoạch trước"}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
+                              )
+                            )}
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {(formData.objectiveType === "cai-tao-dat" ||
-                      formData.objectiveType === "tri-benh") && (
-                      <div className="space-y-4 mt-2 anim-fade-in">
-                        <Label className="text-sm font-bold text-slate-700">
-                          {formData.objectiveType === "cai-tao-dat"
-                            ? "Phác đồ cải tạo đất áp dụng"
-                            : "Phác đồ trị bệnh áp dụng"}
-                        </Label>
-                        <RegimenSelector
-                          regimens={regimens}
-                          selectedRegimenId={formData.regimenId}
-                          disabled={!!selectedPlan?.regimenId}
-                          type={
-                            formData.objectiveType === "cai-tao-dat"
-                              ? "amendment"
-                              : "treatment"
-                          }
-                          onSelect={(regimen) => {
-                            setFormData((prev) => ({
-                              ...prev,
-                              regimenId: regimen.id,
-                            }));
-                          }}
-                        />
-                      </div>
-                    )}
+
                   </div>
                 )}
 
@@ -1945,31 +2056,60 @@ export default function TaskCreatePage() {
           <div className="space-y-4">
             {formData.objectiveType === "theo-ke-hoach" ||
             formData.objectiveType === "thu-hoach" ||
-            ((formData.objectiveType === "cai-tao-dat" ||
-              formData.objectiveType === "tri-benh") &&
-              formData.selectedStages.length > 0 &&
-              !formData.regimenId) ? (
-              (formData.selectedStages.length > 0
-                ? formData.selectedStages
-                : formData.objectiveType === "thu-hoach"
-                  ? ["Công việc thu hoạch"]
-                  : ["Công việc chính"]
-              ).map((stageName) => (
+            formData.objectiveType === "cai-tao-dat" ||
+            formData.objectiveType === "tri-benh" ? (
+              formData.selectedStages.length > 0 ? (
+                formData.selectedStages.map((stageName) => (
+                  <TaskStageAllocation
+                    key={stageName}
+                    stageName={stageName}
+                    cycleName={
+                      formData.objectiveType === "cai-tao-dat"
+                        ? "Cải tạo đất"
+                        : formData.objectiveType === "tri-benh"
+                          ? "Điều trị bệnh"
+                          : undefined
+                    }
+                    allocations={formData.materials.filter(
+                      (m: any) => m.stageId === stageName,
+                    )}
+                    tasks={formData.tasks.filter(
+                      (t: any) => t.stageId === stageName,
+                    )}
+                    onAddMaterial={(item: any) => handleAddMaterial(item)}
+                    onRemoveMaterial={handleRemoveMaterial}
+                    onUpdateMaterial={handleUpdateMaterial}
+                    onAddTask={handleAddTask}
+                    onRemoveTask={handleRemoveTask}
+                    onUpdateTask={handleUpdateTask}
+                    regions={regions}
+                    personnel={personnel}
+                    enterpriseId={
+                      selectedEnterpriseId ||
+                      (selectedPlan as any)?.enterpriseId ||
+                      ""
+                    }
+                    availableTasks={
+                      selectedPlan?.taskAllocations?.filter(
+                        (t: any) => t.stageId === stageName,
+                      )
+                    }
+                    availableMaterials={
+                      selectedPlan?.materialAllocations?.filter(
+                        (m: any) => m.stageId === stageName,
+                      )
+                    }
+                  />
+                ))
+              ) : formData.objectiveType === "thu-hoach" ? (
                 <TaskStageAllocation
-                  key={stageName}
-                  stageName={stageName}
-                  cycleName={
-                    formData.objectiveType === "cai-tao-dat"
-                      ? "Cải tạo đất"
-                      : formData.objectiveType === "tri-benh"
-                        ? "Điều trị bệnh"
-                        : undefined
-                  }
+                  key="thu-hoach"
+                  stageName="Công việc thu hoạch"
                   allocations={formData.materials.filter(
-                    (m: any) => m.stageId === stageName,
+                    (m: any) => m.stageId === "Công việc thu hoạch",
                   )}
                   tasks={formData.tasks.filter(
-                    (t: any) => t.stageId === stageName,
+                    (t: any) => t.stageId === "Công việc thu hoạch",
                   )}
                   onAddMaterial={(item: any) => handleAddMaterial(item)}
                   onRemoveMaterial={handleRemoveMaterial}
@@ -1984,30 +2124,16 @@ export default function TaskCreatePage() {
                     (selectedPlan as any)?.enterpriseId ||
                     ""
                   }
-                  availableTasks={
-                    formData.objectiveType === "theo-ke-hoach" ||
-                    formData.objectiveType === "cai-tao-dat" ||
-                    formData.objectiveType === "tri-benh"
-                      ? selectedPlan?.taskAllocations?.filter(
-                          (t: any) => t.stageId === stageName,
-                        )
-                      : formData.objectiveType !== "phat-sinh"
-                        ? selectedPlan?.taskAllocations
-                        : undefined
-                  }
-                  availableMaterials={
-                    formData.objectiveType === "theo-ke-hoach" ||
-                    formData.objectiveType === "cai-tao-dat" ||
-                    formData.objectiveType === "tri-benh"
-                      ? selectedPlan?.materialAllocations?.filter(
-                          (m: any) => m.stageId === stageName,
-                        )
-                      : formData.objectiveType !== "phat-sinh"
-                        ? selectedPlan?.materialAllocations
-                        : undefined
-                  }
+                  availableTasks={selectedPlan?.taskAllocations}
+                  availableMaterials={selectedPlan?.materialAllocations}
                 />
-              ))
+              ) : (
+                <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
+                  <p className="text-slate-400 font-medium italic">
+                    Vui lòng chọn giai đoạn thực hiện ở bước trước.
+                  </p>
+                </div>
+              )
             ) : formData.objectiveType === "phat-sinh" ? (
               <TaskStageAllocation
                 key="phat-sinh"
@@ -2028,218 +2154,8 @@ export default function TaskCreatePage() {
                 regions={filteredRegionsForPhatSinh}
                 personnel={personnel}
                 enterpriseId={selectedEnterpriseId}
-                // Phát sinh allows all options, so availableTasks/Materials are undefined
               />
-            ) : (
-              (() => {
-                const regimen = regimens.find(
-                  (r) => r.id === formData.regimenId,
-                );
-
-                if (!regimen) {
-                  return (
-                    <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
-                      <p className="text-slate-400 font-medium italic">
-                        Vui lòng chọn{" "}
-                        {formData.objectiveType === "cai-tao-dat"
-                          ? "quy trình cải tạo"
-                          : "phác đồ điều trị"}{" "}
-                        ở bước trước.
-                      </p>
-                    </div>
-                  );
-                }
-
-                const stageName = regimen.name;
-                const relevantMaterials = formData.materials.filter(
-                  (m: any) => m.stageId === stageName,
-                );
-                const relevantTasks = formData.tasks.filter(
-                  (t: any) => t.stageId === stageName,
-                );
-
-                return (
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animation-slide-up">
-                    {/* --- LEFT SIDE: Task Addition --- */}
-                    <div className="lg:col-span-12 space-y-5">
-                      {/* <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-sm space-y-4">
-                        <div className="flex items-center justify-between border-b pb-3">
-                          <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                            Danh mục đề xuất
-                          </h4>
-                          <Badge
-                            variant="outline"
-                            className="text-[9px] bg-slate-50"
-                          >
-                            {regimen.category}
-                          </Badge>
-                        </div>
-
-                        <div className="space-y-2">
-                          {regimen.steps?.map((step) => (
-                            <button
-                              key={step.id}
-                              onClick={() =>
-                                handleAddTask({
-                                  stageId: stageName,
-                                  name: step.title,
-                                  description: step.description,
-                                  labor: "Tùy chỉnh",
-                                  duration: step.day,
-                                })
-                              }
-                              className="w-full text-left p-3 rounded-2xl bg-slate-50 border border-transparent hover:border-primary/30 hover:bg-primary/5 transition-all group relative overflow-hidden"
-                            >
-                              <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Plus className="w-4 h-4 text-primary" />
-                              </div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 rounded uppercase">
-                                  {step.day}
-                                </span>
-                                <span className="text-xs font-black text-slate-800">
-                                  {step.title}
-                                </span>
-                              </div>
-                              <p className="text-[10px] text-slate-500 line-clamp-1">
-                                {step.description}
-                              </p>
-                            </button>
-                          ))}
-                          {(!regimen.steps || regimen.steps.length === 0) && (
-                            <div className="py-8 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-                              <p className="text-[10px] text-slate-400 italic">
-                                Không có công việc mẫu
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div> */}
-
-                      <TaskStageAllocation
-                        stageName={stageName}
-                        cycleName={
-                          formData.objectiveType === "cai-tao-dat"
-                            ? "Cải tạo đất"
-                            : "Phác đồ điều trị"
-                        }
-                        allocations={relevantMaterials}
-                        tasks={relevantTasks}
-                        onAddMaterial={(item) => handleAddMaterial(item)}
-                        onRemoveMaterial={handleRemoveMaterial}
-                        onUpdateMaterial={handleUpdateMaterial}
-                        onAddTask={handleAddTask}
-                        onRemoveTask={handleRemoveTask}
-                        onUpdateTask={handleUpdateTask}
-                        regions={regions}
-                        personnel={personnel}
-                        enterpriseId={
-                          selectedEnterpriseId ||
-                          (selectedPlan as any)?.enterpriseId ||
-                          ""
-                        }
-                        availableTasks={
-                          selectedPlan?.taskAllocations ||
-                          regimen.steps?.map((step: any) => ({
-                            id:
-                              parseInt(step.id.replace(/\D/g, "")) ||
-                              Date.now(),
-                            name: step.title,
-                            description: step.description,
-                            duration: step.day,
-                            stageId: stageName,
-                            labor: "Tùy chỉnh",
-                          })) ||
-                          []
-                        }
-                        availableMaterials={selectedPlan?.materialAllocations}
-                      />
-                    </div>
-
-                    {/* --- RIGHT SIDE: Timeline --- */}
-                    {/* <div className="lg:col-span-5 bg-slate-900 rounded-xl p-8 text-white shadow-2xl relative overflow-hidden min-h-[500px]">
-                      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full -mr-32 -mt-32 blur-3xl" />
-
-                      <div className="relative z-10">
-                        <div className="flex items-center gap-4 mb-8">
-                          <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center border border-white/20">
-                            <Clock className="w-6 h-6 text-primary" />
-                          </div>
-                          <div>
-                            <h4 className="text-lg font-black tracking-tight leading-none mb-1">
-                              Timeline chi tiết
-                            </h4>
-                            <p className="text-xs text-slate-400 font-medium">
-                              Lộ trình kỹ thuật chuẩn của hệ thống
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="space-y-0 relative">
-                          <div className="absolute left-[23px] top-6 bottom-6 w-0.5 bg-gradient-to-b from-primary via-slate-700 to-transparent" />
-
-                          {regimen.steps?.map((step, idx) => (
-                            <div
-                              key={step.id}
-                              className="relative pl-14 pb-10 last:pb-0"
-                            >
-                              <div
-                                className={cn(
-                                  "absolute -left-1 top-0 w-14 h-12 rounded-2xl bg-slate-800 border-4 border-slate-900 flex flex-col items-center justify-center z-10 transition-transform group-hover:scale-110 shadow-lg",
-                                  idx === 0
-                                    ? "bg-primary border-slate-900"
-                                    : "",
-                                )}
-                              >
-                                <span className="text-[8px] font-black uppercase text-white">
-                                  {step.day}
-                                </span>
-                              </div>
-
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <h5 className="font-black text-base text-white">
-                                    {step.title}
-                                  </h5>
-                                  {idx === 0 && (
-                                    <Badge className="bg-primary/20 text-primary border-primary/30 text-[8px] font-black py-0">
-                                      BẮT ĐẦU
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-sm text-slate-400 font-medium leading-relaxed max-w-md">
-                                  {step.description}
-                                </p>
-
-                                <div className="flex items-center gap-4 mt-3">
-                                  <div className="flex items-center gap-1.5">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                      Sẵn sàng
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-
-                          {(!regimen.steps || regimen.steps.length === 0) && (
-                            <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-                              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
-                                <CalendarIcon className="w-8 h-8 text-slate-700" />
-                              </div>
-                              <p className="text-sm font-bold italic">
-                                Chưa có dữ liệu timeline
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div> */}
-                  </div>
-                );
-              })()
-            )}
+            ) : null}
           </div>
         </div>
       ),
@@ -2590,8 +2506,25 @@ export default function TaskCreatePage() {
                   {[
                     {
                       label: "Nhân sự",
-                      value: formData.assignedTo.length || "—",
-                      sub: formData.assignedType === "team" ? "đội" : "người",
+                      value: (() => {
+                        const allPersonnel = new Set([
+                          ...formData.supervisors,
+                          ...formData.qualityInspectors,
+                          ...formData.tasks.flatMap((t: any) => {
+                            const labor = t.labor || "";
+                            if (labor.includes(":")) {
+                              return labor
+                                .split(":")[1]
+                                .trim()
+                                .split(", ")
+                                .filter(Boolean);
+                            }
+                            return [];
+                          }),
+                        ]);
+                        return allPersonnel.size > 0 ? allPersonnel.size : "—";
+                      })(),
+                      sub: "người",
                     },
                     {
                       label: "Vật tư",
