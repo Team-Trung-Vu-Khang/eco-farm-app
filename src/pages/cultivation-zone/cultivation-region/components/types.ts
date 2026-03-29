@@ -3,6 +3,14 @@ export interface Coordinate {
   lng: number;
 }
 
+export interface GeographicalSelection {
+  id: string;
+  type: "region" | "area" | "plot";
+  regionId: string;
+  areaId?: string;
+  plotId?: string;
+}
+
 export interface PlantEntry {
   entryId: string;
   height: string;
