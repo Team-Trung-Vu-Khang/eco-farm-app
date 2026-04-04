@@ -316,9 +316,78 @@ export const initialTreatmentPlans: TreatmentPlan[] = [
     status: "in_progress",
     area: 4.0,
     budget: 120,
+    budgetRange: "100-150",
     technician: "Lê Văn C",
     soilIssue: "Đất bạc màu, nghèo dinh dưỡng",
     cropType: "Rau màu",
+    soilProblems: ["soil_compaction", "low_organic", "imbalanced_ph"],
+    targetSeverity: "improve",
+    primaryMethodId: 3,
+    supportingMethodIds: [1, 2],
+    goalTags: ["#tanghuuco", "#phuchoihevisinh", "#giamchaidat"],
+    cropGroupTags: ["rau-an-la", "rau-gia-vi"],
+    applicableObjects: ["dat-trong-lien-vu", "vuon-sau-thu-hoach"],
+    applicableCrops: ["rau-mau", "dua-leo", "ca-chua"],
+    terrainTypes: ["dat-bang", "dat-phu-sa-pha-cat"],
+    responsibleUnit: "soil-lab",
+    authors: [
+      {
+        id: 1,
+        name: "Lê Văn C",
+        qualification: "Kỹ sư nông học",
+        organization: "Trung tâm cải tạo đất Đông Nam Bộ",
+      },
+      {
+        id: 2,
+        name: "Phạm Thu Hà",
+        qualification: "Thạc sĩ thổ nhưỡng",
+        organization: "Viện công nghệ vi sinh ứng dụng",
+      },
+    ],
+    currentSurvey:
+      "Đất canh tác liên tục 8 vụ, lớp mặt chai cứng, hữu cơ thấp, rễ cây cũ phân hủy chậm và thoát nước bề mặt kém sau mưa.",
+    importantNotes:
+      "Ưu tiên vật tư hữu cơ đã hoai hoàn toàn, không phối trộn vi sinh cùng vôi trong cùng một ngày.",
+    expectedOutcomeSummary:
+      "Sau 2 vụ canh tác, đất tơi hơn, giữ ẩm tốt hơn và giảm tỷ lệ cây còi cọc đầu vụ.",
+    inspectionParameters: ["ph", "organic_matter", "ec", "root_growth"],
+    qualityChecklist: [
+      "Khảo sát pH đầu kỳ và cuối kỳ",
+      "Kiểm tra độ tơi xốp lớp đất mặt 0-20cm",
+      "Đánh giá mật độ rễ tơ sau 21 ngày",
+    ],
+    materialItems: [
+      {
+        id: 1,
+        category: "fertilizer",
+        name: "Phân hữu cơ hoai",
+        dosageMin: "2",
+        dosageMax: "3",
+        unit: "tấn/ha",
+      },
+      {
+        id: 2,
+        category: "bio",
+        name: "Chế phẩm vi sinh Bacillus",
+        dosageMin: "5",
+        dosageMax: "10",
+        unit: "lít/ha",
+      },
+    ],
+    attachments: [
+      {
+        id: 1,
+        name: "huong-dan-cai-tao-dat-bac-mau.pdf",
+        fileType: "pdf",
+        size: "2.4 MB",
+      },
+      {
+        id: 2,
+        name: "quy-trinh-bon-phan-huu-co.jpg",
+        fileType: "image",
+        size: "1.8 MB",
+      },
+    ],
   },
   {
     id: 2,
@@ -395,9 +464,16 @@ export const initialTreatmentPlans: TreatmentPlan[] = [
     status: "planning",
     area: 5.5,
     budget: 250,
+    budgetRange: "200-300",
     technician: "Trần Thị B",
     soilIssue: "Đất chua phèn (pH < 4.0)",
     cropType: "Lúa",
+    soilProblems: ["acid_sulfate", "imbalanced_ph", "poor_drainage"],
+    targetSeverity: "recovery",
+    primaryMethodId: 2,
+    supportingMethodIds: [5, 3],
+    goalTags: ["#haphen", "#canbangph", "#phuchoihoatdongre"],
+    responsibleUnit: "field-ops",
   },
   {
     id: 3,
@@ -416,9 +492,16 @@ export const initialTreatmentPlans: TreatmentPlan[] = [
     status: "planning",
     area: 3.2,
     budget: 95,
+    budgetRange: "50-100",
     technician: "Nguyễn Văn A",
     soilIssue: "Nhiễm mặn (EC > 4dS/m)",
     cropType: "Tôm - Lúa",
+    soilProblems: ["salinity", "poor_drainage"],
+    targetSeverity: "intensive",
+    primaryMethodId: 5,
+    supportingMethodIds: [6],
+    goalTags: ["#giamman", "#on-dinh-ec"],
+    responsibleUnit: "branch-team",
   },
   {
     id: 4,
@@ -564,9 +647,16 @@ export const initialTreatmentPlans: TreatmentPlan[] = [
     status: "in_progress",
     area: 380.0,
     budget: 5000,
+    budgetRange: "trên-1000",
     technician: "Lê Thanh Hà",
     soilIssue: "Đất nén chặt, úng bí, nhiễm nấm Phytophthora cấp tính",
     cropType: "Sầu riêng kinh doanh",
+    soilProblems: ["soil_compaction", "soil_borne_disease", "poor_drainage"],
+    targetSeverity: "recovery",
+    primaryMethodId: 1,
+    supportingMethodIds: [2, 3],
+    goalTags: ["#cuure", "#canbangph", "#kichhoatvisinh"],
+    responsibleUnit: "expert-council",
   },
 ];
 
@@ -581,14 +671,40 @@ export const createEmptyTreatmentPlanForm = (): TreatmentPlanFormData => ({
   intensity: "medium",
   priority: "medium",
   selectedMethods: [],
+  primaryMethodId: undefined,
+  supportingMethodIds: [],
   procedures: [],
   seasonalPhases: [],
   status: "planning",
   area: 0,
   budget: 0,
+  budgetRange: "",
   technician: "",
   soilIssue: "",
   cropType: "",
+  soilProblems: [],
+  targetSeverity: "improve",
+  cropGroupTags: [],
+  applicableObjects: [],
+  applicableCrops: [],
+  terrainTypes: [],
+  responsibleUnit: "",
+  authors: [
+    {
+      id: 1,
+      name: "",
+      qualification: "",
+      organization: "",
+    },
+  ],
+  goalTags: [],
+  currentSurvey: "",
+  importantNotes: "",
+  expectedOutcomeSummary: "",
+  inspectionParameters: [],
+  qualityChecklist: [],
+  materialItems: [],
+  attachments: [],
 });
 
 export const treatmentPlanIntensityOptions = [
@@ -602,4 +718,78 @@ export const treatmentPlanPriorityOptions = [
   { label: "Trung bình", value: "medium" },
   { label: "Cao", value: "high" },
   { label: "Khẩn cấp", value: "urgent" },
+] as const;
+
+export const soilProblemOptions = [
+  { label: "Đất chai cứng", value: "soil_compaction" },
+  { label: "Đất bạc màu", value: "low_organic" },
+  { label: "Đất nhiễm mặn", value: "salinity" },
+  { label: "Đất phèn", value: "acid_sulfate" },
+  { label: "Mất cân bằng pH", value: "imbalanced_ph" },
+  { label: "Thoát nước kém", value: "poor_drainage" },
+  { label: "Bệnh hại trong đất", value: "soil_borne_disease" },
+] as const;
+
+export const targetSeverityOptions = [
+  { label: "Theo dõi", value: "monitor" },
+  { label: "Cải thiện", value: "improve" },
+  { label: "Can thiệp mạnh", value: "intensive" },
+  { label: "Phục hồi khẩn", value: "recovery" },
+] as const;
+
+export const responsibleUnitOptions = [
+  { label: "Tổ vận hành nông trường", value: "field-ops" },
+  { label: "Phòng lab đất", value: "soil-lab" },
+  { label: "Nhóm kỹ thuật chi nhánh", value: "branch-team" },
+  { label: "Hội đồng chuyên gia", value: "expert-council" },
+] as const;
+
+export const applicableObjectOptions = [
+  { label: "Đất trồng liên vụ", value: "dat-trong-lien-vu" },
+  { label: "Vườn sau thu hoạch", value: "vuon-sau-thu-hoach" },
+  { label: "Khu đất chuyển đổi cơ cấu", value: "khu-dat-chuyen-doi" },
+  { label: "Khu vực có bệnh nền", value: "khu-vuc-co-benh-nen" },
+] as const;
+
+export const cropGroupOptions = [
+  { label: "Lúa", value: "lua" },
+  { label: "Rau ăn lá", value: "rau-an-la" },
+  { label: "Rau gia vị", value: "rau-gia-vi" },
+  { label: "Cây ăn trái", value: "cay-an-trai" },
+  { label: "Cây công nghiệp", value: "cay-cong-nghiep" },
+  { label: "Cây dược liệu", value: "cay-duoc-lieu" },
+] as const;
+
+export const terrainOptions = [
+  { label: "Đất bằng", value: "dat-bang" },
+  { label: "Đất thấp trũng", value: "dat-thap-trung" },
+  { label: "Đất gò cao", value: "dat-go-cao" },
+  { label: "Đất phù sa pha cát", value: "dat-phu-sa-pha-cat" },
+  { label: "Đất đỏ bazan", value: "dat-do-bazan" },
+] as const;
+
+export const budgetRangeOptions = [
+  { label: "50 - 100 triệu", value: "50-100" },
+  { label: "100 - 150 triệu", value: "100-150" },
+  { label: "150 - 300 triệu", value: "150-300" },
+  { label: "300 - 500 triệu", value: "300-500" },
+  { label: "Trên 1 tỷ", value: "trên-1000" },
+] as const;
+
+export const inspectionParameterOptions = [
+  { label: "pH đất", value: "ph" },
+  { label: "EC / độ mặn", value: "ec" },
+  { label: "Hữu cơ", value: "organic_matter" },
+  { label: "Độ ẩm đất", value: "moisture" },
+  { label: "Mật độ rễ", value: "root_growth" },
+  { label: "Tỷ lệ sống cây", value: "survival_rate" },
+  { label: "Mức độ bệnh đất", value: "soil_disease" },
+] as const;
+
+export const treatmentMaterialCategoryOptions = [
+  { label: "Máy móc", value: "machine" },
+  { label: "Thiết bị", value: "equipment" },
+  { label: "Phân bón", value: "fertilizer" },
+  { label: "Vi sinh", value: "bio" },
+  { label: "Khác", value: "other" },
 ] as const;

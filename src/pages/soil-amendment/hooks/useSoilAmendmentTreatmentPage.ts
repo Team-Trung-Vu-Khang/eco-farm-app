@@ -6,6 +6,30 @@ import {
 } from "../data/soilAmendmentTreatmentData";
 import type { TreatmentPlan, TreatmentPlanFormData } from "../types/treatment";
 
+function normalizeTreatmentPlanForm(
+  plan?: Partial<TreatmentPlan> | null,
+): TreatmentPlanFormData {
+  return {
+    ...createEmptyTreatmentPlanForm(),
+    ...plan,
+    authors:
+      plan?.authors && plan.authors.length > 0
+        ? plan.authors
+        : createEmptyTreatmentPlanForm().authors,
+    goalTags: plan?.goalTags || plan?.objectives || [],
+    soilProblems: plan?.soilProblems || [],
+    cropGroupTags: plan?.cropGroupTags || [],
+    applicableObjects: plan?.applicableObjects || [],
+    applicableCrops: plan?.applicableCrops || [],
+    terrainTypes: plan?.terrainTypes || [],
+    inspectionParameters: plan?.inspectionParameters || [],
+    qualityChecklist: plan?.qualityChecklist || [],
+    materialItems: plan?.materialItems || [],
+    attachments: plan?.attachments || [],
+    supportingMethodIds: plan?.supportingMethodIds || [],
+  };
+}
+
 export function useSoilAmendmentTreatmentPage() {
   const { toast } = useToast();
   const [data, setData] = useState<TreatmentPlan[]>(initialTreatmentPlans);
@@ -57,13 +81,15 @@ export function useSoilAmendmentTreatmentPage() {
 
   const handleCreate = () => {
     setEditingItem(null);
-    setFormData(createEmptyTreatmentPlanForm());
+    setFormData(normalizeTreatmentPlanForm());
+    setSelectedId(null);
     setFormOpen(true);
   };
 
   const handleEdit = (item: TreatmentPlan) => {
     setEditingItem(item);
-    setFormData({ ...item });
+    setSelectedId(item.id);
+    setFormData(normalizeTreatmentPlanForm(item));
     setFormOpen(true);
   };
 
@@ -90,14 +116,25 @@ export function useSoilAmendmentTreatmentPage() {
       return;
     }
 
+    const normalizedPayload = {
+      ...normalizeTreatmentPlanForm(formData),
+      objectives: formData.goalTags || formData.objectives || [],
+      goalTags: formData.goalTags || formData.objectives || [],
+      selectedMethods: [
+        ...(formData.primaryMethodId ? [formData.primaryMethodId] : []),
+        ...((formData.supportingMethodIds || []).filter(
+          (item) => item !== formData.primaryMethodId,
+        ) as number[]),
+      ],
+    } as TreatmentPlanFormData;
+
     if (editingItem) {
       setData((prev) =>
         prev.map((item) =>
           item.id === editingItem.id
             ? ({
                 ...item,
-                ...formData,
-                objectives: formData.objectives || [],
+                ...normalizedPayload,
               } as TreatmentPlan)
             : item,
         ),
@@ -105,11 +142,9 @@ export function useSoilAmendmentTreatmentPage() {
       toast({ title: "Thành công", description: "Đã cập nhật phác đồ" });
     } else {
       const newItem: TreatmentPlan = {
-        ...(formData as TreatmentPlan),
+        ...(normalizedPayload as TreatmentPlan),
         id: Math.max(...data.map((item) => item.id), 0) + 1,
         status: "planning",
-        selectedMethods: formData.selectedMethods || [],
-        objectives: formData.objectives || [],
         procedures: [],
         seasonalPhases: [],
       };

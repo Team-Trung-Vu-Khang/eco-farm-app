@@ -9,28 +9,33 @@ import {
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  AlertTriangle,
-  Beaker,
+  BookOpen,
   CheckCircle2,
-  Clock,
-  Edit,
+  Clock3,
   FileText,
-  Image as ImageIcon,
-  Lightbulb,
-  ListChecks,
   MapPin,
-  Play,
+  PlayCircle,
   Sprout,
   Target,
   Trash2,
+  UserRound,
   Video,
-  Wind,
 } from "lucide-react";
+import useCropStore from "../../../stores/useCropStore";
+import useGroupCropStore from "../../../stores/useGroupCropStore";
 import {
-  getTreatmentIntensityConfig,
-} from "../data/soilAmendmentTreatmentConfig";
-import { mockTreatmentMethods } from "../data/soilAmendmentTreatmentData";
-import type { TreatmentPlan } from "../types/treatment";
+  budgetRangeOptions,
+  inspectionParameterOptions,
+  mockTreatmentMethods,
+  responsibleUnitOptions,
+  targetSeverityOptions,
+  treatmentMaterialCategoryOptions,
+} from "../data/soilAmendmentTreatmentData";
+import type {
+  TreatmentAttachment,
+  TreatmentPlan,
+  VideoTutorial,
+} from "../types/treatment";
 
 interface SoilTreatmentPlanDetailProps {
   onDelete: (item: TreatmentPlan) => void;
@@ -38,396 +43,545 @@ interface SoilTreatmentPlanDetailProps {
   selectedPlan: TreatmentPlan | null;
 }
 
+function getOptionLabel(
+  options: ReadonlyArray<{ label: string; value: string }>,
+  value?: string,
+) {
+  return options.find((item) => item.value === value)?.label || "Chưa cập nhật";
+}
+
+function resolveLabels(
+  values: string[] | undefined,
+  options: Array<{ label: string; value: string }>,
+) {
+  return (values || []).map((value) => {
+    return options.find((item) => item.value === value)?.label || value;
+  });
+}
+
+function SectionBlock({
+  children,
+  eyebrow,
+  title,
+}: {
+  children: React.ReactNode;
+  eyebrow: string;
+  title: string;
+}) {
+  return (
+    <section className="rounded-[28px] border border-amber-100 bg-white p-6 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">
+        {eyebrow}
+      </p>
+      <h3 className="mt-2 text-xl font-semibold text-slate-900">{title}</h3>
+      <div className="mt-5 space-y-4">{children}</div>
+    </section>
+  );
+}
+
 export function SoilTreatmentPlanDetail({
   onDelete,
   onEdit,
   selectedPlan,
 }: SoilTreatmentPlanDetailProps) {
+  const groupCrops = useGroupCropStore((state) => state.groupCrops);
+  const crops = useCropStore((state) => state.crops);
+
   if (!selectedPlan) {
     return (
-      <div className="flex h-full flex-col items-center justify-center bg-gray-50/30 text-gray-400">
-        <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full border border-gray-100 bg-white shadow-sm">
-          <Sprout className="h-12 w-12 text-gray-300" />
-        </div>
-        <h3 className="mb-1 text-lg font-medium text-gray-600">Chưa chọn phác đồ</h3>
-        <p>Vui lòng chọn một phác đồ từ danh sách bên trái</p>
+      <div className="flex min-h-[400px] items-center justify-center bg-slate-50 text-slate-400">
+        Chưa chọn phác đồ để xem chi tiết.
       </div>
     );
   }
 
-  const intensityConfig = getTreatmentIntensityConfig(selectedPlan.intensity);
+  const methodIds = [
+    ...(selectedPlan.primaryMethodId ? [selectedPlan.primaryMethodId] : []),
+    ...(selectedPlan.supportingMethodIds || []),
+    ...selectedPlan.selectedMethods,
+  ];
+  const methods = mockTreatmentMethods.filter((item) => methodIds.includes(item.id));
+  const groupCropLabels = resolveLabels(
+    selectedPlan.cropGroupTags,
+    groupCrops.map((item) => ({ label: item.name, value: String(item.id) })),
+  );
+  const cropLabels = resolveLabels(
+    selectedPlan.applicableCrops,
+    crops.map((item) => ({ label: item.name, value: String(item.id) })),
+  );
+  const videos: Array<TreatmentAttachment | VideoTutorial> =
+    selectedPlan.attachments?.filter((item) => item.fileType === "video").length
+      ? (selectedPlan.attachments?.filter((item) => item.fileType === "video") as TreatmentAttachment[])
+      : (selectedPlan.videoTutorials || []);
+  const documents: Array<TreatmentAttachment | { id: number; name: string; size?: string; type?: string }> =
+    selectedPlan.attachments && selectedPlan.attachments.length > 0
+      ? selectedPlan.attachments
+      : (selectedPlan.relatedDocuments || []);
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="relative h-48 overflow-hidden bg-gradient-to-r from-green-600 to-emerald-500">
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="absolute inset-0 flex flex-col justify-end p-6 text-white">
-          <div className="mb-2 flex items-center gap-3">
-            <span className="rounded-full bg-white/20 px-3 py-1 font-mono text-sm font-medium backdrop-blur-sm">
-              {selectedPlan.code}
-            </span>
-            <Badge className={`${intensityConfig.color} text-white`}>
-              {intensityConfig.label}
-            </Badge>
+    <div className="max-h-[92vh] overflow-y-auto bg-[linear-gradient(180deg,#fff7ed_0%,#fffbeb_22%,#ffffff_55%)]">
+      <div className="border-b border-amber-100 bg-[radial-gradient(circle_at_top_left,_rgba(245,158,11,0.18),_transparent_34%),linear-gradient(135deg,#0f172a_0%,#1e293b_44%,#14532d_100%)] px-8 py-8 text-white">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-3xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="bg-white/15 text-white">{selectedPlan.code}</Badge>
+              <Badge className="bg-amber-400/90 text-slate-950">
+                {getOptionLabel(targetSeverityOptions, selectedPlan.targetSeverity)}
+              </Badge>
+              <Badge className="bg-white/15 text-white">
+                {getOptionLabel(budgetRangeOptions, selectedPlan.budgetRange)}
+              </Badge>
+            </div>
+            <h2 className="mt-4 text-3xl font-semibold leading-tight">
+              {selectedPlan.name}
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200">
+              {selectedPlan.soilIssue}
+            </p>
           </div>
-          <h2 className="mb-2 text-2xl font-bold">{selectedPlan.name}</h2>
-          <div className="flex items-center gap-4 text-sm">
-            <span className="flex items-center gap-1.5">
-              <MapPin className="h-4 w-4" />
-              {selectedPlan.zone}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Sprout className="h-4 w-4" />
-              {selectedPlan.cropType}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Clock className="h-4 w-4" />
-              {selectedPlan.duration}
-            </span>
+
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => onEdit(selectedPlan)}>
+              Chỉnh sửa
+            </Button>
+            <Button variant="destructive" onClick={() => onDelete(selectedPlan)}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              Xóa
+            </Button>
           </div>
         </div>
-        <div className="absolute right-4 top-4 flex gap-2">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => onEdit(selectedPlan)}
-            className="bg-white/90 hover:bg-white"
-          >
-            <Edit className="mr-1 h-4 w-4" />
-            Sửa
-          </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => onDelete(selectedPlan)}
-          >
-            <Trash2 className="mr-1 h-4 w-4" />
-            Xóa
-          </Button>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-4">
+          <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-300">Khu vực</p>
+            <p className="mt-2 font-medium">{selectedPlan.zone}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-300">Thời lượng</p>
+            <p className="mt-2 font-medium">{selectedPlan.duration}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-300">
+              Đơn vị phụ trách
+            </p>
+            <p className="mt-2 font-medium">
+              {getOptionLabel(responsibleUnitOptions, selectedPlan.responsibleUnit)}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-300">
+              Biện pháp chính
+            </p>
+            <p className="mt-2 font-medium">
+              {methods[0]?.name || "Chưa cập nhật"}
+            </p>
+          </div>
         </div>
       </div>
 
-      <Tabs defaultValue="procedures" className="p-6">
-        <TabsList className="mb-6 grid w-full grid-cols-2">
-          <TabsTrigger value="procedures">
-            <ListChecks className="mr-2 h-4 w-4" />
-            Quy trình & Các bước
-          </TabsTrigger>
-          <TabsTrigger value="methods">
-            <Beaker className="mr-2 h-4 w-4" />
-            Phương pháp
-          </TabsTrigger>
+      <Tabs defaultValue="overview" className="px-8 py-6">
+        <TabsList className="grid w-full grid-cols-3 rounded-2xl bg-amber-50 p-1">
+          <TabsTrigger value="overview">Tổng quan</TabsTrigger>
+          <TabsTrigger value="handbook">Sách hướng dẫn</TabsTrigger>
+          <TabsTrigger value="media">Video & Tài liệu</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="procedures" className="space-y-6">
-          {selectedPlan.procedures.length > 0 ? (
-            <div className="space-y-6">
-              {selectedPlan.procedures.map((procedure) => (
-                <div
-                  key={procedure.id}
-                  className="relative border-l-2 border-gray-200 pb-8 pl-8 last:border-l-0 last:pb-0"
-                >
-                  <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full border-2 border-white bg-green-500 shadow-sm" />
+        <TabsContent value="overview" className="mt-6 space-y-6">
+          <SectionBlock eyebrow="Overview" title="Tóm tắt áp dụng">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card className="border-slate-200">
+                <CardContent className="space-y-3 p-5">
+                  <div className="flex items-center gap-2 font-medium text-slate-900">
+                    <MapPin className="h-4 w-4 text-emerald-600" />
+                    Phạm vi và đối tượng
+                  </div>
+                  <p className="text-sm text-slate-600">
+                    Cây trồng: {cropLabels.join(", ") || "Chưa cập nhật"}
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    Địa hình: {(selectedPlan.terrainTypes || []).join(", ") || "Chưa cập nhật"}
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    Nhóm cây: {groupCropLabels.join(", ") || "Chưa cập nhật"}
+                  </p>
+                </CardContent>
+              </Card>
 
-                  <Card className="border-gray-200 shadow-sm transition-shadow hover:shadow-md">
-                    <CardContent className="space-y-4 p-5">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="mb-2 flex items-center gap-2">
-                            <Badge className="bg-green-600 text-xs font-bold text-white">
-                              Bước {procedure.stepNumber}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              <Clock className="mr-1 h-3 w-3" />
-                              {procedure.timing}
-                            </Badge>
-                            {procedure.estimatedDays && (
-                              <Badge variant="outline" className="text-xs">
-                                {procedure.estimatedDays} ngày
+              <Card className="border-slate-200">
+                <CardContent className="space-y-3 p-5">
+                  <div className="flex items-center gap-2 font-medium text-slate-900">
+                    <UserRound className="h-4 w-4 text-amber-600" />
+                    Tác giả và cộng tác
+                  </div>
+                  {(selectedPlan.authors || []).length > 0 ? (
+                    <div className="space-y-2">
+                      {selectedPlan.authors?.map((author) => (
+                        <div key={author.id} className="rounded-xl bg-slate-50 p-3">
+                          <p className="font-medium text-slate-900">{author.name}</p>
+                          <p className="text-sm text-slate-600">
+                            {author.qualification} - {author.organization}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">Chưa có thông tin tác giả.</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card className="border-slate-200">
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-2 font-medium text-slate-900">
+                    <Target className="h-4 w-4 text-red-500" />
+                    Mục tiêu phác đồ
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {(selectedPlan.goalTags || selectedPlan.objectives || []).map((item) => (
+                      <Badge key={item} variant="secondary" className="rounded-full">
+                        {item}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-slate-200">
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-2 font-medium text-slate-900">
+                    <CheckCircle2 className="h-4 w-4 text-blue-500" />
+                    Thông số kiểm tra
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {(selectedPlan.inspectionParameters || []).map((item) => (
+                      <Badge key={item} variant="outline" className="rounded-full">
+                        {getOptionLabel(inspectionParameterOptions, item)}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </SectionBlock>
+
+          <SectionBlock eyebrow="Survey" title="Khảo sát và ghi chú">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card className="border-slate-200">
+                <CardContent className="p-5">
+                  <h4 className="font-medium text-slate-900">Khảo sát hiện trạng</h4>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                    {selectedPlan.currentSurvey || "Chưa cập nhật khảo sát hiện trạng."}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="border-slate-200">
+                <CardContent className="p-5">
+                  <h4 className="font-medium text-slate-900">Lưu ý quan trọng</h4>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                    {selectedPlan.importantNotes || "Chưa cập nhật lưu ý."}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </SectionBlock>
+        </TabsContent>
+
+        <TabsContent value="handbook" className="mt-6 space-y-6">
+          <SectionBlock eyebrow="Handbook" title="Sổ tay triển khai">
+            <Card className="border-amber-200 bg-amber-50/70">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-2 font-medium text-slate-900">
+                  <BookOpen className="h-4 w-4 text-amber-700" />
+                  Mở đầu
+                </div>
+                <p className="mt-3 text-sm leading-6 text-slate-700">
+                  {selectedPlan.expectedOutcomeSummary ||
+                    "Chưa cập nhật phần giới thiệu tổng quan cho phác đồ."}
+                </p>
+              </CardContent>
+            </Card>
+
+            <div className="space-y-4">
+              {selectedPlan.procedures.length > 0 ? (
+                selectedPlan.procedures.map((procedure) => (
+                  <div
+                    key={procedure.id}
+                    className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
+                          Giai đoạn {procedure.stepNumber}
+                        </p>
+                        <h4 className="mt-2 text-xl font-semibold text-slate-900">
+                          {procedure.name}
+                        </h4>
+                      </div>
+                      <Badge className="rounded-full bg-slate-900 text-white">
+                        <Clock3 className="mr-1 h-3 w-3" />
+                        {procedure.startDay !== undefined && procedure.endDay !== undefined
+                          ? `Ngày ${procedure.startDay} -> ${procedure.endDay}`
+                          : procedure.timing}
+                      </Badge>
+                    </div>
+
+                    <p className="mt-4 text-sm leading-6 text-slate-600">
+                      {procedure.detailedInstructions || procedure.description || "Chưa cập nhật hướng dẫn cho giai đoạn này."}
+                    </p>
+
+                    <div className="mt-5 grid gap-4 md:grid-cols-3">
+                      <Card className="border-slate-200">
+                        <CardContent className="p-4">
+                          <p className="text-xs uppercase tracking-wide text-slate-400">
+                            Kỹ thuật
+                          </p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">
+                            {procedure.technique || "Chưa cập nhật"}
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card className="border-slate-200">
+                        <CardContent className="p-4">
+                          <p className="text-xs uppercase tracking-wide text-slate-400">
+                            Định lượng
+                          </p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">
+                            {procedure.dosage || "Theo thực tế hiện trường"}
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card className="border-slate-200">
+                        <CardContent className="p-4">
+                          <p className="text-xs uppercase tracking-wide text-slate-400">
+                            Kết quả mong đợi
+                          </p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">
+                            {procedure.expectedOutcome || "Chưa cập nhật"}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {(procedure.materials.length > 0 || procedure.equipment.length > 0) && (
+                      <div className="mt-5 grid gap-4 md:grid-cols-2">
+                        <div>
+                          <p className="text-sm font-medium text-slate-900">Vật tư</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {procedure.materials.map((material) => (
+                              <Badge key={material} variant="secondary" className="rounded-full">
+                                {material}
                               </Badge>
-                            )}
+                            ))}
                           </div>
-                          <h3 className="mb-1 text-lg font-bold text-gray-900">
-                            {procedure.name}
-                          </h3>
-                          <p className="text-sm text-gray-600">{procedure.description}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-900">Thiết bị</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {procedure.equipment.map((equipment) => (
+                              <Badge key={equipment} variant="outline" className="rounded-full">
+                                {equipment}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
                       </div>
+                    )}
 
-                      {procedure.images && procedure.images.length > 0 && (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <ImageIcon className="h-4 w-4 text-blue-600" />
-                            Hình ảnh minh họa
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            {procedure.images.map((image, index) => (
-                              <div
-                                key={index}
-                                className="relative aspect-video overflow-hidden rounded-lg border border-gray-200 bg-gray-100"
-                              >
-                                <img
-                                  src={image}
-                                  alt={`Bước ${procedure.stepNumber} - Ảnh ${index + 1}`}
-                                  className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-                                />
+                    {(procedure.stageMaterials || []).length > 0 && (
+                      <div className="mt-5">
+                        <p className="text-sm font-medium text-slate-900">
+                          Vật tư riêng của giai đoạn
+                        </p>
+                        <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                          {procedure.stageMaterials?.map((item) => (
+                            <div
+                              key={item.id}
+                              className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                            >
+                              <Badge variant="outline" className="rounded-full">
+                                {getOptionLabel(treatmentMaterialCategoryOptions, item.category)}
+                              </Badge>
+                              <p className="mt-3 font-medium text-slate-900">{item.name}</p>
+                              <p className="mt-2 text-sm text-slate-600">
+                                {item.dosageMin} - {item.dosageMax} {item.unit}
+                              </p>
+                              {item.note && (
+                                <p className="mt-2 text-sm text-slate-500">{item.note}</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {procedure.qualityCheckpoints &&
+                      procedure.qualityCheckpoints.length > 0 && (
+                        <div className="mt-5 rounded-2xl bg-slate-50 p-4">
+                          <p className="text-sm font-medium text-slate-900">
+                            Checklist chất lượng
+                          </p>
+                          <div className="mt-3 space-y-2">
+                            {procedure.qualityCheckpoints.map((item) => (
+                              <div key={item} className="flex items-start gap-2 text-sm text-slate-600">
+                                <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
+                                <span>{item}</span>
                               </div>
                             ))}
                           </div>
                         </div>
                       )}
 
-                      {procedure.videoUrl && (
-                        <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-600">
-                              <Play className="h-5 w-5 text-white" />
+                    {procedure.warnings && procedure.warnings.length > 0 && (
+                      <div className="mt-5 rounded-2xl border border-rose-100 bg-rose-50 p-4">
+                        <p className="text-sm font-medium text-rose-900">
+                          Lưu ý riêng của giai đoạn
+                        </p>
+                        <div className="mt-3 space-y-2">
+                          {procedure.warnings.map((item) => (
+                            <div key={item} className="flex items-start gap-2 text-sm text-rose-700">
+                              <span className="mt-0.5 h-2 w-2 rounded-full bg-rose-500" />
+                              <span>{item}</span>
                             </div>
-                            <div className="flex-1">
-                              <p className="text-sm font-semibold text-blue-900">
-                                Video hướng dẫn chi tiết
-                              </p>
-                              <p className="text-xs text-blue-700">
-                                Xem video để hiểu rõ hơn về kỹ thuật thực hiện
-                              </p>
-                            </div>
-                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                              <Video className="mr-1 h-4 w-4" />
-                              Xem
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <Card className="border-dashed border-slate-300">
+                  <CardContent className="p-6 text-sm text-slate-500">
+                    Chưa có chương hướng dẫn chi tiết. Hiện detail vẫn hiển thị đầy đủ
+                    phần tổng quan, vật tư, media và checklist từ master data.
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {(selectedPlan.materialItems || []).length > 0 && (
+              <SectionBlock eyebrow="Materials" title="Vật tư định lượng">
+                <div className="grid gap-3">
+                  {selectedPlan.materialItems?.map((item) => (
+                    <div
+                      key={item.id}
+                      className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-[1fr_1.4fr_1fr]"
+                    >
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">
+                          Nhóm vật tư
+                        </p>
+                        <p className="mt-1 font-medium text-slate-900">
+                          {getOptionLabel(treatmentMaterialCategoryOptions, item.category)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">
+                          Tên vật tư
+                        </p>
+                        <p className="mt-1 font-medium text-slate-900">{item.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">
+                          Định lượng / ha
+                        </p>
+                        <p className="mt-1 font-medium text-slate-900">
+                          {item.dosageMin} - {item.dosageMax} {item.unit}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </SectionBlock>
+            )}
+          </SectionBlock>
+        </TabsContent>
+
+        <TabsContent value="media" className="mt-6 space-y-6">
+          <SectionBlock eyebrow="Media" title="Video hướng dẫn và tài liệu">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Card className="border-slate-200">
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-2 font-medium text-slate-900">
+                    <Video className="h-4 w-4 text-violet-600" />
+                    Video hướng dẫn
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    {videos.length > 0 ? (
+                      videos.map((item, index) => (
+                        <div
+                          key={item.id || index}
+                          className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="font-medium text-slate-900">
+                              {"title" in item ? item.title : item.name}
+                            </p>
+                            <p className="mt-1 text-sm text-slate-500">
+                              {"description" in item
+                                ? item.description
+                                : item.size || "Video hướng dẫn thao tác"}
+                            </p>
+                          </div>
+                            <Button size="sm" variant="outline">
+                              <PlayCircle className="mr-2 h-4 w-4" />
+                              Xem video
                             </Button>
                           </div>
                         </div>
-                      )}
+                      ))
+                    ) : (
+                      <p className="text-sm text-slate-500">Chưa có video hướng dẫn.</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
 
-                      {procedure.detailedInstructions && (
-                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                          <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900">
-                            <FileText className="h-4 w-4 text-gray-600" />
-                            Hướng dẫn chi tiết
-                          </h4>
-                          <p className="text-sm leading-relaxed text-gray-700">
-                            {procedure.detailedInstructions}
-                          </p>
-                        </div>
-                      )}
+              <Card className="border-slate-200">
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-2 font-medium text-slate-900">
+                    <FileText className="h-4 w-4 text-emerald-600" />
+                    Tài liệu đính kèm
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    {documents.length > 0 ? (
+                      documents.map((item, index) => (
+                          <div
+                            key={item.id || index}
+                            className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                          >
+                            <p className="font-medium text-slate-900">{item.name}</p>
+                            <p className="mt-1 text-sm text-slate-500">
+                              {"fileType" in item
+                                ? item.size || item.fileType
+                                : item.size || item.type || "Tài liệu tham khảo"}
+                            </p>
+                          </div>
+                        ))
+                    ) : (
+                      <p className="text-sm text-slate-500">Chưa có tài liệu đính kèm.</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        {procedure.dosage && (
-                          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-                            <p className="mb-1 text-xs font-medium text-amber-900">
-                              Liều lượng
-                            </p>
-                            <p className="text-sm font-bold text-amber-700">
-                              {procedure.dosage}
-                            </p>
-                          </div>
-                        )}
-                        {procedure.technique && (
-                          <div className="rounded-lg border border-purple-200 bg-purple-50 p-3">
-                            <p className="mb-1 text-xs font-medium text-purple-900">
-                              Kỹ thuật
-                            </p>
-                            <p className="text-sm font-bold text-purple-700">
-                              {procedure.technique}
-                            </p>
-                          </div>
-                        )}
-                        {procedure.weatherRequirements && (
-                          <div className="rounded-lg border border-sky-200 bg-sky-50 p-3">
-                            <p className="mb-1 flex items-center gap-1 text-xs font-medium text-sky-900">
-                              <Wind className="h-3 w-3" />
-                              Điều kiện thời tiết
-                            </p>
-                            <p className="text-sm font-bold text-sky-700">
-                              {procedure.weatherRequirements}
-                            </p>
-                          </div>
-                        )}
-                        {procedure.laborRequired && (
-                          <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3">
-                            <p className="mb-1 text-xs font-medium text-indigo-900">
-                              Nhân công
-                            </p>
-                            <p className="text-sm font-bold text-indigo-700">
-                              {procedure.laborRequired} người
-                            </p>
-                          </div>
-                        )}
-                        {procedure.estimatedCost && (
-                          <div className="col-span-2 rounded-lg border border-green-200 bg-green-50 p-3">
-                            <p className="mb-1 text-xs font-medium text-green-900">
-                              Chi phí ước tính
-                            </p>
-                            <p className="text-lg font-bold text-green-700">
-                              {procedure.estimatedCost} triệu đồng
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      {procedure.warnings && procedure.warnings.length > 0 && (
-                        <div className="rounded-r-lg border-l-4 border-red-500 bg-red-50 p-4">
-                          <div className="flex items-start gap-3">
-                            <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
-                            <div className="flex-1">
-                              <h4 className="mb-2 text-sm font-bold text-red-900">
-                                ⚠️ Lưu ý quan trọng
-                              </h4>
-                              <ul className="space-y-1.5">
-                                {procedure.warnings.map((warning, index) => (
-                                  <li
-                                    key={index}
-                                    className="flex items-start gap-2 text-sm text-red-800"
-                                  >
-                                    <span className="mt-0.5 font-bold text-red-500">•</span>
-                                    <span>{warning}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {procedure.tips && procedure.tips.length > 0 && (
-                        <div className="rounded-r-lg border-l-4 border-yellow-500 bg-yellow-50 p-4">
-                          <div className="flex items-start gap-3">
-                            <Lightbulb className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600" />
-                            <div className="flex-1">
-                              <h4 className="mb-2 text-sm font-bold text-yellow-900">
-                                💡 Mẹo hữu ích
-                              </h4>
-                              <ul className="space-y-1.5">
-                                {procedure.tips.map((tip, index) => (
-                                  <li
-                                    key={index}
-                                    className="flex items-start gap-2 text-sm text-yellow-800"
-                                  >
-                                    <span className="mt-0.5 font-bold text-yellow-500">✓</span>
-                                    <span>{tip}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {procedure.expectedOutcome && (
-                        <div className="rounded-lg border border-green-200 bg-green-50 p-3">
-                          <div className="flex items-start gap-2">
-                            <Target className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
-                            <div>
-                              <p className="mb-1 text-xs font-medium text-green-900">
-                                Kết quả mong đợi
-                              </p>
-                              <p className="text-sm text-green-700">
-                                {procedure.expectedOutcome}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {procedure.qualityCheckpoints &&
-                        procedure.qualityCheckpoints.length > 0 && (
-                          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                            <h4 className="mb-3 flex items-center gap-2 text-sm font-bold text-blue-900">
-                              <CheckCircle2 className="h-4 w-4" />
-                              Điểm kiểm tra chất lượng
-                            </h4>
-                            <div className="space-y-2">
-                              {procedure.qualityCheckpoints.map((checkpoint, index) => (
-                                <div key={index} className="flex items-start gap-2">
-                                  <div className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-600">
-                                    <CheckCircle2 className="h-3 w-3 text-white" />
-                                  </div>
-                                  <p className="flex-1 text-sm text-blue-800">
-                                    {checkpoint}
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                      <div className="grid grid-cols-2 gap-3">
-                        {procedure.materials && procedure.materials.length > 0 && (
-                          <div>
-                            <p className="mb-2 text-xs font-semibold text-gray-700">
-                              Vật tư cần thiết
-                            </p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {procedure.materials.map((material, index) => (
-                                <Badge
-                                  key={index}
-                                  variant="secondary"
-                                  className="bg-green-100 text-xs text-green-800"
-                                >
-                                  {material}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {procedure.equipment && procedure.equipment.length > 0 && (
-                          <div>
-                            <p className="mb-2 text-xs font-semibold text-gray-700">
-                              Thiết bị
-                            </p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {procedure.equipment.map((equipment, index) => (
-                                <Badge
-                                  key={index}
-                                  variant="secondary"
-                                  className="bg-blue-100 text-xs text-blue-800"
-                                >
-                                  {equipment}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
+            <Card className="border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#ecfccb_100%)]">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 font-medium text-slate-900">
+                  <Sprout className="h-4 w-4 text-emerald-600" />
+                  Kết luận handbook
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="py-12 text-center text-gray-400">
-              <ListChecks className="mx-auto mb-3 h-12 w-12 opacity-20" />
-              <p className="text-sm">Chưa có quy trình chi tiết</p>
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="methods" className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            {mockTreatmentMethods
-              .filter((method) => selectedPlan.selectedMethods.includes(method.id))
-              .map((method) => (
-                <Card key={method.id} className="border-gray-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <span className="text-2xl">{method.icon}</span>
-                      <div className="flex-1">
-                        <h4 className="text-sm font-medium">{method.name}</h4>
-                        <p className="mt-1 text-xs text-gray-500">
-                          {method.description}
-                        </p>
-                        <Badge variant="outline" className="mt-2 text-xs">
-                          {method.type === "physical" && "Vật lý"}
-                          {method.type === "chemical" && "Hóa học"}
-                          {method.type === "biological" && "Sinh học"}
-                          {method.type === "integrated" && "Tổng hợp"}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-          </div>
+                <p className="mt-3 text-sm leading-6 text-slate-700">
+                  Phác đồ này được trình bày theo dạng sổ tay để đội hiện trường có
+                  thể đọc từ trên xuống dưới như một hướng dẫn thao tác, đồng thời
+                  vẫn tra cứu nhanh được video, vật tư và checklist khi cần.
+                </p>
+              </CardContent>
+            </Card>
+          </SectionBlock>
         </TabsContent>
       </Tabs>
     </div>

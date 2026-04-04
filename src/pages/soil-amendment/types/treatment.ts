@@ -4,20 +4,39 @@ export interface TreatmentPlan {
   name: string;
   zone: string;
   objectives: string[];
+  goalTags?: string[];
   duration: string;
   startDate: string;
   endDate: string;
   intensity: "light" | "medium" | "deep";
   priority: "low" | "medium" | "high" | "urgent";
   selectedMethods: number[];
+  primaryMethodId?: number;
+  supportingMethodIds?: number[];
   procedures: TreatmentProcedure[];
   seasonalPhases: SeasonalPhase[];
   status: "planning" | "in_progress" | "completed" | "cancelled";
   area: number;
   budget: number;
+  budgetRange?: string;
   technician: string;
   soilIssue: string;
   cropType: string;
+  soilProblems?: string[];
+  targetSeverity?: "monitor" | "improve" | "intensive" | "recovery";
+  cropGroupTags?: string[];
+  applicableObjects?: string[];
+  applicableCrops?: string[];
+  terrainTypes?: string[];
+  responsibleUnit?: string;
+  authors?: TreatmentAuthor[];
+  currentSurvey?: string;
+  importantNotes?: string;
+  expectedOutcomeSummary?: string;
+  inspectionParameters?: string[];
+  qualityChecklist?: string[];
+  materialItems?: TreatmentMaterialItem[];
+  attachments?: TreatmentAttachment[];
   coverImage?: string;
   soilAnalysis?: SoilAnalysis;
   expectedResults?: ExpectedResult[];
@@ -44,6 +63,30 @@ export interface ExpectedResult {
   before: string;
   after: string;
   timeframe: string;
+}
+
+export interface TreatmentAuthor {
+  id: number;
+  name: string;
+  qualification: string;
+  organization: string;
+}
+
+export interface TreatmentMaterialItem {
+  id: number;
+  category: "machine" | "equipment" | "fertilizer" | "bio" | "other";
+  name: string;
+  dosageMin: string;
+  dosageMax: string;
+  unit: string;
+  note?: string;
+}
+
+export interface TreatmentAttachment {
+  id: number;
+  name: string;
+  fileType: "pdf" | "image" | "video";
+  size: string;
 }
 
 export interface DocumentAsset {
@@ -80,12 +123,15 @@ export interface TreatmentProcedure {
   stepNumber: number;
   name: string;
   description: string;
+  startDay?: number;
+  endDay?: number;
   detailedInstructions?: string;
   dosage?: string;
   timing: string;
   technique: string;
   materials: string[];
   equipment: string[];
+  stageMaterials?: TreatmentMaterialItem[];
   estimatedDays: number;
   images?: string[];
   videoUrl?: string;
