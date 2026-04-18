@@ -16,20 +16,33 @@ export default defineConfig({
       exposes: {
         "./App": "./src/App.tsx",
       },
-      shared: [],
+      shared: {
+        react: {
+          singleton: true,
+          requiredVersion: "^19.2.0",
+        },
+        "react-dom": {
+          singleton: true,
+          requiredVersion: "^19.2.0",
+        },
+        wouter: {
+          singleton: true,
+        },
+      },
     }),
   ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    dedupe: ["react", "react-dom", "wouter"],
   },
   // base: "/farm",
   // build: { target: "esnext" },
-  server: {
-    port: 3001,
-  },
-  preview: {
-    port: 3001,
-  },
+  // server: {
+  //   port: 3001,
+  // },
+  // preview: {
+  //   port: 3001,
+  // },
 });
