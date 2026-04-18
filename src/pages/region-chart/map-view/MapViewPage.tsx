@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogFooter,
   cn,
-} from "@tankhang1/eco-shared-ui";
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   MapContainer,
   TileLayer,
@@ -44,7 +44,7 @@ import {
   Save,
   Activity,
 } from "lucide-react";
-import { Button } from "@tankhang1/eco-shared-ui";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 import { MOCK_REGIONS, MOCK_AREAS } from "../constants";
 
