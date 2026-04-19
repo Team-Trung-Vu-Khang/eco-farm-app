@@ -110,6 +110,7 @@ import DocsPage from "./pages/docs/DocsPage";
 import CreateDocsPage from "./pages/docs/CreateDocsPage";
 import UpdateDocsPage from "./pages/docs/UpdateDocsPage";
 import DocsDetailPage from "./pages/docs/DocsDetailPage";
+import DocumentVersionPage from "./pages/document-version/DocumentVersionPage";
 import CreateSeedPage from "./pages/seed/CreateSeedPage";
 import SeedDetailPage from "./pages/seed/SeedDetailPage";
 import UpdateSeedPage from "./pages/seed/UpdateSeedPage";
@@ -338,6 +339,7 @@ function Router() {
       <Route path="/equipment/:id/edit" component={EquipmentCreatePage} />
       <Route path="/equipment/:id" component={EquipmentDetailPage} />
       <Route path="/contract" component={ContractPage} />
+      <Route path="/document-version" component={DocumentVersionPage} />
       <Route path="/contract/create" component={ContractCreatePage} />
       <Route path="/contract/:id/edit" component={ContractEditPage} />
       <Route path="/contract/:id" component={ContractDetailPage} />
