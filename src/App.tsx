@@ -115,6 +115,10 @@ import DocumentCategoryListPage from "./pages/document-category/DocumentCategory
 import DocumentCategoryCreatePage from "./pages/document-category/DocumentCategoryCreatePage";
 import DocumentCategoryEditPage from "./pages/document-category/DocumentCategoryEditPage";
 import DocumentCategoryDetailPage from "./pages/document-category/DocumentCategoryDetailPage";
+import DocumentVersionPage from "./pages/document-version/DocumentVersionPage";
+import RoleResponsibilityDetailPage from "./pages/role-responsibility/RoleResponsibilityDetailPage";
+import RoleResponsibilityFormPage from "./pages/role-responsibility/RoleResponsibilityFormPage";
+import RoleResponsibilityPage from "./pages/role-responsibility/RoleResponsibilityPage";
 import CreateSeedPage from "./pages/seed/CreateSeedPage";
 import SeedDetailPage from "./pages/seed/SeedDetailPage";
 import UpdateSeedPage from "./pages/seed/UpdateSeedPage";
@@ -304,9 +308,18 @@ function Router() {
       <Route path="/crop/create" component={CropCreatePage} />
       <Route path="/crop/:id" component={CropDetailPage} />
       <Route path="/document-category" component={DocumentCategoryListPage} />
-      <Route path="/document-category/create" component={DocumentCategoryCreatePage} />
-      <Route path="/document-category/:id/edit" component={DocumentCategoryEditPage} />
-      <Route path="/document-category/:id" component={DocumentCategoryDetailPage} />
+      <Route
+        path="/document-category/create"
+        component={DocumentCategoryCreatePage}
+      />
+      <Route
+        path="/document-category/:id/edit"
+        component={DocumentCategoryEditPage}
+      />
+      <Route
+        path="/document-category/:id"
+        component={DocumentCategoryDetailPage}
+      />
       <Route path="/group-crop" component={GroupCropPage} />
       <Route path="/docs" component={DocsPage} />
       <Route path="/docs/create" component={CreateDocsPage} />
@@ -348,6 +361,20 @@ function Router() {
       <Route path="/equipment/:id/edit" component={EquipmentCreatePage} />
       <Route path="/equipment/:id" component={EquipmentDetailPage} />
       <Route path="/contract" component={ContractPage} />
+      <Route path="/document-version" component={DocumentVersionPage} />
+      <Route path="/role-responsibility" component={RoleResponsibilityPage} />
+      <Route
+        path="/role-responsibility/create"
+        component={RoleResponsibilityFormPage}
+      />
+      <Route
+        path="/role-responsibility/:id/edit"
+        component={RoleResponsibilityFormPage}
+      />
+      <Route
+        path="/role-responsibility/:id"
+        component={RoleResponsibilityDetailPage}
+      />
       <Route path="/contract/create" component={ContractCreatePage} />
       <Route path="/contract/:id/edit" component={ContractEditPage} />
       <Route path="/contract/:id" component={ContractDetailPage} />
