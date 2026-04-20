@@ -40,7 +40,7 @@ export function DocumentVersionFormDialog({
       open={open}
       onOpenChange={onOpenChange}
       title={mode === "create" ? "Tạo phiên bản tài liệu" : "Cập nhật phiên bản"}
-      description="Nhập version, thời gian hiệu lực, file đính kèm và mô tả thay đổi để phục vụ kiểm soát phát hành."
+      description="Nhập phiên bản, thời gian hiệu lực, tệp đính kèm và mô tả thay đổi để phục vụ kiểm soát phát hành."
       onSubmit={onSubmit}
       submitLabel={mode === "create" ? "Lưu phiên bản" : "Cập nhật phiên bản"}
       size="xl"
@@ -59,7 +59,7 @@ export function DocumentVersionFormDialog({
           </div>
 
           <div className="space-y-2">
-            <FieldLabel>Kế thừa từ version cũ</FieldLabel>
+            <FieldLabel>Kế thừa từ phiên bản cũ</FieldLabel>
             <FieldSelect value={formData.baseVersionId} onChange={onBaseVersionChange}>
               <option value="none">Không kế thừa</option>
               {documents
@@ -75,7 +75,7 @@ export function DocumentVersionFormDialog({
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <FieldLabel htmlFor="version">Version</FieldLabel>
+            <FieldLabel htmlFor="version">Phiên bản</FieldLabel>
             <Input
               id="version"
               value={formData.version}
@@ -108,7 +108,7 @@ export function DocumentVersionFormDialog({
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <FieldLabel htmlFor="effectiveFrom">Effective From</FieldLabel>
+            <FieldLabel htmlFor="effectiveFrom">Hiệu lực từ</FieldLabel>
             <Input
               id="effectiveFrom"
               type="date"
@@ -124,7 +124,7 @@ export function DocumentVersionFormDialog({
           </div>
 
           <div className="space-y-2">
-            <FieldLabel htmlFor="effectiveTo">Effective To</FieldLabel>
+            <FieldLabel htmlFor="effectiveTo">Hiệu lực đến</FieldLabel>
             <Input
               id="effectiveTo"
               type="date"
@@ -141,7 +141,7 @@ export function DocumentVersionFormDialog({
         </div>
 
         <div className="space-y-2">
-          <FieldLabel htmlFor="attachment">File upload</FieldLabel>
+          <FieldLabel htmlFor="attachment">Tệp đính kèm</FieldLabel>
           <Input
             id="attachment"
             type="file"
@@ -183,9 +183,9 @@ export function DocumentVersionFormDialog({
         ) : (
           <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900">
             <Eye className="h-4 w-4" />
-            <AlertTitle>Double check ổn</AlertTitle>
+            <AlertTitle>Đã kiểm tra hợp lệ</AlertTitle>
             <AlertDescription>
-              Khoảng hiệu lực hiện chưa bị chồng lấn với version khác của cùng tài liệu.
+              Khoảng hiệu lực hiện chưa bị chồng lấn với phiên bản khác của cùng tài liệu.
             </AlertDescription>
           </Alert>
         )}

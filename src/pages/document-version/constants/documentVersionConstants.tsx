@@ -121,7 +121,7 @@ export const DOCUMENT_COLUMNS: Column<DocumentTableRow>[] = [
   { key: "code", label: "Mã tài liệu" },
   { key: "name", label: "Tên tài liệu" },
   { key: "type", label: "Loại" },
-  { key: "currentVersion", label: "Version hiện tại" },
+  { key: "currentVersion", label: "Phiên bản hiện tại" },
   {
     key: "status",
     label: "Trạng thái",

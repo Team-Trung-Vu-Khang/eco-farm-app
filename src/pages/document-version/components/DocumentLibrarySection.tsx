@@ -24,11 +24,11 @@ export function DocumentLibrarySection({
         <div>
           <h2 className="text-lg font-semibold">Danh sách tài liệu</h2>
           <p className="text-sm text-muted-foreground">
-            Chọn tài liệu để xem lịch sử version và thao tác nghiệp vụ.
+            Chọn tài liệu để xem lịch sử phiên bản và thao tác nghiệp vụ.
           </p>
         </div>
         <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
-          Flow chuẩn
+          Quy trình chuẩn
         </Badge>
       </div>
 
@@ -55,7 +55,7 @@ export function DocumentLibrarySection({
               <p className="mt-3 font-medium text-foreground">{row.name}</p>
               <p className="mt-1 text-sm text-muted-foreground">{row.type}</p>
               <div className="mt-3 flex flex-col gap-1 text-sm text-muted-foreground">
-                <span>Version hiện tại: {row.currentVersion}</span>
+                <span>Phiên bản hiện tại: {row.currentVersion}</span>
                 <span>Phạm vi: {row.scope}</span>
               </div>
               <div className="mt-4 flex flex-col gap-2 sm:flex-row">
@@ -69,7 +69,7 @@ export function DocumentLibrarySection({
                   }}
                 >
                   <Eye className="mr-2 h-4 w-4" />
-                  View detail
+                  Xem chi tiết
                 </Button>
                 <Button
                   type="button"
@@ -80,7 +80,7 @@ export function DocumentLibrarySection({
                   }}
                 >
                   <PencilLine className="mr-2 h-4 w-4" />
-                  Edit
+                  Chỉnh sửa
                 </Button>
               </div>
             </button>

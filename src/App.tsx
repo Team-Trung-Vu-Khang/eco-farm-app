@@ -111,6 +111,9 @@ import CreateDocsPage from "./pages/docs/CreateDocsPage";
 import UpdateDocsPage from "./pages/docs/UpdateDocsPage";
 import DocsDetailPage from "./pages/docs/DocsDetailPage";
 import DocumentVersionPage from "./pages/document-version/DocumentVersionPage";
+import RoleResponsibilityDetailPage from "./pages/role-responsibility/RoleResponsibilityDetailPage";
+import RoleResponsibilityFormPage from "./pages/role-responsibility/RoleResponsibilityFormPage";
+import RoleResponsibilityPage from "./pages/role-responsibility/RoleResponsibilityPage";
 import CreateSeedPage from "./pages/seed/CreateSeedPage";
 import SeedDetailPage from "./pages/seed/SeedDetailPage";
 import UpdateSeedPage from "./pages/seed/UpdateSeedPage";
@@ -340,6 +343,19 @@ function Router() {
       <Route path="/equipment/:id" component={EquipmentDetailPage} />
       <Route path="/contract" component={ContractPage} />
       <Route path="/document-version" component={DocumentVersionPage} />
+      <Route path="/role-responsibility" component={RoleResponsibilityPage} />
+      <Route
+        path="/role-responsibility/create"
+        component={RoleResponsibilityFormPage}
+      />
+      <Route
+        path="/role-responsibility/:id/edit"
+        component={RoleResponsibilityFormPage}
+      />
+      <Route
+        path="/role-responsibility/:id"
+        component={RoleResponsibilityDetailPage}
+      />
       <Route path="/contract/create" component={ContractCreatePage} />
       <Route path="/contract/:id/edit" component={ContractEditPage} />
       <Route path="/contract/:id" component={ContractDetailPage} />

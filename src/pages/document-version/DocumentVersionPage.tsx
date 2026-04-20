@@ -38,7 +38,7 @@ export default function DocumentVersionPage() {
   return (
     <AdminLayout
       title="Quản lý phiên bản tài liệu"
-      description="Quản trị version cho SOP, hồ sơ truy xuất, nhật ký mùa vụ và tài liệu chứng nhận với kiểm tra hiệu lực theo thời gian."
+      description="Quản trị phiên bản cho SOP, hồ sơ truy xuất, nhật ký mùa vụ và tài liệu chứng nhận với kiểm tra hiệu lực theo thời gian."
       actions={
         <div className="flex w-full flex-row gap-2">
           <Button
@@ -60,7 +60,7 @@ export default function DocumentVersionPage() {
             }
           >
             <FilePlus2 className="mr-2 h-4 w-4" />
-            Tạo version mới
+            Tạo phiên bản mới
           </Button>
         </div>
       }

@@ -69,7 +69,7 @@ export function useDocumentVersionPage() {
 
     if (!overlap) return null;
 
-    return `Khoảng thời gian bị trùng với version ${overlap.version} (${formatDate(
+    return `Khoảng thời gian bị trùng với phiên bản ${overlap.version} (${formatDate(
       overlap.effectiveFrom,
     )} - ${formatDate(overlap.effectiveTo)}).`;
   }, [documents, editingVersionId, formData.documentId, formData.effectiveFrom, formData.effectiveTo]);
@@ -203,7 +203,7 @@ export function useDocumentVersionPage() {
 
     toast({
       title: "Đã duyệt phiên bản",
-      description: "Version đã được cập nhật sang trạng thái hiệu lực.",
+      description: "Phiên bản đã được cập nhật sang trạng thái hiệu lực.",
     });
   };
 
@@ -304,7 +304,7 @@ export function useDocumentVersionPage() {
                     action: "created",
                     user: "Phạm Quốc Huy",
                     at: now,
-                    detail: `tạo version ${newVersion.version} ${
+                    detail: `tạo phiên bản ${newVersion.version} ${
                       selectedBaseVersion
                         ? `kế thừa từ ${selectedBaseVersion.version}`
                         : "không kế thừa từ bản cũ"
@@ -319,7 +319,7 @@ export function useDocumentVersionPage() {
 
       toast({
         title: "Đã tạo phiên bản mới",
-        description: `Version ${formData.version} đã được lưu và sẵn sàng chuyển duyệt.`,
+        description: `Phiên bản ${formData.version} đã được lưu và sẵn sàng chuyển duyệt.`,
       });
     } else if (editingVersionId) {
       setDocuments((prev) =>
@@ -350,7 +350,7 @@ export function useDocumentVersionPage() {
                     action: "updated",
                     user: "Phạm Quốc Huy",
                     at: now,
-                    detail: `cập nhật version ${formData.version} và điều chỉnh thời gian hiệu lực.`,
+                    detail: `cập nhật phiên bản ${formData.version} và điều chỉnh thời gian hiệu lực.`,
                   },
                   ...document.logs,
                 ],
@@ -361,7 +361,7 @@ export function useDocumentVersionPage() {
 
       toast({
         title: "Đã cập nhật phiên bản",
-        description: `Version ${formData.version} đã được chỉnh sửa thành công.`,
+        description: `Phiên bản ${formData.version} đã được chỉnh sửa thành công.`,
       });
     }
 
