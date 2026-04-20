@@ -8,6 +8,7 @@ export interface MaterialAllocation {
   unit: string;
   type: "fertilizer" | "pesticide" | "other" | "tool";
   stageId: string;
+  taskId: number;
   materialCategory: string;
   materialType: string;
   materialName: string;
@@ -20,6 +21,7 @@ export interface Task {
   plan: string;
   stage: string;
   assignedTo: string[];
+  assignedToIds?: string[];
   assignedType: "individual" | "team";
   supervisors?: string[];
   qualityInspectors?: string[];

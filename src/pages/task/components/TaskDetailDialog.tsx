@@ -18,6 +18,7 @@ import {
   Search,
   Shield,
   ClipboardCheck,
+  RefreshCw,
 } from "lucide-react";
 import {
   Dialog,
@@ -29,6 +30,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { type Task } from "../../../stores/useTaskStore";
 import useRegionStore from "../../../stores/useRegionStore";
+import { getFrequencyText } from "../../plan/utils/task";
 
 interface TaskDetailDialogProps {
   task: Task | null;
@@ -256,15 +258,30 @@ export default function TaskDetailDialog({
 
             <div className="space-y-2">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                Số tuần lặp lại
+              </p>
+              <div className="p-3 rounded-2xl border border-slate-100 bg-white shadow-sm flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-blue-50 text-blue-500">
+                  <RefreshCw className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-slate-800">
+                    {task.tasks?.some(t => t.isRepeating) 
+                      ? Math.max(...task.tasks.map(t => t.repeatWeeks || 0)) + " tuần"
+                      : "Không lặp lại"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                 Bắt đầu
               </p>
               <div className="p-3 rounded-2xl border border-slate-100 bg-white shadow-sm space-y-1">
                 <div className="flex items-center gap-2 text-sm font-black text-slate-800">
                   <CalendarIcon className="w-4 h-4 text-emerald-500" />
                   {task.startDate}
-                </div>
-                <div className="text-[10px] text-slate-400 italic ml-6 opacity-60">
-                  (Dự kiến: {task.startDate})
                 </div>
               </div>
             </div>
@@ -276,10 +293,7 @@ export default function TaskDetailDialog({
               <div className="p-3 rounded-2xl border border-slate-100 bg-white shadow-sm space-y-1">
                 <div className="flex items-center gap-2 text-sm font-black text-slate-800">
                   <CalendarIcon className="w-4 h-4 text-rose-500" />
-                  {task.endDate}
-                </div>
-                <div className="text-[10px] text-slate-400 italic ml-6 opacity-60">
-                  (Dự kiến: {task.endDate})
+                  {task.endDate || "Duy trì"}
                 </div>
               </div>
             </div>
@@ -379,20 +393,37 @@ export default function TaskDetailDialog({
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                          <CalendarIcon className="w-4 h-4" />
-                          Từ ngày:{" "}
-                          <span className="font-bold text-slate-700">
-                            {t.startDate || task.startDate}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                          <CalendarIcon className="w-4 h-4" />
-                          Đến ngày:{" "}
-                          <span className="font-bold text-slate-700">
-                            {t.endDate || task.endDate}
-                          </span>
-                        </div>
+                          <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                            {t.isRepeating ? (
+                              <>
+                                <RefreshCw className="w-4 h-4 text-primary" />
+                                Tần suất:{" "}
+                                <span className="font-bold text-slate-700">
+                                  {getFrequencyText(
+                                    t.repeatDays || [],
+                                    t.repeatWeeks || 0,
+                                  )}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <CalendarIcon className="w-4 h-4" />
+                                Từ ngày:{" "}
+                                <span className="font-bold text-slate-700">
+                                  {t.startDate || task.startDate}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                          {!t.isRepeating && (
+                            <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                              <CalendarIcon className="w-4 h-4" />
+                              Đến ngày:{" "}
+                              <span className="font-bold text-slate-700">
+                                {t.endDate || task.endDate}
+                              </span>
+                            </div>
+                          )}
                       </div>
                     </div>
 

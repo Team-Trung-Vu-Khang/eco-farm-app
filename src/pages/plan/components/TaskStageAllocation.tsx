@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
+  Label,
   ScrollArea,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
@@ -17,6 +18,7 @@ import {
   CheckCircle2,
   MapPin,
   Plus,
+  RefreshCw,
   Search,
   User,
   Users,
@@ -30,6 +32,7 @@ import type {
   MaterialAllocation,
   TaskAllocation,
 } from "../types";
+import { DAYS_OF_WEEK, getFrequencyText } from "../utils/task";
 import GeographicalSelector from "./GeographicalSelector";
 
 export const TaskStageAllocation = memo(
@@ -613,27 +616,129 @@ const TaskBlock = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="relative">
-              <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                type="date"
-                className="pl-10 h-10 text-sm"
-                value={task.startDate || ""}
-                onChange={(e) => syncDates(e.target.value, task.endDate || "")}
-              />
-            </div>
-            <div className="relative">
-              <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                type="date"
-                className="pl-10 h-10 text-sm"
-                value={task.endDate || ""}
-                onChange={(e) =>
-                  syncDates(task.startDate || "", e.target.value)
+          <div className="space-y-4 pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <RefreshCw
+                  className={cn(
+                    "w-4 h-4 text-slate-400",
+                    task.isRepeating && "text-blue-500",
+                  )}
+                />
+                <Label
+                  htmlFor={`repeat-${task.id}`}
+                  className="text-xs font-bold text-slate-700 cursor-pointer"
+                >
+                  Lặp lại công việc
+                </Label>
+              </div>
+              <Checkbox
+                id={`repeat-${task.id}`}
+                checked={task.isRepeating}
+                onCheckedChange={(checked) =>
+                  onUpdateTask?.(task.id, { isRepeating: !!checked })
                 }
               />
             </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Ngày bắt đầu
+                </span>
+                <div className="relative">
+                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+                  <Input
+                    type="date"
+                    className="pl-10 h-10 text-sm bg-slate-50 border-slate-200"
+                    value={task.startDate || ""}
+                    onChange={(e) =>
+                      syncDates(e.target.value, task.endDate || "")
+                    }
+                  />
+                </div>
+              </div>
+
+              {!task.isRepeating ? (
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Ngày kết thúc
+                  </span>
+                  <div className="relative">
+                    <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+                    <Input
+                      type="date"
+                      className="pl-10 h-10 text-sm bg-slate-50 border-slate-200"
+                      value={task.endDate || ""}
+                      onChange={(e) =>
+                        syncDates(task.startDate || "", e.target.value)
+                      }
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Số tuần lặp lại
+                  </span>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      min={1}
+                      className="h-10 text-sm bg-slate-50 border-slate-200 font-bold"
+                      value={task.repeatWeeks || ""}
+                      placeholder="Số tuần..."
+                      onChange={(e) =>
+                        onUpdateTask?.(task.id, {
+                          repeatWeeks: parseInt(e.target.value, 10),
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {task.isRepeating && (
+              <div className="space-y-3 p-3 bg-blue-50/50 rounded-xl border border-blue-100 animate-in fade-in slide-in-from-top-2">
+                <div className="flex flex-wrap gap-2 justify-between">
+                  {DAYS_OF_WEEK.map((day) => {
+                    const isSelected = (task.repeatDays || []).includes(
+                      day.value,
+                    );
+                    return (
+                      <button
+                        key={day.value}
+                        type="button"
+                        onClick={() => {
+                          const currentDays = task.repeatDays || [];
+                          const newDays = isSelected
+                            ? currentDays.filter((d: number) => d !== day.value)
+                            : [...currentDays, day.value];
+                          onUpdateTask?.(task.id, { repeatDays: newDays });
+                        }}
+                        className={cn(
+                          "w-8 h-8 rounded-full text-[10px] font-bold transition-all border",
+                          isSelected
+                            ? "bg-blue-600 border-blue-600 text-white shadow-sm"
+                            : "bg-white border-slate-200 text-slate-400 hover:border-blue-300 hover:text-blue-500",
+                        )}
+                      >
+                        {day.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="pt-2 border-t border-blue-100/50">
+                  <p className="text-[11px] font-medium text-blue-700 italic">
+                    {getFrequencyText(
+                      task.repeatDays || [],
+                      task.repeatWeeks || 0,
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

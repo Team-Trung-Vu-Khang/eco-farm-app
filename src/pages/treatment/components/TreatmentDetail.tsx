@@ -1,32 +1,40 @@
-import { useState } from "react";
-import {
-  MapPin,
-  Calendar,
-  List,
-  Activity,
-  Shield,
-  Leaf,
-  Bug,
-  CheckCircle2,
-  AlertTriangle,
-  ArrowRight,
-  Droplets,
-  Wind,
-  Image as ImageIcon,
-  Play,
-  Layers,
-  AlertOctagon,
-  Building2,
-  ShieldCheck,
-} from "lucide-react";
+import React, { useState } from "react";
 import {
   Badge,
+  Button,
   Card,
   CardContent,
-  Button,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  BookOpen,
+  CheckCircle2,
+  Clock3,
+  FileText,
+  MapPin,
+  PlayCircle,
+  Sprout,
+  Target,
+  Trash2,
+  UserRound,
+  Video,
+  Activity,
+  Shield,
+  Layers,
+  AlertCircle,
+} from "lucide-react";
 import type { Treatment } from "../types/treatment.types";
-import { severityConfig } from "../data/treatment.data";
+import {
+  budgetRangeOptions,
+  inspectionParameterOptions,
+  responsibleUnitOptions,
+  severityConfig,
+  treatmentMaterialCategoryOptions,
+  treatmentMethodOptions,
+} from "../data/treatment.data";
 
 interface TreatmentDetailProps {
   treatment: Treatment;
@@ -35,12 +43,32 @@ interface TreatmentDetailProps {
   onViewMaterial?: (id: string) => void;
 }
 
-const getSeverityStyle = (severity: keyof typeof severityConfig) => {
+function getOptionLabel(
+  options: ReadonlyArray<{ label: string; value: string }>,
+  value?: string,
+) {
+  return options.find((item) => item.value === value)?.label || "Chưa cập nhật";
+}
+
+function SectionBlock({
+  children,
+  eyebrow,
+  title,
+}: {
+  children: React.ReactNode;
+  eyebrow: string;
+  title: string;
+}) {
   return (
-    severityConfig[severity]?.color ||
-    "text-gray-700 bg-gray-50 border-gray-200"
+    <section className="rounded-[28px] border border-emerald-100 bg-white p-6 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">
+        {eyebrow}
+      </p>
+      <h3 className="mt-2 text-xl font-semibold text-slate-900">{title}</h3>
+      <div className="mt-5 space-y-4">{children}</div>
+    </section>
   );
-};
+}
 
 export function TreatmentDetail({
   treatment,
@@ -48,629 +76,484 @@ export function TreatmentDetail({
   onDelete,
   onViewMaterial,
 }: TreatmentDetailProps) {
-  const [activeTab, setActiveTab] = useState<"milestone" | "gallery" | "info">(
-    "milestone",
-  );
+  if (!treatment) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center bg-slate-50 text-slate-400">
+        Chưa chọn phác đồ để xem chi tiết.
+      </div>
+    );
+  }
+
+  // Resolve method labels
+  const methodIds = [
+    ...(treatment.primaryMethodId ? [treatment.primaryMethodId] : []),
+    ...(treatment.supportingMethodIds || []),
+  ];
+  const methods = treatmentMethodOptions.filter((item) => methodIds.includes(item.value));
+
+  const videos = treatment.attachments?.filter((item) => item.fileType === "video") || [];
+  const documents = treatment.attachments?.filter((item) => item.fileType === "pdf") || [];
 
   return (
-    <div className="h-full flex flex-col bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div className="h-full flex flex-col bg-[linear-gradient(180deg,#f0fdf4_0%,#f7fee7_22%,#ffffff_55%)] overflow-hidden rounded-2xl border border-gray-200 shadow-sm">
       {/* 1. HERO HEADER SECTION */}
-      <div className="relative shrink-0">
-        {/* Background Image with Overlay */}
-        <div className="absolute inset-0 z-0">
-          {treatment.images?.[0] ? (
-            <img
-              src={treatment.images[0]}
-              className="w-full h-full object-cover"
-              alt="Treatment Background"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-r from-green-800 to-green-600" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
-        </div>
-
-        <div className="relative z-10 p-6 md:p-8 text-white">
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex items-center gap-3">
-              <Badge className="bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-md">
+      <div className="border-b border-emerald-100 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_34%),linear-gradient(135deg,#064e3b_0%,#065f46_44%,#064e3b_100%)] px-8 py-8 text-white shrink-0">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-3xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="bg-white/15 text-white border-transparent backdrop-blur-md">
                 {treatment.code}
               </Badge>
-              <div
-                className={`
-                text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border
-                ${getSeverityStyle(treatment.severity)}
-            `}
+              <Badge
+                className={`border-transparent ${
+                  severityConfig[treatment.severity as keyof typeof severityConfig]?.color || ""
+                } bg-opacity-90`}
               >
-                {severityConfig[treatment.severity]?.label ||
-                  treatment.severity}
+                {severityConfig[treatment.severity as keyof typeof severityConfig]?.label || treatment.severity}
+              </Badge>
+              <Badge className="bg-white/15 text-white border-transparent backdrop-blur-md">
+                {getOptionLabel(budgetRangeOptions, treatment.budgetRange)}
+              </Badge>
+            </div>
+            <h2 className="mt-4 text-3xl font-semibold leading-tight">
+              {treatment.name}
+            </h2>
+            <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-emerald-100">
+              <div className="flex items-center gap-1.5">
+                <Activity className="h-4 w-4 text-emerald-400" />
+                <span>{treatment.disease}</span>
+              </div>
+              <span className="opacity-30">|</span>
+              <div className="flex items-center gap-1.5">
+                <Layers className="h-4 w-4 text-emerald-400" />
+                <span>{treatment.crop} - {treatment.cropType}</span>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-white hover:bg-white/20 h-8"
-                onClick={() => onEdit(treatment)}
-              >
-                Sửa
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-red-200 hover:text-white hover:bg-red-500/50 h-8"
-                onClick={() => onDelete(treatment)}
-              >
-                Xóa
-              </Button>
-            </div>
           </div>
 
-          <h1 className="text-2xl md:text-3xl font-bold mb-2 leading-tight max-w-3xl font-display">
-            {treatment.name}
-          </h1>
-
-          <div className="flex flex-wrap items-center gap-6 mt-4 text-sm font-medium text-white/90">
-            <div className="flex items-center gap-2 px-3 py-1 bg-black/20 rounded-full backdrop-blur-sm border border-white/10">
-              <Leaf className="w-3.5 h-3.5 text-green-400" />
-              <span>{treatment.crop}</span>
-              <span className="text-white/40">|</span>
-              <span>{treatment.cropType}</span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1 bg-black/20 rounded-full backdrop-blur-sm border border-white/10">
-              <Bug className="w-3.5 h-3.5 text-red-400" />
-              <span>{treatment.disease}</span>
-            </div>
-            {treatment.stage && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-black/20 rounded-full backdrop-blur-sm border border-white/10">
-                <Layers className="w-3.5 h-3.5 text-amber-400" />
-                <span>{treatment.stage}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Header Stats Bar */}
-        <div className="relative z-10 bg-white/10 backdrop-blur-md border-t border-white/10 grid grid-cols-2 md:grid-cols-4 divide-x divide-white/10">
-          <div className="p-3 text-center transition-colors hover:bg-white/5">
-            <div className="text-white/60 text-[10px] uppercase font-bold tracking-wider mb-1">
-              Thời gian xử lý
-            </div>
-            <div className="text-white font-semibold font-mono text-lg">
-              {treatment.totalDuration}
-            </div>
-          </div>
-          {/* <div className="p-3 text-center transition-colors hover:bg-white/5">
-            <div className="text-white/60 text-[10px] uppercase font-bold tracking-wider mb-1">
-              Chi phí ước tính
-            </div>
-            <div className="text-white font-semibold font-mono text-lg">
-              {treatment.totalCost}
-            </div>
-          </div> */}
-          {/* <div className="p-3 text-center hidden md:block transition-colors hover:bg-white/5">
-            <div className="text-white/60 text-[10px] uppercase font-bold tracking-wider mb-1">
-              Hiệu quả bệnh
-            </div>
-            <div className="text-green-400 font-bold text-lg">
-              {treatment.efficacyRate}
-            </div>
-          </div> */}
-          <div className="p-3 text-center hidden md:block transition-colors hover:bg-white/5">
-            <div className="text-white/60 text-[10px] uppercase font-bold tracking-wider mb-1">
-              An toàn sinh học
-            </div>
-            <div
-              className={`font-bold text-lg uppercase ${treatment.safetyRating === "high" ? "text-blue-400" : "text-amber-400"}`}
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              className="bg-white/10 hover:bg-white/20 text-white border-white/20"
+              onClick={() => onEdit(treatment)}
             >
-              {treatment.safetyRating === "high" ? "Rất cao" : "Trung bình"}
-            </div>
+              Chỉnh sửa
+            </Button>
+            <Button
+              variant="destructive"
+              className="bg-rose-500/80 hover:bg-rose-500 border-none"
+              onClick={() => onDelete(treatment)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Xóa
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 grid-cols-2 md:grid-cols-4">
+          <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
+            <p className="text-[10px] uppercase tracking-wider text-emerald-200">Khu vực</p>
+            <p className="mt-1 font-medium">{treatment.zone || "Đa vùng"}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
+            <p className="text-[10px] uppercase tracking-wider text-emerald-200">Thời lượng</p>
+            <p className="mt-1 font-medium">{treatment.totalDuration}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
+            <p className="text-[10px] uppercase tracking-wider text-emerald-200">Đơn vị phụ trách</p>
+            <p className="mt-1 font-medium line-clamp-1">
+              {getOptionLabel(responsibleUnitOptions, treatment.responsibleUnit)}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
+            <p className="text-[10px] uppercase tracking-wider text-emerald-200">Biện pháp chính</p>
+            <p className="mt-1 font-medium line-clamp-1">
+              {methods[0]?.label || "Chưa cập nhật"}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* 2. NAVIGATION TABS */}
-      <div className="flex border-b border-gray-200 bg-white sticky top-0 z-20 shadow-sm">
-        <button
-          onClick={() => setActiveTab("milestone")}
-          className={`flex-1 py-3 text-sm font-semibold border-b-2 transition-colors flex justify-center items-center gap-2
-                 ${activeTab === "milestone" ? "border-green-600 text-green-700 bg-green-50/50" : "border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50"}
-             `}
-        >
-          <List className="w-4 h-4" /> Quy trình & Các bước
-        </button>
+      {/* 2. TABS SECTION */}
+      <div className="flex-1 overflow-hidden flex flex-col">
+        <Tabs defaultValue="overview" className="flex-1 flex flex-col h-full">
+          <div className="px-8 pt-6 pb-2 shrink-0 bg-white/50 border-b border-emerald-50">
+            <TabsList className="grid w-full grid-cols-3 rounded-2xl bg-emerald-50 p-1">
+              <TabsTrigger
+                value="overview"
+                className="data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm"
+              >
+                Tổng quan
+              </TabsTrigger>
+              <TabsTrigger
+                value="handbook"
+                className="data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm"
+              >
+                Sổ tay hướng dẫn
+              </TabsTrigger>
+              <TabsTrigger
+                value="media"
+                className="data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm"
+              >
+                Video & Tài liệu
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-        <button
-          onClick={() => setActiveTab("info")}
-          className={`flex-1 py-3 text-sm font-semibold border-b-2 transition-colors flex justify-center items-center gap-2
-                 ${activeTab === "info" ? "border-green-600 text-green-700 bg-green-50/50" : "border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50"}
-             `}
-        >
-          <Activity className="w-4 h-4" /> Thông tin phác đồ
-        </button>
-
-        <button
-          onClick={() => setActiveTab("gallery")}
-          className={`flex-1 py-3 text-sm font-semibold border-b-2 transition-colors flex justify-center items-center gap-2
-                 ${activeTab === "gallery" ? "border-green-600 text-green-700 bg-green-50/50" : "border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50"}
-             `}
-        >
-          <ImageIcon className="w-4 h-4" /> Thư viện ảnh/video
-        </button>
-      </div>
-
-      {/* 3. CONTENT AREA */}
-      <div className="flex-1 overflow-y-auto bg-gray-50/50 p-6">
-        {/* --- MILESTONE TAB --- */}
-        {activeTab === "milestone" && (
-          <div className="max-w-4xl mx-auto space-y-8">
-            <div className="mb-6 flex items-center justify-between">
-              <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-green-600" />
-                Lộ trình xử lý
-              </h3>
-              <span className="text-sm text-gray-500">
-                Tổng cộng {treatment.steps.length} bước xử lý
-              </span>
-            </div>
-
-            {/* Timeline Items */}
-            <div className="space-y-8 relative pl-4 md:pl-8">
-              {/* Connecting Line */}
-              <div className="absolute left-[27px] md:left-[43px] top-6 bottom-0 w-0.5 bg-gray-200 z-0"></div>
-
-              {treatment.steps.map((step) => (
-                <div key={step.id} className="relative z-10 group">
-                  {/* Step Badge */}
-                  <div className="absolute left-0 md:left-2 top-0 w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-sm shadow ring-4 ring-gray-50">
-                    {step.step}
-                  </div>
-
-                  <div className="ml-12 md:ml-16 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all p-5">
-                    <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 pb-4 border-b border-gray-100 gap-2">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <h4 className="font-bold text-lg text-gray-900">
-                            {step.name}
-                          </h4>
-                          <span className="px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700">
-                            {step.timing}
-                          </span>
-                        </div>
-                        <p className="text-gray-600 text-sm">
-                          {step.description}
+          <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">
+            {/* --- OVERVIEW TAB --- */}
+            <TabsContent value="overview" className="mt-0 space-y-6 outline-none">
+              <SectionBlock eyebrow="Overview" title="Tóm tắt phác đồ">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Card className="border-slate-200 shadow-none">
+                    <CardContent className="space-y-3 p-5">
+                      <div className="flex items-center gap-2 font-medium text-slate-900">
+                        <MapPin className="h-4 w-4 text-emerald-600" />
+                        Phạm vi và đối tượng
+                      </div>
+                      <div className="space-y-2 pt-1 text-sm text-slate-600">
+                        <p>
+                          <span className="font-medium">Cây trồng:</span> {treatment.crop} ({treatment.variety})
+                        </p>
+                        <p>
+                          <span className="font-medium">Giống/Hạt:</span> {treatment.seed || "Chưa cập nhật"}
+                        </p>
+                        <p>
+                          <span className="font-medium">Địa hình:</span> {(treatment.terrainTypes || []).join(", ") || "Đa terrain"}
                         </p>
                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50/50 rounded-xl p-4">
-                      {/* Material Section */}
-                      <div className="space-y-3">
-                        <div className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                          <Droplets className="w-3.5 h-3.5" /> Vật tư sử dụng
-                        </div>
-                        <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
-                          <div
-                            className="font-bold text-base flex items-center gap-1 cursor-pointer hover:underline mb-1"
-                            onClick={() =>
-                              step.materialId &&
-                              onViewMaterial?.(step.materialId)
-                            }
-                          >
-                            <span
-                              className={`
-                              px-1.5 py-0.5 rounded text-[10px] font-bold uppercase mr-1
-                              ${
-                                step.materialType === "fertilizer"
-                                  ? "bg-amber-100 text-amber-700"
-                                  : "bg-red-100 text-red-700"
-                              }
-                            `}
-                            >
-                              {step.materialType === "fertilizer"
-                                ? "Phân bón"
-                                : "Thuốc"}
-                            </span>
-                            <span className="text-gray-900">
-                              {step.materialName}
-                            </span>
-                            {step.materialId && (
-                              <ArrowRight className="w-3.5 h-3.5 opacity-50 ml-auto" />
-                            )}
-                          </div>
-                          <div className="flex items-center gap-4 text-sm mt-2">
-                            <div>
-                              <span className="text-gray-500 text-xs block">
-                                Liều lượng pha
-                              </span>
-                              <span className="font-medium text-gray-900">
-                                {step.dosage}
-                              </span>
-                            </div>
-                            <div className="h-6 w-px bg-gray-200"></div>
-                            <div>
-                              <span className="text-gray-500 text-xs block">
-                                Lượng dùng/ha
-                              </span>
-                              <span className="font-medium text-gray-900">
-                                {step.dosagePerArea}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Technical Section */}
-                      <div className="space-y-3">
-                        <div className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                          <Activity className="w-3.5 h-3.5" /> Yêu cầu kỹ thuật
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-white p-2.5 rounded-lg border border-gray-200">
-                            <span className="text-gray-500 text-[10px] uppercase block mb-0.5">
-                              Cách xử lý
-                            </span>
-                            <span className="text-sm font-medium text-gray-900 leading-tight block">
-                              {step.applicationMethod}
-                            </span>
-                          </div>
-
-                          {/* SAFETY PERIOD HIGHLIGHT (PHI) */}
-                          <div
-                            className={`p-2.5 rounded-lg border ${step.safetyPeriod ? "bg-amber-50 border-amber-200" : "bg-gray-50 border-gray-200"}`}
-                          >
-                            <span className="text-amber-700/70 text-[10px] uppercase font-bold block mb-0.5 flex items-center gap-1">
-                              <AlertOctagon className="w-3 h-3" /> Thời gian
-                              cách ly
-                            </span>
-                            <span className="text-sm font-bold text-amber-700 leading-tight block">
-                              {step.safetyPeriod || "Không yêu cầu"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Environment & PPE Row */}
-                    <div className="mt-4 flex flex-wrap gap-4 text-xs text-gray-600 border-t border-gray-100 pt-3">
-                      {step.weatherConditions && (
-                        <div className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-100">
-                          <Wind className="w-3.5 h-3.5" />
-                          <span className="font-medium">
-                            {step.weatherConditions}
-                          </span>
-                        </div>
-                      )}
-                      {step.ppeRequired && (
-                        <div className="flex items-center gap-1.5 bg-gray-100 text-gray-700 px-2 py-1 rounded border border-gray-200">
-                          <Shield className="w-3.5 h-3.5" />
-                          <span>Bảo hộ: {step.ppeRequired}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {step.notes && (
-                      <div className="mt-3 flex gap-2 text-amber-800 bg-amber-50 p-3 rounded-lg text-sm border border-amber-100">
-                        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                        <span className="leading-relaxed">
-                          <span className="font-bold">Lưu ý quan trọng:</span>{" "}
-                          {step.notes}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {/* Finish Node */}
-              <div className="relative z-10 pl-12 md:pl-16 pt-2">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-800 rounded-full font-bold text-sm">
-                  <CheckCircle2 className="w-4 h-4" /> Hoàn thành phác đồ
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* --- INFO TAB --- */}
-        {activeTab === "info" && (
-          <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
-            <Card className="shadow-sm border-gray-200">
-              <CardContent className="p-6">
-                <h3 className="font-bold text-lg mb-4 text-gray-800 flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-blue-600" /> Thông tin chuyên
-                  môn
-                </h3>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 py-3 border-b border-gray-100">
-                    <div className="text-sm text-gray-500">Tác giả phác đồ</div>
-                    <div className="text-sm font-medium text-right">
-                      {treatment.author}
-                      <br />
-                      <span className="text-xs text-gray-400">
-                        {treatment.authorTitle}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 py-3 border-b border-gray-100">
-                    <div className="text-sm text-gray-500">Người phê duyệt</div>
-                    <div className="text-sm font-medium text-right">
-                      {treatment.approvedBy}
-                      <br />
-                      <span className="text-xs text-gray-400">
-                        {treatment.approvalDate}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 py-3">
-                    <div className="text-sm text-gray-500">Giống áp dụng</div>
-                    <div className="text-sm font-medium text-right">
-                      {treatment.variety} ({treatment.seed})
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-sm border-gray-200 bg-gradient-to-br from-white to-gray-50/50">
-              <CardContent className="p-6">
-                <h3 className="font-bold text-lg mb-4 text-gray-800 flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-indigo-600" /> Đơn vị cung
-                  cấp phác đồ
-                </h3>
-                <div className="flex items-start gap-4 p-4 rounded-xl bg-white border border-gray-100 shadow-sm">
-                  <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
-                    <Building2 className="w-6 h-6" />
-                  </div>
-                  <div className="space-y-1">
-                    <h4 className="font-bold text-gray-900 leading-tight">
-                      {treatment.author}
-                    </h4>
-                    <p className="text-sm text-indigo-600 font-medium">
-                      {treatment.authorTitle}
-                    </p>
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 pt-1">
-                      <ShieldCheck className="w-3.5 h-3.5 text-green-600" />
-                      <span className="text-gray-400 font-medium italic">
-                        Đơn vị tư vấn kỹ thuật chuyên sâu
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* <Card className="shadow-sm border-gray-200">
-              <CardContent className="p-6">
-                <h3 className="font-bold text-lg mb-4 text-gray-800 flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-green-600" /> Chỉ số hiệu
-                  quả
-                </h3>
-
-                <div className="space-y-6">
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-600">
-                        Mức độ an toàn sinh học
-                      </span>
-                      <span className="font-bold">
-                        {treatment.safetyRating === "high"
-                          ? "Cao"
-                          : "Trung bình"}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full ${treatment.safetyRating === "high" ? "bg-green-500 w-[90%]" : "bg-amber-500 w-[60%]"}`}
-                      ></div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-600">
-                        Hiệu quả kiểm soát bệnh
-                      </span>
-                      <span className="font-bold">
-                        {treatment.efficacyRate}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2">
-                      <div className="h-2 rounded-full bg-blue-500 w-[85%]"></div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card> */}
-
-            {/* Deployment Regions Grid */}
-            <div className="md:col-span-2 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-lg text-gray-800 flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-green-600" /> Vùng đang áp
-                  dụng
-                </h3>
-                <Button variant="outline" size="sm" className="h-8">
-                  Xem bản đồ tổng quát
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  {
-                    id: 1,
-                    name: "Khu vực A - Cầu Đất",
-                    area: "2.5 ha",
-                    manager: "Nguyễn Văn An",
-                    startDate: "10/01/2024",
-                    progress: 75,
-                    status: "active",
-                    image:
-                      "https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                  },
-                  {
-                    id: 2,
-                    name: "Khu vực B - Trại Mát",
-                    area: "1.8 ha",
-                    manager: "Trần Thị Bé",
-                    startDate: "15/01/2024",
-                    progress: 45,
-                    status: "active",
-                    image:
-                      "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                  },
-                  {
-                    id: 3,
-                    name: "Khu vực C - Đa Sar",
-                    area: "3.2 ha",
-                    manager: "Lê Minh Cường",
-                    startDate: "05/02/2024",
-                    progress: 20,
-                    status: "warning",
-                    image:
-                      "https://images.unsplash.com/photo-1516253593875-bd7ba052fbc5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                  },
-                  {
-                    id: 4,
-                    name: "Khu vực D - Lạc Dương",
-                    area: "1.5 ha",
-                    manager: "Phạm Văn Dũng",
-                    startDate: "20/01/2024",
-                    progress: 90,
-                    status: "active",
-                    image:
-                      "https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                  },
-                ].map((region) => (
-                  <Card
-                    key={region.id}
-                    className="overflow-hidden hover:shadow-md transition-all border-gray-200 group cursor-pointer"
-                  >
-                    <div className="flex h-full">
-                      <div className="w-1/3 relative overflow-hidden">
-                        <img
-                          src={region.image}
-                          alt={region.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
-                        <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
-                      </div>
-                      <div className="w-2/3 p-4 flex flex-col justify-between">
-                        <div>
-                          <div className="flex justify-between items-start mb-1">
-                            <h4 className="font-bold text-gray-900 line-clamp-1">
-                              {region.name}
-                            </h4>
-                            <Badge
-                              className={`text-[10px] h-5 border-none ${
-                                region.status === "active"
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-amber-100 text-amber-700"
-                              }`}
-                            >
-                              {region.status === "active"
-                                ? "Đang xử lý"
-                                : "Cảnh báo"}
-                            </Badge>
-                          </div>
-
-                          <div className="text-xs text-gray-500 mb-3 flex items-center gap-2">
-                            <span className="flex items-center gap-1">
-                              <MapPin className="w-3 h-3" /> {region.area}
-                            </span>
-                            <span className="w-1 h-1 bg-gray-300 rounded-full" />
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />{" "}
-                              {region.startDate}
-                            </span>
-                          </div>
-
-                          <div className="space-y-1">
-                            <div className="flex justify-between text-xs text-gray-600">
-                              <span>Tiến độ</span>
-                              <span className="font-medium">
-                                {region.progress}%
-                              </span>
-                            </div>
-                            <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full rounded-full ${region.status === "active" ? "bg-green-500" : "bg-amber-500"}`}
-                                style={{ width: `${region.progress}%` }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center text-xs">
-                          <div className="text-gray-500">
-                            Phụ trách:{" "}
-                            <span className="font-medium text-gray-700">
-                              {region.manager}
-                            </span>
-                          </div>
-                          <ArrowRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-green-600 group-hover:translate-x-1 transition-all" />
-                        </div>
-                      </div>
-                    </div>
+                    </CardContent>
                   </Card>
-                ))}
-              </div>
-            </div>
+
+                  <Card className="border-slate-200 shadow-none">
+                    <CardContent className="space-y-3 p-5">
+                      <div className="flex items-center gap-2 font-medium text-slate-900">
+                        <UserRound className="h-4 w-4 text-emerald-600" />
+                        Tác giả và cộng tác
+                      </div>
+                      {(treatment.authors || []).length > 0 ? (
+                        <div className="space-y-2 max-h-[120px] overflow-y-auto pr-2 custom-scrollbar">
+                          {treatment.authors?.map((author) => (
+                            <div key={author.id} className="rounded-xl bg-slate-50 p-3">
+                              <p className="font-medium text-slate-900 text-sm">{author.name}</p>
+                              <p className="text-xs text-slate-500">
+                                {author.qualification} - {author.organization}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-slate-500">Chưa có thông tin tác giả chi tiết.</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Card className="border-slate-200 shadow-none">
+                    <CardContent className="p-5">
+                      <div className="flex items-center gap-2 font-medium text-slate-900 mb-4">
+                        <Target className="h-4 w-4 text-rose-500" />
+                        Mục tiêu phác đồ
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {(treatment.goalTags || []).map((item) => (
+                          <Badge key={item} variant="secondary" className="rounded-full bg-emerald-50 text-emerald-700 border-none">
+                            {item}
+                          </Badge>
+                        ))}
+                        {(treatment.goalTags || []).length === 0 && (
+                          <span className="text-sm text-slate-400 italic">Chưa xác định mục tiêu cụ thể</span>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-slate-200 shadow-none">
+                    <CardContent className="p-5">
+                      <div className="flex items-center gap-2 font-medium text-slate-900 mb-4">
+                        <CheckCircle2 className="h-4 w-4 text-blue-500" />
+                        Thông số kiểm tra
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {(treatment.inspectionParameters || []).map((item) => (
+                          <Badge key={item} variant="outline" className="rounded-full border-slate-200 text-slate-600">
+                            {getOptionLabel(inspectionParameterOptions, item)}
+                          </Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </SectionBlock>
+
+              <SectionBlock eyebrow="Context" title="Khảo sát và ghi chú">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Card className="border-slate-200 shadow-none bg-slate-50/50">
+                    <CardContent className="p-5">
+                      <h4 className="font-medium text-slate-900 flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-slate-400" />
+                        Khảo sát hiện trạng
+                      </h4>
+                      <p className="mt-3 text-sm leading-6 text-slate-600 italic">
+                        {treatment.currentSurvey || "Chưa cập nhật khảo sát hiện trạng."}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-slate-200 shadow-none bg-slate-50/50">
+                    <CardContent className="p-5">
+                      <h4 className="font-medium text-slate-900 flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-slate-400" />
+                        Lưu ý quan trọng
+                      </h4>
+                      <p className="mt-3 text-sm leading-6 text-slate-600">
+                        {treatment.importantNotes || "Chưa cập nhật lưu ý kỹ thuật."}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </SectionBlock>
+            </TabsContent>
+
+            {/* --- HANDBOOK TAB --- */}
+            <TabsContent value="handbook" className="mt-0 space-y-6 outline-none">
+              <SectionBlock eyebrow="Handbook" title="Sổ tay triển khai thực địa">
+                <Card className="border-emerald-200 bg-emerald-50/70 shadow-none">
+                  <CardContent className="p-5">
+                    <div className="flex items-center gap-2 font-medium text-emerald-900">
+                      <BookOpen className="h-4 w-4 text-emerald-700" />
+                      Mở đầu phác đồ
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-emerald-800">
+                      {treatment.expectedOutcomeSummary ||
+                        "Hướng dẫn chi tiết lộ trình điều trị, cách sử dụng vật tư và các bước kỹ thuật cần tuân thủ."}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <div className="space-y-6 pt-4">
+                  {(treatment.procedures || []).length > 0 ? (
+                    treatment.procedures?.map((procedure) => (
+                      <div
+                        key={procedure.id}
+                        className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-600">
+                              Giai đoạn {procedure.stepNumber}
+                            </p>
+                            <h4 className="mt-1 text-xl font-semibold text-slate-900">
+                              {procedure.name}
+                            </h4>
+                          </div>
+                          <Badge className="rounded-full bg-slate-900 text-white font-mono border-none">
+                            <Clock3 className="mr-1.5 h-3.5 w-3.5" />
+                            {procedure.startDay !== undefined && procedure.endDay !== undefined
+                              ? `Ngày ${procedure.startDay} -> ${procedure.endDay}`
+                              : procedure.timing}
+                          </Badge>
+                        </div>
+
+                        <p className="mt-4 text-sm leading-6 text-slate-600">
+                          {procedure.detailedInstructions || procedure.description}
+                        </p>
+
+                        <div className="mt-6 grid gap-4 md:grid-cols-3">
+                          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                              Kỹ thuật
+                            </p>
+                            <p className="mt-2 text-sm font-semibold text-slate-800 line-clamp-2">
+                              {procedure.technique || "Chưa cập nhật"}
+                            </p>
+                          </div>
+                          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                              Định lượng
+                            </p>
+                            <p className="mt-2 text-sm font-semibold text-slate-800">
+                              {procedure.dosage || "Theo thực tế"}
+                            </p>
+                          </div>
+                          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                              Mục tiêu giai đoạn
+                            </p>
+                            <p className="mt-2 text-sm font-semibold text-emerald-700 line-clamp-2">
+                              {procedure.expectedOutcome || "Phòng trị bệnh"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {(procedure.stageMaterials || []).length > 0 && (
+                          <div className="mt-6">
+                            <p className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                              <Badge className="w-1.5 h-1.5 rounded-full p-0 bg-emerald-500 border-none" />
+                              Danh mục vật tư
+                            </p>
+                            <div className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+                              {procedure.stageMaterials?.map((item) => (
+                                <div
+                                  key={item.id}
+                                  className="rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4"
+                                >
+                                  <Badge variant="outline" className="rounded-full bg-white text-[10px] h-5 border-emerald-100 text-emerald-700">
+                                    {getOptionLabel(treatmentMaterialCategoryOptions, item.category)}
+                                  </Badge>
+                                  <p className="mt-3 font-bold text-slate-900 text-sm">{item.name}</p>
+                                  <p className="mt-1 text-sm text-emerald-700 font-medium">
+                                    {item.dosageMin} - {item.dosageMax} {item.unit}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {procedure.qualityCheckpoints && procedure.qualityCheckpoints.length > 0 && (
+                          <div className="mt-6 rounded-2xl bg-blue-50/50 border border-blue-100 p-4">
+                            <p className="text-xs font-bold text-blue-800 uppercase tracking-wider">
+                              Checklist chất lượng
+                            </p>
+                            <div className="mt-3 space-y-2">
+                              {procedure.qualityCheckpoints.map((item) => (
+                                <div key={item} className="flex items-start gap-2 text-sm text-slate-600">
+                                  <CheckCircle2 className="mt-0.5 h-4 w-4 text-blue-500 flex-shrink-0" />
+                                  <span>{item}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {procedure.warnings && procedure.warnings.length > 0 && (
+                          <div className="mt-4 rounded-2xl border border-rose-100 bg-rose-50/50 p-4">
+                            <p className="text-xs font-bold text-rose-800 uppercase tracking-wider">
+                              Lưu ý an toàn / Kỹ thuật
+                            </p>
+                            <div className="mt-3 space-y-2">
+                              {procedure.warnings.map((item) => (
+                                <div key={item} className="flex items-start gap-2 text-sm text-rose-700">
+                                  <AlertCircle className="mt-0.5 h-4 w-4 text-rose-500 flex-shrink-0" />
+                                  <span>{item}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <Card className="border-dashed border-slate-300 shadow-none">
+                      <CardContent className="p-8 text-center">
+                        <BookOpen className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+                        <p className="text-sm text-slate-500">
+                          Chưa có lộ trình hướng dẫn chi tiết cho phác đồ này.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </SectionBlock>
+            </TabsContent>
+
+            {/* --- MEDIA TAB --- */}
+            <TabsContent value="media" className="mt-0 space-y-6 outline-none">
+              <SectionBlock eyebrow="Media" title="Video & Tài liệu đính kèm">
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <Card className="border-slate-200 shadow-none">
+                    <CardContent className="p-5">
+                      <div className="flex items-center gap-2 font-medium text-slate-900 mb-4">
+                        <Video className="h-4 w-4 text-violet-600" />
+                        Video hướng dẫn
+                      </div>
+                      <div className="space-y-3">
+                        {videos.length > 0 ? (
+                          videos.map((item) => (
+                            <div
+                              key={item.id}
+                              className="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex items-center justify-between group"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-violet-600">
+                                  <PlayCircle className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-slate-900 text-sm">{item.name}</p>
+                                  <p className="text-xs text-slate-500 uppercase">{item.size || "Video HD"}</p>
+                                </div>
+                              </div>
+                              <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                <PlayCircle className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="py-8 text-center text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                            <Video className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                            <p className="text-xs">Chưa có video hướng dẫn</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-slate-200 shadow-none">
+                    <CardContent className="p-5">
+                      <div className="flex items-center gap-2 font-medium text-slate-900 mb-4">
+                        <FileText className="h-4 w-4 text-blue-600" />
+                        Tài liệu tham khảo
+                      </div>
+                      <div className="space-y-3">
+                        {documents.length > 0 ? (
+                          documents.map((item) => (
+                            <div
+                              key={item.id}
+                              className="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex items-center justify-between group"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                  <FileText className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-slate-900 text-sm">{item.name}</p>
+                                  <p className="text-xs text-slate-500 uppercase">{item.fileType} • {item.size}</p>
+                                </div>
+                              </div>
+                              <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                <FileText className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="py-8 text-center text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                            <FileText className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                            <p className="text-xs">Chưa có tài liệu đính kèm</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card className="border-emerald-100 bg-[linear-gradient(135deg,#f8fafc_0%,#dcfce7_100%)] shadow-none">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 font-medium text-slate-900">
+                      <Sprout className="h-4 w-4 text-emerald-600" />
+                      Kết luận kỹ thuật
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-slate-700 italic">
+                      Phác đồ này được xây dựng trên nền tảng cơ sở dữ liệu bệnh học chuyên sâu, kết hợp giữa phương pháp hóa học và sinh học để tối ưu chi phí và hiệu quả. Đội ngũ kỹ thuật cần bám sát lộ trình 3 giai đoạn để đạt kết quả tốt nhất.
+                    </p>
+                  </CardContent>
+                </Card>
+              </SectionBlock>
+            </TabsContent>
           </div>
-        )}
-
-        {/* --- GALLERY TAB --- */}
-        {activeTab === "gallery" && (
-          <div className="max-w-5xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Video Highlight */}
-              {treatment.videoUrl && (
-                <div className="col-span-1 md:col-span-2">
-                  <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-                    <Play className="w-4 h-4" /> Video hướng dẫn
-                  </h3>
-                  <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-lg border border-gray-200">
-                    <iframe
-                      className="w-full h-full"
-                      src={`https://www.youtube.com/embed/${treatment.videoUrl.split("v=")[1] || treatment.videoUrl.split("/").pop()}`}
-                      title="YouTube video player"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                    ></iframe>
-                  </div>
-                </div>
-              )}
-
-              {/* Images Grid */}
-              {treatment.images?.map((img, idx) => (
-                <div
-                  key={idx}
-                  className="group relative aspect-video rounded-xl overflow-hidden shadow-sm border border-gray-200 cursor-zoom-in"
-                >
-                  <img
-                    src={img}
-                    alt={`Documentation ${idx + 1}`}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="text-white text-xs font-medium">
-                      Hình ảnh thực địa #{idx + 1}
-                    </span>
-                  </div>
-                </div>
-              ))}
-
-              {/* Add placeholder if no images */}
-              {(!treatment.images || treatment.images.length === 0) && (
-                <div className="col-span-full py-12 text-center text-gray-400 bg-white rounded-xl border border-dashed border-gray-200">
-                  <ImageIcon className="w-12 h-12 mx-auto mb-2 opacity-20" />
-                  <p>Chưa có hình ảnh minh họa</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        </Tabs>
       </div>
     </div>
   );
 }
+

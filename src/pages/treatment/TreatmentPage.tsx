@@ -1,4 +1,5 @@
 import { Plus, Bug } from "lucide-react";
+import { useLocation } from "wouter";
 import {
   AdminLayout,
   Button,
@@ -12,6 +13,7 @@ import { TreatmentForm } from "./components/TreatmentForm";
 import { useTreatmentPage } from "./hooks/useTreatmentPage";
 
 export default function TreatmentPage() {
+  const [, setLocation] = useLocation();
   const {
     filteredData,
     selectedId,
@@ -19,9 +21,6 @@ export default function TreatmentPage() {
     selectedTreatment,
     deleteOpen,
     setDeleteOpen,
-    formOpen,
-    setFormOpen,
-    editingItem,
     searchFilters,
     setSearchFilters,
     materialModalOpen,
@@ -29,9 +28,7 @@ export default function TreatmentPage() {
     selectedMaterial,
     severityCounts,
     severityConfig,
-    handleCreate,
     handleEdit,
-    handleSubmit,
     handleDelete,
     handleConfirmDelete,
     handleViewMaterial,
@@ -44,7 +41,7 @@ export default function TreatmentPage() {
       description="Hệ thống quản lý quy trình kỹ thuật & sâu bệnh"
       actions={
         <Button
-          onClick={handleCreate}
+          onClick={() => setLocation("/treatment/create")}
           className="bg-green-600 hover:bg-green-700 shadow-sm"
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -54,8 +51,8 @@ export default function TreatmentPage() {
     >
       <div className="space-y-6">
         <TreatmentSeverityStats
-          severityCounts={severityCounts}
           severityConfig={severityConfig}
+          severityCounts={severityCounts}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden">
@@ -91,13 +88,6 @@ export default function TreatmentPage() {
           </div>
         </div>
       </div>
-
-      <TreatmentForm
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        initialData={editingItem}
-        onSubmit={handleSubmit}
-      />
 
       <DeleteDialog
         open={deleteOpen}

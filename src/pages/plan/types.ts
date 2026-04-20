@@ -20,6 +20,9 @@ export interface TaskAllocation extends StoreTaskAllocation {
   geographicalSelections?: GeographicalSelection[];
   startDate?: string;
   endDate?: string;
+  isRepeating?: boolean;
+  repeatDays?: number[];
+  repeatWeeks?: number;
 }
 
 export type PlanPurpose = Plan["purpose"];

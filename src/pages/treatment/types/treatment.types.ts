@@ -1,23 +1,46 @@
-export interface TreatmentStep {
+export interface TreatmentAuthor {
   id: number;
-  step: number;
+  name: string;
+  qualification: string;
+  organization: string;
+}
+
+export interface TreatmentAttachment {
+  id: number;
+  name: string;
+  fileType: "pdf" | "image" | "video";
+  size: string;
+  url?: string;
+}
+
+export interface TreatmentMaterialItem {
+  id: number;
+  category: string;
+  name: string;
+  dosageMin: string;
+  dosageMax: string;
+  unit: string;
+}
+
+export interface TreatmentProcedure {
+  id: number;
+  stepNumber: number;
   name: string;
   description: string;
-  materialId: string; // Link to material system
-  materialName: string;
-  materialType?: "pesticide" | "fertilizer" | "other";
+  startDay?: number;
+  endDay?: number;
+  detailedInstructions: string;
   dosage: string;
-  dosagePerArea: string;
-  applicationMethod: string;
   timing: string;
-  duration: string;
-  frequency: string;
-  cost: string;
-  costPerArea: string;
-  safetyPeriod: string;
-  ppeRequired: string;
-  weatherConditions: string;
-  notes: string;
+  technique: string;
+  materials: string[];
+  equipment: string[];
+  stageMaterials: TreatmentMaterialItem[];
+  estimatedDays: number;
+  warnings: string[];
+  tips: string[];
+  expectedOutcome: string;
+  qualityCheckpoints: string[];
 }
 
 export interface Treatment {
@@ -27,30 +50,52 @@ export interface Treatment {
   cropType: string;
   crop: string;
   variety: string;
-  seed: string;
   disease: string;
   severity: "M0" | "M1" | "M2" | "M3" | "M4";
   author: string;
   authorTitle: string;
-  approvedBy: string;
-  approvalDate: string;
-  version: string;
+  approvedBy?: string;
+  approvalDate?: string;
+  version?: string;
   totalCost: string;
   totalDuration: string;
   safetyRating: "low" | "medium" | "high";
-  efficacyRate: string;
-  steps: TreatmentStep[];
+  efficacyRate?: string;
   status: "active" | "inactive";
   createdAt: string;
+  seed?: string;
+  steps?: any[];
   images?: string[];
   videoUrl?: string;
-  stage?: string; // Growth stage e.g. "Ra hoa", "Nuôi quả"
-  location?: {
-    lat: number;
-    lng: number;
-    address: string;
-    polygon?: { lat: number; lng: number }[];
-  };
+  stage?: string;
+  
+  // Dynamic collections from the wizard
+  authors?: TreatmentAuthor[];
+  attachments?: TreatmentAttachment[];
+  procedures?: TreatmentProcedure[];
+  
+  // Expanded fields
+  zone?: string;
+  soilIssue?: string;
+  soilProblems?: string[];
+  startDate?: string;
+  endDate?: string;
+  duration?: string;
+  budgetRange?: string;
+  responsibleUnit?: string;
+  priority?: "low" | "medium" | "high";
+  cropGroupTags?: string[];
+  applicableObjects?: string[];
+  applicableCrops?: string[];
+  terrainTypes?: string[];
+  primaryMethodId?: string;
+  supportingMethodIds?: string[];
+  goalTags?: string[];
+  currentSurvey?: string;
+  importantNotes?: string;
+  expectedOutcomeSummary?: string;
+  inspectionParameters?: string[];
+  qualityChecklist?: string[];
 }
 
 export interface SearchFilters {
@@ -61,23 +106,4 @@ export interface SearchFilters {
   disease: string;
   severity: string;
   status: string;
-}
-
-export interface Material {
-  id: string;
-  code: string;
-  name: string;
-  type: "pesticide" | "fertilizer" | "material";
-  manufacturer: string;
-  activeIngredient: string;
-  concentration: string;
-  formulation: string;
-  toxicityLevel: "low" | "medium" | "high";
-  safetyPeriod: string;
-  instructions: string;
-  dosageGuide: string;
-  storage: string;
-  warnings: string[];
-  registrationNumber: string;
-  expiryMonths: number;
 }

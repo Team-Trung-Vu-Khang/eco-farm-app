@@ -1,11 +1,9 @@
 import { useMemo, useState } from "react";
+import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  initialTreatments,
-  materialsDatabase,
-  severityConfig,
-} from "../data/treatment.data";
+import { materialsDatabase, severityConfig } from "../data/treatment.data";
 import type { SearchFilters, Treatment } from "../types/treatment.types";
+import { useTreatmentStore } from "@/stores/useTreatmentStore";
 
 const emptySearchFilters: SearchFilters = {
   keyword: "",
@@ -16,10 +14,16 @@ const emptySearchFilters: SearchFilters = {
   severity: "",
   status: "",
 };
-
 export function useTreatmentPage() {
   const { toast } = useToast();
-  const [data, setData] = useState<Treatment[]>(initialTreatments);
+  const [, setLocation] = useLocation();
+  const {
+    treatments: data,
+    deleteTreatment,
+    updateTreatment,
+    addTreatment,
+  } = useTreatmentStore();
+
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Treatment | null>(null);
   const [materialModalOpen, setMaterialModalOpen] = useState(false);
@@ -27,8 +31,6 @@ export function useTreatmentPage() {
     null,
   );
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<Treatment | null>(null);
   const [searchFilters, setSearchFilters] =
     useState<SearchFilters>(emptySearchFilters);
 
@@ -60,7 +62,10 @@ export function useTreatmentPage() {
   }, [data, searchFilters]);
 
   const resolvedSelectedId = useMemo(() => {
-    if (selectedId !== null && filteredData.some((item) => item.id === selectedId)) {
+    if (
+      selectedId !== null &&
+      filteredData.some((item) => item.id === selectedId)
+    ) {
       return selectedId;
     }
 
@@ -73,46 +78,11 @@ export function useTreatmentPage() {
   );
 
   const handleEdit = (item: Treatment) => {
-    setEditingItem(item);
-    setFormOpen(true);
+    setLocation(`/treatment/${item.id}/edit`);
   };
 
   const handleCreate = () => {
-    setEditingItem(null);
-    setFormOpen(true);
-  };
-
-  const handleSubmit = (formData: Partial<Treatment>) => {
-    if (editingItem) {
-      setData((prev) =>
-        prev.map((item) =>
-          item.id === editingItem.id ? { ...item, ...formData } : item,
-        ),
-      );
-      toast({
-        title: "Thành công",
-        description: `Đã cập nhật phác đồ: ${formData.name}`,
-      });
-    } else {
-      const newItem: Treatment = {
-        ...formData,
-        id: Math.max(...data.map((d) => d.id), 0) + 1,
-        steps: [],
-        createdAt: new Date().toISOString().split("T")[0],
-        status: "active",
-        severity: "moderate",
-        safetyRating: "medium",
-        ...formData,
-      } as Treatment;
-
-      setData((prev) => [newItem, ...prev]);
-      setSelectedId(newItem.id);
-      toast({
-        title: "Thành công",
-        description: `Đã tạo mới phác đồ: ${newItem.name}`,
-      });
-    }
-    setFormOpen(false);
+    setLocation("/treatment/create");
   };
 
   const handleDelete = (item: Treatment) => {
@@ -122,7 +92,7 @@ export function useTreatmentPage() {
 
   const handleConfirmDelete = () => {
     if (deleteItem) {
-      setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
+      deleteTreatment(deleteItem.id);
       if (selectedId === deleteItem.id) {
         setSelectedId(null);
       }
@@ -155,20 +125,17 @@ export function useTreatmentPage() {
     selectedTreatment,
     deleteOpen,
     setDeleteOpen,
-    formOpen,
-    setFormOpen,
-    editingItem,
     searchFilters,
     setSearchFilters,
     materialModalOpen,
     setMaterialModalOpen,
-    selectedMaterial:
-      selectedMaterialId ? materialsDatabase[selectedMaterialId] : null,
+    selectedMaterial: selectedMaterialId
+      ? materialsDatabase[selectedMaterialId]
+      : null,
     severityCounts,
     severityConfig,
     handleCreate,
     handleEdit,
-    handleSubmit,
     handleDelete,
     handleConfirmDelete,
     handleViewMaterial,

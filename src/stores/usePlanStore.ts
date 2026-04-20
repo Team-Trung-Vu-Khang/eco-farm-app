@@ -22,6 +22,9 @@ export interface TaskAllocation {
   labor: string;
   duration: string;
   geographicalSelections?: import("../pages/plan/types").GeographicalSelection[];
+  isRepeating?: boolean;
+  repeatDays?: number[];
+  repeatWeeks?: number;
 }
 
 export interface Plan {

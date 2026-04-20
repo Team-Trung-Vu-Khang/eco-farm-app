@@ -48,6 +48,7 @@ import {
   Sprout,
   StickyNote,
   Target,
+  RefreshCw,
   Trash2,
   User,
   Users,
@@ -72,6 +73,7 @@ import type {
   MaterialAllocation,
   TaskAllocation,
 } from "../plan/types";
+import { getFrequencyText } from "../plan/utils/task";
 
 const SelectionCard = ({
   regionId,
@@ -426,7 +428,7 @@ export default function TaskEditPage() {
           task.stage && task.stage !== "N/A"
             ? task.stage.split(", ").filter(Boolean)
             : [],
-        selectedPlotIds: taskPlots.length > 0 ? taskPlots : planPlots,
+        selectedPlotIds: (taskPlots.length > 0 ? taskPlots : planPlots) as string[],
       });
 
       // Resolve EnterpriseId for "phat-sinh" tasks if not already set
@@ -2196,8 +2198,20 @@ export default function TaskEditPage() {
                         variant="outline"
                         className="text-[10px] bg-white border-slate-200 text-slate-500 py-0.5 px-2"
                       >
-                        <CalendarIcon className="w-3 h-3 mr-1 opacity-60" />
-                        {task.startDate} → {task.endDate}
+                        {task.isRepeating ? (
+                          <>
+                            <RefreshCw className="w-3 h-3 mr-1 opacity-60" />
+                            {getFrequencyText(
+                              task.repeatDays || [],
+                              task.repeatWeeks || 0,
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <CalendarIcon className="w-3 h-3 mr-1 opacity-60" />
+                            {task.startDate} → {task.endDate}
+                          </>
+                        )}
                       </Badge>
                     </div>
 
@@ -2234,10 +2248,12 @@ export default function TaskEditPage() {
                           <Clock className="w-3.5 h-3.5 text-slate-400 mt-0.5" />
                           <div className="min-w-0">
                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                              Thời gian
+                              {task.isRepeating ? "Lặp lại" : "Thời gian"}
                             </p>
                             <p className="text-xs font-semibold text-slate-700">
-                              {task.duration || "—"}
+                              {task.isRepeating
+                                ? `${task.repeatWeeks || 0} tuần`
+                                : task.duration || "—"}
                             </p>
                           </div>
                         </div>

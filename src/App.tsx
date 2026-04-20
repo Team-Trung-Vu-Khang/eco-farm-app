@@ -62,6 +62,7 @@ import DistributionDetailPage from "./pages/cultivation-zone/distribution-detail
 import PlantDistributionCreatePage from "./pages/cultivation-zone/distribution-detail/PlantDistributionCreatePage";
 import SearchCropPage from "./pages/cultivation-zone/search-crop/SearchCropPage";
 import SearchZonePage from "./pages/cultivation-zone/search-zone/SearchZonePage";
+import SearchUnitPage from "./pages/enterprise/search-unit/SearchUnitPage";
 
 import SeedPage from "./pages/seed/SeedPage";
 import GrowthCyclePage from "./pages/growth-cycle/GrowthCyclePage";
@@ -110,6 +111,10 @@ import DocsPage from "./pages/docs/DocsPage";
 import CreateDocsPage from "./pages/docs/CreateDocsPage";
 import UpdateDocsPage from "./pages/docs/UpdateDocsPage";
 import DocsDetailPage from "./pages/docs/DocsDetailPage";
+import DocumentCategoryListPage from "./pages/document-category/DocumentCategoryListPage";
+import DocumentCategoryCreatePage from "./pages/document-category/DocumentCategoryCreatePage";
+import DocumentCategoryEditPage from "./pages/document-category/DocumentCategoryEditPage";
+import DocumentCategoryDetailPage from "./pages/document-category/DocumentCategoryDetailPage";
 import CreateSeedPage from "./pages/seed/CreateSeedPage";
 import SeedDetailPage from "./pages/seed/SeedDetailPage";
 import UpdateSeedPage from "./pages/seed/UpdateSeedPage";
@@ -278,6 +283,7 @@ function Router() {
       <Route path="/treatment" component={TreatmentPage} />
       <Route path="/search-crop" component={SearchCropPage} />
       <Route path="/search-zone" component={SearchZonePage} />
+      <Route path="/search-unit" component={SearchUnitPage} />
       <Route
         path="/plant-identification"
         component={PlantIdentificationListPage}
@@ -297,6 +303,10 @@ function Router() {
       <Route path="/crop" component={CropPage} />
       <Route path="/crop/create" component={CropCreatePage} />
       <Route path="/crop/:id" component={CropDetailPage} />
+      <Route path="/document-category" component={DocumentCategoryListPage} />
+      <Route path="/document-category/create" component={DocumentCategoryCreatePage} />
+      <Route path="/document-category/:id/edit" component={DocumentCategoryEditPage} />
+      <Route path="/document-category/:id" component={DocumentCategoryDetailPage} />
       <Route path="/group-crop" component={GroupCropPage} />
       <Route path="/docs" component={DocsPage} />
       <Route path="/docs/create" component={CreateDocsPage} />
@@ -355,6 +365,7 @@ function Router() {
       <Route path="/settings" component={SettingsPage} />
       <Route path="/treatment" component={TreatmentPage} />
       <Route path="/treatment/create" component={CreateTreatmentPage} />
+      <Route path="/treatment/:id/edit" component={CreateTreatmentPage} />
 
       <Route path="/farmer" component={FarmerPage} />
       <Route path="/farmer/create" component={FarmerCreatePage} />
