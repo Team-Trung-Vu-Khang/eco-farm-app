@@ -88,7 +88,21 @@ export const isContaintHtmlTag = (text: string) => {
   return text.startsWith("<") && text.endsWith(">");
 };
 
-export const safeConvertLexicalToHtml = async (editorContent: string) => {
+export const safeConvertLexicalToHtml = async (editorContent: any) => {
+  if (!editorContent) return "";
+
+  // If it's a string, it should look like JSON if it's Lexical
+  if (typeof editorContent === "string") {
+    if (editorContent.trim() === "" || !editorContent.includes('{"root":')) {
+      return editorContent; // Return as is if it's just plain text or empty
+    }
+  } else if (typeof editorContent === "object") {
+    // If it's an object, it must have a 'root' property to be a valid SerializedEditorState
+    if (!("root" in editorContent)) {
+      return "";
+    }
+  }
+
   try {
     return await convertLexicalToHtml(editorContent);
   } catch (error) {

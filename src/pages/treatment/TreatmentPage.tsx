@@ -30,6 +30,7 @@ export default function TreatmentPage() {
     severityConfig,
     handleEdit,
     handleDelete,
+    handleDuplicate,
     handleConfirmDelete,
     handleViewMaterial,
     handleResetFilters,
@@ -72,6 +73,7 @@ export default function TreatmentPage() {
                 treatment={selectedTreatment}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onDuplicate={handleDuplicate}
                 onViewMaterial={handleViewMaterial}
               />
             ) : (

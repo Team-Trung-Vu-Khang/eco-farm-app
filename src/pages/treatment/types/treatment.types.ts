@@ -29,7 +29,7 @@ export interface TreatmentProcedure {
   description: string;
   startDay?: number;
   endDay?: number;
-  detailedInstructions: string;
+  detailedInstructions: any;
   dosage: string;
   timing: string;
   technique: string;
@@ -37,10 +37,11 @@ export interface TreatmentProcedure {
   equipment: string[];
   stageMaterials: TreatmentMaterialItem[];
   estimatedDays: number;
-  warnings: string[];
+  warnings: any;
   tips: string[];
-  expectedOutcome: string;
-  qualityCheckpoints: string[];
+  expectedOutcome: any;
+  qualityCheckpoints: any;
+  attachments: TreatmentAttachment[];
 }
 
 export interface Treatment {
@@ -96,6 +97,7 @@ export interface Treatment {
   expectedOutcomeSummary?: string;
   inspectionParameters?: string[];
   qualityChecklist?: string[];
+  applicableCropConfigs?: any[];
 }
 
 export interface SearchFilters {

@@ -107,6 +107,41 @@ export function useTreatmentPage() {
     setMaterialModalOpen(true);
   };
 
+  const handleDuplicate = (item: Treatment) => {
+    const newId = Date.now();
+    
+    // Deep clone nested arrays to avoid reference sharing
+    const duplicatedProcedures = item.procedures?.map((proc, pIdx) => {
+      const newProcId = Date.now() + pIdx + 1000;
+      return {
+        ...proc,
+        id: newProcId,
+        stageMaterials: proc.stageMaterials?.map((mat, mIdx) => ({
+          ...mat,
+          id: Date.now() + (pIdx * 100) + mIdx + 2000,
+        })) || [],
+      };
+    }) || [];
+
+    const duplicatedItem: Treatment = {
+      ...item,
+      id: newId,
+      code: `${item.code}-COPY`,
+      name: `${item.name} (Bản sao)`,
+      createdAt: new Date().toISOString(),
+      procedures: duplicatedProcedures,
+      authors: item.authors?.map(a => ({ ...a })),
+      attachments: item.attachments?.map(att => ({ ...att })),
+    };
+
+    addTreatment(duplicatedItem);
+    setSelectedId(newId);
+    toast({
+      title: "Thành công",
+      description: `Đã sao chép phác đồ: ${item.name}`,
+    });
+  };
+
   const handleResetFilters = () => setSearchFilters(emptySearchFilters);
 
   const severityCounts = {
@@ -137,6 +172,7 @@ export function useTreatmentPage() {
     handleCreate,
     handleEdit,
     handleDelete,
+    handleDuplicate,
     handleConfirmDelete,
     handleViewMaterial,
     handleResetFilters,

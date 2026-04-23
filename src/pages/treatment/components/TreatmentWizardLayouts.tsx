@@ -62,7 +62,13 @@ export function SummaryField({
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
         {label}
       </p>
-      <div className="text-sm text-slate-700">{value}</div>
+      <div className="text-sm text-slate-700">
+        {typeof value === "string" && value.includes("<") ? (
+          <div dangerouslySetInnerHTML={{ __html: value }} className="rich-text-content" />
+        ) : (
+          value
+        )}
+      </div>
     </div>
   );
 }

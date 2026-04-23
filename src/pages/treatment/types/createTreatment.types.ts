@@ -5,6 +5,12 @@ import type {
   Treatment,
 } from "./treatment.types";
 
+export interface ApplicableCropConfig {
+  id: string;
+  groupName: string;
+  specificCrops: string[];
+}
+
 export interface CreateTreatmentFormData {
   // Identification
   code: string;
@@ -15,7 +21,7 @@ export interface CreateTreatmentFormData {
   intensity: "low" | "medium" | "high";
   soilProblems: string[];
   targetSeverity: Treatment["severity"];
-  soilIssue: string;
+  soilIssue: string | any;
   startDate: string;
   endDate: string;
   duration: string;
@@ -27,6 +33,7 @@ export interface CreateTreatmentFormData {
   cropGroupTags: string[];
   applicableObjects: string[];
   applicableCrops: string[];
+  applicableCropConfigs: ApplicableCropConfig[];
   terrainTypes: string[];
   authors: TreatmentAuthor[];
   
@@ -35,8 +42,8 @@ export interface CreateTreatmentFormData {
   supportingMethodIds: string[];
   goalTags: string[];
   currentSurvey: string;
-  importantNotes: string;
-  expectedOutcomeSummary: string;
+  importantNotes: any;
+  expectedOutcomeSummary: any;
   
   // Step 4: Procedures & Day-by-Day
   procedures: TreatmentProcedure[];

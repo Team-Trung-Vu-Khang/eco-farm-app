@@ -1,3 +1,24 @@
 @import "tailwindcss";
 
 @import "@Team-Trung-Vu-Khang/eco-shared-ui/index.css";
+
+@layer base {
+  .rich-text-content ul {
+    @apply list-disc list-inside;
+  }
+  .rich-text-content ol {
+    @apply list-decimal list-inside;
+  }
+  .rich-text-content a {
+    @apply text-blue-600 hover:underline;
+  }
+  .rich-text-content b, .rich-text-content strong {
+    @apply font-bold;
+  }
+  .rich-text-content i, .rich-text-content em {
+    @apply italic;
+  }
+  .rich-text-content p {
+    @apply mb-1;
+  }
+}
