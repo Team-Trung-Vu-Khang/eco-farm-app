@@ -10,6 +10,7 @@ interface SoilTreatmentSidebarProps {
   filterIntensity: string;
   filterStatus: string;
   filteredData: TreatmentPlan[];
+  onResetFilters: () => void;
   searchKeyword: string;
   selectedId: number | null;
   setFilterIntensity: (value: string) => void;
@@ -22,6 +23,7 @@ export function SoilTreatmentSidebar({
   filterIntensity,
   filterStatus,
   filteredData,
+  onResetFilters,
   searchKeyword,
   selectedId,
   setFilterIntensity,
@@ -33,7 +35,9 @@ export function SoilTreatmentSidebar({
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all lg:col-span-3">
       <div className="z-10 shrink-0 space-y-3 border-b border-gray-100 bg-white p-3">
         <div className="flex items-center justify-between px-1">
-          <h3 className="text-base font-bold text-gray-800">Danh sách phác đồ</h3>
+          <h3 className="text-base font-bold text-gray-800">
+            Danh sách phác đồ
+          </h3>
           <Button
             variant="ghost"
             size="sm"
@@ -49,7 +53,7 @@ export function SoilTreatmentSidebar({
             placeholder="Tìm kiếm phác đồ..."
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
-            className="h-9 pl-9 text-sm"
+            className="h-9 pl-10 text-sm"
           />
         </div>
 
@@ -127,7 +131,9 @@ export function SoilTreatmentSidebar({
                   <span className="font-mono text-xs font-medium text-gray-500">
                     {item.code}
                   </span>
-                  <div className={`h-2 w-2 rounded-full ${statusConfig.color}`} />
+                  <div
+                    className={`h-2 w-2 rounded-full ${statusConfig.color}`}
+                  />
                 </div>
                 <h4 className="mb-1 line-clamp-2 text-sm font-semibold text-gray-900">
                   {item.name}
@@ -137,7 +143,9 @@ export function SoilTreatmentSidebar({
                   <span className="truncate">{item.zone}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge className={`${intensityConfig.color} px-2 py-0.5 text-xs text-white`}>
+                  <Badge
+                    className={`${intensityConfig.color} px-2 py-0.5 text-xs text-white`}
+                  >
                     {intensityConfig.label}
                   </Badge>
                   <span className="text-xs text-gray-500">{item.duration}</span>
@@ -152,11 +160,7 @@ export function SoilTreatmentSidebar({
             <Button
               variant="link"
               className="mt-2 text-green-600"
-              onClick={() => {
-                setSearchKeyword("");
-                setFilterStatus("");
-                setFilterIntensity("");
-              }}
+              onClick={onResetFilters}
             >
               Xóa bộ lọc
             </Button>

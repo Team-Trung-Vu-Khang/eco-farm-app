@@ -63,12 +63,21 @@ export function useSoilAmendmentTreatmentPage() {
     });
   }, [data, searchKeyword, filterStatus, filterIntensity]);
 
-  const selectedPlan = useMemo(() => {
-    if (filteredData.length === 0) return null;
-    return (
-      filteredData.find((item) => item.id === selectedId) ?? filteredData[0]
-    );
+  const resolvedSelectedId = useMemo(() => {
+    if (
+      selectedId !== null &&
+      filteredData.some((item) => item.id === selectedId)
+    ) {
+      return selectedId;
+    }
+
+    return filteredData[0]?.id ?? null;
   }, [filteredData, selectedId]);
+
+  const selectedPlan = useMemo(
+    () => data.find((item) => item.id === resolvedSelectedId) ?? null,
+    [data, resolvedSelectedId],
+  );
 
   const stats = useMemo(
     () => ({
@@ -101,9 +110,91 @@ export function useSoilAmendmentTreatmentPage() {
   const handleConfirmDelete = () => {
     if (deleteItem) {
       setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
+      if (selectedId === deleteItem.id) {
+        setSelectedId(null);
+      }
       toast({ title: "Thành công", description: "Đã xóa phác đồ" });
     }
     setDeleteOpen(false);
+    setDeleteItem(null);
+  };
+
+  const handleDuplicate = (item: TreatmentPlan) => {
+    const newId = Date.now();
+    const duplicatedItem: TreatmentPlan = {
+      ...item,
+      id: newId,
+      code: `${item.code}-COPY`,
+      name: `${item.name} (Bản sao)`,
+      procedures: item.procedures.map((procedure, procedureIndex) => ({
+        ...procedure,
+        id: newId + procedureIndex + 1,
+        stageMaterials:
+          procedure.stageMaterials?.map((material, materialIndex) => ({
+            ...material,
+            id: newId + (procedureIndex + 1) * 100 + materialIndex,
+          })) || [],
+      })),
+      seasonalPhases: item.seasonalPhases.map((phase, phaseIndex) => ({
+        ...phase,
+        id: newId + phaseIndex + 500,
+      })),
+      authors: item.authors?.map((author) => ({ ...author })),
+      materialItems: item.materialItems?.map((material, materialIndex) => ({
+        ...material,
+        id: newId + materialIndex + 1000,
+      })),
+      attachments: item.attachments?.map((attachment, attachmentIndex) => ({
+        ...attachment,
+        id: newId + attachmentIndex + 1500,
+      })),
+      relatedDocuments: item.relatedDocuments?.map((document, documentIndex) => ({
+        ...document,
+        id: newId + documentIndex + 2000,
+      })),
+      videoTutorials: item.videoTutorials?.map((video, videoIndex) => ({
+        ...video,
+        id: newId + videoIndex + 2500,
+      })),
+      expectedResults: item.expectedResults?.map((result) => ({ ...result })),
+      riskFactors: [...(item.riskFactors || [])],
+      successIndicators: [...(item.successIndicators || [])],
+      goalTags: [...(item.goalTags || [])],
+      objectives: [...item.objectives],
+      selectedMethods: [...item.selectedMethods],
+      supportingMethodIds: [...(item.supportingMethodIds || [])],
+      cropGroupTags: [...(item.cropGroupTags || [])],
+      applicableObjects: [...(item.applicableObjects || [])],
+      applicableCrops: [...(item.applicableCrops || [])],
+      terrainTypes: [...(item.terrainTypes || [])],
+      inspectionParameters: [...(item.inspectionParameters || [])],
+      qualityChecklist: [...(item.qualityChecklist || [])],
+      soilProblems: [...(item.soilProblems || [])],
+      soilAnalysis: item.soilAnalysis
+        ? {
+            ...item.soilAnalysis,
+            pH: { ...item.soilAnalysis.pH },
+            organicMatter: { ...item.soilAnalysis.organicMatter },
+            nitrogen: { ...item.soilAnalysis.nitrogen },
+            phosphorus: { ...item.soilAnalysis.phosphorus },
+            potassium: { ...item.soilAnalysis.potassium },
+            ec: { ...item.soilAnalysis.ec },
+          }
+        : undefined,
+    };
+
+    setData((prev) => [duplicatedItem, ...prev]);
+    setSelectedId(newId);
+    toast({
+      title: "Thành công",
+      description: `Đã sao chép phác đồ: ${item.name}`,
+    });
+  };
+
+  const handleResetFilters = () => {
+    setSearchKeyword("");
+    setFilterStatus("");
+    setFilterIntensity("");
   };
 
   const handleSubmit = () => {
@@ -170,7 +261,7 @@ export function useSoilAmendmentTreatmentPage() {
     handleEdit,
     handleSubmit,
     searchKeyword,
-    selectedId,
+    selectedId: resolvedSelectedId,
     selectedPlan,
     setDeleteOpen,
     setFilterIntensity,
@@ -180,5 +271,7 @@ export function useSoilAmendmentTreatmentPage() {
     setSearchKeyword,
     setSelectedId,
     stats,
+    handleDuplicate,
+    handleResetFilters,
   };
 }

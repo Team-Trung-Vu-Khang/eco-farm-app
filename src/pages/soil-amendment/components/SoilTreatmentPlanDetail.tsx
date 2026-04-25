@@ -12,6 +12,7 @@ import {
   BookOpen,
   CheckCircle2,
   Clock3,
+  Copy,
   FileText,
   MapPin,
   PlayCircle,
@@ -20,6 +21,8 @@ import {
   Trash2,
   UserRound,
   Video,
+  Activity,
+  Layers,
 } from "lucide-react";
 import useCropStore from "../../../stores/useCropStore";
 import useGroupCropStore from "../../../stores/useGroupCropStore";
@@ -39,6 +42,7 @@ import type {
 
 interface SoilTreatmentPlanDetailProps {
   onDelete: (item: TreatmentPlan) => void;
+  onDuplicate: (item: TreatmentPlan) => void;
   onEdit: (item: TreatmentPlan) => void;
   selectedPlan: TreatmentPlan | null;
 }
@@ -81,6 +85,7 @@ function SectionBlock({
 
 export function SoilTreatmentPlanDetail({
   onDelete,
+  onDuplicate,
   onEdit,
   selectedPlan,
 }: SoilTreatmentPlanDetailProps) {
@@ -119,75 +124,109 @@ export function SoilTreatmentPlanDetail({
       : (selectedPlan.relatedDocuments || []);
 
   return (
-    <div className="max-h-[92vh] overflow-y-auto bg-[linear-gradient(180deg,#fff7ed_0%,#fffbeb_22%,#ffffff_55%)]">
-      <div className="border-b border-amber-100 bg-[radial-gradient(circle_at_top_left,_rgba(245,158,11,0.18),_transparent_34%),linear-gradient(135deg,#0f172a_0%,#1e293b_44%,#14532d_100%)] px-8 py-8 text-white">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-[linear-gradient(180deg,#fff7ed_0%,#fffbeb_22%,#ffffff_55%)] shadow-sm">
+      <div className="shrink-0 border-b border-amber-100 bg-[radial-gradient(circle_at_top_left,_rgba(245,158,11,0.18),_transparent_34%),linear-gradient(135deg,#0f172a_0%,#1e293b_44%,#14532d_100%)] px-8 py-8 text-white">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-3xl">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge className="bg-white/15 text-white">{selectedPlan.code}</Badge>
+              <Badge className="border-transparent bg-white/15 text-white backdrop-blur-md">
+                {selectedPlan.code}
+              </Badge>
               <Badge className="bg-amber-400/90 text-slate-950">
                 {getOptionLabel(targetSeverityOptions, selectedPlan.targetSeverity)}
               </Badge>
-              <Badge className="bg-white/15 text-white">
+              <Badge className="border-transparent bg-white/15 text-white backdrop-blur-md">
                 {getOptionLabel(budgetRangeOptions, selectedPlan.budgetRange)}
               </Badge>
             </div>
             <h2 className="mt-4 text-3xl font-semibold leading-tight">
               {selectedPlan.name}
             </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200">
-              {selectedPlan.soilIssue}
-            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-amber-100">
+              <div className="flex items-center gap-1.5">
+                <Activity className="h-4 w-4 text-amber-300" />
+                <span>{selectedPlan.soilIssue}</span>
+              </div>
+              <span className="opacity-30">|</span>
+              <div className="flex items-center gap-1.5">
+                <Layers className="h-4 w-4 text-amber-300" />
+                <span>{selectedPlan.cropType || "Đất canh tác tổng hợp"}</span>
+              </div>
+            </div>
           </div>
 
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => onEdit(selectedPlan)}>
+            <Button
+              variant="secondary"
+              className="border-white/20 bg-white/10 text-white hover:bg-white/20"
+              onClick={() => onDuplicate(selectedPlan)}
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              Sao chép
+            </Button>
+            <Button
+              variant="secondary"
+              className="border-white/20 bg-white/10 text-white hover:bg-white/20"
+              onClick={() => onEdit(selectedPlan)}
+            >
               Chỉnh sửa
             </Button>
-            <Button variant="destructive" onClick={() => onDelete(selectedPlan)}>
+            <Button
+              variant="destructive"
+              className="border-none bg-rose-500/80 hover:bg-rose-500"
+              onClick={() => onDelete(selectedPlan)}
+            >
               <Trash2 className="mr-2 h-4 w-4" />
               Xóa
             </Button>
           </div>
         </div>
 
-        <div className="mt-6 grid gap-3 md:grid-cols-4">
-          <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-300">Khu vực</p>
-            <p className="mt-2 font-medium">{selectedPlan.zone}</p>
+        <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
+            <p className="text-[10px] uppercase tracking-wider text-amber-100">
+              Khu vực
+            </p>
+            <p className="mt-1 font-medium">{selectedPlan.zone}</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-300">Thời lượng</p>
-            <p className="mt-2 font-medium">{selectedPlan.duration}</p>
+          <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
+            <p className="text-[10px] uppercase tracking-wider text-amber-100">
+              Thời lượng
+            </p>
+            <p className="mt-1 font-medium">{selectedPlan.duration}</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-300">
+          <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
+            <p className="text-[10px] uppercase tracking-wider text-amber-100">
               Đơn vị phụ trách
             </p>
-            <p className="mt-2 font-medium">
+            <p className="mt-1 font-medium line-clamp-1">
               {getOptionLabel(responsibleUnitOptions, selectedPlan.responsibleUnit)}
             </p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-300">
+          <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
+            <p className="text-[10px] uppercase tracking-wider text-amber-100">
               Biện pháp chính
             </p>
-            <p className="mt-2 font-medium">
+            <p className="mt-1 line-clamp-1 font-medium">
               {methods[0]?.name || "Chưa cập nhật"}
             </p>
           </div>
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="px-8 py-6">
-        <TabsList className="grid w-full grid-cols-3 rounded-2xl bg-amber-50 p-1">
-          <TabsTrigger value="overview">Tổng quan</TabsTrigger>
-          <TabsTrigger value="handbook">Sách hướng dẫn</TabsTrigger>
-          <TabsTrigger value="media">Video & Tài liệu</TabsTrigger>
-        </TabsList>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <Tabs defaultValue="overview" className="flex h-full flex-1 flex-col">
+          <div className="shrink-0 border-b border-amber-50 bg-white/50 px-8 pb-2 pt-6">
+            <TabsList className="grid w-full grid-cols-3 rounded-2xl bg-amber-50 p-1">
+              <TabsTrigger value="overview">Tổng quan</TabsTrigger>
+              <TabsTrigger value="handbook">Sổ tay hướng dẫn</TabsTrigger>
+              <TabsTrigger value="media">Video & Tài liệu</TabsTrigger>
+            </TabsList>
+          </div>
 
-        <TabsContent value="overview" className="mt-6 space-y-6">
-          <SectionBlock eyebrow="Overview" title="Tóm tắt áp dụng">
+          <div className="custom-scrollbar flex-1 overflow-y-auto px-8 py-6">
+            <TabsContent value="overview" className="mt-0 space-y-6 outline-none">
+              <SectionBlock eyebrow="Overview" title="Tóm tắt áp dụng">
             <div className="grid gap-4 md:grid-cols-2">
               <Card className="border-slate-200">
                 <CardContent className="space-y-3 p-5">
@@ -285,11 +324,11 @@ export function SoilTreatmentPlanDetail({
                 </CardContent>
               </Card>
             </div>
-          </SectionBlock>
-        </TabsContent>
+              </SectionBlock>
+            </TabsContent>
 
-        <TabsContent value="handbook" className="mt-6 space-y-6">
-          <SectionBlock eyebrow="Handbook" title="Sổ tay triển khai">
+            <TabsContent value="handbook" className="mt-0 space-y-6 outline-none">
+              <SectionBlock eyebrow="Handbook" title="Sổ tay triển khai">
             <Card className="border-amber-200 bg-amber-50/70">
               <CardContent className="p-5">
                 <div className="flex items-center gap-2 font-medium text-slate-900">
@@ -460,46 +499,46 @@ export function SoilTreatmentPlanDetail({
               )}
             </div>
 
-            {(selectedPlan.materialItems || []).length > 0 && (
-              <SectionBlock eyebrow="Materials" title="Vật tư định lượng">
-                <div className="grid gap-3">
-                  {selectedPlan.materialItems?.map((item) => (
-                    <div
-                      key={item.id}
-                      className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-[1fr_1.4fr_1fr]"
-                    >
-                      <div>
-                        <p className="text-xs uppercase tracking-wide text-slate-400">
-                          Nhóm vật tư
-                        </p>
-                        <p className="mt-1 font-medium text-slate-900">
-                          {getOptionLabel(treatmentMaterialCategoryOptions, item.category)}
-                        </p>
+              {(selectedPlan.materialItems || []).length > 0 && (
+                <SectionBlock eyebrow="Materials" title="Vật tư định lượng">
+                  <div className="grid gap-3">
+                    {selectedPlan.materialItems?.map((item) => (
+                      <div
+                        key={item.id}
+                        className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-[1fr_1.4fr_1fr]"
+                      >
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-400">
+                            Nhóm vật tư
+                          </p>
+                          <p className="mt-1 font-medium text-slate-900">
+                            {getOptionLabel(treatmentMaterialCategoryOptions, item.category)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-400">
+                            Tên vật tư
+                          </p>
+                          <p className="mt-1 font-medium text-slate-900">{item.name}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-400">
+                            Định lượng / ha
+                          </p>
+                          <p className="mt-1 font-medium text-slate-900">
+                            {item.dosageMin} - {item.dosageMax} {item.unit}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs uppercase tracking-wide text-slate-400">
-                          Tên vật tư
-                        </p>
-                        <p className="mt-1 font-medium text-slate-900">{item.name}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs uppercase tracking-wide text-slate-400">
-                          Định lượng / ha
-                        </p>
-                        <p className="mt-1 font-medium text-slate-900">
-                          {item.dosageMin} - {item.dosageMax} {item.unit}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                </SectionBlock>
+              )}
               </SectionBlock>
-            )}
-          </SectionBlock>
-        </TabsContent>
+            </TabsContent>
 
-        <TabsContent value="media" className="mt-6 space-y-6">
-          <SectionBlock eyebrow="Media" title="Video hướng dẫn và tài liệu">
+            <TabsContent value="media" className="mt-0 space-y-6 outline-none">
+              <SectionBlock eyebrow="Media" title="Video hướng dẫn và tài liệu">
             <div className="grid gap-4 lg:grid-cols-2">
               <Card className="border-slate-200">
                 <CardContent className="p-5">
@@ -517,14 +556,14 @@ export function SoilTreatmentPlanDetail({
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               <p className="font-medium text-slate-900">
-                              {"title" in item ? item.title : item.name}
-                            </p>
-                            <p className="mt-1 text-sm text-slate-500">
-                              {"description" in item
-                                ? item.description
-                                : item.size || "Video hướng dẫn thao tác"}
-                            </p>
-                          </div>
+                                {"title" in item ? item.title : item.name}
+                              </p>
+                              <p className="mt-1 text-sm text-slate-500">
+                                {"description" in item
+                                  ? item.description
+                                  : item.size || "Video hướng dẫn thao tác"}
+                              </p>
+                            </div>
                             <Button size="sm" variant="outline">
                               <PlayCircle className="mr-2 h-4 w-4" />
                               Xem video
@@ -548,18 +587,18 @@ export function SoilTreatmentPlanDetail({
                   <div className="mt-4 space-y-3">
                     {documents.length > 0 ? (
                       documents.map((item, index) => (
-                          <div
-                            key={item.id || index}
-                            className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-                          >
-                            <p className="font-medium text-slate-900">{item.name}</p>
-                            <p className="mt-1 text-sm text-slate-500">
-                              {"fileType" in item
-                                ? item.size || item.fileType
-                                : item.size || item.type || "Tài liệu tham khảo"}
-                            </p>
-                          </div>
-                        ))
+                        <div
+                          key={item.id || index}
+                          className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                        >
+                          <p className="font-medium text-slate-900">{item.name}</p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {"fileType" in item
+                              ? item.size || item.fileType
+                              : item.size || item.type || "Tài liệu tham khảo"}
+                          </p>
+                        </div>
+                      ))
                     ) : (
                       <p className="text-sm text-slate-500">Chưa có tài liệu đính kèm.</p>
                     )}
@@ -581,9 +620,11 @@ export function SoilTreatmentPlanDetail({
                 </p>
               </CardContent>
             </Card>
-          </SectionBlock>
-        </TabsContent>
-      </Tabs>
+              </SectionBlock>
+            </TabsContent>
+          </div>
+        </Tabs>
+      </div>
     </div>
   );
 }

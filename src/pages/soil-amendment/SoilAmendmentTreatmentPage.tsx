@@ -1,152 +1,57 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   AdminLayout,
-  Badge,
   Button,
   Card,
   CardContent,
-  DataTable,
   DeleteDialog,
-  type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Sprout } from "lucide-react";
 import { SoilTreatmentPlanDetail } from "./components/SoilTreatmentPlanDetail";
 import { SoilTreatmentPlanFormDialog } from "./components/SoilTreatmentPlanFormDialog";
+import { SoilTreatmentSidebar } from "./components/SoilTreatmentSidebar";
 import { SoilTreatmentStats } from "./components/SoilTreatmentStats";
-import {
-  responsibleUnitOptions,
-  targetSeverityOptions,
-  treatmentPlanIntensityOptions,
-} from "./data/soilAmendmentTreatmentData";
 import { useSoilAmendmentTreatmentPage } from "./hooks/useSoilAmendmentTreatmentPage";
-import type { TreatmentPlan } from "./types/treatment";
-
-function getOptionLabel(
-  options: ReadonlyArray<{ label: string; value: string }>,
-  value?: string,
-) {
-  return options.find((item) => item.value === value)?.label || "Chưa cập nhật";
-}
 
 export default function SoilAmendmentTreatmentPage() {
-  const [screen, setScreen] = useState<"list" | "form" | "detail">("list");
+  const [screen, setScreen] = useState<"list" | "form">("list");
 
   const {
     deleteOpen,
     editingItem,
     filteredData,
+    filterIntensity,
+    filterStatus,
     formData,
     handleConfirmDelete,
     handleCreate,
     handleDelete,
+    handleDuplicate,
     handleEdit,
+    handleResetFilters,
     handleSubmit,
+    searchKeyword,
+    selectedId,
     selectedPlan,
     setDeleteOpen,
+    setFilterIntensity,
+    setFilterStatus,
     setFormData,
+    setSearchKeyword,
     setSelectedId,
     stats,
   } = useSoilAmendmentTreatmentPage();
-
-  const columns = useMemo<Column<TreatmentPlan>[]>(
-    () => [
-      {
-        key: "code",
-        label: "Mã",
-        render: (value) => (
-          <span className="font-mono text-xs font-medium text-slate-500">
-            {value}
-          </span>
-        ),
-      },
-      {
-        key: "name",
-        label: "Tên phác đồ",
-        render: (value, item) => (
-          <div className="max-w-[320px]">
-            <p className="font-medium text-slate-900 truncate">{value}</p>
-            <p className="line-clamp-2 text-xs text-slate-500">
-              {item.soilIssue}
-            </p>
-          </div>
-        ),
-      },
-      {
-        key: "zone",
-        label: "Khu vực",
-      },
-      {
-        key: "responsibleUnit",
-        label: "Đơn vị phụ trách",
-        render: (value) => (
-          <span className="text-sm text-slate-700">
-            {getOptionLabel(responsibleUnitOptions, String(value || ""))}
-          </span>
-        ),
-      },
-      {
-        key: "targetSeverity",
-        label: "Mức độ mục tiêu",
-        render: (value) => (
-          <Badge variant="outline" className="rounded-full">
-            {getOptionLabel(targetSeverityOptions, String(value || ""))}
-          </Badge>
-        ),
-      },
-      {
-        key: "intensity",
-        label: "Cường độ",
-        render: (value) => (
-          <Badge variant="secondary" className="rounded-full">
-            {getOptionLabel(treatmentPlanIntensityOptions, String(value || ""))}
-          </Badge>
-        ),
-      },
-      {
-        key: "duration",
-        label: "Thời lượng",
-      },
-    ],
-    [],
-  );
-
-  const tableFilters = useMemo(
-    () => [
-      {
-        key: "status",
-        label: "Trạng thái",
-        options: [
-          { label: "Lên kế hoạch", value: "planning" },
-          { label: "Đang triển khai", value: "in_progress" },
-          { label: "Hoàn tất", value: "completed" },
-          { label: "Ngưng", value: "cancelled" },
-        ],
-      },
-      {
-        key: "intensity",
-        label: "Cường độ",
-        options: treatmentPlanIntensityOptions.map((option) => ({ ...option })),
-      },
-      {
-        key: "targetSeverity",
-        label: "Mức độ mục tiêu",
-        options: targetSeverityOptions.map((option) => ({ ...option })),
-      },
-    ],
-    [],
-  );
-
-  const handleViewDetail = (item: TreatmentPlan) => {
-    setSelectedId(item.id);
-    setScreen("detail");
-  };
 
   const handleCreatePage = () => {
     handleCreate();
     setScreen("form");
   };
 
-  const handleEditPage = (item: TreatmentPlan) => {
+  const handleEditPage = (item = selectedPlan) => {
+    if (!item) {
+      return;
+    }
+
     handleEdit(item);
     setScreen("form");
   };
@@ -160,23 +65,18 @@ export default function SoilAmendmentTreatmentPage() {
     setScreen("list");
   };
 
-  const handleConfirmDeletePage = () => {
-    handleConfirmDelete();
-    setScreen("list");
-  };
-
   return (
     <AdminLayout
       title="Cải tạo đất"
-      description="Danh mục phác đồ master data với bảng danh sách, wizard tạo mới và detail dạng handbook cho đội kỹ thuật."
+      description="Hệ thống quản lý phác đồ cải tạo đất với luồng tra cứu, handbook và dữ liệu kỹ thuật theo hiện trạng đất."
       actions={
         screen === "list" ? (
           <Button
             onClick={handleCreatePage}
-            className="bg-emerald-600 shadow-sm hover:bg-emerald-700"
+            className="bg-green-600 shadow-sm hover:bg-green-700"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Tạo phác đồ
+            Thêm phác đồ mới
           </Button>
         ) : (
           <Button
@@ -190,23 +90,47 @@ export default function SoilAmendmentTreatmentPage() {
         )
       }
     >
-      {screen === "list" && (
+      {screen === "list" ? (
         <div className="space-y-6">
           <SoilTreatmentStats stats={stats} />
 
-          <DataTable
-            columns={columns}
-            data={filteredData}
-            filters={tableFilters}
-            onDelete={handleDelete}
-            onEdit={handleEditPage}
-            onView={handleViewDetail}
-            searchPlaceholder="Tìm theo mã, tên phác đồ, tình trạng đất..."
-          />
-        </div>
-      )}
+          <div className="grid grid-cols-1 gap-6 overflow-hidden lg:grid-cols-12">
+            <SoilTreatmentSidebar
+              filterIntensity={filterIntensity}
+              filterStatus={filterStatus}
+              filteredData={filteredData}
+              onResetFilters={handleResetFilters}
+              searchKeyword={searchKeyword}
+              selectedId={selectedId}
+              setFilterIntensity={setFilterIntensity}
+              setFilterStatus={setFilterStatus}
+              setSearchKeyword={setSearchKeyword}
+              setSelectedId={setSelectedId}
+            />
 
-      {screen === "form" && (
+            <div className="h-full overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm lg:col-span-9">
+              {selectedPlan ? (
+                <SoilTreatmentPlanDetail
+                  onDelete={handleDelete}
+                  onDuplicate={handleDuplicate}
+                  onEdit={handleEditPage}
+                  selectedPlan={selectedPlan}
+                />
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center bg-gray-50/30 text-gray-400">
+                  <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full border border-gray-100 bg-white shadow-sm">
+                    <Sprout className="h-12 w-12 text-gray-300" />
+                  </div>
+                  <h3 className="mb-1 text-lg font-medium text-gray-600">
+                    Chưa chọn phác đồ
+                  </h3>
+                  <p>Vui lòng chọn một phác đồ từ danh sách bên trái</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
         <Card className="border-slate-200 shadow-sm">
           <CardContent className="p-6">
             <div className="mb-6">
@@ -235,20 +159,10 @@ export default function SoilAmendmentTreatmentPage() {
         </Card>
       )}
 
-      {screen === "detail" && (
-        <div>
-          <SoilTreatmentPlanDetail
-            onDelete={handleDelete}
-            onEdit={handleEditPage}
-            selectedPlan={selectedPlan}
-          />
-        </div>
-      )}
-
       <DeleteDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        onConfirm={handleConfirmDeletePage}
+        onConfirm={handleConfirmDelete}
         title="Xóa phác đồ"
         description="Bạn có chắc chắn muốn xóa phác đồ master data này?"
       />
