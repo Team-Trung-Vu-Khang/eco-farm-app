@@ -24,7 +24,7 @@ export default function PlanPage() {
 
   return (
     <AdminLayout
-      title="Quản lý  canh tác"
+      title="Quản lý canh tác"
       description="Lập và quản lý kế hoạch theo mùa vụ"
       actions={
         <Link href="/plan/create">

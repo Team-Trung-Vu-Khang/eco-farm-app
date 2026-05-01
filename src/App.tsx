@@ -149,6 +149,7 @@ import CultivationAreaDetailPage from "./pages/cultivation-area/CultivationAreaD
 import CultivationPlotPage from "./pages/cultivation-plot/CultivationPlotPage";
 import CultivationPlotCreatePage from "./pages/cultivation-plot/CultivationPlotCreatePage";
 import CultivationPlotDetailPage from "./pages/cultivation-plot/CultivationPlotDetailPage";
+import MaterialLookupPage from "./pages/material-lookup/MaterialLookupPage";
 
 function Router() {
   return (
@@ -288,6 +289,7 @@ function Router() {
       <Route path="/search-crop" component={SearchCropPage} />
       <Route path="/search-zone" component={SearchZonePage} />
       <Route path="/search-unit" component={SearchUnitPage} />
+      <Route path="/lookup-material" component={MaterialLookupPage} />
       <Route
         path="/plant-identification"
         component={PlantIdentificationListPage}
