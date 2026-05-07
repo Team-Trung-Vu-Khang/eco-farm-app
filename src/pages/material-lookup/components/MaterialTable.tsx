@@ -5,8 +5,6 @@ import {
   Skeleton,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  ExternalLink,
-  FlaskConical,
   MoreHorizontal,
   ShieldAlert,
   ChevronLeft,
@@ -14,6 +12,7 @@ import {
 } from "lucide-react";
 import { type FC } from "react";
 import type { MaterialItem, WHOClass } from "../types/types";
+import { CATEGORIES } from "../constants/categories";
 
 interface MaterialTableProps {
   materials: MaterialItem[];
@@ -139,6 +138,8 @@ export const MaterialTable: FC<MaterialTableProps> = ({
             {materials.map((item) => {
               const tox = getToxicityConfig(item.toxicityClass);
               const isSelected = selectedIds.includes(item.id);
+              const categoryConfig = CATEGORIES.find((c) => c.id === item.category);
+              const Icon = categoryConfig?.icon || ShieldAlert;
 
               return (
                 <tr
@@ -158,11 +159,7 @@ export const MaterialTable: FC<MaterialTableProps> = ({
                   <td className="p-4 w-[300px]">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-white transition-all shadow-sm shrink-0 border border-slate-200/50">
-                        {item.category === "Pesticide" ? (
-                          <FlaskConical size={20} />
-                        ) : (
-                          <ExternalLink size={20} />
-                        )}
+                        <Icon size={20} className={categoryConfig?.color} />
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-bold text-slate-900 truncate leading-tight">

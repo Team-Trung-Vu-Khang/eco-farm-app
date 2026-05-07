@@ -5,6 +5,13 @@ export type MaterialCategory =
   | "Pesticide"
   | "Material";
 
+export interface CategoryOption {
+  id: MaterialCategory;
+  name: string;
+  icon: any;
+  color: string;
+}
+
 export interface MaterialItem {
   id: string; // Unique ID (e.g., pesticide-1)
   originalId: number;

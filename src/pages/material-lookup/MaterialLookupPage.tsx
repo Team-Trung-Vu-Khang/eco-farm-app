@@ -1,6 +1,5 @@
 import { useState, type FC } from "react";
 import { AdminLayout, useToast, cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Sprout, Box, Settings, FlaskConical } from "lucide-react";
 import { useMaterialLookup } from "./hooks/useMaterialLookup";
 import { MaterialTable } from "./components/MaterialTable";
 import { FloatingActionBar } from "./components/FloatingActionBar";
@@ -12,11 +11,12 @@ import { EquipmentDetailView } from "./components/details/EquipmentDetailView";
 import { type MaterialItem } from "./types/types";
 import {
   CategorySidebar,
-  type CategoryOption,
 } from "./components/CategorySidebar";
+import { CATEGORIES } from "./constants/categories";
 import { MaterialSearchBar } from "./components/MaterialSearchBar";
 import { ResultsSummary } from "./components/ResultsSummary";
 import { DetailPanel } from "./components/DetailPanel";
+
 
 const MaterialLookupPage: FC = () => {
   const { toast } = useToast();
@@ -41,33 +41,6 @@ const MaterialLookupPage: FC = () => {
   const [selectedItem, setSelectedItem] = useState<MaterialItem | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isAdvancedFilterOpen, setIsAdvancedFilterOpen] = useState(false);
-
-  const categories: CategoryOption[] = [
-    {
-      id: "Pesticide",
-      name: "Thuốc BVTV",
-      icon: FlaskConical,
-      color: "text-emerald-500",
-    },
-    {
-      id: "Fertilizer",
-      name: "Phân bón",
-      icon: Sprout,
-      color: "text-blue-500",
-    },
-    {
-      id: "Material",
-      name: "Vật tư tiêu hao",
-      icon: Box,
-      color: "text-amber-500",
-    },
-    {
-      id: "Equipment",
-      name: "Thiết bị & Công cụ",
-      icon: Settings,
-      color: "text-slate-500",
-    },
-  ];
 
   const handleItemClick = (item: MaterialItem) => {
     setSelectedItem(item);
@@ -107,7 +80,7 @@ const MaterialLookupPage: FC = () => {
             setTempFilters({ ...tempFilters, categories: cats });
             applyFilters();
           }}
-          categories={categories}
+          categories={CATEGORIES}
         />
 
         <div className="flex-1 flex flex-col min-w-0 relative bg-slate-50">

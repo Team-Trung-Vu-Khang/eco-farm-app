@@ -1,14 +1,7 @@
 import { type FC } from "react";
 import { Building2, PanelLeftClose, Layers } from "lucide-react";
 import { cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { MaterialCategory } from "../types/types";
-
-export interface CategoryOption {
-  id: MaterialCategory;
-  name: string;
-  icon: any;
-  color: string;
-}
+import type { MaterialCategory, CategoryOption } from "../types/types";
 
 interface CategorySidebarProps {
   isCollapsed: boolean;

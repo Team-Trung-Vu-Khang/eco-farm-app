@@ -28,6 +28,9 @@ import MaterialDetailPage from "./pages/material/MaterialDetailPage";
 import EquipmentCreatePage from "./pages/equipment/EquipmentCreatePage";
 import EquipmentDetailPage from "./pages/equipment/EquipmentDetailPage";
 import UnitCreatePage from "./pages/unit/UnitCreatePage";
+import IoTDevicePage from "./pages/iot-device/IoTDevicePage";
+import IoTDeviceCreatePage from "./pages/iot-device/IoTDeviceCreatePage";
+import IoTDeviceDetailPage from "./pages/iot-device/IoTDeviceDetailPage";
 
 import NotFoundPage from "./pages/NotFoundPage";
 import { Toaster, TooltipProvider } from "@Team-Trung-Vu-Khang/eco-shared-ui";
@@ -405,6 +408,12 @@ function Router() {
       <Route path="/cooperative/create" component={CooperativeCreatePage} />
       <Route path="/cooperative/:id/edit" component={CooperativeEditPage} />
       <Route path="/cooperative/:id" component={CooperativeDetailPage} />
+
+      {/* IoT Device Management Routes */}
+      <Route path="/iot-device" component={IoTDevicePage} />
+      <Route path="/iot-device/create" component={IoTDeviceCreatePage} />
+      <Route path="/iot-device/:id/edit" component={IoTDeviceCreatePage} />
+      <Route path="/iot-device/:id" component={IoTDeviceDetailPage} />
 
       <Route component={NotFoundPage} />
     </Switch>
