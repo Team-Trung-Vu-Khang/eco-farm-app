@@ -10,12 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@Team-Trung-Vu-Khang/eco-shared-ui": "^0.0.5-beta.6",
+    "@Team-Trung-Vu-Khang/eco-shared-ui": "^0.0.5-beta.7",
     "@originjs/vite-plugin-federation": "^1.4.1",
     "@tailwindcss/vite": "^4.1.18",
     "@turf/turf": "^7.3.4",
     "@yudiel/react-qr-scanner": "^2.5.1",
     "geojson": "^0.5.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "leaflet": "^1.9.4",
     "qr-scanner": "^1.4.2",
     "react": "^19.2.0",
@@ -26,6 +28,7 @@
     "read-excel-file": "^6.0.3",
     "tailwindcss": "^4.1.18",
     "wouter": "^3.9.0",
+    "xlsx": "^0.18.5",
     "zustand": "^5.0.11"
   },
   "devDependencies": {

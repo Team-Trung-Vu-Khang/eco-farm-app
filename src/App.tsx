@@ -153,6 +153,7 @@ import CultivationPlotPage from "./pages/cultivation-plot/CultivationPlotPage";
 import CultivationPlotCreatePage from "./pages/cultivation-plot/CultivationPlotCreatePage";
 import CultivationPlotDetailPage from "./pages/cultivation-plot/CultivationPlotDetailPage";
 import MaterialLookupPage from "./pages/material-lookup/MaterialLookupPage";
+import ProductionCultivationReportPage from "./pages/production-cultivation-report/ProductionCultivationReportPage";
 
 function Router() {
   return (
@@ -391,6 +392,10 @@ function Router() {
       <Route path="/plan/create" component={PlanCreatePage} />
       <Route path="/plan/:id/edit" component={PlanEditPage} />
       <Route path="/plan/:id" component={PlanDetailPage} />
+      <Route
+        path="/production-cultivation-report"
+        component={ProductionCultivationReportPage}
+      />
       <Route path="/task" component={TaskPage} />
       <Route path="/task/create" component={TaskCreatePage} />
       <Route path="/task/:id/edit" component={TaskEditPage} />
