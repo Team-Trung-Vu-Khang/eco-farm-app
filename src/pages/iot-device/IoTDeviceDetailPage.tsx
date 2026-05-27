@@ -10,7 +10,8 @@ import {
   Wifi,
   Zap,
   RefreshCw,
-  Power
+  Power,
+  AlertTriangle
 } from "lucide-react";
 import {
   AdminLayout,
@@ -25,7 +26,15 @@ import {
   TabsTrigger,
   Badge,
   useToast,
-  cn
+  cn,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useLocation, useParams } from "wouter";
 import { 
@@ -41,13 +50,18 @@ import {
 } from "recharts";
 import { mockDeviceMetrics } from "./data/mockData";
 import { DeviceInteractiveMap } from "./components/map/DeviceInteractiveMap";
+import { ConnectionConfigModal } from "./components/ConnectionConfigModal";
 import useIoTDeviceStore from "../../stores/useIoTDeviceStore";
+import type { DeviceConnectionConfig } from "./types";
 
 export default function IoTDeviceDetailPage() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { devices } = useIoTDeviceStore();
+  const { devices, updateDevice } = useIoTDeviceStore();
+  
+  const [isConfigOpen, setIsConfigOpen] = React.useState(false);
+  const [isDisconnectOpen, setIsDisconnectOpen] = React.useState(false);
   
   const device = devices.find(d => d.id === id) || devices[0];
 
@@ -67,6 +81,26 @@ export default function IoTDeviceDetailPage() {
     }, 2000);
   };
 
+  const handleSaveConfig = (config: DeviceConnectionConfig) => {
+    updateDevice(device.id, { connectionConfig: config });
+    setIsConfigOpen(false);
+    toast({
+      title: "Cấu hình thành công",
+      description: "Các thông số kết nối IoT đã được cập nhật.",
+      className: "bg-emerald-50 border-emerald-100 text-emerald-900"
+    });
+  };
+
+  const handleDisconnect = () => {
+    updateDevice(device.id, { status: "offline" });
+    setIsDisconnectOpen(false);
+    toast({
+      title: "Đã ngắt kết nối",
+      description: "Thiết bị đã được chuyển sang trạng thái Offline. Hệ thống sẽ ngừng nhận dữ liệu Telemetry.",
+      variant: "destructive"
+    });
+  };
+
   return (
     <AdminLayout
       title={device.name}
@@ -77,11 +111,15 @@ export default function IoTDeviceDetailPage() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Quay lại
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => setIsConfigOpen(true)}>
             <Settings className="w-4 h-4 mr-2" />
             Cấu hình
           </Button>
-          <Button variant="outline" className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-100">
+          <Button 
+            variant="outline" 
+            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-100"
+            onClick={() => setIsDisconnectOpen(true)}
+          >
             <Power className="w-4 h-4 mr-2" />
             Ngắt kết nối
           </Button>
@@ -89,6 +127,38 @@ export default function IoTDeviceDetailPage() {
       }
     >
       <div className="space-y-6">
+        {/* Connection Config Modal */}
+        <ConnectionConfigModal
+          device={device}
+          open={isConfigOpen}
+          onOpenChange={setIsConfigOpen}
+          onSave={handleSaveConfig}
+        />
+
+        {/* Disconnect Confirm Dialog */}
+        <AlertDialog open={isDisconnectOpen} onOpenChange={setIsDisconnectOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <div className="mx-auto w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center mb-4">
+                <AlertTriangle className="w-6 h-6 text-rose-500" />
+              </div>
+              <AlertDialogTitle className="text-center">Xác nhận ngắt kết nối</AlertDialogTitle>
+              <AlertDialogDescription className="text-center">
+                Bạn có chắc chắn muốn ngắt kết nối thiết bị này? 
+                Hệ thống sẽ ngừng nhận dữ liệu Telemetry từ thiết bị.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDisconnect}
+                className="bg-rose-600 hover:bg-rose-700 focus:ring-rose-600"
+              >
+                Đồng ý ngắt kết nối
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         {/* Top Status Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="border-none shadow-sm ring-1 ring-slate-200/50 bg-white">

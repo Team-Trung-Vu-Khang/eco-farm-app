@@ -836,10 +836,12 @@ const MapContent = () => {
                       value={filterRegion}
                       onValueChange={setFilterRegion}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tất cả" />
+                      <SelectTrigger className="w-full pr-2">
+                        <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%", minWidth: 0, textAlign: "left" }}>
+                          <SelectValue placeholder="Tất cả" />
+                        </span>
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[9999]">
                         <SelectItem value="all">Tất cả</SelectItem>
                         {MOCK_REGIONS.map((r) => (
                           <SelectItem key={r.id} value={r.id.toString()}>
@@ -852,10 +854,12 @@ const MapContent = () => {
                   <div>
                     <Label>Khu vực</Label>
                     <Select value={filterArea} onValueChange={setFilterArea}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tất cả" />
+                      <SelectTrigger className="w-full pr-2">
+                        <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%", minWidth: 0, textAlign: "left" }}>
+                          <SelectValue placeholder="Tất cả" />
+                        </span>
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[9999]">
                         <SelectItem value="all">Tất cả</SelectItem>
                         {MOCK_AREAS.filter(
                           (a) =>
@@ -874,10 +878,12 @@ const MapContent = () => {
                 <div>
                   <Label>Trạng thái cây</Label>
                   <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Tất cả trạng thái" />
+                    <SelectTrigger className="w-full pr-2">
+                      <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%", minWidth: 0, textAlign: "left" }}>
+                        <SelectValue placeholder="Tất cả trạng thái" />
+                      </span>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[9999]">
                       <SelectItem value="all">Tất cả</SelectItem>
                       <SelectItem value="healthy">Khỏe mạnh</SelectItem>
                       <SelectItem value="diseased">Bị bệnh</SelectItem>
