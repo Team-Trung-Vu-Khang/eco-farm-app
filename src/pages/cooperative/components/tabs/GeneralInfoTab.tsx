@@ -28,14 +28,18 @@ export function GeneralInfoTab({ data }: GeneralInfoTabProps) {
             </div>
             <div>
               <div className="text-sm text-muted-foreground mb-1">Ngày cấp</div>
-              <div className="font-medium text-base">15/03/2020</div>
+              <div className="font-medium text-base">
+                {data.issueDate
+                  ? new Date(data.issueDate).toLocaleDateString("vi-VN")
+                  : "Chưa cập nhật"}
+              </div>
             </div>
           </div>
           <div className="space-y-4">
             <div>
               <div className="text-sm text-muted-foreground mb-1">Cơ quan thuế</div>
               <div className="font-medium text-base">
-                Chi cục thuế Quận Cầu Giấy
+                {data.taxAuthority || "Chưa cập nhật"}
               </div>
             </div>
             <div>

@@ -5,9 +5,11 @@ import { getMapCenter } from "../utils/map";
 export function usePlotDetailPage() {
   const [, setLocation] = useLocation();
   const [newMatch, newParams] = useRoute(
+    "/plot-distribution/detail/:id",
+  );
+  const [legacyMatch, legacyParams] = useRoute(
     "/region-chart/plot-distribution/detail/:id",
   );
-  const [legacyMatch, legacyParams] = useRoute("/plot-distribution/detail/:id");
   const { getPlotById } = useRegionStore();
 
   const id =

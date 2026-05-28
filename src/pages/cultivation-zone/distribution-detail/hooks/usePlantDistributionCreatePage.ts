@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useLocation } from "wouter";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useRoute } from "wouter";
 import {
   MOCK_SEEDS,
   type DistributionMethod,
@@ -13,6 +13,7 @@ import {
   MOCK_PLOTS,
   MOCK_REGIONS,
 } from "@/pages/region-chart/constants";
+import usePlantDistributionStore from "@/stores/usePlantDistributionStore";
 
 export const getSeedColor = (seedId: string) => {
   const colors = [
@@ -31,6 +32,9 @@ export const getSeedColor = (seedId: string) => {
 
 export const usePlantDistributionCreatePage = () => {
   const [, setLocation] = useLocation();
+  const [matchEdit, editParams] = useRoute("/distribution-detail/:id/edit");
+  const editingId = matchEdit ? editParams?.id : undefined;
+  const { addRecord, updateRecord, getRecordById } = usePlantDistributionStore();
 
   const [scope, setScope] = useState<DistributionScope>("region");
   const [selectedRegionId, setSelectedRegionId] = useState("");
@@ -43,6 +47,23 @@ export const usePlantDistributionCreatePage = () => {
   const [rowConfigs, setRowConfigs] = useState<RowConfig[]>([]);
   const [plantLocations, setPlantLocations] = useState<PlantLocation[]>([]);
   const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!editingId) return;
+
+    const record = getRecordById(editingId);
+    if (!record) return;
+
+    setScope(record.scope);
+    setSelectedRegionId(record.selectedRegionId || "");
+    setSelectedAreaIds(record.selectedAreaIds || []);
+    setSelectedPlotIds(record.selectedPlotIds || []);
+    setSelectedSeedIds(record.selectedSeedIds || []);
+    setDistributionMethod(record.distributionMethod);
+    setPlantEntries(record.plantEntries || []);
+    setRowConfigs(record.rowConfigs || []);
+    setPlantLocations(record.plantLocations || []);
+  }, [editingId, getRecordById]);
 
   const selectedRegion = useMemo(
     () =>
@@ -226,17 +247,36 @@ export const usePlantDistributionCreatePage = () => {
   };
 
   const handleComplete = () => {
-    console.log("Distribution data:", {
+    const targetName =
+      scope === "region"
+        ? selectedRegion?.name || ""
+        : scope === "area"
+          ? selectedAreas.map((a) => a.name).join(", ")
+          : selectedPlots.map((p) => p.name).join(", ");
+
+    const payload = {
+      name: `Phân bổ ${availableVarieties.join(" - ") || "cây trồng"}`,
       scope,
+      targetName,
+      distributionMethod,
+      totalPlants,
+      seedVarieties: selectedSeedIds.length,
+      status: "active" as const,
       selectedRegionId,
       selectedAreaIds,
       selectedPlotIds,
       selectedSeedIds,
-      distributionMethod,
       plantEntries,
       rowConfigs,
       plantLocations,
-    });
+    };
+
+    if (editingId) {
+      updateRecord(editingId, payload);
+    } else {
+      addRecord(payload);
+    }
+
     setLocation("/distribution-detail");
   };
 
@@ -274,6 +314,7 @@ export const usePlantDistributionCreatePage = () => {
     updatePlantLocation,
     generatePlantLocations,
     handleComplete,
+    isEditing: !!editingId,
     handleCancel: () => setLocation("/distribution-detail"),
     goToList: () => setLocation("/distribution-detail"),
   };

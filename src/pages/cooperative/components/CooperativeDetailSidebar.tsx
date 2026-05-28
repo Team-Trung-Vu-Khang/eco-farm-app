@@ -77,7 +77,9 @@ export function CooperativeDetailSidebar({ data }: CooperativeDetailSidebarProps
                       ? "Chế biến"
                       : item === "trading"
                         ? "Thương mại"
-                        : "Dịch vụ"}
+                        : item === "service"
+                          ? "Dịch vụ"
+                          : "Khác"}
                 </Badge>
               ))
             ) : (
@@ -88,7 +90,9 @@ export function CooperativeDetailSidebar({ data }: CooperativeDetailSidebarProps
                     ? "Chế biến"
                     : data.classification === "trading"
                       ? "Thương mại"
-                      : "Dịch vụ"}
+                      : data.classification === "service"
+                        ? "Dịch vụ"
+                        : "Khác"}
               </Badge>
             )}
           </div>
@@ -117,7 +121,10 @@ export function CooperativeDetailSidebar({ data }: CooperativeDetailSidebarProps
             <div className="flex items-start gap-3">
               <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
               <span>
-                {data.address}, {data.ward}, {data.district}, {data.province}
+                {data.address}
+                {data.ward ? `, ${data.ward}` : ""}
+                {data.district ? `, ${data.district}` : ""}
+                {data.province ? `, ${data.province}` : ""}
               </span>
             </div>
             <div className="flex items-center gap-3">

@@ -35,11 +35,12 @@ export function useEnterpriseCreateForm() {
     phone: "",
     email: "",
     province: "",
+    district: "",
     ward: "",
     address: "",
     image: "",
     description: "",
-
+    contacts: [],
     branches: [],
     bankAccounts: [],
     documents: [],
@@ -343,6 +344,7 @@ export function useEnterpriseCreateForm() {
         | "processing"
         | "trading"
         | "service"
+        | "other"
       )[],
       taxCode: formData.taxCode,
       taxAddress: formData.taxAddress,
@@ -350,6 +352,7 @@ export function useEnterpriseCreateForm() {
       issueDate: formData.issueDate,
       address: formData.address,
       ward: formData.ward,
+      district: formData.district,
       province: formData.province,
       foundedDate: formData.foundedDate,
       representative: formData.representative,
@@ -358,6 +361,7 @@ export function useEnterpriseCreateForm() {
       phone: formData.phone,
       email: formData.email,
       status: "active" as const,
+      contacts: formData.contacts,
       documents: formData.documents,
       branches: formData.branches,
       bankAccounts: formData.bankAccounts,

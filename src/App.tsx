@@ -212,13 +212,26 @@ function Router() {
       <Route path="/area-distribution/create" component={AreaCreatePage} />
       <Route path="/area-distribution/edit/:id" component={AreaCreatePage} />
       <Route path="/plot-distribution" component={PlotDistributionPage} />
-      <Route path="/plot-distribution" component={PlotDistributionPage} />
-      <Route path="/plot-distribution/create" component={PlotCreatePage} />
       <Route path="/plot-distribution/create" component={PlotCreatePage} />
       <Route path="/plot-distribution/edit/:id" component={PlotCreatePage} />
-      <Route path="/plot-distribution/edit/:id" component={PlotCreatePage} />
       <Route path="/plot-distribution/detail/:id" component={PlotDetailPage} />
-      <Route path="/plot-distribution/detail/:id" component={PlotDetailPage} />
+      {/* Legacy aliases */}
+      <Route
+        path="/region-chart/plot-distribution"
+        component={PlotDistributionPage}
+      />
+      <Route
+        path="/region-chart/plot-distribution/create"
+        component={PlotCreatePage}
+      />
+      <Route
+        path="/region-chart/plot-distribution/edit/:id"
+        component={PlotCreatePage}
+      />
+      <Route
+        path="/region-chart/plot-distribution/detail/:id"
+        component={PlotDetailPage}
+      />
       <Route path="/map-view" component={MapViewPage} />
       <Route path="/soil-amendment-map" component={SoilAmendmentMapPage} />
       <Route
@@ -262,6 +275,10 @@ function Router() {
       <Route
         path="/distribution-detail/:id"
         component={DistributionDetailPage}
+      />
+      <Route
+        path="/distribution-detail/:id/edit"
+        component={PlantDistributionCreatePage}
       />
       {/* Cultivation Area Routes */}
       <Route path="/cultivation-area" component={CultivationAreaPage} />

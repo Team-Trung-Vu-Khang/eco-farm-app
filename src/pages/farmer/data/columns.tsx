@@ -25,10 +25,11 @@ export const farmerColumns: Column<Enterprise>[] = [
         processing: "Chế biến",
         trading: "Thương mại",
         service: "Dịch vụ",
+        other: "Khác",
       };
       return (value as string[])?.map((item: string) => (
         <Badge key={item} variant="secondary" className="mr-1">
-          {labels[item]}
+          {labels[item] || item}
         </Badge>
       ));
     },

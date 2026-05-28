@@ -75,7 +75,9 @@ export const FarmerOverviewCard = ({ data }: FarmerOverviewCardProps) => {
                   ? "Chế biến"
                   : item === "trading"
                     ? "Thương mại"
-                    : "Dịch vụ"}
+                    : item === "service"
+                      ? "Dịch vụ"
+                      : "Khác"}
             </Badge>
           ))}
         </div>

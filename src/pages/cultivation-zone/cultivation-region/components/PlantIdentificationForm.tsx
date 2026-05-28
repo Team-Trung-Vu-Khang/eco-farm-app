@@ -8,6 +8,7 @@ import useCultivationRegionStore from "../../../../stores/useCultivationRegionSt
 import useFarmingMethodStore from "../../../../stores/useFarmingMethodStore";
 import useIrrigationSystemStore from "../../../../stores/useIrrigationSystemStore";
 import usePersonnelStore from "../../../../stores/usePersonnelStore";
+import usePlantStore from "../../../../stores/usePlantStore";
 import useRegionStore from "../../../../stores/useRegionStore";
 import useSeedStore from "../../../../stores/useSeedStore";
 import { type Plant } from "../../../region-chart/constants";
@@ -36,6 +37,8 @@ const PlantIdentificationForm = ({
 
   const { enterprises } = useEnterpriseStore();
   const [, setLocation] = useLocation();
+
+  const regionStore = useRegionStore.getState();
 
   // ---- Share state ----
   const [enterpriseId, setEnterpriseId] = useState(
@@ -453,17 +456,57 @@ const PlantIdentificationForm = ({
 
   // ---- Submit: one plant per entry ----
   const handleComplete = () => {
-    const newPlantArr = plants.map((p) => {
+    const nextPlantCode = (index: number) => {
+      if (initialData?.code) return initialData.code;
+
+      const maxNumericCode = usePlantStore
+        .getState()
+        .plants.map((item) => item.code || "")
+        .map((code) => code.match(/^(?:PL-|PLANT-)?(\d+)$/i)?.[1])
+        .filter(Boolean)
+        .map((value) => Number(value))
+        .filter((value) => !Number.isNaN(value))
+        .reduce((max, current) => Math.max(max, current), 0);
+
+      return `PL-${String(maxNumericCode + index + 1).padStart(3, "0")}`;
+    };
+
+    const newPlantArr = plants.map((p, index) => {
+      const plotContext = regionStore.getPlotById(p.plotId);
+      const areaContext = regionStore.getAreaById(p.plotId);
+
+      const regionName =
+        plotContext?.region?.name ||
+        areaContext?.region?.name ||
+        selectedCultivationRegion?.name;
+
+      const areaName =
+        plotContext?.area?.name ||
+        (areaContext?.area as { name?: string } | undefined)?.name;
+
+      const plotName = plotContext?.plot?.name;
+
+      const generatedCode = nextPlantCode(index);
+
       return {
         ...initialData,
+        code: generatedCode,
+        name: initialData?.name || plotName || `Cây trồng ${generatedCode}`,
+        type: initialData?.type || "Cây trồng",
+        status: initialData?.status || "healthy",
         height: p.height,
         enterpriseId,
         ageValue: p.ageValue,
         ageUnit: p.ageUnit,
+        age: p.ageValue
+          ? `${p.ageValue} ${p.ageUnit === "years" ? "năm" : p.ageUnit === "months" ? "tháng" : "ngày"}`
+          : undefined,
         plantedDate: p.plantedDate,
         note: p.note,
         plotId: p.plotId,
         cultivationRegionId,
+        regionName,
+        areaName,
         coordinate: p.coordinate,
         id:
           initialData?.id ||

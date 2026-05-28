@@ -7,6 +7,7 @@ export const farmerFilters = [
       { label: "Chế biến", value: "processing" },
       { label: "Thương mại", value: "trading" },
       { label: "Dịch vụ", value: "service" },
+      { label: "Khác", value: "other" },
     ],
   },
 ];

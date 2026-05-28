@@ -47,9 +47,11 @@ const PlotCreatePage = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [newMatch, newParams] = useRoute(
+    "/plot-distribution/edit/:id",
+  );
+  const [legacyMatch, legacyParams] = useRoute(
     "/region-chart/plot-distribution/edit/:id",
   );
-  const [legacyMatch, legacyParams] = useRoute("/plot-distribution/edit/:id");
   const editParams = newMatch ? newParams : legacyParams;
   const isEditMode = (newMatch || legacyMatch) && !!editParams?.id;
 
@@ -468,7 +470,7 @@ const PlotCreatePage = () => {
 
     // Short delay to ensure state persists before navigation
     setTimeout(() => {
-      setLocation("/region-chart/plot-distribution");
+      setLocation("/plot-distribution");
     }, 150);
   };
 
@@ -787,7 +789,7 @@ const PlotCreatePage = () => {
       actions={
         <Button
           variant="outline"
-          onClick={() => setLocation("/region-chart/plot-distribution")}
+          onClick={() => setLocation("/plot-distribution")}
         >
           <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại
         </Button>
@@ -797,7 +799,7 @@ const PlotCreatePage = () => {
         steps={steps}
         onComplete={handleSubmit}
         completeLabel={isEditMode ? "Cập nhật" : "Tạo mới"}
-        onCancel={() => setLocation("/region-chart/plot-distribution")}
+        onCancel={() => setLocation("/plot-distribution")}
       />
     </AdminLayout>
   );

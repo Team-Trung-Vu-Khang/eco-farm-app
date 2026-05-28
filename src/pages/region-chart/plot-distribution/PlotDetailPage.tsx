@@ -23,7 +23,7 @@ const PlotDetailPage = () => {
         actions={
           <Button
             variant="outline"
-            onClick={() => setLocation("/region-chart/plot-distribution")}
+            onClick={() => setLocation("/plot-distribution")}
           >
             <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại
           </Button>
@@ -44,14 +44,12 @@ const PlotDetailPage = () => {
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={() => setLocation("/region-chart/plot-distribution")}
+            onClick={() => setLocation("/plot-distribution")}
           >
             <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại
           </Button>
           <Button
-            onClick={() =>
-              setLocation(`/region-chart/plot-distribution/edit/${plot.id}`)
-            }
+            onClick={() => setLocation(`/plot-distribution/edit/${plot.id}`)}
           >
             <Edit className="w-4 h-4 mr-2" /> Chỉnh sửa
           </Button>
