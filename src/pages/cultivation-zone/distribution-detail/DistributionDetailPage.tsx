@@ -35,6 +35,9 @@ import {
 import { MapContainer, TileLayer, Marker, Popup, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { PLANT_DISTRIBUTION_MOCK_DATA } from "./data/constants";
+import { MOCK_SEEDS } from "./constants";
+import usePlantDistributionStore from "@/stores/usePlantDistributionStore";
 
 // --- Mock Data ---
 
@@ -140,19 +143,59 @@ const generateMockHistory = (count: number): HistoryLog[] => {
 const DistributionDetailPage = () => {
   const [, params] = useRoute("/distribution-detail/:id");
   const [, setLocation] = useLocation();
+  const { getRecordById, deleteRecord } = usePlantDistributionStore();
   const [plants, setPlants] = useState<PlantLocation[]>([]);
   const [history, setHistory] = useState<HistoryLog[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
 
+  const distributionId = params?.id;
+  const detailData = distributionId ? getRecordById(distributionId) : undefined;
+
   useEffect(() => {
-    // Simulate fetching data
-    setPlants(generateMockPlants(50));
+    if (detailData?.plantLocations?.length) {
+      const mappedPlants = detailData.plantLocations.map((location) => {
+        const seed = MOCK_SEEDS.find((item) => item.id === location.seedId);
+        return {
+          id: location.id,
+          code: location.plantCode,
+          variety: seed?.name || "Chưa xác định",
+          status: "healthy" as const,
+          height: 100,
+          plantedDate: location.plantedDate,
+          coordinate: location.coordinate,
+        };
+      });
+      setPlants(mappedPlants);
+    } else {
+      setPlants(generateMockPlants(50));
+    }
     setHistory(generateMockHistory(15));
-  }, []);
+  }, [detailData]);
 
   const handleBack = () => {
     setLocation("/distribution-detail");
   };
+
+  const handleEdit = () => {
+    if (!distributionId) return;
+    setLocation(`/distribution-detail/${distributionId}/edit`);
+  };
+
+  const handleDelete = () => {
+    if (!distributionId) return;
+    deleteRecord(distributionId);
+    setLocation("/distribution-detail");
+  };
+
+  if (!detailData) {
+    return (
+      <AdminLayout title="Không tìm thấy" description="Bản ghi không tồn tại">
+        <div className="text-sm text-muted-foreground">
+          Không có dữ liệu phân bổ.
+        </div>
+      </AdminLayout>
+    );
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -268,8 +311,8 @@ const DistributionDetailPage = () => {
 
   return (
     <AdminLayout
-      title={MOCK_DETAIL.name}
-      description={`Mã: ${MOCK_DETAIL.code} • Tạo ngày ${MOCK_DETAIL.plantedDate}`}
+      title={detailData.name}
+      description={`Mã: ${detailData.code} • Tạo ngày ${detailData.createdAt}`}
       actions={
         <div className="flex gap-2">
           <Button
@@ -284,9 +327,12 @@ const DistributionDetailPage = () => {
             <Download className="w-4 h-4 mr-2" />
             Xuất báo cáo
           </Button>
-          <Button size="sm" className="shadow-sm">
+          <Button size="sm" className="shadow-sm" onClick={handleEdit}>
             <Edit className="w-4 h-4 mr-2" />
             Chỉnh sửa
+          </Button>
+          <Button size="sm" variant="destructive" onClick={handleDelete}>
+            Xóa
           </Button>
         </div>
       }
@@ -333,7 +379,7 @@ const DistributionDetailPage = () => {
                     Tổng cây trồng
                   </div>
                   <div className="text-2xl font-bold text-indigo-700">
-                    {MOCK_DETAIL.totalPlants}
+                    {detailData.totalPlants}
                   </div>
                 </div>
               </CardContent>
@@ -462,10 +508,9 @@ const DistributionDetailPage = () => {
                           <span>{v.name}</span>
                           <span className="text-muted-foreground">
                             {v.count} cây (
-                            {(
-                              (v.count / MOCK_DETAIL.totalPlants) *
-                              100
-                            ).toFixed(0)}
+                            {((v.count / detailData.totalPlants) * 100).toFixed(
+                              0,
+                            )}
                             %)
                           </span>
                         </div>
@@ -473,7 +518,7 @@ const DistributionDetailPage = () => {
                           <div
                             className="h-full rounded-full transition-all duration-500"
                             style={{
-                              width: `${(v.count / MOCK_DETAIL.totalPlants) * 100}%`,
+                              width: `${(v.count / detailData.totalPlants) * 100}%`,
                               backgroundColor: v.color,
                             }}
                           />
@@ -495,12 +540,12 @@ const DistributionDetailPage = () => {
                   <div className="divide-y divide-slate-100">
                     <div className="p-3 flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Phạm vi</span>
-                      <Badge variant="outline">{MOCK_DETAIL.scope}</Badge>
+                      <Badge variant="outline">{detailData.scope}</Badge>
                     </div>
                     <div className="p-3 flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Đối tượng</span>
                       <span className="font-medium text-right max-w-[150px] truncate">
-                        {MOCK_DETAIL.targetName}
+                        {detailData.targetName}
                       </span>
                     </div>
                     <div className="p-3 flex justify-between items-center text-sm">
@@ -508,7 +553,7 @@ const DistributionDetailPage = () => {
                         Ngày xuống giống
                       </span>
                       <span className="font-medium">
-                        {MOCK_DETAIL.plantedDate}
+                        {detailData.createdAt}
                       </span>
                     </div>
                     <div className="p-3 flex justify-between items-center text-sm">

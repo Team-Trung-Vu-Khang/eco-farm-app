@@ -276,6 +276,10 @@ function Router() {
         path="/distribution-detail/:id"
         component={DistributionDetailPage}
       />
+      <Route
+        path="/distribution-detail/:id/edit"
+        component={PlantDistributionCreatePage}
+      />
       {/* Cultivation Area Routes */}
       <Route path="/cultivation-area" component={CultivationAreaPage} />
       <Route

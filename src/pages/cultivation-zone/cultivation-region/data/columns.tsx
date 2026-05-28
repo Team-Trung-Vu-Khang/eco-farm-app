@@ -34,20 +34,26 @@ export const getCultivationRegionColumns = (standards: Standard[]) => [
     label: "Đối tượng áp dụng",
   },
   {
-    key: "certificateId",
+    key: "certificateIds",
     label: "Chứng nhận",
-    render: (value: string) => {
-      const certificate = standards.find((item) => item.code === value);
-      if (!certificate) return null;
+    render: (value: string[] | string) => {
+      const ids = Array.isArray(value) ? value : value ? [value] : [];
+      if (ids.length === 0) return null;
 
-      return (
-        <Badge
-          variant="secondary"
-          className="bg-blue-50 text-blue-700 hover:bg-blue-100"
-        >
-          {certificate.name}
-        </Badge>
-      );
+      return ids.map((id) => {
+        const certificate = standards.find((item) => item.code === id);
+        if (!certificate) return null;
+
+        return (
+          <Badge
+            key={id}
+            variant="secondary"
+            className="mr-1 bg-blue-50 text-blue-700 hover:bg-blue-100"
+          >
+            {certificate.name}
+          </Badge>
+        );
+      });
     },
   },
   {
