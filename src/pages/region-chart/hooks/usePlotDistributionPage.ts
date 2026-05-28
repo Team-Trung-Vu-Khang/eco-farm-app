@@ -33,17 +33,17 @@ export function usePlotDistributionPage() {
   const columns = useMemo(
     () =>
       createPlotDistributionRichColumns((id) =>
-        setLocation(`/region-chart/plot-distribution/detail/${id}`),
+        setLocation(`/plot-distribution/detail/${id}`),
       ),
     [setLocation],
   );
 
   const handleAdd = () => {
-    setLocation("/region-chart/plot-distribution/create");
+    setLocation("/plot-distribution/create");
   };
 
   const handleEdit = (item: PlotDistributionRow) => {
-    setLocation(`/region-chart/plot-distribution/edit/${item.id}`);
+    setLocation(`/plot-distribution/edit/${item.id}`);
   };
 
   const handleDelete = (item: PlotDistributionRow) => {

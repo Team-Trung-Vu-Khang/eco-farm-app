@@ -66,7 +66,7 @@ const RegionCreatePage = () => {
 
   const [regionPoints, setRegionPoints] = useState<L.LatLng[]>(defaultPoints);
 
-  const { addRegion, updateRegion, getRegionById } = useRegionStore();
+  const { regions, addRegion, updateRegion, getRegionById } = useRegionStore();
   const { enterprises } = useEnterpriseStore();
   const { lands } = useLandStore();
   const { terrains } = useTerrainStore();
@@ -83,6 +83,29 @@ const RegionCreatePage = () => {
       }
     }
   }, [isEditMode, params?.id, getRegionById]);
+
+  const generateNextRegionCode = useCallback(() => {
+    const maxCodeNumber = (Array.isArray(regions) ? regions : []).reduce(
+      (max, region) => {
+        const match = /^REG-(\d+)$/i.exec(region.code || "");
+        if (!match) return max;
+        const current = Number(match[1]);
+        return Number.isNaN(current) ? max : Math.max(max, current);
+      },
+      0,
+    );
+
+    return `REG-${String(maxCodeNumber + 1).padStart(3, "0")}`;
+  }, [regions]);
+
+  useEffect(() => {
+    if (isEditMode) return;
+
+    setFormData((prev) => {
+      if ((prev.code || "").trim()) return prev;
+      return { ...prev, code: generateNextRegionCode() };
+    });
+  }, [isEditMode, generateNextRegionCode]);
 
   const resolveRegionId = useCallback(() => {
     if (formData.id) return formData.id;
@@ -415,8 +438,10 @@ const RegionCreatePage = () => {
       return;
     }
 
+    const resolvedCode = (formData.code || "").trim() || generateNextRegionCode();
+
     const regionData: Omit<Region, "id"> = {
-      code: formData.code || "",
+      code: resolvedCode,
       name: formData.name || "",
       provinceId: formData.provinceId || "",
       districtId: formData.districtId || "",
