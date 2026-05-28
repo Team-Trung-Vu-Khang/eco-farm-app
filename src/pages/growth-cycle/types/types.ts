@@ -1,12 +1,10 @@
-import type { SerializedEditorState } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-
 export interface GrowthStage {
   id: string;
   name: string;
   duration: number;
   usePdf: boolean;
   pdfFile?: File | null | { name: string; size: number };
-  content: SerializedEditorState;
+  content: string;
 }
 
 export interface GrowthCycle {

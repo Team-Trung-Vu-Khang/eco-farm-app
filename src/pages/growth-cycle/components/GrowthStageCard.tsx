@@ -11,6 +11,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Trash, Upload, FileText } from "lucide-react";
 import type { GrowthStage } from "../types/types";
+import { safeConvertLexicalToHtml } from "@/utils/commons";
 
 interface GrowthStageCardProps {
   stage: GrowthStage;
@@ -29,7 +30,9 @@ export const GrowthStageCard = ({
   const [isDragging, setIsDragging] = useState(false);
 
   const pdfFileName =
-    stage.pdfFile && typeof stage.pdfFile === "object" && "name" in stage.pdfFile
+    stage.pdfFile &&
+    typeof stage.pdfFile === "object" &&
+    "name" in stage.pdfFile
       ? stage.pdfFile.name
       : null;
 
@@ -132,9 +135,14 @@ export const GrowthStageCard = ({
           <div className="border rounded-lg overflow-hidden bg-muted/5">
             <Editor
               maxLength={10000}
+              initialHtml={stage.content}
               contentEditableClassname="h-[200px] p-4 focus:outline-none bg-white"
-              editorSerializedState={stage.content}
-              onSerializedChange={(content) => onUpdate(stage.id, { content })}
+              onSerializedChange={async (content) => {
+                const htmlContent = await safeConvertLexicalToHtml(content);
+                onUpdate(stage.id, {
+                  content: htmlContent,
+                });
+              }}
             />
           </div>
         ) : (
@@ -161,7 +169,9 @@ export const GrowthStageCard = ({
                 <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-600 mb-2">
                   <FileText className="w-6 h-6" />
                 </div>
-                <p className="text-sm font-bold text-slate-800">{pdfFileName}</p>
+                <p className="text-sm font-bold text-slate-800">
+                  {pdfFileName}
+                </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Đã chọn thành công. Nhấn để thay đổi.
                 </p>
