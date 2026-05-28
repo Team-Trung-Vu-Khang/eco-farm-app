@@ -1,4 +1,4 @@
-import type { BankAccount, Branch } from "../data/constants";
+import type { BankAccount, Branch, Contact } from "../data/constants";
 
 export interface EnterpriseDocument {
   name: string;
@@ -23,10 +23,12 @@ export interface EnterpriseFormData {
   phone: string;
   email: string;
   province: string;
+  district: string;
   ward: string;
   address: string;
   image: string;
   description: string;
+  contacts: Contact[];
   branches: Branch[];
   bankAccounts: BankAccount[];
   documents: EnterpriseDocument[];

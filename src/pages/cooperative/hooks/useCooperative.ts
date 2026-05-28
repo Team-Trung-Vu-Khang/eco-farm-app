@@ -1,22 +1,24 @@
 import { useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { INITIAL_DATA } from "../data/constants";
-import type { Cooperative } from "../types/types";
+import useEnterpriseStore from "@/stores/useEnterpriseStore";
+import type { Enterprise } from "@/pages/enterprise/data/constants";
 
 export function useCooperative() {
   const { toast } = useToast();
-  const [data, setData] = useState<Cooperative[]>(INITIAL_DATA);
+  const enterprises = useEnterpriseStore((state) => state.enterprises);
+  const deleteEnterprise = useEnterpriseStore((state) => state.deleteEnterprise);
+  const data = enterprises.filter((item) => item.type === "cooperative");
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<Cooperative | null>(null);
+  const [deleteItem, setDeleteItem] = useState<Enterprise | null>(null);
 
-  const handleDelete = (item: Cooperative) => {
+  const handleDelete = (item: Enterprise) => {
     setDeleteItem(item);
     setDeleteOpen(true);
   };
 
   const handleConfirmDelete = () => {
     if (deleteItem) {
-      setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
+      deleteEnterprise(deleteItem.id);
       toast({
         title: "Thành công",
         description: "Đã xóa đơn vị khỏi hệ thống",

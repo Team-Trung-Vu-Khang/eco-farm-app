@@ -1,12 +1,12 @@
 import { DataTable } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { COOPERATIVE_COLUMNS, COOPERATIVE_FILTERS } from "../data/constants";
-import type { Cooperative } from "../types/types";
+import type { Enterprise } from "@/pages/enterprise/data/constants";
 
 interface CooperativeTableProps {
-  data: Cooperative[];
-  onView: (item: Cooperative) => void;
-  onEdit: (item: Cooperative) => void;
-  onDelete: (item: Cooperative) => void;
+  data: Enterprise[];
+  onView: (item: Enterprise) => void;
+  onEdit: (item: Enterprise) => void;
+  onDelete: (item: Enterprise) => void;
 }
 
 export function CooperativeTable({

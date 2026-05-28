@@ -1,8 +1,8 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { Cooperative } from "../types/types";
+import type { Enterprise } from "@/pages/enterprise/data/constants";
 import { vietQrBankData } from "../../../constants/banks";
 
-export const INITIAL_DATA: Cooperative[] = [
+export const INITIAL_DATA: Enterprise[] = [
   {
     id: 2,
     code: "HTX001",
@@ -50,7 +50,7 @@ export const INITIAL_DATA: Cooperative[] = [
   },
 ];
 
-export const COOPERATIVE_COLUMNS: Column<Cooperative>[] = [
+export const COOPERATIVE_COLUMNS: Column<Enterprise>[] = [
   { key: "code", label: "Mã" },
   {
     key: "image",
@@ -74,11 +74,12 @@ export const COOPERATIVE_COLUMNS: Column<Cooperative>[] = [
         processing: "Chế biến",
         trading: "Thương mại",
         service: "Dịch vụ",
+        other: "Khác",
       };
       return (value as string[]).map((item: string) => {
         return (
           <Badge key={item} variant="secondary" className="mr-1">
-            {labels[item]}
+            {labels[item] || item}
           </Badge>
         );
       });
@@ -107,6 +108,7 @@ export const COOPERATIVE_FILTERS = [
       { label: "Chế biến", value: "processing" },
       { label: "Thương mại", value: "trading" },
       { label: "Dịch vụ", value: "service" },
+      { label: "Khác", value: "other" },
     ],
   },
 ];

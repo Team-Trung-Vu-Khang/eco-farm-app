@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import useEnterpriseStore from "@/stores/useEnterpriseStore";
 import type {
   Contact,
   BankAccount,
@@ -15,6 +16,8 @@ import { parseVietQR } from "@/utils/commons";
 export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const addEnterprise = useEnterpriseStore((state) => state.addEnterprise);
+  const updateEnterprise = useEnterpriseStore((state) => state.updateEnterprise);
 
   const [formData, setFormData] = useState<CooperativeFormData>({
     type: "cooperative",
@@ -23,11 +26,16 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
     brandName: "",
     taxCode: "",
     taxAddress: "",
+    taxAuthority: "",
+    issueDate: "",
     classification: [],
     foundedDate: "",
     representative: "",
     website: "",
+    phone: "",
+    email: "",
     province: "",
+    district: "",
     ward: "",
     address: "",
     image: "",
@@ -468,6 +476,46 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
   };
 
   const submitForm = () => {
+    const payload = {
+      code: formData.code,
+      name: formData.name,
+      brandName: formData.brandName,
+      image: formData.image,
+      type: "cooperative" as const,
+      classification: formData.classification as (
+        | "production"
+        | "processing"
+        | "trading"
+        | "service"
+        | "other"
+      )[],
+      taxCode: formData.taxCode,
+      address: formData.address,
+      phone: formData.phone,
+      email: formData.email,
+      status: "active" as const,
+      taxAddress: formData.taxAddress,
+      taxAuthority: formData.taxAuthority,
+      issueDate: formData.issueDate,
+      foundedDate: formData.foundedDate,
+      representative: formData.representative,
+      website: formData.website,
+      province: formData.province,
+      district: formData.district,
+      ward: formData.ward,
+      description: formData.description,
+      contacts: formData.contacts,
+      branches: formData.branches,
+      bankAccounts: formData.bankAccounts,
+      documents: formData.documents,
+    };
+
+    if (initialData?.id) {
+      updateEnterprise(Number(initialData.id), payload);
+    } else {
+      addEnterprise(payload);
+    }
+
     setShowConfirmDialog(false);
     toast({
       title: "Thành công",

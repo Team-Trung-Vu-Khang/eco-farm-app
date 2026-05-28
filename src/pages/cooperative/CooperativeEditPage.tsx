@@ -13,8 +13,7 @@ import {
   StepperForm,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { useCooperativeForm } from "./hooks/useCooperativeForm";
 import { BasicInfoStep } from "./components/steps/BasicInfoStep";
 import { ContactInfoStep } from "./components/steps/ContactInfoStep";
@@ -23,59 +22,44 @@ import { DocumentsStep } from "./components/steps/DocumentsStep";
 import { ConfirmStep } from "./components/steps/ConfirmStep";
 import { BranchesStep } from "./components/steps/BranchesStep";
 import type { CooperativeFormData } from "./types/types";
+import useEnterpriseStore from "@/stores/useEnterpriseStore";
 
 export default function CooperativeEditPage() {
   const [, setLocation] = useLocation();
-  const [initialData, setInitialData] =
-    useState<Partial<CooperativeFormData> | null>(null);
+  const [, params] = useRoute("/cooperative/:id/edit");
+  const getEnterpriseById = useEnterpriseStore((state) => state.getEnterpriseById);
+  const enterpriseId = params?.id ? Number(params.id) : null;
+  const cooperativeData = enterpriseId ? getEnterpriseById(enterpriseId) : undefined;
 
-  // Mock data fetching
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setInitialData({
-        id: "1",
+  const initialData: Partial<CooperativeFormData> | null = cooperativeData
+    ? {
+        id: cooperativeData.id,
         type: "cooperative",
-        code: "DN2024001",
-        name: "Hợp tác xã Nông nghiệp Xanh EcoFarm",
-        brandName: "EcoFarm Vietnam",
-        taxCode: "0101234567",
-        taxAddress: "Tầng 5, Tòa nhà ABC, Cầu Giấy, Hà Nội",
-        classification: ["production"],
-        foundedDate: "2020-03-15",
-        representative: "Nguyễn Văn Giám Đốc",
-        website: "https://ecofarm.vn",
-        province: "hn",
-        ward: "dich_vong",
-        address: "Số 123 Đường Xuân Thủy",
-        image:
-          "https://images.unsplash.com/photo-1595839019623-668b555776a3?w=800&q=80",
-        description:
-          "Hợp tác xã tiên phong trong lĩnh vực nông nghiệp công nghệ cao, chuyên sản xuất và cung ứng rau sạch chuẩn VietGAP.",
-        contacts: [
-          {
-            name: "Lê Văn Tiến",
-            phone: "0333444555",
-            email: "tien.lv@ecofarm.vn",
-          },
-        ],
-        branches: [],
-        bankAccounts: [
-          {
-            bin: "970436",
-            bankName: "Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)",
-            accountHolder: "ECOFARM CORP",
-            accountNumber: "0011001234567",
-            branch: "Sở Giao Dịch",
-            note: "Tài khoản chính",
-          },
-        ],
-        documents: [
-          { name: "giay_phep_kd.pdf", type: "application/pdf", size: "2.5MB" },
-        ],
-      });
-    }, 500);
-  }, []);
+        code: cooperativeData.code,
+        name: cooperativeData.name,
+        brandName: cooperativeData.brandName || "",
+        taxCode: cooperativeData.taxCode || "",
+        taxAddress: cooperativeData.taxAddress || "",
+        taxAuthority: cooperativeData.taxAuthority || "",
+        issueDate: cooperativeData.issueDate || "",
+        classification: cooperativeData.classification || [],
+        foundedDate: cooperativeData.foundedDate || "",
+        representative: cooperativeData.representative || "",
+        website: cooperativeData.website || "",
+        phone: cooperativeData.phone || "",
+        email: cooperativeData.email || "",
+        province: cooperativeData.province || "",
+        district: cooperativeData.district || "",
+        ward: cooperativeData.ward || "",
+        address: cooperativeData.address || "",
+        image: cooperativeData.image || "",
+        description: cooperativeData.description || "",
+        contacts: cooperativeData.contacts || [],
+        branches: cooperativeData.branches || [],
+        bankAccounts: cooperativeData.bankAccounts || [],
+        documents: cooperativeData.documents || [],
+      }
+    : null;
 
   const {
     formData,
@@ -232,10 +216,10 @@ export default function CooperativeEditPage() {
     return (
       <AdminLayout
         title="Cập nhật Hợp tác xã"
-        description="Đang tải dữ liệu..."
+        description="Không tìm thấy dữ liệu hợp tác xã"
       >
-        <div className="flex items-center justify-center p-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="flex items-center justify-center p-12 text-muted-foreground">
+          Không tìm thấy hợp tác xã cần chỉnh sửa
         </div>
       </AdminLayout>
     );

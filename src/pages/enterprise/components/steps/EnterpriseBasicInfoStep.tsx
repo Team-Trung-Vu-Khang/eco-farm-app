@@ -276,7 +276,7 @@ export function EnterpriseBasicInfoStep() {
             <Select
               value={formData.province}
               onValueChange={(val) =>
-                setFormData({ ...formData, province: val })
+                setFormData({ ...formData, province: val, district: "", ward: "" })
               }
             >
               <SelectTrigger>
@@ -292,13 +292,15 @@ export function EnterpriseBasicInfoStep() {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="ward">Phường / Xã *</Label>
+            <Label htmlFor="district">Quận / Huyện *</Label>
             <Select
-              value={formData.ward}
-              onValueChange={(val) => setFormData({ ...formData, ward: val })}
+              value={formData.district}
+              onValueChange={(val) =>
+                setFormData({ ...formData, district: val, ward: "" })
+              }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Chọn Phường / Xã" />
+                <SelectValue placeholder="Chọn Quận / Huyện" />
               </SelectTrigger>
               <SelectContent>
                 {PROVINCES.find(
@@ -311,6 +313,15 @@ export function EnterpriseBasicInfoStep() {
               </SelectContent>
             </Select>
           </div>
+        </div>
+        <div className="space-y-2 mt-4">
+          <Label htmlFor="ward">Phường / Xã</Label>
+          <Input
+            id="ward"
+            value={formData.ward}
+            onChange={(e) => setFormData({ ...formData, ward: e.target.value })}
+            placeholder="VD: Phường Bến Nghé / Xã Tân Phú"
+          />
         </div>
         <div className="space-y-2 mt-4">
           <Label htmlFor="address">Địa chỉ chi tiết</Label>

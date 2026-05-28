@@ -161,6 +161,31 @@ export function BasicInfoStep({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
+          <Label htmlFor="taxAuthority">Cơ quan thuế</Label>
+          <Input
+            id="taxAuthority"
+            value={formData.taxAuthority}
+            onChange={(e) =>
+              setFormData({ ...formData, taxAuthority: e.target.value })
+            }
+            placeholder="Cục thuế / Chi cục thuế..."
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="issueDate">Ngày cấp</Label>
+          <Input
+            id="issueDate"
+            type="date"
+            value={formData.issueDate}
+            onChange={(e) =>
+              setFormData({ ...formData, issueDate: e.target.value })
+            }
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
           <Label htmlFor="representative">Người đại diện pháp luật *</Label>
           <Input
             id="representative"
@@ -195,7 +220,7 @@ export function BasicInfoStep({
             <Select
               value={formData.province}
               onValueChange={(val) =>
-                setFormData({ ...formData, province: val })
+                setFormData({ ...formData, province: val, district: "", ward: "" })
               }
             >
               <SelectTrigger>
@@ -211,13 +236,15 @@ export function BasicInfoStep({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="ward">Phường / Xã *</Label>
+            <Label htmlFor="district">Quận / Huyện *</Label>
             <Select
-              value={formData.ward}
-              onValueChange={(val) => setFormData({ ...formData, ward: val })}
+              value={formData.district}
+              onValueChange={(val) =>
+                setFormData({ ...formData, district: val, ward: "" })
+              }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Chọn Phường / Xã" />
+                <SelectValue placeholder="Chọn Quận / Huyện" />
               </SelectTrigger>
               <SelectContent>
                 {PROVINCES.find(
@@ -232,6 +259,15 @@ export function BasicInfoStep({
           </div>
         </div>
         <div className="space-y-2 mt-4">
+          <Label htmlFor="ward">Phường / Xã</Label>
+          <Input
+            id="ward"
+            value={formData.ward}
+            onChange={(e) => setFormData({ ...formData, ward: e.target.value })}
+            placeholder="VD: Phường Bến Nghé / Xã Tân Phú"
+          />
+        </div>
+        <div className="space-y-2 mt-4">
           <Label htmlFor="address">Địa chỉ chi tiết</Label>
           <Input
             id="address"
@@ -241,6 +277,26 @@ export function BasicInfoStep({
             }
             placeholder="Số nhà, đường, ấp..."
           />
+        </div>
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          <div className="space-y-2">
+            <Label htmlFor="phone">Hotline</Label>
+            <Input
+              id="phone"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder="09xx xxx xxx"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="email@example.com"
+            />
+          </div>
         </div>
       </div>
 

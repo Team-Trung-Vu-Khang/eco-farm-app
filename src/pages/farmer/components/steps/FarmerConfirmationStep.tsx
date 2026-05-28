@@ -115,7 +115,12 @@ export const FarmerConfirmationStep = ({
                   <MapPin className="w-4 h-4 text-primary shrink-0" />
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Địa chỉ</p>
-                    <p className="text-sm font-medium leading-normal">{formData.address}</p>
+                    <p className="text-sm font-medium leading-normal">
+                      {formData.address}
+                      {formData.ward && `, ${formData.ward}`}
+                      {formData.district && `, ${formData.district}`}
+                      {formData.province && `, ${formData.province}`}
+                    </p>
                   </div>
                 </div>
               </div>

@@ -48,11 +48,16 @@ export interface CooperativeFormData {
   brandName: string;
   taxCode: string;
   taxAddress: string;
+  taxAuthority: string;
+  issueDate: string;
   classification: string[];
   foundedDate: string;
   representative: string;
   website: string;
+  phone: string;
+  email: string;
   province: string;
+  district: string;
   ward: string;
   address: string;
   image: string;
@@ -62,4 +67,3 @@ export interface CooperativeFormData {
   bankAccounts: BankAccount[];
   documents: { name: string; type: string; size: string }[];
 }
-

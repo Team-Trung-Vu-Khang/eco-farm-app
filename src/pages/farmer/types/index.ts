@@ -46,6 +46,7 @@ export interface FarmerFormData {
   phone: string;
   email: string;
   province?: string;
+  district?: string;
   ward?: string;
   address: string;
   image?: string;

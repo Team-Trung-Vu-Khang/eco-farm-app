@@ -29,7 +29,13 @@ export interface Enterprise {
   name: string;
   image?: string;
   type: "enterprise" | "farm" | "cooperative";
-  classification: ("production" | "processing" | "trading" | "service")[];
+  classification: (
+    | "production"
+    | "processing"
+    | "trading"
+    | "service"
+    | "other"
+  )[];
   taxCode: string;
   address: string;
   phone: string;
