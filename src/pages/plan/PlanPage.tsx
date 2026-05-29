@@ -10,7 +10,6 @@ import { planColumns, planFilters, PlanStatisticsCards } from "./data/table";
 import { usePlanPage } from "./hooks/usePlanPage";
 
 export default function PlanPage() {
-  const [, setLocation] = useLocation();
   const {
     plans,
     statistics,
@@ -21,6 +20,8 @@ export default function PlanPage() {
     goToView,
     goToEdit,
   } = usePlanPage();
+
+  console.log("plans", plans);
 
   return (
     <AdminLayout

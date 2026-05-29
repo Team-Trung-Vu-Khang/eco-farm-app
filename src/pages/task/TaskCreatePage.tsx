@@ -294,7 +294,8 @@ import usePlanStore from "../../stores/usePlanStore";
 import useAmendmentPlanStore from "../../stores/useAmendmentPlanStore";
 import usePersonnelStore from "../../stores/usePersonnelStore";
 import useTeamStore from "../../stores/useTeamStore";
-import useRegimenStore from "../../stores/useRegimenStore";
+import { useTreatmentStore } from "../../stores/useTreatmentStore";
+import { useAmendmentRegimenStore } from "../../stores/useAmendmentRegimenStore";
 import useRegionStore from "../../stores/useRegionStore";
 import { TaskStageAllocation } from "../plan/components/TaskStageAllocation";
 import { getFrequencyText } from "../plan/utils/task";
@@ -389,7 +390,43 @@ export default function TaskCreatePage() {
   const amendmentPlans = useAmendmentPlanStore((state) => state.plans);
   const personnel = usePersonnelStore((state) => state.personnel);
   const teams = useTeamStore((state) => state.teams);
-  const regimens = useRegimenStore((state) => state.regimens);
+  const treatments = useTreatmentStore((state) => state.treatments);
+  const amendmentRegimensRaw = useAmendmentRegimenStore((state) => state.regimens);
+  const regimens = useMemo(() => {
+    const mappedTreatments = treatments.map((t) => ({
+      id: String(t.id),
+      name: t.name,
+      description: t.disease || t.name,
+      type: "tri-benh" as const,
+      provider: t.author || "Chưa rõ",
+      category: t.disease || "Điều trị",
+      crop: t.crop || "Tất cả",
+      steps: t.procedures?.map((p: any) => ({
+        id: String(p.id),
+        day: p.startDay ? `Ngày ${p.startDay}` : `Ngày ${p.stepNumber}`,
+        title: p.name,
+        description: p.description,
+      })) || [],
+    }));
+
+    const mappedAmendments = amendmentRegimensRaw.map((t) => ({
+      id: String(t.id),
+      name: t.name,
+      description: t.soilIssue || t.name,
+      type: "cai-tao-dat" as const,
+      provider: t.authors?.[0]?.name || "Chưa rõ",
+      category: t.soilIssue || "Cải tạo",
+      crop: t.cropType || "Tất cả",
+      steps: t.procedures?.map((p: any) => ({
+        id: String(p.id),
+        day: p.timing || `Ngày ${p.stepNumber}`,
+        title: p.name,
+        description: p.description,
+      })) || [],
+    }));
+
+    return [...mappedTreatments, ...mappedAmendments];
+  }, [treatments, amendmentRegimensRaw]);
 
   const [formData, setFormData] = useState({
     code: "CV-" + Math.floor(1000 + Math.random() * 9000),
@@ -510,7 +547,7 @@ export default function TaskCreatePage() {
       });
     }
 
-    if (names.length > 0) return names.join(", ");
+    if (names.length > 0) return names.join("; ");
     return selectedPlan.zone || "Toàn vùng";
   }, [selectedPlan, getPlotById, getAreaById, getRegionById]);
 
@@ -800,7 +837,7 @@ export default function TaskCreatePage() {
           formData.objectiveType !== "phat-sinh"
             ? formData.planName || "Công việc theo kế hoạch"
             : "Công việc phát sinh",
-        stage: formData.selectedStages.join(", ") || "N/A",
+        stage: formData.selectedStages.join("; ") || "N/A",
         assignedTo: formData.assignedTo,
         assignedType: formData.assignedType,
         supervisors: formData.supervisors,
@@ -2281,7 +2318,7 @@ export default function TaskCreatePage() {
                           Phạm vi lô đất
                         </p>
                         <p className="text-xs font-semibold text-slate-700 max-w-[160px] text-right leading-snug">
-                          {formData.selectedPlotIds.join(", ")}
+                          {formData.selectedPlotIds.join("; ")}
                         </p>
                       </div>
                     )}
@@ -2381,7 +2418,7 @@ export default function TaskCreatePage() {
                                   task.labor
                                     .split(":")[1]
                                     .trim()
-                                    .split(", ")
+                                    .split("; ")
                                     .filter(Boolean)
                                     .map((name, i) => (
                                       <Badge
@@ -2532,7 +2569,7 @@ export default function TaskCreatePage() {
                               return labor
                                 .split(":")[1]
                                 .trim()
-                                .split(", ")
+                                .split("; ")
                                 .filter(Boolean);
                             }
                             return [];

@@ -5,7 +5,8 @@ import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import useRegionStore from "@/stores/useRegionStore";
 import useSeasonStore from "@/stores/useSeasonStore";
 import usePlanStore from "../../../stores/usePlanStore";
-import useRegimenStore from "../../../stores/useRegimenStore";
+import { useTreatmentStore } from "../../../stores/useTreatmentStore";
+import { useAmendmentRegimenStore } from "../../../stores/useAmendmentRegimenStore";
 import type {
   GeographicalSelection,
   MaterialAllocation,
@@ -57,7 +58,44 @@ export function usePlanForm(mode: "create" | "edit") {
   const seasons = useSeasonStore((state) => state.seasons);
   const { regions } = useRegionStore();
   const { growthCycles } = useGrowthCycleStore();
-  const regimens = useRegimenStore((state) => state.regimens);
+  const treatments = useTreatmentStore((state) => state.treatments);
+  const amendmentRegimensRaw = useAmendmentRegimenStore((state) => state.regimens);
+
+  const regimens = useMemo(() => {
+    const mappedTreatments = treatments.map((t) => ({
+      id: String(t.id),
+      name: t.name,
+      description: t.disease || t.name,
+      type: "tri-benh" as const,
+      provider: t.author || "Chưa rõ",
+      category: t.disease || "Điều trị",
+      crop: t.crop || "Tất cả",
+      steps: t.procedures?.map((p: any) => ({
+        id: String(p.id),
+        day: p.startDay ? `Ngày ${p.startDay}` : `Ngày ${p.stepNumber}`,
+        title: p.name,
+        description: p.description,
+      })) || [],
+    }));
+
+    const mappedAmendments = amendmentRegimensRaw.map((t) => ({
+      id: String(t.id),
+      name: t.name,
+      description: t.soilIssue || t.name,
+      type: "cai-tao-dat" as const,
+      provider: t.authors?.[0]?.name || "Chưa rõ",
+      category: t.soilIssue || "Cải tạo",
+      crop: t.cropType || "Tất cả",
+      steps: t.procedures?.map((p: any) => ({
+        id: String(p.id),
+        day: p.timing || `Ngày ${p.stepNumber}`,
+        title: p.name,
+        description: p.description,
+      })) || [],
+    }));
+
+    return [...mappedTreatments, ...mappedAmendments];
+  }, [treatments, amendmentRegimensRaw]);
 
   const plan = mode === "edit" ? getPlanById(Number(params.id)) : undefined;
   const initialSelectionState = useMemo(
@@ -90,7 +128,8 @@ export function usePlanForm(mode: "create" | "edit") {
           growthCycleId: plan.growthCycleId || "",
           regimenId: plan.regimenId || "",
           selectedStages: plan.selectedStages || [],
-          materialAllocations: (plan.materialAllocations as MaterialAllocation[]) || [],
+          materialAllocations:
+            (plan.materialAllocations as MaterialAllocation[]) || [],
           taskAllocations: (plan.taskAllocations as TaskAllocation[]) || [],
           status: plan.status,
         }
@@ -117,7 +156,8 @@ export function usePlanForm(mode: "create" | "edit") {
       growthCycleId: plan.growthCycleId || "",
       regimenId: plan.regimenId || "",
       selectedStages: plan.selectedStages || [],
-      materialAllocations: (plan.materialAllocations as MaterialAllocation[]) || [],
+      materialAllocations:
+        (plan.materialAllocations as MaterialAllocation[]) || [],
       taskAllocations: (plan.taskAllocations as TaskAllocation[]) || [],
       status: plan.status,
     });
@@ -135,7 +175,9 @@ export function usePlanForm(mode: "create" | "edit") {
     [formData, regions],
   );
 
-  const handleGeographicalConfirm = (newSelections: GeographicalSelection[]) => {
+  const handleGeographicalConfirm = (
+    newSelections: GeographicalSelection[],
+  ) => {
     setSelections(newSelections);
 
     const nextSelectionState = deriveSelectionState(
@@ -163,20 +205,25 @@ export function usePlanForm(mode: "create" | "edit") {
     setDateWarning(null);
   };
 
-  const handleAddMaterial = useCallback((item: Omit<MaterialAllocation, "id">) => {
-    setFormData((prev) => ({
-      ...prev,
-      materialAllocations: [
-        ...prev.materialAllocations,
-        { id: Date.now(), ...item },
-      ],
-    }));
-  }, []);
+  const handleAddMaterial = useCallback(
+    (item: Omit<MaterialAllocation, "id">) => {
+      setFormData((prev) => ({
+        ...prev,
+        materialAllocations: [
+          ...prev.materialAllocations,
+          { id: Date.now(), ...item },
+        ],
+      }));
+    },
+    [],
+  );
 
   const handleRemoveMaterial = useCallback((id: number) => {
     setFormData((prev) => ({
       ...prev,
-      materialAllocations: prev.materialAllocations.filter((item) => item.id !== id),
+      materialAllocations: prev.materialAllocations.filter(
+        (item) => item.id !== id,
+      ),
     }));
   }, []);
 

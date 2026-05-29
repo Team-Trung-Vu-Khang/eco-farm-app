@@ -54,13 +54,14 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
 
 import usePersonnelStore from "../../stores/usePersonnelStore";
 import usePlanStore from "../../stores/usePlanStore";
 import useAmendmentPlanStore from "../../stores/useAmendmentPlanStore";
-import useRegimenStore from "../../stores/useRegimenStore";
+import { useTreatmentStore } from "../../stores/useTreatmentStore";
+import { useAmendmentRegimenStore } from "../../stores/useAmendmentRegimenStore";
 import useRegionStore from "../../stores/useRegionStore";
 import useTaskStore from "../../stores/useTaskStore";
 import useTeamStore from "../../stores/useTeamStore";
@@ -315,7 +316,47 @@ export default function TaskEditPage() {
   const amendmentPlans = useAmendmentPlanStore((state) => state.plans);
   const personnel = usePersonnelStore((state) => state.personnel);
   const teams = useTeamStore((state) => state.teams);
-  const regimens = useRegimenStore((state) => state.regimens);
+  const treatments = useTreatmentStore((state) => state.treatments);
+  const amendmentRegimensRaw = useAmendmentRegimenStore(
+    (state) => state.regimens,
+  );
+  const regimens = useMemo(() => {
+    const mappedTreatments = treatments.map((t) => ({
+      id: String(t.id),
+      name: t.name,
+      description: t.disease || t.name,
+      type: "tri-benh" as const,
+      provider: t.author || "Chưa rõ",
+      category: t.disease || "Điều trị",
+      crop: t.crop || "Tất cả",
+      steps:
+        t.procedures?.map((p: any) => ({
+          id: String(p.id),
+          day: p.startDay ? `Ngày ${p.startDay}` : `Ngày ${p.stepNumber}`,
+          title: p.name,
+          description: p.description,
+        })) || [],
+    }));
+
+    const mappedAmendments = amendmentRegimensRaw.map((t) => ({
+      id: String(t.id),
+      name: t.name,
+      description: t.soilIssue || t.name,
+      type: "cai-tao-dat" as const,
+      provider: t.authors?.[0]?.name || "Chưa rõ",
+      category: t.soilIssue || "Cải tạo",
+      crop: t.cropType || "Tất cả",
+      steps:
+        t.procedures?.map((p: any) => ({
+          id: String(p.id),
+          day: p.timing || `Ngày ${p.stepNumber}`,
+          title: p.name,
+          description: p.description,
+        })) || [],
+    }));
+
+    return [...mappedTreatments, ...mappedAmendments];
+  }, [treatments, amendmentRegimensRaw]);
   const { regions, getPlotById } = useRegionStore();
 
   const task = getTaskById(Number(id));
@@ -373,7 +414,7 @@ export default function TaskEditPage() {
       let rId = "";
 
       const planMatch = [...plans, ...amendmentPlans].find(
-        (p) => p.name === task.plan,
+        (p) => p.name.normalize() === task.plan.normalize(),
       );
 
       if (planMatch) {
@@ -395,7 +436,9 @@ export default function TaskEditPage() {
           rId = planMatch.regimenId;
         }
       } else {
-        const regimenMatch = regimens.find((r) => r.name === task.plan);
+        const regimenMatch = regimens.find(
+          (r) => r.name.normalize() === task.plan.normalize(),
+        );
         if (regimenMatch) {
           objType = regimenMatch.type; // "tri-benh" or "cai-tao-dat"
           rId = regimenMatch.id;
@@ -411,7 +454,7 @@ export default function TaskEditPage() {
         objectiveType: objType,
         planId: pId,
         planName: task.plan,
-        stage: task.stage === "N/A" ? "" : task.stage,
+        stage: task.stage === "N/A" ? "" : task.stage.normalize(),
         regimenId: rId,
         assignedType: task.assignedType,
         assignedTo: task.assignedTo,
@@ -422,13 +465,24 @@ export default function TaskEditPage() {
         priority: task.priority,
         description: task.description,
         geographicalSelections: (task as any).geographicalSelections || [],
-        materials: task.materials || [],
-        tasks: (task as any).tasks || [],
+        materials: (task.materials || []).map((m) => ({
+          ...m,
+          stageId: m.stageId.normalize(),
+        })),
+        tasks: ((task as any).tasks || []).map((t: any) => ({
+          ...t,
+          stageId: t.stageId.normalize(),
+        })),
         selectedStages:
           task.stage && task.stage !== "N/A"
-            ? task.stage.split(", ").filter(Boolean)
+            ? task.stage
+                .split("; ")
+                .map((s) => s.normalize())
+                .filter(Boolean)
             : [],
-        selectedPlotIds: (taskPlots.length > 0 ? taskPlots : planPlots) as string[],
+        selectedPlotIds: (taskPlots.length > 0
+          ? taskPlots
+          : planPlots) as string[],
       });
 
       // Resolve EnterpriseId for "phat-sinh" tasks if not already set
@@ -591,6 +645,13 @@ export default function TaskEditPage() {
     }));
   };
 
+    const handleUpdateMaterial = useCallback((id: number, updates: Partial<MaterialAllocation>) => {
+    setFormData((prev) => ({
+      ...prev,
+      materials: prev.materials.map((m) => (m.id === id ? { ...m, ...updates } : m)),
+    }));
+  }, []);
+
   const handleRemoveMaterial = (id: number) => {
     setFormData((prev) => ({
       ...prev,
@@ -694,7 +755,7 @@ export default function TaskEditPage() {
               setFormData((prev) => ({
                 ...prev,
                 selectedStages: next,
-                stage: next.join(", "),
+                stage: next.join("; "),
               }));
             }}
             className={cn(
@@ -716,7 +777,7 @@ export default function TaskEditPage() {
                 setFormData((prev) => ({
                   ...prev,
                   selectedStages: next,
-                  stage: next.join(", "),
+                  stage: next.join("; "),
                 }));
               }}
             />
@@ -1906,6 +1967,7 @@ export default function TaskEditPage() {
                     onAddTask={handleAddTask}
                     onRemoveTask={handleRemoveTask}
                     onUpdateTask={handleUpdateTask}
+                    onUpdateMaterial={handleUpdateMaterial}
                     regions={regions}
                     personnel={personnel}
                     enterpriseId={
@@ -1938,6 +2000,7 @@ export default function TaskEditPage() {
                   onAddTask={handleAddTask}
                   onRemoveTask={handleRemoveTask}
                   onUpdateTask={handleUpdateTask}
+                  onUpdateMaterial={handleUpdateMaterial}
                   regions={regions}
                   personnel={personnel}
                   enterpriseId={
@@ -1973,6 +2036,7 @@ export default function TaskEditPage() {
                 onAddTask={handleAddTask}
                 onRemoveTask={handleRemoveTask}
                 onUpdateTask={handleUpdateTask}
+                onUpdateMaterial={handleUpdateMaterial}
                 regions={filteredRegionsForPhatSinh}
                 personnel={personnel}
                 enterpriseId={selectedEnterpriseId || ""}
@@ -2367,7 +2431,7 @@ export default function TaskEditPage() {
                               return labor
                                 .split(":")[1]
                                 .trim()
-                                .split(", ")
+                                .split("; ")
                                 .filter(Boolean);
                             }
                             return [];

@@ -5,7 +5,8 @@ import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import useRegionStore from "@/stores/useRegionStore";
 import useSeasonStore from "@/stores/useSeasonStore";
 import usePlanStore from "../../../stores/usePlanStore";
-import useRegimenStore from "../../../stores/useRegimenStore";
+import { useTreatmentStore } from "../../../stores/useTreatmentStore";
+import { useAmendmentRegimenStore } from "../../../stores/useAmendmentRegimenStore";
 import {
   summarizePlanSelections,
   summarizeTaskSelections,
@@ -21,7 +22,44 @@ export function usePlanDetailPage() {
   const { regions } = useRegionStore();
   const { growthCycles } = useGrowthCycleStore();
   const { seasons } = useSeasonStore();
-  const regimens = useRegimenStore((state) => state.regimens);
+  const treatments = useTreatmentStore((state) => state.treatments);
+  const amendmentRegimensRaw = useAmendmentRegimenStore((state) => state.regimens);
+
+  const regimens = useMemo(() => {
+    const mappedTreatments = treatments.map((t) => ({
+      id: String(t.id),
+      name: t.name,
+      description: t.disease || t.name,
+      type: "tri-benh" as const,
+      provider: t.author || "Chưa rõ",
+      category: t.disease || "Điều trị",
+      crop: t.crop || "Tất cả",
+      steps: t.procedures?.map((p: any) => ({
+        id: String(p.id),
+        day: p.startDay ? `Ngày ${p.startDay}` : `Ngày ${p.stepNumber}`,
+        title: p.name,
+        description: p.description,
+      })) || [],
+    }));
+
+    const mappedAmendments = amendmentRegimensRaw.map((t) => ({
+      id: String(t.id),
+      name: t.name,
+      description: t.soilIssue || t.name,
+      type: "cai-tao-dat" as const,
+      provider: t.authors?.[0]?.name || "Chưa rõ",
+      category: t.soilIssue || "Cải tạo",
+      crop: t.cropType || "Tất cả",
+      steps: t.procedures?.map((p: any) => ({
+        id: String(p.id),
+        day: p.timing || `Ngày ${p.stepNumber}`,
+        title: p.name,
+        description: p.description,
+      })) || [],
+    }));
+
+    return [...mappedTreatments, ...mappedAmendments];
+  }, [treatments, amendmentRegimensRaw]);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const plan = getPlanById(Number(params.id));

@@ -661,6 +661,7 @@ export default function PlanEditPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
                               {cycle!.stages.map((stage, idx) => {
                                 const stageKey = `${cycle!.id}:${stage.name}`;
+
                                 return (
                                   <StageItem
                                     key={stage.id}

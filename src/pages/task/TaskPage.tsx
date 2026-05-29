@@ -37,6 +37,8 @@ export default function TaskPage() {
     handleConfirmDelete,
   } = useTaskPage();
 
+  console.log("tasks", tasks);
+
   return (
     <AdminLayout
       title="Phân bổ công việc"
