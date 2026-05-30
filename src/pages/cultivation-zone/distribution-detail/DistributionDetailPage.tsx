@@ -447,7 +447,7 @@ const DistributionDetailPage = () => {
                           lng: plant.coordinate.lng,
                         }}
                         title={`${plant.code} - ${plant.variety}`}
-                        label={plant.status === "healthy" ? "●" : "!"}
+                        label={""}
                         clickable
                       />
                     ))}

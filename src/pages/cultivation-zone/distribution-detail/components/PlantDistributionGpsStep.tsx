@@ -124,7 +124,7 @@ export const PlantDistributionGpsStep = ({
                         lng: location.coordinate.lng,
                       }}
                       title={`${location.plantCode} - ${seedName}`}
-                      label={colorDot}
+                      label={""}
                       draggable
                       clickable
                       onDragEnd={(event: unknown) => {
