@@ -48,17 +48,27 @@ const MapContent = ({
   activeCropInDialog: CropDetail | null;
   setActiveCropInDialog: (c: CropDetail) => void;
 }) => {
+  const toClosedPath = (coordinates?: Array<{ lat: number; lng: number }>) => {
+    if (!coordinates || coordinates.length < 3) return [];
+
+    const path = coordinates.map((coord) => ({ lat: coord.lat, lng: coord.lng }));
+    const first = path[0];
+    const last = path[path.length - 1];
+    if (first.lat !== last.lat || first.lng !== last.lng) {
+      path.push({ ...first });
+    }
+
+    return path;
+  };
+
+  const regionPath = toClosedPath(currentRegion?.coordinates);
+
   return (
     <>
       {/* Region Outline (Blue) */}
-      {currentRegion?.coordinates && (
+      {regionPath.length > 0 && (
         <MFPolygon
-          paths={[
-            currentRegion.coordinates.map((coord: any) => ({
-              lat: coord.lat,
-              lng: coord.lng,
-            })),
-          ]}
+          paths={[regionPath]}
           strokeColor="#3b82f6"
           strokeWidth={3}
           fillColor="#3b82f6"
@@ -67,39 +77,39 @@ const MapContent = ({
       )}
 
       {/* Area Outlines (Green) */}
-      {currentRegion?.subAreas?.map((area: any) => (
-        <MFPolygon
-          key={area.id}
-          paths={[
-            area.coordinates.map((coord: any) => ({
-              lat: coord.lat,
-              lng: coord.lng,
-            })),
-          ]}
-          strokeColor="#22c55e"
-          strokeWidth={2}
-          fillColor="#22c55e"
-          fillOpacity={0.15}
-        />
-      ))}
+      {currentRegion?.subAreas?.map((area: any) => {
+        const areaPath = toClosedPath(area.coordinates);
+        if (!areaPath.length) return null;
+
+        return (
+          <MFPolygon
+            key={area.id}
+            paths={[areaPath]}
+            strokeColor="#22c55e"
+            strokeWidth={2}
+            fillColor="#22c55e"
+            fillOpacity={0.15}
+          />
+        );
+      })}
 
       {/* Plot Outlines (Orange) */}
       {currentRegion?.subAreas?.flatMap((area: any) =>
-        area.plots.map((plot: any) => (
-          <MFPolygon
-            key={plot.id}
-            paths={[
-              plot.coordinates.map((coord: any) => ({
-                lat: coord.lat,
-                lng: coord.lng,
-              })),
-            ]}
-            strokeColor="#f97316"
-            strokeWidth={1.5}
-            fillColor="#f97316"
-            fillOpacity={0.2}
-          />
-        )),
+        area.plots.map((plot: any) => {
+          const plotPath = toClosedPath(plot.coordinates);
+          if (!plotPath.length) return null;
+
+          return (
+            <MFPolygon
+              key={plot.id}
+              paths={[plotPath]}
+              strokeColor="#f97316"
+              strokeWidth={1.5}
+              fillColor="#f97316"
+              fillOpacity={0.2}
+            />
+          );
+        }),
       )}
 
       {cropsInThisRegion.map((c) => (

@@ -2314,17 +2314,31 @@ const ZoneMapContent = ({
     targetAreaIds.size > 0 ||
     targetPlotIds.size > 0;
 
+  const toClosedPath = (coordinates?: Coordinate[]) => {
+    if (!coordinates || coordinates.length < 3) return [];
+
+    const path = coordinates.map((c) => ({ lat: c.lat, lng: c.lng }));
+    const first = path[0];
+    const last = path[path.length - 1];
+
+    if (first.lat !== last.lat || first.lng !== last.lng) {
+      path.push({ ...first });
+    }
+
+    return path;
+  };
+
   return (
     <>
       {/* Regions */}
       {regions.map((region) => {
         const isTargetRegion = targetRegionIds.has(region.id);
+        const regionPath = toClosedPath(region.coordinates);
+        if (!regionPath.length) return null;
         return (
           <MFPolygon
             key={`region-${region.id}`}
-            paths={[
-              region.coordinates.map((c) => ({ lat: c.lat, lng: c.lng })),
-            ]}
+            paths={[regionPath]}
             strokeColor="#3b82f6"
             strokeWidth={
               selectedUnit?.type === "region" &&
@@ -2358,13 +2372,13 @@ const ZoneMapContent = ({
 
           if (!shouldRenderArea) return [];
           const isTargetArea = targetAreaIds.has(areaId);
+          const areaPath = toClosedPath(area.coordinates);
+          if (!areaPath.length) return [];
 
           return [
             <MFPolygon
               key={`area-${area.id}`}
-              paths={[
-                area.coordinates.map((c) => ({ lat: c.lat, lng: c.lng })),
-              ]}
+              paths={[areaPath]}
               strokeColor="#10b981"
               strokeWidth={
                 selectedUnit?.type === "area" &&
@@ -2396,13 +2410,13 @@ const ZoneMapContent = ({
               : targetPlotIds.has(plotId);
             if (!shouldRenderPlot) return [];
             const isTargetPlot = targetPlotIds.has(plotId);
+            const plotPath = toClosedPath(plot.coordinates);
+            if (!plotPath.length) return [];
 
             return [
               <MFPolygon
                 key={`plot-${plot.id}`}
-                paths={[
-                  plot.coordinates.map((c) => ({ lat: c.lat, lng: c.lng })),
-                ]}
+                paths={[plotPath]}
                 strokeColor="#f59e0b"
                 strokeWidth={
                   selectedUnit?.type === "plot" &&
