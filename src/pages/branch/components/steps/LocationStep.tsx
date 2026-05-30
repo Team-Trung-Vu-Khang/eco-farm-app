@@ -104,6 +104,17 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
     return null;
   };
 
+  const moveMapTo = (lat: number, lon: number) => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (typeof map.setCenter === "function") {
+      map.setCenter({ lat, lng: lon });
+    }
+    if (typeof map.setZoom === "function") {
+      map.setZoom(15);
+    }
+  };
+
   const normalizeMap4dSuggestion = (
     item: NonNullable<Map4DAutosuggestResponse["result"]>[number],
   ): AddressSuggestion | null => {
@@ -252,10 +263,16 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
     const houseNumber = address.house_number || "";
     const streetAddress = houseNumber ? `${houseNumber} ${road}` : road;
 
+    const selectedAddress =
+      suggestion.addressText ||
+      suggestion.name ||
+      suggestion.display_name ||
+      streetAddress;
+
     updateFormData({
       latitude: suggestion.lat,
       longitude: suggestion.lon,
-      address: streetAddress || suggestion.display_name.split(",")[0],
+      address: streetAddress || selectedAddress,
       ward:
         address.ward ||
         address.suburb ||
@@ -271,8 +288,9 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
       city: address.city || address.province || address.state || "",
     });
 
+    moveMapTo(suggestion.lat, suggestion.lon);
     skipNextSearchRef.current = true;
-    setSearchAddress(suggestion.display_name);
+    setSearchAddress(selectedAddress);
     setShowSuggestions(false);
     setIsInputFocused(false);
     toast({
@@ -285,6 +303,7 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
+          moveMapTo(pos.coords.latitude, pos.coords.longitude);
           updateFormData({
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
@@ -304,9 +323,7 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    if (typeof map.setCenter === "function") {
-      map.setCenter({ lat: safeLatitude, lng: safeLongitude });
-    }
+    moveMapTo(safeLatitude, safeLongitude);
   }, [safeLatitude, safeLongitude]);
 
   useEffect(() => {
@@ -362,6 +379,7 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
                 <div
                   key={index}
                   className="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0 transition-colors"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => handleSelectAddress(suggestion)}
                 >
                   <div className="flex items-start gap-2">
