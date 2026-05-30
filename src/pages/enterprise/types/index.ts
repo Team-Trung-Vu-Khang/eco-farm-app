@@ -25,6 +25,8 @@ export interface EnterpriseFormData {
   province: string;
   district: string;
   ward: string;
+  latitude?: number;
+  longitude?: number;
   address: string;
   image: string;
   description: string;

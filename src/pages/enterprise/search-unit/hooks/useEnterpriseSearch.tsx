@@ -6,6 +6,9 @@ import useCultivationRegionStore from "@/stores/useCultivationRegionStore";
 import useRegionStore from "@/stores/useRegionStore";
 import { type AdvancedFilters, POLYGON_COLORS } from "../data/constants";
 
+const MAP_FALLBACK_CENTER = { lat: 10.762622, lng: 106.660172 };
+const MAP_DEFAULT_ZOOM = 9;
+
 export function useEnterpriseSearch() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -25,6 +28,7 @@ export function useEnterpriseSearch() {
   // Search state for panels
   const [bankSearchQuery, setBankSearchQuery] = useState("");
   const [branchSearchQuery, setBranchSearchQuery] = useState("");
+  const [mapRenderKey, setMapRenderKey] = useState(0);
 
   const mapRef = useRef<any>(null);
 
@@ -78,6 +82,77 @@ export function useEnterpriseSearch() {
     if (selectedEnterpriseId === null) return null;
     return enterprises.find((e) => e.id === selectedEnterpriseId) || null;
   }, [enterprises, selectedEnterpriseId]);
+
+  const enterpriseMarkers = useMemo(() => {
+    return filteredEnterprises
+      .map((enterprise) => {
+        const lat = Number(enterprise.latitude);
+        const lng = Number(enterprise.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        return {
+          id: enterprise.id,
+          name: enterprise.name,
+          code: enterprise.code,
+          type: enterprise.type,
+          lat,
+          lng,
+        };
+      })
+      .filter(
+        (
+          item,
+        ): item is {
+          id: number;
+          name: string;
+          code: string;
+          type: "enterprise" | "farm" | "cooperative";
+          lat: number;
+          lng: number;
+        } => item !== null,
+      );
+  }, [filteredEnterprises]);
+
+  const mapDefaultCenter = useMemo(() => {
+    const markersFromAll = enterprises
+      .map((enterprise) => {
+        const lat = Number(enterprise.latitude);
+        const lng = Number(enterprise.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        return { type: enterprise.type, lat, lng };
+      })
+      .filter((item): item is { type: "enterprise" | "farm" | "cooperative"; lat: number; lng: number } => item !== null);
+
+    const enterpriseMarker = markersFromAll.find((m) => m.type === "enterprise");
+    if (enterpriseMarker) {
+      return { lat: enterpriseMarker.lat, lng: enterpriseMarker.lng };
+    }
+
+    if (markersFromAll.length > 0) {
+      return { lat: markersFromAll[0].lat, lng: markersFromAll[0].lng };
+    }
+
+    return MAP_FALLBACK_CENTER;
+  }, [enterprises]);
+
+  const visibleEnterpriseMarkers = useMemo(() => {
+    if (selectedEnterpriseId === null) return enterpriseMarkers;
+    return enterpriseMarkers.filter((marker) => marker.id === selectedEnterpriseId);
+  }, [enterpriseMarkers, selectedEnterpriseId]);
+
+  const selectedEnterpriseMarker = useMemo(() => {
+    if (selectedEnterpriseId === null) return null;
+    const enterprise = enterprises.find((e) => e.id === selectedEnterpriseId);
+    if (!enterprise) return null;
+    const lat = Number(enterprise.latitude);
+    const lng = Number(enterprise.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return { lat, lng };
+  }, [enterprises, selectedEnterpriseId]);
+
+  const mapCurrentCenter = useMemo(() => {
+    if (selectedEnterpriseMarker) return selectedEnterpriseMarker;
+    return mapDefaultCenter;
+  }, [selectedEnterpriseMarker, mapDefaultCenter]);
 
   const enterpriseCultivationRegions = useMemo(() => {
     if (!selectedEnterprise) return [];
@@ -208,7 +283,9 @@ export function useEnterpriseSearch() {
   // Actions
   const focusMapToPolygons = (polygons: any[]) => {
     if (!mapRef.current || !polygons.length) return;
-    const allPoints = polygons.flatMap((p) => p.coordinates as [number, number][]);
+    const allPoints = polygons.flatMap(
+      (p) => p.coordinates as [number, number][],
+    );
     if (!allPoints.length) return;
 
     const lats = allPoints.map(([lat]) => lat);
@@ -275,7 +352,29 @@ export function useEnterpriseSearch() {
   );
 
   useEffect(() => {
-    if (visiblePolygons.length > 0) {
+    setMapRenderKey((prev) => prev + 1);
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (typeof map.setZoom === "function") {
+      map.setZoom(MAP_DEFAULT_ZOOM);
+    }
+
+    if (selectedEnterpriseMarker && typeof map.setCenter === "function") {
+      map.setCenter({
+        lat: selectedEnterpriseMarker.lat,
+        lng: selectedEnterpriseMarker.lng,
+      });
+      return;
+    }
+
+    if (typeof map.setCenter === "function") {
+      map.setCenter(mapDefaultCenter);
+    }
+  }, [selectedEnterpriseId, selectedEnterpriseMarker, mapDefaultCenter]);
+
+  useEffect(() => {
+    if (selectedEnterpriseId === null && visiblePolygons.length > 0) {
       focusMapToPolygons(visiblePolygons);
       // Retry once for the case map instance is initialized slightly later.
       const timer = window.setTimeout(() => {
@@ -283,7 +382,7 @@ export function useEnterpriseSearch() {
       }, 250);
       return () => window.clearTimeout(timer);
     }
-  }, [visiblePolygons]);
+  }, [selectedEnterpriseId, visiblePolygons]);
 
   return {
     enterprises: filteredEnterprises,
@@ -304,7 +403,11 @@ export function useEnterpriseSearch() {
     branchSearchQuery,
     setBranchSearchQuery,
     mapRef,
+    mapRenderKey,
+    mapDefaultCenter,
+    mapCurrentCenter,
     visiblePolygons,
+    enterpriseMarkers: visibleEnterpriseMarkers,
     activeFilterCount,
     toggleFilter,
     resetFilters,

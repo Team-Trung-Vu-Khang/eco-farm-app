@@ -21,6 +21,7 @@ import {
   TabsList,
   TabsTrigger,
   Textarea,
+  useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import {
@@ -49,6 +50,7 @@ import {
 import { PROVINCES } from "@/constants/province";
 import { vietQrBankData } from "@/constants/banks";
 import { useEnterpriseFormContext } from "../../context/EnterpriseFormContext";
+import { useEffect, useRef, useState } from "react";
 
 const classificationOptions = [
   { value: "production", label: "Sản xuất" },
@@ -67,6 +69,8 @@ const bankOptions = vietQrBankData.map((bank) => ({
 }));
 
 export function EnterpriseBasicInfoStep() {
+  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
+  const { toast } = useToast();
   const {
     formData,
     setFormData,
@@ -75,6 +79,103 @@ export function EnterpriseBasicInfoStep() {
     handleLogoDrop,
     handleImageUpload,
   } = useEnterpriseFormContext();
+  const [addressQuery, setAddressQuery] = useState(formData.address || "");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<
+    Array<{ name: string; address: string; lat: number; lng: number }>
+  >([]);
+  const [isFocused, setIsFocused] = useState(false);
+  const skipNextSearchRef = useRef(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(async () => {
+      if (skipNextSearchRef.current) {
+        skipNextSearchRef.current = false;
+        return;
+      }
+      if (!isFocused || !addressQuery || addressQuery.trim().length < 3) {
+        setSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+      if (!MAP4D_ACCESS_KEY) return;
+
+      try {
+        const params = new URLSearchParams({
+          key: MAP4D_ACCESS_KEY,
+          text: addressQuery.trim(),
+        });
+        const res = await fetch(
+          `https://api.map4d.vn/sdk/autosuggest?${params.toString()}`,
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          result?: Array<{
+            name?: string;
+            address?: string;
+            location?: { lat?: number; lng?: number };
+          }>;
+        };
+        const result = Array.isArray(data.result) ? data.result : [];
+        const next = result
+          .map((item) => ({
+            name: item?.name || "",
+            address: item?.address || "",
+            lat: Number(item?.location?.lat),
+            lng: Number(item?.location?.lng),
+          }))
+          .filter(
+            (item) =>
+              item.address && Number.isFinite(item.lat) && Number.isFinite(item.lng),
+          );
+        setSuggestions(next);
+        setShowSuggestions(next.length > 0);
+      } catch {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    }, 400);
+
+    return () => window.clearTimeout(timer);
+  }, [addressQuery, isFocused, MAP4D_ACCESS_KEY]);
+
+  useEffect(() => {
+    const onClickOutside = (event: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+        setIsFocused(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  const handlePickAddress = (item: {
+    name: string;
+    address: string;
+    lat: number;
+    lng: number;
+  }) => {
+    const selectedAddress = item.address || item.name;
+    skipNextSearchRef.current = true;
+    setAddressQuery(selectedAddress);
+    setShowSuggestions(false);
+    setIsFocused(false);
+    setFormData((prev) => ({
+      ...prev,
+      address: selectedAddress,
+      latitude: item.lat,
+      longitude: item.lng,
+    }));
+    toast({
+      title: "Đã chọn địa chỉ",
+      description: "Đã lưu địa chỉ và tọa độ.",
+    });
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -323,16 +424,46 @@ export function EnterpriseBasicInfoStep() {
             placeholder="VD: Phường Bến Nghé / Xã Tân Phú"
           />
         </div>
-        <div className="space-y-2 mt-4">
+        <div className="space-y-2 mt-4" ref={searchContainerRef}>
           <Label htmlFor="address">Địa chỉ chi tiết</Label>
           <Input
             id="address"
-            value={formData.address}
-            onChange={(e) =>
-              setFormData({ ...formData, address: e.target.value })
-            }
+            value={addressQuery}
+            onFocus={() => {
+              setIsFocused(true);
+              if (suggestions.length > 0) setShowSuggestions(true);
+            }}
+            onChange={(e) => {
+              setAddressQuery(e.target.value);
+              setFormData({ ...formData, address: e.target.value });
+              if (!e.target.value) {
+                setShowSuggestions(false);
+                setSuggestions([]);
+              }
+            }}
             placeholder="Số nhà, đường, ấp..."
           />
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="z-[99999] mt-1 max-h-56 overflow-y-auto rounded-md border bg-white shadow">
+              {suggestions.map((item, index) => (
+                <button
+                  key={`${item.lat}-${item.lng}-${index}`}
+                  type="button"
+                  className="w-full border-b px-3 py-2 text-left text-sm hover:bg-slate-50 last:border-b-0"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handlePickAddress(item)}
+                >
+                  <div className="font-medium text-slate-800 truncate">
+                    {item.name || item.address}
+                  </div>
+                  <div className="text-xs text-slate-500 truncate">{item.address}</div>
+                </button>
+              ))}
+            </div>
+          )}
+          <p className="text-xs text-slate-500">
+            Tọa độ: {formData.latitude?.toFixed(6) ?? "--"}, {formData.longitude?.toFixed(6) ?? "--"}
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mt-4">

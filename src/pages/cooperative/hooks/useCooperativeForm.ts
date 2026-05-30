@@ -503,6 +503,8 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
       province: formData.province,
       district: formData.district,
       ward: formData.ward,
+      latitude: formData.latitude,
+      longitude: formData.longitude,
       description: formData.description,
       contacts: formData.contacts,
       branches: formData.branches,

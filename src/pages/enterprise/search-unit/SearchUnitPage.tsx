@@ -31,7 +31,10 @@ const SearchUnitPage = () => {
     branchSearchQuery,
     setBranchSearchQuery,
     mapRef,
+    mapRenderKey,
+    mapCurrentCenter,
     visiblePolygons,
+    enterpriseMarkers,
     activeFilterCount,
     toggleFilter,
     resetFilters,
@@ -128,7 +131,11 @@ const SearchUnitPage = () => {
 
           <EnterpriseMapSection
             mapRef={mapRef}
+            mapRenderKey={mapRenderKey}
+            mapCurrentCenter={mapCurrentCenter}
             visiblePolygons={visiblePolygons}
+            enterpriseMarkers={enterpriseMarkers}
+            selectedEnterpriseId={selectedEnterpriseId}
             isDetailOpen={!!selectedEnterpriseId}
           />
 

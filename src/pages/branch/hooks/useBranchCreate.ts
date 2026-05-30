@@ -25,6 +25,8 @@ export function useBranchCreate() {
     province: "",
     district: "",
     ward: "",
+    latitude: "",
+    longitude: "",
     description: "",
   });
   const [showConfirm, setShowConfirm] = useState(false);
@@ -74,8 +76,8 @@ export function useBranchCreate() {
       status: "active" as const,
       createdAt: new Date().toISOString(),
       imageUrl: "",
-      latitude: "10.7769",
-      longitude: "106.7009",
+      latitude: formData.latitude || "10.7769",
+      longitude: formData.longitude || "106.7009",
       contacts: [],
       bankAccounts: [],
     };

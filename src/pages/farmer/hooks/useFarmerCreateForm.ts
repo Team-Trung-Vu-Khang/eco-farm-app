@@ -36,6 +36,8 @@ export function useFarmerCreateForm() {
     province: "",
     district: "",
     ward: "",
+    latitude: undefined,
+    longitude: undefined,
     address: "",
     image: "",
     description: "",

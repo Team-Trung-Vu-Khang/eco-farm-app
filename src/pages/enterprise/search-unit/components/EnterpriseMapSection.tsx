@@ -5,20 +5,29 @@ import {
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Layers } from "lucide-react";
-import { MFMap, MFPolygon } from "react-map4d-map";
+import { MFMap, MFMarker, MFPolygon } from "react-map4d-map";
 
 interface EnterpriseMapSectionProps {
   mapRef: React.MutableRefObject<any>;
+  mapRenderKey: number;
+  mapCurrentCenter: { lat: number; lng: number };
   visiblePolygons: any[];
+  enterpriseMarkers: Array<{
+    id: number;
+    name: string;
+    code: string;
+    type: "enterprise" | "farm" | "cooperative";
+    lat: number;
+    lng: number;
+  }>;
+  selectedEnterpriseId: number | null;
   isDetailOpen: boolean;
 }
 
 const MapControls = ({
   mapRef,
-  isDetailOpen,
 }: {
   mapRef: React.MutableRefObject<any>;
-  isDetailOpen: boolean;
 }) => {
   return (
     <div className={cn("absolute bottom-6 right-6 z-20 flex flex-col gap-2 transition-all duration-300")}>
@@ -54,7 +63,11 @@ const MapControls = ({
 
 export const EnterpriseMapSection: React.FC<EnterpriseMapSectionProps> = ({
   mapRef,
+  mapRenderKey,
+  mapCurrentCenter,
   visiblePolygons,
+  enterpriseMarkers,
+  selectedEnterpriseId,
   isDetailOpen,
 }) => {
   const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
@@ -72,8 +85,9 @@ export const EnterpriseMapSection: React.FC<EnterpriseMapSectionProps> = ({
     <div className="flex-1 flex flex-col relative bg-slate-100">
       <div className="flex-1 relative">
         <MFMap
-          center={{ lat: 10.762622, lng: 106.660172 }}
-          zoom={13}
+          key={mapRenderKey}
+          center={mapCurrentCenter}
+          zoom={9}
           accessKey={MAP4D_ACCESS_KEY}
           options={{ mapType: "raster", controlOptions: {} }}
           version="2.5"
@@ -98,7 +112,15 @@ export const EnterpriseMapSection: React.FC<EnterpriseMapSectionProps> = ({
             />
             )
           ))}
-          <MapControls mapRef={mapRef} isDetailOpen={isDetailOpen} />
+          {enterpriseMarkers.map((marker) => (
+            <MFMarker
+              key={`enterprise-marker-${marker.id}`}
+              position={{ lat: marker.lat, lng: marker.lng }}
+              title={`${marker.code} - ${marker.name}`}
+              label={selectedEnterpriseId === marker.id ? "●" : ""}
+            />
+          ))}
+          <MapControls mapRef={mapRef} />
         </MFMap>
 
         {!isDetailOpen && (
@@ -116,6 +138,12 @@ export const EnterpriseMapSection: React.FC<EnterpriseMapSectionProps> = ({
                 </div>
               </div>
               <div className="px-6 py-2 bg-white flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-red-500 shadow-sm" />
+                  <span className="text-[10px] font-bold text-slate-600">
+                    Marker đơn vị
+                  </span>
+                </div>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-blue-500 shadow-sm" />
                   <span className="text-[10px] font-bold text-slate-600">
