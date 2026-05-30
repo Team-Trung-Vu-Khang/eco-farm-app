@@ -20,8 +20,6 @@ import {
   TabsTrigger,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -61,12 +59,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Tooltip as LeafletTooltip,
-  MapContainer,
-  Polygon,
-  TileLayer,
-} from "react-leaflet";
+import { MFMap, MFPolygon } from "react-map4d-map";
 import {
   CartesianGrid,
   Tooltip as ChartTooltip,
@@ -100,8 +93,13 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
   };
 
   const [isScopeMapExpanded, setIsScopeMapExpanded] = useState(false);
-  const scopeMapRef = useRef<L.Map | null>(null);
-  const expandedScopeMapRef = useRef<L.Map | null>(null);
+  const scopeMapRef = useRef<any>(null);
+  const expandedScopeMapRef = useRef<any>(null);
+  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
+  const [scopeMapView, setScopeMapView] = useState({
+    center: { lat: 11.53, lng: 106.88 },
+    zoom: 13,
+  });
 
   const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
   const { growthCycles } = useGrowthCycleStore();
@@ -167,12 +165,43 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
     coordinates?: { lat: number; lng: number }[],
   ) => {
     if (!coordinates?.length) return;
+
+    const lats = coordinates.map((c) => c.lat);
+    const lngs = coordinates.map((c) => c.lng);
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs);
+    const maxLng = Math.max(...lngs);
+    const span = Math.max(maxLat - minLat, maxLng - minLng);
+
+    const nextCenter = {
+      lat: (minLat + maxLat) / 2,
+      lng: (minLng + maxLng) / 2,
+    };
+
+    const nextZoom =
+      span > 1
+        ? 8
+        : span > 0.5
+          ? 9
+          : span > 0.2
+            ? 10
+            : span > 0.1
+              ? 11
+              : span > 0.05
+                ? 12
+                : span > 0.02
+                  ? 13
+                  : span > 0.01
+                    ? 14
+                    : 15;
+
+    setScopeMapView({ center: nextCenter, zoom: nextZoom });
+
     const map = getActiveScopeMap();
     if (!map) return;
-    const bounds = L.latLngBounds(
-      coordinates.map((c) => [c.lat, c.lng] as [number, number]),
-    );
-    map.flyToBounds(bounds, { padding: [40, 40], duration: 1.1 });
+    if (typeof map.setCenter === "function") map.setCenter(nextCenter);
+    if (typeof map.setZoom === "function") map.setZoom(nextZoom);
   };
 
   const { area, details } = useCultivationRegionDetail(resolvedId);
@@ -318,173 +347,79 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
     };
   }, [area, regionIndex]);
 
-  const scopeMapBounds = scopeMapData?.bounds ?? null;
-
   const ScopeMapPolygons = () => {
     if (!scopeMapData) return null;
+
+    const toClosedPath = (coordinates?: Array<{ lat: number; lng: number }>) => {
+      if (!coordinates || coordinates.length < 3) return [];
+      const path = coordinates.map((c) => ({ lat: c.lat, lng: c.lng }));
+      const first = path[0];
+      const last = path[path.length - 1];
+      if (first.lat !== last.lat || first.lng !== last.lng) {
+        path.push({ ...first });
+      }
+      return path;
+    };
 
     return (
       <>
         {/* Regions */}
         {scopeMapData.regions.map(({ region, explicit }) => {
-          if (!region?.coordinates || region.coordinates.length < 3)
-            return null;
+          const regionPath = toClosedPath(region?.coordinates);
+          if (!regionPath.length) return null;
           return (
-            <Polygon
+            <MFPolygon
               key={`scope-region-${region.id}`}
-              positions={(region.coordinates || []).map((c: any) => [
-                c.lat,
-                c.lng,
-              ])}
-              pathOptions={{
-                color: "#3b82f6",
-                weight: explicit ? 2.5 : 2,
-                fillColor: "#3b82f6",
-                fillOpacity: explicit ? 0.08 : 0,
-                dashArray: explicit ? undefined : "6, 6",
+              paths={[regionPath]}
+              strokeColor="#3b82f6"
+              strokeWidth={explicit ? 2.5 : 2}
+              fillColor="#3b82f6"
+              fillOpacity={explicit ? 0.08 : 0}
+              clickable
+              onClick={() => {
+                focusScopeMapToCoordinates(region.coordinates);
               }}
-              eventHandlers={{
-                click: (e) => {
-                  L.DomEvent.stopPropagation(e);
-                  focusScopeMapToCoordinates(region.coordinates);
-                },
-              }}
-            >
-              <LeafletTooltip sticky>
-                <div className="px-3 py-2 w-64">
-                  <div className="font-black text-blue-600 text-[10px] uppercase tracking-widest mb-1 border-b border-blue-100 pb-1">
-                    Vùng trồng
-                  </div>
-
-                  <div className="w-full overflow-hidden min-w-0 text-wrap font-bold text-slate-800 text-sm mb-1">
-                    {region.code}: {region.name}
-                  </div>
-
-                  <div className="flex w-full items-start gap-1.5 text-slate-500 text-[11px] leading-relaxed">
-                    <Scale3d className="w-3 h-3 text-red-500 shrink-0 mt-0.5" />
-
-                    <span className="block overflow-hidden text-wrap flex-1 min-w-0">
-                      {region.area} ha
-                    </span>
-                  </div>
-
-                  <div className="flex w-full items-start gap-1.5 text-slate-500 text-[11px] leading-relaxed">
-                    <MapPin className="w-3 h-3 text-red-500 shrink-0 mt-0.5" />
-
-                    <span className="block overflow-hidden text-wrap flex-1 min-w-0">
-                      {formatFullAddress(region)}
-                    </span>
-                  </div>
-                </div>
-              </LeafletTooltip>
-            </Polygon>
+            />
           );
         })}
 
         {/* Areas */}
         {scopeMapData.areas.map(({ area: a, explicit }) => {
-          if (!a?.coordinates || a.coordinates.length < 3) return null;
+          const areaPath = toClosedPath(a?.coordinates);
+          if (!areaPath.length) return null;
           return (
-            <Polygon
+            <MFPolygon
               key={`scope-area-${a.id}`}
-              positions={(a.coordinates || []).map((c: any) => [c.lat, c.lng])}
-              pathOptions={{
-                color: "#10b981",
-                weight: explicit ? 2.5 : 1.75,
-                fillColor: "#10b981",
-                fillOpacity: explicit ? 0.12 : 0.06,
-                dashArray: explicit ? undefined : "4, 6",
+              paths={[areaPath]}
+              strokeColor="#10b981"
+              strokeWidth={explicit ? 2.5 : 1.75}
+              fillColor="#10b981"
+              fillOpacity={explicit ? 0.12 : 0.06}
+              clickable
+              onClick={() => {
+                focusScopeMapToCoordinates(a.coordinates);
               }}
-              eventHandlers={{
-                click: (e) => {
-                  L.DomEvent.stopPropagation(e);
-                  focusScopeMapToCoordinates(a.coordinates);
-                },
-              }}
-            >
-              <LeafletTooltip sticky>
-                <div className="px-3 py-2 w-64">
-                  <div className="font-black text-emerald-600 text-[10px] uppercase tracking-widest mb-1 border-b border-emerald-100 pb-1">
-                    Khu vực
-                  </div>
-                  <div className="w-full overflow-hidden min-w-0 text-wrap font-bold text-slate-800 text-sm mb-1">
-                    {a.code}: {a.name}
-                  </div>
-
-                  <div className="flex w-full items-start gap-1.5 text-slate-500 text-[11px] leading-relaxed">
-                    <Scale3d className="w-3 h-3 text-red-500 shrink-0 mt-0.5" />
-
-                    <span className="block overflow-hidden text-wrap flex-1 min-w-0">
-                      {a.area} ha
-                    </span>
-                  </div>
-
-                  <div className="flex items-start gap-1.5 text-slate-500 text-[11px] leading-relaxed">
-                    <MapPin className="w-3 h-3 text-red-500 shrink-0 mt-0.5" />
-                    <span className="block overflow-hidden text-wrap flex-1 min-w-0">
-                      {formatFullAddress(
-                        regionIndex.areaById.get(String(a.id))?.region,
-                      )}
-                    </span>
-                  </div>
-                </div>
-              </LeafletTooltip>
-            </Polygon>
+            />
           );
         })}
 
         {/* Plots */}
         {scopeMapData.plots.map(({ plot, explicit }) => {
-          if (!plot?.coordinates || plot.coordinates.length < 3) return null;
+          const plotPath = toClosedPath(plot?.coordinates);
+          if (!plotPath.length) return null;
           return (
-            <Polygon
+            <MFPolygon
               key={`scope-plot-${plot.id}`}
-              positions={(plot.coordinates || []).map((c: any) => [
-                c.lat,
-                c.lng,
-              ])}
-              pathOptions={{
-                color: "#f59e0b",
-                weight: explicit ? 2.25 : 1.5,
-                fillColor: "#f59e0b",
-                fillOpacity: explicit ? 0.22 : 0.12,
-                dashArray: explicit ? undefined : "3, 7",
+              paths={[plotPath]}
+              strokeColor="#f59e0b"
+              strokeWidth={explicit ? 2.25 : 1.5}
+              fillColor="#f59e0b"
+              fillOpacity={explicit ? 0.22 : 0.12}
+              clickable
+              onClick={() => {
+                focusScopeMapToCoordinates(plot.coordinates);
               }}
-              eventHandlers={{
-                click: (e) => {
-                  L.DomEvent.stopPropagation(e);
-                  focusScopeMapToCoordinates(plot.coordinates);
-                },
-              }}
-            >
-              <LeafletTooltip sticky>
-                <div className="px-3 py-2 w-64">
-                  <div className="font-black text-amber-600 text-[10px] uppercase tracking-widest mb-1 border-b border-amber-100 pb-1">
-                    Lô đất
-                  </div>
-                  <div className="w-full overflow-hidden min-w-0 text-wrap font-bold text-slate-800 text-sm mb-1">
-                    {plot.code}: {plot.name}
-                  </div>
-
-                  <div className="flex w-full items-start gap-1.5 text-slate-500 text-[11px] leading-relaxed">
-                    <Scale3d className="w-3 h-3 text-red-500 shrink-0 mt-0.5" />
-
-                    <span className="block overflow-hidden text-wrap flex-1 min-w-0">
-                      {plot.area} ha
-                    </span>
-                  </div>
-
-                  <div className="flex items-start gap-1.5 text-slate-500 text-[11px] leading-relaxed">
-                    <MapPin className="w-3 h-3 text-red-500 shrink-0 mt-0.5" />
-                    <span className="block overflow-hidden text-wrap flex-1 min-w-0">
-                      {formatFullAddress(
-                        regionIndex.plotById.get(String(plot.id))?.region,
-                      )}
-                    </span>
-                  </div>
-                </div>
-              </LeafletTooltip>
-            </Polygon>
+            />
           );
         })}
       </>
@@ -507,6 +442,23 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
     }
 
     return { regionIds, areaIds, plotIds };
+  }, [scopeMapData]);
+
+  useEffect(() => {
+    if (!scopeMapData) return;
+    const allCoords: Array<{ lat: number; lng: number }> = [];
+    scopeMapData.regions.forEach((item) => {
+      allCoords.push(...(item.region.coordinates || []));
+    });
+    scopeMapData.areas.forEach((item) => {
+      allCoords.push(...(item.area.coordinates || []));
+    });
+    scopeMapData.plots.forEach((item) => {
+      allCoords.push(...(item.plot.coordinates || []));
+    });
+
+    if (!allCoords.length) return;
+    focusScopeMapToCoordinates(allCoords);
   }, [scopeMapData]);
 
   const baseRelevantPlans = useMemo(() => {
@@ -1283,17 +1235,18 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
               "rounded-xl z-10 min-h-[65vh] h-full w-full overflow-hidden border border-slate-100 bg-slate-50 relative shadow-sm aspect-video",
             )}
           >
-            <MapContainer
-              ref={scopeMapRef}
-              center={[11.53, 106.88]}
-              zoom={13}
-              bounds={scopeMapBounds ?? undefined}
-              boundsOptions={{ padding: [40, 40] }}
-              style={{ height: "100%", width: "100%" }}
+            <MFMap
+              center={scopeMapView.center}
+              zoom={scopeMapView.zoom}
+              accessKey={MAP4D_ACCESS_KEY}
+              options={{ mapType: "raster", controlOptions: {} }}
+              version="2.5"
+              onMapReady={(map) => {
+                if (map) scopeMapRef.current = map;
+              }}
             >
-              <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
               <ScopeMapPolygons />
-            </MapContainer>
+            </MFMap>
 
             <button
               type="button"
@@ -1315,17 +1268,18 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
               </DialogHeader>
               <div className="flex h-full">
                 <div className="flex-1 relative bg-slate-100">
-                  <MapContainer
-                    ref={expandedScopeMapRef}
-                    center={[11.53, 106.88]}
-                    zoom={13}
-                    bounds={scopeMapBounds ?? undefined}
-                    boundsOptions={{ padding: [60, 60] }}
-                    style={{ height: "100%", width: "100%" }}
+                  <MFMap
+                    center={scopeMapView.center}
+                    zoom={scopeMapView.zoom}
+                    accessKey={MAP4D_ACCESS_KEY}
+                    options={{ mapType: "raster", controlOptions: {} }}
+                    version="2.5"
+                    onMapReady={(map) => {
+                      if (map) expandedScopeMapRef.current = map;
+                    }}
                   >
-                    <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                     <ScopeMapPolygons />
-                  </MapContainer>
+                  </MFMap>
 
                   <button
                     type="button"
