@@ -88,6 +88,23 @@ const PlotCreatePage = () => {
     return getAreaById(selectedAreaId)?.area ?? null;
   }, [selectedAreaId, getAreaById]);
 
+  const resolveEnterpriseIdFromRegion = useCallback(
+    (regionId: number | null) => {
+      if (!regionId) return null;
+      const region = regions.find((item) => item.id === regionId);
+      if (!region?.enterpriseId) return null;
+
+      const enterpriseKey = String(region.enterpriseId);
+      const matchedEnterprise = enterprises.find(
+        (enterprise) =>
+          String(enterprise.id) === enterpriseKey ||
+          String(enterprise.code) === enterpriseKey,
+      );
+      return matchedEnterprise?.id ?? null;
+    },
+    [regions, enterprises],
+  );
+
   const areaPolygonFeature = useMemo(() => {
     if (areaPolygon.length < 3) return null;
     const coordinates = areaPolygon.map((p) => [p.lng, p.lat]);
@@ -156,6 +173,7 @@ const PlotCreatePage = () => {
         if (parentArea) {
           setSelectedRegionId(parentArea.regionId);
           setSelectedAreaId(String(parentArea.id));
+          setSelectEnterpriseId(resolveEnterpriseIdFromRegion(parentArea.regionId));
         }
 
         setFormData({
@@ -180,7 +198,12 @@ const PlotCreatePage = () => {
         }
       }
     }
-  }, [isEditMode, editParams?.id, regions]);
+  }, [isEditMode, editParams?.id, regions, resolveEnterpriseIdFromRegion]);
+
+  useEffect(() => {
+    if (selectEnterpriseId !== null || selectedRegionId === null) return;
+    setSelectEnterpriseId(resolveEnterpriseIdFromRegion(selectedRegionId));
+  }, [selectEnterpriseId, selectedRegionId, resolveEnterpriseIdFromRegion]);
 
   // Handle Region/Area Selection to set bounds (Only if NOT in edit mode initial load, or if user changes area)
   // We need to be careful not to overwrite bounds when loading edit data.

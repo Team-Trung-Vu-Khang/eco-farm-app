@@ -98,6 +98,24 @@ const RegionCreatePage = () => {
     return `REG-${String(maxCodeNumber + 1).padStart(3, "0")}`;
   }, [regions]);
 
+  const generateNextSubAreaCode = useCallback(() => {
+    const allSubAreaCodes = [
+      ...(regions || []).flatMap((region) => (region.subAreas || []).map((sub) => sub.code)),
+      ...((formData.subAreas as SubArea[] | undefined) || []).map((sub) => sub.code),
+    ]
+      .map((code) => String(code || "").trim())
+      .filter(Boolean);
+
+    const maxCodeNumber = allSubAreaCodes.reduce((max, code) => {
+      const match = /^AREA-(\d+)$/i.exec(code);
+      if (!match) return max;
+      const current = Number(match[1]);
+      return Number.isNaN(current) ? max : Math.max(max, current);
+    }, 0);
+
+    return `AREA-${String(maxCodeNumber + 1).padStart(3, "0")}`;
+  }, [regions, formData.subAreas]);
+
   useEffect(() => {
     if (isEditMode) return;
 
@@ -479,7 +497,7 @@ const RegionCreatePage = () => {
     const regionIdForSub = resolveRegionId() ?? 0;
     const newSub: SubArea = {
       area: 0,
-      code: "",
+      code: generateNextSubAreaCode(),
       plots: [],
       landType: "",
       coordinates: [],
@@ -519,6 +537,7 @@ const RegionCreatePage = () => {
 
     const updatedSub = {
       ...editingSubArea,
+      code: (editingSubArea.code || "").toString().trim() || generateNextSubAreaCode(),
       regionId: regionIdForSub,
       coordinates: fullCoords,
     } as SubArea;

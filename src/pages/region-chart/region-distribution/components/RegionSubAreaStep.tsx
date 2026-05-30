@@ -255,6 +255,19 @@ export const RegionSubAreaStep = ({
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
+                    <Label>Mã khu vực</Label>
+                    <Input
+                      value={editingSubArea.code || ""}
+                      onChange={(event) =>
+                        onSetEditingSubArea({
+                          ...editingSubArea,
+                          code: event.target.value,
+                        })
+                      }
+                      placeholder="AREA-001"
+                    />
+                  </div>
+                  <div className="space-y-1">
                     <Label>Tên khu vực</Label>
                     <Input
                       value={editingSubArea.name || ""}

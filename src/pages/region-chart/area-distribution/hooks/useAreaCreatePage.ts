@@ -85,6 +85,23 @@ export function useAreaCreatePage() {
     [regions, selectedRegionId],
   );
 
+  const resolveEnterpriseIdFromRegion = useCallback(
+    (regionId: number | null) => {
+      if (!regionId) return null;
+      const region = regions.find((item) => item.id === regionId);
+      if (!region?.enterpriseId) return null;
+
+      const enterpriseKey = String(region.enterpriseId);
+      const matched = enterprises.find(
+        (enterprise) =>
+          String(enterprise.id) === enterpriseKey ||
+          String(enterprise.code) === enterpriseKey,
+      );
+      return matched?.id ?? null;
+    },
+    [regions, enterprises],
+  );
+
   const areaPolygonFeature = useMemo(() => {
     if (areaPoints.length < 3) {
       return null;
@@ -183,6 +200,7 @@ export function useAreaCreatePage() {
     const area = found.area;
     setFormData(area);
     setSelectedRegionId(area.regionId);
+    setSelectEnterpriseId(resolveEnterpriseIdFromRegion(area.regionId));
 
     if (area.coordinates && area.coordinates.length >= 3) {
       const loadedPoints = area.coordinates.map((coord: any) => L.latLng(coord.lat, coord.lng));
@@ -194,7 +212,13 @@ export function useAreaCreatePage() {
     setActiveAreaDragWarning(null);
     setIsDraggingAreaPoint(false);
     setActivePointIndex(null);
-  }, [getAreaById, isEditMode, params?.id, syncMapCenters]);
+  }, [
+    getAreaById,
+    isEditMode,
+    params?.id,
+    resolveEnterpriseIdFromRegion,
+    syncMapCenters,
+  ]);
 
   useEffect(() => {
     if (!selectedRegionId) {
@@ -204,6 +228,10 @@ export function useAreaCreatePage() {
     const region = regions.find((item) => item.id === selectedRegionId);
     if (!region) {
       return;
+    }
+
+    if (selectEnterpriseId === null) {
+      setSelectEnterpriseId(resolveEnterpriseIdFromRegion(selectedRegionId));
     }
 
     setFormData((prev) => {
@@ -233,7 +261,14 @@ export function useAreaCreatePage() {
       setIsDraggingAreaPoint(false);
       setActivePointIndex(null);
     }
-  }, [isEditMode, regions, selectedRegionId, syncMapCenters]);
+  }, [
+    isEditMode,
+    regions,
+    resolveEnterpriseIdFromRegion,
+    selectEnterpriseId,
+    selectedRegionId,
+    syncMapCenters,
+  ]);
 
   useEffect(() => {
     if (!selectedRegionId) {
