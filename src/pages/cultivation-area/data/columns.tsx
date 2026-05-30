@@ -16,7 +16,9 @@ export const getCultivationAreaColumns = (
     label: "Mã",
     render: (value: string, row: CultivationArea) => (
       <Link href={`/cultivation-area/${row.id}`}>
-        <a className="font-mono text-xs text-primary hover:underline">{value}</a>
+        <span className="font-mono text-xs text-primary hover:underline">
+          {value}
+        </span>
       </Link>
     ),
   },

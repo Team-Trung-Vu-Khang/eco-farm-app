@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import L from "leaflet";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useLocation } from "wouter";
 import useEnterpriseStore from "@/stores/useEnterpriseStore";
@@ -27,7 +26,7 @@ export function useEnterpriseSearch() {
   const [bankSearchQuery, setBankSearchQuery] = useState("");
   const [branchSearchQuery, setBranchSearchQuery] = useState("");
 
-  const mapRef = useRef<L.Map | null>(null);
+  const mapRef = useRef<any>(null);
 
   // Filter Logic
   const filteredEnterprises = useMemo(() => {
@@ -99,12 +98,42 @@ export function useEnterpriseSearch() {
       coordinates: [number, number][];
       color: string;
     }[] = [];
+    const polygonIds = new Set<string>();
+    const unmatchedTargetIds = new Set<string>();
+
+    const regionById = new Map<string, any>();
+    const areaById = new Map<string, { area: any; region: any }>();
+    const plotById = new Map<string, { plot: any; area: any; region: any }>();
+
+    regions.forEach((region) => {
+      regionById.set(String(region.id), region);
+      (region.subAreas || []).forEach((area) => {
+        areaById.set(String(area.id), { area, region });
+        (area.plots || []).forEach((plot) => {
+          plotById.set(String(plot.id), { plot, area, region });
+        });
+      });
+    });
+
+    const pushPolygon = (polygon: {
+      id: string;
+      rawId: string;
+      type: "region" | "area" | "plot";
+      name: string;
+      coordinates: [number, number][];
+      color: string;
+    }) => {
+      if (!polygon.coordinates?.length || polygonIds.has(polygon.id)) return;
+      polygonIds.add(polygon.id);
+      polygons.push(polygon);
+    };
 
     enterpriseCultivationRegions.forEach((cr) => {
       cr.targetIds.forEach((targetId) => {
-        const region = regions.find((r) => String(r.id) === String(targetId));
-        if (region && region.coordinates) {
-          polygons.push({
+        const key = String(targetId);
+        const region = regionById.get(key);
+        if (region?.coordinates) {
+          pushPolygon({
             id: `region-${region.id}`,
             rawId: String(region.id),
             type: "region",
@@ -114,42 +143,64 @@ export function useEnterpriseSearch() {
             ),
             color: POLYGON_COLORS.region,
           });
+          return;
         }
 
-        regions.forEach((r) => {
-          const area = r.subAreas?.find(
-            (a) => String(a.id) === String(targetId),
-          );
-          if (area && area.coordinates) {
-            polygons.push({
-              id: `area-${area.id}`,
-              rawId: String(area.id),
-              type: "area",
-              name: area.name,
-              coordinates: area.coordinates.map(
-                (c) => [c.lat, c.lng] as [number, number],
-              ),
-              color: POLYGON_COLORS.area,
-            });
-          }
-
-          area?.plots?.forEach((p) => {
-            if (p.coordinates) {
-              polygons.push({
-                id: `plot-${p.id}`,
-                rawId: String(p.id),
-                type: "plot",
-                name: p.name,
-                coordinates: p.coordinates.map(
-                  (c) => [c.lat, c.lng] as [number, number],
-                ),
-                color: POLYGON_COLORS.plot,
-              });
-            }
+        const areaHit = areaById.get(key);
+        if (areaHit?.area?.coordinates) {
+          pushPolygon({
+            id: `area-${areaHit.area.id}`,
+            rawId: String(areaHit.area.id),
+            type: "area",
+            name: areaHit.area.name,
+            coordinates: areaHit.area.coordinates.map(
+              (c: any) => [c.lat, c.lng] as [number, number],
+            ),
+            color: POLYGON_COLORS.area,
           });
-        });
+
+          // Keep prior behavior: when an area is targeted, show all plots in that area.
+          (areaHit.area.plots || []).forEach((plot: any) => {
+            if (!plot?.coordinates) return;
+            pushPolygon({
+              id: `plot-${plot.id}`,
+              rawId: String(plot.id),
+              type: "plot",
+              name: plot.name,
+              coordinates: plot.coordinates.map(
+                (c: any) => [c.lat, c.lng] as [number, number],
+              ),
+              color: POLYGON_COLORS.plot,
+            });
+          });
+          return;
+        }
+
+        const plotHit = plotById.get(key);
+        if (plotHit?.plot?.coordinates) {
+          pushPolygon({
+            id: `plot-${plotHit.plot.id}`,
+            rawId: String(plotHit.plot.id),
+            type: "plot",
+            name: plotHit.plot.name,
+            coordinates: plotHit.plot.coordinates.map(
+              (c: any) => [c.lat, c.lng] as [number, number],
+            ),
+            color: POLYGON_COLORS.plot,
+          });
+          return;
+        }
+
+        unmatchedTargetIds.add(key);
       });
     });
+
+    if (unmatchedTargetIds.size > 0) {
+      console.warn(
+        "[SearchUnit] Unmatched cultivation targetIds:",
+        Array.from(unmatchedTargetIds),
+      );
+    }
 
     return polygons;
   }, [enterpriseCultivationRegions, regions]);
@@ -157,8 +208,47 @@ export function useEnterpriseSearch() {
   // Actions
   const focusMapToPolygons = (polygons: any[]) => {
     if (!mapRef.current || !polygons.length) return;
-    const bounds = L.latLngBounds(polygons.flatMap((p) => p.coordinates));
-    mapRef.current.flyToBounds(bounds, { padding: [50, 50], duration: 1.25 });
+    const allPoints = polygons.flatMap((p) => p.coordinates as [number, number][]);
+    if (!allPoints.length) return;
+
+    const lats = allPoints.map(([lat]) => lat);
+    const lngs = allPoints.map(([, lng]) => lng);
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs);
+    const maxLng = Math.max(...lngs);
+    const center = { lat: (minLat + maxLat) / 2, lng: (minLng + maxLng) / 2 };
+
+    const map = mapRef.current;
+
+    if (typeof map.fitBounds === "function") {
+      // Map4D SDK versions may accept different bounds formats.
+      try {
+        map.fitBounds([
+          { lat: minLat, lng: minLng },
+          { lat: maxLat, lng: maxLng },
+        ]);
+        return;
+      } catch {
+        try {
+          map.fitBounds([
+            [minLat, minLng],
+            [maxLat, maxLng],
+          ]);
+          return;
+        } catch {
+          // Fall back to center/zoom below.
+        }
+      }
+    }
+
+    if (typeof map.setCenter === "function") {
+      map.setCenter(center);
+    }
+
+    if (typeof map.setZoom === "function") {
+      map.setZoom(14);
+    }
   };
 
   const toggleFilter = (key: keyof AdvancedFilters, value: string) => {
@@ -187,6 +277,11 @@ export function useEnterpriseSearch() {
   useEffect(() => {
     if (visiblePolygons.length > 0) {
       focusMapToPolygons(visiblePolygons);
+      // Retry once for the case map instance is initialized slightly later.
+      const timer = window.setTimeout(() => {
+        focusMapToPolygons(visiblePolygons);
+      }, 250);
+      return () => window.clearTimeout(timer);
     }
   }, [visiblePolygons]);
 

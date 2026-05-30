@@ -7,15 +7,24 @@ import {
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft, Edit, MapPin } from "lucide-react";
-import { Polygon, Tooltip } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import { RegionChartMapCard } from "../components/RegionChartMapCard";
+import { MFMap, MFPolygon } from "react-map4d-map";
 import { RegionChartStatusBadge } from "../components/RegionChartStatusBadge";
 import { useAreaDetailPage } from "../hooks/useAreaDetailPage";
 
 const AreaDetailPage = () => {
+  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
   const { setLocation, area, region, center, landTypeName, terrainName } =
     useAreaDetailPage();
+  const closePath = (points: Array<{ lat: number; lng: number }>) => {
+    if (!points || points.length < 3) return [];
+    const path = points.map((p) => ({ lat: p.lat, lng: p.lng }));
+    const first = path[0];
+    const last = path[path.length - 1];
+    if (first.lat !== last.lat || first.lng !== last.lng) {
+      path.push({ ...first });
+    }
+    return path;
+  };
 
   if (!area) {
     return (
@@ -151,59 +160,53 @@ const AreaDetailPage = () => {
 
         {/* Right Column: Map */}
         <div className="lg:col-span-2">
-          <RegionChartMapCard
-            title={
-              <span className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" /> Bản đồ khu vực & Lô
-              </span>
-            }
-            center={center}
-            zoom={15}
-          >
-            {area.coordinates && area.coordinates.length >= 3 && (
-              <Polygon
-                positions={area.coordinates.map((c: any) => [c.lat, c.lng])}
-                pathOptions={{
-                  color: "blue",
-                  fillColor: "blue",
-                  fillOpacity: 0.1,
-                  weight: 2,
-                  dashArray: "5, 5",
-                }}
-              >
-                <Tooltip sticky direction="top">
-                  {area.name} ({area.area} ha)
-                </Tooltip>
-              </Polygon>
-            )}
-
-            {area.plots?.map((plot: any) => {
-              if (!plot.coordinates || plot.coordinates.length < 3) {
-                return null;
-              }
-
-              return (
-                <Polygon
-                  key={plot.id}
-                  positions={plot.coordinates.map((c: any) => [c.lat, c.lng])}
-                  pathOptions={{
-                    color: "orange",
-                    fillColor: "orange",
-                    fillOpacity: 0.3,
-                    weight: 2,
-                  }}
+          <Card className="flex h-full min-h-[500px] flex-col">
+            <CardHeader>
+              <CardTitle>
+                <span className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" /> Bản đồ khu vực & Lô
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="relative flex-1 overflow-hidden rounded-b-lg p-0">
+              <div className="h-[600px] w-full">
+                <MFMap
+                  center={{ lat: center[0], lng: center[1] }}
+                  zoom={15}
+                  accessKey={MAP4D_ACCESS_KEY}
+                  options={{ mapType: "raster" }}
+                  version="2.5"
                 >
-                  <Tooltip sticky>
-                    <div className="text-sm">
-                      <strong>{plot.name}</strong>
-                      <br />
-                      {plot.area} ha
-                    </div>
-                  </Tooltip>
-                </Polygon>
-              );
-            })}
-          </RegionChartMapCard>
+                  {area.coordinates && area.coordinates.length >= 3 && (
+                    <MFPolygon
+                      paths={[closePath(area.coordinates)]}
+                      strokeColor="#2563eb"
+                      fillColor="#2563eb"
+                      fillOpacity={0.1}
+                      strokeWidth={2}
+                    />
+                  )}
+
+                  {area.plots?.map((plot: any) => {
+                    if (!plot.coordinates || plot.coordinates.length < 3) {
+                      return null;
+                    }
+
+                    return (
+                      <MFPolygon
+                        key={plot.id}
+                        paths={[closePath(plot.coordinates)]}
+                        strokeColor="#f59e0b"
+                        fillColor="#f59e0b"
+                        fillOpacity={0.3}
+                        strokeWidth={2}
+                      />
+                    );
+                  })}
+                </MFMap>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </AdminLayout>

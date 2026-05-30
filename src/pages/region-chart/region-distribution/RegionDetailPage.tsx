@@ -6,15 +6,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Polygon, Tooltip } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import { MFMap, MFPolygon } from "react-map4d-map";
 import { ChevronLeft, Edit } from "lucide-react";
 import { LAND_TYPES } from "../constants";
-import { RegionChartMapCard } from "../components/RegionChartMapCard";
 import { RegionChartStatusBadge } from "../components/RegionChartStatusBadge";
 import { useRegionDetailPage } from "../hooks/useRegionDetailPage";
 
 const RegionDetailPage = () => {
+  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
+  const closePath = (points: { lat: number; lng: number }[]) => {
+    if (!points || points.length < 3) return [];
+    const path = points.map((p) => ({ lat: p.lat, lng: p.lng }));
+    const first = path[0];
+    const last = path[path.length - 1];
+    if (first.lat !== last.lat || first.lng !== last.lng) {
+      path.push({ ...first });
+    }
+    return path;
+  };
   const {
     setLocation,
     region,
@@ -142,41 +151,49 @@ const RegionDetailPage = () => {
 
         {/* Right Col: Map */}
         <div className="lg:col-span-2">
-          <RegionChartMapCard title="Bản đồ phân bố" center={center} zoom={14}>
-            {region.coordinates && region.coordinates.length > 0 && (
-              <Polygon
-                positions={region.coordinates.map((c) => [c.lat, c.lng])}
-                pathOptions={{
-                  fill: false,
-                  color: "blue",
-                  dashArray: "5, 5",
-                  bubblingMouseEvents: false,
-                }}
-              >
-                <Tooltip sticky direction="top">
-                  Vùng trồng: {region.name}
-                </Tooltip>
-              </Polygon>
-            )}
-
-            {region.subAreas?.map((sub) => {
-              if (!sub.coordinates || sub.coordinates.length < 3) {
-                return null;
-              }
-
-              return (
-                <Polygon
-                  key={sub.id}
-                  positions={sub.coordinates.map((c) => [c.lat, c.lng])}
-                  pathOptions={{ color: "green", weight: 2 }}
+          <Card className="flex h-full min-h-[500px] flex-col">
+            <CardHeader>
+              <CardTitle>Bản đồ phân bố</CardTitle>
+            </CardHeader>
+            <CardContent className="relative flex-1 overflow-hidden rounded-b-lg p-0">
+              <div className="h-[600px] w-full">
+                <MFMap
+                  center={{ lat: center[0], lng: center[1] }}
+                  zoom={14}
+                  accessKey={MAP4D_ACCESS_KEY}
+                  options={{ mapType: "raster" }}
+                  version="2.5"
                 >
-                  <Tooltip sticky direction="top">
-                    Khu vực {sub.name}
-                  </Tooltip>
-                </Polygon>
-              );
-            })}
-          </RegionChartMapCard>
+                  {region.coordinates && region.coordinates.length > 0 && (
+                    <MFPolygon
+                      paths={[closePath(region.coordinates)]}
+                      strokeColor="#2563eb"
+                      strokeWidth={2}
+                      fillColor="#2563eb"
+                      fillOpacity={0}
+                    />
+                  )}
+
+                  {region.subAreas?.map((sub) => {
+                    if (!sub.coordinates || sub.coordinates.length < 3) {
+                      return null;
+                    }
+
+                    return (
+                      <MFPolygon
+                        key={sub.id}
+                        paths={[closePath(sub.coordinates)]}
+                        strokeColor="#16a34a"
+                        strokeWidth={2}
+                        fillColor="#16a34a"
+                        fillOpacity={0.08}
+                      />
+                    );
+                  })}
+                </MFMap>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </AdminLayout>

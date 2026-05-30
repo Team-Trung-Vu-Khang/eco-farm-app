@@ -23,8 +23,6 @@ import {
   useToast,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import {
   Activity,
   Building2,
@@ -40,15 +38,9 @@ import {
   Target,
   X,
 } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { MFMap, MFPolygon } from "react-map4d-map";
 import { useLocation } from "wouter";
-import {
-  MapContainer,
-  Polygon,
-  TileLayer,
-  Tooltip,
-  useMap,
-} from "react-leaflet";
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 import useRegionStore from "../../../stores/useRegionStore";
 import { CultivationRegionDetailView } from "../cultivation-region/CultivationRegionDetailPage";
@@ -82,13 +74,17 @@ interface AdvancedFilters {
 }
 
 const SearchZonePage = () => {
+  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
   const { toast } = useToast();
   const { enterprises } = useEnterpriseStore();
   const { regions } = useRegionStore();
   const { areas: cultivationRegions } = useCultivationRegionStore();
 
-  const mapRef = React.useRef<L.Map | null>(null);
-  const expandedMapRef = React.useRef<L.Map | null>(null);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({
+    lat: 11.53,
+    lng: 106.88,
+  });
+  const [mapZoom, setMapZoom] = useState(13);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedEnterpriseId, setSelectedEnterpriseId] = useState<
@@ -208,24 +204,52 @@ const SearchZonePage = () => {
     };
   }, [regionIndex, selectedCultivationRegion]);
 
-  const getActiveMap = () => {
-    if (isMapExpanded) return expandedMapRef.current;
-    return mapRef.current;
-  };
+  const focusMapToBoundingCoordinates = useCallback(
+    (coordinates: Coordinate[]) => {
+      if (!coordinates.length) return;
+      const lats = coordinates.map((c) => c.lat);
+      const lngs = coordinates.map((c) => c.lng);
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      const minLng = Math.min(...lngs);
+      const maxLng = Math.max(...lngs);
+      const span = Math.max(maxLat - minLat, maxLng - minLng);
 
-  const focusMapToCoordinates = (coordinates?: Coordinate[]) => {
-    const map = getActiveMap();
-    if (!map) return;
-    if (!coordinates?.length) return;
-    const bounds = L.latLngBounds(
-      coordinates.map((c) => [c.lat, c.lng] as [number, number]),
-    );
-    map.flyToBounds(bounds, { padding: [50, 50], duration: 1.25 });
-  };
+      setMapCenter({
+        lat: (minLat + maxLat) / 2,
+        lng: (minLng + maxLng) / 2,
+      });
+
+      const nextZoom =
+        span > 1
+          ? 8
+          : span > 0.5
+            ? 9
+            : span > 0.2
+              ? 10
+              : span > 0.1
+                ? 11
+                : span > 0.05
+                  ? 12
+                  : span > 0.02
+                    ? 13
+                    : span > 0.01
+                      ? 14
+                      : 15;
+      setMapZoom(nextZoom);
+    },
+    [],
+  );
+
+  const focusMapToCoordinates = useCallback(
+    (coordinates?: Coordinate[]) => {
+      if (!coordinates?.length) return;
+      focusMapToBoundingCoordinates(coordinates);
+    },
+    [focusMapToBoundingCoordinates],
+  );
 
   const focusMapToCultivationTargets = () => {
-    const map = getActiveMap();
-    if (!map) return;
     const regions = selectedCultivationTargets.visibleRegions;
     if (!regions.length) return;
 
@@ -255,10 +279,7 @@ const SearchZonePage = () => {
     }
 
     if (!allCoords.length) return;
-    map.flyToBounds(
-      L.latLngBounds(allCoords.map((c) => [c.lat, c.lng] as [number, number])),
-      { padding: [50, 50], duration: 1.25 },
-    );
+    focusMapToBoundingCoordinates(allCoords);
   };
 
   const clearSelectedUnit = () => {
@@ -1186,16 +1207,13 @@ const SearchZonePage = () => {
                       "lg:col-span-8 rounded-2xl overflow-hidden border-4 border-white bg-white shadow-xl relative min-h-80 lg:min-h-125 transition-all duration-300 ease-in-out",
                     )}
                   >
-                    <MapContainer
-                      zoom={13}
-                      ref={mapRef}
-                      center={[11.53, 106.88]}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                      }}
+                    <MFMap
+                      center={mapCenter}
+                      zoom={mapZoom}
+                      accessKey={MAP4D_ACCESS_KEY}
+                      options={{ mapType: "raster", controlOptions: {} }}
+                      version="2.5"
                     >
-                      <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                       <ZoneMapContent
                         regions={selectedCultivationTargets.visibleRegions}
                         selectedUnit={selectedUnit}
@@ -1207,11 +1225,12 @@ const SearchZonePage = () => {
                         targetSignature={
                           selectedCultivationTargets.targetSignature
                         }
+                        onFocusCoordinates={focusMapToCoordinates}
                         onSelectUnit={(type, data) =>
                           setSelectedUnit({ type, data })
                         }
                       />
-                    </MapContainer>
+                    </MFMap>
 
                     {/* Map Controls */}
                     <div className="absolute top-4 right-4 z-[1000]">
@@ -1254,13 +1273,13 @@ const SearchZonePage = () => {
                       <div className="flex h-full">
                         {/* Left: Map */}
                         <div className="flex-1 relative bg-slate-100">
-                          <MapContainer
-                            center={[11.53, 106.88]}
-                            zoom={13}
-                            ref={expandedMapRef}
-                            style={{ height: "100%", width: "100%" }}
+                          <MFMap
+                            center={mapCenter}
+                            zoom={mapZoom}
+                            accessKey={MAP4D_ACCESS_KEY}
+                            options={{ mapType: "raster", controlOptions: {} }}
+                            version="2.5"
                           >
-                            <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                             <ZoneMapContent
                               regions={
                                 selectedCultivationTargets.visibleRegions
@@ -1278,11 +1297,12 @@ const SearchZonePage = () => {
                               targetSignature={
                                 selectedCultivationTargets.targetSignature
                               }
+                              onFocusCoordinates={focusMapToCoordinates}
                               onSelectUnit={(type, data) =>
                                 setSelectedUnit({ type, data })
                               }
                             />
-                          </MapContainer>
+                          </MFMap>
 
                           {/* Close button */}
                           <button
@@ -2239,6 +2259,7 @@ const ZoneMapContent = ({
   targetAreaIds,
   targetPlotIds,
   targetSignature,
+  onFocusCoordinates,
   onSelectUnit,
 }: {
   regions: Region[];
@@ -2247,10 +2268,9 @@ const ZoneMapContent = ({
   targetAreaIds: Set<string>;
   targetPlotIds: Set<string>;
   targetSignature: string;
+  onFocusCoordinates: (coordinates?: Coordinate[]) => void;
   onSelectUnit: (type: "region" | "area" | "plot", data: any) => void;
 }) => {
-  const map = useMap();
-
   useEffect(() => {
     if (!regions?.length) return;
 
@@ -2278,11 +2298,14 @@ const ZoneMapContent = ({
     }
 
     if (!allCoords.length) return;
-    map.flyToBounds(allCoords.map((c) => [c.lat, c.lng]) as any, {
-      padding: [50, 50],
-      duration: 1.5,
-    });
-  }, [map, regions, targetSignature, targetAreaIds, targetPlotIds]);
+    onFocusCoordinates(allCoords);
+  }, [
+    regions,
+    targetSignature,
+    targetAreaIds,
+    targetPlotIds,
+    onFocusCoordinates,
+  ]);
 
   if (!regions?.length) return null;
 
@@ -2291,50 +2314,34 @@ const ZoneMapContent = ({
     targetAreaIds.size > 0 ||
     targetPlotIds.size > 0;
 
-  const flyToCoordinates = (coordinates?: Coordinate[]) => {
-    if (!coordinates?.length) return;
-    map.flyToBounds(coordinates.map((c) => [c.lat, c.lng]) as any, {
-      padding: [50, 50],
-      duration: 1.25,
-    });
-  };
-
   return (
     <>
       {/* Regions */}
       {regions.map((region) => {
         const isTargetRegion = targetRegionIds.has(region.id);
         return (
-          <Polygon
+          <MFPolygon
             key={`region-${region.id}`}
-            positions={region.coordinates.map((c) => [c.lat, c.lng])}
-            pathOptions={{
-              color: "#3b82f6",
-              weight:
-                selectedUnit?.type === "region" &&
-                selectedUnit.data.id === region.id
-                  ? 4
-                  : isTargetRegion
-                    ? 3
-                    : 2,
-              fillColor: "#3b82f6",
-              fillOpacity: 0.1,
-              dashArray: filterMode && !isTargetRegion ? "6, 6" : undefined,
+            paths={[
+              region.coordinates.map((c) => ({ lat: c.lat, lng: c.lng })),
+            ]}
+            strokeColor="#3b82f6"
+            strokeWidth={
+              selectedUnit?.type === "region" &&
+              selectedUnit.data.id === region.id
+                ? 4
+                : isTargetRegion
+                  ? 3
+                  : 2
+            }
+            fillColor="#3b82f6"
+            fillOpacity={0.1}
+            clickable
+            onClick={() => {
+              onFocusCoordinates(region.coordinates);
+              onSelectUnit("region", region);
             }}
-            eventHandlers={{
-              click: (e) => {
-                L.DomEvent.stopPropagation(e);
-                flyToCoordinates(region.coordinates);
-                onSelectUnit("region", region);
-              },
-            }}
-          >
-            <Tooltip sticky>
-              <div className="px-2 py-1 font-bold text-[10px] uppercase tracking-tighter">
-                Vùng: {region.name}
-              </div>
-            </Tooltip>
-          </Polygon>
+          />
         );
       })}
 
@@ -2353,36 +2360,28 @@ const ZoneMapContent = ({
           const isTargetArea = targetAreaIds.has(areaId);
 
           return [
-            <Polygon
+            <MFPolygon
               key={`area-${area.id}`}
-              positions={area.coordinates.map((c) => [c.lat, c.lng])}
-              pathOptions={{
-                color: "#10b981",
-                weight:
-                  selectedUnit?.type === "area" &&
-                  selectedUnit.data.id === area.id
-                    ? 4
-                    : isTargetArea || hasTargetPlot
-                      ? 2.5
-                      : 1.5,
-                fillColor: "#10b981",
-                fillOpacity: isTargetArea ? 0.2 : 0.1,
-                dashArray: filterMode && !isTargetArea ? "4, 6" : undefined,
+              paths={[
+                area.coordinates.map((c) => ({ lat: c.lat, lng: c.lng })),
+              ]}
+              strokeColor="#10b981"
+              strokeWidth={
+                selectedUnit?.type === "area" &&
+                selectedUnit.data.id === area.id
+                  ? 4
+                  : isTargetArea || hasTargetPlot
+                    ? 2.5
+                    : 1.5
+              }
+              fillColor="#10b981"
+              fillOpacity={isTargetArea ? 0.2 : 0.1}
+              clickable
+              onClick={() => {
+                onFocusCoordinates(area.coordinates);
+                onSelectUnit("area", area);
               }}
-              eventHandlers={{
-                click: (e) => {
-                  L.DomEvent.stopPropagation(e);
-                  flyToCoordinates(area.coordinates);
-                  onSelectUnit("area", area);
-                },
-              }}
-            >
-              <Tooltip sticky>
-                <div className="px-2 py-1 font-bold text-[10px] uppercase tracking-tighter text-emerald-700">
-                  Khu vực: {area.name}
-                </div>
-              </Tooltip>
-            </Polygon>,
+            />,
           ];
         }),
       )}
@@ -2399,36 +2398,28 @@ const ZoneMapContent = ({
             const isTargetPlot = targetPlotIds.has(plotId);
 
             return [
-              <Polygon
+              <MFPolygon
                 key={`plot-${plot.id}`}
-                positions={plot.coordinates.map((c) => [c.lat, c.lng])}
-                pathOptions={{
-                  color: "#f59e0b",
-                  weight:
-                    selectedUnit?.type === "plot" &&
-                    selectedUnit.data.id === plot.id
-                      ? 4
-                      : isTargetPlot
-                        ? 2
-                        : 1,
-                  fillColor: "#f59e0b",
-                  fillOpacity: isTargetPlot ? 0.25 : 0.15,
-                  dashArray: filterMode && !isTargetPlot ? "3, 7" : undefined,
+                paths={[
+                  plot.coordinates.map((c) => ({ lat: c.lat, lng: c.lng })),
+                ]}
+                strokeColor="#f59e0b"
+                strokeWidth={
+                  selectedUnit?.type === "plot" &&
+                  selectedUnit.data.id === plot.id
+                    ? 4
+                    : isTargetPlot
+                      ? 2
+                      : 1
+                }
+                fillColor="#f59e0b"
+                fillOpacity={isTargetPlot ? 0.25 : 0.15}
+                clickable
+                onClick={() => {
+                  onFocusCoordinates(plot.coordinates);
+                  onSelectUnit("plot", plot);
                 }}
-                eventHandlers={{
-                  click: (e) => {
-                    L.DomEvent.stopPropagation(e);
-                    flyToCoordinates(plot.coordinates);
-                    onSelectUnit("plot", plot);
-                  },
-                }}
-              >
-                <Tooltip sticky>
-                  <div className="px-2 py-1 font-bold text-[10px] uppercase tracking-tighter text-amber-700">
-                    Lô: {plot.name}
-                  </div>
-                </Tooltip>
-              </Polygon>,
+              />,
             ];
           }),
         ),

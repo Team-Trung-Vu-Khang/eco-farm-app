@@ -5,31 +5,33 @@ import {
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Layers } from "lucide-react";
-import {
-  MapContainer,
-  Polygon,
-  TileLayer,
-  Tooltip,
-  useMap,
-} from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { MFMap, MFPolygon } from "react-map4d-map";
 
 interface EnterpriseMapSectionProps {
-  mapRef: React.MutableRefObject<L.Map | null>;
+  mapRef: React.MutableRefObject<any>;
   visiblePolygons: any[];
   isDetailOpen: boolean;
 }
 
-const MapControls = ({ isDetailOpen }: { isDetailOpen: boolean }) => {
-  const map = useMap();
+const MapControls = ({
+  mapRef,
+  isDetailOpen,
+}: {
+  mapRef: React.MutableRefObject<any>;
+  isDetailOpen: boolean;
+}) => {
   return (
     <div className={cn("absolute bottom-6 right-6 z-20 flex flex-col gap-2 transition-all duration-300")}>
       <Button
         variant="secondary"
         size="icon"
         className="w-10 h-10 rounded-md bg-white shadow-xl border border-slate-200 hover:bg-slate-50 transition-all group"
-        onClick={() => map.setZoom(map.getZoom() + 1)}
+        onClick={() => {
+          const map = mapRef.current;
+          if (!map) return;
+          const zoom = typeof map.getZoom === "function" ? map.getZoom() : 13;
+          if (typeof map.setZoom === "function") map.setZoom(zoom + 1);
+        }}
       >
         <span className="text-xl font-bold text-slate-700 group-hover:text-primary">+</span>
       </Button>
@@ -37,7 +39,12 @@ const MapControls = ({ isDetailOpen }: { isDetailOpen: boolean }) => {
         variant="secondary"
         size="icon"
         className="w-10 h-10 rounded-md bg-white shadow-xl border border-slate-200 hover:bg-slate-50 transition-all group"
-        onClick={() => map.setZoom(map.getZoom() - 1)}
+        onClick={() => {
+          const map = mapRef.current;
+          if (!map) return;
+          const zoom = typeof map.getZoom === "function" ? map.getZoom() : 13;
+          if (typeof map.setZoom === "function") map.setZoom(zoom - 1);
+        }}
       >
         <span className="text-xl font-bold text-slate-700 group-hover:text-primary">-</span>
       </Button>
@@ -50,67 +57,49 @@ export const EnterpriseMapSection: React.FC<EnterpriseMapSectionProps> = ({
   visiblePolygons,
   isDetailOpen,
 }) => {
+  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
+  const toClosedPath = (coords: [number, number][]) => {
+    if (!coords || coords.length < 3) return [];
+    const path = coords.map(([lat, lng]) => ({ lat, lng }));
+    const first = path[0];
+    const last = path[path.length - 1];
+    const isClosed = first.lat === last.lat && first.lng === last.lng;
+    if (!isClosed) path.push({ ...first });
+    return path;
+  };
+
   return (
     <div className="flex-1 flex flex-col relative bg-slate-100">
       <div className="flex-1 relative">
-        <MapContainer
-          center={[10.762622, 106.660172]}
+        <MFMap
+          center={{ lat: 10.762622, lng: 106.660172 }}
           zoom={13}
-          style={{ height: "100%", width: "100%" }}
-          className="z-10"
-          ref={(map) => {
+          accessKey={MAP4D_ACCESS_KEY}
+          options={{ mapType: "raster", controlOptions: {} }}
+          version="2.5"
+          onMapReady={(map) => {
             if (map) mapRef.current = map;
           }}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
           {visiblePolygons.map((poly) => (
-            <Polygon
+            toClosedPath(poly.coordinates).length > 0 && (
+            <MFPolygon
               key={poly.id}
-              positions={poly.coordinates}
-              pathOptions={{
-                fillColor: poly.color,
-                fillOpacity: 0.2,
-                color: poly.color,
-                weight: 2,
-                className: "cursor-pointer",
+              paths={[toClosedPath(poly.coordinates)]}
+              strokeColor={poly.color}
+              strokeWidth={2}
+              fillColor={poly.color}
+              fillOpacity={0.2}
+              clickable
+              onClick={() => {
+                const url = `/${poly.type}-distribution/detail/${poly.rawId}`;
+                window.open(url, "_blank");
               }}
-              eventHandlers={{
-                click: () => {
-                  const url = `/${poly.type}-distribution/detail/${poly.rawId}`;
-                  window.open(url, "_blank");
-                },
-                mouseover: (e) => {
-                  const layer = e.target;
-                  layer.setStyle({ fillOpacity: 0.4, weight: 3 });
-                },
-                mouseout: (e) => {
-                  const layer = e.target;
-                  layer.setStyle({ fillOpacity: 0.2, weight: 2 });
-                },
-              }}
-            >
-              <Tooltip permanent sticky interactive>
-                <div
-                  className="px-2 py-1 flex flex-col items-center gap-1 cursor-pointer pointer-events-auto"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const url = `/${poly.type}-distribution/detail/${poly.rawId}`;
-                    window.open(url, "_blank");
-                  }}
-                >
-                  <span className="font-bold text-slate-800">{poly.name}</span>
-                  <span className="text-[10px] text-primary font-medium animate-pulse">
-                    Click xem chi tiết
-                  </span>
-                </div>
-              </Tooltip>
-            </Polygon>
+            />
+            )
           ))}
-          <MapControls isDetailOpen={isDetailOpen} />
-        </MapContainer>
+          <MapControls mapRef={mapRef} isDetailOpen={isDetailOpen} />
+        </MFMap>
 
         {!isDetailOpen && (
           <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 w-max max-w-[90%]">

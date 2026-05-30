@@ -6,11 +6,15 @@ import {
   CardHeader,
   ScrollArea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { MapContainer, Marker, Popup, TileLayer, Tooltip } from "react-leaflet";
-import { Edit2, Layers, Navigation, Sprout } from "lucide-react";
+import { MFMap, MFMarker } from "react-map4d-map";
+import { Edit2, Layers, Navigation } from "lucide-react";
 import { MOCK_SEEDS } from "../constants";
-import type { DistributionMethod, PlantEntry, PlantLocation, RowConfig } from "../constants";
-import { createCustomIcon } from "./plantDistributionMapUtils";
+import type {
+  DistributionMethod,
+  PlantEntry,
+  PlantLocation,
+  RowConfig,
+} from "../constants";
 
 type Props = {
   distributionMethod: DistributionMethod;
@@ -35,6 +39,7 @@ export const PlantDistributionGpsStep = ({
   updatePlantLocation,
   generatePlantLocations,
 }: Props) => {
+  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
   const totalPlants =
     distributionMethod === "zone"
       ? plantEntries.reduce((sum, entry) => sum + entry.quantity, 0)
@@ -64,8 +69,9 @@ export const PlantDistributionGpsStep = ({
             Chưa có dữ liệu định vị
           </h3>
           <p className="text-muted-foreground text-center max-w-md mb-6">
-            Hệ thống sẽ tự động khởi tạo tọa độ GPS cho <strong>{totalPlants}</strong>{" "}
-            cây trồng dựa trên phương thức phân bổ đã chọn.
+            Hệ thống sẽ tự động khởi tạo tọa độ GPS cho{" "}
+            <strong>{totalPlants}</strong> cây trồng dựa trên phương thức phân
+            bổ đã chọn.
           </p>
           <Button
             onClick={generatePlantLocations}
@@ -92,156 +98,88 @@ export const PlantDistributionGpsStep = ({
                 </Button>
               </div>
 
-              <MapContainer
-                center={[
-                  plantLocations[0]?.coordinate.lat || 11.558,
-                  plantLocations[0]?.coordinate.lng || 107.134,
-                ]}
+              <MFMap
+                center={{
+                  lat: plantLocations[0]?.coordinate.lat || 11.558,
+                  lng: plantLocations[0]?.coordinate.lng || 107.134,
+                }}
                 zoom={18}
-                style={{ height: "100%", width: "100%" }}
-                className="z-0 bg-slate-100"
+                accessKey={MAP4D_ACCESS_KEY}
+                options={{ mapType: "raster", controlOptions: {} }}
+                version="2.5"
               >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                />
-                <TileLayer
-                  attribution="Labels"
-                  url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
-                />
-
                 {plantLocations.map((location) => {
-                  const seed = MOCK_SEEDS.find((item) => item.id === location.seedId);
+                  const seed = MOCK_SEEDS.find(
+                    (item) => item.id === location.seedId,
+                  );
                   const isSelected = selectedPlantId === location.id;
-                  const color = getSeedColor(location.seedId);
+                  const seedName = seed?.name || "Chưa xác định";
+                  const colorDot = isSelected ? "●" : "•";
 
                   return (
-                    <Marker
+                    <MFMarker
                       key={location.id}
-                      position={[location.coordinate.lat, location.coordinate.lng]}
-                      icon={createCustomIcon(color, isSelected)}
-                      draggable
-                      eventHandlers={{
-                        dragend: (event) => {
-                          const marker = event.target;
-                          const position = marker.getLatLng();
-                          updatePlantLocation(location.id, position.lat, position.lng);
-                        },
-                        click: () => setSelectedPlantId(location.id),
+                      position={{
+                        lat: location.coordinate.lat,
+                        lng: location.coordinate.lng,
                       }}
-                    >
-                      {isSelected && (
-                        <Tooltip direction="top" offset={[0, -10]} opacity={1} permanent>
-                          <div className="text-[10px] font-bold px-1 py-0.5 bg-white border rounded shadow-sm">
-                            {location.plantCode}
-                          </div>
-                        </Tooltip>
-                      )}
-
-                      <Popup closeButton={false} className="custom-popup">
-                        <div className="p-1">
-                          <div className="flex items-center gap-2 mb-2 pb-2 border-b">
-                            <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center">
-                              {seed?.imageUrl ? (
-                                <img
-                                  src={seed.imageUrl}
-                                  className="w-full h-full object-cover rounded"
-                                />
-                              ) : (
-                                <Sprout className="w-4 h-4 text-green-600" />
-                              )}
-                            </div>
-                            <div>
-                              <div className="font-bold text-sm">{location.plantCode}</div>
-                              <div className="text-[10px] text-muted-foreground">
-                                {seed?.name}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="space-y-1">
-                                <label className="text-[10px] uppercase text-muted-foreground font-bold">
-                                  Vĩ độ (Lat)
-                                </label>
-                                <input
-                                  className="w-full text-xs p-1 border rounded bg-slate-50 font-mono"
-                                  type="number"
-                                  step="0.000001"
-                                  value={location.coordinate.lat}
-                                  onChange={(event) => {
-                                    const value = parseFloat(event.target.value);
-                                    if (!Number.isNaN(value)) {
-                                      updatePlantLocation(
-                                        location.id,
-                                        value,
-                                        location.coordinate.lng,
-                                      );
-                                    }
-                                  }}
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <label className="text-[10px] uppercase text-muted-foreground font-bold">
-                                  Kinh độ (Lng)
-                                </label>
-                                <input
-                                  className="w-full text-xs p-1 border rounded bg-slate-50 font-mono"
-                                  type="number"
-                                  step="0.000001"
-                                  value={location.coordinate.lng}
-                                  onChange={(event) => {
-                                    const value = parseFloat(event.target.value);
-                                    if (!Number.isNaN(value)) {
-                                      updatePlantLocation(
-                                        location.id,
-                                        location.coordinate.lat,
-                                        value,
-                                      );
-                                    }
-                                  }}
-                                />
-                              </div>
-                            </div>
-                            <div className="text-[10px] text-green-600 italic flex items-center gap-1 justify-center bg-green-50 p-1 rounded">
-                              <Navigation className="w-3 h-3" />
-                              Kéo thả để điều chỉnh vị trí
-                            </div>
-                          </div>
-                        </div>
-                      </Popup>
-                    </Marker>
+                      title={`${location.plantCode} - ${seedName}`}
+                      label={colorDot}
+                      draggable
+                      clickable
+                      onDragEnd={(event: unknown) => {
+                        const eventWithLatLng = event as {
+                          latLng?: { lat?: number; lng?: number };
+                        };
+                        const lat = eventWithLatLng?.latLng?.lat;
+                        const lng = eventWithLatLng?.latLng?.lng;
+                        if (
+                          typeof lat === "number" &&
+                          typeof lng === "number"
+                        ) {
+                          updatePlantLocation(location.id, lat, lng);
+                        }
+                      }}
+                      onClick={() => {
+                        setSelectedPlantId(location.id);
+                      }}
+                    />
                   );
                 })}
-              </MapContainer>
+              </MFMap>
 
               <div className="absolute bottom-4 left-4 right-auto bg-white/90 backdrop-blur-md p-3 rounded-lg shadow-lg border border-slate-200 max-w-[200px] z-[500]">
                 <div className="text-xs font-bold mb-2 text-slate-800">
                   Chú thích loại cây
                 </div>
                 <div className="space-y-1.5 max-h-[100px] overflow-y-auto pr-1 custom-scrollbar">
-                  {Array.from(new Set(plantLocations.map((location) => location.seedId))).map(
-                    (seedId) => {
-                      const seed = MOCK_SEEDS.find((item) => item.id === seedId);
-                      const count = plantLocations.filter(
-                        (location) => location.seedId === seedId,
-                      ).length;
-                      const color = getSeedColor(seedId);
+                  {Array.from(
+                    new Set(plantLocations.map((location) => location.seedId)),
+                  ).map((seedId) => {
+                    const seed = MOCK_SEEDS.find((item) => item.id === seedId);
+                    const count = plantLocations.filter(
+                      (location) => location.seedId === seedId,
+                    ).length;
+                    const color = getSeedColor(seedId);
 
-                      return (
-                        <div key={seedId} className="flex items-center gap-2 text-[10px]">
-                          <span
-                            className="w-2.5 h-2.5 rounded-full shadow-sm"
-                            style={{ backgroundColor: color }}
-                          />
-                          <span className="flex-1 truncate font-medium text-slate-700">
-                            {seed?.name}
-                          </span>
-                          <span className="text-slate-400 font-mono">{count}</span>
-                        </div>
-                      );
-                    },
-                  )}
+                    return (
+                      <div
+                        key={seedId}
+                        className="flex items-center gap-2 text-[10px]"
+                      >
+                        <span
+                          className="w-2.5 h-2.5 rounded-full shadow-sm"
+                          style={{ backgroundColor: color }}
+                        />
+                        <span className="flex-1 truncate font-medium text-slate-700">
+                          {seed?.name}
+                        </span>
+                        <span className="text-slate-400 font-mono">
+                          {count}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </Card>
@@ -264,7 +202,9 @@ export const PlantDistributionGpsStep = ({
                   <div className="bg-white/10 rounded px-2 py-1.5 backdrop-blur-sm">
                     <div className="text-white/50 mb-0.5">Phương thức</div>
                     <div className="font-semibold">
-                      {distributionMethod === "zone" ? "Theo vùng" : "Theo hàng"}
+                      {distributionMethod === "zone"
+                        ? "Theo vùng"
+                        : "Theo hàng"}
                     </div>
                   </div>
                   <div className="bg-white/10 rounded px-2 py-1.5 backdrop-blur-sm">
@@ -284,7 +224,10 @@ export const PlantDistributionGpsStep = ({
                     <Layers className="w-4 h-4 text-slate-400" />
                     Danh sách tọa độ
                   </span>
-                  <Badge variant="outline" className="bg-white text-xs font-normal">
+                  <Badge
+                    variant="outline"
+                    className="bg-white text-xs font-normal"
+                  >
                     {plantLocations.length} điểm
                   </Badge>
                 </div>
@@ -294,7 +237,9 @@ export const PlantDistributionGpsStep = ({
                   <ScrollArea className="h-full">
                     <div className="divide-y divide-slate-100">
                       {plantLocations.map((location) => {
-                        const seed = MOCK_SEEDS.find((item) => item.id === location.seedId);
+                        const seed = MOCK_SEEDS.find(
+                          (item) => item.id === location.seedId,
+                        );
                         const isSelected = selectedPlantId === location.id;
 
                         return (
@@ -323,7 +268,11 @@ export const PlantDistributionGpsStep = ({
                                 <div className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
                                   <span
                                     className="w-2 h-2 rounded-full flex-shrink-0"
-                                    style={{ backgroundColor: getSeedColor(location.seedId) }}
+                                    style={{
+                                      backgroundColor: getSeedColor(
+                                        location.seedId,
+                                      ),
+                                    }}
                                   />
                                   {seed?.name}
                                 </div>
@@ -349,7 +298,9 @@ export const PlantDistributionGpsStep = ({
                                     step="0.000001"
                                     value={location.coordinate.lat}
                                     onChange={(event) => {
-                                      const value = parseFloat(event.target.value);
+                                      const value = parseFloat(
+                                        event.target.value,
+                                      );
                                       if (!Number.isNaN(value)) {
                                         updatePlantLocation(
                                           location.id,
@@ -370,7 +321,9 @@ export const PlantDistributionGpsStep = ({
                                     step="0.000001"
                                     value={location.coordinate.lng}
                                     onChange={(event) => {
-                                      const value = parseFloat(event.target.value);
+                                      const value = parseFloat(
+                                        event.target.value,
+                                      );
                                       if (!Number.isNaN(value)) {
                                         updatePlantLocation(
                                           location.id,

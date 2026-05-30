@@ -21,6 +21,7 @@ interface LocationMapCardProps {
 }
 
 export function LocationMapCard({ branch }: LocationMapCardProps) {
+  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
   const latitude = branch.latitude ? parseFloat(branch.latitude) : 10.7769;
   const longitude = branch.longitude ? parseFloat(branch.longitude) : 106.7009;
 
@@ -49,8 +50,8 @@ export function LocationMapCard({ branch }: LocationMapCardProps) {
           <MFMap
             center={{ lat: latitude, lng: longitude }}
             zoom={15}
-            accessKey="37b541da761a2896d03951cf69bc989e"
-            options={{ mapType: "raster", controlOptions: {} }}
+            accessKey={MAP4D_ACCESS_KEY}
+            options={{ mapType: "raster" }}
             version="2.5"
           >
             <MFMarker

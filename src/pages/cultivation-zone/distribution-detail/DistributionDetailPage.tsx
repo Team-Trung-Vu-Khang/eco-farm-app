@@ -30,27 +30,13 @@ import {
   Filter,
   Droplets,
   Sun,
-  Plus,
 } from "lucide-react";
-import { MapContainer, TileLayer, Marker, Popup, Tooltip } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { MFMap, MFMarker } from "react-map4d-map";
 import { PLANT_DISTRIBUTION_MOCK_DATA } from "./data/constants";
 import { MOCK_SEEDS } from "./constants";
 import usePlantDistributionStore from "@/stores/usePlantDistributionStore";
 
 // --- Mock Data ---
-
-// Fix Leaflet default marker
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
 
 interface PlantLocation {
   id: string;
@@ -141,6 +127,7 @@ const generateMockHistory = (count: number): HistoryLog[] => {
 };
 
 const DistributionDetailPage = () => {
+  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
   const [, params] = useRoute("/distribution-detail/:id");
   const [, setLocation] = useLocation();
   const { getRecordById, deleteRecord } = usePlantDistributionStore();
@@ -208,15 +195,8 @@ const DistributionDetailPage = () => {
     }
   };
 
-  // Custom Icon for Map
-  const createCustomIcon = (status: string) => {
-    const color = status === "healthy" ? "#22c55e" : "#f59e0b";
-    return L.divIcon({
-      html: `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="6" cy="6" r="5" fill="${color}" stroke="white" stroke-width="2"/></svg>`,
-      className: "bg-transparent",
-      iconSize: [12, 12],
-    });
-  };
+  const mapCenter =
+    plants[0]?.coordinate || ({ lat: 11.558, lng: 107.134 } as const);
 
   const plantColumns = [
     {
@@ -452,41 +432,26 @@ const DistributionDetailPage = () => {
                   </div>
                 </CardHeader>
                 <div className="flex-1 relative z-0">
-                  <MapContainer
-                    center={[11.558, 107.134]}
+                  <MFMap
+                    center={mapCenter}
                     zoom={17}
-                    style={{ height: "100%", width: "100%" }}
-                    className="z-0"
+                    accessKey={MAP4D_ACCESS_KEY}
+                    options={{ mapType: "raster", controlOptions: {} }}
+                    version="2.5"
                   >
-                    <TileLayer
-                      url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                      attribution="Esri"
-                    />
-                    <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}" />
                     {plants.map((plant) => (
-                      <Marker
+                      <MFMarker
                         key={plant.id}
-                        position={[plant.coordinate.lat, plant.coordinate.lng]}
-                        icon={createCustomIcon(plant.status)}
-                      >
-                        <Popup>
-                          <div className="p-1">
-                            <div className="font-bold text-sm mb-1">
-                              {plant.code}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {plant.variety}
-                            </div>
-                            <div
-                              className={`text-xs mt-1 font-medium ${plant.status === "healthy" ? "text-green-600" : "text-amber-600"}`}
-                            >
-                              Status: {plant.status}
-                            </div>
-                          </div>
-                        </Popup>
-                      </Marker>
+                        position={{
+                          lat: plant.coordinate.lat,
+                          lng: plant.coordinate.lng,
+                        }}
+                        title={`${plant.code} - ${plant.variety}`}
+                        label={plant.status === "healthy" ? "●" : "!"}
+                        clickable
+                      />
                     ))}
-                  </MapContainer>
+                  </MFMap>
                 </div>
               </Card>
             </div>

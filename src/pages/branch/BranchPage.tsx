@@ -46,7 +46,7 @@ export default function BranchPage() {
         onEdit={handleEdit}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm chi nhánh..."
-        filters={[...branchFilters]}
+        filters={[...branchFilters] as any}
         selectable
       />
 

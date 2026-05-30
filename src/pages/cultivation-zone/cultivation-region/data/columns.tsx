@@ -15,7 +15,9 @@ export const getCultivationRegionColumns = (standards: Standard[]) => [
     label: "Mã",
     render: (value: string, row: CultivationRegion) => (
       <Link href={`/cultivation-region/${row.id}`}>
-        <a className="font-mono text-xs text-primary hover:underline">{value}</a>
+        <span className="font-mono text-xs text-primary hover:underline">
+          {value}
+        </span>
       </Link>
     ),
   },

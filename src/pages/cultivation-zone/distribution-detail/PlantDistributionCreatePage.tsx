@@ -5,7 +5,6 @@ import {
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
-import "./components/leafletIconSetup";
 import { PlantDistributionConfigurationStep } from "./components/PlantDistributionConfigurationStep";
 import { PlantDistributionConfirmationStep } from "./components/PlantDistributionConfirmationStep";
 import { PlantDistributionGpsStep } from "./components/PlantDistributionGpsStep";

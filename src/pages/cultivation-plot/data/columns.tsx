@@ -16,7 +16,9 @@ export const getCultivationPlotColumns = (
     label: "Mã",
     render: (value: string, row: CultivationPlot) => (
       <Link href={`/cultivation-plot/${row.id}`}>
-        <a className="font-mono text-xs text-primary hover:underline">{value}</a>
+        <span className="font-mono text-xs text-primary hover:underline">
+          {value}
+        </span>
       </Link>
     ),
   },

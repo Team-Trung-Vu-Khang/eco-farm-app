@@ -12,9 +12,7 @@ import {
   useToast,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import "leaflet/dist/leaflet.css";
 import {
-  Activity,
   Filter,
   Leaf,
   MapPin,
@@ -28,16 +26,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import {
-  MapContainer,
-  Marker,
-  Polygon,
-  Popup,
-  TileLayer,
-  Tooltip,
-  useMap,
-} from "react-leaflet";
+import { useState } from "react";
+import { MFMap, MFMarker, MFPolygon } from "react-map4d-map";
 import useCropDetailStore from "../../../stores/useCropDetailStore";
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 import useRegionStore from "../../../stores/useRegionStore";
@@ -46,18 +36,6 @@ import { type CropDetail } from "../constants";
 import { CultivationZoneDialog } from "./components/CultivationZoneDialog";
 import { CropDetailDialog } from "./components/CropDetailDialog";
 import useGroupCropStore from "@/stores/useGroupCropStore";
-import { getMarkerIcon } from "../cultivation-region/components/mapUtils";
-
-const activeIcon = getMarkerIcon("green");
-const defaultIcon = getMarkerIcon("blue");
-
-const SetMapCenter = ({ lat, lng }: { lat: number; lng: number }) => {
-  const map = useMap();
-  useEffect(() => {
-    map.flyTo([lat, lng], 17, { duration: 1 });
-  }, [lat, lng, map]);
-  return null;
-};
 
 const MapContent = ({
   currentRegion,
@@ -72,114 +50,68 @@ const MapContent = ({
 }) => {
   return (
     <>
-      <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-
       {/* Region Outline (Blue) */}
       {currentRegion?.coordinates && (
-        <Polygon
-          positions={currentRegion.coordinates.map((coord: any) => [
-            coord.lat,
-            coord.lng,
-          ])}
-          pathOptions={{
-            color: "#3b82f6",
-            weight: 3,
-            fillOpacity: 0.1,
-          }}
-        >
-          <Tooltip>
-            <div className="text-xs font-bold text-slate-800">
-              Vùng: {currentRegion.name}
-            </div>
-          </Tooltip>
-        </Polygon>
+        <MFPolygon
+          paths={[
+            currentRegion.coordinates.map((coord: any) => ({
+              lat: coord.lat,
+              lng: coord.lng,
+            })),
+          ]}
+          strokeColor="#3b82f6"
+          strokeWidth={3}
+          fillColor="#3b82f6"
+          fillOpacity={0.1}
+        />
       )}
 
       {/* Area Outlines (Green) */}
       {currentRegion?.subAreas?.map((area: any) => (
-        <Polygon
+        <MFPolygon
           key={area.id}
-          positions={area.coordinates.map((coord: any) => [
-            coord.lat,
-            coord.lng,
-          ])}
-          pathOptions={{
-            color: "#22c55e",
-            weight: 2,
-            fillOpacity: 0.15,
-          }}
-        >
-          <Tooltip>
-            <div className="text-xs font-bold text-slate-800">
-              Khu vực: {area.name}
-            </div>
-          </Tooltip>
-        </Polygon>
+          paths={[
+            area.coordinates.map((coord: any) => ({
+              lat: coord.lat,
+              lng: coord.lng,
+            })),
+          ]}
+          strokeColor="#22c55e"
+          strokeWidth={2}
+          fillColor="#22c55e"
+          fillOpacity={0.15}
+        />
       ))}
 
       {/* Plot Outlines (Orange) */}
       {currentRegion?.subAreas?.flatMap((area: any) =>
         area.plots.map((plot: any) => (
-          <Polygon
+          <MFPolygon
             key={plot.id}
-            positions={plot.coordinates.map((coord: any) => [
-              coord.lat,
-              coord.lng,
-            ])}
-            pathOptions={{
-              color: "#f97316",
-              weight: 1.5,
-              fillOpacity: 0.2,
-            }}
-          >
-            <Tooltip>
-              <div className="text-xs font-bold text-slate-800">
-                Lô: {plot.name}
-              </div>
-            </Tooltip>
-          </Polygon>
+            paths={[
+              plot.coordinates.map((coord: any) => ({
+                lat: coord.lat,
+                lng: coord.lng,
+              })),
+            ]}
+            strokeColor="#f97316"
+            strokeWidth={1.5}
+            fillColor="#f97316"
+            fillOpacity={0.2}
+          />
         )),
       )}
 
       {cropsInThisRegion.map((c) => (
-        <Marker
+        <MFMarker
           key={c.id}
-          position={[c.coordinate.lat, c.coordinate.lng]}
-          icon={activeCropInDialog?.id === c.id ? activeIcon : defaultIcon}
-          eventHandlers={{
-            click: () => setActiveCropInDialog(c),
-          }}
-        >
-          <Popup className="rounded-2xl" autoPan={false}>
-            <div className="p-1 min-w-37.5">
-              <div className="flex items-center gap-2 mb-2">
-                <Badge
-                  variant="secondary"
-                  className="bg-primary/10 text-primary border-none text-[10px] font-black"
-                >
-                  {c.code}
-                </Badge>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                  {new Date(c.plantedDate).getFullYear()}
-                </span>
-              </div>
-              <h5 className="font-black text-slate-800 leading-tight text-sm mb-1">
-                {c.name}
-              </h5>
-              <div className="flex items-center gap-1 text-[10px] text-slate-500 font-medium">
-                <Activity size={10} className="text-primary" />
-                <span>{c.growthStage}</span>
-              </div>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-      {activeCropInDialog && (
-        <SetMapCenter
-          lat={activeCropInDialog.coordinate.lat}
-          lng={activeCropInDialog.coordinate.lng}
+          position={{ lat: c.coordinate.lat, lng: c.coordinate.lng }}
+          title={c.name}
+          label={activeCropInDialog?.id === c.id ? "●" : ""}
+          clickable
+          onClick={() => setActiveCropInDialog(c)}
         />
-      )}
+      ))}
     </>
   );
 };
@@ -336,6 +268,7 @@ const RegionListItem = ({
 };
 
 const SearchCropPage = () => {
+  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
   const { toast } = useToast();
   const { crops } = useCropDetailStore();
   const { regions } = useRegionStore();
@@ -486,6 +419,40 @@ const SearchCropPage = () => {
     }
     return value !== undefined && value !== null;
   }).length;
+
+  const mapView = (() => {
+    if (activeCropInDialog) {
+      return {
+        center: {
+          lat: activeCropInDialog.coordinate.lat,
+          lng: activeCropInDialog.coordinate.lng,
+        },
+        zoom: 17,
+      };
+    }
+
+    if (!selectedRegionId) {
+      return {
+        center: { lat: 11.53, lng: 106.88 },
+        zoom: 15,
+      };
+    }
+
+    const firstCrop = filteredCrops.find(
+      (c) => c.regionId === selectedRegionId,
+    );
+    if (!firstCrop) {
+      return {
+        center: { lat: 11.53, lng: 106.88 },
+        zoom: 15,
+      };
+    }
+
+    return {
+      center: { lat: firstCrop.coordinate.lat, lng: firstCrop.coordinate.lng },
+      zoom: 15,
+    };
+  })();
 
   return (
     <AdminLayout title="Tìm kiếm & Truy xuất nguồn gốc">
@@ -962,24 +929,15 @@ const SearchCropPage = () => {
                                     isCropDetailOpen && "opacity-0",
                                   )}
                                 >
-                                  <MapContainer
-                                    center={
-                                      activeCropInDialog
-                                        ? [
-                                            activeCropInDialog.coordinate.lat,
-                                            activeCropInDialog.coordinate.lng,
-                                          ]
-                                        : cropsInThisRegion.length > 0
-                                          ? [
-                                              cropsInThisRegion[0].coordinate
-                                                .lat,
-                                              cropsInThisRegion[0].coordinate
-                                                .lng,
-                                            ]
-                                          : [11.53, 106.88]
-                                    }
-                                    zoom={15}
-                                    style={{ height: "100%", width: "100%" }}
+                                  <MFMap
+                                    center={mapView.center}
+                                    zoom={mapView.zoom}
+                                    accessKey={MAP4D_ACCESS_KEY}
+                                    options={{
+                                      mapType: "raster",
+                                      controlOptions: {},
+                                    }}
+                                    version="2.5"
                                   >
                                     <MapContent
                                       currentRegion={currentRegion}
@@ -989,7 +947,7 @@ const SearchCropPage = () => {
                                         setActiveCropInDialog
                                       }
                                     />
-                                  </MapContainer>
+                                  </MFMap>
                                   <div
                                     onClick={() => setIsMapExpanded(true)}
                                     className="p-3 rounded-xl cursor-pointer absolute top-4 right-4 z-1000 bg-white/90 backdrop-blur-sm shadow-xl hover:bg-white transition-colors"
@@ -1149,17 +1107,12 @@ const SearchCropPage = () => {
               <div className="flex h-full w-full overflow-hidden">
                 {/* Map Section */}
                 <div className="flex-1 relative bg-white border-r">
-                  <MapContainer
-                    center={
-                      activeCropInDialog
-                        ? [
-                            activeCropInDialog.coordinate.lat,
-                            activeCropInDialog.coordinate.lng,
-                          ]
-                        : [11.53, 106.88]
-                    }
-                    zoom={16}
-                    style={{ height: "100%", width: "100%" }}
+                  <MFMap
+                    center={mapView.center}
+                    zoom={mapView.zoom}
+                    accessKey={MAP4D_ACCESS_KEY}
+                    options={{ mapType: "raster", controlOptions: {} }}
+                    version="2.5"
                   >
                     <MapContent
                       currentRegion={regions.find(
@@ -1171,7 +1124,7 @@ const SearchCropPage = () => {
                       activeCropInDialog={activeCropInDialog}
                       setActiveCropInDialog={setActiveCropInDialog}
                     />
-                  </MapContainer>
+                  </MFMap>
                   <div
                     className="p-3 rounded-xl cursor-pointer absolute top-4 right-4 z-1000 bg-white/90 backdrop-blur-sm shadow-xl hover:bg-white transition-colors"
                     onClick={() => setIsMapExpanded(false)}

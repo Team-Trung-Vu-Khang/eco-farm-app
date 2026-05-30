@@ -23,7 +23,9 @@ export const plantDistributionColumns = [
     label: "Mã phân bổ",
     render: (value: string, row: PlantDistributionListItem) => (
       <Link href={`/distribution-detail/${row.id}`}>
-        <a className="font-mono text-xs text-primary hover:underline">{value}</a>
+        <span className="font-mono text-xs text-primary hover:underline">
+          {value}
+        </span>
       </Link>
     ),
   },
