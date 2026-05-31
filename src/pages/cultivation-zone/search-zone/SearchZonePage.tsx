@@ -39,7 +39,7 @@ import {
   X,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { MFMap, MFPolygon } from "react-map4d-map";
+import { MFMap, MFMarker, MFPolygon } from "react-map4d-map";
 import { useLocation } from "wouter";
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 import useRegionStore from "../../../stores/useRegionStore";
@@ -1216,6 +1216,7 @@ const SearchZonePage = () => {
                     >
                       <ZoneMapContent
                         regions={selectedCultivationTargets.visibleRegions}
+                        enterprises={enterprises}
                         selectedUnit={selectedUnit}
                         targetRegionIds={
                           selectedCultivationTargets.targetRegionIds
@@ -1284,6 +1285,7 @@ const SearchZonePage = () => {
                               regions={
                                 selectedCultivationTargets.visibleRegions
                               }
+                              enterprises={enterprises}
                               selectedUnit={selectedUnit}
                               targetRegionIds={
                                 selectedCultivationTargets.targetRegionIds
@@ -2254,6 +2256,7 @@ const GeographyScopeTree = ({
 
 const ZoneMapContent = ({
   regions,
+  enterprises,
   selectedUnit,
   targetRegionIds,
   targetAreaIds,
@@ -2263,6 +2266,7 @@ const ZoneMapContent = ({
   onSelectUnit,
 }: {
   regions: Region[];
+  enterprises: any[];
   selectedUnit: any;
   targetRegionIds: Set<number>;
   targetAreaIds: Set<string>;
@@ -2328,8 +2332,55 @@ const ZoneMapContent = ({
     return path;
   };
 
+  const getRegionCenter = (coordinates?: Coordinate[]) => {
+    if (!coordinates?.length) return null;
+    const sum = coordinates.reduce(
+      (acc, coord) => ({
+        lat: acc.lat + coord.lat,
+        lng: acc.lng + coord.lng,
+      }),
+      { lat: 0, lng: 0 },
+    );
+    return {
+      lat: sum.lat / coordinates.length,
+      lng: sum.lng / coordinates.length,
+    };
+  };
+
   return (
     <>
+      {/* Owner Logo Markers */}
+      {regions.map((region) => {
+        const center = getRegionCenter(region.coordinates);
+        if (!center) return null;
+
+        const ownerEnterprise = enterprises.find(
+          (enterprise) =>
+            String(enterprise.id) === String((region as any).enterpriseId),
+        );
+
+        if (!ownerEnterprise?.image) return null;
+
+        return (
+          <MFMarker
+            key={`region-owner-${region.id}`}
+            position={center}
+            icon={{
+              url: ownerEnterprise.image,
+              width: 34,
+              height: 34,
+            }}
+            title={ownerEnterprise.brandName || ownerEnterprise.name}
+            clickable
+            label={""}
+            onClick={() => {
+              onFocusCoordinates(region.coordinates);
+              onSelectUnit("region", region);
+            }}
+          />
+        );
+      })}
+
       {/* Regions */}
       {regions.map((region) => {
         const isTargetRegion = targetRegionIds.has(region.id);

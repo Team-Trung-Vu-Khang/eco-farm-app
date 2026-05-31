@@ -35,6 +35,7 @@ const SearchUnitPage = () => {
     mapCurrentCenter,
     visiblePolygons,
     enterpriseMarkers,
+    regionLogoMarkers,
     activeFilterCount,
     toggleFilter,
     resetFilters,
@@ -135,6 +136,7 @@ const SearchUnitPage = () => {
             mapCurrentCenter={mapCurrentCenter}
             visiblePolygons={visiblePolygons}
             enterpriseMarkers={enterpriseMarkers}
+            regionLogoMarkers={regionLogoMarkers}
             selectedEnterpriseId={selectedEnterpriseId}
             isDetailOpen={!!selectedEnterpriseId}
           />

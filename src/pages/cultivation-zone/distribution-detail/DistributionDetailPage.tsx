@@ -32,6 +32,7 @@ import {
   Sun,
 } from "lucide-react";
 import { MFMap, MFMarker } from "react-map4d-map";
+import treeMarkerIcon from "@/assets/tree.webp";
 import { PLANT_DISTRIBUTION_MOCK_DATA } from "./data/constants";
 import { MOCK_SEEDS } from "./constants";
 import usePlantDistributionStore from "@/stores/usePlantDistributionStore";
@@ -445,6 +446,11 @@ const DistributionDetailPage = () => {
                         position={{
                           lat: plant.coordinate.lat,
                           lng: plant.coordinate.lng,
+                        }}
+                        icon={{
+                          url: treeMarkerIcon,
+                          width: 32,
+                          height: 32,
                         }}
                         title={`${plant.code} - ${plant.variety}`}
                         label={""}

@@ -6,6 +6,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { MapPin, Maximize2 } from "lucide-react";
 import { MFMap, MFMarker, MFPolygon } from "react-map4d-map";
+import treeMarkerIcon from "@/assets/tree.webp";
 import type {
   Plant,
   Region,
@@ -104,6 +105,11 @@ export const PlantIdentificationMapSection = ({
 
           <MFMarker
             position={{ lat: plant.coordinate.lat, lng: plant.coordinate.lng }}
+            icon={{
+              url: treeMarkerIcon,
+              width: 32,
+              height: 32,
+            }}
             title={`${plant.code} - ${plant.name}`}
             label={""}
             clickable
