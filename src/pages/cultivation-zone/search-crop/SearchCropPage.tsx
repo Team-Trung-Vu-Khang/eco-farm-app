@@ -51,7 +51,10 @@ const MapContent = ({
   const toClosedPath = (coordinates?: Array<{ lat: number; lng: number }>) => {
     if (!coordinates || coordinates.length < 3) return [];
 
-    const path = coordinates.map((coord) => ({ lat: coord.lat, lng: coord.lng }));
+    const path = coordinates.map((coord) => ({
+      lat: coord.lat,
+      lng: coord.lng,
+    }));
     const first = path[0];
     const last = path[path.length - 1];
     if (first.lat !== last.lat || first.lng !== last.lng) {
@@ -117,7 +120,7 @@ const MapContent = ({
           key={c.id}
           position={{ lat: c.coordinate.lat, lng: c.coordinate.lng }}
           title={c.name}
-          label={activeCropInDialog?.id === c.id ? "●" : ""}
+          label={""}
           clickable
           onClick={() => setActiveCropInDialog(c)}
         />

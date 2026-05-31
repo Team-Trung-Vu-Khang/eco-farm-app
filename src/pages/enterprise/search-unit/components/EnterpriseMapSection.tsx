@@ -1,9 +1,5 @@
 import React from "react";
-import {
-  Button,
-  Card,
-  cn,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Button, Card, cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Layers } from "lucide-react";
 import { MFMap, MFMarker, MFPolygon } from "react-map4d-map";
 
@@ -24,13 +20,13 @@ interface EnterpriseMapSectionProps {
   isDetailOpen: boolean;
 }
 
-const MapControls = ({
-  mapRef,
-}: {
-  mapRef: React.MutableRefObject<any>;
-}) => {
+const MapControls = ({ mapRef }: { mapRef: React.MutableRefObject<any> }) => {
   return (
-    <div className={cn("absolute bottom-6 right-6 z-20 flex flex-col gap-2 transition-all duration-300")}>
+    <div
+      className={cn(
+        "absolute bottom-6 right-6 z-20 flex flex-col gap-2 transition-all duration-300",
+      )}
+    >
       <Button
         variant="secondary"
         size="icon"
@@ -42,7 +38,9 @@ const MapControls = ({
           if (typeof map.setZoom === "function") map.setZoom(zoom + 1);
         }}
       >
-        <span className="text-xl font-bold text-slate-700 group-hover:text-primary">+</span>
+        <span className="text-xl font-bold text-slate-700 group-hover:text-primary">
+          +
+        </span>
       </Button>
       <Button
         variant="secondary"
@@ -55,7 +53,9 @@ const MapControls = ({
           if (typeof map.setZoom === "function") map.setZoom(zoom - 1);
         }}
       >
-        <span className="text-xl font-bold text-slate-700 group-hover:text-primary">-</span>
+        <span className="text-xl font-bold text-slate-700 group-hover:text-primary">
+          -
+        </span>
       </Button>
     </div>
   );
@@ -95,29 +95,30 @@ export const EnterpriseMapSection: React.FC<EnterpriseMapSectionProps> = ({
             if (map) mapRef.current = map;
           }}
         >
-          {visiblePolygons.map((poly) => (
-            toClosedPath(poly.coordinates).length > 0 && (
-            <MFPolygon
-              key={poly.id}
-              paths={[toClosedPath(poly.coordinates)]}
-              strokeColor={poly.color}
-              strokeWidth={2}
-              fillColor={poly.color}
-              fillOpacity={0.2}
-              clickable
-              onClick={() => {
-                const url = `/${poly.type}-distribution/detail/${poly.rawId}`;
-                window.open(url, "_blank");
-              }}
-            />
-            )
-          ))}
+          {visiblePolygons.map(
+            (poly) =>
+              toClosedPath(poly.coordinates).length > 0 && (
+                <MFPolygon
+                  key={poly.id}
+                  paths={[toClosedPath(poly.coordinates)]}
+                  strokeColor={poly.color}
+                  strokeWidth={2}
+                  fillColor={poly.color}
+                  fillOpacity={0.2}
+                  clickable
+                  onClick={() => {
+                    const url = `/${poly.type}-distribution/detail/${poly.rawId}`;
+                    window.open(url, "_blank");
+                  }}
+                />
+              ),
+          )}
           {enterpriseMarkers.map((marker) => (
             <MFMarker
               key={`enterprise-marker-${marker.id}`}
               position={{ lat: marker.lat, lng: marker.lng }}
               title={`${marker.code} - ${marker.name}`}
-              label={selectedEnterpriseId === marker.id ? "●" : ""}
+              label={""}
             />
           ))}
           <MapControls mapRef={mapRef} />

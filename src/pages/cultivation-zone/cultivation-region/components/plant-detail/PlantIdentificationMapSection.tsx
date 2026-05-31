@@ -6,7 +6,11 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { MapPin, Maximize2 } from "lucide-react";
 import { MFMap, MFMarker, MFPolygon } from "react-map4d-map";
-import type { Plant, Region, SubArea } from "../../../../region-chart/constants";
+import type {
+  Plant,
+  Region,
+  SubArea,
+} from "../../../../region-chart/constants";
 
 type PlotLike = {
   id: string;
@@ -101,7 +105,7 @@ export const PlantIdentificationMapSection = ({
           <MFMarker
             position={{ lat: plant.coordinate.lat, lng: plant.coordinate.lng }}
             title={`${plant.code} - ${plant.name}`}
-            label={plant.code || "●"}
+            label={""}
             clickable
           />
         </MFMap>
