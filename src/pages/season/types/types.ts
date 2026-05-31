@@ -25,7 +25,7 @@ export interface Season {
   // but the user said "one or more". Maybe for intercropping or sequential cycles?
   growthCycleIds: string[];
   growthCycles?: GrowthCycle[]; // Populated data
-  selectedStages?: Record<string, Record<string, number>>; // cycleId -> stageId -> duration
+  selectedStages?: Record<string, Record<string, string | number>>; // cycleId -> stageId -> duration
 
   documents: SeasonDocument[];
 
@@ -47,7 +47,7 @@ export interface CreateSeasonForm {
   cropId?: string;
   varietyId?: string;
   growthCycleIds: string[];
-  selectedStages: Record<string, Record<string, number>>;
+  selectedStages: Record<string, Record<string, string | number>>;
   documents: File[];
 }
 

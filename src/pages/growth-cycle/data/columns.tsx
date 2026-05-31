@@ -56,14 +56,64 @@ export const growthCycleColumns: Column<GrowthCycle>[] = [
   {
     key: "totalDays",
     label: "Thời gian",
-    render: (value) => (
-      <Badge
-        variant="secondary"
-        className="bg-blue-50 text-blue-700 border-blue-100 text-[10px] font-bold uppercase tracking-wider"
-      >
-        {value} NGÀY
-      </Badge>
-    ),
+    render: (value, row: GrowthCycle) => {
+      let hasDays = false;
+      let hasMonths = false;
+      let hasYears = false;
+
+      let sumYears = 0;
+      let sumMonths = 0;
+      let sumDays = 0;
+
+      row.stages.forEach((stage) => {
+        const durationStr = String(stage.duration || "");
+        if (durationStr.includes("ngày")) hasDays = true;
+        if (durationStr.includes("tháng")) hasMonths = true;
+        if (durationStr.includes("năm")) hasYears = true;
+
+        const yearMatch = durationStr.match(/(\d+)\s*năm/);
+        const monthMatch = durationStr.match(/(\d+)\s*tháng/);
+        const dayMatch = durationStr.match(/(\d+)\s*ngày/);
+
+        if (yearMatch) sumYears += parseInt(yearMatch[1]);
+        if (monthMatch) sumMonths += parseInt(monthMatch[1]);
+        if (dayMatch) sumDays += parseInt(dayMatch[1]);
+
+        if (
+          !yearMatch &&
+          !monthMatch &&
+          !dayMatch &&
+          !isNaN(Number(durationStr)) &&
+          Number(durationStr) > 0
+        ) {
+          hasDays = true;
+          sumDays += Number(durationStr);
+        }
+      });
+
+      const computedTotalDays = sumYears * 365 + sumMonths * 30 + sumDays;
+
+      let displayStr = "";
+      if (hasDays) {
+        displayStr = `${computedTotalDays} ngày`;
+      } else if (hasMonths) {
+        const totalMonths = sumYears * 12 + sumMonths;
+        displayStr = `${totalMonths} tháng`;
+      } else if (hasYears) {
+        displayStr = `${sumYears} năm`;
+      } else {
+        displayStr = `${computedTotalDays} ngày`;
+      }
+
+      return (
+        <Badge
+          variant="secondary"
+          className="bg-blue-50 text-blue-700 border-blue-100 text-[10px] font-bold uppercase tracking-wider"
+        >
+          {displayStr}
+        </Badge>
+      );
+    },
   },
   {
     key: "numStages",

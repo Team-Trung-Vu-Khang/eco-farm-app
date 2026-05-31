@@ -9,8 +9,8 @@ export const initialData: Variety[] = [
     varietyCode: "VARI01",
     varietyName: "Sầu riêng Ri6",
     scientificName: "Durio zibethinus",
-    origin: "Việt Nam (Bình Hòa Phước, Vĩnh Long)",
-    growthDuration: "3-4 năm",
+    origin: "1",
+    growthDuration: "4 năm",
     averageYield: "20-25 tấn/ha/năm",
     description:
       "Giống sầu riêng cao cấp, tỷ lệ hạt lép cao (90-95%), cơm vàng đậm, vị ngọt béo, không xơ, ráo và không dính tay. Trồng phổ biến tại ĐBSCL, Đông Nam Bộ và Tây Nguyên.",
@@ -27,7 +27,7 @@ export const initialData: Variety[] = [
     varietyCode: "VARI02",
     varietyName: "Sầu riêng Monthong (Dona/Thái)",
     scientificName: "Durio zibethinus (Monthong)",
-    origin: "Thái Lan",
+    origin: "2",
     growthDuration: "4 năm",
     averageYield: "50-60 tấn/ha",
     description:
@@ -45,8 +45,8 @@ export const initialData: Variety[] = [
     varietyCode: "VARI03",
     varietyName: "Sầu riêng Musang King (D197)",
     scientificName: "Durio zibethinus",
-    origin: "Malaysia (Sabah/Kelantan)",
-    growthDuration: "4-5 năm",
+    origin: "3",
+    growthDuration: "5 năm",
     averageYield: "15-20 tấn/ha/năm",
     description:
       "Mệnh danh là 'vua sầu riêng', đít trái chia 5 rãnh hình sao. Cơm vàng đậm/cam, dẻo mịn, hạt dẹp, vị ngọt đậm xen lẫn chút đắng nhẹ đặc trưng. Trái sẽ tự rụng khi chín.",
@@ -63,8 +63,8 @@ export const initialData: Variety[] = [
     varietyCode: "VARI04",
     varietyName: "Sầu riêng Khổ qua xanh",
     scientificName: "Durio zibethinus",
-    origin: "Việt Nam (Cai Lậy, Tiền Giang)",
-    growthDuration: "95-100 ngày (thời gian đậu trái)",
+    origin: "4",
+    growthDuration: "100 ngày",
     averageYield: "50-60 tấn/ha",
     description:
       "Trái hình thoi giống trái khổ qua, vỏ vẫn xanh khi chín. Dễ ra hoa đậu trái, năng suất cực cao. Cơm mỏng màu vàng nhạt, béo vừa, hơi nhẫn đắng nhưng rất thơm.",
@@ -81,7 +81,7 @@ export const initialData: Variety[] = [
     varietyCode: "VARI05",
     varietyName: "Sầu riêng Chuồng bò hạt lép",
     scientificName: "Durio zibethinus",
-    origin: "Việt Nam (Cai Lậy, Tiền Giang / Bến Tre)",
+    origin: "5",
     growthDuration: "5 năm",
     averageYield: "60 kg/cây/năm",
     description:
@@ -99,8 +99,8 @@ export const initialData: Variety[] = [
     varietyCode: "VARI06",
     varietyName: "Sầu riêng Chín Hóa (Cơm vàng sữa hạt lép)",
     scientificName: "Durio zibethinus",
-    origin: "Việt Nam (Chợ Lách, Bến Tre)",
-    growthDuration: "3-4 năm",
+    origin: "6",
+    growthDuration: "4 năm",
     averageYield: "50-70 trái/cây/năm",
     description:
       "Trái hình trụ, vỏ màu vàng cám. Cơm màu vàng rơm, rất béo, ngọt, dẻo mềm không dính tay. Tỷ lệ hạt lép tự nhiên rất cao (30-40%).",
@@ -117,7 +117,7 @@ export const initialData: Variety[] = [
     varietyCode: "VARI07",
     varietyName: "Sầu riêng Black Thorn (Gai đen / D200)",
     scientificName: "Durio zibethinus",
-    origin: "Malaysia",
+    origin: "7",
     growthDuration: "4 năm",
     averageYield: "Trung bình đến cao",
     description:
@@ -135,8 +135,8 @@ export const initialData: Variety[] = [
     varietyCode: "VARI08",
     varietyName: "Sầu riêng Sáu Hữu",
     scientificName: "Durio zibethinus",
-    origin: "Việt Nam (Cai Lậy, Tiền Giang / Gia Lai)",
-    growthDuration: "105-115 ngày (thời gian đậu trái)",
+    origin: "8",
+    growthDuration: "115 ngày",
     averageYield: "Trung bình (năng suất không cao)",
     description:
       "Trái nhỏ thon dài, gai dài. Cơm màu vàng tươi, hàm lượng nước thấp nên mềm xốp, ráo, tỷ lệ ăn được cao, hương vị béo ngậy đậm đà.",

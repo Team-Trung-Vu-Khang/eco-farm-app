@@ -17,11 +17,10 @@ export default function PlanPage() {
     setDeleteOpen,
     handleDelete,
     handleConfirmDelete,
+    handleDuplicate,
     goToView,
     goToEdit,
   } = usePlanPage();
-
-  console.log("plans", plans);
 
   return (
     <AdminLayout
@@ -47,6 +46,7 @@ export default function PlanPage() {
         data={plans}
         onView={(item) => goToView(item.id)}
         onEdit={(item) => goToEdit(item.id)}
+        onDuplicate={handleDuplicate}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm kế hoạch..."
         filters={planFilters}

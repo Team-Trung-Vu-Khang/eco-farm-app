@@ -86,10 +86,10 @@ function UpdateSeasonContent({ season }: { season: Season }) {
       formData={formData}
       growthCycles={growthCycles}
       onBack={() => setLocation("/season")}
-      onCycleConfirm={(growthCycleIds, selectedStages) =>
+      onCycleConfirm={(growthCycleId, selectedStages) =>
         setFormData({
           ...formData,
-          growthCycleIds,
+          growthCycleIds: growthCycleId ? [growthCycleId] : [],
           selectedStages,
         })
       }

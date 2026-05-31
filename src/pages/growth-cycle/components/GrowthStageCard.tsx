@@ -9,7 +9,7 @@ import {
   RadioGroupItem,
   Button,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Trash, Upload, FileText } from "lucide-react";
+import { Trash, Upload, FileText, Calendar } from "lucide-react";
 import type { GrowthStage } from "../types/types";
 import { safeConvertLexicalToHtml } from "@/utils/commons";
 
@@ -28,6 +28,34 @@ export const GrowthStageCard = ({
 }: GrowthStageCardProps) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  const getDurationParts = () => {
+    const duration = String(stage.duration || "");
+    const yearMatch = duration.match(/(\d+)\s*năm/);
+    const monthMatch = duration.match(/(\d+)\s*tháng/);
+    const dayMatch = duration.match(/(\d+)\s*ngày/);
+
+    const isRawNumber = !yearMatch && !monthMatch && !dayMatch && !isNaN(Number(duration)) && Number(duration) > 0;
+
+    return {
+      years: yearMatch ? yearMatch[1] : "",
+      months: monthMatch ? monthMatch[1] : "",
+      days: dayMatch ? dayMatch[1] : (isRawNumber ? duration : ""),
+    };
+  };
+
+  const { years, months, days } = getDurationParts();
+
+  const handleDurationChange = (type: "years" | "months" | "days", value: string) => {
+    const cleanValue = value.replace(/\D/g, "");
+    const newParts = { years, months, days, [type]: cleanValue };
+    const parts = [];
+    if (newParts.years && parseInt(newParts.years) > 0) parts.push(`${newParts.years} năm`);
+    if (newParts.months && parseInt(newParts.months) > 0) parts.push(`${newParts.months} tháng`);
+    if (newParts.days && parseInt(newParts.days) > 0) parts.push(`${newParts.days} ngày`);
+    
+    onUpdate(stage.id, { duration: parts.join(" ") });
+  };
 
   const pdfFileName =
     stage.pdfFile &&
@@ -89,15 +117,45 @@ export const GrowthStageCard = ({
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-sm font-semibold">Thời gian (ngày)</Label>
-            <Input
-              type="number"
-              value={stage.duration || ""}
-              onChange={(e) =>
-                onUpdate(stage.id, { duration: Number(e.target.value) })
-              }
-              placeholder="0"
-            />
+            <Label className="text-sm font-semibold">Thời gian</Label>
+            <div className="relative flex items-center h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 group">
+              <Calendar className="w-4 h-4 text-slate-400 mr-2 group-focus-within:text-primary transition-colors shrink-0" />
+              <div className="flex items-center gap-1 flex-1 justify-around">
+                <div className="flex items-center">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={years}
+                    onChange={(e) => handleDurationChange("years", e.target.value)}
+                    className="w-10 outline-none text-center bg-transparent p-0 placeholder:text-slate-300 [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <span className="text-slate-500 text-xs shrink-0">năm</span>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={months}
+                    onChange={(e) => handleDurationChange("months", e.target.value)}
+                    className="w-10 outline-none text-center bg-transparent p-0 placeholder:text-slate-300 [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <span className="text-slate-500 text-xs shrink-0">tháng</span>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={days}
+                    onChange={(e) => handleDurationChange("days", e.target.value)}
+                    className="w-10 outline-none text-center bg-transparent p-0 placeholder:text-slate-300 [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <span className="text-slate-500 text-xs shrink-0">ngày</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

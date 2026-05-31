@@ -14,8 +14,8 @@ interface SeasonFormPageProps {
   growthCycles: GrowthCycle[];
   onBack: () => void;
   onCycleConfirm: (
-    growthCycleIds: string[],
-    selectedStages: Record<string, Record<string, number>>,
+    growthCycleId: string,
+    selectedStages: Record<string, Record<string, string>>,
   ) => void;
   onDialogOpenChange: (open: boolean) => void;
   onFormChange: (formData: SeasonFormData) => void;
@@ -98,7 +98,7 @@ export function SeasonFormPage({
         scope={formData.scope}
         cropId={formData.cropId}
         varietyId={formData.varietyId}
-        selectedIds={formData.growthCycleIds}
+        selectedId={formData.growthCycleIds[0] || ""}
         selectedStages={formData.selectedStages}
         onConfirm={onCycleConfirm}
       />

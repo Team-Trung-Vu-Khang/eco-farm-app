@@ -1891,6 +1891,7 @@ interface PlanStore {
   addPlan: (plan: Omit<Plan, "id" | "createdAt">) => void;
   updatePlan: (id: number, updates: Partial<Plan>) => void;
   deletePlan: (id: number) => void;
+  duplicatePlan: (id: number) => void;
   resetPlans: () => void;
   getStatistics: () => {
     active: number;
@@ -1937,6 +1938,27 @@ const usePlanStore = create<PlanStore>()(
           set((state) => ({
             plans: state.plans.filter((p) => p.id !== id),
           }));
+        },
+
+        duplicatePlan: (id) => {
+          const plan = get().plans.find((p) => p.id === id);
+          if (plan) {
+            const newId =
+              get().plans.length > 0
+                ? Math.max(...get().plans.map((p) => p.id)) + 1
+                : 1;
+            const newPlan: Plan = {
+              ...plan,
+              id: newId,
+              name: `${plan.name} (Bản sao)`,
+              code: `${plan.code}-COPY`,
+              status: "draft",
+              createdAt: new Date().toISOString().split("T")[0],
+            };
+            set((state) => ({
+              plans: [...state.plans, newPlan],
+            }));
+          }
         },
 
         resetPlans: () => {

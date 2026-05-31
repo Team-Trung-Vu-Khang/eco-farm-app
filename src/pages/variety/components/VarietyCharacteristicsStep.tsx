@@ -28,6 +28,32 @@ export function VarietyCharacteristicsStep({
   fileInputRef,
   onPickIllustration,
 }: VarietyCharacteristicsStepProps) {
+  const getGrowthDurationParts = () => {
+    const duration = formData.growthDuration || "";
+    const yearMatch = duration.match(/(\d+)\s*năm/);
+    const monthMatch = duration.match(/(\d+)\s*tháng/);
+    const dayMatch = duration.match(/(\d+)\s*ngày/);
+
+    return {
+      years: yearMatch ? yearMatch[1] : "",
+      months: monthMatch ? monthMatch[1] : "",
+      days: dayMatch ? dayMatch[1] : "",
+    };
+  };
+
+  const { years, months, days } = getGrowthDurationParts();
+
+  const handleGrowthDurationChange = (type: "years" | "months" | "days", value: string) => {
+    const cleanValue = value.replace(/\D/g, "");
+    const newParts = { years, months, days, [type]: cleanValue };
+    const parts = [];
+    if (newParts.years && parseInt(newParts.years) > 0) parts.push(`${newParts.years} năm`);
+    if (newParts.months && parseInt(newParts.months) > 0) parts.push(`${newParts.months} tháng`);
+    if (newParts.days && parseInt(newParts.days) > 0) parts.push(`${newParts.days} ngày`);
+    
+    updateField("growthDuration", parts.join(" "));
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="relative overflow-hidden rounded-xl border border-amber-200 bg-linear-to-r from-amber-50 via-white to-amber-50 p-6 shadow-sm">
@@ -112,19 +138,43 @@ export function VarietyCharacteristicsStep({
               <Label className="text-sm font-semibold text-slate-700">
                 Thời gian sinh trưởng
               </Label>
-              <div className="relative group">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-amber-600 transition-colors" />
-                <Input
-                  value={formData.growthDuration}
-                  onChange={(event) =>
-                    updateField("growthDuration", event.target.value)
-                  }
-                  placeholder="VD: 3 - 4"
-                  className="pl-10 pr-16"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400 bg-slate-50 px-2 py-0.5 rounded">
-                  năm
-                </span>
+              <div className="relative flex items-center h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500/20 group">
+                <Calendar className="w-4 h-4 text-slate-400 mr-2 group-focus-within:text-amber-600 transition-colors shrink-0" />
+                <div className="flex items-center gap-1 flex-1 justify-around">
+                  <div className="flex items-center">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={years}
+                      onChange={(e) => handleGrowthDurationChange("years", e.target.value)}
+                      className="w-10 outline-none text-center bg-transparent p-0 placeholder:text-slate-300 [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <span className="text-slate-500 text-xs shrink-0">năm</span>
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={months}
+                      onChange={(e) => handleGrowthDurationChange("months", e.target.value)}
+                      className="w-10 outline-none text-center bg-transparent p-0 placeholder:text-slate-300 [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <span className="text-slate-500 text-xs shrink-0">tháng</span>
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={days}
+                      onChange={(e) => handleGrowthDurationChange("days", e.target.value)}
+                      className="w-10 outline-none text-center bg-transparent p-0 placeholder:text-slate-300 [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <span className="text-slate-500 text-xs shrink-0">ngày</span>
+                  </div>
+                </div>
               </div>
               <p className="text-[11px] text-muted-foreground">
                 Thời gian từ khi trồng đến khi thu hoạch lần đầu

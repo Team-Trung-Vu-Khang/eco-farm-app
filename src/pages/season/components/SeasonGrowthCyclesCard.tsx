@@ -13,12 +13,58 @@ import { Layers, Plus, Sprout, Trash2 } from "lucide-react";
 import type { GrowthCycle } from "../../growth-cycle/types/types";
 import { getCropImage } from "../utils/utils";
 
+function parseDuration(durationStr: string): { years: string; months: string; days: string } {
+  const str = String(durationStr || "");
+  const yearMatch = str.match(/(\d+)\s*năm/);
+  const monthMatch = str.match(/(\d+)\s*tháng/);
+  const dayMatch = str.match(/(\d+)\s*ngày/);
+  return {
+    years: yearMatch ? yearMatch[1] : "",
+    months: monthMatch ? monthMatch[1] : "",
+    days: dayMatch ? dayMatch[1] : (!yearMatch && !monthMatch && !isNaN(Number(str)) && Number(str) > 0 ? str : ""),
+  };
+}
+
+function formatDurationDisplay(durationStr: string): string {
+  const { years, months, days } = parseDuration(String(durationStr || ""));
+  const parts = [];
+  if (years && parseInt(years) > 0) parts.push(`${years} năm`);
+  if (months && parseInt(months) > 0) parts.push(`${months} tháng`);
+  if (days && parseInt(days) > 0) parts.push(`${days} ngày`);
+  return parts.length > 0 ? parts.join(" ") : "-";
+}
+
+function computeCycleDuration(stages: GrowthCycle["stages"]): string {
+  let hasDays = false;
+  let hasMonths = false;
+  let hasYears = false;
+  let sumYears = 0;
+  let sumMonths = 0;
+  let sumDays = 0;
+
+  stages.forEach((stage) => {
+    const { years, months, days } = parseDuration(String(stage.duration || ""));
+    const str = String(stage.duration || "");
+    if (str.includes("năm")) hasYears = true;
+    if (str.includes("tháng")) hasMonths = true;
+    if (str.includes("ngày") || (!str.includes("năm") && !str.includes("tháng") && !isNaN(Number(str)) && Number(str) > 0)) hasDays = true;
+    if (years) sumYears += parseInt(years);
+    if (months) sumMonths += parseInt(months);
+    if (days) sumDays += parseInt(days);
+  });
+
+  if (hasDays) return `${sumYears * 365 + sumMonths * 30 + sumDays} ngày`;
+  if (hasMonths) return `${sumYears * 12 + sumMonths} tháng`;
+  if (hasYears) return `${sumYears} năm`;
+  return "-";
+}
+
 interface SeasonGrowthCyclesCardProps {
   growthCycleIds: string[];
   onAddCycle: () => void;
   onRemoveCycle: (cycleId: string) => void;
   selectedCycles: GrowthCycle[];
-  selectedStages: Record<string, Record<string, number>>;
+  selectedStages: Record<string, Record<string, string | number>>;
 }
 
 export function SeasonGrowthCyclesCard({
@@ -78,7 +124,7 @@ export function SeasonGrowthCyclesCard({
                         <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
                           <span>{cycle.cropName}</span>
                           <span className="h-1 w-1 rounded-full bg-slate-300" />
-                          <span>{cycle.totalDays} ngày</span>
+                          <span>{cycle.stages ? computeCycleDuration(cycle.stages) : "-"}</span>
                           <span className="h-1 w-1 rounded-full bg-slate-300" />
                           <span className="font-medium text-green-600">
                             {Object.keys(selectedStageMap).length}/
@@ -111,7 +157,7 @@ export function SeasonGrowthCyclesCard({
                               className="border-slate-200 bg-white font-normal text-slate-700 shadow-sm"
                             >
                               <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-green-500" />
-                              {stage.name} ({selectedStageMap[stage.id]} ngày)
+                              {stage.name} ({formatDurationDisplay(String(selectedStageMap[stage.id] || ""))})
                             </Badge>
                           ))}
                         </div>

@@ -402,24 +402,22 @@ const TaskBlock = ({
   const togglePersonnel = (name: string) => {
     const currentList = [...assignedPersonnelList];
     const isRemoving = currentList.includes(name);
+    const currentLimitStr = task.labor ? task.labor.split(":")[0].trim() : "";
 
     if (isRemoving) {
       // Removing is always allowed
       currentList.splice(currentList.indexOf(name), 1);
       const laborStr =
         currentList.length > 0
-          ? `${currentList.length} người: ${currentList.join(", ")}`
-          : "";
+          ? `${currentLimitStr}: ${currentList.join(", ")}`
+          : currentLimitStr;
       onUpdateTask?.(task.id, { labor: laborStr });
       return;
     }
 
-    // Get the plan-configured max personnel count from the selected task's labor field
-    const planTask = availableTasks?.find((t: any) => t.name === task.name);
-    const planLaborRaw: string = planTask?.labor || "";
-    // Parse numbers like "3", "3 người", "3 nhân sự"
-    const maxPersonnel = planLaborRaw
-      ? parseInt(planLaborRaw.replace(/\D/g, ""), 10)
+    // Extract the max personnel count directly from the preserved limit string
+    const maxPersonnel = currentLimitStr
+      ? parseInt(currentLimitStr.replace(/\D/g, ""), 10)
       : NaN;
 
     const newList = [...currentList, name];
@@ -430,8 +428,8 @@ const TaskBlock = ({
         onConfirm: () => {
           const laborStr =
             newList.length > 0
-              ? `${newList.length} người: ${newList.join(", ")}`
-              : "";
+              ? `${currentLimitStr}: ${newList.join(", ")}`
+              : currentLimitStr;
           onUpdateTask?.(task.id, { labor: laborStr });
         },
       });
@@ -440,8 +438,8 @@ const TaskBlock = ({
 
     const laborStr =
       newList.length > 0
-        ? `${newList.length} người: ${newList.join(", ")}`
-        : "";
+        ? `${currentLimitStr}: ${newList.join(", ")}`
+        : currentLimitStr;
     onUpdateTask?.(task.id, { labor: laborStr });
   };
 
