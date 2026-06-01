@@ -279,7 +279,7 @@ export function SeasonBasicInfoCard({
           <div
             className={`grid grid-cols-1 gap-4 ${showStatusField ? "md:grid-cols-2" : ""}`}
           >
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label>
                 Thời gian (ngày) <span className="text-destructive">*</span>
               </Label>
@@ -295,7 +295,7 @@ export function SeasonBasicInfoCard({
                   }
                 />
               </div>
-            </div>
+            </div> */}
 
             {showStatusField && (
               <div className="space-y-2">

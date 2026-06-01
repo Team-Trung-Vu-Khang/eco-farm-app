@@ -28,14 +28,64 @@ export const seasonColumns: Column<Season>[] = [
   {
     key: "duration",
     label: "Thời gian",
-    render: (_, item) => (
-      <div className="flex items-center gap-1.5 text-xs">
-        <Calendar className="h-4 w-4 text-green-600" />
-        <span className="text-sm font-medium text-green-700">
-          {item.duration} ngày
-        </span>
-      </div>
-    ),
+    render: (_, item) => {
+      // Tính tổng thời gian từ các giai đoạn đã chọn trong selectedStages
+      const stageDurations = Object.values(item.selectedStages || {}).flatMap(
+        (stageMap) => Object.values(stageMap),
+      );
+
+      let hasDays = false;
+      let hasMonths = false;
+      let hasYears = false;
+      let sumYears = 0;
+      let sumMonths = 0;
+      let sumDays = 0;
+
+      stageDurations.forEach((dur) => {
+        const str = String(dur || "");
+        if (str.includes("năm")) hasYears = true;
+        if (str.includes("tháng")) hasMonths = true;
+
+        const yearMatch = str.match(/(\d+)\s*năm/);
+        const monthMatch = str.match(/(\d+)\s*tháng/);
+        const dayMatch = str.match(/(\d+)\s*ngày/);
+
+        if (yearMatch) sumYears += parseInt(yearMatch[1]);
+        if (monthMatch) sumMonths += parseInt(monthMatch[1]);
+        if (dayMatch) {
+          hasDays = true;
+          sumDays += parseInt(dayMatch[1]);
+        } else if (
+          !yearMatch &&
+          !monthMatch &&
+          !isNaN(Number(str)) &&
+          Number(str) > 0
+        ) {
+          hasDays = true;
+          sumDays += Number(str);
+        }
+      });
+
+      let displayStr = "-";
+      if (stageDurations.length > 0) {
+        if (hasDays) {
+          displayStr = `${sumYears * 365 + sumMonths * 30 + sumDays} ngày`;
+        } else if (hasMonths) {
+          displayStr = `${sumYears * 12 + sumMonths} tháng`;
+        } else if (hasYears) {
+          displayStr = `${sumYears} năm`;
+        }
+      }
+
+      return (
+        <div className="flex items-center gap-1.5 text-xs">
+          <Calendar className="h-4 w-4 text-green-600" />
+          <span className="text-sm font-medium text-green-700">
+            {displayStr}
+          </span>
+        </div>
+      );
+    },
   },
   {
     key: "applyFor",
