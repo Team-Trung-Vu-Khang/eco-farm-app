@@ -15,7 +15,7 @@ import type {
   PlantLocation,
   RowConfig,
 } from "../constants";
-
+import treeMarkerIcon from "@/assets/tree.webp";
 type Props = {
   distributionMethod: DistributionMethod;
   plantEntries: PlantEntry[];
@@ -112,9 +112,7 @@ export const PlantDistributionGpsStep = ({
                   const seed = MOCK_SEEDS.find(
                     (item) => item.id === location.seedId,
                   );
-                  const isSelected = selectedPlantId === location.id;
                   const seedName = seed?.name || "Chưa xác định";
-                  const colorDot = isSelected ? "●" : "•";
 
                   return (
                     <MFMarker
@@ -122,6 +120,11 @@ export const PlantDistributionGpsStep = ({
                       position={{
                         lat: location.coordinate.lat,
                         lng: location.coordinate.lng,
+                      }}
+                      icon={{
+                        url: treeMarkerIcon,
+                        width: 32,
+                        height: 32,
                       }}
                       title={`${location.plantCode} - ${seedName}`}
                       label={""}
