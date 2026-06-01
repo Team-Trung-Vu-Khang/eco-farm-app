@@ -66,310 +66,29 @@ export interface Plan {
   createdAt: string;
 }
 
-// const initialPlans: Plan[] = [
-//   {
-//     id: 1,
-//     code: "KH001",
-//     name: "Kế hoạch sầu riêng vụ Xuân 2025",
-//     description: "Kế hoạch canh tác sầu riêng Monthon vụ Xuân 2025 tại vùng A1",
-//     seasonId: "spring-2025",
-//     seasonName: "Vụ Xuân 2025",
-//     startDate: "2025-01-15",
-//     endDate: "2025-06-30",
-//     selectedRegionIds: ["1"],
-//     selectedZoneIds: ["sub-1-1"],
-//     selectedPlotIds: ["plot-1-1", "plot-1-2"],
-//     crop: "Sầu riêng",
-//     variety: "Monthon",
-//     purpose: "cultivation",
-//     growthCycleId: "GC001",
-//     area: "20.0",
-//     expectedYield: "45",
-//     selectedStages: [
-//       "Chuẩn bị đất",
-//       "Gieo trồng",
-//       "Chăm sóc giai đoạn 1",
-//       "Bón phân lần 1",
-//     ],
-//     materialAllocations: [
-//       {
-//         id: 1,
-//         stageId: "Chuẩn bị đất",
-//         materialCategory: "Phân bón",
-//         materialType: "Phân hữu cơ",
-//         materialName: "Phân chuồng hoai mục",
-//         quantity: "5000",
-//         unit: "kg",
-//       },
-//     ],
-//     taskAllocations: [
-//       {
-//         id: 1,
-//         stageId: "Chuẩn bị đất",
-//         name: "Cày ải và khử trùng đất",
-//         description: "Cày sâu 25-30cm, rải vôi bột khử trùng",
-//         labor: "5 người",
-//         duration: "7 ngày",
-//       },
-//     ],
-//     status: "active",
-//     createdAt: "2024-12-01",
-//   },
-//   {
-//     id: 2,
-//     code: "KH002",
-//     name: "Kế hoạch khử phèn Khu B",
-//     description: "Cải tạo đất bị nhiễm phèn nặng tại Khu vực B",
-//     seasonId: "S2025-HE",
-//     seasonName: "Vụ Hè 2025",
-//     startDate: "2025-03-01",
-//     endDate: "2025-04-15",
-//     selectedRegionIds: ["1"],
-//     selectedZoneIds: ["sub-1-2"],
-//     selectedPlotIds: ["plot-1-3"],
-//     crop: "Cải tạo đất",
-//     variety: "",
-//     purpose: "treatment",
-//     regimenId: "reg-phen-cap-toc",
-//     growthCycleId: "",
-//     area: "15.5",
-//     expectedYield: "0",
-//     selectedStages: ["Xả phèn lần 1", "Bón vôi khử chua", "Kiểm tra pH đất"],
-//     materialAllocations: [
-//       {
-//         id: 3,
-//         stageId: "Bón vôi khử chua",
-//         materialCategory: "Khác",
-//         materialType: "Vôi bột",
-//         materialName: "Vôi nông nghiệp",
-//         quantity: "1500",
-//         unit: "kg",
-//       },
-//     ],
-//     taskAllocations: [
-//       {
-//         id: 2,
-//         stageId: "Xả phèn lần 1",
-//         name: "Bơm xả nước phèn",
-//         description: "Mở cống xả nước cũ, bơm nước mới vào ngâm",
-//         labor: "2 người",
-//         duration: "3 ngày",
-//       },
-//     ],
-//     status: "draft",
-//     createdAt: "2024-12-10",
-//   },
-//   {
-//     id: 3,
-//     code: "KH003",
-//     name: "Kế hoạch bưởi da xanh Bình Phước",
-//     description: "Canh tác bưởi da xanh tiêu chuẩn VietGAP",
-//     seasonId: "S001",
-//     seasonName: "Vụ Xuân 2024",
-//     startDate: "2025-07-01",
-//     endDate: "2025-12-31",
-//     selectedRegionIds: ["4"],
-//     selectedZoneIds: [],
-//     selectedPlotIds: [],
-//     crop: "Bưởi",
-//     variety: "Da xanh",
-//     purpose: "cultivation",
-//     growthCycleId: "GC002",
-//     area: "15.0",
-//     expectedYield: "12",
-//     selectedStages: ["Chuẩn bị cây giống", "Đào hố trồng"],
-//     materialAllocations: [],
-//     taskAllocations: [],
-//     status: "draft",
-//     createdAt: "2024-12-15",
-//   },
-//   {
-//     id: 4,
-//     code: "PS001",
-//     name: "Xử lý ngập úng bất ngờ",
-//     description: "Công việc phát sinh do mưa lớn gây ngập úng cục bộ tại khu vực A1",
-//     seasonId: "spring-2025",
-//     seasonName: "Vụ Xuân 2025",
-//     startDate: "2025-02-10",
-//     endDate: "2025-02-12",
-//     selectedRegionIds: ["1"],
-//     selectedZoneIds: ["sub-1-1"],
-//     selectedPlotIds: ["plot-1-1"],
-//     crop: "Sầu riêng",
-//     variety: "Monthon",
-//     purpose: "incurred",
-//     growthCycleId: "",
-//     area: "2.0",
-//     expectedYield: "0",
-//     selectedStages: ["Phát sinh"],
-//     materialAllocations: [
-//       {
-//         id: 10,
-//         stageId: "Phát sinh",
-//         materialCategory: "Dụng cụ",
-//         materialType: "Máy bơm",
-//         materialName: "Máy bơm nước 5HP",
-//         quantity: "2",
-//         unit: "cái",
-//       },
-//     ],
-//     taskAllocations: [
-//       {
-//         id: 10,
-//         stageId: "Phát sinh",
-//         name: "Bơm thoát nước khẩn cấp",
-//         description: "Vận hành máy bơm liên tục để thoát nước ra kênh chính",
-//         labor: "2 người",
-//         duration: "24 giờ",
-//       },
-//       {
-//         id: 11,
-//         stageId: "Phát sinh",
-//         name: "Kiểm tra rễ và xịt thuốc phòng thối rễ",
-//         description: "Kiểm tra tình trạng đất sau ngập và phun vôi bột sát khuẩn",
-//         labor: "3 người",
-//         duration: "1 ngày",
-//       },
-//     ],
-//     status: "active",
-//     createdAt: "2025-02-10",
-//   },
-//   {
-//     id: 5,
-//     code: "TH001",
-//     name: "Kế hoạch Thu hoạch Sầu riêng 2026",
-//     description: "Thu hoạch, phân loại và đóng gói sầu riêng Monthon đạt chuẩn xuất khẩu",
-//     seasonId: "spring-2026",
-//     seasonName: "Vụ Xuân 2026",
-//     startDate: "2026-05-15",
-//     endDate: "2026-06-15",
-//     selectedRegionIds: ["1"],
-//     selectedZoneIds: ["sub-1-1"],
-//     selectedPlotIds: ["plot-1-1", "plot-1-2"],
-//     crop: "Sầu riêng",
-//     variety: "Monthon",
-//     purpose: "harvest",
-//     growthCycleId: "GC001",
-//     area: "5.0",
-//     expectedYield: "25",
-//     selectedStages: ["Chuẩn bị kho", "Thu hái tại vườn", "Phân loại & Đóng gói"],
-//     materialAllocations: [
-//       {
-//         id: 20,
-//         stageId: "Chuẩn bị kho",
-//         materialCategory: "Bao bì",
-//         materialType: "Thùng carton",
-//         materialName: "Thùng sầu riêng 15kg",
-//         quantity: "1500",
-//         unit: "cái",
-//       },
-//     ],
-//     taskAllocations: [
-//       {
-//         id: 20,
-//         stageId: "Thu hái tại vườn",
-//         name: "Hái trái đạt độ chín",
-//         description: "Gõ kiểm tra độ chín và hái trái xuống bằng dây kéo",
-//         labor: "10 người",
-//         duration: "10 ngày",
-//       },
-//     ],
-//     status: "draft",
-//     createdAt: "2025-03-01",
-//   },
-//   {
-//     id: 6,
-//     code: "DT001",
-//     name: "Điều trị rầy phấn trắng đợt 1",
-//     description: "Phun thuốc đặc trị và theo dõi mật độ rầy trên vườn sầu riêng",
-//     seasonId: "spring-2026",
-//     seasonName: "Vụ Xuân 2026",
-//     startDate: "2026-03-10",
-//     endDate: "2026-03-20",
-//     selectedRegionIds: ["1"],
-//     selectedZoneIds: ["sub-1-1", "sub-1-2"],
-//     selectedPlotIds: [],
-//     crop: "Sầu riêng",
-//     variety: "Monthon",
-//     purpose: "treatment",
-//     growthCycleId: "GC001",
-//     area: "8.5",
-//     expectedYield: "0",
-//     selectedStages: ["Phun thuốc đợt 1", "Kiểm tra sau phun"],
-//     materialAllocations: [
-//       {
-//         id: 30,
-//         stageId: "Phun thuốc đợt 1",
-//         materialCategory: "Thuốc BVTV",
-//         materialType: "Thuốc trừ rầy",
-//         materialName: "Chess 50WG",
-//         quantity: "20",
-//         unit: "gói",
-//       },
-//     ],
-//     taskAllocations: [
-//       {
-//         id: 30,
-//         stageId: "Phun thuốc đợt 1",
-//         name: "Phun thuốc hệ thống",
-//         description: "Sử dụng drone phun thuốc toàn diện mặt dưới lá",
-//         labor: "2 người",
-//         duration: "2 ngày",
-//       },
-//     ],
-//     status: "active",
-//     createdAt: "2026-03-05",
-//   },
-//   {
-//     id: 7,
-//     code: "KH007",
-//     name: "Kế hoạch Dưa lưới nhà màng",
-//     description: "Canh tác dưa lưới công nghệ cao trong nhà màng A2",
-//     seasonId: "spring-2026",
-//     seasonName: "Vụ Xuân 2026",
-//     startDate: "2026-03-01",
-//     endDate: "2026-05-30",
-//     selectedRegionIds: ["1"],
-//     selectedZoneIds: ["sub-1-2"],
-//     selectedPlotIds: ["plot-1-3"],
-//     crop: "Dưa lưới",
-//     variety: "Taki",
-//     purpose: "cultivation",
-//     growthCycleId: "GC003",
-//     area: "1.2",
-//     expectedYield: "5",
-//     selectedStages: ["Ươm cây con", "Trồng cây", "Chăm sóc & Thụ phấn"],
-//     materialAllocations: [],
-//     taskAllocations: [],
-//     status: "active",
-//     createdAt: "2026-02-15",
-//   },
-// ];
-
 // export const initialPlans: Plan[] = [
-//   // 1. KẾ HOẠCH CANH TÁC (CULTIVATION): Làm bông nghịch vụ sầu riêng Ri6
 //   {
 //     id: 1,
 //     code: "PLN-2024-001",
 //     name: "Kế hoạch làm bông nghịch vụ Sầu riêng Ri6 - ĐBSCL",
 //     description:
-//       "Áp dụng kỹ thuật xiết nước, đậy bạt và phun Paclobutrazol để kích thích ra hoa nghịch vụ cho sầu riêng Ri6 nhằm đón giá cao dịp cuối năm.",
+//       "Áp dụng kỹ thuật xiết nước, đậy bạt và phun Paclobutrazol để kích thích ra hoa nghịch vụ cho sầu riêng Ri6.",
 //     seasonId: "S002",
 //     seasonName: "Vụ Nghịch ĐBSCL - Sầu riêng Ri6",
-//     startDate: "2024-05-15", // Tháng 4-5 âm lịch [3]
+//     startDate: "2024-05-15",
 //     endDate: "2024-11-30",
-//     selectedRegionIds: ["REG-01"],
-//     selectedZoneIds: ["ZONE-01-A"],
-//     selectedPlotIds: ["PLOT-001", "PLOT-002"],
+//     selectedRegionIds: ["1", "3"],
+//     selectedZoneIds: ["sub-1-1", "sub-1-2"],
+//     selectedPlotIds: ["plot-1-1", "plot-1-2", "plot-1-3"],
 //     crop: "Sầu riêng",
-//     variety: "Sầu riêng Ri6",
+//     variety: "Monthong",
 //     purpose: "cultivation",
-//     area: "3.5",
+//     area: "50.5",
 //     expectedYield: "60",
-//     growthCycleId: "GC003", // Quy trình Ri6 nghịch vụ
+//     growthCycleId: "GC003",
 //     selectedStages: [
-//       "Dằn lân, tạo mầm & Phủ bạt xiết nước",
-//       "Dỡ bạt, nhấp nước & Kéo mắt cua",
+//       "GC003:Dằn lân, tạo mầm & Phủ bạt xiết nước",
+//       "GC003:Dỡ bạt, nhấp nước & Kéo mắt cua",
 //     ],
 //     materialAllocations: [
 //       {
@@ -415,130 +134,147 @@ export interface Plan {
 //         stageId: "GC003:Dằn lân, tạo mầm & Phủ bạt xiết nước",
 //         name: "Bón lân tạo mầm và Xiết nước",
 //         description:
-//           "Bón lân gốc khi cơi đọt cuối chuyển lụa. Dọn sạch cỏ gốc và xiết cạn nước mương tạo khô hạn 10-14 ngày.",
+//           "Bón lân gốc khi cơi đọt cuối chuyển lụa. Dọn sạch cỏ gốc và xiết cạn nước mương tạo khô hạn.",
 //         labor: "3 người",
 //         duration: "14 ngày",
 //       },
 //       {
 //         id: 202,
-//         stageId: "Dỡ bạt nilon và phun Paclobutrazol",
-//         name: "Đậy bạt nilon và phun Paclobutrazol",
-//         description:
-//           "Phủ kín bạt nilon quanh gốc cản nước mưa. Phun Paclobutrazol 25SC 1 lần duy nhất vào dạ dưới cành.",
-//         labor: "4 người",
-//         duration: "2 ngày",
-//       },
-//       {
-//         id: 203,
 //         stageId: "GC003:Dằn lân, tạo mầm & Phủ bạt xiết nước",
-//         name: "Phun tạo mầm lá",
+//         name: "Phun tạo mầm và đậy bạt nilon",
 //         description:
-//           "Phun MKP 0-52-34 hoặc 10-60-10 qua 3 cử cách nhau 7-10 ngày để đẩy nhanh quá trình phân chia tế bào mầm hoa.",
-//         labor: "2 người",
+//           "Phủ kín bạt nilon quanh gốc cản nước mưa. Phun Paclobutrazol 25SC 1 lần vào dạ dưới cành.",
+//         labor: "4 người",
 //         duration: "3 ngày",
 //       },
 //       {
-//         id: 204,
+//         id: 203,
 //         stageId: "GC003:Dỡ bạt, nhấp nước & Kéo mắt cua",
-//         name: "Phun phá miên trạng kích mắt cua",
+//         name: "Dỡ bạt và Phun phá miên trạng",
 //         description:
-//           "Phun KNO3 (5-10g/lít) để phá miên trạng, kích mầm hoa bung đồng loạt sau khi dỡ bạt.",
+//           "Khi mắt cua sáng 70-80%, dỡ bạt. Phun KNO3 để phá miên trạng kích mắt cua đâm đồng loạt.",
 //         labor: "2 người",
-//         duration: "1 ngày",
+//         duration: "2 ngày",
 //       },
 //     ],
 //     status: "active",
 //     createdAt: "2024-05-01",
+//     regimenId: "",
 //   },
-
-//   // 2. KẾ HOẠCH CẢI TẠO (AMENDMENT): Phục hồi vườn sầu riêng sau thu hoạch
 //   {
 //     id: 2,
 //     code: "PLN-2024-002",
-//     name: "Kế hoạch phục hồi vườn Sầu riêng Monthong sau thu hoạch",
+//     name: "Kế hoạch phục hồi Hệ nền Đất & Kích kháng rễ Sầu riêng (Đông Nam Bộ)",
 //     description:
-//       "Cắt tỉa cành, rửa vườn và bón phân hữu cơ kết hợp nấm đối kháng để phục hồi bộ rễ, chuẩn bị cho cơi đọt mới.",
+//       "Áp dụng phác đồ PD-SOIL-HCDF-2026: Khơi rãnh thoát nước, xới nhẹ mặt đất, bón phân hữu cơ và vi sinh để phục hồi rễ tơ, điều chỉnh cấu trúc và pH đất.",
 //     seasonId: "S003",
 //     seasonName: "Chính vụ Đông Nam Bộ",
 //     startDate: "2024-08-01",
 //     endDate: "2024-09-30",
-//     selectedRegionIds: ["REG-02"],
-//     selectedZoneIds: ["ZONE-02-B"],
-//     selectedPlotIds: ["PLOT-005"],
+//     selectedRegionIds: ["1", "3"],
+//     selectedZoneIds: ["sub-1-1", "sub-1-2"],
+//     selectedPlotIds: ["plot-1-1", "plot-1-2", "plot-1-3"],
 //     crop: "Sầu riêng",
-//     variety: "Sầu riêng Monthong (Dona)",
+//     variety: "Monthong",
 //     purpose: "amendment",
-//     area: "5.0",
-//     expectedYield: "0", // Giai đoạn phục hồi không có sản lượng
-//     growthCycleId: "GC001",
-//     selectedStages: ["Phục hồi sau thu hoạch & Làm cơi đọt"],
+//     growthCycleId: "",
+//     regimenId: "4",
+//     selectedStages: [
+//       "4:Cấp tốc (0–7 ngày) – “Cứu rễ, cứu oxy”",
+//       "4:Ngắn hạn (2–6 tuần) – “Điều chỉnh cấu trúc - pH nền”",
+//     ],
+//     status: "active",
 //     materialAllocations: [
 //       {
-//         id: 103,
-//         stageId: "GC001:Phục hồi sau thu hoạch & Làm cơi đọt",
+//         id: 105,
+//         stageId: "4:Ngắn hạn (2–6 tuần) – “Điều chỉnh cấu trúc - pH nền”",
 //         materialCategory: "Phân bón",
-//         materialType: "Phân hữu cơ vi sinh",
-//         materialName: "Phân chuồng hoai mục ủ Trichoderma",
+//         materialType: "Phân hữu cơ",
+//         materialName: "Phân hữu cơ hoai mục",
 //         quantity: "25",
 //         unit: "kg/cây",
 //       },
 //       {
-//         id: 104,
-//         stageId: "GC001:Phục hồi sau thu hoạch & Làm cơi đọt",
-//         materialCategory: "Chế phẩm sinh học",
-//         materialType: "Kích rễ",
-//         materialName: "Acid Plus (Humic + Fulvic + Axit Amin)",
-//         quantity: "15",
-//         unit: "lít",
+//         id: 106,
+//         stageId: "4:Ngắn hạn (2–6 tuần) – “Điều chỉnh cấu trúc - pH nền”",
+//         materialCategory: "Chế phẩm vi sinh",
+//         materialType: "fertilizer",
+//         materialName: "Ozym (Bào tử vi sinh)",
+//         quantity: "100",
+//         unit: "g/gốc",
+//       },
+//       {
+//         id: 107,
+//         stageId: "4:Ngắn hạn (2–6 tuần) – “Điều chỉnh cấu trúc - pH nền”",
+//         materialCategory: "Chế phẩm vi sinh",
+//         materialType: "fertilizer",
+//         materialName: "Bzym+ (10^15 CFU/mL)",
+//         quantity: "500",
+//         unit: "ml/gốc",
 //       },
 //     ],
 //     taskAllocations: [
 //       {
-//         id: 203,
-//         stageId: "GC001:Phục hồi sau thu hoạch & Làm cơi đọt",
-//         name: "Cắt tỉa cành và xịt rửa vườn",
+//         id: 204,
+//         stageId: "4:Cấp tốc (0–7 ngày) – “Cứu rễ, cứu oxy”",
+//         name: "Khơi rãnh thoát nước và xới nhẹ mặt đất",
 //         description:
-//           "Cắt bỏ cành bơi, cành sâu bệnh, quét vôi hoặc xịt Booc-đô/thuốc gốc Đồng sát khuẩn diệt mầm bệnh.",
+//           "Thoát nước khẩn cấp, xới nhẹ lớp mặt tăng thông thoáng, thu gom tàn dư thối, quả rụng đem tiêu hủy để dọn nguồn bệnh.",
 //         labor: "5 người",
-//         duration: "5 ngày",
+//         duration: "7 ngày",
+//         geographicalSelections: [
+//           {
+//             id: "geo-reg02-a",
+//             type: "region",
+//             regionId: "REG-02",
+//           },
+//         ],
 //       },
 //       {
-//         id: 204,
-//         stageId: "GC001:Phục hồi sau thu hoạch & Làm cơi đọt",
-//         name: "Bón phân hữu cơ và tưới kích rễ",
+//         id: 205,
+//         stageId: "4:Ngắn hạn (2–6 tuần) – “Điều chỉnh cấu trúc - pH nền”",
+//         name: "Bón phân hữu cơ và tưới vi sinh",
 //         description:
-//           "Xới nhẹ tầng đất mặt, bón phân chuồng ủ nấm đối kháng Trichoderma và tưới Acid Plus để phục hồi rễ tơ.",
+//           "Bón vôi/Dolomite khử chua. Rải Ozym kết hợp phân hữu cơ hoai mục để phân hủy rễ thối. Tưới Bzym+ để thiết lập quần thể vi sinh bảo vệ rễ.",
 //         labor: "3 người",
-//         duration: "3 ngày",
+//         duration: "30 ngày",
+//         geographicalSelections: [
+//           {
+//             id: "geo-reg02-b",
+//             type: "region",
+//             regionId: "REG-02",
+//           },
+//         ],
 //       },
 //     ],
-//     status: "active",
+//     area: "50.5",
+//     expectedYield: "0",
 //     createdAt: "2024-07-20",
 //   },
-
 //   {
 //     id: 3,
-//     code: "PLN-TREAT-003",
-//     name: "Kế hoạch điều trị bệnh thán thư sầu riêng",
+//     code: "PLN-TREAT-001",
+//     name: "Kế hoạch điều trị bệnh thán thư bông sầu riêng",
 //     description:
-//       "Áp dụng phác đồ PT001: Hết triệu chứng thán thư sau 14 ngày, cây ra đọt non khỏe. Diệt nấm và phục hồi lá.",
-//     seasonId: "S-2025",
-//     seasonName: "Vụ mùa 2025",
+//       "Phác đồ PT001: Hết triệu chứng thán thư sau 14 ngày, bảo vệ hoa và lá lụa. Diệt nấm và phục hồi.",
+//     seasonId: "S001",
+//     seasonName: "Chính vụ Đồng bằng sông Cửu Long",
 //     startDate: "2025-01-15",
-//     endDate: "2025-01-29", // Tổng thời gian 14 ngày
+//     endDate: "2025-01-29",
 //     selectedRegionIds: ["REG-01"],
 //     selectedZoneIds: ["ZONE-01"],
 //     selectedPlotIds: ["PLOT-01"],
 //     crop: "Sầu riêng",
 //     variety: "Monthon",
 //     purpose: "treatment",
-//     growthCycleId: "GC001",
-//     regimenId: "1", // Lấy chính xác từ id: 1 của initialTreatments trong source [1]
-//     selectedStages: ["Ra hoa & Đậu quả"],
+//     growthCycleId: "",
+//     regimenId: "1",
+//     selectedStages: ["1:Phun thuốc phòng ngừa", "1:Điều trị chính"],
+//     status: "active",
 //     materialAllocations: [
 //       {
-//         id: 1001,
-//         stageId: "Ra hoa & Đậu quả",
+//         id: 107,
+//         stageId: "1:Phun thuốc phòng ngừa",
 //         materialCategory: "Thuốc BVTV (Hóa học)",
 //         materialType: "pesticide",
 //         materialName: "Mancozeb 80% WP",
@@ -546,8 +282,8 @@ export interface Plan {
 //         unit: "g/l",
 //       },
 //       {
-//         id: 1002,
-//         stageId: "Ra hoa & Đậu quả",
+//         id: 108,
+//         stageId: "1:Điều trị chính",
 //         materialCategory: "Thuốc BVTV (Hóa học)",
 //         materialType: "pesticide",
 //         materialName: "Carbendazim 50% WP",
@@ -557,163 +293,130 @@ export interface Plan {
 //     ],
 //     taskAllocations: [
 //       {
-//         id: 2001,
-//         stageId: "Ra hoa & Đậu quả",
+//         id: 206,
+//         stageId: "1:Phun thuốc phòng ngừa",
 //         name: "Phun thuốc phòng ngừa",
 //         description:
 //           "Phun xịt hóa học toàn bộ tán lá, tập trung vào mặt dưới lá. Tránh phun khi nắng gắt.",
 //         labor: "2 người",
 //         duration: "1 ngày",
+//         geographicalSelections: [
+//           {
+//             id: "geo-reg01-a",
+//             type: "region",
+//             regionId: "REG-01",
+//           },
+//         ],
 //       },
 //       {
-//         id: 2002,
-//         stageId: "Ra hoa & Đậu quả",
+//         id: 207,
+//         stageId: "1:Điều trị chính",
 //         name: "Điều trị chính",
 //         description:
 //           "Tập trung vào vùng bị bệnh nặng. Phun 2 lần cách nhau 3 ngày.",
 //         labor: "2 người",
 //         duration: "4 ngày",
+//         geographicalSelections: [
+//           {
+//             id: "geo-reg01-b",
+//             type: "region",
+//             regionId: "REG-01",
+//           },
+//         ],
 //       },
 //     ],
-//     status: "active",
-//     createdAt: "2025-01-15",
+//     area: "0.0",
+//     createdAt: "2025-01-05",
 //   },
 //   {
 //     id: 4,
-//     code: "PLN-TREAT-004",
-//     name: "Kế hoạch cấp cứu Xì mủ Sầu riêng diện rộng",
+//     code: "PLN-2024-004",
+//     name: "Kế hoạch nuôi trái sầu riêng Monthong ĐNB (Chống sượng, vô cơm)",
 //     description:
-//       "Áp dụng phác đồ ICU-PHYT-2026: Cấp cứu vườn bị xì mủ do Phytophthora (mức độ M4 - Khủng hoảng nguy cơ chết cây).",
-//     seasonId: "S-2026",
-//     seasonName: "Vụ mùa 2026",
-//     startDate: "2026-01-01",
-//     endDate: "2026-03-31", // Tổng thời gian 3 tháng
-//     selectedRegionIds: ["REG-02"],
-//     selectedZoneIds: ["ZONE-02"],
-//     selectedPlotIds: ["PLOT-02"],
+//       "Cung cấp dinh dưỡng phân kỳ theo tuổi trái, tỉa trái non sinh lý và bón Kali Sulphate để lên cơm vàng.",
+//     seasonId: "S003",
+//     seasonName: "Chính vụ Đông Nam Bộ",
+//     startDate: "2024-03-01",
+//     endDate: "2024-06-30",
+//     selectedRegionIds: ["5", "10", "3", "1"],
+//     selectedZoneIds: ["sub-1-1", "sub-1-2"],
+//     selectedPlotIds: ["plot-1-1", "plot-1-2", "plot-1-3"],
 //     crop: "Sầu riêng",
-//     variety: "Nâng cao",
-//     purpose: "treatment",
-//     growthCycleId: "GC001",
-//     regimenId: "3", // Lấy chính xác từ id: 3 của initialTreatments trong source [1]
-//     selectedStages: ["Điều trị xì mủ"],
+//     variety: "Monthong",
+//     purpose: "cultivation",
+//     area: "50.5",
+//     expectedYield: "80",
+//     growthCycleId: "GC004",
+//     selectedStages: ["GC004:Nuôi trái vô cơm & Thu hoạch (Đặc thù Monthong)"],
 //     materialAllocations: [
 //       {
-//         id: 3001,
-//         stageId: "Điều trị xì mủ",
-//         materialCategory: "Chế phẩm vi sinh",
-//         materialType: "fertilizer",
-//         materialName: "Bzym+ (10^15 CFU/mL)",
+//         id: 109,
+//         stageId: "GC004:Nuôi trái vô cơm & Thu hoạch (Đặc thù Monthong)",
+//         materialCategory: "Phân bón",
+//         materialType: "Phân vô cơ",
+//         materialName: "NPK 15-15-15",
 //         quantity: "1",
-//         unit: "l/100l",
+//         unit: "kg/cây/lần",
+//       },
+//       {
+//         id: 110,
+//         stageId: "GC004:Nuôi trái vô cơm & Thu hoạch (Đặc thù Monthong)",
+//         materialCategory: "Phân bón",
+//         materialType: "Phân vô cơ",
+//         materialName: "Kali Sulphate (K2SO4 - Kali trắng)",
+//         quantity: "0.5",
+//         unit: "kg/cây/lần",
 //       },
 //     ],
 //     taskAllocations: [
 //       {
-//         id: 4001,
-//         stageId: "Điều trị xì mủ",
-//         name: "Đổ ải vi sinh (Root Drench)",
+//         id: 207,
+//         stageId: "GC004:Nuôi trái vô cơm & Thu hoạch (Đặc thù Monthong)",
+//         name: "Tỉa trái non (3 đợt)",
 //         description:
-//           "Tưới gốc đặc trị. Pha Bzym+ mật độ cao tưới đẫm vùng rễ để tiêu diệt nấm Phytophthora và tạo biển lợi khuẩn quanh gốc.",
-//         labor: "3 người",
-//         duration: "30 ngày",
+//           "Đợt 1 (sau 10 ngày), Đợt 2 (sau 20 ngày), Đợt 3 (sau 30 ngày) giữ lại số lượng chuẩn.",
+//         labor: "4 người",
+//         duration: "20 ngày",
+//       },
+//       {
+//         id: 208,
+//         stageId: "GC004:Nuôi trái vô cơm & Thu hoạch (Đặc thù Monthong)",
+//         name: "Bón NPK cân bằng và Kali trắng vô cơm",
+//         description:
+//           "Bón NPK 15-15-15 định kỳ 8-10 ngày/lần. Khi trái đạt 60 ngày tuổi, chuyển sang bón Kali Sulphate.",
+//         labor: "2 người",
+//         duration: "10 ngày",
 //       },
 //     ],
 //     status: "active",
-//     createdAt: "2026-01-01",
+//     createdAt: "2024-02-20",
+//     regimenId: "",
 //   },
-
-//   // 3. KẾ HOẠCH ĐIỀU TRỊ (TREATMENT): Quản lý nứt thân xì mủ và rầy xanh
 //   {
 //     id: 5,
 //     code: "PLN-2024-005",
-//     name: "Kế hoạch phòng trị bệnh nứt thân xì mủ mùa mưa",
+//     name: "Kế hoạch cắt nước và thu hoạch sầu riêng Thái (Monthong) ĐBSCL",
 //     description:
-//       "Xử lý triệt để nấm Phytophthora palmivora gây bệnh nứt thân xì mủ và quản lý rầy xanh bảo vệ cơi đọt non.",
-//     seasonId: "S004",
-//     seasonName: "Chính vụ Tây Nguyên",
-//     startDate: "2024-09-10",
-//     endDate: "2024-10-10",
-//     selectedRegionIds: ["REG-03"],
-//     selectedZoneIds: ["ZONE-03-C"],
-//     selectedPlotIds: ["PLOT-010", "PLOT-011"],
-//     crop: "Sầu riêng",
-//     variety: "Sầu riêng Musang King",
-//     purpose: "treatment",
-//     area: "2.0",
-//     growthCycleId: "GC005",
-//     selectedStages: ["Quản lý sâu bệnh và đọt non"],
-//     materialAllocations: [
-//       {
-//         id: 105,
-//         stageId: "Quản lý sâu bệnh và đọt non",
-//         materialCategory: "Thuốc BVTV",
-//         materialType: "Thuốc trừ nấm bệnh",
-//         materialName: "Thuốc gốc Đồng / Metalaxyl",
-//         quantity: "10",
-//         unit: "lít",
-//       },
-//       {
-//         id: 106,
-//         stageId: "Quản lý sâu bệnh và đọt non",
-//         materialCategory: "Thuốc BVTV",
-//         materialType: "Thuốc trừ sâu rầy",
-//         materialName: "Thuốc đặc trị rầy xanh, nhện đỏ",
-//         quantity: "5",
-//         unit: "lít",
-//       },
-//     ],
-//     taskAllocations: [
-//       {
-//         id: 205,
-//         stageId: "Quản lý sâu bệnh và đọt non",
-//         name: "Điều trị nứt thân xì mủ",
-//         description:
-//           "Cạo sạch vết bệnh xì mủ trên thân, quét thuốc đặc trị gốc đồng hoặc Metalaxyl để diệt nấm Phytophthora.",
-//         labor: "2 người",
-//         duration: "7 ngày",
-//         isRepeating: true,
-//         repeatDays: [13, 14], // Lặp lại sau 3 ngày và 7 ngày
-//       },
-//       {
-//         id: 206,
-//         stageId: "Quản lý sâu bệnh và đọt non",
-//         name: "Phun bảo vệ cơi đọt mũi giáo",
-//         description:
-//           "Phun thuốc đặc trị rầy xanh ngay khi đọt non nhú mũi giáo để bảo vệ dàn lá.",
-//         labor: "2 người",
-//         duration: "2 ngày",
-//       },
-//     ],
-//     status: "draft",
-//     createdAt: "2024-09-05",
-//   },
-
-//   // 4. KẾ HOẠCH THU HOẠCH (HARVEST): Cắt nước và thu hoạch sầu riêng
-//   {
-//     id: 6,
-//     code: "PLN-2024-006",
-//     name: "Kế hoạch cắt nước và thu hoạch sầu riêng Thái (Monthong)",
-//     description:
-//       "Thực hiện siết nước cuối vụ để ráo cơm, lên màu đẹp và tiến hành cắt trái chuẩn xuất khẩu.",
+//       "Thực hiện siết nước cuối vụ để ráo cơm, lên màu đẹp và tiến hành cắt trái, xử lý Ethephon chuẩn xuất khẩu.",
 //     seasonId: "S001",
 //     seasonName: "Chính vụ Đồng bằng sông Cửu Long",
 //     startDate: "2024-04-15",
 //     endDate: "2024-05-15",
-//     selectedRegionIds: ["REG-01"],
-//     selectedZoneIds: ["ZONE-01-B"],
-//     selectedPlotIds: ["PLOT-008"],
+//     selectedRegionIds: ["1"],
+//     selectedZoneIds: ["sub-1-1", "sub-1-2"],
+//     selectedPlotIds: ["plot-1-1", "plot-1-2", "plot-1-3"],
 //     crop: "Sầu riêng",
-//     variety: "Sầu riêng Monthong (Dona)",
+//     variety: "Monthong",
 //     purpose: "harvest",
-//     area: "4.0",
-//     expectedYield: "80", // 80 tấn
-//     growthCycleId: "GC004",
-//     selectedStages: ["Nuôi trái vô cơm & Thu hoạch"],
+//     area: "50.5",
+//     expectedYield: "80",
+//     growthCycleId: "",
+//     regimenId: "",
+//     selectedStages: ["Thu hoạch"],
 //     materialAllocations: [
 //       {
-//         id: 107,
-//         stageId: "GC004:Nuôi trái vô cơm & Thu hoạch",
+//         id: 112,
+//         stageId: "Thu hoạch",
 //         materialCategory: "Dụng cụ nông nghiệp",
 //         materialType: "Vật tư thu hoạch",
 //         materialName: "Kéo cắt cuống chuyên dụng và sọt nhựa",
@@ -721,8 +424,8 @@ export interface Plan {
 //         unit: "cái",
 //       },
 //       {
-//         id: 108,
-//         stageId: "GC004:Nuôi trái vô cơm & Thu hoạch",
+//         id: 113,
+//         stageId: "Thu hoạch",
 //         materialCategory: "Chất điều hòa sinh trưởng",
 //         materialType: "Hóa chất",
 //         materialName: "Ethephon",
@@ -732,1157 +435,491 @@ export interface Plan {
 //     ],
 //     taskAllocations: [
 //       {
-//         id: 207,
-//         stageId: "GC004:Nuôi trái vô cơm & Thu hoạch",
+//         id: 209,
+//         stageId: "Thu hoạch",
 //         name: "Cắt nước trước thu hoạch",
 //         description:
-//           "Ngưng tưới nước hoàn toàn trước ngày thu hoạch dự kiến từ 15 - 20 ngày để sầu riêng ráo cơm, độ béo cao, không bị sượng nước.",
+//           "Ngưng tưới nước hoàn toàn trước ngày thu hoạch dự kiến 15-20 ngày để sầu riêng ráo cơm.",
 //         labor: "1 người",
 //         duration: "15 ngày",
 //       },
 //       {
-//         id: 208,
-//         stageId: "GC004:Nuôi trái vô cơm & Thu hoạch",
-//         name: "Cắt trái và phân loại",
+//         id: 210,
+//         stageId: "Thu hoạch",
+//         name: "Cắt trái, phân loại và xử lý Ethephon",
 //         description:
-//           "Đánh giá độ chín sinh lý (tuổi trái). Cắt trái nhẹ nhàng, phân loại hàng xuất khẩu (Loại A, B) và hàng xô cấp đông.",
+//           "Cắt trái theo độ chín sinh lý. Xử lý nhúng Ethephon nồng độ an toàn để lô hàng chín đồng loạt xuất khẩu.",
 //         labor: "8 người",
 //         duration: "7 ngày",
 //       },
-//       {
-//         id: 209,
-//         stageId: "Xử lý chín đồng loạt bằng Ethephon",
-//         name: "Xử lý chín đồng loạt bằng Ethephon",
-//         description:
-//           "Xử lý trái sau khi cắt bằng Ethephon nồng độ 45 - 270 ppm để kích thích sản sinh ethylene, giúp toàn bộ lô hàng chín đồng loạt sau 3-5 ngày phục vụ xuất khẩu.",
-//         labor: "3 người",
-//         duration: "2 ngày",
-//       },
 //     ],
-//     status: "completed",
+//     status: "active",
 //     createdAt: "2024-04-01",
 //   },
 //   {
-//     id: 7,
-//     code: "PLN-2024-007",
-//     name: "Kế hoạch nuôi trái sầu riêng Monthong (Chống sượng, vô cơm)",
+//     id: 6,
+//     code: "PLN-HARVEST-001",
+//     name: "Kế hoạch thu hoạch sầu riêng Monthong chính vụ ĐBSCL",
 //     description:
-//       "Cung cấp dinh dưỡng phân kỳ theo tuổi trái, tỉa trái non sinh lý và bón Kali Sulphate để lên cơm vàng, tránh sượng múi.",
+//       "Thực hiện cắt nước cuối vụ để ráo cơm, tiến hành cắt trái và xử lý nhúng Ethephon chuẩn xuất khẩu.",
 //     seasonId: "S001",
-//     seasonName: "Chính vụ Đông Nam Bộ",
-//     startDate: "2024-02-01",
-//     endDate: "2024-06-15", // Thời gian nuôi trái Monthong kéo dài khoảng 120-135 ngày
-//     selectedRegionIds: ["REG-02"],
-//     selectedZoneIds: ["ZONE-02-A"],
-//     selectedPlotIds: ["PLOT-005"],
+//     seasonName: "Chính vụ Đồng bằng sông Cửu Long",
+//     startDate: "2024-04-15",
+//     endDate: "2024-05-15",
+//     selectedRegionIds: ["3", "5", "1"],
+//     selectedZoneIds: ["sub-1-1", "sub-1-2"],
+//     selectedPlotIds: ["plot-1-1", "plot-1-2", "plot-1-3"],
 //     crop: "Sầu riêng",
-//     variety: "Sầu riêng Monthong (Dona)",
-//     purpose: "cultivation",
-//     area: "4.0",
-//     expectedYield: "80",
-//     growthCycleId: "GC004",
-//     selectedStages: ["Đậu quả, nuôi quả và thu hoạch"],
+//     variety: "Monthong",
+//     purpose: "harvest",
+//     growthCycleId: "",
+//     regimenId: "",
+//     selectedStages: ["Thu hoạch"],
+//     status: "active",
 //     materialAllocations: [
 //       {
-//         id: 108,
-//         stageId: "Đậu quả, nuôi quả và thu hoạch",
-//         materialCategory: "Phân bón",
-//         materialType: "Phân vô cơ",
-//         materialName: "NPK 15-15-15",
-//         quantity: "1",
-//         unit: "kg/cây/lần",
+//         id: 1779988350720,
+//         stageId: "Thu hoạch",
+//         materialCategory: "Dụng cụ nông nghiệp",
+//         materialType: "Vật tư thu hoạch",
+//         materialName: "Kéo cắt cuống chuyên dụng và sọt nhựa",
+//         quantity: "50",
+//         unit: "cái",
 //       },
 //       {
-//         id: 109,
-//         stageId: "Đậu quả, nuôi quả và thu hoạch",
-//         materialCategory: "Phân bón",
-//         materialType: "Phân vô cơ",
-//         materialName: "Kali Sulphate (K2SO4 - Kali trắng)",
-//         quantity: "0.5",
-//         unit: "kg/cây/lần",
-//       },
-//       {
-//         id: 110,
-//         stageId: "Đậu quả, nuôi quả và thu hoạch",
-//         materialCategory: "Phân bón lá",
-//         materialType: "Vi lượng",
-//         materialName: "Canxi-Bo",
-//         quantity: "1",
+//         id: 1779988350721,
+//         stageId: "Thu hoạch",
+//         materialCategory: "Chất điều hòa sinh trưởng",
+//         materialType: "Hóa chất",
+//         materialName: "Ethephon",
+//         quantity: "5",
 //         unit: "lít",
 //       },
 //     ],
 //     taskAllocations: [
 //       {
-//         id: 209,
-//         stageId: "Đậu quả, nuôi quả và thu hoạch",
-//         name: "Tỉa trái non (3 đợt)",
+//         id: 1779988365799,
+//         stageId: "Thu hoạch",
+//         name: "Cắt nước trước thu hoạch",
 //         description:
-//           "Đợt 1 (sau 10 ngày) loại quả dị dạng. Đợt 2 (sau 20 ngày) tỉa quả méo. Đợt 3 (sau 30 ngày) giữ lại số lượng chuẩn.",
-//         labor: "4 người",
-//         duration: "20 ngày",
-//         isRepeating: true,
-//         repeatDays: [7 - 9],
+//           "Ngưng tưới nước hoàn toàn trước ngày thu hoạch dự kiến 15-20 ngày để sầu riêng ráo cơm, lên màu đẹp, hạn chế sượng nước.",
+//         labor: "1 người",
+//         duration: "15 ngày",
+//         geographicalSelections: [
+//           {
+//             id: "gk9s3nr6f",
+//             type: "region",
+//             regionId: "3",
+//           },
+//           {
+//             id: "6fv2o7w89",
+//             type: "region",
+//             regionId: "5",
+//           },
+//           {
+//             id: "gq2qdqq7k",
+//             type: "region",
+//             regionId: "1",
+//           },
+//         ],
 //       },
 //       {
-//         id: 210,
-//         stageId: "Đậu quả, nuôi quả và thu hoạch",
-//         name: "Bón NPK cân bằng (Giai đoạn đầu)",
+//         id: 1779988365800,
+//         stageId: "Thu hoạch",
+//         name: "Cắt trái, phân loại và xử lý Ethephon",
 //         description:
-//           "Bón NPK 15-15-15 định kỳ 8-10 ngày/lần để thúc trái lớn nhanh trong 60 ngày đầu.",
-//         labor: "2 người",
-//         duration: "2 ngày",
-//         isRepeating: true,
-//         repeatDays: [7 - 12],
-//       },
-//       {
-//         id: 211,
-//         stageId: "Đậu quả, nuôi quả và thu hoạch",
-//         name: "Bón Kali trắng vô cơm (Giai đoạn cuối)",
-//         description:
-//           "Khi trái đạt 60 ngày tuổi, chuyển sang bón Kali Sulphate để trái ráo cơm, lên màu, tuyệt đối không dùng Kali đỏ (Clorua).",
-//         labor: "2 người",
-//         duration: "2 ngày",
+//           "Đánh giá độ chín sinh lý để cắt trái. Sau đó xử lý nhúng Ethephon nồng độ an toàn để lô hàng chín đồng loạt phục vụ xuất khẩu.",
+//         labor: "8 người",
+//         duration: "7 ngày",
+//         geographicalSelections: [
+//           {
+//             id: "gk9s3nr6f",
+//             type: "region",
+//             regionId: "3",
+//           },
+//           {
+//             id: "6fv2o7w89",
+//             type: "region",
+//             regionId: "5",
+//           },
+//           {
+//             id: "gq2qdqq7k",
+//             type: "region",
+//             regionId: "1",
+//           },
+//         ],
 //       },
 //     ],
-//     status: "active",
-//     createdAt: "2024-01-20",
+//     area: "50.5",
+//     createdAt: "2026-05-28",
 //   },
 // ];
 
 export const initialPlans: Plan[] = [
-  // // 1. KẾ HOẠCH CANH TÁC: LÀM BÔNG NGHỊCH VỤ SẦU RIÊNG RI6
-  // // Vùng: ĐBSCL | Mùa vụ: S002 (Nghịch vụ Ri6 ĐBSCL) | Chu kỳ: GC003 (Ri6 Nghịch vụ)
-  // {
-  //   id: 1,
-  //   code: "PLN-2024-001",
-  //   name: "Kế hoạch làm bông nghịch vụ Sầu riêng Ri6 - ĐBSCL",
-  //   description:
-  //     "Áp dụng kỹ thuật xiết nước, đậy bạt và phun Paclobutrazol để kích thích ra hoa nghịch vụ cho sầu riêng Ri6.",
-  //   seasonId: "S002",
-  //   seasonName: "Vụ Nghịch ĐBSCL - Sầu riêng Ri6",
-  //   startDate: "2024-05-15",
-  //   endDate: "2024-11-30",
-  //   selectedRegionIds: ["REG-01"],
-  //   selectedZoneIds: ["ZONE-01-A"],
-  //   selectedPlotIds: ["PLOT-001", "PLOT-002"],
-  //   crop: "Sầu riêng",
-  //   variety: "Sầu riêng Ri6",
-  //   purpose: "cultivation",
-  //   area: "3.5",
-  //   expectedYield: "60",
-  //   growthCycleId: "GC003",
-  //   selectedStages: [
-  //     "GC003:Dằn lân, tạo mầm & Phủ bạt xiết nước",
-  //     "GC003:Dỡ bạt, nhấp nước & Kéo mắt cua",
-  //   ],
-  //   materialAllocations: [
-  //     {
-  //       id: 101,
-  //       stageId: "GC003:Dằn lân, tạo mầm & Phủ bạt xiết nước",
-  //       materialCategory: "Phân bón",
-  //       materialType: "Phân vô cơ",
-  //       materialName: "Phân Lân (DAP hoặc Super Lân)",
-  //       quantity: "4",
-  //       unit: "kg/cây",
-  //     },
-  //     {
-  //       id: 102,
-  //       stageId: "GC003:Dằn lân, tạo mầm & Phủ bạt xiết nước",
-  //       materialCategory: "Thuốc điều hòa sinh trưởng",
-  //       materialType: "Paclobutrazol",
-  //       materialName: "Paclobutrazol 25SC",
-  //       quantity: "5",
-  //       unit: "lít",
-  //     },
-  //     {
-  //       id: 103,
-  //       stageId: "GC003:Dằn lân, tạo mầm & Phủ bạt xiết nước",
-  //       materialCategory: "Phân bón lá",
-  //       materialType: "Phân vô cơ",
-  //       materialName: "MKP (0-52-34) hoặc NPK 10-60-10",
-  //       quantity: "5",
-  //       unit: "kg",
-  //     },
-  //     {
-  //       id: 104,
-  //       stageId: "GC003:Dỡ bạt, nhấp nước & Kéo mắt cua",
-  //       materialCategory: "Hóa chất",
-  //       materialType: "Phá miên trạng",
-  //       materialName: "KNO3 (Nitrat Kali)",
-  //       quantity: "2",
-  //       unit: "kg",
-  //     },
-  //   ],
-  //   taskAllocations: [
-  //     {
-  //       id: 201,
-  //       stageId: "GC003:Dằn lân, tạo mầm & Phủ bạt xiết nước",
-  //       name: "Bón lân tạo mầm và Xiết nước",
-  //       description:
-  //         "Bón lân gốc khi cơi đọt cuối chuyển lụa. Dọn sạch cỏ gốc và xiết cạn nước mương tạo khô hạn.",
-  //       labor: "3 người",
-  //       duration: "14 ngày",
-  //     },
-  //     {
-  //       id: 202,
-  //       stageId: "GC003:Dằn lân, tạo mầm & Phủ bạt xiết nước",
-  //       name: "Phun tạo mầm và đậy bạt nilon",
-  //       description:
-  //         "Phủ kín bạt nilon quanh gốc cản nước mưa. Phun Paclobutrazol 25SC 1 lần vào dạ dưới cành.",
-  //       labor: "4 người",
-  //       duration: "3 ngày",
-  //     },
-  //     {
-  //       id: 203,
-  //       stageId: "GC003:Dỡ bạt, nhấp nước & Kéo mắt cua",
-  //       name: "Dỡ bạt và Phun phá miên trạng",
-  //       description:
-  //         "Khi mắt cua sáng 70-80%, dỡ bạt. Phun KNO3 để phá miên trạng kích mắt cua đâm đồng loạt.",
-  //       labor: "2 người",
-  //       duration: "2 ngày",
-  //     },
-  //   ],
-  //   status: "active",
-  //   createdAt: "2024-05-01",
-  // },
-
-  // // 2. KẾ HOẠCH CẢI TẠO: PHỤC HỒI SAU THU HOẠCH
-  // // Vùng: Đông Nam Bộ | Mùa vụ: S003 (Chính vụ ĐNB) | Chu kỳ: GC001 (Thuận vụ chung)
-  // {
-  //   id: 2,
-  //   code: "PLN-2024-002",
-  //   name: "Kế hoạch phục hồi Hệ nền Đất & Kích kháng rễ Sầu riêng (Đông Nam Bộ)",
-  //   description:
-  //     "Áp dụng phác đồ PD-SOIL-HCDF-2026: Khơi rãnh thoát nước, xới nhẹ mặt đất, bón phân hữu cơ và vi sinh để phục hồi rễ tơ, điều chỉnh cấu trúc và pH đất.",
-  //   seasonId: "S003",
-  //   seasonName: "Chính vụ Đông Nam Bộ",
-  //   startDate: "2024-08-01",
-  //   endDate: "2024-09-30",
-  //   selectedRegionIds: ["REG-02"],
-  //   selectedZoneIds: ["ZONE-02-B"],
-  //   selectedPlotIds: ["PLOT-005"],
-  //   crop: "Sầu riêng",
-  //   variety: "Sầu riêng Monthong (Dona)",
-  //   purpose: "amendment",
-  //   growthCycleId: "",
-  //   regimenId: "4",
-  //   selectedStages: [
-  //     "4:Cấp tốc (0–7 ngày) – “Cứu rễ, cứu oxy”",
-  //     "4:Ngắn hạn (2–6 tuần) – “Điều chỉnh cấu trúc - pH nền”",
-  //   ],
-  //   status: "active",
-  //   materialAllocations: [
-  //     {
-  //       id: 105,
-  //       stageId: "4:Ngắn hạn (2–6 tuần) – “Điều chỉnh cấu trúc - pH nền”",
-  //       materialCategory: "Phân bón",
-  //       materialType: "Phân hữu cơ",
-  //       materialName: "Phân hữu cơ hoai mục",
-  //       quantity: "25",
-  //       unit: "kg/cây",
-  //     },
-  //     {
-  //       id: 106,
-  //       stageId: "4:Ngắn hạn (2–6 tuần) – “Điều chỉnh cấu trúc - pH nền”",
-  //       materialCategory: "Chế phẩm vi sinh",
-  //       materialType: "fertilizer",
-  //       materialName: "Ozym (Bào tử vi sinh)",
-  //       quantity: "100",
-  //       unit: "g/gốc",
-  //     },
-  //     {
-  //       id: 107,
-  //       stageId: "4:Ngắn hạn (2–6 tuần) – “Điều chỉnh cấu trúc - pH nền”",
-  //       materialCategory: "Chế phẩm vi sinh",
-  //       materialType: "fertilizer",
-  //       materialName: "Bzym+ (10^15 CFU/mL)",
-  //       quantity: "500",
-  //       unit: "ml/gốc",
-  //     },
-  //   ],
-  //   taskAllocations: [
-  //     {
-  //       id: 204,
-  //       stageId: "4:Cấp tốc (0–7 ngày) – “Cứu rễ, cứu oxy”",
-  //       name: "Khơi rãnh thoát nước và xới nhẹ mặt đất",
-  //       description:
-  //         "Thoát nước khẩn cấp, xới nhẹ lớp mặt tăng thông thoáng, thu gom tàn dư thối, quả rụng đem tiêu hủy để dọn nguồn bệnh.",
-  //       labor: "5 người",
-  //       duration: "7 ngày",
-  //       geographicalSelections: [
-  //         {
-  //           id: "geo-reg02-a",
-  //           type: "region",
-  //           regionId: "REG-02",
-  //         },
-  //       ],
-  //     },
-  //     {
-  //       id: 205,
-  //       stageId: "4:Ngắn hạn (2–6 tuần) – “Điều chỉnh cấu trúc - pH nền”",
-  //       name: "Bón phân hữu cơ và tưới vi sinh",
-  //       description:
-  //         "Bón vôi/Dolomite khử chua. Rải Ozym kết hợp phân hữu cơ hoai mục để phân hủy rễ thối. Tưới Bzym+ để thiết lập quần thể vi sinh bảo vệ rễ.",
-  //       labor: "3 người",
-  //       duration: "30 ngày",
-  //       geographicalSelections: [
-  //         {
-  //           id: "geo-reg02-b",
-  //           type: "region",
-  //           regionId: "REG-02",
-  //         },
-  //       ],
-  //     },
-  //   ],
-  //   area: "5.0",
-  //   expectedYield: "0",
-  //   createdAt: "2024-07-20",
-  // },
-
-  // // 3. KẾ HOẠCH ĐIỀU TRỊ: BỆNH THÁN THƯ GIAI ĐOẠN RA HOA
-  // // Vùng: ĐBSCL | Mùa vụ: S001 (Chính vụ ĐBSCL) | Chu kỳ: GC001 (Thuận vụ chung)
-  // {
-  //   id: 3,
-  //   code: "PLN-TREAT-001",
-  //   name: "Kế hoạch điều trị bệnh thán thư bông sầu riêng",
-  //   description:
-  //     "Phác đồ PT001: Hết triệu chứng thán thư sau 14 ngày, bảo vệ hoa và lá lụa. Diệt nấm và phục hồi.",
-  //   seasonId: "S001",
-  //   seasonName: "Chính vụ Đồng bằng sông Cửu Long",
-  //   startDate: "2025-01-15",
-  //   endDate: "2025-01-29",
-  //   selectedRegionIds: ["REG-01"],
-  //   selectedZoneIds: ["ZONE-01"],
-  //   selectedPlotIds: ["PLOT-01"],
-  //   crop: "Sầu riêng",
-  //   variety: "Monthon",
-  //   purpose: "treatment",
-  //   growthCycleId: "",
-  //   regimenId: "1",
-  //   selectedStages: ["1:Phun thuốc phòng ngừa", "1:Điều trị chính"],
-  //   status: "active",
-  //   materialAllocations: [
-  //     {
-  //       id: 107,
-  //       stageId: "1:Phun thuốc phòng ngừa",
-  //       materialCategory: "Thuốc BVTV (Hóa học)",
-  //       materialType: "pesticide",
-  //       materialName: "Mancozeb 80% WP",
-  //       quantity: "2",
-  //       unit: "g/l",
-  //     },
-  //     {
-  //       id: 108,
-  //       stageId: "1:Điều trị chính",
-  //       materialCategory: "Thuốc BVTV (Hóa học)",
-  //       materialType: "pesticide",
-  //       materialName: "Carbendazim 50% WP",
-  //       quantity: "1.5",
-  //       unit: "g/l",
-  //     },
-  //   ],
-  //   taskAllocations: [
-  //     {
-  //       id: 206,
-  //       stageId: "1:Phun thuốc phòng ngừa",
-  //       name: "Phun thuốc phòng ngừa",
-  //       description:
-  //         "Phun xịt hóa học toàn bộ tán lá, tập trung vào mặt dưới lá. Tránh phun khi nắng gắt.",
-  //       labor: "2 người",
-  //       duration: "1 ngày",
-  //       geographicalSelections: [
-  //         {
-  //           id: "geo-reg01-a",
-  //           type: "region",
-  //           regionId: "REG-01",
-  //         },
-  //       ],
-  //     },
-  //     {
-  //       id: 207,
-  //       stageId: "1:Điều trị chính",
-  //       name: "Điều trị chính",
-  //       description:
-  //         "Tập trung vào vùng bị bệnh nặng. Phun 2 lần cách nhau 3 ngày.",
-  //       labor: "2 người",
-  //       duration: "4 ngày",
-  //       geographicalSelections: [
-  //         {
-  //           id: "geo-reg01-b",
-  //           type: "region",
-  //           regionId: "REG-01",
-  //         },
-  //       ],
-  //     },
-  //   ],
-  //   area: "2.5",
-  //   createdAt: "2025-01-05",
-  // },
-
-  // // 4. KẾ HOẠCH CANH TÁC: NUÔI TRÁI VÀ CHỐNG SƯỢNG ĐÔNG NAM BỘ
-  // // Vùng: Đông Nam Bộ | Mùa vụ: S003 (Chính vụ ĐNB) | Chu kỳ: GC004 (Monthong)
-  // {
-  //   id: 4,
-  //   code: "PLN-2024-004",
-  //   name: "Kế hoạch nuôi trái sầu riêng Monthong ĐNB (Chống sượng, vô cơm)",
-  //   description:
-  //     "Cung cấp dinh dưỡng phân kỳ theo tuổi trái, tỉa trái non sinh lý và bón Kali Sulphate để lên cơm vàng.",
-  //   seasonId: "S003",
-  //   seasonName: "Chính vụ Đông Nam Bộ",
-  //   startDate: "2024-03-01",
-  //   endDate: "2024-06-30",
-  //   selectedRegionIds: ["REG-02"],
-  //   selectedZoneIds: ["ZONE-02-A"],
-  //   selectedPlotIds: ["PLOT-005"],
-  //   crop: "Sầu riêng",
-  //   variety: "Sầu riêng Monthong (Dona)",
-  //   purpose: "cultivation",
-  //   area: "4.0",
-  //   expectedYield: "80",
-  //   growthCycleId: "GC004",
-  //   selectedStages: ["GC004:Nuôi trái vô cơm & Thu hoạch (Đặc thù Monthong)"],
-  //   materialAllocations: [
-  //     {
-  //       id: 109,
-  //       stageId: "GC004:Nuôi trái vô cơm & Thu hoạch (Đặc thù Monthong)",
-  //       materialCategory: "Phân bón",
-  //       materialType: "Phân vô cơ",
-  //       materialName: "NPK 15-15-15",
-  //       quantity: "1",
-  //       unit: "kg/cây/lần",
-  //     },
-  //     {
-  //       id: 110,
-  //       stageId: "GC004:Nuôi trái vô cơm & Thu hoạch (Đặc thù Monthong)",
-  //       materialCategory: "Phân bón",
-  //       materialType: "Phân vô cơ",
-  //       materialName: "Kali Sulphate (K2SO4 - Kali trắng)",
-  //       quantity: "0.5",
-  //       unit: "kg/cây/lần",
-  //     },
-  //   ],
-  //   taskAllocations: [
-  //     {
-  //       id: 207,
-  //       stageId: "GC004:Nuôi trái vô cơm & Thu hoạch (Đặc thù Monthong)",
-  //       name: "Tỉa trái non (3 đợt)",
-  //       description:
-  //         "Đợt 1 (sau 10 ngày), Đợt 2 (sau 20 ngày), Đợt 3 (sau 30 ngày) giữ lại số lượng chuẩn.",
-  //       labor: "4 người",
-  //       duration: "20 ngày",
-  //     },
-  //     {
-  //       id: 208,
-  //       stageId: "GC004:Nuôi trái vô cơm & Thu hoạch (Đặc thù Monthong)",
-  //       name: "Bón NPK cân bằng và Kali trắng vô cơm",
-  //       description:
-  //         "Bón NPK 15-15-15 định kỳ 8-10 ngày/lần. Khi trái đạt 60 ngày tuổi, chuyển sang bón Kali Sulphate.",
-  //       labor: "2 người",
-  //       duration: "10 ngày",
-  //     },
-  //   ],
-  //   status: "active",
-  //   createdAt: "2024-02-20",
-  // },
-
-  // // 5. KẾ HOẠCH THU HOẠCH (ĐBSCL)
-  // // Vùng: ĐBSCL | Mùa vụ: S001 (Chính vụ ĐBSCL) | Chu kỳ: GC004 (Monthong)
-  // {
-  //   id: 5,
-  //   code: "PLN-2024-005",
-  //   name: "Kế hoạch cắt nước và thu hoạch sầu riêng Thái (Monthong) ĐBSCL",
-  //   description:
-  //     "Thực hiện siết nước cuối vụ để ráo cơm, lên màu đẹp và tiến hành cắt trái, xử lý Ethephon chuẩn xuất khẩu.",
-  //   seasonId: "S001",
-  //   seasonName: "Chính vụ Đồng bằng sông Cửu Long",
-  //   startDate: "2024-04-15",
-  //   endDate: "2024-05-15",
-  //   selectedRegionIds: ["REG-01"],
-  //   selectedZoneIds: ["ZONE-01-B"],
-  //   selectedPlotIds: ["PLOT-008"],
-  //   crop: "Sầu riêng",
-  //   variety: "Sầu riêng Monthong (Dona)",
-  //   purpose: "harvest",
-  //   area: "4.0",
-  //   expectedYield: "80",
-  //   growthCycleId: "", // Đã làm rỗng theo quy tắc kế hoạch thu hoạch
-  //   regimenId: "",
-  //   selectedStages: ["Thu hoạch"], // Đã chuyển thành mốc Thu hoạch độc lập
-  //   materialAllocations: [
-  //     {
-  //       id: 112,
-  //       stageId: "Thu hoạch", // Đã đồng bộ stageId
-  //       materialCategory: "Dụng cụ nông nghiệp",
-  //       materialType: "Vật tư thu hoạch",
-  //       materialName: "Kéo cắt cuống chuyên dụng và sọt nhựa",
-  //       quantity: "50",
-  //       unit: "cái",
-  //     },
-  //     {
-  //       id: 113,
-  //       stageId: "Thu hoạch", // Đã đồng bộ stageId
-  //       materialCategory: "Chất điều hòa sinh trưởng",
-  //       materialType: "Hóa chất",
-  //       materialName: "Ethephon",
-  //       quantity: "2",
-  //       unit: "lít",
-  //     },
-  //   ],
-  //   taskAllocations: [
-  //     {
-  //       id: 209,
-  //       stageId: "Thu hoạch", // Đã đồng bộ stageId
-  //       name: "Cắt nước trước thu hoạch",
-  //       description:
-  //         "Ngưng tưới nước hoàn toàn trước ngày thu hoạch dự kiến 15-20 ngày để sầu riêng ráo cơm.",
-  //       labor: "1 người",
-  //       duration: "15 ngày",
-  //     },
-  //     {
-  //       id: 210,
-  //       stageId: "Thu hoạch", // Đã đồng bộ stageId
-  //       name: "Cắt trái, phân loại và xử lý Ethephon",
-  //       description:
-  //         "Cắt trái theo độ chín sinh lý. Xử lý nhúng Ethephon nồng độ an toàn để lô hàng chín đồng loạt xuất khẩu.",
-  //       labor: "8 người",
-  //       duration: "7 ngày",
-  //     },
-  //   ],
-  //   status: "completed",
-  //   createdAt: "2024-04-01",
-  // },
-  // {
-  //   id: 6,
-  //   code: "PLN-HARVEST-001",
-  //   name: "Kế hoạch thu hoạch sầu riêng Monthong chính vụ ĐBSCL",
-  //   description:
-  //     "Thực hiện cắt nước cuối vụ để ráo cơm, tiến hành cắt trái và xử lý nhúng Ethephon chuẩn xuất khẩu.",
-  //   seasonId: "S001",
-  //   seasonName: "Chính vụ Đồng bằng sông Cửu Long",
-  //   startDate: "2024-04-15",
-  //   endDate: "2024-05-15",
-  //   selectedRegionIds: ["3", "5", "1"],
-  //   selectedZoneIds: ["sub-1-1", "sub-1-2"],
-  //   selectedPlotIds: ["plot-1-1", "plot-1-2", "plot-1-3"],
-  //   crop: "Sầu riêng",
-  //   variety: "Monthong",
-  //   purpose: "harvest",
-  //   growthCycleId: "",
-  //   regimenId: "",
-  //   selectedStages: ["Thu hoạch"],
-  //   status: "active",
-  //   materialAllocations: [
-  //     {
-  //       id: 1779988350720,
-  //       stageId: "Thu hoạch",
-  //       materialCategory: "Dụng cụ nông nghiệp",
-  //       materialType: "Vật tư thu hoạch",
-  //       materialName: "Kéo cắt cuống chuyên dụng và sọt nhựa",
-  //       quantity: "50",
-  //       unit: "cái",
-  //     },
-  //     {
-  //       id: 1779988350721,
-  //       stageId: "Thu hoạch",
-  //       materialCategory: "Chất điều hòa sinh trưởng",
-  //       materialType: "Hóa chất",
-  //       materialName: "Ethephon",
-  //       quantity: "5",
-  //       unit: "lít",
-  //     },
-  //   ],
-  //   taskAllocations: [
-  //     {
-  //       id: 1779988365799,
-  //       stageId: "Thu hoạch",
-  //       name: "Cắt nước trước thu hoạch",
-  //       description:
-  //         "Ngưng tưới nước hoàn toàn trước ngày thu hoạch dự kiến 15-20 ngày để sầu riêng ráo cơm, lên màu đẹp, hạn chế sượng nước.",
-  //       labor: "1 người",
-  //       duration: "15 ngày",
-  //       geographicalSelections: [
-  //         {
-  //           id: "gk9s3nr6f",
-  //           type: "region",
-  //           regionId: "3",
-  //         },
-  //         {
-  //           id: "6fv2o7w89",
-  //           type: "region",
-  //           regionId: "5",
-  //         },
-  //         {
-  //           id: "gq2qdqq7k",
-  //           type: "region",
-  //           regionId: "1",
-  //         },
-  //       ],
-  //     },
-  //     {
-  //       id: 1779988365800,
-  //       stageId: "Thu hoạch",
-  //       name: "Cắt trái, phân loại và xử lý Ethephon",
-  //       description:
-  //         "Đánh giá độ chín sinh lý để cắt trái. Sau đó xử lý nhúng Ethephon nồng độ an toàn để lô hàng chín đồng loạt phục vụ xuất khẩu.",
-  //       labor: "8 người",
-  //       duration: "7 ngày",
-  //       geographicalSelections: [
-  //         {
-  //           id: "gk9s3nr6f",
-  //           type: "region",
-  //           regionId: "3",
-  //         },
-  //         {
-  //           id: "6fv2o7w89",
-  //           type: "region",
-  //           regionId: "5",
-  //         },
-  //         {
-  //           id: "gq2qdqq7k",
-  //           type: "region",
-  //           regionId: "1",
-  //         },
-  //       ],
-  //     },
-  //   ],
-  //   area: "50.5",
-  //   createdAt: "2026-05-28",
-  // },
   {
-    "id": 1,
-    "code": "PLN-2024-001",
-    "name": "Kế hoạch làm bông nghịch vụ Sầu riêng Ri6 - ĐBSCL",
-    "description": "Áp dụng kỹ thuật xiết nước, đậy bạt và phun Paclobutrazol để kích thích ra hoa nghịch vụ cho sầu riêng Ri6.",
-    "seasonId": "S002",
-    "seasonName": "Vụ Nghịch ĐBSCL - Sầu riêng Ri6",
-    "startDate": "2024-05-15",
-    "endDate": "2024-11-30",
-    "selectedRegionIds": [
-      "1",
-      "3"
+    id: 1,
+    code: "PLN-LUA-2025-001",
+    name: "Kế hoạch canh tác lúa ST25 giảm phát thải vụ Đông Xuân (ĐBSCL)",
+    description:
+      "Áp dụng quy trình '1 Phải 5 Giảm', sạ cụm bằng máy và kỹ thuật tưới ngập khô xen kẽ (AWD) để tăng năng suất và giảm phát thải khí nhà kính.",
+    seasonId: "S001",
+    seasonName: "Vụ Đông Xuân (Đồng bằng sông Cửu Long)",
+    startDate: "2024-11-15",
+    endDate: "2025-03-10",
+    selectedRegionIds: ["1"],
+    selectedZoneIds: ["sub-1-1"],
+    selectedPlotIds: ["plot-1-1", "plot-1-2"],
+    crop: "Lúa",
+    variety: "ST25",
+    purpose: "cultivation",
+    area: "20.0",
+    expectedYield: "750",
+    growthCycleId: "GC-LUA-01",
+    selectedStages: [
+      "GC-LUA-01:Nảy mầm và Cây con non (Từ gieo đến 15 ngày)",
+      "GC-LUA-01:Sinh trưởng dinh dưỡng - Đẻ nhánh",
     ],
-    "selectedZoneIds": [
-      "sub-1-1",
-      "sub-1-2"
-    ],
-    "selectedPlotIds": [
-      "plot-1-1",
-      "plot-1-2",
-      "plot-1-3"
-    ],
-    "crop": "Sầu riêng",
-    "variety": "Monthong",
-    "purpose": "cultivation",
-    "area": "50.5",
-    "expectedYield": "60",
-    "growthCycleId": "GC003",
-    "selectedStages": [
-      "GC003:Dằn lân, tạo mầm & Phủ bạt xiết nước",
-      "GC003:Dỡ bạt, nhấp nước & Kéo mắt cua"
-    ],
-    "materialAllocations": [
+    materialAllocations: [
       {
-        "id": 101,
-        "stageId": "GC003:Dằn lân, tạo mầm & Phủ bạt xiết nước",
-        "materialCategory": "Phân bón",
-        "materialType": "Phân vô cơ",
-        "materialName": "Phân Lân (DAP hoặc Super Lân)",
-        "quantity": "4",
-        "unit": "kg/cây"
+        id: 101,
+        stageId: "GC-LUA-01:Nảy mầm và Cây con non (Từ gieo đến 15 ngày)",
+        materialCategory: "Giống",
+        materialType: "Giống xác nhận",
+        materialName: "Hạt giống lúa ST25 cấp xác nhận",
+        quantity: "60",
+        unit: "kg/ha",
       },
       {
-        "id": 102,
-        "stageId": "GC003:Dằn lân, tạo mầm & Phủ bạt xiết nước",
-        "materialCategory": "Thuốc điều hòa sinh trưởng",
-        "materialType": "Paclobutrazol",
-        "materialName": "Paclobutrazol 25SC",
-        "quantity": "5",
-        "unit": "lít"
+        id: 102,
+        stageId: "GC-LUA-01:Sinh trưởng dinh dưỡng - Đẻ nhánh",
+        materialCategory: "Phân bón",
+        materialType: "Phân vô cơ",
+        materialName: "NPK 20-20-15+TE",
+        quantity: "150",
+        unit: "kg/ha/lần",
       },
-      {
-        "id": 103,
-        "stageId": "GC003:Dằn lân, tạo mầm & Phủ bạt xiết nước",
-        "materialCategory": "Phân bón lá",
-        "materialType": "Phân vô cơ",
-        "materialName": "MKP (0-52-34) hoặc NPK 10-60-10",
-        "quantity": "5",
-        "unit": "kg"
-      },
-      {
-        "id": 104,
-        "stageId": "GC003:Dỡ bạt, nhấp nước & Kéo mắt cua",
-        "materialCategory": "Hóa chất",
-        "materialType": "Phá miên trạng",
-        "materialName": "KNO3 (Nitrat Kali)",
-        "quantity": "2",
-        "unit": "kg"
-      }
     ],
-    "taskAllocations": [
+    taskAllocations: [
       {
-        "id": 201,
-        "stageId": "GC003:Dằn lân, tạo mầm & Phủ bạt xiết nước",
-        "name": "Bón lân tạo mầm và Xiết nước",
-        "description": "Bón lân gốc khi cơi đọt cuối chuyển lụa. Dọn sạch cỏ gốc và xiết cạn nước mương tạo khô hạn.",
-        "labor": "3 người",
-        "duration": "14 ngày"
+        id: 201,
+        stageId: "GC-LUA-01:Nảy mầm và Cây con non (Từ gieo đến 15 ngày)",
+        name: "Gieo sạ cụm kết hợp vùi phân",
+        description:
+          "Sử dụng máy bay không người lái hoặc máy sạ cụm định vị để gieo sạ chính xác, khoảng cách hàng 20-30cm, kết hợp vùi phân sâu 3-4cm để tránh thất thoát đạm.",
+        labor: "3 người",
+        duration: "5 ngày",
       },
       {
-        "id": 202,
-        "stageId": "GC003:Dằn lân, tạo mầm & Phủ bạt xiết nước",
-        "name": "Phun tạo mầm và đậy bạt nilon",
-        "description": "Phủ kín bạt nilon quanh gốc cản nước mưa. Phun Paclobutrazol 25SC 1 lần vào dạ dưới cành.",
-        "labor": "4 người",
-        "duration": "3 ngày"
+        id: 202,
+        stageId: "GC-LUA-01:Sinh trưởng dinh dưỡng - Đẻ nhánh",
+        name: "Áp dụng tưới Ướt khô xen kẽ (AWD)",
+        description:
+          "Giữ mực nước 1-3cm. Khi lúa được 25-40 ngày, tiến hành rút nước để mặt ruộng khô nứt nẻ chân chim (thấp hơn mặt đất 15cm) giúp rễ ăn sâu, chống đổ ngã và giảm khí Metan.",
+        labor: "2 người",
+        duration: "15 ngày",
       },
-      {
-        "id": 203,
-        "stageId": "GC003:Dỡ bạt, nhấp nước & Kéo mắt cua",
-        "name": "Dỡ bạt và Phun phá miên trạng",
-        "description": "Khi mắt cua sáng 70-80%, dỡ bạt. Phun KNO3 để phá miên trạng kích mắt cua đâm đồng loạt.",
-        "labor": "2 người",
-        "duration": "2 ngày"
-      }
     ],
-    "status": "active",
-    "createdAt": "2024-05-01",
-    "regimenId": ""
+    status: "active",
+    createdAt: "2024-10-20",
+    regimenId: "",
   },
   {
-    "id": 2,
-    "code": "PLN-2024-002",
-    "name": "Kế hoạch phục hồi Hệ nền Đất & Kích kháng rễ Sầu riêng (Đông Nam Bộ)",
-    "description": "Áp dụng phác đồ PD-SOIL-HCDF-2026: Khơi rãnh thoát nước, xới nhẹ mặt đất, bón phân hữu cơ và vi sinh để phục hồi rễ tơ, điều chỉnh cấu trúc và pH đất.",
-    "seasonId": "S003",
-    "seasonName": "Chính vụ Đông Nam Bộ",
-    "startDate": "2024-08-01",
-    "endDate": "2024-09-30",
-    "selectedRegionIds": [
-      "1",
-      "3"
+    id: 2,
+    code: "PLN-LUA-SOIL-002",
+    name: "Kế hoạch cải tạo đất nhiễm mặn phèn vụ Hè Thu",
+    description:
+      "Cày ải phơi đất, đánh rãnh rửa mặn và bón lót lân nung chảy để hạ phèn trước khi gieo sạ giống chịu mặn OM18.",
+    seasonId: "S002",
+    seasonName: "Vụ Hè Thu (Đồng bằng sông Cửu Long)",
+    startDate: "2025-04-01",
+    endDate: "2025-04-20",
+    selectedRegionIds: ["1"],
+    selectedZoneIds: ["sub-1-1", "sub-1-2"],
+    selectedPlotIds: ["plot-1-1", "plot-1-2", "plot-1-3"],
+    crop: "Lúa",
+    variety: "ST25",
+    purpose: "amendment",
+    area: "50.5",
+    expectedYield: "0",
+    growthCycleId: "",
+    regimenId: "1",
+    selectedStages: [
+      "1:Cày lật, đánh rãnh & Rửa phèn",
+      "1:Bón lót Vôi và Lân nung chảy",
     ],
-    "selectedZoneIds": [
-      "sub-1-1",
-      "sub-1-2"
-    ],
-    "selectedPlotIds": [
-      "plot-1-1",
-      "plot-1-2",
-      "plot-1-3"
-    ],
-    "crop": "Sầu riêng",
-    "variety": "Monthong",
-    "purpose": "amendment",
-    "growthCycleId": "",
-    "regimenId": "4",
-    "selectedStages": [
-      "4:Cấp tốc (0–7 ngày) – “Cứu rễ, cứu oxy”",
-      "4:Ngắn hạn (2–6 tuần) – “Điều chỉnh cấu trúc - pH nền”"
-    ],
-    "status": "active",
-    "materialAllocations": [
+    materialAllocations: [
       {
-        "id": 105,
-        "stageId": "4:Ngắn hạn (2–6 tuần) – “Điều chỉnh cấu trúc - pH nền”",
-        "materialCategory": "Phân bón",
-        "materialType": "Phân hữu cơ",
-        "materialName": "Phân hữu cơ hoai mục",
-        "quantity": "25",
-        "unit": "kg/cây"
+        id: 103,
+        stageId: "1:Bón lót Vôi và Lân nung chảy",
+        materialCategory: "Phân bón",
+        materialType: "Cải tạo đất",
+        materialName: "Vôi bột nông nghiệp (Ca(OH)2)",
+        quantity: "1000 - 2000",
+        unit: "kg/ha",
       },
       {
-        "id": 106,
-        "stageId": "4:Ngắn hạn (2–6 tuần) – “Điều chỉnh cấu trúc - pH nền”",
-        "materialCategory": "Chế phẩm vi sinh",
-        "materialType": "fertilizer",
-        "materialName": "Ozym (Bào tử vi sinh)",
-        "quantity": "100",
-        "unit": "g/gốc"
+        id: 104,
+        stageId: "1:Bón lót Vôi và Lân nung chảy",
+        materialCategory: "Phân bón",
+        materialType: "Phân vô cơ",
+        materialName: "Lân nung chảy (Văn Điển/Đầu Trâu)",
+        quantity: "400 - 500",
+        unit: "kg/ha",
+      },
+    ],
+    taskAllocations: [
+      {
+        id: 203,
+        stageId: "1:Cày lật, đánh rãnh & Rửa phèn",
+        name: "Cày lật, đánh rãnh thoát nước và rửa phèn mặn",
+        description:
+          "Cày lật mặt ruộng sâu 15-20cm để lộ tầng đất sinh phèn. San phẳng mặt ruộng bằng tia laser, đánh rãnh rộng 20-30cm, sâu 15-20cm, cách nhau 6-9m để xả phèn mặn hiệu quả trước khi gieo sạ [1]. Bơm nước ngọt ngập 5-10cm, ngâm 3-5 ngày rồi xả kiệt. Lặp lại 3-5 lần.",
+        labor: "3 người",
+        duration: "15 ngày",
       },
       {
-        "id": 107,
-        "stageId": "4:Ngắn hạn (2–6 tuần) – “Điều chỉnh cấu trúc - pH nền”",
-        "materialCategory": "Chế phẩm vi sinh",
-        "materialType": "fertilizer",
-        "materialName": "Bzym+ (10^15 CFU/mL)",
-        "quantity": "500",
-        "unit": "ml/gốc"
-      }
-    ],
-    "taskAllocations": [
-      {
-        "id": 204,
-        "stageId": "4:Cấp tốc (0–7 ngày) – “Cứu rễ, cứu oxy”",
-        "name": "Khơi rãnh thoát nước và xới nhẹ mặt đất",
-        "description": "Thoát nước khẩn cấp, xới nhẹ lớp mặt tăng thông thoáng, thu gom tàn dư thối, quả rụng đem tiêu hủy để dọn nguồn bệnh.",
-        "labor": "5 người",
-        "duration": "7 ngày",
-        "geographicalSelections": [
-          {
-            "id": "geo-reg02-a",
-            "type": "region",
-            "regionId": "REG-02"
-          }
-        ]
+        id: 204,
+        stageId: "1:Bón lót Vôi và Lân nung chảy",
+        name: "Bón lót Vôi và Lân nung chảy trung hòa độc chất",
+        description:
+          "Bón rải 1 - 2 tấn vôi bột/ha để nâng pH. Sau đó bón lót chuyên biệt 400 - 500 kg Lân nung chảy trước khi bừa trục cuối. Lân sẽ kết hợp với Sắt (Fe), Nhôm (Al) thành dạng khó di động, giúp rễ mạ non tránh ngộ độc. Chú ý: Tuyệt đối không bón vôi cùng lúc với phân đạm.",
+        labor: "5 người",
+        duration: "5 ngày",
       },
-      {
-        "id": 205,
-        "stageId": "4:Ngắn hạn (2–6 tuần) – “Điều chỉnh cấu trúc - pH nền”",
-        "name": "Bón phân hữu cơ và tưới vi sinh",
-        "description": "Bón vôi/Dolomite khử chua. Rải Ozym kết hợp phân hữu cơ hoai mục để phân hủy rễ thối. Tưới Bzym+ để thiết lập quần thể vi sinh bảo vệ rễ.",
-        "labor": "3 người",
-        "duration": "30 ngày",
-        "geographicalSelections": [
-          {
-            "id": "geo-reg02-b",
-            "type": "region",
-            "regionId": "REG-02"
-          }
-        ]
-      }
     ],
-    "area": "50.5",
-    "expectedYield": "0",
-    "createdAt": "2024-07-20"
+    status: "active",
+    createdAt: "2025-03-10",
   },
   {
-    "id": 3,
-    "code": "PLN-TREAT-001",
-    "name": "Kế hoạch điều trị bệnh thán thư bông sầu riêng",
-    "description": "Phác đồ PT001: Hết triệu chứng thán thư sau 14 ngày, bảo vệ hoa và lá lụa. Diệt nấm và phục hồi.",
-    "seasonId": "S001",
-    "seasonName": "Chính vụ Đồng bằng sông Cửu Long",
-    "startDate": "2025-01-15",
-    "endDate": "2025-01-29",
-    "selectedRegionIds": [
-      "REG-01"
+    id: 3,
+    code: "PLN-LUA-2025-003",
+    name: "Kế hoạch gieo mạ và chống rét lúa vụ Chiêm Xuân (ĐBSH)",
+    description:
+      "Sử dụng giống chịu rét J02, làm mạ nền cứng che phủ nilon và điều tiết nước làm áo giữ ấm cho gốc lúa.",
+    seasonId: "S004",
+    seasonName: "Vụ Chiêm Xuân (Đồng bằng sông Hồng)",
+    startDate: "2024-12-25",
+    endDate: "2025-02-15",
+    selectedRegionIds: ["1"],
+    selectedZoneIds: ["sub-1-1", "sub-1-2"],
+    selectedPlotIds: ["plot-1-1", "plot-1-2", "plot-1-3"],
+    crop: "Lúa",
+    variety: "ST25",
+    purpose: "cultivation",
+    area: "50.5",
+    expectedYield: "130",
+    growthCycleId: "GC-LUA-02",
+    selectedStages: [
+      "GC-LUA-02:Ngâm ủ và Gieo mạ chống rét",
+      "GC-LUA-02:Bén rễ hồi xanh và Đẻ nhánh",
     ],
-    "selectedZoneIds": [
-      "ZONE-01"
-    ],
-    "selectedPlotIds": [
-      "PLOT-01"
-    ],
-    "crop": "Sầu riêng",
-    "variety": "Monthon",
-    "purpose": "treatment",
-    "growthCycleId": "",
-    "regimenId": "1",
-    "selectedStages": [
-      "1:Phun thuốc phòng ngừa",
-      "1:Điều trị chính"
-    ],
-    "status": "active",
-    "materialAllocations": [
+    materialAllocations: [
       {
-        "id": 107,
-        "stageId": "1:Phun thuốc phòng ngừa",
-        "materialCategory": "Thuốc BVTV (Hóa học)",
-        "materialType": "pesticide",
-        "materialName": "Mancozeb 80% WP",
-        "quantity": "2",
-        "unit": "g/l"
+        id: 104,
+        stageId: "GC-LUA-02:Ngâm ủ và Gieo mạ chống rét",
+        materialCategory: "Vật tư",
+        materialType: "Màng phủ",
+        materialName: "Nilon trắng trong suốt và khung vòm tre",
+        quantity: "150",
+        unit: "cuộn",
       },
       {
-        "id": 108,
-        "stageId": "1:Điều trị chính",
-        "materialCategory": "Thuốc BVTV (Hóa học)",
-        "materialType": "pesticide",
-        "materialName": "Carbendazim 50% WP",
-        "quantity": "1.5",
-        "unit": "g/l"
-      }
+        id: 105,
+        stageId: "GC-LUA-02:Ngâm ủ và Gieo mạ chống rét",
+        materialCategory: "Phân bón",
+        materialType: "Phân lân và tro",
+        materialName: "Supe lân và Tro bếp",
+        quantity: "10",
+        unit: "kg/sào",
+      },
     ],
-    "taskAllocations": [
+    taskAllocations: [
       {
-        "id": 206,
-        "stageId": "1:Phun thuốc phòng ngừa",
-        "name": "Phun thuốc phòng ngừa",
-        "description": "Phun xịt hóa học toàn bộ tán lá, tập trung vào mặt dưới lá. Tránh phun khi nắng gắt.",
-        "labor": "2 người",
-        "duration": "1 ngày",
-        "geographicalSelections": [
-          {
-            "id": "geo-reg01-a",
-            "type": "region",
-            "regionId": "REG-01"
-          }
-        ]
+        id: 204,
+        stageId: "GC-LUA-02:Ngâm ủ và Gieo mạ chống rét",
+        name: "Làm vòm nilon che mạ",
+        description:
+          "Làm vòm che nilon cho luống mạ rộng 1.2m, cao 0.5m. Rắc tro bếp để tăng nhiệt độ. Tuyệt đối không bón đạm Urê khi nhiệt độ < 15 độ C [8, 9].",
+        labor: "5 người",
+        duration: "7 ngày",
       },
       {
-        "id": 207,
-        "stageId": "1:Điều trị chính",
-        "name": "Điều trị chính",
-        "description": "Tập trung vào vùng bị bệnh nặng. Phun 2 lần cách nhau 3 ngày.",
-        "labor": "2 người",
-        "duration": "4 ngày",
-        "geographicalSelections": [
-          {
-            "id": "geo-reg01-b",
-            "type": "region",
-            "regionId": "REG-01"
-          }
-        ]
-      }
+        id: 205,
+        stageId: "GC-LUA-02:Bén rễ hồi xanh và Đẻ nhánh",
+        name: "Điều tiết nước giữ ấm",
+        description:
+          "Duy trì lớp nước mặt từ 3-5 cm với phương châm 'lấy nước làm áo' để chống rét cho lúa sau cấy [9].",
+        labor: "2 người",
+        duration: "20 ngày",
+      },
     ],
-    "area": "0.0",
-    "createdAt": "2025-01-05"
+    status: "active",
+    createdAt: "2024-11-20",
+    regimenId: "",
   },
   {
-    "id": 4,
-    "code": "PLN-2024-004",
-    "name": "Kế hoạch nuôi trái sầu riêng Monthong ĐNB (Chống sượng, vô cơm)",
-    "description": "Cung cấp dinh dưỡng phân kỳ theo tuổi trái, tỉa trái non sinh lý và bón Kali Sulphate để lên cơm vàng.",
-    "seasonId": "S003",
-    "seasonName": "Chính vụ Đông Nam Bộ",
-    "startDate": "2024-03-01",
-    "endDate": "2024-06-30",
-    "selectedRegionIds": [
-      "5",
-      "10",
-      "3",
-      "1"
+    id: 4,
+    code: "PLN-LUA-TREAT-002",
+    name: "Kế hoạch né rầy và phòng trừ đạo ôn lúa Đài Thơm 8",
+    description:
+      "Thực hiện xuống giống đồng loạt né rầy dựa vào bẫy đèn. Quản lý bệnh đạo ôn cổ bông ở giai đoạn làm đòng, trổ bông bằng cách kết hợp điều tiết nước, ngắt nguồn đạm và phun thuốc đặc trị nội hấp.",
+    seasonId: "S002",
+    seasonName: "Vụ Hè Thu (Đồng bằng sông Cửu Long)",
+    startDate: "2025-06-10",
+    endDate: "2025-06-25",
+    selectedRegionIds: ["1"],
+    selectedZoneIds: ["sub-1-1", "sub-1-2"],
+    selectedPlotIds: ["plot-1-1", "plot-1-2", "plot-1-3"],
+    crop: "Lúa",
+    variety: "ST25",
+    purpose: "treatment",
+    area: "50.5",
+    expectedYield: "0",
+    growthCycleId: "",
+    regimenId: "101",
+    selectedStages: [
+      "101:Cắt đứt nguồn dinh dưỡng & Giữ nước",
+      "101:Phun thuốc đặc trị Đạo ôn",
     ],
-    "selectedZoneIds": [
-      "sub-1-1",
-      "sub-1-2"
-    ],
-    "selectedPlotIds": [
-      "plot-1-1",
-      "plot-1-2",
-      "plot-1-3"
-    ],
-    "crop": "Sầu riêng",
-    "variety": "Monthong",
-    "purpose": "cultivation",
-    "area": "50.5",
-    "expectedYield": "80",
-    "growthCycleId": "GC004",
-    "selectedStages": [
-      "GC004:Nuôi trái vô cơm & Thu hoạch (Đặc thù Monthong)"
-    ],
-    "materialAllocations": [
+    materialAllocations: [
       {
-        "id": 109,
-        "stageId": "GC004:Nuôi trái vô cơm & Thu hoạch (Đặc thù Monthong)",
-        "materialCategory": "Phân bón",
-        "materialType": "Phân vô cơ",
-        "materialName": "NPK 15-15-15",
-        "quantity": "1",
-        "unit": "kg/cây/lần"
+        id: 106,
+        stageId: "101:Phun thuốc đặc trị Đạo ôn",
+        materialCategory: "Thuốc BVTV",
+        materialType: "Fungicide",
+        materialName: "Thuốc đặc trị đạo ôn (Fuji-one 40EC / Zilla 100SC)",
+        quantity: "1.0 - 1.2",
+        unit: "lít/ha",
       },
       {
-        "id": 110,
-        "stageId": "GC004:Nuôi trái vô cơm & Thu hoạch (Đặc thù Monthong)",
-        "materialCategory": "Phân bón",
-        "materialType": "Phân vô cơ",
-        "materialName": "Kali Sulphate (K2SO4 - Kali trắng)",
-        "quantity": "0.5",
-        "unit": "kg/cây/lần"
-      }
-    ],
-    "taskAllocations": [
-      {
-        "id": 207,
-        "stageId": "GC004:Nuôi trái vô cơm & Thu hoạch (Đặc thù Monthong)",
-        "name": "Tỉa trái non (3 đợt)",
-        "description": "Đợt 1 (sau 10 ngày), Đợt 2 (sau 20 ngày), Đợt 3 (sau 30 ngày) giữ lại số lượng chuẩn.",
-        "labor": "4 người",
-        "duration": "20 ngày"
+        id: 1780332724777,
+        stageId: "101:Cắt đứt nguồn dinh dưỡng & Giữ nước",
+        materialCategory: "Nông cụ",
+        materialType: "Nông cụ",
+        materialName: "Cuốc",
+        quantity: "2",
+        unit: "cái",
       },
       {
-        "id": 208,
-        "stageId": "GC004:Nuôi trái vô cơm & Thu hoạch (Đặc thù Monthong)",
-        "name": "Bón NPK cân bằng và Kali trắng vô cơm",
-        "description": "Bón NPK 15-15-15 định kỳ 8-10 ngày/lần. Khi trái đạt 60 ngày tuổi, chuyển sang bón Kali Sulphate.",
-        "labor": "2 người",
-        "duration": "10 ngày"
-      }
+        id: 1780332733460,
+        stageId: "101:Cắt đứt nguồn dinh dưỡng & Giữ nước",
+        materialCategory: "Nông cụ",
+        materialType: "Nông cụ",
+        materialName: "Ủng bảo hộ",
+        quantity: "10",
+        unit: "đôi",
+      },
     ],
-    "status": "active",
-    "createdAt": "2024-02-20",
-    "regimenId": ""
+    taskAllocations: [
+      {
+        id: 206,
+        stageId: "101:Cắt đứt nguồn dinh dưỡng & Giữ nước",
+        name: "Cắt đứt nguồn dinh dưỡng & Giữ nước",
+        description:
+          "Ngay khi phát hiện dấu hiệu bệnh, lập tức ngừng bón phân đạm, NPK và phân bón lá. Bắt buộc giữ mực nước ruộng ổn định từ 3-5cm để lúa hút nước, giảm sốc sinh lý, tuyệt đối không để ruộng khô cạn.",
+        labor: "1 người",
+        duration: "14 ngày",
+      },
+      {
+        id: 207,
+        stageId: "101:Phun thuốc đặc trị Đạo ôn",
+        name: "Phun phòng/trị đạo ôn cổ bông",
+        description:
+          "Áp dụng máy bay không người lái để phun sương mịn ướt đều toàn bộ thân lá. Bắt buộc phun phòng 2 lần: lần 1 trước khi lúa trổ 5-7 ngày và lần 2 sau khi lúa trổ đều hoàn toàn 7-10 ngày. Chú ý: Tuyệt đối không pha chung kali trắng (K2SO4) khi lúa đang bị bệnh.",
+        labor: "2 người (điều khiển Drone)",
+        duration: "2 ngày",
+      },
+    ],
+    status: "active",
+    createdAt: "2025-05-15",
   },
   {
-    "id": 5,
-    "code": "PLN-2024-005",
-    "name": "Kế hoạch cắt nước và thu hoạch sầu riêng Thái (Monthong) ĐBSCL",
-    "description": "Thực hiện siết nước cuối vụ để ráo cơm, lên màu đẹp và tiến hành cắt trái, xử lý Ethephon chuẩn xuất khẩu.",
-    "seasonId": "S001",
-    "seasonName": "Chính vụ Đồng bằng sông Cửu Long",
-    "startDate": "2024-04-15",
-    "endDate": "2024-05-15",
-    "selectedRegionIds": [
-      "1"
-    ],
-    "selectedZoneIds": [
-      "sub-1-1",
-      "sub-1-2"
-    ],
-    "selectedPlotIds": [
-      "plot-1-1",
-      "plot-1-2",
-      "plot-1-3"
-    ],
-    "crop": "Sầu riêng",
-    "variety": "Monthong",
-    "purpose": "harvest",
-    "area": "50.5",
-    "expectedYield": "80",
-    "growthCycleId": "",
-    "regimenId": "",
-    "selectedStages": [
-      "Thu hoạch"
-    ],
-    "materialAllocations": [
+    id: 5,
+    code: "PLN-LUA-HARVEST-002",
+    name: "Kế hoạch thu hoạch và quản lý rơm rạ không đốt đồng",
+    description:
+      "Cắt nước cuối vụ, thu hoạch cơ giới và sử dụng nấm Trichoderma để phân hủy rơm rạ trực tiếp trên đồng, hướng tới Nông nghiệp tuần hoàn.",
+    seasonId: "S001",
+    seasonName: "Vụ Đông Xuân (Đồng bằng sông Cửu Long)",
+    startDate: "2025-03-01",
+    endDate: "2025-03-15",
+    selectedRegionIds: ["1"],
+    selectedZoneIds: ["sub-1-1", "sub-1-2"],
+    selectedPlotIds: ["plot-1-1", "plot-1-2", "plot-1-3"],
+    crop: "Lúa",
+    variety: "ST25",
+    purpose: "harvest",
+    area: "50.5",
+    expectedYield: "750",
+    growthCycleId: "",
+    regimenId: "",
+    selectedStages: ["Thời kỳ Lúa chín và Thu hoạch"],
+    materialAllocations: [
       {
-        "id": 112,
-        "stageId": "Thu hoạch",
-        "materialCategory": "Dụng cụ nông nghiệp",
-        "materialType": "Vật tư thu hoạch",
-        "materialName": "Kéo cắt cuống chuyên dụng và sọt nhựa",
-        "quantity": "50",
-        "unit": "cái"
+        id: 107,
+        stageId: "Thời kỳ Lúa chín và Thu hoạch",
+        materialCategory: "Chế phẩm sinh học",
+        materialType: "Vi sinh",
+        materialName: "Nấm đối kháng Trichoderma",
+        quantity: "5",
+        unit: "kg/ha",
       },
       {
-        "id": 113,
-        "stageId": "Thu hoạch",
-        "materialCategory": "Chất điều hòa sinh trưởng",
-        "materialType": "Hóa chất",
-        "materialName": "Ethephon",
-        "quantity": "2",
-        "unit": "lít"
-      }
-    ],
-    "taskAllocations": [
-      {
-        "id": 209,
-        "stageId": "Thu hoạch",
-        "name": "Cắt nước trước thu hoạch",
-        "description": "Ngưng tưới nước hoàn toàn trước ngày thu hoạch dự kiến 15-20 ngày để sầu riêng ráo cơm.",
-        "labor": "1 người",
-        "duration": "15 ngày"
+        id: 1780329683502,
+        stageId: "Thu hoạch",
+        materialCategory: "Nông cụ",
+        materialType: "Nông cụ",
+        materialName: "Cưa cầm tay",
+        quantity: "10",
+        unit: "cái",
       },
       {
-        "id": 210,
-        "stageId": "Thu hoạch",
-        "name": "Cắt trái, phân loại và xử lý Ethephon",
-        "description": "Cắt trái theo độ chín sinh lý. Xử lý nhúng Ethephon nồng độ an toàn để lô hàng chín đồng loạt xuất khẩu.",
-        "labor": "8 người",
-        "duration": "7 ngày"
-      }
-    ],
-    "status": "active",
-    "createdAt": "2024-04-01"
-  },
-  {
-    "id": 6,
-    "code": "PLN-HARVEST-001",
-    "name": "Kế hoạch thu hoạch sầu riêng Monthong chính vụ ĐBSCL",
-    "description": "Thực hiện cắt nước cuối vụ để ráo cơm, tiến hành cắt trái và xử lý nhúng Ethephon chuẩn xuất khẩu.",
-    "seasonId": "S001",
-    "seasonName": "Chính vụ Đồng bằng sông Cửu Long",
-    "startDate": "2024-04-15",
-    "endDate": "2024-05-15",
-    "selectedRegionIds": [
-      "3",
-      "5",
-      "1"
-    ],
-    "selectedZoneIds": [
-      "sub-1-1",
-      "sub-1-2"
-    ],
-    "selectedPlotIds": [
-      "plot-1-1",
-      "plot-1-2",
-      "plot-1-3"
-    ],
-    "crop": "Sầu riêng",
-    "variety": "Monthong",
-    "purpose": "harvest",
-    "growthCycleId": "",
-    "regimenId": "",
-    "selectedStages": [
-      "Thu hoạch"
-    ],
-    "status": "active",
-    "materialAllocations": [
-      {
-        "id": 1779988350720,
-        "stageId": "Thu hoạch",
-        "materialCategory": "Dụng cụ nông nghiệp",
-        "materialType": "Vật tư thu hoạch",
-        "materialName": "Kéo cắt cuống chuyên dụng và sọt nhựa",
-        "quantity": "50",
-        "unit": "cái"
+        id: 1780329690848,
+        stageId: "Thu hoạch",
+        materialCategory: "Nông cụ",
+        materialType: "Nông cụ",
+        materialName: "Ủng bảo hộ",
+        quantity: "20",
+        unit: "đôi",
       },
-      {
-        "id": 1779988350721,
-        "stageId": "Thu hoạch",
-        "materialCategory": "Chất điều hòa sinh trưởng",
-        "materialType": "Hóa chất",
-        "materialName": "Ethephon",
-        "quantity": "5",
-        "unit": "lít"
-      }
     ],
-    "taskAllocations": [
+    taskAllocations: [
       {
-        "id": 1779988365799,
-        "stageId": "Thu hoạch",
-        "name": "Cắt nước trước thu hoạch",
-        "description": "Ngưng tưới nước hoàn toàn trước ngày thu hoạch dự kiến 15-20 ngày để sầu riêng ráo cơm, lên màu đẹp, hạn chế sượng nước.",
-        "labor": "1 người",
-        "duration": "15 ngày",
-        "geographicalSelections": [
+        id: 1780329761088,
+        stageId: "Thu hoạch",
+        name: "Rút cạn nước trước thu hoạch",
+        description:
+          "Rút nước trước khi thu hoạch 7-10 ngày để mặt ruộng khô cứng, giúp máy gặt đập liên hợp di chuyển dễ dàng và hạt lúa chín đồng đều.",
+        labor: "1 người",
+        duration: "10 ngày",
+        geographicalSelections: [
           {
-            "id": "gk9s3nr6f",
-            "type": "region",
-            "regionId": "3"
+            id: "4xxqyv0ei",
+            type: "region",
+            regionId: "1",
           },
-          {
-            "id": "6fv2o7w89",
-            "type": "region",
-            "regionId": "5"
-          },
-          {
-            "id": "gq2qdqq7k",
-            "type": "region",
-            "regionId": "1"
-          }
-        ]
+        ],
       },
       {
-        "id": 1779988365800,
-        "stageId": "Thu hoạch",
-        "name": "Cắt trái, phân loại và xử lý Ethephon",
-        "description": "Đánh giá độ chín sinh lý để cắt trái. Sau đó xử lý nhúng Ethephon nồng độ an toàn để lô hàng chín đồng loạt phục vụ xuất khẩu.",
-        "labor": "8 người",
-        "duration": "7 ngày",
-        "geographicalSelections": [
+        id: 1780329791647,
+        stageId: "Thu hoạch",
+        name: "Cuốn rơm và xử lý gốc rạ",
+        description:
+          "Tuyệt đối không đốt đồng. Dùng máy cuốn rơm đưa rơm ra khỏi ruộng để trồng nấm/cho bò ăn. Gốc rạ còn lại rải Trichoderma rồi cày vùi lấp để phân hủy thành phân hữu cơ.",
+        labor: "4 người",
+        duration: "5 ngày",
+        geographicalSelections: [
           {
-            "id": "gk9s3nr6f",
-            "type": "region",
-            "regionId": "3"
+            id: "4xxqyv0ei",
+            type: "region",
+            regionId: "1",
           },
-          {
-            "id": "6fv2o7w89",
-            "type": "region",
-            "regionId": "5"
-          },
-          {
-            "id": "gq2qdqq7k",
-            "type": "region",
-            "regionId": "1"
-          }
-        ]
-      }
+        ],
+      },
     ],
-    "area": "50.5",
-    "createdAt": "2026-05-28"
-  }
-
+    status: "active",
+    createdAt: "2025-02-10",
+  },
 ];
 
 interface PlanStore {
