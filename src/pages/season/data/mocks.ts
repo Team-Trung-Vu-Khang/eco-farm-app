@@ -13,7 +13,7 @@ export const initialSeasons: Season[] = [
     status: "active",
     scope: "crop",
     cropId: "Sầu riêng",
-    growthCycleIds: ["GC001"], // Quy trình Sầu riêng kinh doanh (Thuận vụ)
+    growthCycleIds: ["GC001"],
     documents: [
       {
         id: "D001",
@@ -23,8 +23,13 @@ export const initialSeasons: Season[] = [
         uploadedAt: "2024-01-15",
       },
     ],
-    createdAt: now - 150 * 86400000,
-    updatedAt: now - 10 * 86400000,
+    createdAt: 1767366133224,
+    updatedAt: 1780326299036,
+    selectedStages: {
+      GC001: {
+        s1_1: "90 ngày",
+      },
+    },
   },
   {
     id: "S002",
@@ -32,12 +37,12 @@ export const initialSeasons: Season[] = [
     name: "Vụ Nghịch ĐBSCL - Sầu riêng Ri6",
     description:
       "Xử lý ra hoa nghịch vụ bằng cách xiết nước, đậy bạt nilon để thu hoạch từ tháng 11 đến tháng 3 năm sau, mang lại giá trị thương mại cực cao.",
-    duration: 250, // Chu kỳ làm bông đến thu hoạch ngắn hơn (đặc thù nghịch vụ)
+    duration: 250,
     status: "active",
     scope: "variety",
     cropId: "Sầu riêng",
-    varietyId: "1", // Sầu riêng Ri6
-    growthCycleIds: ["GC003"], // Quy trình Sầu riêng Ri6 (Nghịch vụ ĐBSCL)
+    varietyId: "1",
+    growthCycleIds: ["GC003"],
     documents: [
       {
         id: "D002",
@@ -47,8 +52,14 @@ export const initialSeasons: Season[] = [
         uploadedAt: "2024-02-10",
       },
     ],
-    createdAt: now - 90 * 86400000,
-    updatedAt: now - 2 * 86400000,
+    createdAt: 1772550133224,
+    updatedAt: 1780326309569,
+    selectedStages: {
+      GC003: {
+        r1_2: "15 ngày",
+        r1_3: "55 ngày",
+      },
+    },
   },
   {
     id: "S003",
@@ -60,11 +71,19 @@ export const initialSeasons: Season[] = [
     status: "planning",
     scope: "variety",
     cropId: "Sầu riêng",
-    varietyId: "2", // Sầu riêng Monthong (Dona) phổ biến tại Đông Nam Bộ
-    growthCycleIds: ["GC004"], // Quy trình Sầu riêng Monthong
+    varietyId: "2",
+    growthCycleIds: ["GC004"],
     documents: [],
-    createdAt: now - 50 * 86400000,
-    updatedAt: now,
+    createdAt: 1776006133224,
+    updatedAt: 1780326320202,
+    selectedStages: {
+      GC004: {
+        m1_4: "120 ngày",
+        m1_1: "40 ngày",
+        m1_2: "15 ngày",
+        m1_3: "45 ngày",
+      },
+    },
   },
   {
     id: "S004",
@@ -86,7 +105,14 @@ export const initialSeasons: Season[] = [
         uploadedAt: "2024-03-05",
       },
     ],
-    createdAt: now - 20 * 86400000,
-    updatedAt: now,
+    createdAt: 1778598133224,
+    updatedAt: 1780326328633,
+    selectedStages: {
+      GC001: {
+        s1_2: "45 ngày",
+        s1_3: "55 ngày",
+        s1_4: "110 ngày",
+      },
+    },
   },
 ];

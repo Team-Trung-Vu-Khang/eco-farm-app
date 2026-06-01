@@ -127,6 +127,11 @@ export const PlantDistributionGpsStep = ({
                         width: 32,
                         height: 32,
                       }}
+                      icon={{
+                        url: treeMarkerIcon,
+                        width: 32,
+                        height: 32,
+                      }}
                       title={`${location.plantCode} - ${seedName}`}
                       label={""}
                       draggable
