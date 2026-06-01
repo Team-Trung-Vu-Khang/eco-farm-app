@@ -52,34 +52,34 @@ interface PlantLocation {
 const MOCK_DETAIL = {
   id: "dist-1",
   code: "DIST-001",
-  name: "Phân bổ Sầu riêng Vùng Alpha",
+  name: "Phân bổ Lúa ST25 Vùng Đồng bằng Alpha",
   scope: "region",
-  targetName: "Vùng Bình Phước Alpha",
+  targetName: "Vùng Đồng bằng Sông Cửu Long Alpha",
   method: "zone",
   totalPlants: 500,
   varieties: [
-    { name: "Sầu riêng Ri6", count: 300, color: "#16a34a" },
-    { name: "Sầu riêng Monthong", count: 200, color: "#ca8a04" },
+    { name: "Lúa ST25", count: 300, color: "#16a34a" },
+    { name: "Lúa OM5451", count: 200, color: "#ca8a04" },
   ],
   status: "active",
   plantedDate: "2024-01-15",
-  expectedHarvest: "2028-01-15",
+  expectedHarvest: "2024-05-15",
   areaSize: 2.5, // hecta
   healthScore: 98, // %
 };
 
 // Generate random plant locations
 const generateMockPlants = (count: number): PlantLocation[] => {
-  return Array.from({ length: 50 }).map((_, i) => ({
+  return Array.from({ length: count }).map((_, i) => ({
     id: `p-${i}`,
-    code: `PLANT-${String(i + 1).padStart(3, "0")}`,
-    variety: i % 2 === 0 ? "Sầu riêng Ri6" : "Sầu riêng Monthong",
+    code: `RICE-${String(i + 1).padStart(3, "0")}`,
+    variety: i % 2 === 0 ? "Lúa ST25" : "Lúa OM5451",
     status: Math.random() > 0.9 ? "warning" : "healthy",
-    height: 80 + Math.floor(Math.random() * 40),
+    height: 60 + Math.floor(Math.random() * 40),
     plantedDate: "2024-01-15",
     coordinate: {
-      lat: 11.558 + (Math.random() - 0.5) * 0.002,
-      lng: 107.134 + (Math.random() - 0.5) * 0.002,
+      lat: 10.558 + (Math.random() - 0.5) * 0.002,
+      lng: 105.134 + (Math.random() - 0.5) * 0.002,
     },
   }));
 };
