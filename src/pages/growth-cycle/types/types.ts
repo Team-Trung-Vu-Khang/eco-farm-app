@@ -1,7 +1,7 @@
 export interface GrowthStage {
   id: string;
   name: string;
-  duration: number;
+  duration: string | number;
   usePdf: boolean;
   pdfFile?: File | null | { name: string; size: number };
   content: string;

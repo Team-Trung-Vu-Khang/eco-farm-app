@@ -22,7 +22,7 @@ export function useCreateGrowthCycleForm() {
       {
         id: "1",
         name: "Giai đoạn 1",
-        duration: 0,
+        duration: "",
         usePdf: false,
         content: initialEditorValue,
       },
@@ -31,10 +31,23 @@ export function useCreateGrowthCycleForm() {
 
   const totalDays = useMemo(
     () =>
-      formData.stages.reduce(
-        (sum, stage) => sum + (Number(stage.duration) || 0),
-        0,
-      ),
+      formData.stages.reduce((sum, stage) => {
+        const durationStr = String(stage.duration || "");
+        const yearMatch = durationStr.match(/(\d+)\s*năm/);
+        const monthMatch = durationStr.match(/(\d+)\s*tháng/);
+        const dayMatch = durationStr.match(/(\d+)\s*ngày/);
+
+        // If it's just a raw number string
+        if (!yearMatch && !monthMatch && !dayMatch && !isNaN(Number(durationStr))) {
+           return sum + (Number(durationStr) || 0);
+        }
+
+        const y = yearMatch ? parseInt(yearMatch[1]) : 0;
+        const m = monthMatch ? parseInt(monthMatch[1]) : 0;
+        const d = dayMatch ? parseInt(dayMatch[1]) : 0;
+
+        return sum + (y * 365 + m * 30 + d);
+      }, 0),
     [formData.stages],
   );
 
@@ -85,7 +98,7 @@ export function useCreateGrowthCycleForm() {
         {
           id: nextId,
           name: `Giai đoạn ${nextId}`,
-          duration: 0,
+          duration: "",
           usePdf: false,
           content: initialEditorValue,
         },

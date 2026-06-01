@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { Check, Barcode, FlaskConical, Leaf, MapPin, Sprout } from "lucide-react";
 import { Input, Label, cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CROP_OPTIONS } from "../../../constants/crops";
+import { EnterpriseSelectorDialog } from "./EnterpriseSelectorDialog";
+import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 import type { CreateVarietyForm } from "../types/types";
 
 interface VarietyClassificationStepProps {
@@ -15,6 +18,10 @@ export function VarietyClassificationStep({
   formData,
   updateField,
 }: VarietyClassificationStepProps) {
+  const [isEnterpriseDialogOpen, setIsEnterpriseDialogOpen] = useState(false);
+  const enterprises = useEnterpriseStore((state) => state.enterprises);
+  const selectedEnterprise = enterprises.find(e => String(e.id) === formData.origin);
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="relative overflow-hidden rounded-xl border border-green-200 bg-linear-to-r from-green-50 via-white to-green-50 p-6 shadow-sm">
@@ -121,15 +128,21 @@ export function VarietyClassificationStep({
           <Label className="text-sm font-semibold text-slate-700">
             Nguồn gốc/Xuất xứ
           </Label>
-          <div className="relative group">
+          <div className="relative group cursor-pointer" onClick={() => setIsEnterpriseDialogOpen(true)}>
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-green-600 transition-colors" />
             <Input
-              value={formData.origin}
-              onChange={(event) => updateField("origin", event.target.value)}
-              placeholder="VD: Viện Cây ăn quả Miền Nam"
-              className="pl-10 border-slate-200 focus:border-green-500 focus:ring-green-500/20"
+              readOnly
+              value={selectedEnterprise ? selectedEnterprise.name : ''}
+              placeholder="Chọn nguồn gốc/xuất xứ (đơn vị)"
+              className="pl-10 border-slate-200 focus:border-green-500 focus:ring-green-500/20 cursor-pointer"
             />
           </div>
+          <EnterpriseSelectorDialog
+            isOpen={isEnterpriseDialogOpen}
+            onOpenChange={setIsEnterpriseDialogOpen}
+            onSelect={(id) => updateField("origin", id)}
+            selectedId={formData.origin}
+          />
         </div>
       </div>
     </div>

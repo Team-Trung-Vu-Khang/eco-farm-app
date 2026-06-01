@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { MFMap, MFMarker, MFPolygon } from "react-map4d-map";
+import treeMarkerIcon from "@/assets/tree.webp";
 import useCropDetailStore from "../../../stores/useCropDetailStore";
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 import useRegionStore from "../../../stores/useRegionStore";
@@ -119,6 +120,11 @@ const MapContent = ({
         <MFMarker
           key={c.id}
           position={{ lat: c.coordinate.lat, lng: c.coordinate.lng }}
+          icon={{
+            url: treeMarkerIcon,
+            width: 32,
+            height: 32,
+          }}
           title={c.name}
           label={""}
           clickable

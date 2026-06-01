@@ -31,6 +31,11 @@ export function usePlanPage() {
     setDeleteItem(null);
   };
 
+  const handleDuplicate = (item: { id: number; name: string }) => {
+    usePlanStore.getState().duplicatePlan(item.id);
+    toast({ title: "Thành công", description: "Đã nhân bản kế hoạch" });
+  };
+
   return {
     plans,
     statistics: getStatistics(),
@@ -38,6 +43,7 @@ export function usePlanPage() {
     setDeleteOpen,
     handleDelete,
     handleConfirmDelete,
+    handleDuplicate,
     goToCreate: () => setLocation("/plan/create"),
     goToView: (id: number) => setLocation(`/plan/${id}`),
     goToEdit: (id: number) => setLocation(`/plan/${id}/edit`),

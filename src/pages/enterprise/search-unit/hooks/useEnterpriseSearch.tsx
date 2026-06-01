@@ -94,6 +94,7 @@ export function useEnterpriseSearch() {
           name: enterprise.name,
           code: enterprise.code,
           type: enterprise.type,
+          image: enterprise.image || "",
           lat,
           lng,
         };
@@ -106,6 +107,7 @@ export function useEnterpriseSearch() {
           name: string;
           code: string;
           type: "enterprise" | "farm" | "cooperative";
+          image: string;
           lat: number;
           lng: number;
         } => item !== null,
@@ -153,6 +155,93 @@ export function useEnterpriseSearch() {
     if (selectedEnterpriseMarker) return selectedEnterpriseMarker;
     return mapDefaultCenter;
   }, [selectedEnterpriseMarker, mapDefaultCenter]);
+
+  const regionLogoMarkers = useMemo(() => {
+    if (!selectedEnterprise) return [];
+
+    const toCenter = (coordinates: [number, number][]) => {
+      if (!coordinates?.length) return null;
+      const sum = coordinates.reduce(
+        (acc, [lat, lng]) => ({ lat: acc.lat + lat, lng: acc.lng + lng }),
+        { lat: 0, lng: 0 },
+      );
+      return {
+        lat: sum.lat / coordinates.length,
+        lng: sum.lng / coordinates.length,
+      };
+    };
+
+    const enterpriseRegions = cultivationRegions.filter(
+      (cr) =>
+        String(cr.enterpriseId) === String(selectedEnterprise.id) ||
+        cr.enterpriseId === selectedEnterprise.code,
+    );
+
+    const regionById = new Map<string, any>();
+    const areaToRegionId = new Map<string, string>();
+    const plotToRegionId = new Map<string, string>();
+    regions.forEach((region) => {
+      const regionId = String(region.id);
+      regionById.set(regionId, region);
+      (region.subAreas || []).forEach((area: any) => {
+        const areaId = String(area.id);
+        areaToRegionId.set(areaId, regionId);
+        (area.plots || []).forEach((plot: any) => {
+          plotToRegionId.set(String(plot.id), regionId);
+        });
+      });
+    });
+
+    const targetedRegionIds = new Set<string>();
+    enterpriseRegions.forEach((cr) => {
+      cr.targetIds.forEach((targetId) => {
+        const key = String(targetId);
+        if (regionById.has(key)) {
+          targetedRegionIds.add(key);
+          return;
+        }
+        const areaRegionId = areaToRegionId.get(key);
+        if (areaRegionId) {
+          targetedRegionIds.add(areaRegionId);
+          return;
+        }
+        const plotRegionId = plotToRegionId.get(key);
+        if (plotRegionId) {
+          targetedRegionIds.add(plotRegionId);
+        }
+      });
+    });
+
+    return Array.from(targetedRegionIds)
+      .map((regionId) => {
+        const region = regionById.get(regionId);
+        if (!region?.coordinates?.length) return null;
+        const center = toCenter(
+          region.coordinates.map((c: any) => [c.lat, c.lng] as [number, number]),
+        );
+        if (!center) return null;
+        return {
+          id: `region-${region.id}`,
+          enterpriseId: selectedEnterprise.id,
+          name: selectedEnterprise.brandName || selectedEnterprise.name,
+          image: selectedEnterprise.image || "",
+          lat: center.lat,
+          lng: center.lng,
+        };
+      })
+      .filter(
+        (
+          item,
+        ): item is {
+          id: string;
+          enterpriseId: number;
+          name: string;
+          image: string;
+          lat: number;
+          lng: number;
+        } => item !== null,
+      );
+  }, [selectedEnterprise, cultivationRegions, regions]);
 
   const enterpriseCultivationRegions = useMemo(() => {
     if (!selectedEnterprise) return [];
@@ -408,6 +497,7 @@ export function useEnterpriseSearch() {
     mapCurrentCenter,
     visiblePolygons,
     enterpriseMarkers: visibleEnterpriseMarkers,
+    regionLogoMarkers,
     activeFilterCount,
     toggleFilter,
     resetFilters,

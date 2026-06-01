@@ -744,23 +744,36 @@ export const StageAllocation = memo(
                     ) : (
                       <div className="relative">
                         <Users className="w-3.5 h-3.5 absolute left-2.5 top-3 z-10 text-slate-400" />
-                        <Select
-                          value={newTask.labor}
-                          onValueChange={(v) =>
-                            setNewTask({ ...newTask, labor: v })
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="Số"
+                          className="h-9 pl-8 pr-12 text-xs bg-slate-50/50"
+                          value={
+                            newTask.labor
+                              ? newTask.labor.replace(/\D/g, "")
+                              : ""
                           }
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, "");
+                            setNewTask({
+                              ...newTask,
+                              labor: val ? `${val} người` : "",
+                            });
+                          }}
+                        />
+                        <span
+                          className={cn(
+                            "absolute top-[12px] text-[10px] text-muted-foreground uppercase pointer-events-none",
+                            !!(newTask.labor
+                              ? newTask.labor.replace(/\D/g, "")
+                              : "")
+                              ? "right-7"
+                              : "right-3",
+                          )}
                         >
-                          <SelectTrigger className="h-9 pl-8 text-xs bg-slate-50/50">
-                            <SelectValue placeholder="Nhân lực" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {LABOR_OPTIONS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          người
+                        </span>
                       </div>
                     )}
 

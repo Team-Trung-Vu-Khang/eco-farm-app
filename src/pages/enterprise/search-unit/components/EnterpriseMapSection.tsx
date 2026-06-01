@@ -13,6 +13,15 @@ interface EnterpriseMapSectionProps {
     name: string;
     code: string;
     type: "enterprise" | "farm" | "cooperative";
+    image: string;
+    lat: number;
+    lng: number;
+  }>;
+  regionLogoMarkers: Array<{
+    id: string;
+    enterpriseId: number;
+    name: string;
+    image: string;
     lat: number;
     lng: number;
   }>;
@@ -67,6 +76,7 @@ export const EnterpriseMapSection: React.FC<EnterpriseMapSectionProps> = ({
   mapCurrentCenter,
   visiblePolygons,
   enterpriseMarkers,
+  regionLogoMarkers,
   selectedEnterpriseId,
   isDetailOpen,
 }) => {
@@ -117,7 +127,33 @@ export const EnterpriseMapSection: React.FC<EnterpriseMapSectionProps> = ({
             <MFMarker
               key={`enterprise-marker-${marker.id}`}
               position={{ lat: marker.lat, lng: marker.lng }}
+              icon={
+                marker.image
+                  ? {
+                      url: marker.image,
+                      width: 34,
+                      height: 34,
+                    }
+                  : undefined
+              }
               title={`${marker.code} - ${marker.name}`}
+              label={""}
+            />
+          ))}
+          {regionLogoMarkers.map((marker) => (
+            <MFMarker
+              key={`enterprise-region-logo-${marker.id}`}
+              position={{ lat: marker.lat, lng: marker.lng }}
+              icon={
+                marker.image
+                  ? {
+                      url: marker.image,
+                      width: 30,
+                      height: 30,
+                    }
+                  : undefined
+              }
+              title={marker.name}
               label={""}
             />
           ))}

@@ -30,14 +30,14 @@ export const CROP_OPTIONS = [
   {
     id: "Lúa",
     name: "Lúa",
-    image: "https://giongcamau.vn/uploads/shops/2017_03/om5451-copy.jpg",
+    image: "https://upload.wikimedia.org/wikipedia/commons/f/f2/Mature_Rice_%28India%29_by_Augustus_Binu.jpg",
     group: "Cây lương thực",
   },
   {
     id: "Hồ tiêu",
     name: "Hồ tiêu",
     image:
-      "https://images.unsplash.com/photo-1596755094514-f87e34085b3c?auto=format&fit=crop&q=80&w=200",
+      "https://thanhan.binhphuoc.gov.vn/uploads/news/2017_10/1446_tang-nang-suat-221.jpg",
     group: "Cây công nghiệp",
   },
   {
@@ -51,14 +51,14 @@ export const CROP_OPTIONS = [
     id: "Điều",
     name: "Điều",
     image:
-      "https://images.unsplash.com/photo-1596755094514-f87e34085b3c?auto=format&fit=crop&q=80&w=200",
+      "https://lugiaco.com/wp-content/uploads/2024/03/Cay-dieu-viet-nam-nguon-goc-xuat-xu-dac-diem-1.webp",
     group: "Cây công nghiệp",
   },
   {
     id: "Mắc ca",
     name: "Mắc ca",
     image:
-      "https://images.unsplash.com/photo-1596755094514-f87e34085b3c?auto=format&fit=crop&q=80&w=200",
+      "https://i.ex-cdn.com/nongnghiepmoitruong.vn/files/content/2024/03/26/gia-tri-cua-cay-mac-ca-150954_113-091939.jpg",
     group: "Cây công nghiệp",
   },
 ];

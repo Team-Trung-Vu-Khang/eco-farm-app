@@ -17,7 +17,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
       {
         id: "s1_1",
         name: "Phục hồi sau thu hoạch & Làm cơi đọt",
-        duration: 90,
+        duration: "90 ngày",
         usePdf: false,
         content: `
           <p><strong>Cắt tỉa và vệ sinh:</strong> Cắt tỉa cành bị sâu bệnh, cành ốm yếu, cành mọc đan chéo hoặc cành bơi trên cuống trái để giúp cây thông thoáng. Phun thuốc phòng nấm gốc đồng hoặc rải vôi để diệt mầm bệnh.</p>
@@ -27,7 +27,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
       {
         id: "s1_2",
         name: "Tạo khô hạn & Xử lý ra hoa (Nhú mắt cua)",
-        duration: 45,
+        duration: "45 ngày",
         usePdf: false,
         content: `
           <p><strong>Bón lân tạo mầm:</strong> Khi cơi đọt cuối chuyển sang lá lụa xanh đậm, rải phân lân gốc (khoảng 3-4 kg lân/cây) ở phạm vi 2/3 tán.</p>
@@ -37,7 +37,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
       {
         id: "s1_3",
         name: "Rước mắt cua đến Xổ nhụy",
-        duration: 55,
+        duration: "55 ngày",
         usePdf: false,
         content: `
           <p><strong>Nhấp nước và kéo mắt cua:</strong> Khi mắt cua nhú dài 2-3 cm và sáng rõ, tưới nhấp nước trở lại (lượng nước 20-30% bình thường) rồi tăng dần. Phun Amino, trung vi lượng để rước mắt cua.</p>
@@ -47,7 +47,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
       {
         id: "s1_4",
         name: "Đậu quả, nuôi quả và thu hoạch",
-        duration: 110,
+        duration: "110 ngày",
         usePdf: false,
         content: `
           <p><strong>Giai đoạn tim đèn (sau xổ nhụy):</strong> Giữ ẩm vừa phải (1 ngày tưới, 1 ngày nghỉ). Nếu gặp mưa trái mùa cần phun siêu Lân/MKP để chống sốc rụng trái non.</p>
@@ -74,7 +74,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
       {
         id: "s2_1",
         name: "Kích thích rễ non & Phục hồi sau trồng",
-        duration: 120,
+        duration: "120 ngày",
         usePdf: false,
         content: `
           <p><strong>Bảo vệ cây non:</strong> Cây con mới xuống đất cần được che bóng 30-40% bằng lưới đen hoặc trồng xen cây ngắn ngày để hạn chế bức xạ nhiệt.</p>
@@ -84,7 +84,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
       {
         id: "s2_2",
         name: "Thúc đẩy cơi đọt & Quản lý sâu rầy",
-        duration: 155,
+        duration: "155 ngày",
         usePdf: false,
         content: `
           <p><strong>Dinh dưỡng:</strong> Bón định kỳ NPK giàu Đạm (20-10-10+TE hoặc 30-10-10+TE). Năm 1 bón 0.1-0.2kg/lần cách nhau 1.5-2 tháng. Hàng năm bón lót thêm 20-30 kg phân chuồng hoai mục vào đầu mùa mưa.</p>
@@ -94,7 +94,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
       {
         id: "s2_3",
         name: "Tỉa cành tạo tán hình tháp",
-        duration: 90,
+        duration: "90 ngày",
         usePdf: false,
         content: `
           <p><strong>Bấm ngọn:</strong> Khi cây cao 60-80 cm, tiến hành bấm ngọn để kích thích phát triển cành cấp 1.</p>
@@ -120,7 +120,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
       {
         id: "r1_1",
         name: "Dằn lân, tạo mầm & Phủ bạt xiết nước",
-        duration: 40,
+        duration: "40 ngày",
         usePdf: false,
         content: `
           <p><strong>Điều kiện:</strong> Cây phải trên 5-6 năm tuổi, khỏe mạnh, có đủ 2-3 cơi lá hoàn chỉnh.</p>
@@ -131,7 +131,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
       {
         id: "r1_2",
         name: "Dỡ bạt, nhấp nước & Kéo mắt cua",
-        duration: 15,
+        duration: "15 ngày",
         usePdf: false,
         content: `
           <p><strong>Dỡ bạt:</strong> Khi quan sát thấy 70-80% mắt cua trên cây sáng rõ, tiến hành dỡ bạt nilon.</p>
@@ -141,7 +141,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
       {
         id: "r1_3",
         name: "Phát triển nụ hoa đến Xổ nhụy (Đặc thù Ri6)",
-        duration: 55,
+        duration: "55 ngày",
         usePdf: false,
         content: `
           <p><strong>Đặc tính thời gian:</strong> Từ lúc mắt cua sáng rõ đến khi xổ nhụy của giống Ri6 kéo dài khoảng 55-57 ngày.</p>
@@ -151,7 +151,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
       {
         id: "r1_4",
         name: "Nuôi trái & Thu hoạch (Đặc thù Ri6)",
-        duration: 95,
+        duration: "95 ngày",
         usePdf: false,
         content: `
           <p><strong>Đặc tính thu hoạch:</strong> Ri6 là giống chín sớm. Thời gian từ lúc xổ nhụy đến thu hoạch chỉ từ 90 - 105 ngày.</p>
@@ -177,7 +177,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
       {
         id: "m1_1",
         name: "Bón phân tạo mầm hoa & Xiết nước",
-        duration: 40,
+        duration: "40 ngày",
         usePdf: false,
         content: `
           <p><strong>Tạo khô hạn:</strong> Giống Monthong yêu cầu thời gian xiết nước (khô hạn) dài hơn Ri6 để bung mắt cua, thường từ 30-35 ngày.</p>
@@ -186,7 +186,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
       {
         id: "m1_2",
         name: "Kéo mắt cua & Dưỡng nụ",
-        duration: 15,
+        duration: "15 ngày",
         usePdf: false,
         content: `
           <p><strong>Tiêu chí tưới lại:</strong> Khác với Ri6, đối với giống Monthong, phải chờ đến khi 70-80% mắt cua ra dài từ 2-3 cm mới bắt đầu nhấp nước trở lại.</p>
@@ -195,7 +195,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
       {
         id: "m1_3",
         name: "Mắt cua phát triển đến Xổ nhụy (Đặc thù Monthong)",
-        duration: 45,
+        duration: "45 ngày",
         usePdf: false,
         content: `
           <p><strong>Đặc tính thời gian:</strong> Quá trình từ mắt cua đến xổ nhụy của giống Monthong ngắn hơn Ri6, chỉ mất khoảng 45-50 ngày.</p>
@@ -204,7 +204,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
       {
         id: "m1_4",
         name: "Nuôi trái vô cơm & Thu hoạch (Đặc thù Monthong)",
-        duration: 120,
+        duration: "120 ngày",
         usePdf: false,
         content: `
           <p><strong>Đặc tính thời gian:</strong> Thời gian neo trái trên cây rất dài, từ 115 - 135 ngày tùy khí hậu (vùng cao nguyên thường lâu hơn).</p>
@@ -230,7 +230,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
       {
         id: "mk1_1",
         name: "Phục hồi cây & Dưỡng cơi đọt non",
-        duration: 60,
+        duration: "60 ngày",
         usePdf: false,
         content: `
           <p><strong>Phục hồi:</strong> Cắt tỉa cành thông thoáng vì giống này phân cành nhiều. Bón phân hữu cơ vi sinh, tưới Humic kích rễ.</p>
@@ -239,7 +239,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
       {
         id: "mk1_2",
         name: "Xử lý ra hoa (Khô hạn sinh lý)",
-        duration: 40,
+        duration: "40 ngày",
         usePdf: false,
         content: `
           <p><strong>Kích mầm hoa:</strong> Áp dụng chế độ xiết nước tạo khô hạn. Kết hợp bón lân dưới tán và phun tạo mầm hoa bằng Lân và Kali nồng độ cao.</p>
@@ -248,7 +248,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
       {
         id: "mk1_3",
         name: "Mắt cua đến Xổ nhụy & Bắt buộc Dìu đọt",
-        duration: 55,
+        duration: "55 ngày",
         usePdf: false,
         content: `
           <p><strong>Chăm sóc hoa:</strong> Phun Canxi-Bo trước khi xổ nhụy để ống phấn khỏe.</p>
@@ -257,7 +257,7 @@ export const initialGrowthCycles: GrowthCycle[] = [
       {
         id: "mk1_4",
         name: "Nuôi trái & Chờ trái rụng tự nhiên (Đặc thù Musang King)",
-        duration: 115,
+        duration: "115 ngày",
         usePdf: false,
         content: `
           <p><strong>Tỉa quả khắt khe:</strong> Cây bói (năm 4-5) chỉ được phép giữ 5-7 quả ở sát thân chính để tránh gãy cành, suy kiệt cây.</p>
