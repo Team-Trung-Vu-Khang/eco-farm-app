@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@Team-Trung-Vu-Khang/eco-shared-ui@^0.0.5-beta.7":
-  version "0.0.5-beta.7"
-  resolved "https://npm.pkg.github.com/download/@Team-Trung-Vu-Khang/eco-shared-ui/0.0.5-beta.7/76f1827b61f66424bedea06cbcbfed7c39109427#76f1827b61f66424bedea06cbcbfed7c39109427"
-  integrity sha512-ssq9Fx6qhJPUhxWg4klb1bctvAeckwr8CN8qCrJvEF6bzcf7NcoCmcYxgLCzRNcn22+cc0t0cvZdzWeQwsjEsA==
+"@Team-Trung-Vu-Khang/eco-shared-ui@^0.0.5-beta.8":
+  version "0.0.5-beta.8"
+  resolved "https://npm.pkg.github.com/download/@Team-Trung-Vu-Khang/eco-shared-ui/0.0.5-beta.8/07d46b0ad5a2beaba1ec86dff5f0440ec06be0d1#07d46b0ad5a2beaba1ec86dff5f0440ec06be0d1"
+  integrity sha512-J2PLqL7mvmImqLvxLTS2ZVjhmLNFMRgJQXrc7HOA7Ac56J9l7TlzUCX+kdj2Z9j/MUsd6Ej1NQ0aTz3IOqdFZA==
   dependencies:
     "@lexical/code" "^0.43.0"
     "@lexical/file" "^0.43.0"
@@ -53,6 +53,7 @@
     cmdk "^1.1.1"
     embla-carousel-react "^8.6.0"
     input-otp "^1.4.2"
+    leaflet "^1.9.4"
     lexical "^0.43.0"
     lodash.debounce "^4.0.8"
     lucide-react "^0.562.0"
@@ -60,6 +61,7 @@
     react-day-picker "^9.13.0"
     react-error-boundary "^6.1.0"
     react-hook-form "^7.70.0"
+    react-leaflet "^5.0.0"
     react-resizable-panels "^4.3.3"
     recharts "^3.6.0"
     sonner "^2.0.7"
