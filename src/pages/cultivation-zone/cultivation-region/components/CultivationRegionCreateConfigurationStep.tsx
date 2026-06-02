@@ -338,7 +338,7 @@ export const CultivationRegionCreateConfigurationStep = ({
         isOpen={seedDialogOpen}
         onOpenChange={setSeedDialogOpen}
         variety={activeSeedVariety}
-        selectedSeedIds={commonConfig.seedSelections?.[activeSeedVariety?.id]}
+        selectedSeedIds={commonConfig.seedSelections?.[activeSeedVariety?.id] ?? []}
         onSelect={onSelectSeeds}
       />
     </div>

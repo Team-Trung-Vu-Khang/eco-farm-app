@@ -17,6 +17,24 @@ interface SeedState {
   setError: (error: string | null) => void;
 }
 
+const mergeSeedCatalog = (
+  persistedState: Partial<SeedState> | undefined,
+  currentState: SeedState,
+): SeedState => {
+  const persistedSeeds = persistedState?.seeds ?? [];
+  const seedsById = new Map(currentState.seeds.map((seed) => [seed.id, seed]));
+
+  persistedSeeds.forEach((seed) => {
+    seedsById.set(seed.id, seed);
+  });
+
+  return {
+    ...currentState,
+    ...persistedState,
+    seeds: Array.from(seedsById.values()),
+  };
+};
+
 const useSeedStore = create<SeedState>()(
   devtools(
     persist(
@@ -122,6 +140,7 @@ const useSeedStore = create<SeedState>()(
       {
         name: "seed-storage",
         partialize: (state) => ({ seeds: state.seeds }),
+        merge: mergeSeedCatalog,
       },
     ),
     { name: "SeedStore" },
