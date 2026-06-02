@@ -51,11 +51,13 @@ const VarietyPage = () => {
         filters={varietyFilters}
       />
 
-      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          {selectedId && <VarietyDetailPage id={selectedId} />}
-        </DialogContent>
-      </Dialog>
+      {selectedId && (
+        <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            {detailOpen && <VarietyDetailPage id={selectedId} />}
+          </DialogContent>
+        </Dialog>
+      )}
 
       <DeleteDialog
         open={deleteOpen}

@@ -352,7 +352,7 @@ function Router() {
       <Route path="/docs/:id" component={DocsDetailPage} />
       <Route path="/variety" component={VarietyPage} />
       <Route path="/variety/create" component={CreateVarietyPage} />
-      <Route path="/variety/:id" component={VarietyDetailPage} />
+      {/* <Route path="/variety/:id" component={VarietyDetailPage} /> */}
       <Route path="/variety/:id/edit" component={VarietyEditPage} />
       <Route path="/seed" component={SeedPage} />
       <Route path="/seed/create" component={CreateSeedPage} />

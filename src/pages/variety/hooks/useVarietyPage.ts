@@ -33,13 +33,26 @@ export function useVarietyPage() {
     setDetailOpen(true);
   };
 
+  const handleDetailOpenChange = (open: boolean) => {
+    setDetailOpen(open);
+
+    if (!open) {
+      setSelectedId(null);
+      window.requestAnimationFrame(() => {
+        document.body.style.pointerEvents = "auto";
+        document.body.style.overflow = "";
+        document.body.style.paddingRight = "";
+      });
+    }
+  };
+
   return {
     varieties,
     deleteOpen,
     setDeleteOpen,
     selectedId,
     detailOpen,
-    setDetailOpen,
+    setDetailOpen: handleDetailOpenChange,
     handleDelete,
     handleConfirmDelete,
     handleView,
