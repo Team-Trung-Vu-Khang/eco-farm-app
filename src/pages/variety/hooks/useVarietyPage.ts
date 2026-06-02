@@ -7,12 +7,13 @@ import type { Variety } from "../types/types";
 export function useVarietyPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const { varieties, deleteVariety } = useVarietyStore();
+  const { varieties, deleteVariety, getVarietyById } = useVarietyStore();
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Variety | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const selectedVariety = selectedId ? getVarietyById(selectedId) : null;
 
   const handleDelete = (item: Variety) => {
     setDeleteItem(item);
@@ -33,13 +34,22 @@ export function useVarietyPage() {
     setDetailOpen(true);
   };
 
+  const handleDetailOpenChange = (open: boolean) => {
+    setDetailOpen(open);
+
+    if (!open) {
+      setSelectedId(null);
+    }
+  };
+
   return {
     varieties,
     deleteOpen,
     setDeleteOpen,
     selectedId,
+    selectedVariety,
     detailOpen,
-    setDetailOpen,
+    setDetailOpen: handleDetailOpenChange,
     handleDelete,
     handleConfirmDelete,
     handleView,

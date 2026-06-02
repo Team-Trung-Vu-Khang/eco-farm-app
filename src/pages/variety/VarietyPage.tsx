@@ -3,21 +3,69 @@ import {
   Button,
   DataTable,
   DeleteDialog,
-  Dialog,
-  DialogContent,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Link } from "wouter";
-import VarietyDetailPage from "./VarietyDetailPage";
+import { X } from "lucide-react";
+import { createPortal } from "react-dom";
+import { VarietyDetailContent } from "./components/VarietyDetailContent";
 import { varietyColumns } from "./data/columns";
 import { varietyFilters } from "./data/constants";
 import { useVarietyPage } from "./hooks/useVarietyPage";
+import type { Variety } from "./types/types";
+
+function VarietyDetailModal({
+  open,
+  onOpenChange,
+  variety,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  variety: Variety | null;
+}) {
+  if (!open || typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6"
+      onClick={() => onOpenChange(false)}
+    >
+      <div
+        className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={() => onOpenChange(false)}
+          className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-800"
+          aria-label="Đóng chi tiết"
+        >
+          <X className="h-4 w-4" />
+        </button>
+        <div className="p-6 sm:p-8">
+          {variety ? (
+            <VarietyDetailContent variety={variety} isStandalone={false} />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20">
+              <p className="text-muted-foreground">
+                Không tìm thấy thông tin giống cây.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
 
 const VarietyPage = () => {
   const {
     varieties,
     deleteOpen,
     setDeleteOpen,
-    selectedId,
+    selectedVariety,
     detailOpen,
     setDetailOpen,
     handleDelete,
@@ -51,11 +99,11 @@ const VarietyPage = () => {
         filters={varietyFilters}
       />
 
-      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          {selectedId && <VarietyDetailPage id={selectedId} />}
-        </DialogContent>
-      </Dialog>
+      <VarietyDetailModal
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        variety={selectedVariety}
+      />
 
       <DeleteDialog
         open={deleteOpen}
