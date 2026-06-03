@@ -6,7 +6,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { MapPin, Maximize2 } from "lucide-react";
 import { MFMap, MFMarker, MFPolygon } from "react-map4d-map";
-import treeMarkerIcon from "@/assets/tree.webp";
+import treeMarkerIcon from "@/assets/tree.png";
 import type {
   Plant,
   Region,

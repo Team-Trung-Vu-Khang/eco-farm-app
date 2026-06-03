@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { MFMap, MFMarker, MFPolygon } from "react-map4d-map";
-import treeMarkerIcon from "@/assets/tree.webp";
+import treeMarkerIcon from "@/assets/tree.png";
 import useCropDetailStore from "../../../stores/useCropDetailStore";
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 import useRegionStore from "../../../stores/useRegionStore";

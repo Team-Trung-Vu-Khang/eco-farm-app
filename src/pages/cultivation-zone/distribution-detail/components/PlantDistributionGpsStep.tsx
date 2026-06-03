@@ -15,7 +15,7 @@ import type {
   PlantLocation,
   RowConfig,
 } from "../constants";
-import treeMarkerIcon from "@/assets/tree.webp";
+import treeMarkerIcon from "@/assets/tree.png";
 type Props = {
   distributionMethod: DistributionMethod;
   plantEntries: PlantEntry[];
