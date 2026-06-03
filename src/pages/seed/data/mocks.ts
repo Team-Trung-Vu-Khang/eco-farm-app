@@ -3,203 +3,102 @@ import type { Variety } from "../types/types";
 export const initialData: Variety[] = [
   {
     id: "1",
+    crop: "Dừa",
     illustration:
-      "https://traicayvuongtron.vn/resources/cache/original_xxxxx/WEBSITE%202023/tim%20hieu%20them/blog/kinh%20nghiem%2Cmeo%20vat/trai%20cay/trai%20cay%20dac%20san/sauriengri6/sauriengri62.jpg.webp",
-    crop: "Sầu riêng",
-    varietyCode: "VARI01",
-    varietyName: "Hạt giống Sầu riêng Ri6",
-    supplier: "Trung tâm Giống cây trồng Việt Nam",
-    origin: "Việt Nam",
-    germinationRate: 95,
-    uniformity: 88,
-    yield: "15-20 tấn/ha",
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS22anr0ZeVFmt6I4XAodCYKhF2pwHMLkrHJQ&s",
+    varietyCode: "SEED-COCO-01",
+    varietyName: "Cây giống Dừa sáp cấy mô",
+    supplier: "Công ty TNHH Công nghệ sinh học ViGen",
+    origin: "Cầu Kè, Trà Vinh, Việt Nam",
+    germinationRate: 100, // Cây cấy mô sống sót tốt
+    uniformity: 98,
+    yield: "40 - 80 trái/cây/năm",
     description:
-      "Giống sầu riêng Ri6 chất lượng cao, cơm vàng đậm, hạt lép, mùi thơm đặc trưng và khả năng thích nghi tốt tại khu vực Nam Bộ.",
-    documents: [{ name: "quy-trinh-canh-tac-sau-rieng.pdf", url: "#" }],
+      "Cây giống được sản xuất bằng công nghệ nuôi cấy phôi/mô, giúp nâng tỷ lệ trái sáp đạt từ 85% đến 100% so với phương pháp ươm bằng trái truyền thống.",
+    documents: [{ name: "quy-trinh-cay-mo-dua-sap.pdf", url: "#" }],
     status: "active",
-    updatedAt: "2024-01-20",
+    updatedAt: "2026-06-03",
     editorContent:
-      "Giống sầu riêng Ri6 phù hợp trồng ở vùng đất thoát nước tốt, cần chăm sóc dinh dưỡng cân đối để đạt năng suất và chất lượng trái ổn định.",
+      "Dừa sáp cấy mô có khả năng cho trái nhanh, cơm dày xốp. Yêu cầu đất canh tác thoát nước tốt và phải áp dụng kỹ thuật bón phân hữu cơ cân đối.",
   },
   {
     id: "2",
+    crop: "Dừa",
     illustration:
-      "https://nongsantaynguyen.net/wp-content/uploads/2017/04/sau-rieng-dona-sau-rieng-thai-lan.jpg",
-    crop: "Sầu riêng",
-    varietyCode: "VARI02",
-    varietyName: "Hạt giống Sầu riêng Dona",
-    supplier: "Công ty Mekong Seed",
-    origin: "Thái Lan",
-    germinationRate: 92,
-    uniformity: 86,
-    yield: "18-25 tấn/ha",
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRySCSquLBI-_mlCXKaUE1c1pJHteILKg3K9w&s",
+    varietyCode: "SEED-COCO-02",
+    varietyName: "Trái giống Dừa xiêm lùn (Xiêm xanh)",
+    supplier: "Công ty TNHH MTV Thế giới cây giống",
+    origin: "Bến Tre, Việt Nam",
+    germinationRate: 90,
+    uniformity: 85,
+    yield: "120 - 150 trái/cây/năm",
     description:
-      "Giống sầu riêng Dona sinh trưởng khỏe, trái lớn, cơm vàng, vị béo ngọt và cho năng suất ổn định khi canh tác đúng kỹ thuật.",
-    documents: [{ name: "quy-trinh-canh-tac-sau-rieng.pdf", url: "#" }],
+      "Trái giống được tuyển chọn từ các vườn dừa mẹ khỏe mạnh, ít sâu bệnh. Giống dừa xiêm lùn cho trái sớm, ra trái quanh năm và thu hoạch với chu kỳ 25 ngày/lần.",
+    documents: [{ name: "ky-thuat-trong-dua-xiem-lun.pdf", url: "#" }],
     status: "active",
-    updatedAt: "2024-01-21",
+    updatedAt: "2026-06-03",
     editorContent:
-      "Giống Dona thích hợp trồng tại Tây Nguyên và Đông Nam Bộ, cần quản lý nước tốt trong giai đoạn ra hoa và nuôi trái.",
+      "Khuyến cáo khi ươm trái cần vạt nhẹ một phần vỏ phía núm để mầm dễ bung, tránh để nơi úng nước gây thối mầm.",
   },
   {
     id: "3",
-    illustration:
-      "https://cdn2.fptshop.com.vn/unsafe/1920x0/filters:format(webp):quality(75)/sau_Musa_King_01_0ea1377077.jpg",
-    crop: "Sầu riêng",
-    varietyCode: "VARI03",
-    varietyName: "Hạt giống Sầu riêng Musang King",
-    supplier: "Viện Nghiên cứu Cây ăn quả Miền Nam",
-    origin: "Malaysia",
-    germinationRate: 90,
-    uniformity: 82,
-    yield: "10-16 tấn/ha",
+    crop: "Dừa",
+    illustration: "https://dailyduabentre.com/upload/ckfinder/images/14.jpg",
+    varietyCode: "SEED-COCO-03",
+    varietyName: "Trái giống Dừa lai PB 121",
+    supplier: "Trung tâm Thực nghiệm Dừa Đồng Gò",
+    origin: "Lai nhân tạo (Mã Lai x Tây Phi)",
+    germinationRate: 88,
+    uniformity: 92,
+    yield: "150 - 200 trái/cây/năm",
     description:
-      "Giống sầu riêng Musang King nổi bật với cơm vàng đậm, vị béo, hương thơm mạnh, giá trị thương phẩm cao.",
-    documents: [],
+      "Dừa lai PB 121 (Lùn vàng Mã Lai x Cao Tây Phi) mang ưu thế lai, năng suất cực cao, cơm dày 13-14mm, chịu hạn mặn rất tốt.",
+    documents: [{ name: "ky-thuat-dua-lai-pb121.pdf", url: "#" }],
     status: "active",
-    updatedAt: "2024-01-22",
+    updatedAt: "2026-06-03",
     editorContent:
-      "Giống Musang King cần điều kiện canh tác ổn định, thoát nước tốt và kỹ thuật chăm sóc cao để đảm bảo chất lượng trái.",
+      "Khuyến cáo tuyệt đối không được để trái lai làm giống cho đời F2 vì sẽ xảy ra hiện tượng phân ly, làm mất các đặc tính ưu việt của dòng lai F1.",
   },
   {
     id: "4",
+    crop: "Dừa",
     illustration:
-      "https://vinadurian.com/wp-content/uploads/2023/11/sau-rieng-black-thorn-05-i.jpg",
-    crop: "Sầu riêng",
-    varietyCode: "VARI04",
-    varietyName: "Hạt giống Sầu riêng Black Thorn",
-    supplier: "Syngenta Việt Nam",
-    origin: "Malaysia",
-    germinationRate: 88,
-    uniformity: 80,
-    yield: "12-18 tấn/ha",
+      "https://caygiongphucan.com/wp-content/uploads/2025/06/z5912053468843_2fe7c35eb4c134aa12276231ebd2dba3.jpg",
+    varietyCode: "SEED-COCO-04",
+    varietyName: "Cây giống Dừa ta (cây đầu dòng)",
+    supplier: "Viện KHKT Nông nghiệp Duyên hải Nam Trung Bộ",
+    origin: "Hoài Nhơn, Bình Định, Việt Nam",
+    germinationRate: 92,
+    uniformity: 88,
+    yield: "60 - 80 trái/cây/năm",
     description:
-      "Giống sầu riêng Black Thorn có cơm vàng cam, vị ngọt béo, mùi thơm đậm và được đánh giá cao ở phân khúc cao cấp.",
-    documents: [{ name: "quy-trinh-canh-tac-sau-rieng.pdf", url: "#" }],
+      "Cây giống sản xuất từ vườn dừa ta đầu dòng tại Hoài Nhơn, Bình Định. Khối lượng cơm dừa lớn (400-500g/quả), hàm lượng dầu cực cao từ 62% - 67%.",
+    documents: [{ name: "giong-dua-ta-binh-dinh.pdf", url: "#" }],
     status: "active",
-    updatedAt: "2024-01-23",
+    updatedAt: "2026-06-03",
     editorContent:
-      "Giống Black Thorn phù hợp với mô hình canh tác chuyên sâu, cần kiểm soát sâu bệnh và dinh dưỡng thường xuyên.",
+      "Giống dừa lấy dầu chịu được môi trường đất cát ven biển và khí hậu khô hạn tại Nam Trung Bộ. Có thể trồng xen cỏ voi, sắn để tăng thu nhập.",
   },
   {
     id: "5",
+    crop: "Dừa",
     illustration:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQdJVGm-sJJtIaAWAKr9iSf1cR2w7C-iJZqUw&s",
-    crop: "Sầu riêng",
-    varietyCode: "VARI05",
-    varietyName: "Hạt giống Sầu riêng Monthong",
-    supplier: "Công ty Giống Cây trồng Trung ương",
+      "https://cayantrai.vn/wp-content/uploads/2025/03/dua-dua-2.jpg",
+    varietyCode: "SEED-COCO-05",
+    varietyName: "Trái giống Dừa dứa Thái Lan",
+    supplier: "Vựa cây giống Minh Hậu",
     origin: "Thái Lan",
-    germinationRate: 93,
-    uniformity: 85,
-    yield: "18-25 tấn/ha",
+    germinationRate: 85,
+    uniformity: 80,
+    yield: "80 - 140 trái/cây/năm",
     description:
-      "Giống sầu riêng Monthong có trái lớn, cơm dày, hạt lép, vị ngọt béo nhẹ và khả năng vận chuyển tốt.",
+      "Tuyển chọn từ nhóm dừa dứa trái to, có khả năng nảy mầm cao (80-90%). Nước dừa, rễ, lá và cơm đều mang mùi thơm lá dứa đặc trưng.",
     documents: [],
     status: "active",
-    updatedAt: "2024-01-24",
+    updatedAt: "2026-06-03",
     editorContent:
-      "Monthong là giống phổ biến cho sản xuất hàng hóa, phù hợp trồng quy mô lớn và xuất khẩu nếu đảm bảo quy trình chăm sóc.",
-  },
-  {
-    id: "6",
-    illustration:
-      "https://traicayvuongtron.vn/resources/cache/original_xxxxx/WEBSITE%202023/tim%20hieu%20them/blog/kinh%20nghiem%2Cmeo%20vat/trai%20cay/trai%20cay%20dac%20san/sauriengri6/sauriengri62.jpg.webp",
-    crop: "Sầu riêng",
-    varietyCode: "VARI06",
-    varietyName: "Hạt giống Sầu riêng Khổ Qua Xanh",
-    supplier: "Công ty Mekong Seed",
-    origin: "Việt Nam",
-    germinationRate: 91,
-    uniformity: 78,
-    yield: "10-15 tấn/ha",
-    description:
-      "Giống sầu riêng Khổ Qua Xanh có khả năng thích nghi tốt, mùi thơm đặc trưng, vị ngọt béo và phù hợp thị trường nội địa.",
-    documents: [],
-    status: "active",
-    updatedAt: "2024-02-24",
-    editorContent:
-      "Giống Khổ Qua Xanh dễ chăm sóc hơn một số giống cao cấp, phù hợp vườn quy mô vừa và nhỏ.",
-  },
-  {
-    id: "7",
-    illustration:
-      "https://nongsantaynguyen.net/wp-content/uploads/2017/04/sau-rieng-dona-sau-rieng-thai-lan.jpg",
-    crop: "Sầu riêng",
-    varietyCode: "VARI07",
-    varietyName: "Hạt giống Sầu riêng Chuồng Bò",
-    supplier: "Trung tâm Giống cây trồng Việt Nam",
-    origin: "Việt Nam",
-    germinationRate: 89,
-    uniformity: 76,
-    yield: "9-14 tấn/ha",
-    description:
-      "Giống sầu riêng Chuồng Bò là giống địa phương, cơm vàng, vị ngọt, hương thơm mạnh và có giá trị đặc sản.",
-    documents: [],
-    status: "active",
-    updatedAt: "2024-02-24",
-    editorContent:
-      "Giống Chuồng Bò phù hợp với mô hình bảo tồn giống địa phương và phát triển sản phẩm đặc sản vùng miền.",
-  },
-  {
-    id: "8",
-    illustration:
-      "https://cdn2.fptshop.com.vn/unsafe/1920x0/filters:format(webp):quality(75)/sau_Musa_King_01_0ea1377077.jpg",
-    crop: "Sầu riêng",
-    varietyCode: "VARI08",
-    varietyName: "Hạt giống Sầu riêng D24",
-    supplier: "Công ty Giống Cây trồng Trung ương",
-    origin: "Malaysia",
-    germinationRate: 90,
-    uniformity: 81,
-    yield: "12-17 tấn/ha",
-    description:
-      "Giống sầu riêng D24 có cơm dày, vị béo ngọt cân bằng, mùi thơm vừa phải và chất lượng trái ổn định.",
-    documents: [],
-    status: "active",
-    updatedAt: "2024-02-24",
-    editorContent:
-      "Giống D24 thích hợp trồng tại vùng có khí hậu nóng ẩm, cần quản lý tán và thoát nước tốt.",
-  },
-  {
-    id: "9",
-    illustration:
-      "https://vinadurian.com/wp-content/uploads/2023/11/sau-rieng-black-thorn-05-i.jpg",
-    crop: "Sầu riêng",
-    varietyCode: "VARI09",
-    varietyName: "Hạt giống Sầu riêng Chanee",
-    supplier: "Viện Nghiên cứu Cây ăn quả Miền Nam",
-    origin: "Thái Lan",
-    germinationRate: 91,
-    uniformity: 83,
-    yield: "14-20 tấn/ha",
-    description:
-      "Giống sầu riêng Chanee sinh trưởng khỏe, trái tương đối lớn, cơm vàng, vị ngọt béo và cho năng suất khá.",
-    documents: [],
-    status: "active",
-    updatedAt: "2024-02-24",
-    editorContent:
-      "Giống Chanee phù hợp canh tác thương mại, cần tỉa trái hợp lý để đảm bảo kích thước và chất lượng đồng đều.",
-  },
-  {
-    id: "10",
-    illustration:
-      "https://encrypted-tbn1.gstatic.com/shopping?q=tbn:ANd9GcROeFYHrBvhkXLU78CIneldJwI3mgAWoFDZsxJ5f2sXfPdgwkF9xweTGSi2oLpcSSt1n4CoRTq2huxq1toGW128i1mZCKxrYcXbSwPQ-tesGnTqXiN-gKtN0VidPtK1b188MUGgnw&usqp=CAc",
-    crop: "Sầu riêng",
-    varietyCode: "VARI10",
-    varietyName: "Hạt giống Sầu riêng Red Prawn",
-    supplier: "ThaiBinh Seed",
-    origin: "Malaysia",
-    germinationRate: 87,
-    uniformity: 79,
-    yield: "10-15 tấn/ha",
-    description:
-      "Giống sầu riêng Red Prawn có cơm màu vàng cam, vị ngọt béo, mùi thơm đặc trưng và giá trị thương phẩm tốt.",
-    documents: [],
-    status: "active",
-    updatedAt: "2024-02-24",
-    editorContent:
-      "Giống Red Prawn cần chăm sóc kỹ trong giai đoạn ra hoa, đậu trái và nuôi trái để ổn định chất lượng thành phẩm.",
+      "Cần trồng dừa dứa tách biệt khỏi các giống dừa khác nhằm tránh thụ phấn chéo gây hiện tượng lai tạp làm mất đi hương thơm đặc trưng của trái.",
   },
 ];
 
@@ -211,26 +110,88 @@ export const cropOptions = [
   { label: "Sầu riêng", value: "Sầu riêng" },
 ];
 
-export const supplierOptions = [
+// 2. DỮ LIỆU MOCK NHÀ CUNG CẤP (mockSuppliers)
+export const mockSuppliers: Supplier[] = [
   {
-    label: "Trung tâm Giống cây trồng Việt Nam",
-    value: "Trung tâm Giống cây trồng Việt Nam",
+    id: "SUP-COCO-01",
+    name: "Trường Đại học Trà Vinh",
+    type: "DOANH NGHIỆP",
+    code: "SUP-TVU",
+    representative: "PGS.TS Phạm Tiết Khánh",
+    phone: "02943855246",
+    email: "banbientap@tvu.edu.vn",
+    address:
+      "126 Nguyễn Thiện Thành, Khóm 4, Phường 5, TP Trà Vinh, Tỉnh Trà Vinh", // [1, 2]
   },
-  { label: "Công ty Mekong Seed", value: "Công ty Mekong Seed" },
   {
-    label: "Viện Nghiên cứu Ngô Trung ương",
-    value: "Viện Nghiên cứu Ngô Trung ương",
+    id: "SUP-COCO-02",
+    name: "Trung tâm Thực nghiệm Dừa Đồng Gò",
+    type: "DOANH NGHIỆP",
+    code: "SUP-DONGGO",
+    representative: "Ngô Thị Kiều Dương",
+    phone: "02753822000",
+    email: "donggo@ioop.org.vn",
+    address: "Huyện Giồng Trôm, Tỉnh Bến Tre", // [3]
   },
-  { label: "Syngenta Việt Nam", value: "Syngenta Việt Nam" },
   {
-    label: "Công ty Giống Cây trồng Trung ương",
-    value: "Công ty Giống Cây trồng Trung ương",
+    id: "SUP-COCO-03",
+    name: "Công ty TNHH MTV Thế giới cây giống",
+    type: "DOANH NGHIỆP",
+    code: "SUP-TGCG",
+    representative: "Nguyễn Quang Trình",
+    phone: "0784664499",
+    email: "thegioicaygiong.com@gmail.com",
+    address: "Số 64 Tổ 3, Ấp 14, Xã Long Trung, Huyện Cai Lậy, Tỉnh Tiền Giang", // [4]
+  },
+  {
+    id: "SUP-COCO-04",
+    name: "Viện KHKT Nông nghiệp Duyên hải Nam Trung Bộ",
+    type: "DOANH NGHIỆP",
+    code: "SUP-ASISOV",
+    representative: "TS. Phan Thanh Hải",
+    phone: "02563846626",
+    email: "asisov.vaas@mard.gov.vn",
+    address: "Đường Tây Sơn, Phường Quy Nhơn Bắc, Tỉnh Bình Định", // [5, 6]
+  },
+  {
+    id: "SUP-COCO-05",
+    name: "Công ty TNHH Công nghệ sinh học ViGen",
+    type: "DOANH NGHIỆP",
+    code: "SUP-VIGEN",
+    representative: "Nguyễn Văn Tuấn",
+    phone: "0909789789",
+    email: "Contact@vigen.vn",
+    address: "Ấp Long Huê, Xã Chợ Lách, Tỉnh Vĩnh Long", // [7]
+  },
+  {
+    id: "SUP-COCO-06",
+    name: "Vựa cây giống Minh Hậu",
+    type: "NÔNG HỘ",
+    code: "FARM-MINHHAU",
+    representative: "Phạm Minh Hậu",
+    phone: "0987639100",
+    email: "minhhau@gmail.com",
+    address: "QL60, TT Châu Thành, Bến Tre", // [8]
   },
 ];
 
+export const supplierOptions = mockSuppliers.map((s) => ({
+  label: s.name,
+  value: s.name,
+}));
+
 export const originOptions = [
-  { label: "Việt Nam", value: "Việt Nam" },
+  { label: "Bến Tre, Việt Nam", value: "Bến Tre, Việt Nam" },
+  { label: "Cầu Kè, Trà Vinh, Việt Nam", value: "Cầu Kè, Trà Vinh, Việt Nam" },
+  {
+    label: "Hoài Nhơn, Bình Định, Việt Nam",
+    value: "Hoài Nhơn, Bình Định, Việt Nam",
+  },
   { label: "Thái Lan", value: "Thái Lan" },
+  {
+    label: "Lai nhân tạo (Mã Lai x Tây Phi)",
+    value: "Lai nhân tạo (Mã Lai x Tây Phi)",
+  },
 ];
 
 export interface Supplier {
@@ -243,86 +204,3 @@ export interface Supplier {
   email: string;
   address: string;
 }
-
-export const mockSuppliers: Supplier[] = [
-  {
-    id: "s1",
-    name: "Trung tâm Giống cây trồng Việt Nam",
-    type: "DOANH NGHIỆP",
-    code: "SUP-TCGCTVN",
-    representative: "Nguyễn Văn An",
-    phone: "02438255055",
-    email: "contact@vcsc.gov.vn",
-    address: "Đại học Nông nghiệp Hà Nội, Trâu Quỳ, Gia Lâm, Hà Nội",
-  },
-  {
-    id: "s2",
-    name: "Công ty Mekong Seed",
-    type: "DOANH NGHIỆP",
-    code: "SUP-MKSEED",
-    representative: "Trần Văn Bình",
-    phone: "02923896234",
-    email: "info@mekongseed.com",
-    address: "Khu công nghiệp Long Hậu, Cần Giuộc, Long An",
-  },
-  {
-    id: "s3",
-    name: "Viện Nghiên cứu Ngô Trung ương",
-    type: "DOANH NGHIỆP",
-    code: "SUP-VNNNTW",
-    representative: "Phạm Xuân Hùng",
-    phone: "02053856789",
-    email: "maize@nnc.vn",
-    address: "Thị trấn Yên Mỹ, Thanh Trì, Hà Nội",
-  },
-  {
-    id: "s4",
-    name: "Syngenta Việt Nam",
-    type: "DOANH NGHIỆP",
-    code: "SUP-SYNGVN",
-    representative: "John Smith",
-    phone: "02838247247",
-    email: "vietnam@syngenta.com",
-    address: "Tòa nhà Flemington, 182 Lê Đại Hành, Quận 11, TP.HCM",
-  },
-  {
-    id: "s5",
-    name: "Công ty Giống Cây trồng Trung ương",
-    type: "DOANH NGHIỆP",
-    code: "SUP-GCTTW",
-    representative: "Lê Minh Tuấn",
-    phone: "02438612345",
-    email: "info@gcctw.vn",
-    address: "Đại Mỗ, Nam Từ Liêm, Hà Nội",
-  },
-  {
-    id: "s6",
-    name: "Vườn Lan Ba Hùng",
-    type: "NÔNG HỘ",
-    code: "FARM-BAHUNG",
-    representative: "Phạm Hùng",
-    phone: "0988777666",
-    email: "bahung.lan@yahoo.com",
-    address: "Xã Đam B'ri, TP. Bảo Lộc, Lâm Đồng",
-  },
-  {
-    id: "s7",
-    name: "Hợp tác xã Nông nghiệp Xanh",
-    type: "NÔNG HỘ",
-    code: "COOP-XANH",
-    representative: "Lê Văn Tám",
-    phone: "0345678901",
-    email: "htxxanh@gmail.com",
-    address: "Đức Trọng, Lâm Đồng",
-  },
-  {
-    id: "s8",
-    name: "Vườn giống Tư Sang",
-    type: "NÔNG HỘ",
-    code: "FARM-TUSANG",
-    representative: "Nguyễn Tư Sang",
-    phone: "0912345678",
-    email: "tusang@gmail.com",
-    address: "Chợ Lách, Bến Tre",
-  },
-];

@@ -4,270 +4,241 @@ import type { GrowthCycle } from "../types/types";
 const now = Date.now();
 
 export const initialGrowthCycles: GrowthCycle[] = [
-  // 1. QUY TRÌNH CHUNG CHO SẦU RIÊNG GIAI ĐOẠN KINH DOANH (THUẬN VỤ)
+  // 1. VÒNG ĐỜI SINH HỌC CÂY DỪA (TỔNG QUÁT)
   {
-    id: "GC001",
-    name: "Quy trình Sầu riêng kinh doanh (Thuận vụ)",
+    id: "GC_COCO_001",
+    name: "Vòng đời sinh học cây dừa (Tổng quát)",
     scope: "crop",
-    cropId: "Sầu riêng",
-    cropName: "Sầu riêng",
+    cropId: "Dừa",
+    cropName: "Dừa",
+    totalDays: 21900, // Đại diện cho ~60 năm tuổi thọ
+    numStages: 4,
+    stages: [
+      {
+        id: "coco_s1_1",
+        name: "Cây con (Kiến thiết cơ bản)",
+        duration: "0 - 3 năm",
+        usePdf: false,
+        content: `
+          <p><strong>Đặc điểm sinh lý:</strong> Cây tập trung phát triển hệ thống rễ bất định và mở rộng đường kính thân; định hình bộ tán lá ban đầu; chưa tăng trưởng mạnh về chiều cao [2].</p>
+          <p><strong>Yêu cầu kỹ thuật:</strong> Che bóng nhẹ (50% ánh sáng) ở giai đoạn vườn ươm; tưới nước giữ ẩm gốc đều đặn; bồi đất mô gốc từ năm thứ 2 trở đi; bón thúc NPK chia nhỏ nhiều lần [2]. Cần lưu ý phòng ngừa bọ cánh cứng (bọ dừa) tấn công đọt non ở giai đoạn này [4, 5].</p>
+        `,
+      },
+      {
+        id: "coco_s1_2",
+        name: "Trưởng thành (Bắt đầu sinh sản)",
+        duration: "4 - 6 năm",
+        usePdf: false,
+        content: `
+          <p><strong>Đặc điểm sinh lý:</strong> Thân vươn cao mạnh mẽ; cây bắt đầu phân hóa mầm hoa và cho những lứa trái bói đầu tiên [2].</p>
+          <p><strong>Yêu cầu kỹ thuật:</strong> Tiến hành vệ sinh tán dừa định kỳ từ 1 - 2 lần/năm; tăng cường phân lân và kali để hỗ trợ phân hóa mầm hoa, hạn chế rụng trái non [2]. Chú ý theo dõi và bắt kiến vương, đuông dừa để bảo vệ đỉnh sinh trưởng [4, 6].</p>
+        `,
+      },
+      {
+        id: "coco_s1_3",
+        name: "Khai thác kinh tế (Kinh doanh)",
+        duration: "6 - 40 năm",
+        usePdf: false,
+        content: `
+          <p><strong>Đặc điểm sinh lý:</strong> Cây đạt trạng thái cân bằng sinh lý tối ưu; năng suất quả và chất lượng cơm dừa, nước dừa đạt đỉnh cao và ổn định nhất [2].</p>
+          <p><strong>Yêu cầu kỹ thuật:</strong> Bón phân định lượng hàng năm; bồi bùn ao mương vườn vào đầu mùa khô; tỉa bớt cây trồng xen để đảm bảo ánh sáng quang hợp; kiểm soát dịch hại (chuột, bọ xít trái, nhện đỏ) thường xuyên [2, 4].</p>
+        `,
+      },
+      {
+        id: "coco_s1_4",
+        name: "Lão hóa",
+        duration: "> 40 năm",
+        usePdf: false,
+        content: `
+          <p><strong>Đặc điểm sinh lý:</strong> Năng suất quả suy giảm dần theo thời gian; đỉnh sinh trưởng có xu hướng nhỏ lại (nhỏ đọt), các tàu lá ngắn dần và xuất hiện hiện tượng trống cổ ở một số giống [2].</p>
+          <p><strong>Yêu cầu kỹ thuật:</strong> Tăng cường chăm sóc chuyên sâu bằng phân hữu cơ hoai mục và các trung - vi lượng để kéo dài tuổi thọ; loại bỏ những cá thể già cỗi không còn hiệu quả kinh tế để trồng cây mới [2].</p>
+        `,
+      },
+    ],
+    createdAt: now,
+    updatedAt: now,
+  },
+
+  // 2. QUY TRÌNH CHĂM SÓC DỪA KINH DOANH TRONG MỘT NĂM (THÍCH ỨNG HẠN MẶN)
+  {
+    id: "GC_COCO_002",
+    name: "Quy trình chăm sóc dừa kinh doanh (Hàng năm)",
+    scope: "crop",
+    cropId: "Dừa",
+    cropName: "Dừa",
     totalDays: 365,
     numStages: 4,
     stages: [
       {
-        id: "s1_1",
-        name: "Phục hồi sau thu hoạch & Làm cơi đọt",
+        id: "coco_s2_1",
+        name: "Đầu mùa mưa",
         duration: "90 ngày",
         usePdf: false,
         content: `
-          <p><strong>Cắt tỉa và vệ sinh:</strong> Cắt tỉa cành bị sâu bệnh, cành ốm yếu, cành mọc đan chéo hoặc cành bơi trên cuống trái để giúp cây thông thoáng. Phun thuốc phòng nấm gốc đồng hoặc rải vôi để diệt mầm bệnh.</p>
-          <p><strong>Phục hồi rễ và bón phân:</strong> Bón lót 25-90 kg phân hữu cơ hoai mục hoặc 5-12 kg hữu cơ vi sinh kết hợp nấm đối kháng Trichoderma để ngừa bệnh thối rễ, xì mủ do Phytophthora. Tưới kích rễ bằng Humic/Fulvic kết hợp đạm cá.</p>
-          <p><strong>Quản lý cơi đọt:</strong> Để cây đủ sức nuôi trái, cần lấy ít nhất 2 cơi đọt hoàn chỉnh. Khi cây nhú mũi giáo, cần phun thuốc phòng ngừa rầy xanh, rầy phấn trắng và nhện đỏ để bảo vệ dàn lá non.</p>`,
+          <p><strong>Bón phân:</strong> Bón phân hữu cơ (20-40 kg/cây/năm), lân super và vôi xám dolomite (500-1500 kg/ha) để khử chua, cải thiện đất [7]. Đào rãnh hoặc 10-12 lỗ xung quanh gốc (cách gốc 1.5-2m) để bón phân rồi lấp đất lại [3].</p>
+          <p><strong>Phòng trừ sâu bệnh:</strong> Dọn vệ sinh vườn, cắt bẹ khô để phòng chuột. Kiểm tra và phòng trừ nấm <em>Phytophthora</em> gây bệnh thối đọt khi mưa nhiều, độ ẩm cao [4, 8].</p>
+        `,
       },
       {
-        id: "s1_2",
-        name: "Tạo khô hạn & Xử lý ra hoa (Nhú mắt cua)",
-        duration: "45 ngày",
-        usePdf: false,
-        content: `
-          <p><strong>Bón lân tạo mầm:</strong> Khi cơi đọt cuối chuyển sang lá lụa xanh đậm, rải phân lân gốc (khoảng 3-4 kg lân/cây) ở phạm vi 2/3 tán.</p>
-          <p><strong>Tạo khô hạn (Xiết nước):</strong> Dọn sạch cỏ dưới tán để đất nhanh khô. Tiến hành xiết nước hoàn toàn từ 10-14 ngày.</p>
-          <p><strong>Phun tạo mầm:</strong> Phun phân bón lá có hàm lượng Lân và Kali cao (ví dụ: NPK 10-60-10, MKP 0-52-34) ướt đều mặt dưới lá và dạ cành. Phun 2 lần cách nhau 7-10 ngày.</p>`,
-      },
-      {
-        id: "s1_3",
-        name: "Rước mắt cua đến Xổ nhụy",
-        duration: "55 ngày",
-        usePdf: false,
-        content: `
-          <p><strong>Nhấp nước và kéo mắt cua:</strong> Khi mắt cua nhú dài 2-3 cm và sáng rõ, tưới nhấp nước trở lại (lượng nước 20-30% bình thường) rồi tăng dần. Phun Amino, trung vi lượng để rước mắt cua.</p>
-          <p><strong>Tỉa hoa:</strong> Loại bỏ hoa mọc sát thân chính, hoa ở đầu cành, tỉa bớt hoa trong chùm chỉ để khoảng 10 hoa khỏe mạnh, không sâu bệnh.</p>
-          <p><strong>Chăm sóc trước xổ nhụy:</strong> Trước khi hoa nở 3-5 ngày, phun Canxi-Bo để tăng sức sống hạt phấn, chống rụng hoa. Giai đoạn xổ nhụy giảm 2/3 lượng nước tưới, chỉ giữ đủ ẩm.</p>`,
-      },
-      {
-        id: "s1_4",
-        name: "Đậu quả, nuôi quả và thu hoạch",
-        duration: "110 ngày",
-        usePdf: false,
-        content: `
-          <p><strong>Giai đoạn tim đèn (sau xổ nhụy):</strong> Giữ ẩm vừa phải (1 ngày tưới, 1 ngày nghỉ). Nếu gặp mưa trái mùa cần phun siêu Lân/MKP để chống sốc rụng trái non.</p>
-          <p><strong>Tỉa trái non (3 đợt):</strong> Đợt 1 (10-25 ngày sau xổ nhụy) loại bỏ trái dị dạng. Đợt 2 (40-45 ngày) tỉa trái méo. Đợt 3 (60 ngày) giữ lại số lượng trái phù hợp với sức cây.</p>
-          <p><strong>Dinh dưỡng nuôi trái:</strong> Khi trái nhỏ bón NPK ba số bằng nhau (15-15-15 hoặc 18-18-18). Khi trái lớn vô cơm, chuyển sang NPK Kali cao và Kali Sulphate (Kali trắng). Tuyệt đối không dùng Kali đỏ (chứa Clorua) vì sẽ làm sượng trái, cháy múi.</p>
-          <p><strong>Quản lý đọt:</strong> Nếu cây đi đọt non lúc mang trái, phải "dìu đọt" bằng Lân, Canxi, Magie cao để lá nhanh già, hoặc dùng MKP chặn đọt để tránh cạnh tranh dinh dưỡng làm rụng trái, giật hộc.</p>
-          <p><strong>Trước thu hoạch:</strong> Cắt nước hoàn toàn trước thu hoạch 15-20 ngày để cơm ráo và ngọt.</p>`,
-      },
-    ],
-    createdAt: now - 30 * 86400000,
-    updatedAt: now - 5 * 86400000,
-  },
-
-  // 2. QUY TRÌNH SẦU RIÊNG KIẾN THIẾT CƠ BẢN (NĂM 1-3)
-  {
-    id: "GC002",
-    name: "Quy trình Sầu riêng kiến thiết (Năm 1-3)",
-    scope: "crop",
-    cropId: "Sầu riêng",
-    cropName: "Sầu riêng",
-    totalDays: 365,
-    numStages: 3,
-    stages: [
-      {
-        id: "s2_1",
-        name: "Kích thích rễ non & Phục hồi sau trồng",
-        duration: "120 ngày",
-        usePdf: false,
-        content: `
-          <p><strong>Bảo vệ cây non:</strong> Cây con mới xuống đất cần được che bóng 30-40% bằng lưới đen hoặc trồng xen cây ngắn ngày để hạn chế bức xạ nhiệt.</p>
-          <p><strong>Quản lý nước:</strong> Tưới 1 lần/ngày trong tuần đầu, sau giảm xuống 3-4 lần/tuần. Tuyệt đối không để gốc đọng nước gây thối rễ do nấm Phytophthora. Dùng rơm rạ, cỏ khô tủ gốc giữ ẩm vào mùa khô.</p>
-          <p><strong>Kích rễ:</strong> Dùng Acid Plus (Humic, Fulvic, Axit Amin) tưới gốc định kỳ 20-30 ngày/lần để kích thích rễ non phát triển mạnh.</p>`,
-      },
-      {
-        id: "s2_2",
-        name: "Thúc đẩy cơi đọt & Quản lý sâu rầy",
-        duration: "155 ngày",
-        usePdf: false,
-        content: `
-          <p><strong>Dinh dưỡng:</strong> Bón định kỳ NPK giàu Đạm (20-10-10+TE hoặc 30-10-10+TE). Năm 1 bón 0.1-0.2kg/lần cách nhau 1.5-2 tháng. Hàng năm bón lót thêm 20-30 kg phân chuồng hoai mục vào đầu mùa mưa.</p>
-          <p><strong>Phát triển cơi đọt:</strong> Khi cây nhú mũi giáo, sử dụng các chất điều hòa sinh trưởng (GA3, Nitrophenolate) phun qua lá để kích thích bung đọt đồng loạt.</p>
-          <p><strong>Phòng trừ dịch hại:</strong> Rất quan trọng phải phun thuốc phòng rầy xanh, rệp và nhện đỏ ngay khi cây vừa nhú mũi giáo để bảo vệ cơi đọt không bị rụng.</p>`,
-      },
-      {
-        id: "s2_3",
-        name: "Tỉa cành tạo tán hình tháp",
+        id: "coco_s2_2",
+        name: "Giữa đến cuối mùa mưa",
         duration: "90 ngày",
         usePdf: false,
         content: `
-          <p><strong>Bấm ngọn:</strong> Khi cây cao 60-80 cm, tiến hành bấm ngọn để kích thích phát triển cành cấp 1.</p>
-          <p><strong>Định hình khung tán:</strong> Giữ cành cấp 1 đầu tiên cách mặt đất khoảng 80-100 cm. Chọn giữ 3-4 cành khỏe mọc đều các hướng, cách nhau 40-50 cm.</p>
-          <p><strong>Tỉa cành vô hiệu:</strong> Từ 6 tháng tuổi trở đi, cắt bỏ các cành mọc sát đất, cành tăm bên trong thân, cành mọc vượt đứng để cây thông thoáng. Có thể dùng dây kéo cành để phân tán đều đặn.</p>`,
+          <p><strong>Bón phân bổ sung:</strong> Bón thúc Urea và Kali clorua (giúp hạn chế rụng trái non, tăng đậu trái). Có thể bón thêm lân nung chảy vào thời điểm cuối mùa mưa [7, 9].</p>
+          <p><strong>Quản lý nước:</strong> Khai thông cống rãnh, đảm bảo tiêu thoát nước tốt, tránh tình trạng vườn dừa bị ngập úng làm ảnh hưởng đến khả năng hô hấp của hệ rễ [10, 11].</p>
+        `,
       },
-    ],
-    createdAt: now - 60 * 86400000,
-    updatedAt: now - 10 * 86400000,
-  },
-
-  // 3. QUY TRÌNH ĐẶC THÙ: SẦU RIÊNG RI6 NGHỊCH VỤ ĐBSCL
-  {
-    id: "GC003",
-    name: "Quy trình Sầu riêng Ri6 (Nghịch vụ ĐBSCL)",
-    scope: "variety",
-    cropId: "Sầu riêng",
-    cropName: "Sầu riêng",
-    variety: "1",
-    totalDays: 250,
-    numStages: 4,
-    stages: [
       {
-        id: "r1_1",
-        name: "Dằn lân, tạo mầm & Phủ bạt xiết nước",
-        duration: "40 ngày",
+        id: "coco_s2_3",
+        name: "Chuẩn bị mùa khô (Tích ngọt, giữ ẩm)",
+        duration: "90 ngày",
         usePdf: false,
         content: `
-          <p><strong>Điều kiện:</strong> Cây phải trên 5-6 năm tuổi, khỏe mạnh, có đủ 2-3 cơi lá hoàn chỉnh.</p>
-          <p><strong>Bón lân & Phun tạo mầm:</strong> Khi cơi đọt cuối chuyển lụa, bón 3-4kg Lân gốc. Phun tạo mầm lá (10-60-10 + MKP) 2-3 lần.</p>
-          <p><strong>Phủ bạt & Xiết nước:</strong> Khi mắt cua nhú lác đác, đậy bạt nilon kín mô đất, rút cạn nước trong mương vườn (sâu 60-80cm) để tạo khô hạn nhân tạo triệt để.</p>
-          <p><strong>Xử lý Paclobutrazol:</strong> Phun Paclobutrazol (chỉ 1 lần duy nhất) vào dạ dưới cành và mặt dưới lá để ức chế sinh trưởng. Việc đậy bạt trước khi phun giúp thuốc không rơi xuống đất gây ngộ độc rễ.</p>`,
+          <p><strong>Trữ nước ngọt:</strong> Nạo vét hệ thống mương vườn, đóng cống ngăn mặn. Mực nước cao nhất trong mương trữ phải cách mặt liếp 0,5m để không làm thối rễ [12].</p>
+          <p><strong>Giữ ẩm:</strong> Bồi bùn ao mương lên liếp (nếu mương đã được tháo rửa sạch mặn). Dùng tàu dừa, cỏ khô, rơm rạ phủ liếp giữ ẩm quanh gốc để giảm lượng nước bốc hơi [7, 12].</p>
+        `,
       },
       {
-        id: "r1_2",
-        name: "Dỡ bạt, nhấp nước & Kéo mắt cua",
-        duration: "15 ngày",
-        usePdf: false,
-        content: `
-          <p><strong>Dỡ bạt:</strong> Khi quan sát thấy 70-80% mắt cua trên cây sáng rõ, tiến hành dỡ bạt nilon.</p>
-          <p><strong>Nhấp nước trở lại:</strong> Bắt đầu tưới nhấp nhẹ (khoảng 20-30% lượng bình thường) để cây từ từ hút nước, sau đó tăng dần. Tuyệt đối không tưới quá sớm khi mắt cua chưa sáng vì sẽ gây nghẽn hoa hoặc ra bông phướn (bông lá).</p>
-          <p><strong>Kéo bông:</strong> Phun các chất dinh dưỡng Amino, trung vi lượng để rước mắt cua vươn dài, mập mạp.</p>`,
-      },
-      {
-        id: "r1_3",
-        name: "Phát triển nụ hoa đến Xổ nhụy (Đặc thù Ri6)",
-        duration: "55 ngày",
-        usePdf: false,
-        content: `
-          <p><strong>Đặc tính thời gian:</strong> Từ lúc mắt cua sáng rõ đến khi xổ nhụy của giống Ri6 kéo dài khoảng 55-57 ngày.</p>
-          <p><strong>Nuôi nụ hoa:</strong> Tỉa bớt nụ hoa ngoài ngọn cành, sát thân chính, chỉ giữ nụ hoa ở vị trí thích hợp. Phun Canxi-Bo trước khi xổ nhụy 3-5 ngày.</p>
-          <p><strong>Quản lý cơi đọt:</strong> Trong vụ nghịch, nếu mưa nhiều cây rất dễ đi đọt. Bắt buộc phải phun chặn đọt bằng MKP hoặc "dìu đọt" để lá nhanh chuyển lụa, tránh trùng với thời điểm xổ nhụy.</p>`,
-      },
-      {
-        id: "r1_4",
-        name: "Nuôi trái & Thu hoạch (Đặc thù Ri6)",
+        id: "coco_s2_4",
+        name: "Cao điểm mùa khô (Chống hạn mặn)",
         duration: "95 ngày",
         usePdf: false,
         content: `
-          <p><strong>Đặc tính thu hoạch:</strong> Ri6 là giống chín sớm. Thời gian từ lúc xổ nhụy đến thu hoạch chỉ từ 90 - 105 ngày.</p>
-          <p><strong>Nuôi trái vô cơm:</strong> Vì thời gian thu hoạch ngắn, lịch bón phân nuôi trái cho Ri6 phải được đẩy sớm hơn giống Monthong từ 10-15 ngày. Bắt đầu vô phân Kali trắng (K2SO4) từ ngày thứ 45-50 để cơm lên màu vàng đậm, ráo, béo.</p>
-          <p><strong>Phòng cháy múi:</strong> Chú ý cung cấp đủ vi lượng, đặc biệt là Bo và Magie, giữ ẩm ổn định để tránh hiện tượng nứt gai, cháy múi đặc trưng ở giống Ri6.</p>`,
+          <p><strong>Tưới nước:</strong> Sử dụng hệ thống tưới tiết kiệm, tưới nước ngọt dự trữ với chu kỳ 5-7 ngày/lần. Hạn chế lạm dụng phân bón hóa học nếu không có đủ nước tưới để phân tan [7, 13].</p>
+          <p><strong>Quản lý dịch hại mùa nắng:</strong> Theo dõi sự bùng phát của nhện đỏ, rệp dính và bọ dừa (có thể phóng thích ong ký sinh để tiêu diệt bọ dừa) [14, 15]. Khi kết thúc hạn mặn, ưu tiên bón phân hữu cơ, Super Humic để phục hồi rễ [13].</p>
+        `,
       },
     ],
-    createdAt: now - 90 * 86400000,
-    updatedAt: now - 15 * 86400000,
+    createdAt: now,
+    updatedAt: now,
+  },
+];
+
+// Growth cycles for specific varieties (scope: "variety")
+export const varietyGrowthCycles: GrowthCycle[] = [
+  // Dừa Xiêm xanh (id: "1")
+  {
+    id: "GC_VAR_001",
+    name: "Quy trình canh tác Dừa Xiêm xanh (Uống nước)",
+    scope: "variety",
+    cropId: "Dừa",
+    cropName: "Dừa",
+    variety: "1",
+    totalDays: 900,
+    numStages: 3,
+    stages: [
+      {
+        id: "var1_s1",
+        name: "Giai đoạn kiến thiết (0-30 tháng)",
+        duration: "30 tháng",
+        usePdf: false,
+        content: `<p><strong>Kỹ thuật trồng:</strong> Chọn cây con từ trái giống 12 tháng tuổi, trồng hố 60x60x60 cm, bón lót phân hữu cơ 10 kg/hố. Khoảng cách 6x7 m (238 cây/ha).</p><p><strong>Chăm sóc:</strong> Tưới nước 2-3 lần/tuần trong mùa khô, bón NPK 15-15-15 định kỳ 2 tháng/lần.</p>`,
+      },
+      {
+        id: "var1_s2",
+        name: "Giai đoạn ra hoa, đậu trái",
+        duration: "6 tháng",
+        usePdf: false,
+        content: `<p><strong>Đặc điểm:</strong> Dừa Xiêm xanh ra hoa sau 18-20 tháng trồng. Mỗi tháng ra 1 buồng hoa, thời gian từ thụ phấn đến thu hoạch khoảng 12 tháng.</p><p><strong>Dinh dưỡng:</strong> Tăng cường Kali (KCl 0.5 kg/cây/năm) và Boron để hỗ trợ đậu trái, giảm rụng trái non.</p>`,
+      },
+      {
+        id: "var1_s3",
+        name: "Giai đoạn thu hoạch ổn định",
+        duration: "nhiều năm",
+        usePdf: false,
+        content: `<p><strong>Thu hoạch:</strong> Chu kỳ thu hoạch 45-60 ngày/lần, chọn trái 7-8 tháng tuổi (nước ngọt nhất). Năng suất đạt 120-150 trái/cây/năm.</p><p><strong>Phòng trừ sâu bệnh:</strong> Theo dõi bọ cánh cứng (bọ dừa), nhện đỏ; phun thuốc phòng ngừa vào đầu mùa mưa.</p>`,
+      },
+    ],
+    createdAt: now,
+    updatedAt: now,
   },
 
-  // 4. QUY TRÌNH ĐẶC THÙ: SẦU RIÊNG MONTHONG (DONA)
+  // Dừa Xiêm lục (id: "2")
   {
-    id: "GC004",
-    name: "Quy trình Sầu riêng Monthong (Dona)",
+    id: "GC_VAR_002",
+    name: "Quy trình canh tác Dừa Xiêm lục cao sản",
     scope: "variety",
-    cropId: "Sầu riêng",
-    cropName: "Sầu riêng",
+    cropId: "Dừa",
+    cropName: "Dừa",
     variety: "2",
-    totalDays: 270,
-    numStages: 4,
+    totalDays: 720,
+    numStages: 3,
     stages: [
       {
-        id: "m1_1",
-        name: "Bón phân tạo mầm hoa & Xiết nước",
-        duration: "40 ngày",
+        id: "var2_s1",
+        name: "Vườn ươm & trồng mới (0-18 tháng)",
+        duration: "18 tháng",
         usePdf: false,
-        content: `
-          <p><strong>Tạo khô hạn:</strong> Giống Monthong yêu cầu thời gian xiết nước (khô hạn) dài hơn Ri6 để bung mắt cua, thường từ 30-35 ngày.</p>
-          <p><strong>Phun tạo mầm:</strong> Bón lân dưới gốc và xịt tạo mầm Lân, Kali cao (MKP) liên tục 2-3 đợt lên dạ cành. Chú ý dọn sạch rác, cỏ gốc để gốc đón nắng, nhanh khô.</p>`,
+        content: `<p><strong>Đặc điểm giống:</strong> Dừa Xiêm lục ra hoa cực sớm, chỉ sau 18-20 tháng. Cần chọn cây giống từ vườn đầu dòng đạt chứng nhận. Trồng khoảng cách 6x6 m.</p><p><strong>Kỹ thuật:</strong> Bón lót NPK 16-16-8, bổ sung phân chuồng hoai mục 15 kg/hố. Giữ ẩm bằng lớp phủ hữu cơ.</p>`,
       },
       {
-        id: "m1_2",
-        name: "Kéo mắt cua & Dưỡng nụ",
-        duration: "15 ngày",
+        id: "var2_s2",
+        name: "Ra hoa lần đầu - kinh doanh",
+        duration: "6 tháng",
         usePdf: false,
-        content: `
-          <p><strong>Tiêu chí tưới lại:</strong> Khác với Ri6, đối với giống Monthong, phải chờ đến khi 70-80% mắt cua ra dài từ 2-3 cm mới bắt đầu nhấp nước trở lại.</p>
-          <p><strong>Kéo hoa:</strong> Tưới nhấp từ ngoài tán vào trong, phun thuốc kéo mắt cua bổ sung Amino acid, trung vi lượng giúp chùm hoa mập mạp.</p>`,
+        content: `<p><strong>Quản lý buồng hoa:</strong> Bảo vệ buồng hoa non khỏi sâu đục buồng. Thụ phấn bổ sung trong điều kiện thời tiết bất lợi. Tỉa bớt trái dị dạng.</p><p><strong>Dinh dưỡng thời kỳ ra hoa:</strong> Bổ sung vi lượng Bo, Mn; giảm đạm, tăng lân và kali.</p>`,
       },
       {
-        id: "m1_3",
-        name: "Mắt cua phát triển đến Xổ nhụy (Đặc thù Monthong)",
-        duration: "45 ngày",
+        id: "var2_s3",
+        name: "Thu hoạch & chăm sóc duy trì",
+        duration: "nhiều năm",
         usePdf: false,
-        content: `
-          <p><strong>Đặc tính thời gian:</strong> Quá trình từ mắt cua đến xổ nhụy của giống Monthong ngắn hơn Ri6, chỉ mất khoảng 45-50 ngày.</p>
-          <p><strong>Quản lý nước:</strong> Rất nhạy cảm lúc xổ nhụy. Phải giảm 2/3 lượng nước tưới thông thường để hạt phấn khỏe, đậu trái tốt.</p>`,
-      },
-      {
-        id: "m1_4",
-        name: "Nuôi trái vô cơm & Thu hoạch (Đặc thù Monthong)",
-        duration: "120 ngày",
-        usePdf: false,
-        content: `
-          <p><strong>Đặc tính thời gian:</strong> Thời gian neo trái trên cây rất dài, từ 115 - 135 ngày tùy khí hậu (vùng cao nguyên thường lâu hơn).</p>
-          <p><strong>Nuôi trái:</strong> Trong 60 ngày đầu chủ yếu bón NPK ba số đều (15-15-15). Từ ngày thứ 60 trở đi (bắt đầu vô cơm) mới tiến hành bón NPK Kali cao (12-12-17) và Kali Sunphat.</p>
-          <p><strong>Chống rụng:</strong> Monthong cực kỳ nhạy cảm và dễ rụng trái sinh lý kéo dài (có thể tới 40-45 ngày). Bắt buộc phải khống chế không cho cây đi đọt bằng MKP hoặc Paclobutrazol hàm lượng nhẹ, hoặc chủ động chặn đọt.</p>`,
+        content: `<p><strong>Chu kỳ thu hoạch:</strong> 45 ngày/lần. Trái Xiêm lục đạt chất lượng tốt nhất ở tháng thứ 7-8, nước ngọt đạt 8-9% đường. Năng suất 150-160 trái/cây/năm.</p><p><strong>Xuất khẩu:</strong> Tiêu chuẩn GlobalGAP, VietGAP yêu cầu ghi chép nhật ký canh tác.</p>`,
       },
     ],
-    createdAt: now - 120 * 86400000,
-    updatedAt: now - 20 * 86400000,
+    createdAt: now,
+    updatedAt: now,
   },
 
-  // 5. QUY TRÌNH ĐẶC THÙ: SẦU RIÊNG MUSANG KING
+  // Dừa sáp (id: "3")
   {
-    id: "GC005",
-    name: "Quy trình Sầu riêng Musang King",
+    id: "GC_VAR_003",
+    name: "Quy trình chuyên canh Dừa sáp Cầu Kè",
     scope: "variety",
-    cropId: "Sầu riêng",
-    cropName: "Sầu riêng",
+    cropId: "Dừa",
+    cropName: "Dừa",
     variety: "3",
-    totalDays: 270,
+    totalDays: 1620,
     numStages: 4,
     stages: [
       {
-        id: "mk1_1",
-        name: "Phục hồi cây & Dưỡng cơi đọt non",
-        duration: "60 ngày",
+        id: "var3_s1",
+        name: "Giai đoạn vườn ươm cây mô (0-6 tháng)",
+        duration: "6 tháng",
         usePdf: false,
-        content: `
-          <p><strong>Phục hồi:</strong> Cắt tỉa cành thông thoáng vì giống này phân cành nhiều. Bón phân hữu cơ vi sinh, tưới Humic kích rễ.</p>
-          <p><strong>Dưỡng cơi đọt:</strong> Cung cấp NPK đạm cao kéo đọt. Musang King phát triển tốc độ gấp 1.5 lần giống Thái nên cần lượng dinh dưỡng dồi dào, kiểm soát nhện đỏ và rầy xanh chặt chẽ.</p>`,
+        content: `<p><strong>Nguồn giống:</strong> Chỉ sử dụng cây giống cấy mô từ cơ sở được chứng nhận (tỷ lệ ra trái sáp thật ≥60%). Ươm cây trong bầu đất 30x50 cm, che 50% nắng.</p><p><strong>Dinh dưỡng:</strong> Phun phân bón lá NPK + vi lượng mỗi 2 tuần.</p>`,
       },
       {
-        id: "mk1_2",
-        name: "Xử lý ra hoa (Khô hạn sinh lý)",
-        duration: "40 ngày",
+        id: "var3_s2",
+        name: "Giai đoạn kiến thiết (6-54 tháng)",
+        duration: "48 tháng",
         usePdf: false,
-        content: `
-          <p><strong>Kích mầm hoa:</strong> Áp dụng chế độ xiết nước tạo khô hạn. Kết hợp bón lân dưới tán và phun tạo mầm hoa bằng Lân và Kali nồng độ cao.</p>
-          <p>Giống Musang King chưa hoàn toàn thuần thục với khí hậu nội địa nên khâu xiết nước cần làm kỹ, tránh để mưa làm đứt quãng quá trình phân hóa mầm.</p>`,
+        content: `<p><strong>Trồng:</strong> Hố 80x80x80 cm, bón lót 20 kg phân hữu cơ + 500g super lân + vôi. Khoảng cách 8x8 m (156 cây/ha) để tạo điều kiện thụ phấn chéo tối ưu.</p><p><strong>Lưu ý đặc thù:</strong> Trồng xen một số cây dừa ta/dừa lai làm cây thụ phấn (tỷ lệ 1 cây thụ phấn/5 cây dừa sáp) để tăng tỷ lệ trái sáp.</p>`,
       },
       {
-        id: "mk1_3",
-        name: "Mắt cua đến Xổ nhụy & Bắt buộc Dìu đọt",
-        duration: "55 ngày",
+        id: "var3_s3",
+        name: "Giai đoạn ra hoa, đậu trái (tháng 48-60)",
+        duration: "12 tháng",
         usePdf: false,
-        content: `
-          <p><strong>Chăm sóc hoa:</strong> Phun Canxi-Bo trước khi xổ nhụy để ống phấn khỏe.</p>
-          <p><strong>Quản lý đọt:</strong> Cây Musang King cực kỳ nhạy cảm với việc cạnh tranh dinh dưỡng. Nếu cây ra đọt non, <strong>tuyệt đối ưu tiên phương pháp "Dìu đọt"</strong> (phun Lân, Magie cao ép lá nhanh già) thay vì chặn đọt bằng hóa chất mạnh để tránh suy cây và rụng hoa hàng loạt.</p>`,
+        content: `<p><strong>Thụ phấn nhân tạo:</strong> Thu phấn hoa đực của cây dừa sáp thụ phấn sáng sớm (6-9h), bảo quản lạnh. Thụ phấn bổ sung vào buổi sáng khi hoa cái trổ.</p><p><strong>Bảo vệ buồng:</strong> Bao buồng hoa non bằng túi lưới để tránh côn trùng và thụ phấn tự do làm giảm tỷ lệ sáp.</p>`,
       },
       {
-        id: "mk1_4",
-        name: "Nuôi trái & Chờ trái rụng tự nhiên (Đặc thù Musang King)",
-        duration: "115 ngày",
+        id: "var3_s4",
+        name: "Thu hoạch và phân loại",
+        duration: "nhiều năm",
         usePdf: false,
-        content: `
-          <p><strong>Tỉa quả khắt khe:</strong> Cây bói (năm 4-5) chỉ được phép giữ 5-7 quả ở sát thân chính để tránh gãy cành, suy kiệt cây.</p>
-          <p><strong>Nuôi trái:</strong> Bón phân NPK cân bằng, vô cơm bổ sung Kali Sulphate. Cần buộc dây cố định trái vào cành vào tháng cuối trước khi thu hoạch.</p>
-          <p><strong>Thu hoạch:</strong> Trái Musang King <strong>phải để chín rụng tự nhiên</strong> (khoảng 100 - 120 ngày sau đậu quả), tuyệt đối không cắt sớm trên cây như các giống khác để bảo toàn độ dẻo mịn và hương vị đắng ngọt đặc trưng.</p>`,
+        content: `<p><strong>Xác định trái sáp:</strong> Dùng siêu âm hoặc lắc nghe tiếng (trái sáp ít nước, tiếng đục). Thu hoạch khi trái 11-12 tháng tuổi. Tỷ lệ sáp thật đạt 20-60%/buồng.</p><p><strong>Giá trị kinh tế:</strong> Trái sáp 110.000-220.000 VNĐ/trái; trái thường 15.000-20.000 VNĐ/trái. Năng suất 40-80 trái sáp/cây/năm.</p>`,
       },
     ],
-    createdAt: now - 150 * 86400000,
-    updatedAt: now - 25 * 86400000,
+    createdAt: now,
+    updatedAt: now,
   },
+];
+
+export const initialGrowthCycles_all: GrowthCycle[] = [
+  ...initialGrowthCycles,
+  ...varietyGrowthCycles,
 ];
 
 export const cropOptions = [
@@ -275,6 +246,7 @@ export const cropOptions = [
   { label: "Sầu riêng", value: "crop2" },
   { label: "Lúa", value: "crop3" },
 ];
+
 
 export const varietyOptions = [
   { label: "DT84", value: "DT84" },

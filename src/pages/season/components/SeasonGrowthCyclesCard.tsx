@@ -13,7 +13,11 @@ import { Layers, Plus, Sprout, Trash2 } from "lucide-react";
 import type { GrowthCycle } from "../../growth-cycle/types/types";
 import { getCropImage } from "../utils/utils";
 
-function parseDuration(durationStr: string): { years: string; months: string; days: string } {
+function parseDuration(durationStr: string): {
+  years: string;
+  months: string;
+  days: string;
+} {
   const str = String(durationStr || "");
   const yearMatch = str.match(/(\d+)\s*năm/);
   const monthMatch = str.match(/(\d+)\s*tháng/);
@@ -21,7 +25,11 @@ function parseDuration(durationStr: string): { years: string; months: string; da
   return {
     years: yearMatch ? yearMatch[1] : "",
     months: monthMatch ? monthMatch[1] : "",
-    days: dayMatch ? dayMatch[1] : (!yearMatch && !monthMatch && !isNaN(Number(str)) && Number(str) > 0 ? str : ""),
+    days: dayMatch
+      ? dayMatch[1]
+      : !yearMatch && !monthMatch && !isNaN(Number(str)) && Number(str) > 0
+        ? str
+        : "",
   };
 }
 
@@ -47,7 +55,14 @@ function computeCycleDuration(stages: GrowthCycle["stages"]): string {
     const str = String(stage.duration || "");
     if (str.includes("năm")) hasYears = true;
     if (str.includes("tháng")) hasMonths = true;
-    if (str.includes("ngày") || (!str.includes("năm") && !str.includes("tháng") && !isNaN(Number(str)) && Number(str) > 0)) hasDays = true;
+    if (
+      str.includes("ngày") ||
+      (!str.includes("năm") &&
+        !str.includes("tháng") &&
+        !isNaN(Number(str)) &&
+        Number(str) > 0)
+    )
+      hasDays = true;
     if (years) sumYears += parseInt(years);
     if (months) sumMonths += parseInt(months);
     if (days) sumDays += parseInt(days);
@@ -65,6 +80,8 @@ interface SeasonGrowthCyclesCardProps {
   onRemoveCycle: (cycleId: string) => void;
   selectedCycles: GrowthCycle[];
   selectedStages: Record<string, Record<string, string | number>>;
+  disabled?: boolean;
+  disabledReason?: string;
 }
 
 export function SeasonGrowthCyclesCard({
@@ -73,6 +90,8 @@ export function SeasonGrowthCyclesCard({
   onRemoveCycle,
   selectedCycles,
   selectedStages,
+  disabled = false,
+  disabledReason,
 }: SeasonGrowthCyclesCardProps) {
   return (
     <Card>
@@ -88,10 +107,17 @@ export function SeasonGrowthCyclesCard({
             <Badge variant="outline" className="ml-auto">
               Đã chọn: {growthCycleIds.length}
             </Badge>
-            <Button size="sm" className="h-8 font-bold" onClick={onAddCycle}>
-              <Plus className="mr-1 h-3.5 w-3.5" />
-              Thêm
-            </Button>
+            <div title={disabled ? disabledReason : undefined}>
+              <Button
+                size="sm"
+                className="h-8 font-bold"
+                onClick={onAddCycle}
+                disabled={disabled}
+              >
+                <Plus className="mr-1 h-3.5 w-3.5" />
+                Thêm
+              </Button>
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -124,7 +150,11 @@ export function SeasonGrowthCyclesCard({
                         <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
                           <span>{cycle.cropName}</span>
                           <span className="h-1 w-1 rounded-full bg-slate-300" />
-                          <span>{cycle.stages ? computeCycleDuration(cycle.stages) : "-"}</span>
+                          <span>
+                            {cycle.stages
+                              ? computeCycleDuration(cycle.stages)
+                              : "-"}
+                          </span>
                           <span className="h-1 w-1 rounded-full bg-slate-300" />
                           <span className="font-medium text-green-600">
                             {Object.keys(selectedStageMap).length}/
@@ -157,7 +187,11 @@ export function SeasonGrowthCyclesCard({
                               className="border-slate-200 bg-white font-normal text-slate-700 shadow-sm"
                             >
                               <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-green-500" />
-                              {stage.name} ({formatDurationDisplay(String(selectedStageMap[stage.id] || ""))})
+                              {stage.name} (
+                              {formatDurationDisplay(
+                                String(selectedStageMap[stage.id] || ""),
+                              )}
+                              )
                             </Badge>
                           ))}
                         </div>
@@ -173,13 +207,20 @@ export function SeasonGrowthCyclesCard({
               <p className="text-sm font-medium text-muted-foreground">
                 Chưa có chu kỳ nào được chọn.
               </p>
-              <Button
-                variant="link"
-                className="mt-2 font-bold text-green-700"
-                onClick={onAddCycle}
-              >
-                + Chọn chu kỳ từ thư viện
-              </Button>
+              {disabled && disabledReason ? (
+                <p className="mt-2 text-xs font-medium text-amber-600">
+                  ⚠ {disabledReason}
+                </p>
+              ) : (
+                <Button
+                  variant="link"
+                  className="mt-2 font-bold text-green-700"
+                  onClick={onAddCycle}
+                  disabled={disabled}
+                >
+                  + Chọn chu kỳ từ thư viện
+                </Button>
+              )}
             </div>
           )}
         </div>

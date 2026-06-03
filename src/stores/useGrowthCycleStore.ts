@@ -1,12 +1,14 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import type { GrowthCycle } from "../pages/growth-cycle/types/types";
-import { initialGrowthCycles } from "@/pages/growth-cycle/data/mocks";
+import { initialGrowthCycles_all } from "@/pages/growth-cycle/data/mocks";
 
 function normalizeGrowthCycle(cycle: GrowthCycle): GrowthCycle {
   const normalizedStages = cycle.stages ?? [];
   const normalizedCropId =
-    cycle.cropName && cycle.cropId !== cycle.cropName ? cycle.cropName : cycle.cropId;
+    cycle.cropName && cycle.cropId !== cycle.cropName
+      ? cycle.cropName
+      : cycle.cropId;
 
   return {
     ...cycle,
@@ -42,7 +44,7 @@ const useGrowthCycleStore = create<GrowthCycleState>()(
   devtools(
     persist(
       (set, get) => ({
-        growthCycles: initialGrowthCycles.map(normalizeGrowthCycle),
+        growthCycles: initialGrowthCycles_all.map(normalizeGrowthCycle),
         isLoading: false,
         error: null,
 
@@ -69,7 +71,10 @@ const useGrowthCycleStore = create<GrowthCycleState>()(
               };
 
               return {
-                growthCycles: [normalizeGrowthCycle(newCycle), ...state.growthCycles],
+                growthCycles: [
+                  normalizeGrowthCycle(newCycle),
+                  ...state.growthCycles,
+                ],
               };
             },
             false,
@@ -121,14 +126,24 @@ const useGrowthCycleStore = create<GrowthCycleState>()(
           growthCycles: state.growthCycles.map(normalizeGrowthCycle),
         }),
         merge: (persistedState, currentState) => {
-          const typedPersistedState = persistedState as Partial<GrowthCycleState>;
+          const typedPersistedState =
+            persistedState as Partial<GrowthCycleState>;
+
+          const persistedCycles = (typedPersistedState.growthCycles ?? []).map(
+            normalizeGrowthCycle,
+          );
+          const defaultIds = new Set(initialGrowthCycles_all.map((c) => c.id));
+          const userCycles = persistedCycles.filter(
+            (c) => !defaultIds.has(c.id),
+          );
 
           return {
             ...currentState,
             ...typedPersistedState,
-            growthCycles: (
-              typedPersistedState.growthCycles ?? currentState.growthCycles
-            ).map(normalizeGrowthCycle),
+            growthCycles: [
+              ...initialGrowthCycles_all.map(normalizeGrowthCycle),
+              ...userCycles,
+            ],
           };
         },
       },

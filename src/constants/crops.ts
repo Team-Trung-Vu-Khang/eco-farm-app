@@ -30,7 +30,8 @@ export const CROP_OPTIONS = [
   {
     id: "Lúa",
     name: "Lúa",
-    image: "https://upload.wikimedia.org/wikipedia/commons/f/f2/Mature_Rice_%28India%29_by_Augustus_Binu.jpg",
+    image:
+      "https://upload.wikimedia.org/wikipedia/commons/f/f2/Mature_Rice_%28India%29_by_Augustus_Binu.jpg",
     group: "Cây lương thực",
   },
   {
@@ -53,6 +54,13 @@ export const CROP_OPTIONS = [
     image:
       "https://lugiaco.com/wp-content/uploads/2024/03/Cay-dieu-viet-nam-nguon-goc-xuat-xu-dac-diem-1.webp",
     group: "Cây công nghiệp",
+  },
+  {
+    id: "Dừa",
+    name: "Dừa",
+    image:
+      "https://tfruit.com.vn/wp-content/uploads/2020/03/qu%E1%BA%A3-d%E1%BB%ABa.jpg",
+    group: "Cây ăn trái",
   },
   {
     id: "Mắc ca",

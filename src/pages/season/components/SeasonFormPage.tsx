@@ -47,6 +47,12 @@ export function SeasonFormPage({
     formData.growthCycleIds.includes(cycle.id),
   );
 
+  const isCycleSelectionDisabled =
+    formData.scope === "variety" && !formData.varietyId;
+  const cycleDisabledReason = isCycleSelectionDisabled
+    ? "Vui lòng chọn giống cây trồng cụ thể trước khi chọn chu kỳ sinh trưởng."
+    : undefined;
+
   return (
     <AdminLayout title={title} description={description}>
       <div className="mb-6">
@@ -76,6 +82,8 @@ export function SeasonFormPage({
             onRemoveCycle={onRemoveCycle}
             selectedCycles={selectedCycles}
             selectedStages={formData.selectedStages}
+            disabled={isCycleSelectionDisabled}
+            disabledReason={cycleDisabledReason}
           />
         </div>
 
