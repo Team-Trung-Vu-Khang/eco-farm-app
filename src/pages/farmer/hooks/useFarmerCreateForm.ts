@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
-import type { FarmerFormData, BankAccount, Document, Contact } from "../types";
+import type { FarmerFormData, BankAccount, Contact } from "../types";
 import { vietQrBankData } from "../../../constants/banks";
 import { parseVietQR } from "../../../utils/commons";
 import readXlsxFile from "read-excel-file";
@@ -60,6 +60,7 @@ export function useFarmerCreateForm() {
     branch: "",
     note: "",
     bin: "",
+    logo: "",
   });
 
   const [bankInputMethod, setBankInputMethod] = useState<
@@ -148,6 +149,7 @@ export function useFarmerCreateForm() {
               accountHolder,
               branch,
               note,
+              logo: bankInfo.logo,
             });
             successCount++;
           } else {
@@ -194,6 +196,10 @@ export function useFarmerCreateForm() {
           accountNumber: parsed.accountNumber || prev.accountNumber,
           accountHolder: parsed.accountHolder || prev.accountHolder,
           note: parsed.note || prev.note,
+          logo: parsed.bin
+            ? vietQrBankData.find((bank) => bank.bin === parsed.bin)?.logo ||
+              prev.logo
+            : prev.logo,
         }));
         toast({
           title: "Đã đọc mã QR",
@@ -229,6 +235,10 @@ export function useFarmerCreateForm() {
         bankName: parsed.bankName || prev.bankName,
         accountNumber: parsed.accountNumber || prev.accountNumber,
         accountHolder: parsed.accountHolder || prev.accountHolder,
+        logo: parsed.bin
+          ? vietQrBankData.find((bank) => bank.bin === parsed.bin)?.logo ||
+            prev.logo
+          : prev.logo,
       }));
       toast({
         title: "Quét thành công",
@@ -278,6 +288,7 @@ export function useFarmerCreateForm() {
         branch: "",
         note: "",
         bin: "",
+        logo: "",
       });
     } else {
       toast({

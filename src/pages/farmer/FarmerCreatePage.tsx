@@ -16,7 +16,6 @@ import {
 import { useFarmerCreateForm } from "./hooks/useFarmerCreateForm";
 import { FarmerBasicInfoStep } from "./components/steps/FarmerBasicInfoStep";
 import { FarmerBankStep } from "./components/steps/FarmerBankStep";
-import { FarmerDocumentStep } from "./components/steps/FarmerDocumentStep";
 import { FarmerConfirmationStep } from "./components/steps/FarmerConfirmationStep";
 import { FarmerContactStep } from "./components/steps/FarmerContactStep";
 
@@ -40,7 +39,6 @@ export default function FarmerCreatePage() {
     processQRImage,
     handleLiveScan,
     processLogoImage,
-    processDocuments,
     newContact,
     setNewContact,
     addContact,
@@ -104,24 +102,6 @@ export default function FarmerCreatePage() {
           handleLiveScan={handleLiveScan}
           addBankAccount={addBankAccount}
           removeBankAccount={removeBankAccount}
-        />
-      ),
-    },
-    {
-      id: "documents",
-      title: "Tài liệu",
-      description: "Giấy phép, chứng chỉ",
-      content: (
-        <FarmerDocumentStep
-          documents={formData.documents}
-          isDragging={!!isDragging["documents"]}
-          handleDrag={handleDrag}
-          processDocuments={processDocuments}
-          removeDocument={(idx) => {
-            const newDocs = [...formData.documents];
-            newDocs.splice(idx, 1);
-            updateField("documents", newDocs);
-          }}
         />
       ),
     },

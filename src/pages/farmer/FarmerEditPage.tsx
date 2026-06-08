@@ -8,18 +8,20 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Card,
+  CardContent,
   StepperForm,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useFarmerCreateForm } from "./hooks/useFarmerCreateForm";
 import { FarmerBasicInfoStep } from "./components/steps/FarmerBasicInfoStep";
 import { FarmerBankStep } from "./components/steps/FarmerBankStep";
-import { FarmerDocumentStep } from "./components/steps/FarmerDocumentStep";
 import { FarmerConfirmationStep } from "./components/steps/FarmerConfirmationStep";
 import { FarmerContactStep } from "./components/steps/FarmerContactStep";
 
 export default function FarmerEditPage() {
   const {
+    isEdit,
     formData,
     updateField,
     newBankAccount,
@@ -35,7 +37,6 @@ export default function FarmerEditPage() {
     processQRImage,
     handleLiveScan,
     processLogoImage,
-    processDocuments,
     newContact,
     setNewContact,
     addContact,
@@ -78,9 +79,9 @@ export default function FarmerEditPage() {
       ),
     },
     {
-      id: "banks",
-      title: "Tài khoản ngân hàng",
-      description: "Thiết lập thông tin thanh toán",
+      id: "bank",
+      title: "Ngân hàng",
+      description: "Tài khoản thanh toán",
       content: (
         <FarmerBankStep
           bankAccounts={formData.bankAccounts}
@@ -102,27 +103,9 @@ export default function FarmerEditPage() {
       ),
     },
     {
-      id: "documents",
-      title: "Tài liệu đính kèm",
-      description: "Giấy phép, chứng nhận...",
-      content: (
-        <FarmerDocumentStep
-          documents={formData.documents}
-          isDragging={!!isDragging["documents"]}
-          handleDrag={handleDrag}
-          processDocuments={processDocuments}
-          removeDocument={(index) => {
-            const newDocs = [...formData.documents];
-            newDocs.splice(index, 1);
-            updateField("documents", newDocs);
-          }}
-        />
-      ),
-    },
-    {
       id: "confirm",
       title: "Xác nhận",
-      description: "Kiểm tra lại toàn bộ thông tin",
+      description: "Kiểm tra thông tin",
       content: (
         <FarmerConfirmationStep
           formData={formData}
@@ -134,38 +117,37 @@ export default function FarmerEditPage() {
   ];
 
   return (
-    <AdminLayout>
-      <div className="p-6">
-        <StepperForm
-          steps={steps}
-          onComplete={submitForm}
-          onCancel={navigateBack}
-        />
+    <AdminLayout
+      title={isEdit ? "Chỉnh sửa Nông hộ" : "Tạo mới Nông hộ"}
+      description="Điền thông tin theo từng bước để tạo mới nông hộ"
+    >
+      <Card>
+        <CardContent className="p-6">
+          <StepperForm
+            steps={steps}
+            completeLabel={isEdit ? "Cập nhật" : "Tạo mới"}
+            onComplete={submitForm}
+            onCancel={navigateBack}
+          />
+        </CardContent>
+      </Card>
 
-        <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-          <AlertDialogContent className="max-w-md">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="text-xl">
-                Xác nhận cập nhật?
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                Mọi thay đổi sẽ được lưu vào hệ thống. Bạn có chắc chắn muốn hoàn tất việc chỉnh sửa nông hộ này?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="gap-2 pt-4">
-              <AlertDialogCancel className="rounded-xl px-6">
-                Kiểm tra lại
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={submitForm}
-                className="rounded-xl px-6 bg-primary hover:bg-primary/90 transition-all font-bold"
-              >
-                Cập nhật ngay
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận {isEdit ? "cập nhật" : "tạo mới"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn {isEdit ? "cập nhật" : "tạo mới"} nông hộ "{formData.name}" không?
+              <br />
+              Thông tin đã nhập sẽ được lưu vào hệ thống.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={submitForm}>Xác nhận</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }

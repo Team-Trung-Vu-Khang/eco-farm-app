@@ -397,8 +397,9 @@ export function useEnterpriseCreateForm() {
     },
     {
       id: "documents",
-      title: "Tài liệu",
-      description: "Giấy phép, chứng chỉ",
+      title: "Giấy phép kinh doanh",
+      description:
+        "Tải lên hoặc kiểm tra các giấy tờ pháp lý liên quan đến doanh nghiệp.",
       content: <EnterpriseDocumentsStep />,
     },
     {

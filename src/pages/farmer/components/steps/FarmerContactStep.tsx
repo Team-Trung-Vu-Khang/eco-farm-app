@@ -8,7 +8,10 @@ import {
   Input,
   Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useState } from "react";
 import { Mail, Phone, Plus, Trash2, User, Users } from "lucide-react";
+import useContactStore from "@/stores/useContactStore";
+import { ContactSelectorDialog } from "../ContactSelectorDialog";
 import type { Contact } from "../../types";
 
 interface FarmerContactStepProps {
@@ -26,6 +29,13 @@ export const FarmerContactStep = ({
   addContact,
   removeContact,
 }: FarmerContactStepProps) => {
+  const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
+  const contactStore = useContactStore((state) => state.contacts);
+  const selectedContact = contactStore.find(
+    (contact) =>
+      contact.fullName === newContact.name && contact.phone === newContact.phone,
+  );
+
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       <Card className="border-primary/20 bg-primary/5">
@@ -39,6 +49,35 @@ export const FarmerContactStep = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2 col-span-2">
               <Label htmlFor="contact-name">Họ và tên *</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsContactDialogOpen(true)}
+                  className="h-10 flex-1 justify-between border-primary/20 bg-muted/20 text-left font-normal hover:border-primary/40 hover:bg-primary/5"
+                >
+                  <span className="truncate">
+                    {selectedContact ? selectedContact.fullName : "Chọn liên hệ..."}
+                  </span>
+                  <User className="w-4 h-4 shrink-0 text-muted-foreground" />
+                </Button>
+                {(newContact.name || newContact.phone || newContact.email) && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setNewContact({ name: "", phone: "", email: "" })}
+                    className="h-10 px-3 text-muted-foreground"
+                  >
+                    Xóa
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Có thể chọn liên hệ từ store Thông tin liên hệ.
+              </p>
+            </div>
+            <div className="space-y-2 col-span-2">
+              <Label htmlFor="contact-name">Hoặc nhập tên mới</Label>
               <Input
                 id="contact-name"
                 value={newContact.name}
@@ -78,6 +117,19 @@ export const FarmerContactStep = ({
           </Button>
         </CardContent>
       </Card>
+
+      <ContactSelectorDialog
+        open={isContactDialogOpen}
+        onOpenChange={setIsContactDialogOpen}
+        selectedId={selectedContact?.id || null}
+        onSelect={(contact) =>
+          setNewContact({
+            name: contact.fullName,
+            phone: contact.phone,
+            email: contact.email,
+          })
+        }
+      />
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">

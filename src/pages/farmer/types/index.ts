@@ -21,6 +21,7 @@ export interface BankAccount {
   branch: string;
   note: string;
   bin?: string;
+  logo?: string;
 }
 
 export interface Document {

@@ -79,9 +79,9 @@ export function EnterpriseDocumentsStep() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="text-center mb-4">
-        <h3 className="font-semibold">Tài liệu đính kèm</h3>
+        <h3 className="font-semibold">Giấy phép kinh doanh</h3>
         <p className="text-sm text-muted-foreground">
-          Upload giấy phép kinh doanh, chứng chỉ VietGAP, GlobalGAP (nếu có)
+          Tải lên hoặc kiểm tra các giấy tờ pháp lý liên quan đến doanh nghiệp.
         </p>
       </div>
       <div

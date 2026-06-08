@@ -5,7 +5,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Combobox,
   Input,
   Label,
   Tabs,
@@ -15,6 +14,7 @@ import {
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Scanner } from "@yudiel/react-qr-scanner";
+import { useState } from "react";
 import {
   Building2,
   Camera,
@@ -29,22 +29,17 @@ import {
   Upload,
 } from "lucide-react";
 import { vietQrBankData } from "../../../../constants/banks";
+import useBankStore from "@/stores/useBankStore";
+import { BankSelectorDialog } from "../BankSelectorDialog";
 import type { BankAccount } from "../../types";
-
-const bankOptions = vietQrBankData.map((bank: any) => ({
-  id: bank.id,
-  bin: bank.bin || "",
-  label: bank.name,
-  image: bank.logo,
-  value: bank.bin || "",
-}));
+type BankInputMethod = "manual" | "excel" | "qr-image" | "qr-scan";
 
 interface FarmerBankStepProps {
   bankAccounts: BankAccount[];
   newBankAccount: BankAccount;
   setNewBankAccount: (acc: BankAccount) => void;
   bankInputMethod: string;
-  setBankInputMethod: (val: any) => void;
+  setBankInputMethod: (val: BankInputMethod) => void;
   hasCamera: boolean;
   bankSearchQuery: string;
   setBankSearchQuery: (val: string) => void;
@@ -52,7 +47,7 @@ interface FarmerBankStepProps {
   handleDrag: (id: string, e: React.DragEvent) => void;
   processExcelFile: (file: File) => void;
   processQRImage: (file: File) => void;
-  handleLiveScan: (result: any) => void;
+  handleLiveScan: (result: Array<{ rawValue: string }> | null) => void;
   addBankAccount: () => void;
   removeBankAccount: (index: number) => void;
 }
@@ -74,6 +69,14 @@ export const FarmerBankStep = ({
   addBankAccount,
   removeBankAccount,
 }: FarmerBankStepProps) => {
+  const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
+  const bankOptions = useBankStore((state) => state.bankAccounts);
+  const selectedBank = bankOptions.find(
+    (account) =>
+      account.bankName === newBankAccount.bankName &&
+      account.accountNumber === newBankAccount.accountNumber,
+  );
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <Card className="overflow-hidden border-primary/20 shadow-lg">
@@ -108,21 +111,44 @@ export const FarmerBankStep = ({
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold">Chọn Ngân hàng *</Label>
-                  <Combobox
-                    options={bankOptions}
-                    value={newBankAccount.bin || ""}
-                    onChange={(val) =>
-                      setNewBankAccount({
-                        ...newBankAccount,
-                        bin: val,
-                        bankName:
-                          bankOptions.find((bank) => bank.bin === val)?.label || "",
-                      })
-                    }
-                    placeholder="Chọn ngân hàng..."
-                    searchPlaceholder="Tìm tên ngân hàng..."
-                    className="w-full"
-                  />
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsBankDialogOpen(true)}
+                      className="h-10 flex-1 justify-between border-primary/20 bg-muted/20 text-left font-normal hover:border-primary/40 hover:bg-primary/5"
+                    >
+                      <span className="truncate">
+                        {selectedBank
+                          ? `${selectedBank.bankName} - ${selectedBank.accountNumber}`
+                          : "Chọn ngân hàng..."}
+                      </span>
+                      <Search className="w-4 h-4 shrink-0 text-muted-foreground" />
+                    </Button>
+                    {(newBankAccount.bankName || newBankAccount.accountNumber) && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() =>
+                          setNewBankAccount({
+                            bankName: "",
+                            accountHolder: "",
+                            accountNumber: "",
+                            branch: "",
+                            note: "",
+                            bin: "",
+                            logo: "",
+                          })
+                        }
+                        className="h-10 px-3 text-muted-foreground"
+                      >
+                        Xóa
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Có thể tìm và chọn ngân hàng từ danh sách dialog.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold">Số tài khoản *</Label>
@@ -178,7 +204,7 @@ export const FarmerBankStep = ({
                   />
                 </div>
               </div>
-              <Button onClick={addBankAccount} className="w-full h-12">
+              <Button type="button" onClick={addBankAccount} className="w-full h-12">
                 <Plus className="w-5 h-5 mr-2" />
                 Thêm vào danh sách
               </Button>
@@ -316,13 +342,13 @@ export const FarmerBankStep = ({
                 );
               })
               .map((acc, index) => {
-                const bankInfo = vietQrBankData.find((b: any) => b.bin === acc.bin);
+                const bankInfo = vietQrBankData.find((b) => b.bin === acc.bin);
                 return (
                   <Card key={index} className="group hover:border-primary/50 transition-all shadow-sm">
                     <CardContent className="p-4 flex items-center gap-4">
                       <div className="w-14 h-14 rounded-xl border bg-white flex items-center justify-center p-2">
                         <img
-                          src={bankInfo?.logo || "https://placehold.co/40x40"}
+                          src={acc.logo || bankInfo?.logo || "https://placehold.co/40x40"}
                           alt={acc.bankName}
                           className="w-full h-full object-contain"
                         />
@@ -349,6 +375,23 @@ export const FarmerBankStep = ({
           </div>
         )}
       </div>
+
+      <BankSelectorDialog
+        open={isBankDialogOpen}
+        onOpenChange={setIsBankDialogOpen}
+        selectedId={selectedBank?.id || null}
+        onSelect={(account) =>
+          setNewBankAccount({
+            bankName: account.bankName,
+            accountHolder: account.accountHolder,
+            accountNumber: account.accountNumber,
+            branch: account.branch,
+            note: account.note,
+            bin: "",
+            logo: account.logo,
+          })
+        }
+      />
     </div>
   );
 };
