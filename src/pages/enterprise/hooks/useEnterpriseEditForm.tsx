@@ -437,11 +437,11 @@ export function useEnterpriseEditForm() {
   };
 
   const addBankAccount = () => {
-    if (newBankAccount.bin && newBankAccount.accountNumber) {
-      setFormData({
-        ...formData,
-        bankAccounts: [newBankAccount, ...formData.bankAccounts],
-      });
+    if (newBankAccount.bankName && newBankAccount.accountNumber) {
+      setFormData((prev) => ({
+        ...prev,
+        bankAccounts: [newBankAccount, ...prev.bankAccounts],
+      }));
       setNewBankAccount({
         bankName: "",
         accountHolder: "",
@@ -449,6 +449,7 @@ export function useEnterpriseEditForm() {
         branch: "",
         note: "",
         bin: "",
+        logo: "",
       });
       setBankInputMethod("manual");
       toast({
@@ -458,7 +459,7 @@ export function useEnterpriseEditForm() {
     } else {
       toast({
         title: "Lỗi",
-        description: "Vui lòng nhập đầy đủ thông tin ngân hàng",
+        description: "Vui lòng nhập tên ngân hàng và số tài khoản",
         variant: "destructive",
       });
     }

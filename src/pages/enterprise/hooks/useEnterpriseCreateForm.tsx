@@ -298,10 +298,10 @@ export function useEnterpriseCreateForm() {
 
   const addBankAccount = () => {
     if (newBankAccount.bankName && newBankAccount.accountNumber) {
-      setFormData({
-        ...formData,
-        bankAccounts: [newBankAccount, ...formData.bankAccounts],
-      });
+      setFormData((prev) => ({
+        ...prev,
+        bankAccounts: [newBankAccount, ...prev.bankAccounts],
+      }));
       setNewBankAccount({
         bankName: "",
         accountHolder: "",
@@ -309,6 +309,7 @@ export function useEnterpriseCreateForm() {
         branch: "",
         note: "",
         bin: "",
+        logo: "",
       });
     } else {
       toast({

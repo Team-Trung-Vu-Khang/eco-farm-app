@@ -3,19 +3,10 @@ import {
   Button,
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
-  Combobox,
   Input,
   Label,
-  MultiSelect,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Separator,
   Tabs,
   TabsContent,
   TabsList,
@@ -23,50 +14,31 @@ import {
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Scanner } from "@yudiel/react-qr-scanner";
+import { useState } from "react";
 import {
   Building2,
-  Calendar,
   Camera,
-  Check,
   CreditCard,
   Download,
   FileText,
-  Globe,
-  Image,
-  Info,
-  Mail,
-  MapPin,
-  Phone,
   Plus,
   QrCode,
   Scan,
   Search,
   Trash2,
   Upload,
-  User,
-  Users,
 } from "lucide-react";
-import { PROVINCES } from "@/constants/province";
 import { vietQrBankData } from "@/constants/banks";
+import useBankStore from "@/stores/useBankStore";
 import { useEnterpriseFormContext } from "../../context/EnterpriseFormContext";
+import { BankSelectorDialog } from "./BankSelectorDialog";
+import type { BankAccount } from "../../data/constants";
 
-const classificationOptions = [
-  { value: "production", label: "Sản xuất" },
-  { value: "processing", label: "Chế biến" },
-  { value: "trading", label: "Thương mại" },
-  { value: "service", label: "Dịch vụ" },
-  { value: "other", label: "Khác" },
-];
-
-const bankOptions = vietQrBankData.map((bank) => ({
-  id: bank.id,
-  bin: bank.bin,
-  label: bank.name,
-  image: bank.logo,
-  value: bank.bin,
-}));
+type BankInputMethod = "manual" | "excel" | "qr-image" | "qr-scan";
 
 export function EnterpriseBankAccountsStep() {
+  const [isBankSelectorOpen, setIsBankSelectorOpen] = useState(false);
+  const bankAccounts = useBankStore((state) => state.bankAccounts);
   const {
     bankInputMethod,
     setBankInputMethod,
@@ -84,10 +56,14 @@ export function EnterpriseBankAccountsStep() {
     handleLiveScan,
     bankSearchQuery,
     setBankSearchQuery,
-    confirmBankSearchQuery,
-    setConfirmBankSearchQuery,
     formData,
   } = useEnterpriseFormContext();
+
+  const selectedBank = bankAccounts.find(
+    (account) =>
+      account.bankName === newBankAccount.bankName &&
+      account.accountNumber === newBankAccount.accountNumber,
+  );
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -101,7 +77,7 @@ export function EnterpriseBankAccountsStep() {
         <CardContent className="p-6 pt-0">
           <Tabs
             value={bankInputMethod}
-            onValueChange={(val: any) => setBankInputMethod(val)}
+            onValueChange={(val) => setBankInputMethod(val as BankInputMethod)}
             className="w-full"
           >
             <TabsList className="grid w-full grid-cols-4 mb-8 bg-muted/50 p-1">
@@ -141,86 +117,110 @@ export function EnterpriseBankAccountsStep() {
                   <Label className="text-sm font-semibold">
                     Chọn Ngân hàng *
                   </Label>
-                  <Combobox
-                    options={bankOptions}
-                    value={newBankAccount.bin}
-                    onChange={(val) =>
-                      setNewBankAccount({
-                        ...newBankAccount,
-                        bin: val,
-                        bankName:
-                          bankOptions.find((bank) => bank.bin === val)?.label ||
-                          "",
-                      })
-                    }
-                    placeholder="Chọn ngân hàng..."
-                    searchPlaceholder="Tìm tên ngân hàng..."
-                    className="w-full"
-                  />
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsBankSelectorOpen(true)}
+                      className="h-10 flex-1 justify-between border-primary/20 bg-muted/20 text-left font-normal hover:border-primary/40 hover:bg-primary/5"
+                    >
+                      <span className="truncate">
+                        {selectedBank
+                          ? `${selectedBank.bankName} - ${selectedBank.accountNumber}`
+                          : "Chọn ngân hàng..."}
+                      </span>
+                      <Search className="w-4 h-4 shrink-0 text-muted-foreground" />
+                    </Button>
+                    {(newBankAccount.bankName || newBankAccount.accountNumber) && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() =>
+                          setNewBankAccount({
+                            ...newBankAccount,
+                            bin: "",
+                            bankName: "",
+                            accountHolder: "",
+                            accountNumber: "",
+                            branch: "",
+                            note: "",
+                            logo: "",
+                          })
+                        }
+                        className="h-10 px-3 text-muted-foreground"
+                      >
+                        Xóa
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Có thể tìm và chọn ngân hàng từ danh sách dialog.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold">
                     Số tài khoản *
                   </Label>
-                  <Input
-                    value={newBankAccount.accountNumber}
-                    onChange={(e) =>
-                      setNewBankAccount({
-                        ...newBankAccount,
-                        accountNumber: e.target.value,
-                      })
-                    }
-                    placeholder="Nhập số tài khoản"
-                    className="bg-muted/30 focus-visible:ring-primary"
-                  />
+                    <Input
+                      value={newBankAccount.accountNumber}
+                      onChange={(e) =>
+                        setNewBankAccount({
+                          ...newBankAccount,
+                          accountNumber: e.target.value,
+                        })
+                      }
+                      placeholder="Nhập số tài khoản"
+                    className="h-10 bg-muted/30 focus-visible:ring-primary"
+                    />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold">
                     Chủ tài khoản *
                   </Label>
-                  <Input
-                    value={newBankAccount.accountHolder}
-                    onChange={(e) =>
-                      setNewBankAccount({
-                        ...newBankAccount,
-                        accountHolder: e.target.value.toUpperCase(),
-                      })
-                    }
-                    placeholder="TÊN CHỦ TÀI KHOẢN"
-                    className="bg-muted/30 focus-visible:ring-primary"
-                  />
+                    <Input
+                      value={newBankAccount.accountHolder}
+                      onChange={(e) =>
+                        setNewBankAccount({
+                          ...newBankAccount,
+                          accountHolder: e.target.value.toUpperCase(),
+                        })
+                      }
+                      placeholder="TÊN CHỦ TÀI KHOẢN"
+                    className="h-10 bg-muted/30 focus-visible:ring-primary"
+                    />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold">Chi nhánh</Label>
-                  <Input
-                    value={newBankAccount.branch}
-                    onChange={(e) =>
-                      setNewBankAccount({
-                        ...newBankAccount,
-                        branch: e.target.value,
-                      })
-                    }
-                    placeholder="VD: CN Hoàn Kiếm"
-                    className="bg-muted/30 focus-visible:ring-primary"
-                  />
+                    <Input
+                      value={newBankAccount.branch}
+                      onChange={(e) =>
+                        setNewBankAccount({
+                          ...newBankAccount,
+                          branch: e.target.value,
+                        })
+                      }
+                      placeholder="VD: CN Hoàn Kiếm"
+                    className="h-10 bg-muted/30 focus-visible:ring-primary"
+                    />
                 </div>
                 <div className="col-span-2 space-y-2">
                   <Label className="text-sm font-semibold">Ghi chú</Label>
-                  <Textarea
-                    value={newBankAccount.note}
-                    onChange={(e) =>
-                      setNewBankAccount({
-                        ...newBankAccount,
-                        note: e.target.value,
-                      })
-                    }
-                    placeholder="Ghi chú thêm (không bắt buộc)"
-                    rows={2}
-                    className="bg-muted/30 focus-visible:ring-primary resize-none"
-                  />
+                    <Textarea
+                      value={newBankAccount.note}
+                      onChange={(e) =>
+                        setNewBankAccount({
+                          ...newBankAccount,
+                          note: e.target.value,
+                        })
+                      }
+                      placeholder="Ghi chú thêm (không bắt buộc)"
+                      rows={2}
+                    className="min-h-[80px] bg-muted/30 focus-visible:ring-primary resize-none"
+                    />
                 </div>
               </div>
               <Button
+                type="button"
                 onClick={addBankAccount}
                 className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-12"
               >
@@ -376,6 +376,23 @@ export function EnterpriseBankAccountsStep() {
         </CardContent>
       </Card>
 
+      <BankSelectorDialog
+        open={isBankSelectorOpen}
+        onOpenChange={setIsBankSelectorOpen}
+        selectedId={selectedBank?.id || null}
+        onSelect={(bank) =>
+          setNewBankAccount({
+            ...newBankAccount,
+            bankName: bank.bankName,
+            accountNumber: bank.accountNumber,
+            accountHolder: bank.accountHolder,
+            branch: bank.branch,
+            note: bank.note,
+            logo: bank.logo,
+          })
+        }
+      />
+
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row items-center gap-4 justify-between">
           <h4 className="font-bold text-xl flex items-center gap-3">
@@ -424,7 +441,7 @@ export function EnterpriseBankAccountsStep() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {formData.bankAccounts
-              .filter((acc: any) => {
+              .filter((acc: BankAccount) => {
                 const query = bankSearchQuery.toLowerCase();
                 return (
                   acc.bankName.toLowerCase().includes(query) ||
@@ -432,7 +449,7 @@ export function EnterpriseBankAccountsStep() {
                   acc.accountHolder.toLowerCase().includes(query)
                 );
               })
-              .map((acc: any, index: number) => {
+              .map((acc: BankAccount, index: number) => {
                 const bankInfo = vietQrBankData.find((b) => b.bin === acc.bin);
 
                 return (
@@ -444,6 +461,7 @@ export function EnterpriseBankAccountsStep() {
                       <div className="w-14 h-14 rounded-xl border bg-white flex items-center justify-center p-2 shadow-sm shrink-0 group-hover:scale-105 transition-transform">
                         <img
                           src={
+                            acc.logo ||
                             bankInfo?.logo ||
                             "https://placehold.co/40x40?text=" +
                               acc.bankName?.[0]
