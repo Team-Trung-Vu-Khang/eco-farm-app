@@ -46,7 +46,9 @@ export const FarmerConfirmationStep = ({
         <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
           <Check className="w-10 h-10 text-primary" />
         </div>
-        <h3 className="font-display font-bold text-2xl mb-2">Kiểm tra thông tin</h3>
+        <h3 className="font-display font-bold text-2xl mb-2">
+          Kiểm tra thông tin
+        </h3>
         <p className="text-muted-foreground text-base">
           Vui lòng xem lại tất cả các thông tin trước khi hoàn tất đăng ký
         </p>
@@ -69,7 +71,11 @@ export const FarmerConfirmationStep = ({
             <CardHeader className="text-center pb-4">
               <div className="mx-auto w-24 h-24 -mt-16 rounded-full border-4 border-background bg-white shadow-xl flex items-center justify-center mb-4 overflow-hidden relative z-10 transition-transform hover:scale-105">
                 {formData.image ? (
-                  <img src={formData.image} alt="Logo" className="w-full h-full object-cover" />
+                  <img
+                    src={formData.image}
+                    alt="Logo"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <Image className="w-10 h-10 text-muted-foreground" />
                 )}
@@ -87,7 +93,8 @@ export const FarmerConfirmationStep = ({
                     variant="outline"
                     className="capitalize px-3 py-1 text-xs font-semibold bg-primary/5 text-primary border-primary/20"
                   >
-                    {classificationOptions.find((opt) => opt.value === item)?.label ?? item}
+                    {classificationOptions.find((opt) => opt.value === item)
+                      ?.label ?? item}
                   </Badge>
                 ))}
               </div>
@@ -97,15 +104,23 @@ export const FarmerConfirmationStep = ({
                 <div className="flex items-center gap-4">
                   <CreditCard className="w-4 h-4 text-primary" />
                   <div>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Mã nông hộ</p>
-                    <p className="font-bold text-base">{formData.code || "N/A"}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                      Mã nông hộ
+                    </p>
+                    <p className="font-bold text-base">
+                      {formData.code || "N/A"}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <User className="w-4 h-4 text-primary" />
                   <div>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Người đại diện</p>
-                    <p className="font-bold text-base">{formData.representative || "Chưa nhập"}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                      Người đại diện
+                    </p>
+                    <p className="font-bold text-base">
+                      {formData.representative || "Chưa nhập"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -114,7 +129,9 @@ export const FarmerConfirmationStep = ({
                 <div className="flex items-start gap-4">
                   <MapPin className="w-4 h-4 text-primary shrink-0" />
                   <div>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Địa chỉ</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                      Địa chỉ
+                    </p>
                     <p className="text-sm font-medium leading-normal">
                       {formData.address}
                       {formData.ward && `, ${formData.ward}`}
@@ -163,36 +180,19 @@ export const FarmerConfirmationStep = ({
                   </CardHeader>
                   <CardContent className="grid md:grid-cols-2 gap-8 py-6 px-6">
                     <div>
-                      <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">Mã số thuế</div>
-                      <div className="font-bold text-lg text-primary">{formData.taxCode || "-"}</div>
+                      <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
+                        Mã số thuế
+                      </div>
+                      <div className="font-bold text-lg text-primary">
+                        {formData.taxCode || "-"}
+                      </div>
                     </div>
                     <div>
-                      <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">Cơ quan thuế</div>
-                      <div className="font-medium text-base leading-relaxed">{formData.taxAuthority || "-"}</div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-primary/10">
-                  <CardHeader className="py-5 px-6 border-b bg-muted/5">
-                    <CardTitle className="text-lg flex items-center gap-3">
-                      <Users className="w-5 h-5 text-primary" />
-                      Thông tin liên hệ
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4 py-6 px-6">
-                    <div className="grid md:grid-cols-2 gap-8">
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest text">Hotline</div>
-                        <div className="font-bold text-lg text-primary flex items-center gap-2">
-                          <Phone className="w-4 h-4" /> {formData.phone || "-"}
-                        </div>
+                      <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
+                        Cơ quan thuế
                       </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">Email</div>
-                        <div className="font-medium text-base leading-relaxed flex items-center gap-2">
-                          <Mail className="w-4 h-4" /> {formData.email || "-"}
-                        </div>
+                      <div className="font-medium text-base leading-relaxed">
+                        {formData.taxAuthority || "-"}
                       </div>
                     </div>
                   </CardContent>
@@ -221,8 +221,7 @@ export const FarmerConfirmationStep = ({
                                 {contact.name}
                               </div>
                               <div className="text-sm font-medium text-muted-foreground flex items-center gap-2 mt-0.5">
-                                <Phone className="w-3 h-3" />{" "}
-                                {contact.phone}
+                                <Phone className="w-3 h-3" /> {contact.phone}
                               </div>
                             </div>
                           </div>
@@ -244,7 +243,9 @@ export const FarmerConfirmationStep = ({
                   <div className="flex items-center gap-3">
                     <CreditCard className="w-5 h-5 text-primary" />
                     <h4 className="font-bold text-lg">Tài khoản thanh toán</h4>
-                    <Badge variant="secondary">{formData.bankAccounts.length}</Badge>
+                    <Badge variant="secondary">
+                      {formData.bankAccounts.length}
+                    </Badge>
                   </div>
                   <div className="relative w-full md:w-80">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -260,7 +261,9 @@ export const FarmerConfirmationStep = ({
                 {formData.bankAccounts.length === 0 ? (
                   <div className="text-center py-16 border-2 border-dashed rounded-3xl bg-muted/5">
                     <CreditCard className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-                    <p className="text-muted-foreground font-medium">Chưa có tài khoản ngân hàng nào</p>
+                    <p className="text-muted-foreground font-medium">
+                      Chưa có tài khoản ngân hàng nào
+                    </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -274,27 +277,51 @@ export const FarmerConfirmationStep = ({
                         );
                       })
                       .map((acc, i) => {
-                        const bankInfo = vietQrBankData.find((b) => b.bin === acc.bin);
+                        const bankInfo = vietQrBankData.find(
+                          (b) => b.bin === acc.bin,
+                        );
                         return (
-                          <Card key={i} className="hover:border-primary/40 transition-all shadow-sm">
+                          <Card
+                            key={i}
+                            className="hover:border-primary/40 transition-all shadow-sm"
+                          >
                             <CardContent className="p-5">
                               <div className="flex items-center gap-4 mb-4">
                                 <div className="w-12 h-12 rounded-xl border bg-white flex items-center justify-center p-2">
-                                  <img src={bankInfo?.logo || "https://placehold.co/40x40"} alt={acc.bankName} className="w-full h-full object-contain" />
+                                  <img
+                                    src={
+                                      bankInfo?.logo ||
+                                      "https://placehold.co/40x40"
+                                    }
+                                    alt={acc.bankName}
+                                    className="w-full h-full object-contain"
+                                  />
                                 </div>
                                 <div className="min-w-0">
-                                  <h3 className="font-bold text-sm truncate">{acc.bankName}</h3>
-                                  <p className="text-lg font-mono font-black text-primary tracking-tight">{acc.accountNumber}</p>
+                                  <h3 className="font-bold text-sm truncate">
+                                    {acc.bankName}
+                                  </h3>
+                                  <p className="text-lg font-mono font-black text-primary tracking-tight">
+                                    {acc.accountNumber}
+                                  </p>
                                 </div>
                               </div>
                               <div className="grid grid-cols-2 gap-4 text-xs font-medium border-t pt-4">
                                 <div>
-                                  <span className="text-muted-foreground uppercase text-[9px] font-bold block mb-0.5">Chủ thẻ</span>
-                                  <div className="font-bold uppercase text-foreground truncate">{acc.accountHolder}</div>
+                                  <span className="text-muted-foreground uppercase text-[9px] font-bold block mb-0.5">
+                                    Chủ thẻ
+                                  </span>
+                                  <div className="font-bold uppercase text-foreground truncate">
+                                    {acc.accountHolder}
+                                  </div>
                                 </div>
                                 <div>
-                                  <span className="text-muted-foreground uppercase text-[9px] font-bold block mb-0.5">Chi nhánh</span>
-                                  <div className="font-bold text-foreground truncate">{acc.branch || "-"}</div>
+                                  <span className="text-muted-foreground uppercase text-[9px] font-bold block mb-0.5">
+                                    Chi nhánh
+                                  </span>
+                                  <div className="font-bold text-foreground truncate">
+                                    {acc.branch || "-"}
+                                  </div>
                                 </div>
                               </div>
                             </CardContent>
@@ -308,19 +335,34 @@ export const FarmerConfirmationStep = ({
               <TabsContent value="docs" className="m-0 space-y-6">
                 <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex items-center justify-center gap-3">
                   <FileText className="w-5 h-5 text-blue-600" />
-                  <h4 className="font-bold text-lg text-blue-900">Hồ sơ đính kèm</h4>
-                  <Badge className="bg-blue-100 text-blue-700 border-none ml-auto">{formData.documents.length} tệp</Badge>
+                  <h4 className="font-bold text-lg text-blue-900">
+                    Hồ sơ đính kèm
+                  </h4>
+                  <Badge className="bg-blue-100 text-blue-700 border-none ml-auto">
+                    {formData.documents.length} tệp
+                  </Badge>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {formData.documents.map((doc, i) => (
-                    <Card key={i} className="group overflow-hidden hover:border-blue-300 transition-all">
+                    <Card
+                      key={i}
+                      className="group overflow-hidden hover:border-blue-300 transition-all"
+                    >
                       <CardContent className="p-4 flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
-                          {doc.type.includes("image") ? <Image className="w-6 h-6 text-blue-600" /> : <FileText className="w-6 h-6 text-blue-600" />}
+                          {doc.type.includes("image") ? (
+                            <Image className="w-6 h-6 text-blue-600" />
+                          ) : (
+                            <FileText className="w-6 h-6 text-blue-600" />
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-sm truncate text-blue-900">{doc.name}</h4>
-                          <div className="text-xs font-medium text-blue-700 mt-1">{doc.size} • Thành công</div>
+                          <h4 className="font-bold text-sm truncate text-blue-900">
+                            {doc.name}
+                          </h4>
+                          <div className="text-xs font-medium text-blue-700 mt-1">
+                            {doc.size} • Thành công
+                          </div>
                         </div>
                         <Check className="w-4 h-4 text-green-600" />
                       </CardContent>

@@ -49,8 +49,10 @@ import {
 } from "lucide-react";
 import { PROVINCES } from "@/constants/province";
 import { vietQrBankData } from "@/constants/banks";
+import useContactStore from "@/stores/useContactStore";
 import { useEnterpriseFormContext } from "../../context/EnterpriseFormContext";
 import { useEffect, useRef, useState } from "react";
+import { ContactSelectorDialog } from "../ContactSelectorDialog";
 
 const classificationOptions = [
   { value: "production", label: "Sản xuất" },
@@ -69,6 +71,16 @@ const bankOptions = vietQrBankData.map((bank) => ({
 }));
 
 export function EnterpriseBasicInfoStep() {
+  return <EnterpriseBasicInfoStepContent showContactSelector />;
+}
+
+interface EnterpriseBasicInfoStepContentProps {
+  showContactSelector?: boolean;
+}
+
+function EnterpriseBasicInfoStepContent({
+  showContactSelector = true,
+}: EnterpriseBasicInfoStepContentProps) {
   const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
   const { toast } = useToast();
   const {
@@ -79,6 +91,12 @@ export function EnterpriseBasicInfoStep() {
     handleLogoDrop,
     handleImageUpload,
   } = useEnterpriseFormContext();
+  const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
+  const contactStore = useContactStore((state) => state.contacts);
+  const selectedContact = contactStore.find(
+    (contact) =>
+      contact.phone === formData.phone && contact.email === formData.email,
+  );
   const [addressQuery, setAddressQuery] = useState(formData.address || "");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<
@@ -127,7 +145,9 @@ export function EnterpriseBasicInfoStep() {
           }))
           .filter(
             (item) =>
-              item.address && Number.isFinite(item.lat) && Number.isFinite(item.lng),
+              item.address &&
+              Number.isFinite(item.lat) &&
+              Number.isFinite(item.lng),
           );
         setSuggestions(next);
         setShowSuggestions(next.length > 0);
@@ -377,7 +397,12 @@ export function EnterpriseBasicInfoStep() {
             <Select
               value={formData.province}
               onValueChange={(val) =>
-                setFormData({ ...formData, province: val, district: "", ward: "" })
+                setFormData({
+                  ...formData,
+                  province: val,
+                  district: "",
+                  ward: "",
+                })
               }
             >
               <SelectTrigger>
@@ -456,39 +481,17 @@ export function EnterpriseBasicInfoStep() {
                   <div className="font-medium text-slate-800 truncate">
                     {item.name || item.address}
                   </div>
-                  <div className="text-xs text-slate-500 truncate">{item.address}</div>
+                  <div className="text-xs text-slate-500 truncate">
+                    {item.address}
+                  </div>
                 </button>
               ))}
             </div>
           )}
           <p className="text-xs text-slate-500">
-            Tọa độ: {formData.latitude?.toFixed(6) ?? "--"}, {formData.longitude?.toFixed(6) ?? "--"}
+            Tọa độ: {formData.latitude?.toFixed(6) ?? "--"},{" "}
+            {formData.longitude?.toFixed(6) ?? "--"}
           </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="phone">Hotline</Label>
-            <Input
-              id="phone"
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
-              }
-              placeholder="09xx xxx xxx"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-              placeholder="email@example.com"
-            />
-          </div>
         </div>
       </div>
 

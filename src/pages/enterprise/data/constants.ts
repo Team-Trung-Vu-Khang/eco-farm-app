@@ -101,6 +101,18 @@ export const initialEnterprises: Enterprise[] = [
       "THACO AGRI thực hiện chiến lược đầu tư sản xuất nông nghiệp (trồng trọt, chăn nuôi) tích hợp/tuần hoàn, hữu cơ quy mô lớn trên nền tảng công nghiệp và số hóa trên toàn bộ diện tích 85.000 hecta tại 3 nước Việt Nam, Lào và Campuchia.",
     status: "active",
     createdAt: "2024-01-10",
+    contacts: [
+      {
+        name: "Trần Bá Dương",
+        phone: "0235 356 7161",
+        email: "info@thacoagri.vn",
+      },
+      {
+        name: "Phòng kinh doanh",
+        phone: "0235 356 7162",
+        email: "sales@thacoagri.vn",
+      },
+    ],
     bankAccounts: [
       {
         bankName: "Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)",
@@ -152,6 +164,18 @@ export const initialEnterprises: Enterprise[] = [
       "BAF Việt Nam hoạt động trong lĩnh vực chăn nuôi heo, sản xuất thức ăn chăn nuôi, chế biến thịt heo sạch với chuỗi giá trị khép kín từ trang trại đến bàn ăn.",
     status: "active",
     createdAt: "2024-01-12",
+    contacts: [
+      {
+        name: "Bùi Hương Giang",
+        phone: "028 39 11 00 99",
+        email: "info@baf.vn",
+      },
+      {
+        name: "Ban điều hành",
+        phone: "028 39 11 00 98",
+        email: "office@baf.vn",
+      },
+    ],
     bankAccounts: [
       {
         bankName: "Ngân hàng TMCP Công Thương Việt Nam (VietinBank)",
@@ -194,6 +218,13 @@ export const initialEnterprises: Enterprise[] = [
       "Tập đoàn Dabaco là doanh nghiệp hàng đầu trong lĩnh vực chăn nuôi, sản xuất thức ăn chăn nuôi, giống vật nuôi, trứng gà, dầu thực vật và thực phẩm chế biến.",
     status: "active",
     createdAt: "2024-01-15",
+    contacts: [
+      {
+        name: "Nguyễn Như So",
+        phone: "0222 3828 466",
+        email: "info@dabaco.com.vn",
+      },
+    ],
     bankAccounts: [
       {
         bankName:
@@ -247,6 +278,13 @@ export const initialEnterprises: Enterprise[] = [
       "Trung An chuyên sản xuất, chế biến và xuất khẩu gạo chất lượng cao, ứng dụng công nghệ cao vào sản xuất nông nghiệp sạch, an toàn.",
     status: "active",
     createdAt: "2024-01-18",
+    contacts: [
+      {
+        name: "Phạm Thái Bình",
+        phone: "0292 3857 937",
+        email: "trunganrice@gmail.com",
+      },
+    ],
     bankAccounts: [
       {
         bankName: "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam (BIDV)",
@@ -286,6 +324,18 @@ export const initialEnterprises: Enterprise[] = [
       "Chuyên trồng rau hữu cơ và nuôi gà thả vườn theo mô hình nông nghiệp sạch, cung cấp cho hệ thống siêu thị nội địa.",
     status: "active",
     createdAt: "2024-02-01",
+    contacts: [
+      {
+        name: "Nguyễn Văn An",
+        phone: "0909123456",
+        email: "nguyenvanan@gmail.com",
+      },
+      {
+        name: "Bộ phận kinh doanh",
+        phone: "0909123457",
+        email: "kinhdoanh.anphat@gmail.com",
+      },
+    ],
     bankAccounts: [
       {
         bankName:
@@ -326,6 +376,18 @@ export const initialEnterprises: Enterprise[] = [
       "Trang trại chăn nuôi heo theo mô hình khép kín, áp dụng quy trình VietGAP, cung cấp heo thịt cho các doanh nghiệp chế biến.",
     status: "active",
     createdAt: "2024-02-05",
+    contacts: [
+      {
+        name: "Trần Văn Tuấn",
+        phone: "0912345678",
+        email: "tranvantuan@gmail.com",
+      },
+      {
+        name: "Quản lý trại",
+        phone: "0912345679",
+        email: "quanly.tuanphat@gmail.com",
+      },
+    ],
     bankAccounts: [
       {
         bankName: "Ngân hàng TMCP Công Thương Việt Nam (VietinBank)",
@@ -365,6 +427,13 @@ export const initialEnterprises: Enterprise[] = [
       "Chuyên trồng sầu riêng, mít Thái và xoài cát theo tiêu chuẩn VietGAP, cung cấp cho thị trường nội địa và xuất khẩu.",
     status: "active",
     createdAt: "2024-02-10",
+    contacts: [
+      {
+        name: "Lê Thị Mai",
+        phone: "0988123456",
+        email: "lethimai@gmail.com",
+      },
+    ],
     bankAccounts: [
       {
         bankName: "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam (BIDV)",
@@ -404,6 +473,13 @@ export const initialEnterprises: Enterprise[] = [
       "Canh tác lúa chất lượng cao và nuôi vịt theo mô hình VAC, cung cấp cho hợp tác xã và thương lái địa phương.",
     status: "active",
     createdAt: "2024-02-15",
+    contacts: [
+      {
+        name: "Phạm Văn Bình",
+        phone: "0977123456",
+        email: "phamvanbinh@gmail.com",
+      },
+    ],
     bankAccounts: [
       {
         bankName:
@@ -444,6 +520,13 @@ export const initialEnterprises: Enterprise[] = [
       "Chuyên trồng hoa lan và rau củ công nghệ cao trong nhà kính, kết hợp dịch vụ tham quan nông trại.",
     status: "active",
     createdAt: "2024-02-20",
+    contacts: [
+      {
+        name: "Hoàng Thị Lan",
+        phone: "0966123456",
+        email: "hoangthilan@gmail.com",
+      },
+    ],
     bankAccounts: [
       {
         bankName: "Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)",

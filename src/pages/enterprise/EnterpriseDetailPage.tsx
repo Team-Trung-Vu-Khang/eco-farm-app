@@ -10,6 +10,7 @@ import {
 import { useEnterpriseDetail } from "./hooks/useEnterpriseDetail";
 import { EnterpriseOverviewCard } from "./components/EnterpriseOverviewCard";
 import { EnterpriseInfoTab } from "./components/tabs/EnterpriseInfoTab";
+import { EnterpriseContactsTab } from "./components/tabs/EnterpriseContactsTab";
 import { EnterpriseBranchesTab } from "./components/tabs/EnterpriseBranchesTab";
 import { EnterpriseBankAccountsTab } from "./components/tabs/EnterpriseBankAccountsTab";
 import { EnterpriseDocumentsTab } from "./components/tabs/EnterpriseDocumentsTab";
@@ -78,6 +79,12 @@ export default function EnterpriseDetailPage() {
                 Chi nhánh ({data.branches?.length || 0})
               </TabsTrigger>
               <TabsTrigger
+                value="contacts"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-3"
+              >
+                Liên hệ ({data.contacts?.length || 0})
+              </TabsTrigger>
+              <TabsTrigger
                 value="bankAccounts"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-3"
               >
@@ -103,6 +110,10 @@ export default function EnterpriseDetailPage() {
                   setBranchSearchQuery={setBranchSearchQuery}
                   setLocation={setLocation}
                 />
+              </TabsContent>
+
+              <TabsContent value="contacts" className="m-0 space-y-6">
+                <EnterpriseContactsTab data={data} />
               </TabsContent>
 
               <TabsContent value="bankAccounts" className="m-0 space-y-6">

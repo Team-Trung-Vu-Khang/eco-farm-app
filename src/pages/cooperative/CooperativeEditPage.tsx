@@ -13,6 +13,7 @@ import {
   StepperForm,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useMemo } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useCooperativeForm } from "./hooks/useCooperativeForm";
 import { BasicInfoStep } from "./components/steps/BasicInfoStep";
@@ -27,39 +28,45 @@ import useEnterpriseStore from "@/stores/useEnterpriseStore";
 export default function CooperativeEditPage() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/cooperative/:id/edit");
-  const getEnterpriseById = useEnterpriseStore((state) => state.getEnterpriseById);
+  const getEnterpriseById = useEnterpriseStore(
+    (state) => state.getEnterpriseById,
+  );
   const enterpriseId = params?.id ? Number(params.id) : null;
-  const cooperativeData = enterpriseId ? getEnterpriseById(enterpriseId) : undefined;
+  const cooperativeData = enterpriseId
+    ? getEnterpriseById(enterpriseId)
+    : undefined;
 
-  const initialData: Partial<CooperativeFormData> | null = cooperativeData
-    ? {
-        id: cooperativeData.id,
-        type: "cooperative",
-        code: cooperativeData.code,
-        name: cooperativeData.name,
-        brandName: cooperativeData.brandName || "",
-        taxCode: cooperativeData.taxCode || "",
-        taxAddress: cooperativeData.taxAddress || "",
-        taxAuthority: cooperativeData.taxAuthority || "",
-        issueDate: cooperativeData.issueDate || "",
-        classification: cooperativeData.classification || [],
-        foundedDate: cooperativeData.foundedDate || "",
-        representative: cooperativeData.representative || "",
-        website: cooperativeData.website || "",
-        phone: cooperativeData.phone || "",
-        email: cooperativeData.email || "",
-        province: cooperativeData.province || "",
-        district: cooperativeData.district || "",
-        ward: cooperativeData.ward || "",
-        address: cooperativeData.address || "",
-        image: cooperativeData.image || "",
-        description: cooperativeData.description || "",
-        contacts: cooperativeData.contacts || [],
-        branches: cooperativeData.branches || [],
-        bankAccounts: cooperativeData.bankAccounts || [],
-        documents: cooperativeData.documents || [],
-      }
-    : null;
+  const initialData: Partial<CooperativeFormData> | null = useMemo(() => {
+    if (!cooperativeData) return null;
+
+    return {
+      id: cooperativeData.id,
+      type: "cooperative",
+      code: cooperativeData.code,
+      name: cooperativeData.name,
+      brandName: cooperativeData.brandName || "",
+      taxCode: cooperativeData.taxCode || "",
+      taxAddress: cooperativeData.taxAddress || "",
+      taxAuthority: cooperativeData.taxAuthority || "",
+      issueDate: cooperativeData.issueDate || "",
+      classification: cooperativeData.classification || [],
+      foundedDate: cooperativeData.foundedDate || "",
+      representative: cooperativeData.representative || "",
+      website: cooperativeData.website || "",
+      phone: cooperativeData.phone || "",
+      email: cooperativeData.email || "",
+      province: cooperativeData.province || "",
+      district: cooperativeData.district || "",
+      ward: cooperativeData.ward || "",
+      address: cooperativeData.address || "",
+      image: cooperativeData.image || "",
+      description: cooperativeData.description || "",
+      contacts: cooperativeData.contacts || [],
+      branches: cooperativeData.branches || [],
+      bankAccounts: cooperativeData.bankAccounts || [],
+      documents: cooperativeData.documents || [],
+    };
+  }, [cooperativeData]);
 
   const {
     formData,
@@ -163,7 +170,7 @@ export default function CooperativeEditPage() {
       description: "Tài khoản thanh toán",
       content: (
         <BankInfoStep
-          formData={formData}
+          bankAccounts={formData.bankAccounts}
           newBankAccount={newBankAccount}
           setNewBankAccount={setNewBankAccount}
           bankInputMethod={bankInputMethod}
@@ -185,8 +192,8 @@ export default function CooperativeEditPage() {
     },
     {
       id: "documents",
-      title: "Tài liệu",
-      description: "Giấy phép, chứng chỉ",
+      title: "Giấy chứng nhận đăng ký hợp tác xã",
+      description: "Do cơ quan đăng ký kinh doanh cấp huyện cấp",
       content: (
         <DocumentsStep
           formData={formData}

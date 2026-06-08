@@ -1,35 +1,29 @@
 import {
+  Badge,
+  Button,
   Card,
+  CardContent,
   CardHeader,
   CardTitle,
-  CardContent,
-  Label,
   Input,
-  Button,
-  Badge,
+  Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useState } from "react";
-import { Plus, Users, User, Trash2, CreditCard } from "lucide-react";
-import type { Contact, CooperativeFormData } from "../../types/types";
+import { Mail, Phone, Plus, Trash2, User, Users } from "lucide-react";
 import useContactStore from "@/stores/useContactStore";
 import { ContactSelectorDialog } from "../ContactSelectorDialog";
+import { useEnterpriseFormContext } from "../../context/EnterpriseFormContext";
 
-interface ContactInfoStepProps {
-  formData: CooperativeFormData;
-  newContact: Contact;
-  setNewContact: (contact: Contact) => void;
-  addContact: () => void;
-  removeContact: (index: number) => void;
-}
-
-export function ContactInfoStep({
-  formData,
-  newContact,
-  setNewContact,
-  addContact,
-  removeContact,
-}: ContactInfoStepProps) {
+export function EnterpriseContactsStep() {
   const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
+  const {
+    formData,
+    newContact,
+    setNewContact,
+    addContact,
+    removeContact,
+  } = useEnterpriseFormContext();
+
   const contactStore = useContactStore((state) => state.contacts);
   const selectedContact = contactStore.find(
     (contact) =>
@@ -37,7 +31,6 @@ export function ContactInfoStep({
       contact.phone === newContact.phone &&
       contact.email === newContact.email,
   );
-  const selectedContactId = selectedContact?.id ?? null;
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
@@ -127,7 +120,7 @@ export function ContactInfoStep({
       <ContactSelectorDialog
         open={isContactDialogOpen}
         onOpenChange={setIsContactDialogOpen}
-        selectedId={selectedContactId}
+        selectedId={selectedContact?.id || null}
         onSelect={(contact) =>
           setNewContact({
             name: contact.fullName,
@@ -178,14 +171,12 @@ export function ContactInfoStep({
                   </div>
                   <div className="space-y-1 text-sm text-muted-foreground ml-10">
                     <div className="flex items-center gap-2">
-                      <CreditCard className="w-3 h-3" />
+                      <Phone className="w-3 h-3" />
                       <span>{contact.phone}</span>
                     </div>
                     {contact.email && (
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 flex items-center justify-center">
-                          @
-                        </span>
+                        <Mail className="w-3 h-3" />
                         <span className="truncate">{contact.email}</span>
                       </div>
                     )}

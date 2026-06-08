@@ -8,6 +8,32 @@ import { useLocation } from "wouter";
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 import type { Enterprise } from "../data/constants";
 
+const formatContactTooltip = (enterprise: Enterprise) => {
+  const contacts = enterprise.contacts?.length
+    ? enterprise.contacts
+    : enterprise.phone || enterprise.email
+      ? [
+          {
+            name: enterprise.representative || enterprise.name,
+            phone: enterprise.phone,
+            email: enterprise.email,
+          },
+        ]
+      : [];
+
+  return contacts
+    .map((contact, index) => {
+      const parts = [
+        `${index + 1}. ${contact.name || "Liên hệ"}`,
+        contact.phone ? `SĐT: ${contact.phone}` : null,
+        contact.email ? `Email: ${contact.email}` : null,
+      ].filter(Boolean);
+
+      return parts.join(" | ");
+    })
+    .join("\n");
+};
+
 export function useEnterprisePage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -59,8 +85,68 @@ export function useEnterprisePage() {
         });
       },
     },
-    { key: "phone", label: "Điện thoại" },
-    { key: "email", label: "Email" },
+    {
+      key: "phone",
+      label: "Điện thoại",
+      render: (_value, row) => {
+        const contacts = row.contacts?.length
+          ? row.contacts
+          : row.phone || row.email
+            ? [
+                {
+                  name: row.representative || row.name,
+                  phone: row.phone,
+                  email: row.email,
+                },
+              ]
+            : [];
+
+        const primaryContact = contacts[0];
+        const extraCount = Math.max(0, contacts.length - 1);
+
+        return (
+          <div className="max-w-[240px] space-y-1" title={formatContactTooltip(row)}>
+            <div className="font-medium truncate">{primaryContact?.phone || "-"}</div>
+            {extraCount > 0 && (
+              <div className="text-xs text-muted-foreground">
+                +{extraCount} liên hệ khác
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: "email",
+      label: "Email",
+      render: (_value, row) => {
+        const contacts = row.contacts?.length
+          ? row.contacts
+          : row.phone || row.email
+            ? [
+                {
+                  name: row.representative || row.name,
+                  phone: row.phone,
+                  email: row.email,
+                },
+              ]
+            : [];
+
+        const primaryContact = contacts[0];
+        const extraCount = Math.max(0, contacts.length - 1);
+
+        return (
+          <div className="max-w-[240px] space-y-1" title={formatContactTooltip(row)}>
+            <div className="font-medium truncate">{primaryContact?.email || "-"}</div>
+            {extraCount > 0 && (
+              <div className="text-xs text-muted-foreground">
+                +{extraCount} liên hệ khác
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
     { key: "address", label: "Địa chỉ" },
     {
       key: "status",

@@ -4,15 +4,17 @@ import { vietQrBankData } from "@/constants/banks";
 import useEnterpriseStore from "@/stores/useEnterpriseStore";
 import { parseVietQR } from "@/utils/commons";
 import QrScanner from "qr-scanner";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import readXlsxFile from "read-excel-file";
 import { useLocation } from "wouter";
 import { EnterpriseBankAccountsStep } from "../components/steps/EnterpriseBankAccountsStep";
 import { EnterpriseBasicInfoStep } from "../components/steps/EnterpriseBasicInfoStep";
+import { EnterpriseContactsStep } from "../components/steps/EnterpriseContactsStep";
+import { EnterpriseBranchesStep } from "../components/steps/EnterpriseBranchesStep";
 import { EnterpriseConfirmationStep } from "../components/steps/EnterpriseConfirmationStep";
 import { EnterpriseDocumentsStep } from "../components/steps/EnterpriseDocumentsStep";
 
-import type { BankAccount } from "../data/constants";
+import type { BankAccount, Branch, Contact } from "../data/constants";
 import type { EnterpriseFormData } from "../types";
 
 export function useEnterpriseCreateForm() {
@@ -56,10 +58,27 @@ export function useEnterpriseCreateForm() {
     note: "",
     bin: "",
   });
+  const [newContact, setNewContact] = useState<Contact>({
+    name: "",
+    phone: "",
+    email: "",
+  });
+  const [newBranch, setNewBranch] = useState<Branch>({
+    name: "",
+    taxCode: "",
+    phone: "",
+    taxAddress: "",
+    email: "",
+    address: "",
+    note: "",
+  });
 
   const [bankInputMethod, setBankInputMethod] = useState<
     "manual" | "excel" | "qr-image" | "qr-scan"
   >("manual");
+  const [branchInputMethod, setBranchInputMethod] = useState<
+    "create" | "excel"
+  >("create");
   const [hasCamera, setHasCamera] = useState(false);
   const [bankSearchQuery, setBankSearchQuery] = useState("");
   const [confirmBankSearchQuery, setConfirmBankSearchQuery] = useState("");
@@ -173,6 +192,64 @@ export function useEnterpriseCreateForm() {
     }
   };
 
+  const processBranchExcelFile = async (file: File) => {
+    try {
+      const rows = await readXlsxFile(file);
+      const dataRows = rows.slice(1);
+      const importedBranches: Branch[] = [];
+
+      for (const row of dataRows) {
+        if (row[0]) {
+          importedBranches.push({
+            name: row[0].toString().trim(),
+            taxCode: row[1] ? row[1].toString().trim() : "",
+            phone: row[2] ? row[2].toString().trim() : "",
+            email: row[3] ? row[3].toString().trim() : "",
+            taxAddress: row[4] ? row[4].toString().trim() : "",
+            address: row[5] ? row[5].toString().trim() : "",
+            note: row[6] ? row[6].toString().trim() : "Nhập từ Excel",
+          });
+        }
+      }
+
+      if (importedBranches.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          branches: [...prev.branches, ...importedBranches],
+        }));
+        toast({
+          title: "Thành công",
+          description: `Đã nhập ${importedBranches.length} chi nhánh từ Excel`,
+        });
+        setBranchInputMethod("create");
+      } else {
+        toast({
+          title: "Lỗi",
+          description: "Không tìm thấy dữ liệu hợp lệ trong file Excel",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description:
+          "Không thể đọc file Excel. Vui lòng kiểm tra lại định dạng.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBranchExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processBranchExcelFile(file);
+  };
+
+  const handleBranchExcelDrop = (e: React.DragEvent) => {
+    handleDrag("branch-excel", e);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processBranchExcelFile(file);
+  };
+
   const processQRImage = async (file: File) => {
     try {
       const result = await QrScanner.scanImage(file);
@@ -269,21 +346,24 @@ export function useEnterpriseCreateForm() {
   };
 
   const processDocuments = (files: FileList) => {
-    const newDocs = Array.from(files).map((file) => ({
+    const file = files[0];
+    if (!file) return;
+
+    const newDoc = {
       name: file.name,
       type: file.type,
       size: (file.size / (1024 * 1024)).toFixed(1) + " MB",
       url: URL.createObjectURL(file),
-    }));
+    };
 
     setFormData((prev) => ({
       ...prev,
-      documents: [...prev.documents, ...newDocs],
+      documents: [newDoc],
     }));
 
     toast({
       title: "Đã tải lên",
-      description: `Đã thêm ${newDocs.length} tài liệu.`,
+      description: "Đã tải lên tài liệu.",
     });
   };
 
@@ -324,6 +404,64 @@ export function useEnterpriseCreateForm() {
     setFormData({
       ...formData,
       bankAccounts: formData.bankAccounts.filter((_, i) => i !== index),
+    });
+  };
+
+  const addContact = () => {
+    if (newContact.name.trim() && newContact.phone.trim()) {
+      setFormData((prev) => ({
+        ...prev,
+        contacts: [...prev.contacts, newContact],
+      }));
+      setNewContact({
+        name: "",
+        phone: "",
+        email: "",
+      });
+    } else {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng nhập tên và số điện thoại liên hệ",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const removeContact = (index: number) => {
+    setFormData({
+      ...formData,
+      contacts: formData.contacts.filter((_, i) => i !== index),
+    });
+  };
+
+  const addBranch = () => {
+    if (newBranch.name.trim()) {
+      setFormData({
+        ...formData,
+        branches: [...formData.branches, newBranch],
+      });
+      setNewBranch({
+        name: "",
+        taxCode: "",
+        phone: "",
+        taxAddress: "",
+        email: "",
+        address: "",
+        note: "",
+      });
+    } else {
+      toast({
+        title: "Lỗi",
+        description: "Tên chi nhánh không được để trống",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const removeBranch = (index: number) => {
+    setFormData({
+      ...formData,
+      branches: formData.branches.filter((_, i) => i !== index),
     });
   };
 
@@ -381,40 +519,99 @@ export function useEnterpriseCreateForm() {
     setLocation("/enterprise");
   };
 
-  const steps: Step[] = [
-    {
-      id: "basic",
-      title: "Thông tin cơ bản",
-      description: "Tên, thương hiệu, mã, thuế",
-      content: <EnterpriseBasicInfoStep />,
-      isValid: formData.name.length > 0 && formData.code.length > 0,
-    },
-    {
-      id: "bank",
-      title: "Ngân hàng",
-      description: "Tài khoản thanh toán",
-      content: <EnterpriseBankAccountsStep />,
-    },
-    {
-      id: "documents",
-      title: "Giấy phép kinh doanh",
-      description:
-        "Tải lên hoặc kiểm tra các giấy tờ pháp lý liên quan đến doanh nghiệp.",
-      content: <EnterpriseDocumentsStep />,
-    },
-    {
+  const steps: Step[] = useMemo(() => {
+    const nextSteps: Step[] = [
+      {
+        id: "basic",
+        title: "Thông tin cơ bản",
+        description: "Tên, thương hiệu, mã, thuế",
+        content: <EnterpriseBasicInfoStep />,
+        isValid: formData.name.length > 0 && formData.code.length > 0,
+      },
+      {
+        id: "contacts",
+        title: "Thông tin liên hệ",
+        description: "Danh sách liên hệ",
+        content: <EnterpriseContactsStep />,
+        isValid: formData.contacts.length > 0,
+      },
+      {
+        id: "branches",
+        title: "Chi nhánh",
+        description: "Quản lý chi nhánh",
+        content: <EnterpriseBranchesStep />,
+      },
+      {
+        id: "bank",
+        title: "Ngân hàng",
+        description: "Tài khoản thanh toán",
+        content: <EnterpriseBankAccountsStep />,
+      },
+    ];
+
+    if (formData.type !== "farm") {
+      nextSteps.push({
+        id: "documents",
+        title:
+          formData.type === "cooperative"
+            ? "Giấy chứng nhận đăng ký hợp tác xã (do cơ quan đăng ký kinh doanh cấp huyện cấp)."
+            : "Giấy phép kinh doanh",
+        description:
+          formData.type === "cooperative"
+            ? "Giấy chứng nhận đăng ký hợp tác xã (do cơ quan đăng ký kinh doanh cấp huyện cấp)."
+            : "Tải lên hoặc kiểm tra các giấy tờ pháp lý liên quan đến doanh nghiệp.",
+        content: (
+          <EnterpriseDocumentsStep
+            title={
+              formData.type === "cooperative"
+                ? "Giấy chứng nhận đăng ký hợp tác xã (do cơ quan đăng ký kinh doanh cấp huyện cấp)."
+                : "Sửa giấy phép kinh doanh"
+            }
+            description={
+              formData.type === "cooperative"
+                ? "Giấy chứng nhận đăng ký hợp tác xã (do cơ quan đăng ký kinh doanh cấp huyện cấp)."
+                : "Chỉ upload 1 file giấy phép kinh doanh."
+            }
+            uploadLabel="Chọn file"
+          />
+        ),
+      });
+    }
+
+    nextSteps.push({
       id: "confirm",
       title: "Xác nhận",
       description: "Kiểm tra thông tin",
       content: <EnterpriseConfirmationStep />,
-    },
-  ];
+    });
+
+    return nextSteps;
+  }, [
+    formData.bankAccounts.length,
+    formData.branches.length,
+    formData.code,
+    formData.contacts.length,
+    formData.name,
+    formData.type,
+  ]);
 
   return {
     isDragging,
     handleDrag,
     handleLogoDrop,
     handleImageUpload,
+    newContact,
+    setNewContact,
+    addContact,
+    removeContact,
+    newBranch,
+    setNewBranch,
+    branchInputMethod,
+    setBranchInputMethod,
+    handleBranchExcelDrop,
+    handleBranchExcelUpload,
+    addBranch,
+    removeBranch,
     bankInputMethod,
     setBankInputMethod,
     hasCamera,

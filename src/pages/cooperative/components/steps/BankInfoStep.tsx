@@ -28,12 +28,15 @@ import {
   CreditCard,
 } from "lucide-react";
 import { Scanner } from "@yudiel/react-qr-scanner";
-import type { BankAccount, CooperativeFormData } from "../../types/types";
+import { useState } from "react";
+import useBankStore from "@/stores/useBankStore";
+import type { BankAccount } from "../../types/types";
 import { BANK_OPTIONS } from "../../data/constants";
 import { vietQrBankData } from "@/constants/banks";
+import { BankSelectorDialog } from "../BankSelectorDialog";
 
 interface BankInfoStepProps {
-  formData: CooperativeFormData;
+  bankAccounts: BankAccount[];
   newBankAccount: BankAccount;
   setNewBankAccount: (acc: BankAccount) => void;
   bankInputMethod: "manual" | "excel" | "qr-image" | "qr-scan";
@@ -55,7 +58,7 @@ interface BankInfoStepProps {
 }
 
 export function BankInfoStep({
-  formData,
+  bankAccounts = [],
   newBankAccount,
   setNewBankAccount,
   bankInputMethod,
@@ -73,6 +76,16 @@ export function BankInfoStep({
   addBankAccount,
   removeBankAccount,
 }: BankInfoStepProps) {
+  const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
+  const safeBankAccounts = bankAccounts ?? [];
+  const bankStoreAccounts = useBankStore((state) => state.bankAccounts);
+  const selectedBank = bankStoreAccounts.find(
+    (account) =>
+      account.bankName === newBankAccount.bankName &&
+      account.accountNumber === newBankAccount.accountNumber &&
+      account.accountHolder === newBankAccount.accountHolder,
+  );
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <Card className="overflow-hidden border-primary/20 shadow-lg">
@@ -123,24 +136,47 @@ export function BankInfoStep({
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold">
-                    Chọn Ngân hàng *
+                    Chọn tài khoản từ danh sách
                   </Label>
-                  <Combobox
-                    options={BANK_OPTIONS}
-                    value={newBankAccount.bin}
-                    onChange={(val) =>
-                      setNewBankAccount({
-                        ...newBankAccount,
-                        bin: val,
-                        bankName:
-                          BANK_OPTIONS.find((bank) => bank.bin === val)
-                            ?.label || "",
-                      })
-                    }
-                    placeholder="Chọn ngân hàng..."
-                    searchPlaceholder="Tìm tên ngân hàng..."
-                    className="w-full"
-                  />
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsBankDialogOpen(true)}
+                      className="h-10 flex-1 justify-between border-primary/20 bg-muted/20 text-left font-normal hover:border-primary/40 hover:bg-primary/5"
+                    >
+                      <span className="truncate">
+                        {selectedBank
+                          ? `${selectedBank.bankName} - ${selectedBank.accountNumber}`
+                          : "Chọn ngân hàng..."}
+                      </span>
+                      <Search className="w-4 h-4 shrink-0 text-muted-foreground" />
+                    </Button>
+                    {(newBankAccount.bankName ||
+                      newBankAccount.accountNumber) && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() =>
+                          setNewBankAccount({
+                            bankName: "",
+                            accountHolder: "",
+                            accountNumber: "",
+                            branch: "",
+                            note: "",
+                            bin: "",
+                          })
+                        }
+                        className="h-10 px-3 text-muted-foreground"
+                      >
+                        Xóa
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Chọn nhanh từ danh sách tài khoản sẵn có hoặc nhập mới bên
+                    dưới.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold">
@@ -360,6 +396,28 @@ export function BankInfoStep({
         </CardContent>
       </Card>
 
+      <BankSelectorDialog
+        open={isBankDialogOpen}
+        onOpenChange={setIsBankDialogOpen}
+        selectedId={selectedBank?.id || null}
+        onSelect={(account) =>
+          setNewBankAccount({
+            bankName: account.bankName,
+            accountHolder: account.accountHolder,
+            accountNumber: account.accountNumber,
+            branch: account.branch,
+            note: account.note,
+            bin:
+              vietQrBankData.find(
+                (bank) =>
+                  bank.name.toLowerCase() === account.bankName.toLowerCase() ||
+                  bank.shortName.toLowerCase() ===
+                    account.bankName.toLowerCase(),
+              )?.bin || "",
+          })
+        }
+      />
+
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row items-center gap-4 justify-between">
           <h4 className="font-bold text-xl flex items-center gap-3">
@@ -368,10 +426,10 @@ export function BankInfoStep({
               variant="secondary"
               className="px-3 py-1 rounded-full text-sm"
             >
-              {formData.bankAccounts.length}
+              {safeBankAccounts.length}
             </Badge>
           </h4>
-          {formData.bankAccounts.length > 0 && (
+          {safeBankAccounts.length > 0 && (
             <p className="hidden md:block text-sm text-muted-foreground italic">
               * Nhấn vào biểu tượng thùng rác để xóa tài khoản
             </p>
@@ -379,7 +437,7 @@ export function BankInfoStep({
         </div>
 
         <div className="flex flex-col md:flex-row items-center gap-4 justify-between">
-          {formData.bankAccounts.length > 0 && (
+          {safeBankAccounts.length > 0 && (
             <div className="relative w-full md:w-72 group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
               <Input
@@ -392,7 +450,7 @@ export function BankInfoStep({
           )}
         </div>
 
-        {formData.bankAccounts.length === 0 ? (
+        {safeBankAccounts.length === 0 ? (
           <div className="text-center py-16 border-2 border-dashed rounded-3xl bg-muted/5 transition-colors hover:bg-muted/10">
             <div className="w-20 h-20 rounded-full bg-muted/40 flex items-center justify-center mx-auto mb-4 group">
               <CreditCard className="w-10 h-10 text-muted-foreground group-hover:scale-110 transition-transform" />
@@ -407,7 +465,7 @@ export function BankInfoStep({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {formData.bankAccounts
+            {safeBankAccounts
               .filter((acc) => {
                 const query = bankSearchQuery.toLowerCase();
                 return (

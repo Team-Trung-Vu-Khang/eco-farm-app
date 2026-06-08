@@ -2,6 +2,32 @@ import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { Enterprise } from "@/pages/enterprise/data/constants";
 import { vietQrBankData } from "../../../constants/banks";
 
+const formatContactTooltip = (cooperative: Enterprise) => {
+  const contacts = cooperative.contacts?.length
+    ? cooperative.contacts
+    : cooperative.phone || cooperative.email
+      ? [
+          {
+            name: cooperative.representative || cooperative.name,
+            phone: cooperative.phone,
+            email: cooperative.email,
+          },
+        ]
+      : [];
+
+  return contacts
+    .map((contact, index) => {
+      const parts = [
+        `${index + 1}. ${contact.name || "Liên hệ"}`,
+        contact.phone ? `SĐT: ${contact.phone}` : null,
+        contact.email ? `Email: ${contact.email}` : null,
+      ].filter(Boolean);
+
+      return parts.join(" | ");
+    })
+    .join("\n");
+};
+
 export const INITIAL_DATA: Enterprise[] = [
   {
     id: 2,
@@ -17,6 +43,18 @@ export const INITIAL_DATA: Enterprise[] = [
     email: "nguyenvana@gmail.com",
     status: "active",
     createdAt: "2024-01-12",
+    contacts: [
+      {
+        name: "Nguyễn Văn A",
+        phone: "0912345678",
+        email: "nguyenvana@gmail.com",
+      },
+      {
+        name: "Bộ phận kinh doanh",
+        phone: "0912345679",
+        email: "kinhdoanh@ecofarm.vn",
+      },
+    ],
   },
   {
     id: 3,
@@ -32,6 +70,13 @@ export const INITIAL_DATA: Enterprise[] = [
     email: "htxnongsansach@gmail.com",
     status: "active",
     createdAt: "2024-01-15",
+    contacts: [
+      {
+        name: "Trần Thị B",
+        phone: "0923456789",
+        email: "htxnongsansach@gmail.com",
+      },
+    ],
   },
   {
     id: 4,
@@ -47,6 +92,13 @@ export const INITIAL_DATA: Enterprise[] = [
     email: "htxnongsansach@gmail.com",
     status: "active",
     createdAt: "2024-01-15",
+    contacts: [
+      {
+        name: "Lê Văn C",
+        phone: "0923456789",
+        email: "htxnongsansach@gmail.com",
+      },
+    ],
   },
 ];
 
@@ -85,8 +137,68 @@ export const COOPERATIVE_COLUMNS: Column<Enterprise>[] = [
       });
     },
   },
-  { key: "phone", label: "Điện thoại" },
-  { key: "email", label: "Email" },
+  {
+    key: "phone",
+    label: "Điện thoại",
+    render: (_value, row) => {
+      const contacts = row.contacts?.length
+        ? row.contacts
+        : row.phone || row.email
+          ? [
+              {
+                name: row.representative || row.name,
+                phone: row.phone,
+                email: row.email,
+              },
+            ]
+          : [];
+
+      const primaryContact = contacts[0];
+      const extraCount = Math.max(0, contacts.length - 1);
+
+      return (
+        <div className="max-w-[240px] space-y-1" title={formatContactTooltip(row)}>
+          <div className="font-medium truncate">{primaryContact?.phone || "-"}</div>
+          {extraCount > 0 && (
+            <div className="text-xs text-muted-foreground">
+              +{extraCount} liên hệ khác
+            </div>
+          )}
+        </div>
+      );
+    },
+  },
+  {
+    key: "email",
+    label: "Email",
+    render: (_value, row) => {
+      const contacts = row.contacts?.length
+        ? row.contacts
+        : row.phone || row.email
+          ? [
+              {
+                name: row.representative || row.name,
+                phone: row.phone,
+                email: row.email,
+              },
+            ]
+          : [];
+
+      const primaryContact = contacts[0];
+      const extraCount = Math.max(0, contacts.length - 1);
+
+      return (
+        <div className="max-w-[240px] space-y-1" title={formatContactTooltip(row)}>
+          <div className="font-medium truncate">{primaryContact?.email || "-"}</div>
+          {extraCount > 0 && (
+            <div className="text-xs text-muted-foreground">
+              +{extraCount} liên hệ khác
+            </div>
+          )}
+        </div>
+      );
+    },
+  },
   { key: "address", label: "Địa chỉ" },
   {
     key: "status",

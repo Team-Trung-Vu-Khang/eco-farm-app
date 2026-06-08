@@ -443,10 +443,10 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
       newBankAccount.accountNumber &&
       newBankAccount.accountHolder
     ) {
-      setFormData({
-        ...formData,
-        bankAccounts: [newBankAccount, ...formData.bankAccounts],
-      });
+      setFormData((prev) => ({
+        ...prev,
+        bankAccounts: [newBankAccount, ...prev.bankAccounts],
+      }));
       setNewBankAccount({
         bankName: "",
         accountHolder: "",
@@ -465,10 +465,10 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
   };
 
   const removeBankAccount = (index: number) => {
-    setFormData({
-      ...formData,
-      bankAccounts: formData.bankAccounts.filter((_, i) => i !== index),
-    });
+    setFormData((prev) => ({
+      ...prev,
+      bankAccounts: prev.bankAccounts.filter((_, i) => i !== index),
+    }));
   };
 
   const handleComplete = () => {

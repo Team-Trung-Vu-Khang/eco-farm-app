@@ -1,6 +1,32 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { Enterprise } from "../../enterprise/data/constants";
 
+const formatContactTooltip = (farmer: Enterprise) => {
+  const contacts = farmer.contacts?.length
+    ? farmer.contacts
+    : farmer.phone || farmer.email
+      ? [
+          {
+            name: farmer.representative || farmer.name,
+            phone: farmer.phone,
+            email: farmer.email,
+          },
+        ]
+      : [];
+
+  return contacts
+    .map((contact, index) => {
+      const parts = [
+        `${index + 1}. ${contact.name || "Liên hệ"}`,
+        contact.phone ? `SĐT: ${contact.phone}` : null,
+        contact.email ? `Email: ${contact.email}` : null,
+      ].filter(Boolean);
+
+      return parts.join(" | ");
+    })
+    .join("\n");
+};
+
 export const farmerColumns: Column<Enterprise>[] = [
   { key: "code", label: "Mã" },
   {
@@ -34,8 +60,68 @@ export const farmerColumns: Column<Enterprise>[] = [
       ));
     },
   },
-  { key: "phone", label: "Điện thoại" },
-  { key: "email", label: "Email" },
+  {
+    key: "phone",
+    label: "Điện thoại",
+    render: (_value, row) => {
+      const contacts = row.contacts?.length
+        ? row.contacts
+        : row.phone || row.email
+          ? [
+              {
+                name: row.representative || row.name,
+                phone: row.phone,
+                email: row.email,
+              },
+            ]
+          : [];
+
+      const primaryContact = contacts[0];
+      const extraCount = Math.max(0, contacts.length - 1);
+
+      return (
+        <div className="max-w-[240px] space-y-1" title={formatContactTooltip(row)}>
+          <div className="font-medium truncate">{primaryContact?.phone || "-"}</div>
+          {extraCount > 0 && (
+            <div className="text-xs text-muted-foreground">
+              +{extraCount} liên hệ khác
+            </div>
+          )}
+        </div>
+      );
+    },
+  },
+  {
+    key: "email",
+    label: "Email",
+    render: (_value, row) => {
+      const contacts = row.contacts?.length
+        ? row.contacts
+        : row.phone || row.email
+          ? [
+              {
+                name: row.representative || row.name,
+                phone: row.phone,
+                email: row.email,
+              },
+            ]
+          : [];
+
+      const primaryContact = contacts[0];
+      const extraCount = Math.max(0, contacts.length - 1);
+
+      return (
+        <div className="max-w-[240px] space-y-1" title={formatContactTooltip(row)}>
+          <div className="font-medium truncate">{primaryContact?.email || "-"}</div>
+          {extraCount > 0 && (
+            <div className="text-xs text-muted-foreground">
+              +{extraCount} liên hệ khác
+            </div>
+          )}
+        </div>
+      );
+    },
+  },
   { key: "address", label: "Địa chỉ" },
   {
     key: "status",

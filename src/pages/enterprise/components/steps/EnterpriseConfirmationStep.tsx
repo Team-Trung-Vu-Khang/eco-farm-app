@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useEnterpriseFormContext } from "../../context/EnterpriseFormContext";
-import type { BankAccount, Branch } from "../../data/constants";
+import type { BankAccount, Branch, Contact } from "../../data/constants";
 import type { EnterpriseDocument } from "../../types";
 
 const classificationOptions = [
@@ -45,6 +45,7 @@ const classificationOptions = [
 export function EnterpriseConfirmationStep() {
   const { formData } = useEnterpriseFormContext();
   const [confirmBankSearchQuery, setConfirmBankSearchQuery] = useState("");
+  const defaultContact = formData.contacts[0];
 
   return (
     <div className="space-y-10 max-w-6xl mx-auto">
@@ -208,6 +209,12 @@ export function EnterpriseConfirmationStep() {
                 Chi nhánh ({formData.branches.length})
               </TabsTrigger>
               <TabsTrigger
+                value="contacts"
+                className="text-sm font-bold rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-4 tracking-wide"
+              >
+                Liên hệ ({formData.contacts.length})
+              </TabsTrigger>
+              <TabsTrigger
                 value="banks"
                 className="text-sm font-bold rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-4 tracking-wide"
               >
@@ -293,20 +300,20 @@ export function EnterpriseConfirmationStep() {
                     <div className="grid md:grid-cols-2 gap-8">
                       <div>
                         <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
-                          Hotline
+                          Hotline {defaultContact ? "(Liên hệ đầu tiên)" : ""}
                         </div>
                         <div className="font-bold text-lg text-primary flex items-center gap-2">
                           <Phone className="w-4 h-4" />
-                          {formData.phone || "-"}
+                          {defaultContact?.phone || formData.phone || "-"}
                         </div>
                       </div>
                       <div>
                         <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
-                          Email
+                          Email {defaultContact ? "(Liên hệ đầu tiên)" : ""}
                         </div>
                         <div className="font-medium text-base leading-relaxed flex items-center gap-2">
                           <Mail className="w-4 h-4" />
-                          {formData.email || "-"}
+                          {defaultContact?.email || formData.email || "-"}
                         </div>
                       </div>
                     </div>
@@ -395,6 +402,75 @@ export function EnterpriseConfirmationStep() {
                                 title={branch.note}
                               >
                                 {branch.note || "-"}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent
+                value="contacts"
+                className="m-0 space-y-6 animate-in fade-in duration-300"
+              >
+                <div className="flex items-center gap-3 bg-muted/5 p-4 rounded-xl border border-primary/10">
+                  <Users className="w-5 h-5 text-primary" />
+                  <h4 className="font-bold text-lg">Danh sách liên hệ</h4>
+                  <Badge className="bg-primary/10 text-primary border-none">
+                    {formData.contacts.length}
+                  </Badge>
+                </div>
+
+                {formData.contacts.length === 0 ? (
+                  <div className="text-center py-16 border-2 border-dashed rounded-3xl bg-muted/5">
+                    <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                    <p className="text-muted-foreground font-medium">
+                      Chưa có liên hệ nào được thêm
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {formData.contacts.map((contact: Contact, i: number) => (
+                      <Card
+                        key={i}
+                        className="hover:border-primary/40 transition-all shadow-sm"
+                      >
+                        <CardContent className="p-5">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                <User className="w-4 h-4 text-primary" />
+                              </div>
+                              <div>
+                                <h3 className="font-bold text-base">
+                                  {contact.name}
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                  Liên hệ doanh nghiệp
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 gap-3 text-sm bg-muted/30 p-4 rounded-lg">
+                            <div>
+                              <span className="text-[10px] text-muted-foreground uppercase font-bold block mb-1">
+                                Số điện thoại
+                              </span>
+                              <div className="font-medium flex items-center gap-2">
+                                <Phone className="w-3 h-3 text-primary" />
+                                {contact.phone || "-"}
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-muted-foreground uppercase font-bold block mb-1">
+                                Email
+                              </span>
+                              <div className="font-medium flex items-center gap-2 truncate">
+                                <Mail className="w-3 h-3 text-primary" />
+                                {contact.email || "-"}
                               </div>
                             </div>
                           </div>

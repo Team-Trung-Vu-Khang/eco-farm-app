@@ -17,6 +17,7 @@ import { useLocation } from "wouter";
 import { useCooperativeForm } from "./hooks/useCooperativeForm";
 import { BasicInfoStep } from "./components/steps/BasicInfoStep";
 import { ContactInfoStep } from "./components/steps/ContactInfoStep";
+import { BranchesStep } from "./components/steps/BranchesStep";
 import { BankInfoStep } from "./components/steps/BankInfoStep";
 import { DocumentsStep } from "./components/steps/DocumentsStep";
 import { ConfirmStep } from "./components/steps/ConfirmStep";
@@ -28,6 +29,10 @@ export default function CooperativeCreatePage() {
     setFormData,
     newContact,
     setNewContact,
+    newBranch,
+    setNewBranch,
+    branchInputMethod,
+    setBranchInputMethod,
     newBankAccount,
     setNewBankAccount,
     bankInputMethod,
@@ -41,6 +46,8 @@ export default function CooperativeCreatePage() {
     handleDrag,
     handleExcelUpload,
     handleExcelDrop,
+    handleBranchExcelUpload,
+    handleBranchExcelDrop,
     handleQRImageUpload,
     handleQRImageDrop,
     handleLiveScan,
@@ -51,6 +58,8 @@ export default function CooperativeCreatePage() {
     handleDocumentDelete,
     addContact,
     removeContact,
+    addBranch,
+    removeBranch,
     addBankAccount,
     removeBankAccount,
     showConfirmDialog,
@@ -92,12 +101,32 @@ export default function CooperativeCreatePage() {
       isValid: formData.contacts.length > 0,
     },
     {
+      id: "branches",
+      title: "Chi nhánh",
+      description: "Quản lý chi nhánh",
+      content: (
+        <BranchesStep
+          formData={formData}
+          newBranch={newBranch}
+          setNewBranch={setNewBranch}
+          branchInputMethod={branchInputMethod}
+          setBranchInputMethod={setBranchInputMethod}
+          isDragging={isDragging}
+          handleDrag={handleDrag}
+          handleBranchExcelUpload={handleBranchExcelUpload}
+          handleBranchExcelDrop={handleBranchExcelDrop}
+          addBranch={addBranch}
+          removeBranch={removeBranch}
+        />
+      ),
+    },
+    {
       id: "bank",
       title: "Ngân hàng",
       description: "Tài khoản thanh toán",
       content: (
         <BankInfoStep
-          formData={formData}
+          bankAccounts={formData.bankAccounts}
           newBankAccount={newBankAccount}
           setNewBankAccount={setNewBankAccount}
           bankInputMethod={bankInputMethod}
@@ -119,8 +148,8 @@ export default function CooperativeCreatePage() {
     },
     {
       id: "documents",
-      title: "Tài liệu",
-      description: "Giấy phép, chứng chỉ",
+      title: "Giấy chứng nhận đăng ký hợp tác xã",
+      description: "Do cơ quan đăng ký kinh doanh cấp huyện cấp",
       content: (
         <DocumentsStep
           formData={formData}
