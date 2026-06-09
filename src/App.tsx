@@ -138,6 +138,7 @@ import CooperativeDetailPage from "./pages/cooperative/CooperativeDetailPage";
 import EnterpriseTypePage from "./pages/enterprise-type/EnterpriseTypePage";
 import EnterpriseFormPage from "./pages/enterprise-form/EnterpriseFormPage";
 import EnterpriseCertificatePage from "./pages/enterprise-certificate/EnterpriseCertificatePage";
+import EnterpriseCertificateFormPage from "./pages/enterprise-certificate/EnterpriseCertificateFormPage";
 import MaterialGroupPage from "./pages/material-group/MaterialGroupPage";
 import FertilizerGroupPage from "./pages/fertilizer-group/FertilizerGroupPage";
 import PesticideGroupPage from "./pages/pesticide-group/PesticideGroupPage";
@@ -169,6 +170,14 @@ function Router() {
       <Route
         path="/enterprise-certificate"
         component={EnterpriseCertificatePage}
+      />
+      <Route
+        path="/enterprise-certificate/create"
+        component={EnterpriseCertificateFormPage}
+      />
+      <Route
+        path="/enterprise-certificate/:id/edit"
+        component={EnterpriseCertificateFormPage}
       />
       <Route path="/enterprise" component={EnterprisePage} />
       <Route path="/enterprise/create" component={EnterpriseCreatePage} />
