@@ -95,8 +95,8 @@ export default function UpdateGrowthCyclePage() {
       CROP_OPTIONS.find((c) => c.name === formData.cropId)?.name ||
       formData.cropId;
     const resolvedVarietyName =
-      varieties.find((variety) => variety.id === formData.variety)?.varietyName ||
-      formData.variety;
+      varieties.find((variety) => variety.id === formData.variety)
+        ?.varietyName || formData.variety;
 
     updateGrowthCycle(params.id, {
       name: `Chu kỳ sinh trưởng ${cropName}${resolvedVarietyName ? ` - ${resolvedVarietyName}` : ""}`,
@@ -207,6 +207,7 @@ export default function UpdateGrowthCyclePage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Cập nhật chu kỳ sinh trưởng"
       description={`Chỉnh sửa thông tin cho ${varietyName || formData.cropId}`}
     >
@@ -236,7 +237,9 @@ export default function UpdateGrowthCyclePage() {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận cập nhật chu kỳ sinh trưởng</AlertDialogTitle>
+            <AlertDialogTitle>
+              Xác nhận cập nhật chu kỳ sinh trưởng
+            </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3" asChild>
               <div>
                 <p>Bạn có chắc chắn muốn lưu thay đổi cho chu kỳ này?</p>
@@ -250,15 +253,21 @@ export default function UpdateGrowthCyclePage() {
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Phạm vi:</span>
                     <span className="font-medium">
-                      {formData.scope === "crop" ? "Theo loại cây" : "Theo giống"}
+                      {formData.scope === "crop"
+                        ? "Theo loại cây"
+                        : "Theo giống"}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Số giai đoạn:</span>
-                    <span className="font-medium">{formData.stages.length}</span>
+                    <span className="font-medium">
+                      {formData.stages.length}
+                    </span>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <span className="text-muted-foreground">Tổng thời gian:</span>
+                    <span className="text-muted-foreground">
+                      Tổng thời gian:
+                    </span>
                     <span className="font-medium">{totalDays} ngày</span>
                   </div>
                 </div>

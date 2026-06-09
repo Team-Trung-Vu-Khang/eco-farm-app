@@ -20,6 +20,7 @@ export default function ContactCreatePage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Thêm mới liên hệ"
       description="Thêm thông tin liên hệ mới vào hệ thống"
       actions={

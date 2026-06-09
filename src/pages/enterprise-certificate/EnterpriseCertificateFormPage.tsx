@@ -261,6 +261,7 @@ export default function EnterpriseCertificateFormPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title={isEdit ? "Chỉnh sửa chứng nhận" : "Tạo mới chứng nhận"}
       description="Điền thông tin theo từng bước để tạo hồ sơ chứng nhận"
     >

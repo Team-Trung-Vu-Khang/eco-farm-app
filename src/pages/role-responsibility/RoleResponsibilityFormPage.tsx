@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useRoute } from "wouter";
-import { AdminLayout, Button, StepperForm, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  AdminLayout,
+  Button,
+  StepperForm,
+  useToast,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
 import { useRoleFormSteps } from "./components/RoleFormSteps";
 import { FORM_VAI_TRO_RONG } from "./mocks";
@@ -101,10 +106,14 @@ export default function RoleResponsibilityFormPage() {
   if (isEdit && !editingRole) {
     return (
       <AdminLayout
+        isDev={true}
         title="Không tìm thấy vai trò"
         description="Vai trò bạn muốn chỉnh sửa không còn tồn tại trong hệ thống."
       >
-        <Button variant="outline" onClick={() => setLocation("/role-responsibility")}>
+        <Button
+          variant="outline"
+          onClick={() => setLocation("/role-responsibility")}
+        >
           <ChevronLeft className="mr-2 h-4 w-4" />
           Quay lại danh sách
         </Button>
@@ -114,7 +123,12 @@ export default function RoleResponsibilityFormPage() {
 
   return (
     <AdminLayout
-      title={isEdit ? "Cập nhật vai trò và trách nhiệm" : "Tạo vai trò và trách nhiệm"}
+      isDev={true}
+      title={
+        isEdit
+          ? "Cập nhật vai trò và trách nhiệm"
+          : "Tạo vai trò và trách nhiệm"
+      }
       description={
         isEdit
           ? `Điều chỉnh cấu hình cho vai trò ${editingRole?.tenVaiTro ?? ""}`

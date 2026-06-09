@@ -44,7 +44,8 @@ export default function AmendmentPlanCreatePage() {
   const { seasons } = useSeasonStore();
   const { regions } = useRegionStore();
 
-  const existingPlan = isEdit && params?.id ? getPlanById(Number(params.id)) : undefined;
+  const existingPlan =
+    isEdit && params?.id ? getPlanById(Number(params.id)) : undefined;
   const initialEditState = useMemo(() => {
     if (!existingPlan) {
       return {
@@ -54,7 +55,10 @@ export default function AmendmentPlanCreatePage() {
       };
     }
 
-    const reconstructedSelections = buildSelectionsFromPlan(existingPlan, regions);
+    const reconstructedSelections = buildSelectionsFromPlan(
+      existingPlan,
+      regions,
+    );
 
     return {
       formData: {
@@ -110,7 +114,8 @@ export default function AmendmentPlanCreatePage() {
   );
 
   const selectedProcess = useMemo(
-    () => AMENDMENT_PROCESSES.find((process) => process.id === formData.processId),
+    () =>
+      AMENDMENT_PROCESSES.find((process) => process.id === formData.processId),
     [formData.processId],
   );
 
@@ -175,8 +180,9 @@ export default function AmendmentPlanCreatePage() {
     }
 
     const zone =
-      regions.find((region) => String(region.id) === String(formData.selectedRegionId))
-        ?.name || "";
+      regions.find(
+        (region) => String(region.id) === String(formData.selectedRegionId),
+      )?.name || "";
 
     const planData = {
       code: formData.code,
@@ -303,6 +309,7 @@ export default function AmendmentPlanCreatePage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title={isEdit ? "Cập nhật kế hoạch cải tạo" : "Lập kế hoạch cải tạo mới"}
       description="Xây dựng phương án xử lý đất, phân bổ nguồn lực và giám sát thực hiện"
     >

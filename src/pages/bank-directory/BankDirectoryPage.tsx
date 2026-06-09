@@ -31,6 +31,7 @@ export default function BankDirectoryPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Danh mục ngân hàng"
       description="Quản lý danh sách các ngân hàng được hỗ trợ trong hệ thống"
       actions={

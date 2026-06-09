@@ -1,5 +1,10 @@
 import { Plus } from "lucide-react";
-import { AdminLayout, Button, DataTable, DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  AdminLayout,
+  Button,
+  DataTable,
+  DeleteDialog,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useAreaDistributionPage } from "../hooks/useAreaDistributionPage";
 
 const AreaDistributionPage = () => {
@@ -16,6 +21,7 @@ const AreaDistributionPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Phân bố khu vực"
       description="Quản lý danh sách và bản đồ phân bố các khu vực trồng"
       actions={

@@ -103,17 +103,14 @@ export default function PlanDetailPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Chi tiết kế hoạch"
       description={`Xem thông tin chi tiết kế hoạch ${plan.code}`}
     >
       <div className="space-y-6">
         {/* Header Actions */}
         <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            onClick={goBack}
-            className="gap-2"
-          >
+          <Button variant="ghost" onClick={goBack} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
             Quay lại
           </Button>

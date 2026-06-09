@@ -1,7 +1,4 @@
-import {
-  AdminLayout,
-  Button,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Save, X } from "lucide-react";
 import { TeamFormCard } from "./components/TeamFormCard";
 import { useTeamCreatePage } from "./hooks/useTeamCreatePage";
@@ -11,6 +8,7 @@ export default function TeamCreatePage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Thêm mới đội nhóm"
       description="Tạo đội nhóm làm việc mới"
       actions={

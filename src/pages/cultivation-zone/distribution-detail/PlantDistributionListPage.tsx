@@ -21,6 +21,7 @@ const PlantDistributionListPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Phân bổ cây trồng"
       description="Quản lý phân bổ và định vị GPS cho cây trồng"
       actions={
@@ -30,7 +31,12 @@ const PlantDistributionListPage = () => {
         </Button>
       }
     >
-      <DataTable columns={plantDistributionColumns} data={data} onEdit={handleEdit} onDelete={handleDelete} />
+      <DataTable
+        columns={plantDistributionColumns}
+        data={data}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
 
       <DeleteDialog
         open={deleteOpen}

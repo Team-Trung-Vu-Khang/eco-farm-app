@@ -16,7 +16,9 @@ const DocumentCategoryEditPage = () => {
   const { toast } = useToast();
   const { getCategoryById, updateCategory } = useDocumentCategoryStore();
 
-  const [formData, setFormData] = useState<Omit<DocumentCategory, "id" | "createdAt">>({
+  const [formData, setFormData] = useState<
+    Omit<DocumentCategory, "id" | "createdAt">
+  >({
     code: "",
     name: "",
     description: "",
@@ -81,15 +83,22 @@ const DocumentCategoryEditPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Cập nhật danh mục hồ sơ"
       description={`Chỉnh sửa cấu hình cho tài liệu: ${formData.name}`}
       actions={
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setLocation("/document-category")}>
+          <Button
+            variant="outline"
+            onClick={() => setLocation("/document-category")}
+          >
             <X size={18} className="mr-2" />
             Hủy bỏ
           </Button>
-          <Button onClick={handleSave} className="bg-primary shadow-lg shadow-primary/20">
+          <Button
+            onClick={handleSave}
+            className="bg-primary shadow-lg shadow-primary/20"
+          >
             <Save size={18} className="mr-2" />
             Lưu thay đổi
           </Button>

@@ -28,6 +28,7 @@ const GrowthCyclePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý chu kỳ sinh trưởng"
       description="Các giai đoạn phát triển của cây trồng"
       actions={

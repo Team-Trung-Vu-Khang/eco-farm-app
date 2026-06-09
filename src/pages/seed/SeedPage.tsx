@@ -23,6 +23,7 @@ export default function SeedPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý hạt giống cây"
       actions={
         <div className="flex gap-2">

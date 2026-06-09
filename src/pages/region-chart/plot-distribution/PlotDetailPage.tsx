@@ -18,6 +18,7 @@ const PlotDetailPage = () => {
   if (!plot) {
     return (
       <AdminLayout
+        isDev={true}
         title="Chi tiết lô"
         description="Không tìm thấy thông tin lô"
         actions={
@@ -38,6 +39,7 @@ const PlotDetailPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title={`Chi tiết lô: ${plot.name}`}
       description={`Mã lô: ${plot.id}`}
       actions={

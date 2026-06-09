@@ -28,6 +28,7 @@ export default function TerrainPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý địa hình"
       description="Phân loại và quản lý các loại địa hình trong hệ thống"
       actions={

@@ -121,6 +121,7 @@ export default function FarmerCreatePage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title={isEdit ? "Chỉnh sửa Nông hộ" : "Tạo mới Nông hộ"}
       description="Điền thông tin theo từng bước để tạo mới nông hộ"
     >
@@ -138,9 +139,12 @@ export default function FarmerCreatePage() {
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận {isEdit ? "cập nhật" : "tạo mới"}</AlertDialogTitle>
+            <AlertDialogTitle>
+              Xác nhận {isEdit ? "cập nhật" : "tạo mới"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Bạn có chắc chắn muốn {isEdit ? "cập nhật" : "tạo mới"} nông hộ "{formData.name}" không?
+              Bạn có chắc chắn muốn {isEdit ? "cập nhật" : "tạo mới"} nông hộ "
+              {formData.name}" không?
               <br />
               Thông tin đã nhập sẽ được lưu vào hệ thống.
             </AlertDialogDescription>

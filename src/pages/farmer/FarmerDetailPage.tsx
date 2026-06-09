@@ -27,7 +27,11 @@ export default function FarmerDetailPage() {
 
   if (!data) {
     return (
-      <AdminLayout title="Chi tiết nông hộ" description="Đang tải thông tin...">
+      <AdminLayout
+        isDev={true}
+        title="Chi tiết nông hộ"
+        description="Đang tải thông tin..."
+      >
         <div className="flex flex-col items-center justify-center p-12 space-y-4">
           <div className="text-muted-foreground">Không tìm thấy nông hộ</div>
           <Button variant="outline" onClick={() => setLocation("/farmer")}>
@@ -41,6 +45,7 @@ export default function FarmerDetailPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title={data.name}
       description={`Chi tiết thông tin nông hộ`}
       actions={

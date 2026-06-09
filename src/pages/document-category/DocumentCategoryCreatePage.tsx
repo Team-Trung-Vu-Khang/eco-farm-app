@@ -15,7 +15,9 @@ const DocumentCategoryCreatePage = () => {
   const { toast } = useToast();
   const { addCategory } = useDocumentCategoryStore();
 
-  const [formData, setFormData] = useState<Omit<DocumentCategory, "id" | "createdAt">>({
+  const [formData, setFormData] = useState<
+    Omit<DocumentCategory, "id" | "createdAt">
+  >({
     code: "",
     name: "",
     description: "",
@@ -56,15 +58,22 @@ const DocumentCategoryCreatePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Tạo danh mục hồ sơ"
       description="Thiết lập các yêu cầu tệp tin cho các đơn vị trong hệ thống"
       actions={
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setLocation("/document-category")}>
+          <Button
+            variant="outline"
+            onClick={() => setLocation("/document-category")}
+          >
             <X size={18} className="mr-2" />
             Hủy bỏ
           </Button>
-          <Button onClick={handleSave} className="bg-primary shadow-lg shadow-primary/20">
+          <Button
+            onClick={handleSave}
+            className="bg-primary shadow-lg shadow-primary/20"
+          >
             <Save size={18} className="mr-2" />
             Lưu danh mục
           </Button>

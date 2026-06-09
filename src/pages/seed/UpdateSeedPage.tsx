@@ -159,6 +159,7 @@ export default function UpdateSeedPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Cập nhật hạt giống"
       description="Chỉnh sửa thông tin hạt giống trong hệ thống"
     >

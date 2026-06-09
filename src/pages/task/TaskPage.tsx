@@ -41,6 +41,7 @@ export default function TaskPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Phân bổ công việc"
       description="Phân công nhiệm vụ cho nhân viên và đội nhóm"
       actions={

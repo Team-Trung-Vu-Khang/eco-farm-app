@@ -29,6 +29,7 @@ const PositionPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý chức vụ"
       description="Quản lý chức vụ theo đơn vị sở hữu"
       actions={

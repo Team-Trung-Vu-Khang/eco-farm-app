@@ -9,7 +9,10 @@ import { PlantDistributionConfigurationStep } from "./components/PlantDistributi
 import { PlantDistributionConfirmationStep } from "./components/PlantDistributionConfirmationStep";
 import { PlantDistributionGpsStep } from "./components/PlantDistributionGpsStep";
 import { PlantDistributionScopeStep } from "./components/PlantDistributionScopeStep";
-import { usePlantDistributionCreatePage, getSeedColor } from "./hooks/usePlantDistributionCreatePage";
+import {
+  usePlantDistributionCreatePage,
+  getSeedColor,
+} from "./hooks/usePlantDistributionCreatePage";
 
 const PlantDistributionCreatePage = () => {
   const {
@@ -128,6 +131,7 @@ const PlantDistributionCreatePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Tạo phân bổ cây trồng"
       description="Thiết lập phân bổ cây trồng cho vùng, khu vực hoặc lô đất"
       actions={
@@ -137,7 +141,11 @@ const PlantDistributionCreatePage = () => {
         </Button>
       }
     >
-      <StepperForm steps={steps} onComplete={handleComplete} onCancel={handleCancel} />
+      <StepperForm
+        steps={steps}
+        onComplete={handleComplete}
+        onCancel={handleCancel}
+      />
     </AdminLayout>
   );
 };

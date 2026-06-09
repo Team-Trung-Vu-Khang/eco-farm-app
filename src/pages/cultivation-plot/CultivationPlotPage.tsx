@@ -21,6 +21,7 @@ const CultivationPlotPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Lô canh tác"
       description="Quản lý các thiết lập canh tác theo Khu vực (Lô)"
       actions={
@@ -30,7 +31,12 @@ const CultivationPlotPage = () => {
         </Button>
       }
     >
-      <DataTable columns={columns} data={cultivationPlots} onEdit={handleEdit} onDelete={handleDelete} />
+      <DataTable
+        columns={columns}
+        data={cultivationPlots}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
 
       <DeleteDialog
         open={deleteOpen}

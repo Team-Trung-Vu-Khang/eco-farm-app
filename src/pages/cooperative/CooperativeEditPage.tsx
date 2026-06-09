@@ -222,6 +222,7 @@ export default function CooperativeEditPage() {
   if (!initialData) {
     return (
       <AdminLayout
+        isDev={true}
         title="Cập nhật Hợp tác xã"
         description="Không tìm thấy dữ liệu hợp tác xã"
       >
@@ -234,6 +235,7 @@ export default function CooperativeEditPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title={`Cập nhật Hợp tác xã`}
       description="Cập nhật thông tin chi tiết"
     >

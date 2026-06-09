@@ -36,6 +36,7 @@ const EquipmentGroupPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Danh mục máy móc"
       description="Quản lý danh sách các nhóm máy móc, dụng cụ (Master Data)"
       actions={
@@ -61,7 +62,9 @@ const EquipmentGroupPage = () => {
       >
         <EquipmentGroupForm
           formData={formData}
-          onChange={(updates) => setFormData((prev) => ({ ...prev, ...updates }))}
+          onChange={(updates) =>
+            setFormData((prev) => ({ ...prev, ...updates }))
+          }
         />
       </FormDialog>
 

@@ -25,6 +25,7 @@ export default function EquipmentPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý thiết bị"
       description="Quản lý danh mục máy móc, công cụ và lịch bảo dưỡng"
       actions={

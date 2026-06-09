@@ -1,7 +1,4 @@
-import {
-  AdminLayout,
-  Button,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft } from "lucide-react";
 import { useBranchDetail } from "./hooks/useBranchDetail";
 import { BranchDetailHeader } from "./components/BranchDetailHeader";
@@ -29,7 +26,7 @@ export default function BranchDetailPage() {
   // Show not found state if branch doesn't exist
   if (!branch) {
     return (
-      <AdminLayout>
+      <AdminLayout isDev={true}>
         <div className="flex flex-col items-center justify-center h-96">
           <h2 className="text-2xl font-bold mb-4">
             Không tìm thấy thông tin chi nhánh
@@ -44,7 +41,7 @@ export default function BranchDetailPage() {
   }
 
   return (
-    <AdminLayout>
+    <AdminLayout isDev={true}>
       <div className="max-w-6xl mx-auto space-y-6 pb-10">
         <BranchDetailHeader
           branch={branch}

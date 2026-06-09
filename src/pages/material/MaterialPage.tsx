@@ -23,6 +23,7 @@ export default function MaterialPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý vật liệu"
       description="Quản lý danh mục vật tư, thiết bị, dụng cụ"
       actions={

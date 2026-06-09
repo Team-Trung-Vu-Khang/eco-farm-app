@@ -28,6 +28,7 @@ export default function BranchPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý chi nhánh"
       description="Quản lý danh sách chi nhánh của các đơn vị"
       actions={

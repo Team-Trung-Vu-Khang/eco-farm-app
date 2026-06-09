@@ -23,6 +23,7 @@ export default function RoleResponsibilityPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý vai trò và trách nhiệm"
       description="Quản trị vai trò theo chức năng nông nghiệp, gắn trách nhiệm, người dùng phụ trách và kiểm tra điều kiện nghiệp vụ phục vụ audit."
       actions={

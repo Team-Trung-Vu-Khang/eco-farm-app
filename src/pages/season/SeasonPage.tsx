@@ -21,6 +21,7 @@ export default function SeasonPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý mùa vụ"
       description="Quản lý kế hoạch mùa vụ và quy trình canh tác"
       actions={

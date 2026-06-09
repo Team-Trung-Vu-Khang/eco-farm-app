@@ -242,6 +242,7 @@ const IoTMapViewPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Bản đồ Giám sát IoT"
       description="Theo dõi vị trí và trạng thái thiết bị thời gian thực"
     >
@@ -254,7 +255,6 @@ const IoTMapViewPage = () => {
         {/* TOP BAR: Stats & Filters */}
         <div className="bg-white border-b px-6 py-4 shadow-sm z-30 shrink-0">
           <div className="flex flex-col gap-4">
-            
             {/* Row 1: Overview and Stats Cards (Distributed & Enlarged Grid) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
               {/* Total Devices Card */}
@@ -326,7 +326,6 @@ const IoTMapViewPage = () => {
 
             {/* Row 2: Search and Filters */}
             <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between w-full">
-              
               {/* Search input */}
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -344,14 +343,28 @@ const IoTMapViewPage = () => {
                 <div className="w-full sm:w-[180px]">
                   <Select value={filterStatus} onValueChange={setFilterStatus}>
                     <SelectTrigger className="w-full h-10 border-slate-200 rounded-xl shadow-xs bg-slate-50/30 pr-2">
-                      <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%", minWidth: 0, textAlign: "left" }}>
+                      <span
+                        style={{
+                          display: "block",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          width: "100%",
+                          minWidth: 0,
+                          textAlign: "left",
+                        }}
+                      >
                         <SelectValue placeholder="Trạng thái mạng" />
                       </span>
                     </SelectTrigger>
                     <SelectContent className="z-[9999]">
                       <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                      <SelectItem value="online">Trực tuyến (Online)</SelectItem>
-                      <SelectItem value="offline">Ngoại tuyến (Offline)</SelectItem>
+                      <SelectItem value="online">
+                        Trực tuyến (Online)
+                      </SelectItem>
+                      <SelectItem value="offline">
+                        Ngoại tuyến (Offline)
+                      </SelectItem>
                       <SelectItem value="low_battery">Pin yếu</SelectItem>
                       <SelectItem value="alarm">Cảnh báo</SelectItem>
                     </SelectContent>
@@ -375,7 +388,17 @@ const IoTMapViewPage = () => {
                     }}
                   >
                     <SelectTrigger className="w-full h-10 border-slate-200 rounded-xl shadow-xs bg-slate-50/30 pr-2">
-                      <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%", minWidth: 0, textAlign: "left" }}>
+                      <span
+                        style={{
+                          display: "block",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          width: "100%",
+                          minWidth: 0,
+                          textAlign: "left",
+                        }}
+                      >
                         <SelectValue placeholder="Chọn vùng trồng" />
                       </span>
                     </SelectTrigger>
@@ -390,9 +413,7 @@ const IoTMapViewPage = () => {
                   </Select>
                 </div>
               </div>
-
             </div>
-
           </div>
         </div>
 
@@ -466,363 +487,378 @@ const IoTMapViewPage = () => {
 
           {/* Center: Map */}
           <div className="flex-1 relative">
-          <MapContainer
-            center={mapCenter}
-            zoom={mapZoom}
-            className="h-full w-full"
-            zoomControl={false}
-          >
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            <MapUpdater center={mapCenter} zoom={mapZoom} />
-            <ZoomListener onChange={onZoomChange} />
+            <MapContainer
+              center={mapCenter}
+              zoom={mapZoom}
+              className="h-full w-full"
+              zoomControl={false}
+            >
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <MapUpdater center={mapCenter} zoom={mapZoom} />
+              <ZoomListener onChange={onZoomChange} />
 
-            {visibleLayers.zone && (
-              <GeoJSON
-                data={zoneData as any}
-                style={{
-                  color: "#2b8cbe",
-                  weight: 2,
-                  fillOpacity: 0.1,
-                  dashArray: "5, 5",
-                }}
-              />
-            )}
-            {visibleLayers.area && (
-              <GeoJSON
-                data={areaData as any}
-                style={{ color: "#f03b20", weight: 2, fillOpacity: 0.05 }}
-              />
-            )}
-            {visibleLayers.plot && (
-              <GeoJSON
-                data={plotData as any}
-                style={{ color: "#31a354", weight: 2, fillOpacity: 0.1 }}
-              />
-            )}
-
-            {visibleLayers.device &&
-              filteredDevices.map((device) => (
-                <Marker
-                  key={device.id}
-                  position={[device.lat, device.lng]}
-                  icon={getIoTIcon(device.type, device.status)}
-                  eventHandlers={{
-                    click: () => setSelectedDevice(device),
+              {visibleLayers.zone && (
+                <GeoJSON
+                  data={zoneData as any}
+                  style={{
+                    color: "#2b8cbe",
+                    weight: 2,
+                    fillOpacity: 0.1,
+                    dashArray: "5, 5",
                   }}
-                >
-                  <Popup>
-                    <div className="p-2 min-w-[260px]">
-                      <div className="font-bold text-primary text-base mb-2 border-b pb-1">
-                        {device.name}
-                      </div>
-                      <div className="grid grid-cols-[80px_1fr] gap-x-2 gap-y-2 text-xs">
-                        <span className="text-slate-500">MAC:</span>
-                        <span className="font-mono font-bold text-slate-700 break-all text-right">
-                          {device.mac}
-                        </span>
+                />
+              )}
+              {visibleLayers.area && (
+                <GeoJSON
+                  data={areaData as any}
+                  style={{ color: "#f03b20", weight: 2, fillOpacity: 0.05 }}
+                />
+              )}
+              {visibleLayers.plot && (
+                <GeoJSON
+                  data={plotData as any}
+                  style={{ color: "#31a354", weight: 2, fillOpacity: 0.1 }}
+                />
+              )}
 
-                        <span className="text-slate-500">Trạng thái:</span>
-                        <span
-                          className={cn(
-                            "font-bold text-right",
-                            device.status === "online"
-                              ? "text-emerald-600"
-                              : "text-rose-600",
-                          )}
+              {visibleLayers.device &&
+                filteredDevices.map((device) => (
+                  <Marker
+                    key={device.id}
+                    position={[device.lat, device.lng]}
+                    icon={getIoTIcon(device.type, device.status)}
+                    eventHandlers={{
+                      click: () => setSelectedDevice(device),
+                    }}
+                  >
+                    <Popup>
+                      <div className="p-2 min-w-[260px]">
+                        <div className="font-bold text-primary text-base mb-2 border-b pb-1">
+                          {device.name}
+                        </div>
+                        <div className="grid grid-cols-[80px_1fr] gap-x-2 gap-y-2 text-xs">
+                          <span className="text-slate-500">MAC:</span>
+                          <span className="font-mono font-bold text-slate-700 break-all text-right">
+                            {device.mac}
+                          </span>
+
+                          <span className="text-slate-500">Trạng thái:</span>
+                          <span
+                            className={cn(
+                              "font-bold text-right",
+                              device.status === "online"
+                                ? "text-emerald-600"
+                                : "text-rose-600",
+                            )}
+                          >
+                            {device.status.toUpperCase()}
+                          </span>
+
+                          <span className="text-slate-500">Pin:</span>
+                          <span className="font-bold text-right text-slate-700">
+                            {device.batteryLevel}%
+                          </span>
+                        </div>
+
+                        <Separator className="my-3" />
+
+                        <Button
+                          size="sm"
+                          className="w-full h-9 bg-primary/10 text-primary hover:bg-primary/20 border-none shadow-none"
+                          onClick={() =>
+                            window.open(`/iot-device/${device.id}`, "_blank")
+                          }
                         >
-                          {device.status.toUpperCase()}
-                        </span>
-
-                        <span className="text-slate-500">Pin:</span>
-                        <span className="font-bold text-right text-slate-700">
-                          {device.batteryLevel}%
-                        </span>
+                          Xem chi tiết kỹ thuật
+                          <ChevronRight className="w-3 h-3 ml-1" />
+                        </Button>
                       </div>
+                    </Popup>
+                  </Marker>
+                ))}
+            </MapContainer>
 
-                      <Separator className="my-3" />
+            {/* Map Controls (Absolute) */}
+            <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
+              <Button
+                size="icon"
+                className="shadow-md"
+                onClick={() => setMapZoom((z) => z + 1)}
+              >
+                <Maximize2 className="w-4 h-4" />
+              </Button>
+              <Button
+                size="icon"
+                className="shadow-md"
+                onClick={() => setMapZoom((z) => z - 1)}
+              >
+                <Minimize2 className="w-4 h-4" />
+              </Button>
+              <Button
+                size="icon"
+                className="shadow-md"
+                onClick={() => window.location.reload()}
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </div>
 
-                      <Button
-                        size="sm"
-                        className="w-full h-9 bg-primary/10 text-primary hover:bg-primary/20 border-none shadow-none"
-                        onClick={() =>
-                          window.open(`/iot-device/${device.id}`, "_blank")
-                        }
-                      >
-                        Xem chi tiết kỹ thuật
-                        <ChevronRight className="w-3 h-3 ml-1" />
-                      </Button>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-          </MapContainer>
-
-          {/* Map Controls (Absolute) */}
-          <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
-            <Button
-              size="icon"
-              className="shadow-md"
-              onClick={() => setMapZoom((z) => z + 1)}
-            >
-              <Maximize2 className="w-4 h-4" />
-            </Button>
-            <Button
-              size="icon"
-              className="shadow-md"
-              onClick={() => setMapZoom((z) => z - 1)}
-            >
-              <Minimize2 className="w-4 h-4" />
-            </Button>
-            <Button
-              size="icon"
-              className="shadow-md"
-              onClick={() => window.location.reload()}
-            >
-              <RefreshCw className="w-4 h-4" />
-            </Button>
-          </div>
-
-          {/* Legend (Bottom Right) */}
-          <div className="absolute bottom-6 right-6 z-[1000] bg-white/90 backdrop-blur-sm p-4 rounded-2xl shadow-xl border border-slate-200 min-w-[180px]">
-            <h5 className="text-xs font-bold text-slate-800 mb-3 uppercase tracking-wider">
-              Chú thích thiết bị
-            </h5>
-            <div className="space-y-2.5">
-              <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                <span className="w-3 h-3 rounded-full bg-emerald-500" /> Online
-                / Ổn định
-              </div>
-              <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                <span className="w-3 h-3 rounded-full bg-rose-500" /> Offline /
-                Mất kết nối
-              </div>
-              <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                <span className="w-3 h-3 rounded-full bg-fuchsia-500" /> Cảnh
-                báo hệ thống
-              </div>
-              <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                <span className="w-3 h-3 rounded-full bg-amber-500" /> Pin yếu
-                (&lt; 20%)
-              </div>
-              <Separator className="my-2" />
-              <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                <Cpu className="w-3 h-3" /> Gateway Trung tâm
-              </div>
-              <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                <Zap className="w-3 h-3" /> Cảm biến / Van
+            {/* Legend (Bottom Right) */}
+            <div className="absolute bottom-6 right-6 z-[1000] bg-white/90 backdrop-blur-sm p-4 rounded-2xl shadow-xl border border-slate-200 min-w-[180px]">
+              <h5 className="text-xs font-bold text-slate-800 mb-3 uppercase tracking-wider">
+                Chú thích thiết bị
+              </h5>
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                  <span className="w-3 h-3 rounded-full bg-emerald-500" />{" "}
+                  Online / Ổn định
+                </div>
+                <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                  <span className="w-3 h-3 rounded-full bg-rose-500" /> Offline
+                  / Mất kết nối
+                </div>
+                <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                  <span className="w-3 h-3 rounded-full bg-fuchsia-500" /> Cảnh
+                  báo hệ thống
+                </div>
+                <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                  <span className="w-3 h-3 rounded-full bg-amber-500" /> Pin yếu
+                  (&lt; 20%)
+                </div>
+                <Separator className="my-2" />
+                <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                  <Cpu className="w-3 h-3" /> Gateway Trung tâm
+                </div>
+                <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                  <Zap className="w-3 h-3" /> Cảm biến / Van
+                </div>
               </div>
             </div>
-          </div>
           </div>
 
           {/* Right Sidebar: Device Details */}
           {selectedDevice && (
-          <div className="w-96 shrink-0 border-l bg-slate-50 flex flex-col h-full animate-in slide-in-from-right-5 fade-in z-20">
-            <div className="p-4 border-b bg-white flex items-center justify-between shadow-sm">
-              <div className="flex items-center gap-2">
-                <div className="bg-primary/10 p-2 rounded-lg">
-                  <Signal className="w-5 h-5 text-primary" />
+            <div className="w-96 shrink-0 border-l bg-slate-50 flex flex-col h-full animate-in slide-in-from-right-5 fade-in z-20">
+              <div className="p-4 border-b bg-white flex items-center justify-between shadow-sm">
+                <div className="flex items-center gap-2">
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <Signal className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 leading-tight">
+                      Thông số kỹ thuật
+                    </h3>
+                    <p className="text-[10px] text-slate-500 font-mono">
+                      {selectedDevice.imei}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 leading-tight">
-                    Thông số kỹ thuật
-                  </h3>
-                  <p className="text-[10px] text-slate-500 font-mono">
-                    {selectedDevice.imei}
-                  </p>
-                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSelectedDevice(null)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSelectedDevice(null)}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
 
-            <ScrollArea className="flex-1">
-              <div className="p-4 space-y-6">
-                {/* Status Overview Card */}
-                <Card className="border-none shadow-sm overflow-hidden bg-white">
-                  <CardContent className="p-5">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <div className="text-xs text-slate-400 font-bold uppercase mb-1">
-                          Thiết bị
+              <ScrollArea className="flex-1">
+                <div className="p-4 space-y-6">
+                  {/* Status Overview Card */}
+                  <Card className="border-none shadow-sm overflow-hidden bg-white">
+                    <CardContent className="p-5">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <div className="text-xs text-slate-400 font-bold uppercase mb-1">
+                            Thiết bị
+                          </div>
+                          <h4 className="text-lg font-bold text-slate-800">
+                            {selectedDevice.name}
+                          </h4>
                         </div>
-                        <h4 className="text-lg font-bold text-slate-800">
-                          {selectedDevice.name}
-                        </h4>
-                      </div>
-                      <Badge
-                        className={cn(
-                          "px-2 py-1",
-                          selectedDevice.status === "online"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-rose-100 text-rose-700",
-                        )}
-                      >
-                        {selectedDevice.status.toUpperCase()}
-                      </Badge>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-slate-50 p-3 rounded-xl">
-                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase mb-1">
-                          <Battery className="w-3 h-3" /> Năng lượng
-                        </div>
-                        <div className="text-xl font-bold text-slate-700">
-                          {selectedDevice.batteryLevel}%
-                        </div>
-                      </div>
-                      <div className="bg-slate-50 p-3 rounded-xl">
-                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase mb-1">
-                          <Wifi className="w-3 h-3" /> Tín hiệu
-                        </div>
-                        <div className="text-xl font-bold text-slate-700">
-                          {selectedDevice.rssi}{" "}
-                          <span className="text-xs font-normal">dBm</span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Telemetry Section */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <Clock className="w-4 h-4" /> Dữ liệu đo đạc (Telemetry)
-                  </h4>
-                  <Card className="border-none shadow-sm bg-white overflow-hidden">
-                    <CardContent className="p-0">
-                      <div className="h-48 w-full pt-4 pr-4">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart
-                            data={telemetry}
-                            margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
-                          >
-                            <CartesianGrid
-                              strokeDasharray="3 3"
-                              stroke="#f1f5f9"
-                              vertical={false}
-                            />
-                            <XAxis
-                              dataKey="time"
-                              stroke="#94a3b8"
-                              fontSize={10}
-                              tickLine={false}
-                              axisLine={false}
-                              interval={6}
-                            />
-                            <YAxis
-                              stroke="#94a3b8"
-                              fontSize={10}
-                              tickLine={false}
-                              axisLine={false}
-                            />
-                            <ChartTooltip
-                              contentStyle={{
-                                backgroundColor: "#fff",
-                                border: "1px solid #e2e8f0",
-                                borderRadius: "8px",
-                                fontSize: "10px",
-                                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                              }}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey="value"
-                              name="Giá trị"
-                              stroke="hsl(var(--primary))"
-                              strokeWidth={2}
-                              dot={false}
-                              activeDot={{ r: 4, strokeWidth: 0 }}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="p-4 border-t bg-slate-50/50">
-                        <Button
-                          variant="ghost"
-                          className="w-full text-xs h-8 text-primary font-bold"
-                          onClick={() =>
-                            window.open(`/iot-device/${selectedDevice.id}`, "_blank")
-                          }
+                        <Badge
+                          className={cn(
+                            "px-2 py-1",
+                            selectedDevice.status === "online"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-rose-100 text-rose-700",
+                          )}
                         >
-                          Xem báo cáo phân tích sâu
-                        </Button>
+                          {selectedDevice.status.toUpperCase()}
+                        </Badge>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-slate-50 p-3 rounded-xl">
+                          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase mb-1">
+                            <Battery className="w-3 h-3" /> Năng lượng
+                          </div>
+                          <div className="text-xl font-bold text-slate-700">
+                            {selectedDevice.batteryLevel}%
+                          </div>
+                        </div>
+                        <div className="bg-slate-50 p-3 rounded-xl">
+                          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase mb-1">
+                            <Wifi className="w-3 h-3" /> Tín hiệu
+                          </div>
+                          <div className="text-xl font-bold text-slate-700">
+                            {selectedDevice.rssi}{" "}
+                            <span className="text-xs font-normal">dBm</span>
+                          </div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
-                </div>
 
-                {/* Action Buttons */}
-                <div className="grid grid-cols-2 gap-3 pt-4">
-                  <Button
-                    className="bg-primary text-white hover:bg-primary/90"
-                    disabled={isPinging}
-                    onClick={() => handlePing(selectedDevice.id)}
-                  >
-                    {isPinging ? (
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Wifi className="w-4 h-4 mr-2" />
-                    )}
-                    Ping Test
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-slate-200"
-                    onClick={() =>
-                      window.open(`/iot-device/${selectedDevice.id}`, "_blank")
-                    }
-                  >
-                    <SettingsIcon className="w-4 h-4 mr-2" />
-                    Cấu hình
-                  </Button>
-                </div>
-
-                {/* Location Info */}
-                <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50">
-                  <div className="text-[10px] font-bold text-blue-500 uppercase mb-2">
-                    Vị trí thực địa
+                  {/* Telemetry Section */}
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <Clock className="w-4 h-4" /> Dữ liệu đo đạc (Telemetry)
+                    </h4>
+                    <Card className="border-none shadow-sm bg-white overflow-hidden">
+                      <CardContent className="p-0">
+                        <div className="h-48 w-full pt-4 pr-4">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart
+                              data={telemetry}
+                              margin={{
+                                top: 5,
+                                right: 5,
+                                left: -20,
+                                bottom: 0,
+                              }}
+                            >
+                              <CartesianGrid
+                                strokeDasharray="3 3"
+                                stroke="#f1f5f9"
+                                vertical={false}
+                              />
+                              <XAxis
+                                dataKey="time"
+                                stroke="#94a3b8"
+                                fontSize={10}
+                                tickLine={false}
+                                axisLine={false}
+                                interval={6}
+                              />
+                              <YAxis
+                                stroke="#94a3b8"
+                                fontSize={10}
+                                tickLine={false}
+                                axisLine={false}
+                              />
+                              <ChartTooltip
+                                contentStyle={{
+                                  backgroundColor: "#fff",
+                                  border: "1px solid #e2e8f0",
+                                  borderRadius: "8px",
+                                  fontSize: "10px",
+                                  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                                }}
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey="value"
+                                name="Giá trị"
+                                stroke="hsl(var(--primary))"
+                                strokeWidth={2}
+                                dot={false}
+                                activeDot={{ r: 4, strokeWidth: 0 }}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <div className="p-4 border-t bg-slate-50/50">
+                          <Button
+                            variant="ghost"
+                            className="w-full text-xs h-8 text-primary font-bold"
+                            onClick={() =>
+                              window.open(
+                                `/iot-device/${selectedDevice.id}`,
+                                "_blank",
+                              )
+                            }
+                          >
+                            Xem báo cáo phân tích sâu
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                  <div className="space-y-1">
-                    <div className="text-xs flex justify-between">
-                      <span className="text-slate-500">Tọa độ:</span>
-                      <span className="font-mono">
-                        {selectedDevice.lat.toFixed(6)},{" "}
-                        {selectedDevice.lng.toFixed(6)}
-                      </span>
+
+                  {/* Action Buttons */}
+                  <div className="grid grid-cols-2 gap-3 pt-4">
+                    <Button
+                      className="bg-primary text-white hover:bg-primary/90"
+                      disabled={isPinging}
+                      onClick={() => handlePing(selectedDevice.id)}
+                    >
+                      {isPinging ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Wifi className="w-4 h-4 mr-2" />
+                      )}
+                      Ping Test
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-slate-200"
+                      onClick={() =>
+                        window.open(
+                          `/iot-device/${selectedDevice.id}`,
+                          "_blank",
+                        )
+                      }
+                    >
+                      <SettingsIcon className="w-4 h-4 mr-2" />
+                      Cấu hình
+                    </Button>
+                  </div>
+
+                  {/* Location Info */}
+                  <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50">
+                    <div className="text-[10px] font-bold text-blue-500 uppercase mb-2">
+                      Vị trí thực địa
                     </div>
-                    {(() => {
-                      const loc = getLocationInfo(
-                        selectedDevice.lng,
-                        selectedDevice.lat,
-                      );
-                      return (
-                        <>
-                          {loc.zoneName && (
-                            <div className="text-xs flex justify-between">
-                              <span className="text-slate-500">Vùng:</span>
-                              <span className="font-bold">{loc.zoneName}</span>
-                            </div>
-                          )}
-                          {loc.plotName && (
-                            <div className="text-xs flex justify-between">
-                              <span className="text-slate-500">Lô:</span>
-                              <span className="font-bold">{loc.plotName}</span>
-                            </div>
-                          )}
-                        </>
-                      );
-                    })()}
+                    <div className="space-y-1">
+                      <div className="text-xs flex justify-between">
+                        <span className="text-slate-500">Tọa độ:</span>
+                        <span className="font-mono">
+                          {selectedDevice.lat.toFixed(6)},{" "}
+                          {selectedDevice.lng.toFixed(6)}
+                        </span>
+                      </div>
+                      {(() => {
+                        const loc = getLocationInfo(
+                          selectedDevice.lng,
+                          selectedDevice.lat,
+                        );
+                        return (
+                          <>
+                            {loc.zoneName && (
+                              <div className="text-xs flex justify-between">
+                                <span className="text-slate-500">Vùng:</span>
+                                <span className="font-bold">
+                                  {loc.zoneName}
+                                </span>
+                              </div>
+                            )}
+                            {loc.plotName && (
+                              <div className="text-xs flex justify-between">
+                                <span className="text-slate-500">Lô:</span>
+                                <span className="font-bold">
+                                  {loc.plotName}
+                                </span>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </ScrollArea>
-          </div>
+              </ScrollArea>
+            </div>
           )}
         </div>
       </div>

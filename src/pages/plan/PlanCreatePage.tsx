@@ -613,10 +613,16 @@ export default function PlanCreatePage() {
                             if (e.key === "Enter") {
                               e.preventDefault();
                               const name = newManualStage.trim();
-                              if (name && !formData.selectedStages.includes(name)) {
+                              if (
+                                name &&
+                                !formData.selectedStages.includes(name)
+                              ) {
                                 setFormData((prev) => ({
                                   ...prev,
-                                  selectedStages: [...prev.selectedStages, name],
+                                  selectedStages: [
+                                    ...prev.selectedStages,
+                                    name,
+                                  ],
                                 }));
                                 setNewManualStage("");
                               }
@@ -628,7 +634,10 @@ export default function PlanCreatePage() {
                           type="button"
                           onClick={() => {
                             const name = newManualStage.trim();
-                            if (name && !formData.selectedStages.includes(name)) {
+                            if (
+                              name &&
+                              !formData.selectedStages.includes(name)
+                            ) {
                               setFormData((prev) => ({
                                 ...prev,
                                 selectedStages: [...prev.selectedStages, name],
@@ -1533,7 +1542,7 @@ export default function PlanCreatePage() {
   ];
 
   return (
-    <AdminLayout title={pageTitle} description={pageDescription}>
+    <AdminLayout isDev={true} title={pageTitle} description={pageDescription}>
       <div className="max-w-5xl mx-auto">
         <StepperForm
           steps={steps}

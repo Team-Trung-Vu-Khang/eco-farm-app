@@ -100,8 +100,12 @@ const RegionCreatePage = () => {
 
   const generateNextSubAreaCode = useCallback(() => {
     const allSubAreaCodes = [
-      ...(regions || []).flatMap((region) => (region.subAreas || []).map((sub) => sub.code)),
-      ...((formData.subAreas as SubArea[] | undefined) || []).map((sub) => sub.code),
+      ...(regions || []).flatMap((region) =>
+        (region.subAreas || []).map((sub) => sub.code),
+      ),
+      ...((formData.subAreas as SubArea[] | undefined) || []).map(
+        (sub) => sub.code,
+      ),
     ]
       .map((code) => String(code || "").trim())
       .filter(Boolean);
@@ -456,7 +460,8 @@ const RegionCreatePage = () => {
       return;
     }
 
-    const resolvedCode = (formData.code || "").trim() || generateNextRegionCode();
+    const resolvedCode =
+      (formData.code || "").trim() || generateNextRegionCode();
 
     const regionData: Omit<Region, "id"> = {
       code: resolvedCode,
@@ -537,7 +542,9 @@ const RegionCreatePage = () => {
 
     const updatedSub = {
       ...editingSubArea,
-      code: (editingSubArea.code || "").toString().trim() || generateNextSubAreaCode(),
+      code:
+        (editingSubArea.code || "").toString().trim() ||
+        generateNextSubAreaCode(),
       regionId: regionIdForSub,
       coordinates: fullCoords,
     } as SubArea;
@@ -669,6 +676,7 @@ const RegionCreatePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title={isEditMode ? "Cập nhật vùng trồng" : "Thêm mới vùng trồng"}
       description={
         isEditMode

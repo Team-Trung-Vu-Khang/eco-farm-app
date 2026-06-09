@@ -29,6 +29,7 @@ const PlanTypePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Loại Kế Hoạch"
       description="Quản lý các loại hình kế hoạch sản xuất, kinh doanh trong nông trại"
       actions={

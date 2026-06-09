@@ -28,6 +28,7 @@ const MaterialGroupPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Danh mục vật tư"
       description="Quản lý danh sách các nhóm vật tư (Master Data)"
       actions={

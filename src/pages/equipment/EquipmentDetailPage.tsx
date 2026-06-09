@@ -10,7 +10,12 @@ import {
 import { ChevronLeft, Edit } from "lucide-react";
 import useEquipmentStore from "../../stores/useEquipmentStore";
 import { EquipmentDetailHeader } from "./components/detail/EquipmentDetailHeader";
-import { InfoTab, UsageTab, MaintenanceTab, DocsTab } from "./components/detail/EquipmentDetailTabs";
+import {
+  InfoTab,
+  UsageTab,
+  MaintenanceTab,
+  DocsTab,
+} from "./components/detail/EquipmentDetailTabs";
 import { EquipmentDetailSidebar } from "./components/detail/EquipmentDetailSidebar";
 
 const EquipmentDetailPage = () => {
@@ -23,10 +28,14 @@ const EquipmentDetailPage = () => {
 
   if (!item) {
     return (
-      <AdminLayout title="Chi tiết thiết bị">
+      <AdminLayout isDev={true} title="Chi tiết thiết bị">
         <div className="flex flex-col items-center justify-center py-20">
-          <p className="text-muted-foreground mb-4">Không tìm thấy thông tin thiết bị.</p>
-          <Button onClick={() => setLocation("/equipment")}>Quay lại danh sách</Button>
+          <p className="text-muted-foreground mb-4">
+            Không tìm thấy thông tin thiết bị.
+          </p>
+          <Button onClick={() => setLocation("/equipment")}>
+            Quay lại danh sách
+          </Button>
         </div>
       </AdminLayout>
     );
@@ -34,6 +43,7 @@ const EquipmentDetailPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Chi tiết thiết bị"
       description={`Thông tin và lịch sử bảo dưỡng của ${item.name}`}
       actions={

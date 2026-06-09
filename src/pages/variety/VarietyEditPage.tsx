@@ -7,7 +7,7 @@ export default function VarietyEditPage() {
 
   if (form.notFound) {
     return (
-      <AdminLayout title="Không tìm thấy">
+      <AdminLayout isDev={true} title="Không tìm thấy">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin giống cây này.

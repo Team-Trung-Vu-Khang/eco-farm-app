@@ -21,10 +21,14 @@ export default function RoleResponsibilityDetailPage() {
   if (!selectedRole) {
     return (
       <AdminLayout
+        isDev={true}
         title="Không tìm thấy vai trò"
         description="Vai trò bạn đang xem không còn tồn tại trong hệ thống."
       >
-        <Button variant="outline" onClick={() => setLocation("/role-responsibility")}>
+        <Button
+          variant="outline"
+          onClick={() => setLocation("/role-responsibility")}
+        >
           <ChevronLeft className="mr-2 h-4 w-4" />
           Quay lại danh sách
         </Button>
@@ -34,10 +38,15 @@ export default function RoleResponsibilityDetailPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Chi tiết vai trò và trách nhiệm"
       description="Theo dõi cấu hình nghiệp vụ, người dùng phụ trách và tình trạng kiểm tra điều kiện."
       actions={
-        <Button onClick={() => setLocation(`/role-responsibility/${selectedRole.id}/edit`)}>
+        <Button
+          onClick={() =>
+            setLocation(`/role-responsibility/${selectedRole.id}/edit`)
+          }
+        >
           <PencilLine className="mr-2 h-4 w-4" />
           Chỉnh sửa vai trò
         </Button>

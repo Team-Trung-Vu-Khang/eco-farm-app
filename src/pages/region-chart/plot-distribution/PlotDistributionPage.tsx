@@ -22,6 +22,7 @@ const PlotDistributionPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Phân bố lô"
       description="Quản lý danh sách và bản đồ phân bố các lô trồng"
       actions={

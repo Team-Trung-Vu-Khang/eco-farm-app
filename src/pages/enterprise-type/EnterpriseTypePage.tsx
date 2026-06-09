@@ -46,6 +46,7 @@ const EnterpriseTypePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Nhóm tổ chức"
       description="Quản lý các nhóm đối tượng tổ chức/doanh nghiệp"
       actions={

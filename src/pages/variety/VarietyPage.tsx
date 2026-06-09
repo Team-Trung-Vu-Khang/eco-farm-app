@@ -76,6 +76,7 @@ const VarietyPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý giống cây"
       description="Xem và quản lý danh sách các loại giống cây trồng"
       actions={

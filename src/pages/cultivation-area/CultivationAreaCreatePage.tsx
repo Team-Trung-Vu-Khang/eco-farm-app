@@ -468,7 +468,9 @@ const CultivationAreaCreatePage = () => {
                 className="h-8 rounded-lg"
                 onClick={() => {
                   const bounds = L.latLngBounds(areaPoints);
-                  const center = bounds.isValid() ? bounds.getCenter() : mapCenter;
+                  const center = bounds.isValid()
+                    ? bounds.getCenter()
+                    : mapCenter;
                   setAreaPoints((previous) => [
                     ...previous,
                     L.latLng(center.lat + 0.001, center.lng + 0.001),
@@ -503,7 +505,9 @@ const CultivationAreaCreatePage = () => {
                         event.stopPropagation();
                         if (areaPoints.length <= 3) return;
                         setAreaPoints((previous) =>
-                          previous.filter((_, itemIndex) => itemIndex !== index),
+                          previous.filter(
+                            (_, itemIndex) => itemIndex !== index,
+                          ),
                         );
                         setActivePointIndex(null);
                       }}
@@ -671,7 +675,9 @@ const CultivationAreaCreatePage = () => {
                       <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
                       <Input
                         value={cropSearchTerm}
-                        onChange={(event) => setCropSearchTerm(event.target.value)}
+                        onChange={(event) =>
+                          setCropSearchTerm(event.target.value)
+                        }
                         placeholder="Tìm kiếm giống cây trồng..."
                         className="pl-10 bg-slate-50/50 border-slate-200 focus:bg-white transition-all rounded-lg"
                       />
@@ -679,9 +685,8 @@ const CultivationAreaCreatePage = () => {
                     <ScrollArea className="flex-1 overflow-y-auto">
                       <div className="space-y-2 pr-2">
                         {availableCrops.map((crop) => {
-                          const isSelected = effectiveConfig.selectedCrops?.includes(
-                            crop.id,
-                          );
+                          const isSelected =
+                            effectiveConfig.selectedCrops?.includes(crop.id);
                           const selectedSeeds =
                             effectiveConfig.seedSelections?.[crop.id] || [];
 
@@ -947,7 +952,10 @@ const CultivationAreaCreatePage = () => {
 
   return (
     <AdminLayout
-      title={isEdit ? "Chỉnh sửa khu vực canh tác" : "Thiết lập khu vực canh tác"}
+      isDev={true}
+      title={
+        isEdit ? "Chỉnh sửa khu vực canh tác" : "Thiết lập khu vực canh tác"
+      }
       description="Quy trình khởi tạo và cấu hình canh tác cho khu vực cụ thể"
     >
       <div className="mb-6">
