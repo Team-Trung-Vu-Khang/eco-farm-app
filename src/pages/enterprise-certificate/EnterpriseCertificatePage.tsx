@@ -20,7 +20,7 @@ const EnterpriseCertificatePage = () => {
     handleConfirmDelete,
   } = useEnterpriseCertificateForm();
 
-  const columns = getCertificateColumns();
+  const columns = getCertificateColumns(standards);
   const filterConfig = getFilterConfig(standards);
 
   return (

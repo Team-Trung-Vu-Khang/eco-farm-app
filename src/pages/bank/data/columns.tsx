@@ -7,9 +7,14 @@ export const bankColumns: Column<BankAccount>[] = [
     key: "bankName",
     label: "Ngân hàng",
     render: (value, item) => (
-      <div className="flex items-center gap-3">
-        <BankLogo bankName={value as string} logo={item.logo} />
-        <div className="font-medium">{value}</div>
+      <div className="flex items-center gap-2">
+        <BankLogo bankName={value as string} logo={item.logo} size={28} />
+        <Badge
+          variant="secondary"
+          className="rounded-full bg-primary/10 px-2.5 py-1 text-primary"
+        >
+          {value as string}
+        </Badge>
       </div>
     ),
   },
@@ -21,7 +26,10 @@ export const bankColumns: Column<BankAccount>[] = [
     key: "status",
     label: "Trạng thái",
     render: (value) => (
-      <Badge variant={value === "active" ? "default" : "outline"}>
+      <Badge
+        variant={value === "active" ? "default" : "outline"}
+        className="rounded-full px-2.5 py-1"
+      >
         {value === "active" ? "Hoạt động" : "Không hoạt động"}
       </Badge>
     ),

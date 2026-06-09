@@ -50,7 +50,18 @@ export function useEnterprisePage() {
   const [deleteItem, setDeleteItem] = useState<Enterprise | null>(null);
 
   const columns: Column<Enterprise>[] = [
-    { key: "code", label: "Mã" },
+    {
+      key: "code",
+      label: "Mã",
+      render: (value) => (
+        <Badge
+          variant="outline"
+          className="rounded-full bg-slate-50 px-2.5 py-1 font-mono text-[10px] text-slate-700"
+        >
+          {value as string}
+        </Badge>
+      ),
+    },
     {
       key: "image",
       label: "Hình ảnh",
@@ -64,27 +75,33 @@ export function useEnterprisePage() {
         ) : null,
     },
     { key: "name", label: "Tên đơn vị" },
-    {
-      key: "classification",
-      label: "Phân loại",
-      render: (value) => {
-        const labels: Record<string, string> = {
+  {
+    key: "classification",
+    label: "Phân loại",
+    render: (value) => {
+      const labels: Record<string, string> = {
           production: "Sản xuất",
           processing: "Chế biến",
           trading: "Thương mại",
           service: "Dịch vụ",
           other: "Khác",
-        };
-        const items = value as string[];
-        return items.map((item: string) => {
-          return (
-            <Badge key={item} variant="secondary" className="mr-1">
+      };
+      const items = value as string[];
+      return (
+        <div className="flex flex-wrap gap-1.5">
+          {items.map((item: string) => (
+            <Badge
+              key={item}
+              variant="secondary"
+              className="rounded-full bg-primary/10 px-2.5 py-1 text-primary"
+            >
               {labels[item] || item}
             </Badge>
-          );
-        });
-      },
+          ))}
+        </div>
+      );
     },
+  },
     {
       key: "phone",
       label: "Điện thoại",
@@ -148,15 +165,18 @@ export function useEnterprisePage() {
       },
     },
     { key: "address", label: "Địa chỉ" },
-    {
-      key: "status",
-      label: "Trạng thái",
-      render: (value) => (
-        <Badge variant={value === "active" ? "default" : "outline"}>
-          {value === "active" ? "Hoạt động" : "Không hoạt động"}
-        </Badge>
-      ),
-    },
+  {
+    key: "status",
+    label: "Trạng thái",
+    render: (value) => (
+      <Badge
+        variant={value === "active" ? "default" : "outline"}
+        className="rounded-full px-2.5 py-1"
+      >
+        {value === "active" ? "Hoạt động" : "Không hoạt động"}
+      </Badge>
+    ),
+  },
   ];
 
   const filters = [

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { Enterprise } from "@/pages/enterprise/data/constants";
 import { vietQrBankData } from "../../../constants/banks";
@@ -103,7 +104,18 @@ export const INITIAL_DATA: Enterprise[] = [
 ];
 
 export const COOPERATIVE_COLUMNS: Column<Enterprise>[] = [
-  { key: "code", label: "Mã" },
+  {
+    key: "code",
+    label: "Mã",
+    render: (value) => (
+      <Badge
+        variant="outline"
+        className="rounded-full bg-slate-50 px-2.5 py-1 font-mono text-[10px] text-slate-700"
+      >
+        {value as string}
+      </Badge>
+    ),
+  },
   {
     key: "image",
     label: "Hình ảnh",
@@ -128,13 +140,19 @@ export const COOPERATIVE_COLUMNS: Column<Enterprise>[] = [
         service: "Dịch vụ",
         other: "Khác",
       };
-      return (value as string[]).map((item: string) => {
-        return (
-          <Badge key={item} variant="secondary" className="mr-1">
-            {labels[item] || item}
-          </Badge>
-        );
-      });
+      return (
+        <div className="flex flex-wrap gap-1.5">
+          {(value as string[]).map((item: string) => (
+            <Badge
+              key={item}
+              variant="secondary"
+              className="rounded-full bg-primary/10 px-2.5 py-1 text-primary"
+            >
+              {labels[item] || item}
+            </Badge>
+          ))}
+        </div>
+      );
     },
   },
   {
@@ -204,7 +222,10 @@ export const COOPERATIVE_COLUMNS: Column<Enterprise>[] = [
     key: "status",
     label: "Trạng thái",
     render: (value) => (
-      <Badge variant={value === "active" ? "default" : "outline"}>
+      <Badge
+        variant={value === "active" ? "default" : "outline"}
+        className="rounded-full px-2.5 py-1"
+      >
         {value === "active" ? "Hoạt động" : "Không hoạt động"}
       </Badge>
     ),

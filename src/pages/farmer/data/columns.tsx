@@ -28,7 +28,18 @@ const formatContactTooltip = (farmer: Enterprise) => {
 };
 
 export const farmerColumns: Column<Enterprise>[] = [
-  { key: "code", label: "Mã" },
+  {
+    key: "code",
+    label: "Mã",
+    render: (value) => (
+      <Badge
+        variant="outline"
+        className="rounded-full bg-slate-50 px-2.5 py-1 font-mono text-[10px] text-slate-700"
+      >
+        {value as string}
+      </Badge>
+    ),
+  },
   {
     key: "image",
     label: "Hình ảnh",
@@ -53,11 +64,19 @@ export const farmerColumns: Column<Enterprise>[] = [
         service: "Dịch vụ",
         other: "Khác",
       };
-      return (value as string[])?.map((item: string) => (
-        <Badge key={item} variant="secondary" className="mr-1">
-          {labels[item] || item}
-        </Badge>
-      ));
+      return (
+        <div className="flex flex-wrap gap-1.5">
+          {(value as string[])?.map((item: string) => (
+            <Badge
+              key={item}
+              variant="secondary"
+              className="rounded-full bg-primary/10 px-2.5 py-1 text-primary"
+            >
+              {labels[item] || item}
+            </Badge>
+          ))}
+        </div>
+      );
     },
   },
   {
@@ -79,15 +98,22 @@ export const farmerColumns: Column<Enterprise>[] = [
       const primaryContact = contacts[0];
       const extraCount = Math.max(0, contacts.length - 1);
 
-      return (
+      return primaryContact?.phone ? (
         <div className="max-w-[240px] space-y-1" title={formatContactTooltip(row)}>
-          <div className="font-medium truncate">{primaryContact?.phone || "-"}</div>
+          <Badge
+            variant="outline"
+            className="rounded-full bg-slate-50 px-2.5 py-1 font-mono text-[10px] text-slate-700"
+          >
+            {primaryContact.phone}
+          </Badge>
           {extraCount > 0 && (
             <div className="text-xs text-muted-foreground">
               +{extraCount} liên hệ khác
             </div>
           )}
         </div>
+      ) : (
+        <span className="text-muted-foreground text-sm">-</span>
       );
     },
   },
@@ -110,15 +136,22 @@ export const farmerColumns: Column<Enterprise>[] = [
       const primaryContact = contacts[0];
       const extraCount = Math.max(0, contacts.length - 1);
 
-      return (
+      return primaryContact?.email ? (
         <div className="max-w-[240px] space-y-1" title={formatContactTooltip(row)}>
-          <div className="font-medium truncate">{primaryContact?.email || "-"}</div>
+          <Badge
+            variant="secondary"
+            className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700"
+          >
+            {primaryContact.email}
+          </Badge>
           {extraCount > 0 && (
             <div className="text-xs text-muted-foreground">
               +{extraCount} liên hệ khác
             </div>
           )}
         </div>
+      ) : (
+        <span className="text-muted-foreground text-sm">-</span>
       );
     },
   },
@@ -127,7 +160,10 @@ export const farmerColumns: Column<Enterprise>[] = [
     key: "status",
     label: "Trạng thái",
     render: (value) => (
-      <Badge variant={value === "active" ? "default" : "outline"}>
+      <Badge
+        variant={value === "active" ? "default" : "outline"}
+        className="rounded-full px-2.5 py-1"
+      >
         {value === "active" ? "Hoạt động" : "Không hoạt động"}
       </Badge>
     ),
