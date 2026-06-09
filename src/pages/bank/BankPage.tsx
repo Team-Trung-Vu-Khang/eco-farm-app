@@ -43,7 +43,7 @@ export default function BankPage() {
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm tài khoản..."
         filters={[...bankFilters]}
-        selectable
+        selectable={false}
       />
 
       <DeleteDialog

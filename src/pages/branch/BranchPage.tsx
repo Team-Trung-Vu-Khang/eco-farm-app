@@ -48,7 +48,7 @@ export default function BranchPage() {
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm chi nhánh..."
         filters={[...branchFilters] as any}
-        selectable
+        selectable={false}
       />
 
       <DeleteDialog

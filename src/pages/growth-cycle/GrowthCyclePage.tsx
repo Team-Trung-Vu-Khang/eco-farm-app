@@ -45,7 +45,7 @@ const GrowthCyclePage = () => {
     >
       <DataTable
         data={growthCycles}
-        selectable
+        selectable={false}
         columns={growthCycleColumns}
         onView={handleView}
         onEdit={handleEdit}

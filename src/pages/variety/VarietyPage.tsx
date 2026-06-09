@@ -92,7 +92,7 @@ const VarietyPage = () => {
       <DataTable
         columns={varietyColumns}
         data={varieties}
-        selectable
+        selectable={false}
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}

@@ -46,7 +46,7 @@ export default function SeedPage() {
       <DataTable
         columns={seedColumns}
         data={seeds}
-        selectable
+        selectable={false}
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}

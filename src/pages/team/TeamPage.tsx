@@ -61,7 +61,7 @@ export default function TeamPage() {
         onEdit={(item) => goToDetail(item.id)}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm đội nhóm..."
-        selectable
+        selectable={false}
       />
 
       <DeleteDialog

@@ -36,7 +36,7 @@ export default function SeasonPage() {
     >
       <DataTable
         data={seasons}
-        selectable
+        selectable={false}
         columns={seasonColumns}
         onEdit={handleEdit}
         onDelete={handleDelete}

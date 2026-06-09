@@ -1,9 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Plus } from "lucide-react";
-import {
-  Button,
-  DataTable,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Button, DataTable } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { getContactColumns, getContactFilters } from "../../data/columns";
 import type { Contact, ContactGroup } from "../../types/types";
 
@@ -40,7 +37,7 @@ export function ContactTab({ contacts, groups, onDelete }: ContactTabProps) {
         onDelete={onDelete}
         searchPlaceholder="Tìm kiếm liên hệ..."
         filters={getContactFilters(groups)}
-        selectable
+        selectable={false}
       />
     </div>
   );

@@ -48,7 +48,7 @@ export default function CropPage() {
         onView={handleView}
         onEdit={handleEdit}
         searchPlaceholder="Tìm kiếm cây trồng..."
-        selectable
+        selectable={false}
         filters={TABLE_FILTERS}
       />
 

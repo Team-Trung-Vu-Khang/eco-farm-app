@@ -43,7 +43,7 @@ export default function FarmerPage() {
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm nông hộ..."
         filters={farmerFilters}
-        selectable
+        selectable={false}
       />
 
       <DeleteDialog

@@ -9,7 +9,14 @@ import {
   DropdownMenuTrigger,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { MoreHorizontal, Edit, Eye, Trash2, PowerOff, Power } from "lucide-react";
+import {
+  MoreHorizontal,
+  Edit,
+  Eye,
+  Trash2,
+  PowerOff,
+  Power,
+} from "lucide-react";
 import {
   type DocumentCategory,
   type EntityType,
@@ -74,7 +81,11 @@ export const DocumentCategoryTable: React.FC<DocumentCategoryTableProps> = ({
       render: (value, item) => (
         <Badge
           variant={item.required ? "default" : "outline"}
-          className={item.required ? "bg-red-500 hover:bg-red-600 border-none" : "text-slate-400 border-slate-200"}
+          className={
+            item.required
+              ? "bg-red-500 hover:bg-red-600 border-none"
+              : "text-slate-400 border-slate-200"
+          }
         >
           {item.required ? "Bắt buộc" : "Không"}
         </Badge>
@@ -86,7 +97,11 @@ export const DocumentCategoryTable: React.FC<DocumentCategoryTableProps> = ({
       render: (value, item) => (
         <Badge
           variant={item.hasExpiry ? "secondary" : "outline"}
-          className={item.hasExpiry ? "bg-amber-100 text-amber-700 border-none" : "text-slate-400 border-slate-200"}
+          className={
+            item.hasExpiry
+              ? "bg-amber-100 text-amber-700 border-none"
+              : "text-slate-400 border-slate-200"
+          }
         >
           {item.hasExpiry ? "Có" : "Không"}
         </Badge>
@@ -114,7 +129,11 @@ export const DocumentCategoryTable: React.FC<DocumentCategoryTableProps> = ({
       render: (value, item) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-primary">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-slate-400 hover:text-primary"
+            >
               <MoreHorizontal size={16} />
             </Button>
           </DropdownMenuTrigger>
@@ -158,7 +177,7 @@ export const DocumentCategoryTable: React.FC<DocumentCategoryTableProps> = ({
       data={data}
       columns={columns}
       searchPlaceholder="Tìm kiếm mã, tên tài liệu..."
-      selectable
+      selectable={false}
     />
   );
 };

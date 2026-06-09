@@ -65,7 +65,7 @@ export default function PersonnelPage() {
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm nhân sự..."
         filters={personnelFilters}
-        selectable
+        selectable={false}
       />
 
       <DeleteDialog

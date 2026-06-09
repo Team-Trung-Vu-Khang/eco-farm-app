@@ -39,7 +39,7 @@ export default function DocsPage() {
     >
       <DataTable
         data={data}
-        selectable
+        selectable={false}
         columns={DOCS_COLUMNS}
         onEdit={handleEdit}
         onDelete={handleDelete}

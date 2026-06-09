@@ -24,7 +24,7 @@ export function CooperativeTable({
       onDelete={onDelete}
       searchPlaceholder="Tìm kiếm hợp tác xã..."
       filters={COOPERATIVE_FILTERS}
-      selectable
+      selectable={false}
     />
   );
 }

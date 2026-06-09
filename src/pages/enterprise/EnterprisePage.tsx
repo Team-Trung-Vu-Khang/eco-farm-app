@@ -42,7 +42,7 @@ export default function EnterprisePage() {
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm doanh nghiệp..."
         filters={filters}
-        selectable
+        selectable={false}
       />
 
       <DeleteDialog
