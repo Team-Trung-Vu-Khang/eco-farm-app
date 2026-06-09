@@ -1,18 +1,16 @@
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Label,
-  Input,
-  Button,
   Badge,
+  Button,
+  Card,
+  CardContent,
+  Input,
+  Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useState } from "react";
-import { Plus, Users, User, Trash2, CreditCard } from "lucide-react";
-import type { Contact, CooperativeFormData } from "../../types/types";
+import { useMemo, useState } from "react";
+import { Mail, Phone, Plus, Trash2, User, Users } from "lucide-react";
 import useContactStore from "@/stores/useContactStore";
 import { ContactSelectorDialog } from "../ContactSelectorDialog";
+import type { Contact, CooperativeFormData } from "../../types/types";
 
 interface ContactInfoStepProps {
   formData: CooperativeFormData;
@@ -37,66 +35,61 @@ export function ContactInfoStep({
       contact.phone === newContact.phone &&
       contact.email === newContact.email,
   );
-  const selectedContactId = selectedContact?.id ?? null;
+
+  const selectedContactLabel = useMemo(() => {
+    if (!selectedContact) return "Chọn liên hệ...";
+    return `${selectedContact.fullName} - ${selectedContact.phone}`;
+  }, [selectedContact]);
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
-      <Card className="border-primary/20 bg-primary/5">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Thêm liên hệ mới
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+    <div className="mx-auto max-w-4xl space-y-8">
+      <Card className="overflow-hidden border-primary/20 shadow-lg">
+        <CardContent className="space-y-6 p-6">
           <div className="space-y-2">
-            <Label>Chọn liên hệ từ danh sách</Label>
+            <Label className="text-sm font-semibold">Họ và tên</Label>
             <div className="flex gap-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsContactDialogOpen(true)}
-                className="h-10 flex-1 justify-between border-primary/20 bg-muted/20 text-left font-normal hover:border-primary/40 hover:bg-primary/5"
+                className="h-11 flex-1 justify-between border-primary/20 bg-muted/20 text-left font-normal hover:border-primary/40 hover:bg-primary/5"
               >
-                <span className="truncate">
-                  {selectedContact
-                    ? `${selectedContact.fullName} - ${selectedContact.phone}`
-                    : "Chọn liên hệ..."}
-                </span>
-                <Users className="w-4 h-4 shrink-0 text-muted-foreground" />
+                <span className="truncate">{selectedContactLabel}</span>
+                <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
               </Button>
               {(newContact.name || newContact.phone || newContact.email) && (
                 <Button
                   type="button"
                   variant="ghost"
                   onClick={() => setNewContact({ name: "", phone: "", email: "" })}
-                  className="h-10 px-3 text-muted-foreground"
+                  className="h-11 px-3 text-muted-foreground"
                 >
                   Xóa
                 </Button>
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Chọn nhanh từ danh sách liên hệ sẵn có hoặc nhập mới bên dưới.
+              Có thể chọn liên hệ từ store Thông tin liên hệ.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2 col-span-2">
-              <Label htmlFor="contact-name">Hoặc nhập họ và tên *</Label>
-              <Input
-                id="contact-name"
-                value={newContact.name}
-                onChange={(e) =>
-                  setNewContact({ ...newContact, name: e.target.value })
-                }
-                placeholder="VD: Nguyễn Văn A"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">Hoặc nhập tên mới</Label>
+            <Input
+              value={newContact.name}
+              onChange={(e) =>
+                setNewContact({ ...newContact, name: e.target.value })
+              }
+              placeholder="VD: Nguyễn Văn A"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="contact-phone">Số điện thoại *</Label>
+              <Label className="text-sm font-semibold">
+                Số điện thoại <span className="text-red-500">*</span>
+              </Label>
               <Input
-                id="contact-phone"
                 value={newContact.phone}
                 onChange={(e) =>
                   setNewContact({ ...newContact, phone: e.target.value })
@@ -105,9 +98,8 @@ export function ContactInfoStep({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="contact-email">Email</Label>
+              <Label className="text-sm font-semibold">Email</Label>
               <Input
-                id="contact-email"
                 type="email"
                 value={newContact.email}
                 onChange={(e) =>
@@ -117,8 +109,12 @@ export function ContactInfoStep({
               />
             </div>
           </div>
-          <Button onClick={addContact} className="w-full">
-            <Plus className="w-4 h-4 mr-2" />
+
+          <Button
+            onClick={addContact}
+            className="h-11 w-full bg-primary font-bold text-white hover:bg-primary/90"
+          >
+            <Plus className="mr-2 h-4 w-4" />
             Thêm vào danh sách
           </Button>
         </CardContent>
@@ -127,7 +123,7 @@ export function ContactInfoStep({
       <ContactSelectorDialog
         open={isContactDialogOpen}
         onOpenChange={setIsContactDialogOpen}
-        selectedId={selectedContactId}
+        selectedId={selectedContact?.id || null}
         onSelect={(contact) =>
           setNewContact({
             name: contact.fullName,
@@ -138,54 +134,65 @@ export function ContactInfoStep({
       />
 
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold flex items-center gap-2">
-            <Users className="w-5 h-5 text-primary" />
+        <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
+          <h3 className="flex items-center gap-2 text-xl font-bold">
+            <Users className="h-5 w-5 text-primary" />
             Danh sách liên hệ
           </h3>
-          <Badge variant="outline">{formData.contacts.length} liên hệ</Badge>
+          <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">
+            {formData.contacts.length} liên hệ
+          </Badge>
         </div>
 
         {formData.contacts.length === 0 ? (
-          <div className="text-center py-10 border-2 border-dashed rounded-xl text-muted-foreground">
-            <p>Chưa có thông tin liên hệ nào.</p>
-            <p className="text-sm">Vui lòng thêm liên hệ ở form phía trên.</p>
+          <div className="rounded-3xl border-2 border-dashed bg-muted/5 py-16 text-center transition-colors hover:bg-muted/10">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted/40">
+              <Users className="h-10 w-10 text-muted-foreground" />
+            </div>
+            <h5 className="text-lg font-bold text-muted-foreground">
+              Chưa có liên hệ nào
+            </h5>
+            <p className="mt-2 text-sm text-muted-foreground/70">
+              Các liên hệ bạn thêm sẽ hiển thị tại đây để kiểm tra trước khi lưu.
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {formData.contacts.map((contact, index) => (
               <div
                 key={index}
-                className="relative group bg-card border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                className="group relative overflow-hidden rounded-2xl border border-primary/10 bg-card shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
               >
-                <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+                <div className="absolute left-0 top-0 h-full w-1 bg-primary" />
                 <div className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <User className="w-4 h-4 text-primary" />
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                        <User className="h-4 w-4 text-primary" />
                       </div>
-                      <span className="font-bold">{contact.name}</span>
+                      <div>
+                        <div className="font-bold text-slate-900">
+                          {contact.name}
+                        </div>
+                      </div>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="h-8 w-8 text-destructive opacity-0 transition-opacity group-hover:opacity-100"
                       onClick={() => removeContact(index)}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
-                  <div className="space-y-1 text-sm text-muted-foreground ml-10">
+                  <div className="ml-10 space-y-1.5 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
-                      <CreditCard className="w-3 h-3" />
+                      <Phone className="h-3.5 w-3.5" />
                       <span>{contact.phone}</span>
                     </div>
                     {contact.email && (
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 flex items-center justify-center">
-                          @
-                        </span>
+                        <Mail className="h-3.5 w-3.5" />
                         <span className="truncate">{contact.email}</span>
                       </div>
                     )}

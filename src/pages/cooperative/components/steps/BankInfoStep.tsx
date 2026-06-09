@@ -1,48 +1,37 @@
+import { useMemo, useState } from "react";
 import {
+  Badge,
+  Button,
   Card,
+  CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardContent,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-  Label,
-  Combobox,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Input,
-  Textarea,
-  Button,
-  Badge,
+  Label,
+  ScrollArea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  Building2,
-  Plus,
-  FileText,
-  QrCode,
-  Scan,
-  Download,
-  Upload,
-  Camera,
-  Search,
-  Trash2,
-  CreditCard,
-} from "lucide-react";
-import { Scanner } from "@yudiel/react-qr-scanner";
-import { useState } from "react";
-import useBankStore from "@/stores/useBankStore";
-import type { BankAccount } from "../../types/types";
-import { BANK_OPTIONS } from "../../data/constants";
+import { Banknote, Check, CreditCard, Plus, Search, Trash2 } from "lucide-react";
 import { vietQrBankData } from "@/constants/banks";
-import { BankSelectorDialog } from "../BankSelectorDialog";
+import useBankStore, {
+  type BankAccount as StoredBankAccount,
+} from "@/stores/useBankStore";
+import type { BankAccount } from "../../types/types";
+
+type BankInputMethod = "manual" | "excel" | "qr-image" | "qr-scan";
 
 interface BankInfoStepProps {
   bankAccounts: BankAccount[];
   newBankAccount: BankAccount;
   setNewBankAccount: (acc: BankAccount) => void;
   bankInputMethod: "manual" | "excel" | "qr-image" | "qr-scan";
-  setBankInputMethod: (
-    method: "manual" | "excel" | "qr-image" | "qr-scan",
-  ) => void;
+  setBankInputMethod: (method: BankInputMethod) => void;
   hasCamera: boolean;
   bankSearchQuery: string;
   setBankSearchQuery: (q: string) => void;
@@ -52,9 +41,200 @@ interface BankInfoStepProps {
   handleExcelDrop: (e: React.DragEvent) => void;
   handleQRImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleQRImageDrop: (e: React.DragEvent) => void;
-  handleLiveScan: (result: any) => void;
+  handleLiveScan: (result: Array<{ rawValue: string }> | null) => void;
   addBankAccount: () => void;
   removeBankAccount: (index: number) => void;
+}
+
+function CooperativeBankSelectorDialog({
+  open,
+  onOpenChange,
+  selectedBankName,
+  onSelect,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  selectedBankName: string;
+  onSelect: (bank: StoredBankAccount) => void;
+}) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [tempSelectedName, setTempSelectedName] = useState(selectedBankName);
+  const bankAccounts = useBankStore((state) => state.bankAccounts);
+
+  const filteredBanks = useMemo(() => {
+    const query = searchTerm.toLowerCase().trim();
+    if (!query) return bankAccounts;
+
+    return bankAccounts.filter((bank) => {
+      const searchable = [
+        bank.bankName,
+        bank.accountNumber,
+        bank.accountHolder,
+        bank.branch,
+        bank.note,
+      ]
+        .join(" ")
+        .toLowerCase();
+      return searchable.includes(query);
+    });
+  }, [bankAccounts, searchTerm]);
+
+  const selectedBank = bankAccounts.find(
+    (bank) =>
+      `${bank.bankName} - ${bank.accountNumber}` === tempSelectedName ||
+      bank.bankName === tempSelectedName,
+  );
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (nextOpen) {
+          setTempSelectedName(selectedBankName);
+          setSearchTerm("");
+        }
+        onOpenChange(nextOpen);
+      }}
+    >
+      <DialogContent className="flex h-[90vh] max-h-[90vh] max-w-4xl flex-col overflow-hidden border-none p-0 shadow-2xl">
+        <DialogHeader className="shrink-0 border-b bg-slate-50 px-6 py-5">
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Search className="h-4 w-4" />
+            </div>
+            Chọn tài khoản ngân hàng
+          </DialogTitle>
+          <DialogDescription className="mt-1 text-sm text-muted-foreground">
+            Chọn nhanh một tài khoản có sẵn để tự điền ngân hàng, số tài khoản,
+            chủ tài khoản, chi nhánh và ghi chú.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="shrink-0 border-b bg-white px-6 py-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Tìm theo ngân hàng, số tài khoản, chủ tài khoản..."
+              className="h-11 rounded-xl border-slate-200 bg-slate-50 pl-10 transition-all focus:bg-white"
+            />
+          </div>
+          <div className="mt-3 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+            <span>{filteredBanks.length} kết quả</span>
+            {selectedBank && (
+              <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-primary">
+                <Check className="h-3 w-3" />
+                Đang chọn: {selectedBank.bankName}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="grid gap-3 p-6 sm:grid-cols-2">
+            {filteredBanks.map((bank) => {
+              const displayName = `${bank.bankName} - ${bank.accountNumber}`;
+              const isSelected =
+                tempSelectedName === displayName || tempSelectedName === bank.bankName;
+              const bankInfo = vietQrBankData.find(
+                (item) => item.shortName === bank.bankName || item.name === bank.bankName,
+              );
+
+              return (
+                <button
+                  key={bank.id}
+                  type="button"
+                  onClick={() => setTempSelectedName(displayName)}
+                  className={[
+                    "group flex items-start gap-4 rounded-2xl border bg-white p-4 text-left transition-all hover:border-primary/30 hover:shadow-md",
+                    isSelected
+                      ? "border-primary/40 bg-primary/5 shadow-sm"
+                      : "border-slate-200",
+                  ].join(" ")}
+                >
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-slate-100 bg-white p-2 shadow-sm">
+                    <img
+                      src={
+                        bank.logo ||
+                        bankInfo?.logo ||
+                        `https://placehold.co/56x56?text=${bank.bankName?.[0] || "B"}`
+                      }
+                      alt={bank.bankName}
+                      className="h-full w-full object-contain"
+                      onError={(event) => {
+                        (event.target as HTMLImageElement).src =
+                          "https://placehold.co/56x56?text=B";
+                      }}
+                    />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="truncate text-sm font-bold text-slate-900">
+                          {bank.bankName}
+                        </h3>
+                        <p className="mt-1 line-clamp-2 text-xs text-slate-500">
+                          {bank.accountHolder}
+                        </p>
+                      </div>
+                      <div
+                        className={[
+                          "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+                          isSelected
+                            ? "border-primary bg-primary text-white"
+                            : "border-slate-300 bg-white",
+                        ].join(" ")}
+                      >
+                        {isSelected && <Check className="h-3 w-3" />}
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                        STK: {bank.accountNumber}
+                      </Badge>
+                      <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                        {bank.branch || "Không có chi nhánh"}
+                      </Badge>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+
+            {filteredBanks.length === 0 && (
+              <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-sm text-muted-foreground">
+                <Search className="mb-2 h-5 w-5 text-slate-400" />
+                Không tìm thấy ngân hàng phù hợp
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+
+        <DialogFooter className="shrink-0 border-t bg-white px-6 py-4">
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Hủy
+          </Button>
+          <Button
+            onClick={() => {
+              const bank = bankAccounts.find((item) => {
+                const displayName = `${item.bankName} - ${item.accountNumber}`;
+                return displayName === tempSelectedName || item.bankName === tempSelectedName;
+              });
+              if (bank) onSelect(bank);
+              onOpenChange(false);
+            }}
+            disabled={!tempSelectedName}
+            className="bg-primary hover:bg-primary/90"
+          >
+            Xác nhận
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export function BankInfoStep({
@@ -77,455 +257,308 @@ export function BankInfoStep({
   removeBankAccount,
 }: BankInfoStepProps) {
   const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
-  const safeBankAccounts = bankAccounts ?? [];
-  const bankStoreAccounts = useBankStore((state) => state.bankAccounts);
-  const selectedBank = bankStoreAccounts.find(
-    (account) =>
-      account.bankName === newBankAccount.bankName &&
-      account.accountNumber === newBankAccount.accountNumber &&
-      account.accountHolder === newBankAccount.accountHolder,
-  );
+  const selectedBanks = useMemo(() => bankAccounts, [bankAccounts]);
+
+  const selectedBankLabel = useMemo(() => {
+    if (!newBankAccount.bankName) return "Chọn ngân hàng...";
+
+    const selectedBank = selectedBanks.find(
+      (item) =>
+        item.bankName === newBankAccount.bankName &&
+        item.accountNumber === newBankAccount.accountNumber,
+    );
+
+    return selectedBank
+      ? `${selectedBank.bankName} - ${selectedBank.accountNumber}`
+      : newBankAccount.bankName;
+  }, [newBankAccount.accountNumber, newBankAccount.bankName, selectedBanks]);
+
+  const handleSelectBank = (bank: StoredBankAccount) => {
+    const bankInfo = vietQrBankData.find(
+      (item) => item.shortName === bank.bankName || item.name === bank.bankName,
+    );
+
+    setNewBankAccount({
+      bankName: bank.bankName,
+      accountNumber: bank.accountNumber,
+      accountHolder: bank.accountHolder,
+      branch: bank.branch,
+      note: bank.note,
+      bin: bankInfo?.bin || bank.bin || "",
+    });
+  };
+
+  const filteredAccounts = useMemo(() => {
+    const query = bankSearchQuery.toLowerCase().trim();
+    return selectedBanks
+      .map((account, index) => ({ account, index }))
+      .filter(({ account }) => {
+        if (!query) return true;
+
+        return [
+          account.bankName,
+          account.accountNumber,
+          account.accountHolder,
+          account.branch,
+          account.note,
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(query);
+      });
+  }, [bankSearchQuery, selectedBanks]);
+
+  void bankInputMethod;
+  void setBankInputMethod;
+  void hasCamera;
+  void isDragging;
+  void handleDrag;
+  void handleExcelUpload;
+  void handleExcelDrop;
+  void handleQRImageUpload;
+  void handleQRImageDrop;
+  void handleLiveScan;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="mx-auto max-w-4xl space-y-8">
       <Card className="overflow-hidden border-primary/20 shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-lg font-medium flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-primary" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg font-medium">
+            <Banknote className="h-5 w-5 text-primary" />
             Thêm tài khoản ngân hàng
           </CardTitle>
+          <CardDescription className="text-sm text-muted-foreground">
+            Chọn ngân hàng từ danh sách hoặc nhập tay thông tin tài khoản mới.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="p-6 pt-0">
-          <Tabs
-            value={bankInputMethod}
-            onValueChange={(val: any) => setBankInputMethod(val)}
-            className="w-full"
-          >
-            <TabsList className="grid w-full grid-cols-4 mb-8 bg-muted/50 p-1">
-              <TabsTrigger
-                value="manual"
-                className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              >
-                <Plus className="w-4 h-4 mr-2" /> Nhập tay
-              </TabsTrigger>
-              <TabsTrigger
-                value="excel"
-                className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              >
-                <FileText className="w-4 h-4 mr-2" /> Excel
-              </TabsTrigger>
-              <TabsTrigger
-                value="qr-image"
-                className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              >
-                <QrCode className="w-4 h-4 mr-2" /> Đọc QR
-              </TabsTrigger>
-              <TabsTrigger
-                value="qr-scan"
-                disabled={!hasCamera}
-                className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              >
-                <Scan className="w-4 h-4 mr-2" /> Quét mã
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent
-              value="manual"
-              className="space-y-6 animate-in fade-in-50 duration-300"
-            >
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold">
-                    Chọn tài khoản từ danh sách
-                  </Label>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsBankDialogOpen(true)}
-                      className="h-10 flex-1 justify-between border-primary/20 bg-muted/20 text-left font-normal hover:border-primary/40 hover:bg-primary/5"
-                    >
-                      <span className="truncate">
-                        {selectedBank
-                          ? `${selectedBank.bankName} - ${selectedBank.accountNumber}`
-                          : "Chọn ngân hàng..."}
-                      </span>
-                      <Search className="w-4 h-4 shrink-0 text-muted-foreground" />
-                    </Button>
-                    {(newBankAccount.bankName ||
-                      newBankAccount.accountNumber) && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() =>
-                          setNewBankAccount({
-                            bankName: "",
-                            accountHolder: "",
-                            accountNumber: "",
-                            branch: "",
-                            note: "",
-                            bin: "",
-                          })
-                        }
-                        className="h-10 px-3 text-muted-foreground"
-                      >
-                        Xóa
-                      </Button>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Chọn nhanh từ danh sách tài khoản sẵn có hoặc nhập mới bên
-                    dưới.
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold">
-                    Số tài khoản *
-                  </Label>
-                  <Input
-                    value={newBankAccount.accountNumber}
-                    onChange={(e) =>
-                      setNewBankAccount({
-                        ...newBankAccount,
-                        accountNumber: e.target.value,
-                      })
-                    }
-                    placeholder="Nhập số tài khoản"
-                    className="bg-muted/30 focus-visible:ring-primary"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold">
-                    Chủ tài khoản *
-                  </Label>
-                  <Input
-                    value={newBankAccount.accountHolder}
-                    onChange={(e) =>
-                      setNewBankAccount({
-                        ...newBankAccount,
-                        accountHolder: e.target.value.toUpperCase(),
-                      })
-                    }
-                    placeholder="TÊN CHỦ TÀI KHOẢN"
-                    className="bg-muted/30 focus-visible:ring-primary"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold">Chi nhánh</Label>
-                  <Input
-                    value={newBankAccount.branch}
-                    onChange={(e) =>
-                      setNewBankAccount({
-                        ...newBankAccount,
-                        branch: e.target.value,
-                      })
-                    }
-                    placeholder="VD: CN Hoàn Kiếm"
-                    className="bg-muted/30 focus-visible:ring-primary"
-                  />
-                </div>
-                <div className="col-span-2 space-y-2">
-                  <Label className="text-sm font-semibold">Ghi chú</Label>
-                  <Textarea
-                    value={newBankAccount.note}
-                    onChange={(e) =>
-                      setNewBankAccount({
-                        ...newBankAccount,
-                        note: e.target.value,
-                      })
-                    }
-                    placeholder="Ghi chú thêm (không bắt buộc)"
-                    rows={2}
-                    className="bg-muted/30 focus-visible:ring-primary resize-none"
-                  />
-                </div>
-              </div>
-              <Button
-                onClick={addBankAccount}
-                className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-12"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Thêm vào danh sách
-              </Button>
-            </TabsContent>
-
-            <TabsContent
-              value="excel"
-              className="animate-in fade-in-50 duration-300"
-            >
-              <div className="space-y-6">
-                <div className="flex items-center justify-between p-4 bg-blue-50/50 border border-blue-100 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                      <Download className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm text-blue-900">
-                        Mẫu file Excel
-                      </p>
-                      <p className="text-xs text-blue-700">
-                        Tải xuống file mẫu để nhập liệu chính xác
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="bg-white border-blue-200 hover:bg-blue-50"
-                    onClick={() =>
-                      window.open(
-                        "https://static.affina.com.vn/affina/49cc7798-57fc-4f22-83a0-542fbf3b3c36.xlsx",
-                        "_blank",
-                      )
-                    }
-                  >
-                    <Download className="w-4 h-4 mr-2" /> Tải mẫu
-                  </Button>
-                </div>
-
-                <div
-                  className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all group cursor-pointer ${isDragging["excel"] ? "border-primary bg-primary/5 scale-[1.02]" : "border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/5"}`}
-                  onClick={() =>
-                    document.getElementById("excel-upload")?.click()
-                  }
-                  onDragEnter={(e) => handleDrag("excel", e)}
-                  onDragOver={(e) => handleDrag("excel", e)}
-                  onDragLeave={(e) => handleDrag("excel", e)}
-                  onDrop={handleExcelDrop}
-                >
-                  <input
-                    id="excel-upload"
-                    type="file"
-                    accept=".xlsx, .xls"
-                    className="hidden"
-                    onChange={handleExcelUpload}
-                  />
-                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/10 group-hover:scale-110 transition-all">
-                    <Upload className="w-8 h-8 text-muted-foreground group-hover:text-primary" />
-                  </div>
-                  <h4 className="font-bold text-lg mb-2">Tải lên file Excel</h4>
-                  <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-6">
-                    Kéo thả file .xlsx hoặc .xls vào đây để nhập danh sách tài
-                    khoản tự động
-                  </p>
-                  <Button
-                    variant="secondary"
-                    className="px-8 pointer-events-none"
-                  >
-                    Chọn file từ máy tính
-                  </Button>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent
-              value="qr-image"
-              className="animate-in fade-in-50 duration-300"
-            >
-              <div
-                className={`flex flex-col justify-center items-center border-2 border-dashed rounded-2xl p-12 text-center transition-all group cursor-pointer ${isDragging["qr-image"] ? "border-primary bg-primary/5 scale-[1.02]" : "border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/5"}`}
-                onClick={() =>
-                  document.getElementById("qr-image-upload")?.click()
-                }
-                onDragEnter={(e) => handleDrag("qr-image", e)}
-                onDragOver={(e) => handleDrag("qr-image", e)}
-                onDragLeave={(e) => handleDrag("qr-image", e)}
-                onDrop={handleQRImageDrop}
-              >
-                <input
-                  id="qr-image-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleQRImageUpload}
-                />
-                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/10 group-hover:scale-110 transition-all">
-                  <QrCode className="w-8 h-8 text-muted-foreground group-hover:text-primary" />
-                </div>
-                <h4 className="font-bold text-lg mb-2">Đọc mã QR từ ảnh</h4>
-                <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-6">
-                  Tải lên ảnh chứa mã QR ngân hàng (VietQR) để tự động điền
-                  thông tin
-                </p>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">
+                Chọn tài khoản từ danh sách
+              </Label>
+              <div className="flex gap-2">
                 <Button
-                  variant="secondary"
-                  className="px-8 flex items-center gap-2 pointer-events-none"
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsBankDialogOpen(true)}
+                  className="h-11 flex-1 justify-between border-primary/20 bg-muted/20 text-left font-normal hover:border-primary/40 hover:bg-primary/5"
                 >
-                  <Upload className="w-4 h-4" />
-                  Chọn ảnh QR
+                  <span className="truncate">{selectedBankLabel}</span>
+                  <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
                 </Button>
-              </div>
-            </TabsContent>
-
-            <TabsContent
-              value="qr-scan"
-              className="animate-in fade-in-50 duration-300"
-            >
-              <div className="bg-black/5 rounded-2xl p-4 text-center aspect-video flex flex-col items-center justify-center border border-border overflow-hidden relative min-h-[300px]">
-                {bankInputMethod === "qr-scan" && hasCamera ? (
-                  <div className="w-full h-full max-w-sm mx-auto rounded-xl overflow-hidden shadow-2xl relative border-4 border-primary/20 bg-black">
-                    <Scanner
-                      constraints={{
-                        aspectRatio: 1,
-                        facingMode: "environment",
-                      }}
-                      allowMultiple={false}
-                      onScan={handleLiveScan}
-                    />
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center py-12">
-                    <Camera
-                      className={`w-12 h-12 mb-4 ${hasCamera ? "text-primary animate-bounce" : "text-muted-foreground opacity-20"}`}
-                    />
-                    <h4 className="font-bold text-lg mb-2">
-                      {hasCamera
-                        ? "Máy ảnh sẵn sàng"
-                        : "Không tìm thấy máy ảnh"}
-                    </h4>
-                    <p className="text-sm text-muted-foreground text-center max-w-xs">
-                      {hasCamera
-                        ? "Vui lòng đưa mã QR vào khung hình để quét tự động"
-                        : "Vui lòng sử dụng chức năng đọc QR từ ảnh hoặc nhập tay"}
-                    </p>
-                  </div>
+                {(newBankAccount.bankName || newBankAccount.accountNumber) && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() =>
+                      setNewBankAccount({
+                        bankName: "",
+                        accountHolder: "",
+                        accountNumber: "",
+                        branch: "",
+                        note: "",
+                        bin: "",
+                      })
+                    }
+                    className="h-11 px-3 text-muted-foreground"
+                  >
+                    Xóa
+                  </Button>
                 )}
               </div>
-            </TabsContent>
-          </Tabs>
+              <p className="text-xs text-muted-foreground">
+                Chọn nhanh từ danh sách tài khoản sẵn có hoặc nhập mới bên dưới.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">
+                Số tài khoản <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                value={newBankAccount.accountNumber}
+                onChange={(event) =>
+                  setNewBankAccount({
+                    ...newBankAccount,
+                    accountNumber: event.target.value,
+                  })
+                }
+                placeholder="Nhập số tài khoản"
+                className="bg-muted/30 focus-visible:ring-primary"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">
+                Chủ tài khoản <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                value={newBankAccount.accountHolder}
+                onChange={(event) =>
+                  setNewBankAccount({
+                    ...newBankAccount,
+                    accountHolder: event.target.value.toUpperCase(),
+                  })
+                }
+                placeholder="TÊN CHỦ TÀI KHOẢN"
+                className="bg-muted/30 focus-visible:ring-primary"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Chi nhánh</Label>
+              <Input
+                value={newBankAccount.branch}
+                onChange={(event) =>
+                  setNewBankAccount({
+                    ...newBankAccount,
+                    branch: event.target.value,
+                  })
+                }
+                placeholder="VD: CN Hoàn Kiếm"
+                className="bg-muted/30 focus-visible:ring-primary"
+              />
+            </div>
+            <div className="md:col-span-2 space-y-2">
+              <Label className="text-sm font-semibold">Ghi chú</Label>
+              <Input
+                value={newBankAccount.note}
+                onChange={(event) =>
+                  setNewBankAccount({
+                    ...newBankAccount,
+                    note: event.target.value,
+                  })
+                }
+                placeholder="Ghi chú thêm (không bắt buộc)"
+                className="bg-muted/30 focus-visible:ring-primary"
+              />
+            </div>
+          </div>
+
+          <Button
+            onClick={addBankAccount}
+            className="h-12 w-full bg-primary font-bold text-white hover:bg-primary/90"
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            Thêm vào danh sách
+          </Button>
         </CardContent>
       </Card>
 
-      <BankSelectorDialog
+      <CooperativeBankSelectorDialog
         open={isBankDialogOpen}
         onOpenChange={setIsBankDialogOpen}
-        selectedId={selectedBank?.id || null}
-        onSelect={(account) =>
-          setNewBankAccount({
-            bankName: account.bankName,
-            accountHolder: account.accountHolder,
-            accountNumber: account.accountNumber,
-            branch: account.branch,
-            note: account.note,
-            bin:
-              vietQrBankData.find(
-                (bank) =>
-                  bank.name.toLowerCase() === account.bankName.toLowerCase() ||
-                  bank.shortName.toLowerCase() ===
-                    account.bankName.toLowerCase(),
-              )?.bin || "",
-          })
-        }
+        selectedBankName={selectedBankLabel}
+        onSelect={handleSelectBank}
       />
 
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row items-center gap-4 justify-between">
-          <h4 className="font-bold text-xl flex items-center gap-3">
+      <div className="space-y-4">
+        <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
+          <h4 className="flex items-center gap-3 text-xl font-bold">
             Danh sách đã thêm
-            <Badge
-              variant="secondary"
-              className="px-3 py-1 rounded-full text-sm"
-            >
-              {safeBankAccounts.length}
+            <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">
+              {selectedBanks.length}
             </Badge>
           </h4>
-          {safeBankAccounts.length > 0 && (
-            <p className="hidden md:block text-sm text-muted-foreground italic">
+          {selectedBanks.length > 0 && (
+            <p className="text-sm italic text-muted-foreground">
               * Nhấn vào biểu tượng thùng rác để xóa tài khoản
             </p>
           )}
         </div>
 
-        <div className="flex flex-col md:flex-row items-center gap-4 justify-between">
-          {safeBankAccounts.length > 0 && (
-            <div className="relative w-full md:w-72 group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+        <div className="flex flex-col gap-4">
+          {selectedBanks.length > 0 && (
+            <div className="relative w-full md:w-72">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Tìm kiếm tài khoản..."
                 value={bankSearchQuery}
-                onChange={(e) => setBankSearchQuery(e.target.value)}
-                className="pl-10 bg-muted/30 focus-visible:ring-primary border-none shadow-none"
+                onChange={(event) => setBankSearchQuery(event.target.value)}
+                className="border-none bg-muted/30 pl-10 shadow-none focus-visible:ring-primary"
               />
             </div>
           )}
         </div>
 
-        {safeBankAccounts.length === 0 ? (
-          <div className="text-center py-16 border-2 border-dashed rounded-3xl bg-muted/5 transition-colors hover:bg-muted/10">
-            <div className="w-20 h-20 rounded-full bg-muted/40 flex items-center justify-center mx-auto mb-4 group">
-              <CreditCard className="w-10 h-10 text-muted-foreground group-hover:scale-110 transition-transform" />
+        {selectedBanks.length === 0 ? (
+          <div className="rounded-3xl border-2 border-dashed bg-muted/5 py-16 text-center transition-colors hover:bg-muted/10">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted/40">
+              <CreditCard className="h-10 w-10 text-muted-foreground" />
             </div>
             <h5 className="text-lg font-bold text-muted-foreground">
               Chưa có tài khoản nào
             </h5>
-            <p className="text-sm text-muted-foreground/70 mt-2 max-w-sm mx-auto">
+            <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground/70">
               Các tài khoản ngân hàng bạn thêm sẽ hiển thị tại đây để kiểm tra
-              trước khi lưu
+              trước khi lưu.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {safeBankAccounts
-              .filter((acc) => {
-                const query = bankSearchQuery.toLowerCase();
-                return (
-                  acc.bankName.toLowerCase().includes(query) ||
-                  acc.accountNumber.includes(query) ||
-                  acc.accountHolder.toLowerCase().includes(query)
-                );
-              })
-              .map((acc, index) => {
-                const bankInfo = vietQrBankData.find((b) => b.bin === acc.bin);
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {filteredAccounts.map(({ account, index }) => {
+              const bankInfo = vietQrBankData.find(
+                (bank) =>
+                  bank.shortName === account.bankName || bank.name === account.bankName,
+              );
 
-                return (
-                  <Card
-                    key={index}
-                    className="group hover:border-primary/50 transition-all hover:shadow-md cursor-default border-primary/10"
-                  >
-                    <CardContent className="p-4 flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-xl border bg-white flex items-center justify-center p-2 shadow-sm shrink-0 group-hover:scale-105 transition-transform">
-                        <img
-                          src={
-                            bankInfo?.logo ||
-                            "https://placehold.co/40x40?text=" +
-                              acc.bankName?.[0]
-                          }
-                          alt={acc.bankName}
-                          className="w-full h-full object-contain"
-                        />
+              return (
+                <Card
+                  key={`${account.bankName}-${account.accountNumber}-${index}`}
+                  className="group cursor-default border-primary/10 transition-all hover:border-primary/50 hover:shadow-md"
+                >
+                  <CardContent className="flex items-center gap-4 p-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-white p-2 shadow-sm transition-transform group-hover:scale-105">
+                      <img
+                        src={
+                          bankInfo?.logo ||
+                          `https://placehold.co/56x56?text=${account.bankName?.[0] || "B"}`
+                        }
+                        alt={account.bankName}
+                        className="h-full w-full object-contain"
+                        onError={(event) => {
+                          (event.target as HTMLImageElement).src =
+                            "https://placehold.co/56x56?text=B";
+                        }}
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="truncate text-base font-bold">
+                          {account.bankName}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive opacity-0 transition-opacity group-hover:opacity-100 hover:bg-destructive/10"
+                          onClick={() => removeBankAccount(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-bold text-base truncate">
-                            {acc.bankName}
+                      <p className="font-mono text-lg font-bold tracking-wider text-primary">
+                        {account.accountNumber}
+                      </p>
+                      <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
+                        <span className="truncate font-medium uppercase">
+                          {account.accountHolder}
+                        </span>
+                        {account.branch && (
+                          <span className="ml-2 truncate italic">
+                            CN: {account.branch}
                           </span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10"
-                            onClick={() => removeBankAccount(index)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <p className="font-mono text-lg font-bold text-primary tracking-wider">
-                          {acc.accountNumber}
-                        </p>
-                        <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
-                          <span className="uppercase font-medium">
-                            {acc.accountHolder}
-                          </span>
-                          {acc.branch && (
-                            <span className="italic truncate ml-2">
-                              CN: {acc.branch}
-                            </span>
-                          )}
-                        </div>
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        {account.note && (
+                          <p className="line-clamp-1 text-xs text-muted-foreground">
+                            {account.note}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
