@@ -16,6 +16,7 @@ import {
   SelectValue,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { BranchEnterpriseSelector } from "@/pages/branch/components/steps/BranchEnterpriseSelector";
 
 interface ContactFormProps {
   formData: ContactFormData;
@@ -41,6 +42,79 @@ export function ContactFormCard({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="entityName">Đơn vị sở hữu *</Label>
+          <BranchEnterpriseSelector
+            enterprises={enterprises}
+            selectedId={
+              enterprises
+                .find((enterprise) => enterprise.name === formData.entityName)
+                ?.id.toString() || ""
+            }
+            onSelect={(value) => {
+              const enterprise = enterprises.find(
+                (item) => item.id.toString() === value,
+              );
+              setFormData({
+                ...formData,
+                entityName: enterprise?.name || "",
+              });
+            }}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="groupId">Nhóm danh bạ</Label>
+          <Select
+            value={formData.groupId}
+            onValueChange={(val) => setFormData({ ...formData, groupId: val })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Chọn nhóm danh bạ" />
+            </SelectTrigger>
+            <SelectContent>
+              {groups.map((g) => (
+                <SelectItem key={g.id} value={g.id.toString()}>
+                  {g.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="department">Phòng ban</Label>
+            <Select
+              value={formData.department}
+              onValueChange={(val) =>
+                setFormData({ ...formData, department: val })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn phòng ban" />
+              </SelectTrigger>
+              <SelectContent>
+                {departments
+                  .filter((d) => d.status === "active")
+                  .map((d) => (
+                    <SelectItem key={d.id} value={d.name}>
+                      {d.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="position">Chức vụ</Label>
+            <Input
+              id="position"
+              value={formData.position}
+              onChange={(e) =>
+                setFormData({ ...formData, position: e.target.value })
+              }
+              placeholder="VD: Trưởng phòng"
+            />
+          </div>
+        </div>
         <div className="space-y-2">
           <Label htmlFor="fullName">Họ và tên *</Label>
           <Input
@@ -75,85 +149,6 @@ export function ContactFormCard({
                 setFormData({ ...formData, email: e.target.value })
               }
               placeholder="contact@example.com"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="entityName">Đơn vị sở hữu *</Label>
-            <Select
-              value={formData.entityName}
-              onValueChange={(val) =>
-                setFormData({ ...formData, entityName: val })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn đơn vị" />
-              </SelectTrigger>
-              <SelectContent>
-                {enterprises.map((e) => (
-                  <SelectItem key={e.id} value={e.name}>
-                    {e.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="groupId">Nhóm danh bạ</Label>
-            <Select
-              value={formData.groupId}
-              onValueChange={(val) =>
-                setFormData({ ...formData, groupId: val })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn nhóm danh bạ" />
-              </SelectTrigger>
-              <SelectContent>
-                {groups.map((g) => (
-                  <SelectItem key={g.id} value={g.id.toString()}>
-                    {g.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="department">Phòng ban</Label>
-            <Select
-              value={formData.department}
-              onValueChange={(val) =>
-                setFormData({ ...formData, department: val })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn phòng ban" />
-              </SelectTrigger>
-              <SelectContent>
-                {departments
-                  .filter((d) => d.status === "active")
-                  .map((d) => (
-                    <SelectItem key={d.id} value={d.name}>
-                      {d.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="position">Chức vụ</Label>
-            <Input
-              id="position"
-              value={formData.position}
-              onChange={(e) =>
-                setFormData({ ...formData, position: e.target.value })
-              }
-              placeholder="VD: Trưởng phòng"
             />
           </div>
         </div>
