@@ -51,7 +51,10 @@ export default function BranchFormPage() {
           isEdit={isEdit}
         />
       ),
-      isValid: formData.name.length > 0 && formData.code.length > 0,
+      isValid:
+        formData.name.length > 0 &&
+        formData.code.length > 0 &&
+        formData.enterpriseId.length > 0,
     },
     {
       id: "contact-info",

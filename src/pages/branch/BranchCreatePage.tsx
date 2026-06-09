@@ -17,6 +17,12 @@ export default function BranchCreatePage() {
   const {
     formData,
     updateFormData,
+    contactInfos,
+    newContactInfo,
+    setNewContactInfo,
+    addContactInfo,
+    removeContactInfo,
+    setPrimaryContactInfo,
     showConfirm,
     setShowConfirm,
     handleSubmit,
@@ -55,7 +61,14 @@ export default function BranchCreatePage() {
         </div>
 
         <div className="space-y-6">
-          <ContactCard formData={formData} onUpdate={updateFormData} />
+          <ContactCard
+            contactInfos={contactInfos}
+            newContactInfo={newContactInfo}
+            setNewContactInfo={setNewContactInfo}
+            addContactInfo={addContactInfo}
+            removeContactInfo={removeContactInfo}
+            setPrimaryContactInfo={setPrimaryContactInfo}
+          />
         </div>
       </div>
     </AdminLayout>

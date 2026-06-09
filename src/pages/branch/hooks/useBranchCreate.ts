@@ -4,6 +4,7 @@ import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useBranchStore from "@/stores/useBranchStore";
 import { branchEnterpriseNames } from "../data/constants";
 import { getBranchLocationName } from "../utils/form";
+import type { ContactInfo } from "../types/types";
 
 export function useBranchCreate() {
   const [, setLocation] = useLocation();
@@ -29,10 +30,83 @@ export function useBranchCreate() {
     longitude: "",
     description: "",
   });
+  const [contactInfos, setContactInfos] = useState<ContactInfo[]>([]);
+  const [newContactInfo, setNewContactInfo] = useState<ContactInfo>({
+    id: "",
+    phone: "",
+    email: "",
+    isPrimary: false,
+  });
   const [showConfirm, setShowConfirm] = useState(false);
 
   const updateFormData = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const syncPrimaryContact = (nextContacts: ContactInfo[]) => {
+    const primaryContact = nextContacts.find((contact) => contact.isPrimary);
+
+    setFormData((prev) => ({
+      ...prev,
+      phone: primaryContact?.phone || "",
+      email: primaryContact?.email || "",
+    }));
+  };
+
+  const addContactInfo = () => {
+    if (!newContactInfo.phone && !newContactInfo.email) return;
+
+    const nextContacts: ContactInfo[] = [
+      ...contactInfos,
+      {
+        ...newContactInfo,
+        id: Date.now().toString(),
+        isPrimary: contactInfos.length === 0 || newContactInfo.isPrimary,
+      },
+    ].map((contact, index, list) => ({
+      ...contact,
+      isPrimary:
+        contact.isPrimary || (list.length > 0 && index === 0 && contactInfos.length === 0),
+    }));
+
+    if (!nextContacts.some((contact) => contact.isPrimary) && nextContacts[0]) {
+      nextContacts[0].isPrimary = true;
+    }
+
+    setContactInfos(nextContacts);
+    syncPrimaryContact(nextContacts);
+    setNewContactInfo({
+      id: "",
+      phone: "",
+      email: "",
+      isPrimary: false,
+    });
+  };
+
+  const removeContactInfo = (id: string) => {
+    const nextContacts = contactInfos.filter((contact) => contact.id !== id);
+    if (nextContacts.length === 0) {
+      setFormData((prev) => ({ ...prev, phone: "", email: "" }));
+      setContactInfos([]);
+      return;
+    }
+
+    if (!nextContacts.some((contact) => contact.isPrimary)) {
+      nextContacts[0] = { ...nextContacts[0], isPrimary: true };
+    }
+
+    setContactInfos(nextContacts);
+    syncPrimaryContact(nextContacts);
+  };
+
+  const setPrimaryContactInfo = (id: string) => {
+    const nextContacts = contactInfos.map((contact) => ({
+      ...contact,
+      isPrimary: contact.id === id,
+    }));
+
+    setContactInfos(nextContacts);
+    syncPrimaryContact(nextContacts);
   };
 
   const handleSubmit = () => {
@@ -67,8 +141,8 @@ export function useBranchCreate() {
       code: formData.code || `CN${String(newId).padStart(3, "0")}`,
       name: formData.name,
       enterpriseName: branchEnterpriseNames[formData.enterpriseId] || "",
-      phone: formData.phone,
-      email: formData.email,
+      phone: contactInfos.find((contact) => contact.isPrimary)?.phone || formData.phone,
+      email: contactInfos.find((contact) => contact.isPrimary)?.email || formData.email,
       address: fullAddress || formData.address,
       city: getBranchLocationName(formData.province, "province"),
       district: getBranchLocationName(formData.district, "district"),
@@ -78,7 +152,14 @@ export function useBranchCreate() {
       imageUrl: "",
       latitude: formData.latitude || "10.7769",
       longitude: formData.longitude || "106.7009",
-      contacts: [],
+      contacts: contactInfos.map((contact, index) => ({
+        id: contact.id || String(index + 1),
+        name: `Liên hệ ${index + 1}`,
+        position: "Liên hệ",
+        phone: contact.phone,
+        email: contact.email,
+        isPrimary: contact.isPrimary,
+      })),
       bankAccounts: [],
     };
 
@@ -94,6 +175,12 @@ export function useBranchCreate() {
   return {
     formData,
     updateFormData,
+    contactInfos,
+    newContactInfo,
+    setNewContactInfo,
+    addContactInfo,
+    removeContactInfo,
+    setPrimaryContactInfo,
     showConfirm,
     setShowConfirm,
     handleSubmit,

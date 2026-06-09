@@ -9,6 +9,7 @@ export interface ContactPerson {
 
 export interface ContactInfo {
   id: string;
+  name?: string;
   phone: string;
   email: string;
   isPrimary: boolean;
@@ -20,6 +21,9 @@ export interface BranchBankAccount {
   accountNumber: string;
   accountHolder: string;
   branch: string;
+  note?: string;
+  bin?: string;
+  logo?: string;
   isPrimary: boolean;
 }
 

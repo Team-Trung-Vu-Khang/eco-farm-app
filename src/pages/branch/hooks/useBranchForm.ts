@@ -5,13 +5,20 @@ import useBranchStore from "@/stores/useBranchStore";
 import useEnterpriseStore from "@/stores/useEnterpriseStore";
 import { emptyBranchFormData } from "../data/constants";
 import { buildBranchFullAddress } from "../utils/form";
-import type { BranchEnterpriseOption, BranchFormData, ContactInfo } from "../types/types";
+import type { BranchFormData, ContactInfo } from "../types/types";
+import type { Enterprise } from "@/pages/enterprise/data/constants";
 
 function getInitialBranchFormData(
   branch?: ReturnType<typeof useBranchStore.getState>["branches"][number],
+  enterpriseId = "",
+  enterpriseName = "",
 ): BranchFormData {
   if (!branch) {
-    return emptyBranchFormData;
+    return {
+      ...emptyBranchFormData,
+      enterpriseId,
+      enterpriseName,
+    };
   }
 
   const contactInfos: ContactInfo[] = [];
@@ -27,8 +34,8 @@ function getInitialBranchFormData(
   return {
     code: branch.code,
     name: branch.name,
-    enterpriseId: "DN001",
-    enterpriseName: branch.enterpriseName,
+    enterpriseId,
+    enterpriseName: enterpriseName || branch.enterpriseName,
     taxCode: branch.taxCode || "",
     taxAddress: branch.taxAddress || "",
     address: branch.address,
@@ -60,15 +67,24 @@ export function useBranchForm() {
   const branch = branchId ? getBranchById(branchId) : undefined;
 
   const enterprisesFromStore = useEnterpriseStore((state) => state.enterprises);
-  const enterprises: BranchEnterpriseOption[] = enterprisesFromStore
+  const enterprises: Enterprise[] = enterprisesFromStore
     .filter((e) => e.type === "enterprise")
-    .map((e) => ({
-      id: e.id.toString(),
-      name: e.name,
-    }));
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const initialEnterprise =
+    (branch?.enterpriseName
+      ? enterprises.find((enterprise) => enterprise.name === branch.enterpriseName)
+      : undefined) || (enterprises.length === 1 ? enterprises[0] : undefined);
+
+  const initialEnterpriseId = initialEnterprise?.id.toString() || "";
+  const initialEnterpriseName = initialEnterprise?.name || "";
 
   const [formData, setFormData] = useState<BranchFormData>(() =>
-    getInitialBranchFormData(branch),
+    getInitialBranchFormData(
+      branch,
+      initialEnterpriseId,
+      initialEnterpriseName,
+    ),
   );
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -89,6 +105,9 @@ export function useBranchForm() {
       district: formData.district,
       city: formData.city,
     });
+    const primaryContactInfo =
+      formData.contactInfos.find((contactInfo) => contactInfo.isPrimary) ||
+      formData.contactInfos[0];
 
     const branchPayload = {
       code: formData.code,
@@ -97,8 +116,8 @@ export function useBranchForm() {
       taxCode: formData.taxCode,
       taxAddress: formData.taxAddress,
       website: formData.website,
-      phone: formData.contactInfos[0]?.phone || "",
-      email: formData.contactInfos[0]?.email || "",
+      phone: primaryContactInfo?.phone || "",
+      email: primaryContactInfo?.email || "",
       address: fullAddress || formData.address,
       city: formData.city,
       district: formData.district,

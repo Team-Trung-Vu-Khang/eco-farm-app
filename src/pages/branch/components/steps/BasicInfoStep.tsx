@@ -8,12 +8,14 @@ import {
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { FileText } from "lucide-react";
-import type { BranchEnterpriseOption, BranchFormData } from "../../types/types";
+import type { Enterprise } from "@/pages/enterprise/data/constants";
+import type { BranchFormData } from "../../types/types";
+import { BranchEnterpriseSelector } from "./BranchEnterpriseSelector";
 
 interface BasicInfoStepProps {
   formData: BranchFormData;
   updateFormData: (updates: Partial<BranchFormData>) => void;
-  enterprises: BranchEnterpriseOption[];
+  enterprises: Enterprise[];
   isEdit: boolean;
 }
 
@@ -25,6 +27,25 @@ export function BasicInfoStep({
 }: BasicInfoStepProps) {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      <div className="space-y-2">
+        <Label htmlFor="enterprise">
+          Đơn vị sở hữu <span className="text-red-500">*</span>
+        </Label>
+        <BranchEnterpriseSelector
+          enterprises={enterprises}
+          selectedId={formData.enterpriseId}
+          onSelect={(value) => {
+            const enterprise = enterprises.find(
+              (item) => item.id.toString() === value,
+            );
+            updateFormData({
+              enterpriseId: value,
+              enterpriseName: enterprise?.name || "",
+            });
+          }}
+        />
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="code">
@@ -48,33 +69,6 @@ export function BasicInfoStep({
             onChange={(e) => updateFormData({ name: e.target.value })}
             placeholder="VD: Chi nhánh Miền Nam"
           />
-        </div>
-
-        <div className="space-y-2 col-span-2">
-          <Label htmlFor="enterprise">
-            Đơn vị sở hữu <span className="text-red-500">*</span>
-          </Label>
-          <Select
-            value={formData.enterpriseId}
-            onValueChange={(value) => {
-              const enterprise = enterprises.find((e) => e.id === value);
-              updateFormData({
-                enterpriseId: value,
-                enterpriseName: enterprise?.name || "",
-              });
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Đơn vị sở hữu" />
-            </SelectTrigger>
-            <SelectContent>
-              {enterprises.map((enterprise) => (
-                <SelectItem key={enterprise.id} value={enterprise.id}>
-                  {enterprise.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
         {isEdit && (
