@@ -32,6 +32,7 @@ import IoTDevicePage from "./pages/iot-device/IoTDevicePage";
 import IoTDeviceCreatePage from "./pages/iot-device/IoTDeviceCreatePage";
 import IoTDeviceDetailPage from "./pages/iot-device/IoTDeviceDetailPage";
 import IoTMapViewPage from "./pages/iot-device/monitoring/IoTMapViewPage";
+import IoTDeviceGroupPage from "./pages/iot-device-group/IoTDeviceGroupPage";
 
 import NotFoundPage from "./pages/NotFoundPage";
 import { Toaster, TooltipProvider } from "@Team-Trung-Vu-Khang/eco-shared-ui";
@@ -156,12 +157,14 @@ import CultivationPlotDetailPage from "./pages/cultivation-plot/CultivationPlotD
 import MaterialLookupPage from "./pages/material-lookup/MaterialLookupPage";
 import ProductionCultivationReportPage from "./pages/production-cultivation-report/ProductionCultivationReportPage";
 import TreatmentReportPage from "./pages/treatment-report/TreatmentReportPage";
+import ProvincePage from "./pages/province/ProvincePage";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/terrain" component={TerrainPage} />
+      <Route path="/province" component={ProvincePage} />
       <Route path="/land" component={LandPage} />
       <Route path="/farming-method" component={FarmingMethodPage} />
       <Route path="/certificate" component={CertificatePage} />
@@ -446,6 +449,7 @@ function Router() {
 
       {/* IoT Device Management Routes */}
       <Route path="/iot-device" component={IoTDevicePage} />
+      <Route path="/iot-device-group" component={IoTDeviceGroupPage} />
       <Route path="/iot-device/create" component={IoTDeviceCreatePage} />
       <Route path="/iot-device/:id/edit" component={IoTDeviceCreatePage} />
       <Route path="/iot-device/:id" component={IoTDeviceDetailPage} />
