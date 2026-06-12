@@ -79,6 +79,7 @@ import UpdateSeasonPage from "./pages/season/UpdateSeasonPage";
 import SeasonDetailPage from "./pages/season/SeasonDetailPage";
 import LandPage from "./pages/land/LandPage";
 import FarmingMethodPage from "./pages/farming-method/FarmingMethodPage";
+import FarmingMethodCropPage from "./pages/farming-method/FarmingMethodCropPage";
 import CertificatePage from "./pages/certificate/CertificatePage";
 import ContactPage from "./pages/contact/ContactPage";
 import ContactCreatePage from "./pages/contact/ContactCreatePage";
@@ -168,6 +169,7 @@ function Router() {
       <Route path="/province" component={ProvincePage} />
       <Route path="/land" component={LandPage} />
       <Route path="/farming-method" component={FarmingMethodPage} />
+      <Route path="/farming-method-crop" component={FarmingMethodCropPage} />
       <Route path="/certificate" component={CertificatePage} />
       <Route path="/enterprise-type" component={EnterpriseTypePage} />
       <Route path="/enterprise-form" component={EnterpriseFormPage} />
