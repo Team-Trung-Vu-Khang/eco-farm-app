@@ -158,12 +158,13 @@ import MaterialLookupPage from "./pages/material-lookup/MaterialLookupPage";
 import ProductionCultivationReportPage from "./pages/production-cultivation-report/ProductionCultivationReportPage";
 import TreatmentReportPage from "./pages/treatment-report/TreatmentReportPage";
 import ProvincePage from "./pages/province/ProvincePage";
-
+import LandSpecsPage from "./pages/land-specs/LandSpecsPage";
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/terrain" component={TerrainPage} />
+      <Route path="/land-specs" component={LandSpecsPage} />
       <Route path="/province" component={ProvincePage} />
       <Route path="/land" component={LandPage} />
       <Route path="/farming-method" component={FarmingMethodPage} />

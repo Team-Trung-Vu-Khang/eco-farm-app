@@ -14,62 +14,88 @@ export interface Land {
 const initialLands: Land[] = [
   {
     id: 1,
-    code: "DAT001",
+    code: "phusa",
     name: "Đất phù sa",
     image: "https://sudospaces.com/vietchem/2024/03/dat-phu-sa-1.jpg",
-    description: "Đất màu mỡ, giàu dinh dưỡng, thích hợp trồng lúa, hoa màu",
+    description:
+      "Giàu dinh dưỡng, tơi xốp, khả năng giữ nước tốt, thường được bồi đắp liên tục tại các lưu vực sông ngòi.",
     status: "active",
     createdAt: "2024-01-10",
   },
   {
     id: 2,
-    code: "DAT002",
-    name: "Đất đỏ bazan",
+    code: "feralit",
+    name: "Đất feralit",
     image:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlmrvqQAVCVUx0FvNxr-07y7p_B9K2dnaUMg&s",
+      "https://cdn.thuviennhadat.vn/upload/hinh-anh-bai-viet/TTMN/thang-04-2025/17-4-2025/dat-feralit-o-nuoc-ta-thuong-bi-chua-chu-yeu-la-do-dau.jpg",
     description:
-      "Đất núi lửa, tầng đất dày, thích hợp cây công nghiệp (cà phê, cao su)",
+      "Thường có màu đỏ hoặc vàng, giàu sắt và nhôm. Phổ biến ở vùng đồi núi nhưng rất dễ bị xói mòn nếu thiếu thảm thực vật che phủ.",
     status: "active",
     createdAt: "2024-01-11",
   },
   {
     id: 3,
-    code: "DAT003",
-    name: "Đất cát",
-    image:
-      "https://chaunhuatrongcayblog.wordpress.com/wp-content/uploads/2023/09/image-6.png",
-    description: "Đất thô, thoát nước nhanh, nghèo dinh dưỡng",
+    code: "mun",
+    name: "Đất mùn",
+    image: "https://sfarm.vn/wp-content/uploads/2021/01/mun-huu-co-la-gi.jpg",
+    description:
+      "Rất giàu chất hữu cơ, kết cấu tơi xốp, thường hình thành ở các vùng đồi núi cao có điều kiện khí hậu mát mẻ.",
     status: "active",
     createdAt: "2024-01-12",
   },
   {
     id: 4,
-    code: "DAT004",
-    name: "Đất mùn",
-    image: "https://sfarm.vn/wp-content/uploads/2021/01/mun-huu-co-la-gi.jpg",
-    description: "Đất đen, tơi xốp, giàu chất hữu cơ, rất tốt cho cây trồng",
+    code: "xam",
+    name: "Đất xám",
+    image:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRwQYFS5DSBfO3vTYZvEb7LgDn2PkbfkBUPeA&s",
+    description:
+      "Có kết cấu nhẹ, nghèo dinh dưỡng, thường xuyên khô cằn và cần có biện pháp cải tạo phù hợp để có thể canh tác nông nghiệp.",
     status: "active",
     createdAt: "2024-01-13",
   },
   {
     id: 5,
-    code: "DAT005",
+    code: "phen",
     name: "Đất phèn",
     image: "https://tanhuyhoang.net/wp-content/uploads/2021/10/Picture44.jpg",
-    description: "Đất chua, độ pH thấp, thường bị nứt nẻ khi khô hạn",
+    description:
+      "Có độ chua (pH) cao, chứa nhiều hợp chất phèn độc hại cho rễ cây, cần được cải tạo kỹ lưỡng bằng phương pháp thau chua rửa phèn hoặc bón vôi.",
     status: "active",
     createdAt: "2024-01-14",
   },
   {
     id: 6,
-    code: "DAT006",
-    name: "Đất sét",
+    code: "cat",
+    name: "Đất cát",
     image:
-      "https://file.hstatic.net/1000269461/file/dat-set-la-gi_d1cb0d6dcf18410096c471077cd3002e_grande.jpg",
+      "https://chaunhuatrongcayblog.wordpress.com/wp-content/uploads/2023/09/image-6.png",
     description:
-      "Đất hạt mịn, dẻo, giữ nước và dinh dưỡng tốt nhưng kém thoáng khí",
+      "Kết cấu rời rạc, khả năng thoát nước và hấp thụ nhiệt rất nhanh nhưng lại nghèo chất dinh dưỡng.",
     status: "active",
     createdAt: "2024-01-15",
+  },
+  {
+    id: 7,
+    code: "bazan",
+    name: "Đất bazan",
+    image:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlmrvqQAVCVUx0FvNxr-07y7p_B9K2dnaUMg&s",
+    description:
+      "Đặc trưng bởi màu đỏ nâu, vô cùng tơi xốp, dồi dào dinh dưỡng và giữ ẩm tốt. Rất phù hợp để trồng cây công nghiệp lâu năm.",
+    status: "active",
+    createdAt: "2024-01-16",
+  },
+  {
+    id: 8,
+    code: "man",
+    name: "Đất mặn",
+    image:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSIAYBsCMJ6MMb0Bkh1U-3RvBomWf7Nyb9XIQ&s",
+    description:
+      "Chứa hàm lượng muối hòa tan cao, cản trở sự sinh trưởng của thực vật thông thường. Cần cải tạo bằng rửa mặn hoặc chuyên canh cây chịu mặn.",
+    status: "active",
+    createdAt: "2024-01-17",
   },
 ];
 

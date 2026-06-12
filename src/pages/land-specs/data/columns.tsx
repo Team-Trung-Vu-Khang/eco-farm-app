@@ -1,8 +1,8 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { Terrain } from "../../../stores/useTerrainStore";
+import type { LandSpec } from "../../../stores/useLandSpecStore";
 import { Hash } from "lucide-react";
 
-export const terrainColumns: Column<Terrain>[] = [
+export const landSpecsColumns: Column<LandSpec>[] = [
   {
     key: "code",
     label: "Mã",
@@ -15,7 +15,7 @@ export const terrainColumns: Column<Terrain>[] = [
       );
     },
   },
-  { key: "name", label: "Tên địa hình" },
+  { key: "name", label: "Tên thông số" },
   { key: "description", label: "Mô tả" },
   {
     key: "status",
