@@ -12,6 +12,10 @@ import BranchDetailPage from "./pages/branch/BranchDetailPage";
 import CropPage from "./pages/crop/CropPage";
 import CropCreatePage from "./pages/crop/CropCreatePage";
 import CropDetailPage from "./pages/crop/CropDetailPage";
+import CropFoundationPage from "./pages/crop-foundation/CropFoundationPage";
+import CropFoundationCreatePage from "./pages/crop-foundation/CropFoundationCreatePage";
+import CropFoundationDetailPage from "./pages/crop-foundation/CropFoundationDetailPage";
+import CropFoundationEditPage from "./pages/crop-foundation/CropFoundationEditPage";
 
 import PesticidePage from "./pages/pesticide/PesticidePage";
 import PesticideCreatePage from "./pages/pesticide/PesticideCreatePage";
@@ -95,6 +99,9 @@ import TeamDetailPage from "./pages/team/TeamDetailPage";
 import VarietyPage from "./pages/variety/VarietyPage";
 import CreateVarietyPage from "./pages/variety/CreateVarietyPage";
 import VarietyEditPage from "./pages/variety/VarietyEditPage";
+import VarietyFoundationPage from "./pages/variety-foudation/VarietyFoundationPage";
+import CreateVarietyFoundationPage from "./pages/variety-foudation/CreateVarietyFoundationPage";
+import VarietyFoundationEditPage from "./pages/variety-foudation/VarietyFoundationEditPage";
 import MaterialPage from "./pages/material/MaterialPage";
 import FertilizerPage from "./pages/fertilizer/FertilizerPage";
 import ContractPage from "./pages/contract/ContractPage";
@@ -346,6 +353,10 @@ function Router() {
       <Route path="/crop" component={CropPage} />
       <Route path="/crop/create" component={CropCreatePage} />
       <Route path="/crop/:id" component={CropDetailPage} />
+      <Route path="/crop-foundation" component={CropFoundationPage} />
+      <Route path="/crop-foundation/create" component={CropFoundationCreatePage} />
+      <Route path="/crop-foundation/:id/edit" component={CropFoundationEditPage} />
+      <Route path="/crop-foundation/:id" component={CropFoundationDetailPage} />
       <Route path="/document-category" component={DocumentCategoryListPage} />
       <Route
         path="/document-category/create"
@@ -366,6 +377,9 @@ function Router() {
       <Route path="/docs/:id" component={DocsDetailPage} />
       <Route path="/variety" component={VarietyPage} />
       <Route path="/variety/create" component={CreateVarietyPage} />
+      <Route path="/variety-foudation" component={VarietyFoundationPage} />
+      <Route path="/variety-foudation/create" component={CreateVarietyFoundationPage} />
+      <Route path="/variety-foudation/:id/edit" component={VarietyFoundationEditPage} />
       {/* <Route path="/variety/:id">
         {(params) => <VarietyDetailPage id={params.id} />}
       </Route> */}

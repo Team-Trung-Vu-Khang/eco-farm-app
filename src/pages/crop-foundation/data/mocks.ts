@@ -1,4 +1,4 @@
-import type { Crop } from "../types/types";
+import type { CropFoundation } from "../types/types";
 import { initialEditorValue } from "../../docs/mocks";
 
 export const CROP_HIERARCHY: Record<string, Record<string, string[]>> = {
@@ -13,7 +13,7 @@ export const CROP_HIERARCHY: Record<string, Record<string, string[]>> = {
     "Khoai mì (Sắn)": ["KM94", "KM140", "HL-S11", "KM98-5"],
     "Đậu nành": ["DT84", "DT26", "ĐN29", "VNS206"],
   },
-  "Cây công nghiệp (Industrial Crops)": {
+  "Cây công nghiệp (Industrial CropFoundations)": {
     "Cà phê": ["Robusta (Vối)", "Arabica (Chè)", "TR4", "TR9"],
     "Cao su": ["RRIV 106", "RRIV 124", "PB 260", "GT 1"],
     "Chè (Trà)": ["PH1", "LDP1", "Kim Tuyên", "Bát Tiên", "Shan Tuyết"],
@@ -25,15 +25,15 @@ export const categories = Object.keys(CROP_HIERARCHY);
 
 export { initialEditorValue };
 
-export const initialData: Crop[] = [
+export const initialData: CropFoundation[] = [
   {
     id: 1,
     code: "SR-RI6-001",
     illustration:
       "https://traicayvuongtron.vn/resources/cache/original_xxxxx/WEBSITE%202023/tim%20hieu%20them/blog/kinh%20nghiem%2Cmeo%20vat/trai%20cay/trai%20cay%20dac%20san/sauriengri6/sauriengri62.jpg.webp",
     name: "Sầu riêng",
-    cropType: "Sầu riêng",
-    cropGroup: "Cây ăn trái (Fruit Trees)",
+    cropFoundationType: "Sầu riêng",
+    cropFoundationGroup: "Cây ăn trái (Fruit Trees)",
     harvestMethod: "manual",
     technicalSpecs: {
       scientificName: "Durio zibethinus",
@@ -124,8 +124,8 @@ export const initialData: Crop[] = [
     illustration:
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTfrceV57yHB0tXyP_Al6TOepWynXAFkUbN2g&s",
     name: "Lúa",
-    cropType: "Lúa",
-    cropGroup: "Cây lương thực (Cereal & Grain)",
+    cropFoundationType: "Lúa",
+    cropFoundationGroup: "Cây lương thực (Cereal & Grain)",
     harvestMethod: "machine",
     technicalSpecs: {
       scientificName: "Oryza sativa",
@@ -144,8 +144,8 @@ export const initialData: Crop[] = [
     illustration:
       "https://gap.org.vn/wp-content/uploads/2024/08/caymacca_gap3.jpg",
     name: "Mắc ca",
-    cropType: "Mắc ca",
-    cropGroup: "Cây ăn trái (Fruit Trees)",
+    cropFoundationType: "Mắc ca",
+    cropFoundationGroup: "Cây ăn trái (Fruit Trees)",
     harvestMethod: "manual",
     technicalSpecs: {
       scientificName: "Macadamia integrifolia",
@@ -164,8 +164,8 @@ export const initialData: Crop[] = [
     illustration:
       "https://storage.googleapis.com/onelife-public/blog.onelife.vn/2023/10/3be26adf-1.png",
     name: "Khoai mì",
-    cropType: "Khoai mì (Sắn)",
-    cropGroup: "Cây lương thực (Cereal & Grain)",
+    cropFoundationType: "Khoai mì (Sắn)",
+    cropFoundationGroup: "Cây lương thực (Cereal & Grain)",
     harvestMethod: "machine",
     technicalSpecs: {
       scientificName: "Manihot esculenta",
@@ -184,8 +184,8 @@ export const initialData: Crop[] = [
     illustration:
       "https://bizweb.dktcdn.net/thumb/1024x1024/100/390/808/products/thuong-thuc-dau-nanh-theo-phong-cach-singapore-1.jpg?v=1592987555860",
     name: "Đậu nành",
-    cropType: "Đậu nành",
-    cropGroup: "Cây lương thực (Cereal & Grain)",
+    cropFoundationType: "Đậu nành",
+    cropFoundationGroup: "Cây lương thực (Cereal & Grain)",
     harvestMethod: "machine",
     technicalSpecs: {
       scientificName: "Glycine max",
@@ -204,8 +204,8 @@ export const initialData: Crop[] = [
     illustration:
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRwpgyUZzOe9-8dwoGxhOxZpf_Zfbisx7Pe_w&s",
     name: "Cà phê",
-    cropType: "Cà phê",
-    cropGroup: "Cây công nghiệp (Industrial Crops)",
+    cropFoundationType: "Cà phê",
+    cropFoundationGroup: "Cây công nghiệp (Industrial CropFoundations)",
     harvestMethod: "manual",
     technicalSpecs: {
       scientificName: "Coffea canephora",
@@ -224,8 +224,8 @@ export const initialData: Crop[] = [
     illustration:
       "https://hatgiongdalat.com/asset/upload/image/hat-giong-ngo-ngot.jpg?v=20190410",
     name: "Ngô",
-    cropType: "Ngô",
-    cropGroup: "Cây lương thực (Cereal & Grain)",
+    cropFoundationType: "Ngô",
+    cropFoundationGroup: "Cây lương thực (Cereal & Grain)",
     harvestMethod: "machine",
     technicalSpecs: {
       scientificName: "Zea mays",
@@ -244,8 +244,8 @@ export const initialData: Crop[] = [
     illustration:
       "https://shondoshoes.com/cdn/shop/articles/cao-su-la-gi.jpg?v=1743394151&width=2048",
     name: "Cao su",
-    cropType: "Cao su",
-    cropGroup: "Cây công nghiệp (Industrial Crops)",
+    cropFoundationType: "Cao su",
+    cropFoundationGroup: "Cây công nghiệp (Industrial CropFoundations)",
     harvestMethod: "manual",
     technicalSpecs: {
       scientificName: "Hevea brasiliensis",
@@ -263,8 +263,8 @@ export const initialData: Crop[] = [
     code: "CHE-KT-009",
     illustration: "https://hacoocha.com/wp-content/uploads/tra-la-gi.jpg",
     name: "Chè",
-    cropType: "Chè",
-    cropGroup: "Cây công nghiệp (Industrial Crops)",
+    cropFoundationType: "Chè",
+    cropFoundationGroup: "Cây công nghiệp (Industrial CropFoundations)",
     harvestMethod: "manual",
     technicalSpecs: {
       scientificName: "Camellia sinensis",
@@ -283,8 +283,8 @@ export const initialData: Crop[] = [
     illustration:
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSQUx_lbM5dshfa9k4WVd_kfgUGEqHeaSetOw&s",
     name: "Hồ tiêu",
-    cropType: "Hồ tiêu",
-    cropGroup: "Cây công nghiệp (Industrial Crops)",
+    cropFoundationType: "Hồ tiêu",
+    cropFoundationGroup: "Cây công nghiệp (Industrial CropFoundations)",
     harvestMethod: "manual",
     technicalSpecs: {
       scientificName: "Piper nigrum",
@@ -299,7 +299,7 @@ export const initialData: Crop[] = [
   },
 ];
 
-export const cropTypeOptions = Object.values(CROP_HIERARCHY).flatMap((group) =>
+export const cropFoundationTypeOptions = Object.values(CROP_HIERARCHY).flatMap((group) =>
   Object.keys(group).map((type) => ({ label: type, value: type })),
 );
 
@@ -370,7 +370,7 @@ export const seedData: ExtendedSeed[] = [
   {
     id: "s3",
     illustration:
-      "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&q=80&w=1000",
+      "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=cropFoundation&q=80&w=1000",
     varietyName: "Cây giống Cà phê Robusta TR4",
     varietyCode: "CP-TR4",
     supplier: "Viện WASI",

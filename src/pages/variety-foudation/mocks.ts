@@ -1,0 +1,148 @@
+import type { VarietyFoundation } from "./types";
+
+export const initialData: VarietyFoundation[] = [
+  {
+    id: "1",
+    illustration:
+      "https://traicayvuongtron.vn/resources/cache/original_xxxxx/WEBSITE%202023/tim%20hieu%20them/blog/kinh%20nghiem%2Cmeo%20vat/trai%20cay/trai%20cay%20dac%20san/sauriengri6/sauriengri62.jpg.webp",
+    crop: "Sầu riêng",
+    varietyFoundationCode: "VARI01",
+    varietyFoundationName: "Sầu riêng Ri6",
+    scientificName: "Durio zibethinus",
+    origin: "1",
+    growthDuration: "4 năm",
+    averageYield: "20-25 tấn/ha/năm",
+    description:
+      "Giống sầu riêng cao cấp, tỷ lệ hạt lép cao (90-95%), cơm vàng đậm, vị ngọt béo, không xơ, ráo và không dính tay. Trồng phổ biến tại ĐBSCL, Đông Nam Bộ và Tây Nguyên.",
+    seedType: "Cây giống ghép",
+    documents: [{ name: "huong-dan-nuoi-trong.pdf", url: "#" }],
+    status: "active",
+    updatedAt: "2024-01-20",
+  },
+  {
+    id: "2",
+    illustration:
+      "https://nongsantaynguyen.net/wp-content/uploads/2017/04/sau-rieng-dona-sau-rieng-thai-lan.jpg",
+    crop: "Sầu riêng",
+    varietyFoundationCode: "VARI02",
+    varietyFoundationName: "Sầu riêng Monthong (Dona/Thái)",
+    scientificName: "Durio zibethinus (Monthong)",
+    origin: "2",
+    growthDuration: "4 năm",
+    averageYield: "50-60 tấn/ha",
+    description:
+      "Cây sinh trưởng mạnh, cơm màu vàng nhạt, dày, ráo, dẻo chắc, vị ngọt thanh không gắt, ít béo và mùi thơm dễ chịu. Rất phù hợp để bảo quản và xuất khẩu.",
+    seedType: "Cây giống ghép",
+    documents: [{ name: "ky-thuat-cham-soc-saurieng.pdf", url: "#" }],
+    status: "active",
+    updatedAt: "2024-01-21",
+  },
+  {
+    id: "3",
+    illustration:
+      "https://cdn2.fptshop.com.vn/unsafe/1920x0/filters:format(webp):quality(75)/sau_Musa_King_01_0ea1377077.jpg",
+    crop: "Sầu riêng",
+    varietyFoundationCode: "VARI03",
+    varietyFoundationName: "Sầu riêng Musang King (D197)",
+    scientificName: "Durio zibethinus",
+    origin: "3",
+    growthDuration: "5 năm",
+    averageYield: "15-20 tấn/ha/năm",
+    description:
+      "Mệnh danh là 'vua sầu riêng', đít trái chia 5 rãnh hình sao. Cơm vàng đậm/cam, dẻo mịn, hạt dẹp, vị ngọt đậm xen lẫn chút đắng nhẹ đặc trưng. Trái sẽ tự rụng khi chín.",
+    seedType: "Cây giống ghép",
+    documents: [{ name: "ky-thuat-musang-king.pdf", url: "#" }],
+    status: "active",
+    updatedAt: "2024-02-01",
+  },
+  {
+    id: "4",
+    illustration:
+      "https://bizweb.dktcdn.net/100/428/240/articles/7-6-sau-rieng-kho-qua-xanh.png?v=1649077760710  ",
+    crop: "Sầu riêng",
+    varietyFoundationCode: "VARI04",
+    varietyFoundationName: "Sầu riêng Khổ qua xanh",
+    scientificName: "Durio zibethinus",
+    origin: "4",
+    growthDuration: "100 ngày",
+    averageYield: "50-60 tấn/ha",
+    description:
+      "Trái hình thoi giống trái khổ qua, vỏ vẫn xanh khi chín. Dễ ra hoa đậu trái, năng suất cực cao. Cơm mỏng màu vàng nhạt, béo vừa, hơi nhẫn đắng nhưng rất thơm.",
+    seedType: "Cây giống",
+    documents: [{ name: "tai-lieu-kho-qua-xanh.pdf", url: "#" }],
+    status: "active",
+    updatedAt: "2024-02-02",
+  },
+  {
+    id: "5",
+    illustration:
+      "https://cdn.tgdd.vn/2021/05/CookProductThumb/SRVuong-620x620.jpg",
+    crop: "Sầu riêng",
+    varietyFoundationCode: "VARI05",
+    varietyFoundationName: "Sầu riêng Chuồng bò hạt lép",
+    scientificName: "Durio zibethinus",
+    origin: "5",
+    growthDuration: "5 năm",
+    averageYield: "60 kg/cây/năm",
+    description:
+      "Trái nhỏ (1-2.5kg), gai to và thưa. Cơm màu vàng nhạt, mềm mại, dẻo như sữa, béo ngậy và ngọt thanh. Cây kháng bệnh tốt, ít bị sượng cơm.",
+    seedType: "Cây giống",
+    documents: [{ name: "cham-soc-chuong-bo.pdf", url: "#" }],
+    status: "active",
+    updatedAt: "2024-02-03",
+  },
+  {
+    id: "6",
+    illustration:
+      "https://www.conngongvang.com/wp-content/uploads/2019/01/sau_rieng_ri6-431x431.jpg",
+    crop: "Sầu riêng",
+    varietyFoundationCode: "VARI06",
+    varietyFoundationName: "Sầu riêng Chín Hóa (Cơm vàng sữa hạt lép)",
+    scientificName: "Durio zibethinus",
+    origin: "6",
+    growthDuration: "4 năm",
+    averageYield: "50-70 trái/cây/năm",
+    description:
+      "Trái hình trụ, vỏ màu vàng cám. Cơm màu vàng rơm, rất béo, ngọt, dẻo mềm không dính tay. Tỷ lệ hạt lép tự nhiên rất cao (30-40%).",
+    seedType: "Cây giống",
+    documents: [{ name: "ky-thuat-chin-hoa.pdf", url: "#" }],
+    status: "active",
+    updatedAt: "2024-02-04",
+  },
+  {
+    id: "7",
+    illustration:
+      "https://vinadurian.com/wp-content/uploads/2023/11/sau-rieng-black-thorn-05-i.jpg",
+    crop: "Sầu riêng",
+    varietyFoundationCode: "VARI07",
+    varietyFoundationName: "Sầu riêng Black Thorn (Gai đen / D200)",
+    scientificName: "Durio zibethinus",
+    origin: "7",
+    growthDuration: "4 năm",
+    averageYield: "Trung bình đến cao",
+    description:
+      "Giống sầu riêng đắt đỏ, dễ làm bông nuôi trái. Cơm màu cam ngả đồng rực rỡ, mịn màng, độ béo cực cao nhưng ngọt dịu, rất phù hợp với người kiêng ngọt.",
+    seedType: "Cây giống ghép",
+    documents: [{ name: "ky-thuat-black-thorn.pdf", url: "#" }],
+    status: "active",
+    updatedAt: "2024-02-05",
+  },
+  {
+    id: "8",
+    illustration:
+      "https://minhphuongfruit.com/upload/sanpham/z4369925805629_1e7390a19223c70dc84b562c1b8521e7-01-1436.jpg",
+    crop: "Sầu riêng",
+    varietyFoundationCode: "VARI08",
+    varietyFoundationName: "Sầu riêng Sáu Hữu",
+    scientificName: "Durio zibethinus",
+    origin: "8",
+    growthDuration: "115 ngày",
+    averageYield: "Trung bình (năng suất không cao)",
+    description:
+      "Trái nhỏ thon dài, gai dài. Cơm màu vàng tươi, hàm lượng nước thấp nên mềm xốp, ráo, tỷ lệ ăn được cao, hương vị béo ngậy đậm đà.",
+    seedType: "Cây giống",
+    documents: [{ name: "cham-soc-sau-huu.pdf", url: "#" }],
+    status: "active",
+    updatedAt: "2024-02-06",
+  },
+];

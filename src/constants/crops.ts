@@ -30,7 +30,8 @@ export const CROP_OPTIONS = [
   {
     id: "Lúa",
     name: "Lúa",
-    image: "https://upload.wikimedia.org/wikipedia/commons/f/f2/Mature_Rice_%28India%29_by_Augustus_Binu.jpg",
+    image:
+      "https://upload.wikimedia.org/wikipedia/commons/f/f2/Mature_Rice_%28India%29_by_Augustus_Binu.jpg",
     group: "Cây lương thực",
   },
   {
