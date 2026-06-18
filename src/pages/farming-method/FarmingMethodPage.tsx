@@ -6,12 +6,18 @@ const columns = [
   { key: "description", label: "Mô tả" },
 ];
 
+const fieldConfig = {
+  name: { required: true },
+  code: { required: true },
+};
+
 const FarmingMethodPage = () => {
   return (
     <GenericPage
       title="Quản lý phương thức canh tác"
       description="Các phương thức canh tác áp dụng trong sản xuất"
       entityName="phương thức"
+      fieldConfig={fieldConfig}
       withRichTextEditor
       columns={columns}
       initialData={[

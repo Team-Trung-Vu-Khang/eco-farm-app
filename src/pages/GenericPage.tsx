@@ -26,6 +26,20 @@ interface GenericItem {
   createdAt: string;
 }
 
+interface FieldConfig {
+  required?: boolean;
+  hidden?: boolean;
+  label?: string;
+  placeholder?: string;
+}
+
+interface GenericPageFieldConfig {
+  code?: FieldConfig;
+  name?: FieldConfig;
+  description?: FieldConfig;
+  image?: FieldConfig;
+}
+
 interface GenericPageProps {
   title: string;
   description: string;
@@ -34,6 +48,7 @@ interface GenericPageProps {
   enableImage?: boolean;
   withRichTextEditor?: boolean;
   columns?: Column<GenericItem>[];
+  fieldConfig?: GenericPageFieldConfig;
 }
 
 export function GenericPage({
@@ -44,6 +59,7 @@ export function GenericPage({
   initialData,
   enableImage = false,
   withRichTextEditor = false,
+  fieldConfig = {},
 }: GenericPageProps) {
   const { toast } = useToast();
   const [data, setData] = useState<GenericItem[]>(initialData);
@@ -117,6 +133,21 @@ export function GenericPage({
   };
 
   const handleSubmit = () => {
+    // Validate required fields
+    const requiredFields: Array<keyof typeof formData> = [];
+    if (fieldConfig.code?.required && !formData.code?.trim()) requiredFields.push("code");
+    if (fieldConfig.name?.required !== false && !formData.name?.trim()) requiredFields.push("name");
+    if (fieldConfig.description?.required && !formData.description) requiredFields.push("description");
+
+    if (requiredFields.length > 0) {
+      toast({
+        variant: "destructive",
+        title: "Thiếu thông tin bắt buộc",
+        description: "Vui lòng điền đầy đủ các trường bắt buộc (*)",
+      });
+      return;
+    }
+
     if (editItem) {
       setData((prev) =>
         prev.map((item) =>
@@ -176,30 +207,40 @@ export function GenericPage({
         onSubmit={handleSubmit}
       >
         <div className="w-full space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="code">Mã</Label>
-            <Input
-              id="code"
-              value={formData.code}
-              onChange={(e) =>
-                setFormData({ ...formData, code: e.target.value })
-              }
-              placeholder="Nhập mã"
-              data-testid="input-code"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="name">Tên</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              placeholder="Nhập tên"
-              data-testid="input-name"
-            />
-          </div>
+          {!fieldConfig.code?.hidden && (
+            <div className="space-y-2">
+              <Label htmlFor="code">
+                {fieldConfig.code?.label ?? "Mã"}
+                {fieldConfig.code?.required && <span className="text-red-500 ml-1">*</span>}
+              </Label>
+              <Input
+                id="code"
+                value={formData.code}
+                onChange={(e) =>
+                  setFormData({ ...formData, code: e.target.value })
+                }
+                placeholder={fieldConfig.code?.placeholder ?? "Nhập mã"}
+                data-testid="input-code"
+              />
+            </div>
+          )}
+          {!fieldConfig.name?.hidden && (
+            <div className="space-y-2">
+              <Label htmlFor="name">
+                {fieldConfig.name?.label ?? "Tên"}
+                {fieldConfig.name?.required !== false && <span className="text-red-500 ml-1">*</span>}
+              </Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                placeholder={fieldConfig.name?.placeholder ?? "Nhập tên"}
+                data-testid="input-name"
+              />
+            </div>
+          )}
           {enableImage && (
             <div className="space-y-2">
               <Label htmlFor="image">Hình ảnh</Label>
@@ -244,43 +285,48 @@ export function GenericPage({
               )}
             </div>
           )}
-          <div className="space-y-2">
-            <Label htmlFor="description">Mô tả</Label>
-            {withRichTextEditor ? (
-              <Editor
-                contentEditableClassname="min-h-[300px] max-h-[500px] h-auto overflow-y-auto"
-                initialText={
-                  typeof formData.description === "string"
-                    ? formData.description
-                    : ""
-                }
-                onChange={(value) =>
-                  setFormData({
-                    ...formData,
-                    description: value,
-                  })
-                }
-              />
-            ) : (
-              <Textarea
-                id="description"
-                value={
-                  typeof formData.description === "string"
-                    ? formData.description
-                    : ""
-                }
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    description: e.target.value,
-                  })
-                }
-                placeholder="Nhập mô tả"
-                rows={3}
-                data-testid="input-description"
-              />
-            )}
-          </div>
+          {!fieldConfig.description?.hidden && (
+            <div className="space-y-2">
+              <Label htmlFor="description">
+                {fieldConfig.description?.label ?? "Mô tả"}
+                {fieldConfig.description?.required && <span className="text-red-500 ml-1">*</span>}
+              </Label>
+              {withRichTextEditor ? (
+                <Editor
+                  contentEditableClassname="min-h-[300px] max-h-[500px] h-auto overflow-y-auto"
+                  initialText={
+                    typeof formData.description === "string"
+                      ? formData.description
+                      : ""
+                  }
+                  onChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      description: value,
+                    })
+                  }
+                />
+              ) : (
+                <Textarea
+                  id="description"
+                  value={
+                    typeof formData.description === "string"
+                      ? formData.description
+                      : ""
+                  }
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      description: e.target.value,
+                    })
+                  }
+                  placeholder={fieldConfig.description?.placeholder ?? "Nhập mô tả"}
+                  rows={3}
+                  data-testid="input-description"
+                />
+              )}
+            </div>
+          )}
         </div>
       </FormDialog>
 

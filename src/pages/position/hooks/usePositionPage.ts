@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import usePositionStore, { type Position } from "../../../stores/usePositionStore";
+import usePositionStore, {
+  type Position,
+} from "../../../stores/usePositionStore";
 import { emptyPositionFormData } from "../data/constants";
 import type { PositionFormData } from "../types/types";
 
@@ -33,6 +35,7 @@ export function usePositionPage() {
       name: item.name,
       group: item.group,
       description: item.description,
+      responsibilities: item.responsibilities || [],
       status: item.status,
     });
     setFormOpen(true);

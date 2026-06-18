@@ -43,7 +43,7 @@ export default function CropFoundationCreatePage() {
     },
     {
       id: "technical",
-      title: "Thông số KT",
+      title: "Thông số kỹ thuật",
       content: (
         <TechnicalSpecsStep
           formData={formData}

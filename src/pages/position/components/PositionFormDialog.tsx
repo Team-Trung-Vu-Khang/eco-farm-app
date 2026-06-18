@@ -2,6 +2,7 @@ import {
   FormDialog,
   Input,
   Label,
+  MultiSelect,
   Select,
   SelectContent,
   SelectItem,
@@ -10,6 +11,7 @@ import {
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { POSITION_GROUPS } from "../data/constants";
+import usePositionStore from "../../../stores/usePositionStore";
 import type { PositionFormData } from "../types/types";
 
 interface PositionFormDialogProps {
@@ -29,6 +31,13 @@ export function PositionFormDialog({
   setFormData,
   onSubmit,
 }: PositionFormDialogProps) {
+  const positions = usePositionStore((state) => state.positions);
+
+  const responsibilityOptions = positions.map((p) => ({
+    label: p.name,
+    value: p.name,
+  }));
+
   return (
     <FormDialog
       open={open}
@@ -39,7 +48,9 @@ export function PositionFormDialog({
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="code">Mã chức vụ *</Label>
+            <Label htmlFor="code">
+              Mã vai trò <span className="text-red-500 ml-1">*</span>
+            </Label>
             <Input
               id="code"
               value={formData.code}
@@ -50,7 +61,9 @@ export function PositionFormDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="name">Tên chức vụ *</Label>
+            <Label htmlFor="name">
+              Tên vai trò <span className="text-red-500 ml-1">*</span>
+            </Label>
             <Input
               id="name"
               value={formData.name}
@@ -63,10 +76,15 @@ export function PositionFormDialog({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="group">Nhóm chức vụ *</Label>
+          <Label htmlFor="group">
+            Nhóm chức vụ/chức danh{" "}
+            <span className="text-red-500 ml-1">*</span>
+          </Label>
           <Select
             value={formData.group}
-            onValueChange={(value) => setFormData({ ...formData, group: value })}
+            onValueChange={(value) =>
+              setFormData({ ...formData, group: value })
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder="Chọn nhóm chức vụ" />
@@ -79,6 +97,20 @@ export function PositionFormDialog({
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Danh sách trách nhiệm</Label>
+          <MultiSelect
+            options={responsibilityOptions}
+            value={formData.responsibilities ?? []}
+            placeholder="Chọn các trách nhiệm..."
+            emptyText="Không tìm thấy vai trò"
+            searchPlaceholder="Tìm vai trò..."
+            onChange={(values) =>
+              setFormData({ ...formData, responsibilities: values })
+            }
+          />
         </div>
 
         <div className="space-y-2">

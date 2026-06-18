@@ -24,5 +24,6 @@ export const emptyPositionFormData: PositionFormData = {
   name: "",
   group: "",
   description: "",
+  responsibilities: [],
   status: "active",
 };

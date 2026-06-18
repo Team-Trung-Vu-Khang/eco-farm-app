@@ -5,9 +5,75 @@ import {
   CardTitle,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Check, FileText, FlaskConical, Sprout } from "lucide-react";
+import {
+  Check,
+  File,
+  FileSpreadsheet,
+  FileText,
+  FileType,
+  FlaskConical,
+  Presentation,
+  Sprout,
+} from "lucide-react";
 
 import type { CreateCropFoundationForm } from "../../types/types";
+
+type FileIconConfig = {
+  icon: React.ElementType;
+  color: string;
+  bg: string;
+  border: string;
+  badge: string;
+};
+
+function getFileIconConfig(fileName: string): FileIconConfig {
+  const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+  if (ext === "pdf")
+    return {
+      icon: FileType,
+      color: "text-red-600",
+      bg: "bg-red-50",
+      border: "border-red-200",
+      badge: "bg-red-100 text-red-700",
+    };
+  if (["doc", "docx", "odt"].includes(ext))
+    return {
+      icon: FileText,
+      color: "text-blue-600",
+      bg: "bg-blue-50",
+      border: "border-blue-200",
+      badge: "bg-blue-100 text-blue-700",
+    };
+  if (["xls", "xlsx", "ods"].includes(ext))
+    return {
+      icon: FileSpreadsheet,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50",
+      border: "border-emerald-200",
+      badge: "bg-emerald-100 text-emerald-700",
+    };
+  if (["ppt", "pptx"].includes(ext))
+    return {
+      icon: Presentation,
+      color: "text-orange-600",
+      bg: "bg-orange-50",
+      border: "border-orange-200",
+      badge: "bg-orange-100 text-orange-700",
+    };
+  return {
+    icon: File,
+    color: "text-slate-600",
+    bg: "bg-slate-50",
+    border: "border-slate-200",
+    badge: "bg-slate-100 text-slate-700",
+  };
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 interface ConfirmationStepProps {
   formData: CreateCropFoundationForm;
@@ -75,11 +141,15 @@ export function ConfirmationStep({ formData }: ConfirmationStepProps) {
                 },
                 {
                   label: "Nhiệt độ",
-                  value: formData.technicalSpecs.tempRange ? `${formData.technicalSpecs.tempRange} °C` : "",
+                  value: formData.technicalSpecs.tempRange
+                    ? `${formData.technicalSpecs.tempRange} °C`
+                    : "",
                 },
                 {
                   label: "Độ ẩm",
-                  value: formData.technicalSpecs.humidityRange ? `${formData.technicalSpecs.humidityRange} %` : "",
+                  value: formData.technicalSpecs.humidityRange
+                    ? `${formData.technicalSpecs.humidityRange} %`
+                    : "",
                 },
                 { label: "Độ pH", value: formData.technicalSpecs.phRange },
               ].map((item) => (
@@ -101,31 +171,80 @@ export function ConfirmationStep({ formData }: ConfirmationStepProps) {
         <CardHeader className="bg-zinc-50/50 border-b border-zinc-100/50">
           <CardTitle className="text-base font-bold flex items-center gap-2 text-green-700">
             <FileText className="w-4 h-4" />
-            Hệ thống tài liệu
+            Tài liệu đính kèm
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 grid grid-cols-2 gap-8">
           {[
-            { label: "Kỹ thuật canh tác", key: "farmingTechnique" },
+            { label: "Tài liệu đính kèm, v.v", key: "farmingTechnique" },
             // { label: "Tiêu chuẩn chất lượng", key: "qualityStandard" },
           ].map((item) => (
-            <div key={item.key} className="space-y-2">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                {item.label}
-              </p>
-              <div className="flex items-center gap-2 p-3 bg-zinc-50/50 rounded-md ring-1 ring-zinc-100 text-xs">
-                <div
-                  className={cn(
-                    "w-2 h-2 rounded-full",
-                    (formData.docs as any)[item.key].type === "editor"
-                      ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"
-                      : "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.4)]",
-                  )}
-                />
-                <span className="font-bold text-foreground">
-                  {(formData.docs as any)[item.key].type.toUpperCase()}
-                </span>
-              </div>
+            <div key={item.key} className="space-y-1">
+              {(() => {
+                const doc = (formData.docs as any)[item.key];
+                if (doc.type === "editor") {
+                  return (
+                    <div className="flex items-center gap-2 p-3 bg-green-50 rounded-md ring-1 ring-green-100 text-xs">
+                      <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
+                      <span className="font-bold text-green-800">
+                        Nội dung soạn thảo
+                      </span>
+                    </div>
+                  );
+                }
+                const file: File | null = doc.file;
+                if (!file) {
+                  return (
+                    <div className="flex items-center gap-2 p-3 bg-zinc-50 rounded-md ring-1 ring-zinc-100 text-xs text-muted-foreground italic">
+                      Chưa tải file lên
+                    </div>
+                  );
+                }
+                const {
+                  icon: Icon,
+                  color,
+                  bg,
+                  border,
+                  badge,
+                } = getFileIconConfig(file.name);
+                const ext = file.name.split(".").pop()?.toUpperCase() ?? "FILE";
+                return (
+                  <div
+                    className={cn(
+                      "flex items-center gap-3 rounded-xl border px-3 py-2.5",
+                      bg,
+                      border,
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm border",
+                        border,
+                      )}
+                    >
+                      <Icon className={cn("h-4 w-4", color)} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <p className="truncate text-xs font-semibold text-slate-800">
+                          {file.name}
+                        </p>
+                        <span
+                          className={cn(
+                            "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase",
+                            badge,
+                          )}
+                        >
+                          {ext}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-500">
+                        {formatFileSize(file.size)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           ))}
         </CardContent>

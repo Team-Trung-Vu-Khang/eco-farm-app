@@ -278,13 +278,15 @@ function CropVarietySelectorDialog({
     const items: CropOption[] = [];
 
     CROP_GROUP_OPTIONS.forEach((group) => {
-      Object.entries(CROP_HIERARCHY[group] || {}).forEach(([crop, varieties]) => {
-        items.push({
-          cropGroup: group,
-          crop,
-          varieties,
-        });
-      });
+      Object.entries(CROP_HIERARCHY[group] || {}).forEach(
+        ([crop, varieties]) => {
+          items.push({
+            cropGroup: group,
+            crop,
+            varieties,
+          });
+        },
+      );
     });
 
     const query = searchTerm.trim().toLowerCase();
@@ -292,11 +294,7 @@ function CropVarietySelectorDialog({
     if (!query) return items;
 
     return items.filter((item) => {
-      const searchableText = [
-        item.cropGroup,
-        item.crop,
-        ...item.varieties,
-      ]
+      const searchableText = [item.cropGroup, item.crop, ...item.varieties]
         .join(" ")
         .toLowerCase();
       return searchableText.includes(query);
@@ -308,11 +306,7 @@ function CropVarietySelectorDialog({
     if (!query) return allCropOptions;
 
     return allCropOptions.filter((item) => {
-      const searchableText = [
-        item.cropGroup,
-        item.crop,
-        ...item.varieties,
-      ]
+      const searchableText = [item.cropGroup, item.crop, ...item.varieties]
         .join(" ")
         .toLowerCase();
       return searchableText.includes(query);
@@ -352,8 +346,8 @@ function CropVarietySelectorDialog({
             Chọn cây trồng - giống áp dụng
           </DialogTitle>
           <p className="mt-1 text-sm text-muted-foreground">
-            Tìm và chọn cây trồng, sau đó chọn các giống phù hợp cho phương
-            thức canh tác.
+            Tìm và chọn cây trồng, sau đó chọn các giống phù hợp cho phương thức
+            canh tác.
           </p>
         </DialogHeader>
 
@@ -423,7 +417,10 @@ function CropVarietySelectorDialog({
                       </div>
 
                       <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                        <Badge
+                          variant="secondary"
+                          className="bg-slate-100 text-slate-700"
+                        >
                           {option.varieties.length} giống
                         </Badge>
                         <Badge variant="outline" className="border-slate-200">
@@ -470,7 +467,10 @@ function CropVarietySelectorDialog({
                             Chọn một hoặc nhiều giống áp dụng cho cây trồng này.
                           </p>
                         </div>
-                        <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                        <Badge
+                          variant="secondary"
+                          className="bg-slate-100 text-slate-700"
+                        >
                           {selectedVarieties.length} giống đã chọn
                         </Badge>
                       </div>
@@ -484,7 +484,9 @@ function CropVarietySelectorDialog({
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => setSelectedVarieties(selectedOption.varieties)}
+                          onClick={() =>
+                            setSelectedVarieties(selectedOption.varieties)
+                          }
                         >
                           Chọn tất cả
                         </Button>
@@ -519,7 +521,8 @@ function CropVarietySelectorDialog({
                   </>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-slate-200 bg-white py-16 text-center text-sm text-muted-foreground">
-                    Chọn một cây trồng ở danh sách bên trái để xem giống áp dụng.
+                    Chọn một cây trồng ở danh sách bên trái để xem giống áp
+                    dụng.
                   </div>
                 )}
               </div>
@@ -666,9 +669,7 @@ export default function FarmingMethodCropPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
-  const [editingLinkIndex, setEditingLinkIndex] = useState<number | null>(
-    null,
-  );
+  const [editingLinkIndex, setEditingLinkIndex] = useState<number | null>(null);
   const [linkDraft, setLinkDraft] = useState<RelatedCropForm>(
     emptyRelatedCropForm(),
   );
@@ -813,185 +814,229 @@ export default function FarmingMethodCropPage() {
         onOpenChange={setFormOpen}
         title={editingItem ? "Cập nhật phương thức" : "Thêm phương thức mới"}
         onSubmit={handleSubmit}
-        size="lg"
+        size="xl"
       >
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="code">Mã</Label>
-              <Input
-                id="code"
-                value={formData.code}
-                onChange={(e) =>
-                  setFormData((current) => ({
-                    ...current,
-                    code: e.target.value.toUpperCase(),
-                  }))
-                }
-                placeholder="VD: FM-ORG-001"
-                className="bg-slate-50 font-mono"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Phương thức canh tác</Label>
-              <Select
-                value={formData.name}
-                onValueChange={(value) =>
-                  setFormData((current) => ({
-                    ...current,
-                    name: value,
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn phương thức" />
-                </SelectTrigger>
-                <SelectContent>
-                  {METHOD_OPTIONS.map((method) => (
-                    <SelectItem key={method} value={method}>
-                      {method}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        <div className="space-y-5">
+          {/* Row 1: Mã */}
+          <div className="space-y-1.5">
+            <Label htmlFor="code" className="text-sm font-medium">
+              Mã phương thức
+              <span className="text-red-500 ml-1">*</span>
+            </Label>
+            <Input
+              id="code"
+              value={formData.code}
+              onChange={(e) =>
+                setFormData((current) => ({
+                  ...current,
+                  code: e.target.value.toUpperCase(),
+                }))
+              }
+              placeholder="VD: FM-ORG-001"
+              className="bg-slate-50 font-mono"
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Trạng thái</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value: MethodStatus) =>
-                  setFormData((current) => ({
-                    ...current,
-                    status: value,
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Đang áp dụng</SelectItem>
-                  <SelectItem value="inactive">Ngưng áp dụng</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Mô tả</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData((current) => ({
-                    ...current,
-                    description: e.target.value,
-                  }))
-                }
-                placeholder="Mô tả phạm vi áp dụng của phương thức..."
-                rows={3}
-              />
-            </div>
+          {/* Row 2: Phương thức canh tác */}
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium">
+              Phương thức canh tác
+              <span className="text-red-500 ml-1">*</span>
+            </Label>
+            <Select
+              value={formData.name}
+              onValueChange={(value) =>
+                setFormData((current) => ({
+                  ...current,
+                  name: value,
+                }))
+              }
+            >
+              <SelectTrigger className="w-full bg-slate-50">
+                <SelectValue placeholder="Chọn phương thức" />
+              </SelectTrigger>
+              <SelectContent>
+                {METHOD_OPTIONS.map((method) => (
+                  <SelectItem key={method} value={method}>
+                    {method}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
+          {/* Row 3: Trạng thái */}
+          {/* <div className="space-y-1.5">
+            <Label className="text-sm font-medium">Trạng thái</Label>
+            <Select
+              value={formData.status}
+              onValueChange={(value: MethodStatus) =>
+                setFormData((current) => ({
+                  ...current,
+                  status: value,
+                }))
+              }
+            >
+              <SelectTrigger className="w-full bg-slate-50">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Đang áp dụng</SelectItem>
+                <SelectItem value="inactive">Ngưng áp dụng</SelectItem>
+              </SelectContent>
+            </Select>
+          </div> */}
+
+          {/* Row 4: Mô tả */}
+          <div className="space-y-1.5">
+            <Label htmlFor="description" className="text-sm font-medium">
+              Mô tả
+            </Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) =>
+                setFormData((current) => ({
+                  ...current,
+                  description: e.target.value,
+                }))
+              }
+              placeholder="Mô tả phạm vi áp dụng của phương thức..."
+              rows={4}
+              className="bg-slate-50 resize-none"
+            />
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-slate-100" />
+
+          {/* Row 5: Cây trồng - Giống */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="font-semibold">Cây trồng - Giống áp dụng</Label>
+              <div>
+                <p className="text-sm font-semibold text-slate-800">
+                  Cây trồng - Giống áp dụng
+                </p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Liên kết phương thức với các cây trồng và giống cụ thể
+                </p>
+              </div>
               <Button
                 type="button"
                 variant="outline"
+                size="sm"
                 onClick={openAddLinkDialog}
               >
-                Chọn cây trồng - giống
+                <Plus className="w-3.5 h-3.5 mr-1.5" />
+                Thêm cây trồng - giống
               </Button>
             </div>
 
-            <div className="space-y-3">
-              {formData.relatedCrops.map((relatedCrop, index) => {
-                const varieties = relatedCrop.varieties
-                  .split(",")
-                  .map((item) => item.trim())
-                  .filter(Boolean);
-                const hiddenVarieties = Math.max(varieties.length - 3, 0);
+            {formData.relatedCrops.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 py-8 text-center">
+                <p className="text-sm font-medium text-slate-500">
+                  Chưa có cây trồng nào được liên kết
+                </p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Bấm "Thêm cây trồng - giống" để chọn cây trồng và giống
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {formData.relatedCrops.map((relatedCrop, index) => {
+                  const varieties = relatedCrop.varieties
+                    .split(",")
+                    .map((item) => item.trim())
+                    .filter(Boolean);
+                  const hiddenVarieties = Math.max(varieties.length - 3, 0);
 
-                return (
-                  <div
-                    key={`related-${index}`}
-                    className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4"
-                  >
-                    <div className="min-w-0 flex-1 space-y-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge
-                          variant="outline"
-                          className="border-emerald-200 bg-emerald-50 text-emerald-700"
-                        >
-                          {relatedCrop.crop || "Chưa chọn cây"}
-                        </Badge>
-                        <span className="text-xs text-slate-500">
-                          Liên kết {index + 1}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {relatedCrop.cropGroup ? (
-                          <Badge variant="secondary" className="bg-white text-slate-700">
-                            {relatedCrop.cropGroup}
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="border-dashed text-slate-500">
-                            Chưa chọn nhóm
-                          </Badge>
-                        )}
-                        {varieties.slice(0, 3).map((variety) => (
+                  return (
+                    <div
+                      key={`related-${index}`}
+                      className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                    >
+                      <div className="min-w-0 flex-1 space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Badge
-                            key={`${relatedCrop.crop}-${variety}`}
                             variant="outline"
-                            className="max-w-full border-slate-200 bg-white text-slate-700"
+                            className="border-emerald-200 bg-emerald-50 text-emerald-700"
                           >
-                            <span className="max-w-[12rem] truncate">
-                              {variety}
-                            </span>
+                            {relatedCrop.crop || "Chưa chọn cây"}
                           </Badge>
-                        ))}
-                        {hiddenVarieties > 0 && (
-                          <Badge variant="outline" className="border-slate-200 bg-white text-slate-500">
-                            +{hiddenVarieties}
-                          </Badge>
-                        )}
+                          <span className="text-xs text-slate-500">
+                            Liên kết {index + 1}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {relatedCrop.cropGroup ? (
+                            <Badge
+                              variant="secondary"
+                              className="bg-white text-slate-700"
+                            >
+                              {relatedCrop.cropGroup}
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="border-dashed text-slate-500"
+                            >
+                              Chưa chọn nhóm
+                            </Badge>
+                          )}
+                          {varieties.slice(0, 3).map((variety) => (
+                            <Badge
+                              key={`${relatedCrop.crop}-${variety}`}
+                              variant="outline"
+                              className="max-w-full border-slate-200 bg-white text-slate-700"
+                            >
+                              <span className="max-w-[12rem] truncate">
+                                {variety}
+                              </span>
+                            </Badge>
+                          ))}
+                          {hiddenVarieties > 0 && (
+                            <Badge
+                              variant="outline"
+                              className="border-slate-200 bg-white text-slate-500"
+                            >
+                              +{hiddenVarieties}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-sm text-slate-600">
+                          {relatedCrop.varieties || "Chưa chọn giống"}
+                        </div>
                       </div>
-                      <div className="text-sm text-slate-600">
-                        {relatedCrop.varieties || "Chưa chọn giống"}
-                      </div>
-                    </div>
 
-                    <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => openEditLinkDialog(index)}
-                      >
-                        Chọn giống
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() =>
-                          setFormData((current) => ({
-                            ...current,
-                            relatedCrops: current.relatedCrops.filter(
-                              (_, itemIndex) => itemIndex !== index,
-                            ),
-                          }))
-                        }
-                      >
-                        Xóa
-                      </Button>
+                      <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => openEditLinkDialog(index)}
+                        >
+                          Chọn giống
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() =>
+                            setFormData((current) => ({
+                              ...current,
+                              relatedCrops: current.relatedCrops.filter(
+                                (_, itemIndex) => itemIndex !== index,
+                              ),
+                            }))
+                          }
+                        >
+                          Xóa
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </FormDialog>
