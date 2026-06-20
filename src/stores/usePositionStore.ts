@@ -27,6 +27,206 @@ interface PositionStore {
 const usePositionStore = create<PositionStore>((set, get) => ({
   // Initial data
   positions: [
+    // Nhóm lãnh đạo – ban giám đốc
+    {
+      id: 101,
+      code: "POS-DIR-01",
+      name: "Chủ tịch Hội đồng quản trị (Chairman of the Board)",
+      group: "Nhóm lãnh đạo – ban giám đốc",
+      description:
+        "Người đứng đầu Hội đồng quản trị, chịu trách nhiệm định hướng chiến lược tổng thể và giám sát hoạt động ban điều hành.",
+      responsibilities: [],
+      status: "active",
+      createdAt: "2024-01-01",
+    },
+    {
+      id: 102,
+      code: "POS-DIR-02",
+      name: "Phó Chủ tịch Hội đồng quản trị (Vice Chairman)",
+      group: "Nhóm lãnh đạo – ban giám đốc",
+      description:
+        "Hỗ trợ Chủ tịch HĐQT trong điều phối công việc của Hội đồng quản trị và thay thế khi Chủ tịch vắng mặt.",
+      responsibilities: [],
+      status: "active",
+      createdAt: "2024-01-01",
+    },
+    {
+      id: 103,
+      code: "POS-DIR-03",
+      name: "Tổng Giám đốc (CEO / General Director)",
+      group: "Nhóm lãnh đạo – ban giám đốc",
+      description:
+        "Người điều hành cao nhất của doanh nghiệp, chịu trách nhiệm toàn diện về hoạt động sản xuất kinh doanh trước Hội đồng quản trị.",
+      responsibilities: [],
+      status: "active",
+      createdAt: "2024-01-01",
+    },
+    {
+      id: 104,
+      code: "POS-DIR-04",
+      name: "Phó Tổng Giám đốc (Deputy CEO)",
+      group: "Nhóm lãnh đạo – ban giám đốc",
+      description:
+        "Hỗ trợ Tổng Giám đốc điều hành các mảng hoạt động được phân công và thay thế khi Tổng Giám đốc ủy quyền.",
+      responsibilities: [],
+      status: "active",
+      createdAt: "2024-01-01",
+    },
+    {
+      id: 105,
+      code: "POS-DIR-05",
+      name: "Giám đốc điều hành (COO – Chief Operating Officer)",
+      group: "Nhóm lãnh đạo – ban giám đốc",
+      description:
+        "Chịu trách nhiệm vận hành hàng ngày của toàn bộ hệ thống sản xuất và kinh doanh.",
+      responsibilities: [],
+      status: "active",
+      createdAt: "2024-01-01",
+    },
+    {
+      id: 106,
+      code: "POS-DIR-06",
+      name: "Giám đốc tài chính (CFO – Chief Financial Officer)",
+      group: "Nhóm lãnh đạo – ban giám đốc",
+      description:
+        "Quản lý toàn bộ tài chính, ngân sách, kế hoạch đầu tư và báo cáo tài chính của doanh nghiệp.",
+      responsibilities: [],
+      status: "active",
+      createdAt: "2024-01-01",
+    },
+    {
+      id: 107,
+      code: "POS-DIR-07",
+      name: "Giám đốc kinh doanh (CSO / Commercial Director)",
+      group: "Nhóm lãnh đạo – ban giám đốc",
+      description:
+        "Phụ trách chiến lược bán hàng, phát triển thị trường và quản lý đội ngũ kinh doanh.",
+      responsibilities: [],
+      status: "active",
+      createdAt: "2024-01-01",
+    },
+    {
+      id: 108,
+      code: "POS-DIR-08",
+      name: "Giám đốc kỹ thuật (CTO / Technical Director)",
+      group: "Nhóm lãnh đạo – ban giám đốc",
+      description:
+        "Phụ trách toàn bộ lĩnh vực kỹ thuật nông nghiệp, nghiên cứu và phát triển công nghệ canh tác.",
+      responsibilities: [],
+      status: "active",
+      createdAt: "2024-01-01",
+    },
+    {
+      id: 109,
+      code: "POS-DIR-09",
+      name: "Giám đốc sản xuất (Production Director)",
+      group: "Nhóm lãnh đạo – ban giám đốc",
+      description:
+        "Phụ trách toàn bộ hoạt động sản xuất nông nghiệp, điều phối các vùng trồng và nhà máy sơ chế.",
+      responsibilities: [],
+      status: "active",
+      createdAt: "2024-01-01",
+    },
+    {
+      id: 110,
+      code: "POS-DIR-10",
+      name: "Giám đốc nhân sự (CHRO / HR Director)",
+      group: "Nhóm lãnh đạo – ban giám đốc",
+      description:
+        "Phụ trách chiến lược nhân sự, tuyển dụng, đào tạo và phát triển nguồn nhân lực.",
+      responsibilities: [],
+      status: "active",
+      createdAt: "2024-01-01",
+    },
+    {
+      id: 111,
+      code: "POS-DIR-11",
+      name: "Phó Giám đốc sản xuất",
+      group: "Nhóm lãnh đạo – ban giám đốc",
+      description:
+        "Hỗ trợ Giám đốc sản xuất trong điều phối các hoạt động canh tác và phân công nhiệm vụ các tổ đội.",
+      responsibilities: [],
+      status: "active",
+      createdAt: "2024-01-01",
+    },
+    {
+      id: 112,
+      code: "POS-DIR-12",
+      name: "Phó Giám đốc kỹ thuật",
+      group: "Nhóm lãnh đạo – ban giám đốc",
+      description:
+        "Hỗ trợ Giám đốc kỹ thuật trong nghiên cứu, áp dụng và giám sát quy trình kỹ thuật nông nghiệp.",
+      responsibilities: [],
+      status: "active",
+      createdAt: "2024-01-01",
+    },
+    {
+      id: 113,
+      code: "POS-DIR-13",
+      name: "Phó Giám đốc kinh doanh",
+      group: "Nhóm lãnh đạo – ban giám đốc",
+      description:
+        "Hỗ trợ Giám đốc kinh doanh trong triển khai chiến lược bán hàng và quản lý kênh phân phối.",
+      responsibilities: [],
+      status: "active",
+      createdAt: "2024-01-01",
+    },
+    {
+      id: 114,
+      code: "POS-DIR-14",
+      name: "Giám đốc vùng (Regional Director)",
+      group: "Nhóm lãnh đạo – ban giám đốc",
+      description:
+        "Phụ trách quản lý và điều phối hoạt động của toàn bộ các trang trại, vùng trồng trong khu vực địa lý được giao.",
+      responsibilities: [],
+      status: "active",
+      createdAt: "2024-01-01",
+    },
+    {
+      id: 115,
+      code: "POS-DIR-15",
+      name: "Giám đốc dự án (Project Director)",
+      group: "Nhóm lãnh đạo – ban giám đốc",
+      description:
+        "Chịu trách nhiệm triển khai và quản lý các dự án nông nghiệp lớn theo đúng tiến độ, ngân sách và chất lượng.",
+      responsibilities: [],
+      status: "active",
+      createdAt: "2024-01-01",
+    },
+    {
+      id: 116,
+      code: "POS-DIR-16",
+      name: "Trưởng Ban kiểm soát",
+      group: "Nhóm lãnh đạo – ban giám đốc",
+      description:
+        "Đứng đầu Ban kiểm soát nội bộ, đảm bảo hoạt động doanh nghiệp tuân thủ pháp luật và quy chế nội bộ.",
+      responsibilities: [],
+      status: "active",
+      createdAt: "2024-01-01",
+    },
+    {
+      id: 117,
+      code: "POS-DIR-17",
+      name: "Thư ký Hội đồng quản trị",
+      group: "Nhóm lãnh đạo – ban giám đốc",
+      description:
+        "Hỗ trợ công tác hành chính pháp lý cho Hội đồng quản trị, soạn thảo biên bản, nghị quyết và tài liệu họp.",
+      responsibilities: [],
+      status: "active",
+      createdAt: "2024-01-01",
+    },
+    {
+      id: 118,
+      code: "POS-DIR-18",
+      name: "Trợ lý Tổng Giám đốc / Giám đốc",
+      group: "Nhóm lãnh đạo – ban giám đốc",
+      description:
+        "Hỗ trợ trực tiếp Tổng Giám đốc hoặc Giám đốc trong lịch làm việc, điều phối công việc nội bộ và đối ngoại.",
+      responsibilities: [],
+      status: "active",
+      createdAt: "2024-01-01",
+    },
+
     // Nhóm quản lý – điều hành
     {
       id: 1,

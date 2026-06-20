@@ -14,7 +14,7 @@ export default function BankLogo({
   return (
     <div
       className={`border bg-white flex items-center justify-center p-1 overflow-hidden shrink-0 ${className}`}
-      style={{ width: size, height: size }}
+      style={{ width: size * 2, height: size }}
     >
       <img
         src={logo}

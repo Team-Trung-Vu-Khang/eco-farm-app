@@ -5,4 +5,10 @@ export const emptyBankFormData: Bank = {
   name: "",
   logo: "",
   fullName: "",
+  shortName: "",
+  bin: "",
+  address: "",
+  swiftCode: "",
+  bicCode: "",
+  routingCode: "",
 };

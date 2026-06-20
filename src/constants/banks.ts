@@ -3,6 +3,12 @@ export interface Bank {
   name: string;
   logo: string;
   fullName: string;
+  shortName?: string;
+  bin?: string;
+  address?: string;
+  swiftCode?: string;
+  bicCode?: string;
+  routingCode?: string;
 }
 
 export const vietQrBankData = [

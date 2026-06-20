@@ -12,6 +12,21 @@ import { EnterpriseGroupForm } from "./components/EnterpriseGroupForm";
 import { useEnterpriseGroupForm } from "./hooks/useEnterpriseGroupForm";
 import type { EnterpriseGroup } from "./types";
 
+const columns: Column<EnterpriseGroup>[] = [
+  { key: "code", label: "Mã nhóm", sortable: true },
+  { key: "name", label: "Tên nhóm tổ chức", sortable: true },
+  { key: "description", label: "Mô tả" },
+  {
+    key: "status",
+    label: "Trạng thái",
+    render: (row: EnterpriseGroup) => (
+      <Badge variant={row.status === "active" ? "default" : "secondary"}>
+        {row.status === "active" ? "Đang sử dụng" : "Ngưng sử dụng"}
+      </Badge>
+    ),
+  },
+];
+
 const EnterpriseTypePage = () => {
   const {
     data,
@@ -28,21 +43,6 @@ const EnterpriseTypePage = () => {
     handleSubmit,
     handleConfirmDelete,
   } = useEnterpriseGroupForm();
-
-  const columns: Column<EnterpriseGroup>[] = [
-    { key: "code", label: "Mã nhóm", sortable: true },
-    { key: "name", label: "Tên nhóm tổ chức", sortable: true },
-    { key: "description", label: "Mô tả" },
-    {
-      key: "status",
-      label: "Trạng thái",
-      render: (row: EnterpriseGroup) => (
-        <Badge variant={row.status === "active" ? "default" : "secondary"}>
-          {row.status === "active" ? "Đang sử dụng" : "Ngưng sử dụng"}
-        </Badge>
-      ),
-    },
-  ];
 
   return (
     <AdminLayout
