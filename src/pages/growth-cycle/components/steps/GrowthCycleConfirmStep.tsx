@@ -1,5 +1,12 @@
 import { Badge, Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Calendar, ChevronRight, Layers, Layout, Sprout } from "lucide-react";
+import {
+  Calendar,
+  ChevronRight,
+  Fish,
+  Layers,
+  Layout,
+  Sprout,
+} from "lucide-react";
 import type { CreateGrowthCycleForm } from "../../types/types";
 import type { Variety } from "@/pages/variety/types";
 import { CROP_OPTIONS } from "@/constants/crops";
@@ -19,6 +26,7 @@ export function GrowthCycleConfirmStep({
   const varietyName =
     varieties.find((variety) => variety.id === formData.variety)?.varietyName ||
     formData.variety;
+  const isPlant = (formData.cycleType ?? "plant") === "plant";
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 py-4">
@@ -30,6 +38,22 @@ export function GrowthCycleConfirmStep({
       <Card className="border-none shadow-none bg-muted/30">
         <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-12">
           <div className="flex justify-between items-center py-2 border-b border-muted">
+            <span className="text-sm text-muted-foreground">Nhóm chu kỳ:</span>
+            <Badge variant={isPlant ? "default" : "secondary"}>
+              {isPlant ? (
+                <span className="flex items-center gap-2">
+                  <Sprout className="w-3.5 h-3.5" />
+                  Thực vật
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Fish className="w-3.5 h-3.5" />
+                  Vật nuôi / Thủy sản
+                </span>
+              )}
+            </Badge>
+          </div>
+          <div className="flex justify-between items-center py-2 border-b border-muted">
             <span className="text-sm text-muted-foreground">Phạm vi:</span>
             <Badge
               variant={formData.scope === "crop" ? "default" : "secondary"}
@@ -39,14 +63,14 @@ export function GrowthCycleConfirmStep({
           </div>
           <div className="flex justify-between items-center py-2 border-b border-muted">
             <span className="text-sm text-muted-foreground">
-              Loại cây trồng:
+              {isPlant ? "Loại cây trồng:" : "Đối tượng nuôi:"}
             </span>
             <span className="font-bold">{cropName}</span>
           </div>
           {formData.scope === "variety" && (
             <div className="flex justify-between items-center py-2 border-b border-muted">
               <span className="text-sm text-muted-foreground">
-                Giống cây trồng:
+                {isPlant ? "Giống cây trồng:" : "Giống / dòng:"}
               </span>
               <div className="flex items-center gap-2">
                 <Sprout className="w-4 h-4 text-green-600" />

@@ -46,6 +46,14 @@ export default function CreateGrowthCyclePage() {
           <GrowthCycleBasicInfoStep
             formData={formData}
             filteredVarieties={filteredVarieties}
+            onCycleTypeChange={(cycleType) =>
+              setFormData((prev) => ({
+                ...prev,
+                cycleType,
+                cropId: "",
+                variety: "",
+              }))
+            }
             onScopeChange={(scope) =>
               setFormData((prev) => ({ ...prev, scope, variety: "" }))
             }

@@ -29,6 +29,7 @@ import { GrowthCycleConfirmStep } from "./components/steps/GrowthCycleConfirmSte
 
 function createInitialFormData(): CreateGrowthCycleForm {
   return {
+    cycleType: "plant",
     scope: "crop",
     cropId: "",
     variety: "",
@@ -61,6 +62,7 @@ export default function UpdateGrowthCyclePage() {
     if (!currentCycle) return createInitialFormData();
 
     return {
+      cycleType: currentCycle.cycleType ?? "plant",
       scope: currentCycle.scope || "variety",
       cropId: currentCycle.cropId,
       variety: currentCycle.variety,
@@ -100,6 +102,7 @@ export default function UpdateGrowthCyclePage() {
 
     updateGrowthCycle(params.id, {
       name: `Chu kỳ sinh trưởng ${cropName}${resolvedVarietyName ? ` - ${resolvedVarietyName}` : ""}`,
+      cycleType: formData.cycleType,
       scope: formData.scope,
       cropId: formData.cropId,
       cropName: cropName,
@@ -162,6 +165,14 @@ export default function UpdateGrowthCyclePage() {
         <GrowthCycleBasicInfoStep
           formData={formData}
           filteredVarieties={filteredVarieties}
+          onCycleTypeChange={(cycleType) =>
+            setFormData((prev) => ({
+              ...prev,
+              cycleType,
+              cropId: "",
+              variety: "",
+            }))
+          }
           onScopeChange={(scope) =>
             setFormData((prev) => ({ ...prev, scope, variety: "" }))
           }

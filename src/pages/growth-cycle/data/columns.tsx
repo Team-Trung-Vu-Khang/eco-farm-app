@@ -1,7 +1,36 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Hash, Layers, Sprout } from "lucide-react";
+import { CROP_OPTIONS } from "@/constants/crops";
 import useVarietyStore from "@/stores/useVarietyStore";
 import type { GrowthCycle } from "../types/types";
+
+function resolveCropLabel(cropId: string, cropName?: string) {
+  return (
+    CROP_OPTIONS.find((item) => item.id === cropId || item.name === cropId)?.name ||
+    cropName ||
+    cropId ||
+    "Chưa xác định"
+  );
+}
+
+function resolveApplyForLabel(row: GrowthCycle) {
+  const cropLabel = resolveCropLabel(row.cropId, row.cropName);
+
+  if (row.scope === "crop") {
+    return cropLabel;
+  }
+
+  const varietyStore = useVarietyStore.getState();
+  const variety =
+    (row.variety && varietyStore.getVarietyById(row.variety)) || undefined;
+
+  return (
+    variety?.varietyName ||
+    row.variety ||
+    cropLabel ||
+    "Chưa xác định"
+  );
+}
 
 export const growthCycleColumns: Column<GrowthCycle>[] = [
   {
@@ -40,14 +69,10 @@ export const growthCycleColumns: Column<GrowthCycle>[] = [
     key: "applyFor",
     label: "Áp dụng cho",
     render: (_, row: GrowthCycle) => {
-      const label =
-        row.scope === "crop"
-          ? row.cropName
-          : useVarietyStore.getState().getVarietyById(row.variety!)
-              ?.varietyName;
+      const label = resolveApplyForLabel(row);
 
       return (
-        <div className="flex font-mono font-bold text-xs text-green-600 rounded-md bg-green-100 border border-green-200 px-2 py-1 items-center gap-3 w-fit">
+        <div className="flex w-fit items-center gap-2 rounded-md border border-green-200 bg-green-100 px-2 py-1 font-mono text-xs font-bold text-green-700">
           {label}
         </div>
       );

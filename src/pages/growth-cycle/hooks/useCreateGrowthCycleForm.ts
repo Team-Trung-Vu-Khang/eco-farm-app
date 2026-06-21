@@ -14,6 +14,7 @@ export function useCreateGrowthCycleForm() {
   const { varieties } = useVarietyStore();
 
   const [formData, setFormData] = useState<CreateGrowthCycleForm>({
+    cycleType: "plant",
     scope: "crop",
     cropId: "",
     variety: "",
@@ -68,6 +69,7 @@ export function useCreateGrowthCycleForm() {
 
     addGrowthCycle({
       name: `Chu kỳ sinh trưởng ${cropName}${varietyName ? ` - ${varietyName}` : ""}`,
+      cycleType: formData.cycleType,
       scope: formData.scope,
       cropId: formData.cropId,
       cropName: cropName,

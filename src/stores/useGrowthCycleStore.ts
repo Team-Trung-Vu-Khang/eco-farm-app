@@ -10,6 +10,7 @@ function normalizeGrowthCycle(cycle: GrowthCycle): GrowthCycle {
 
   return {
     ...cycle,
+    cycleType: cycle.cycleType ?? "plant",
     cropId: normalizedCropId,
     totalDays: normalizedStages.reduce(
       (sum, stage) => sum + (Number(stage.duration) || 0),

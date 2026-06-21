@@ -6,15 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  ArrowLeft,
-  Calendar,
-  Edit,
-  FileText,
-  Layers,
-  Leaf,
-  Sprout,
-} from "lucide-react";
+import { ArrowLeft, Calendar, Edit, FileText, Fish, Layers, Leaf, Sprout } from "lucide-react";
 import { Link, useParams } from "wouter";
 import useGrowthCycleStore from "../../stores/useGrowthCycleStore";
 import useVarietyStore from "../../stores/useVarietyStore";
@@ -45,30 +37,38 @@ export default function GrowthCycleDetailPage({
   const varietyName = cycle.variety
     ? getVarietyById(cycle.variety)?.varietyName || cycle.variety
     : null;
+  const isPlant = (cycle.cycleType ?? "plant") === "plant";
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {params?.id && (
-            <Link href="/growth-cycle">
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            </Link>
-          )}
-          <div>
-            <h2 className="text-2xl font-bold">Chi tiết chu kỳ sinh trưởng</h2>
-            <p className="text-sm text-muted-foreground">{cycle.name}</p>
+      <div className="rounded-2xl border bg-gradient-to-r from-background via-background to-muted/30 p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {params?.id && (
+              <Link href="/growth-cycle">
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+              </Link>
+            )}
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-2xl font-bold">Chi tiết chu kỳ sinh trưởng</h2>
+                <Badge variant={isPlant ? "default" : "secondary"}>
+                  {isPlant ? "Thực vật" : "Vật nuôi / Thủy sản"}
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">{cycle.name}</p>
+            </div>
           </div>
-        </div>
 
-        <Link href={`/growth-cycle/${cycle.id}/edit`}>
-          <Button>
-            <Edit className="w-4 h-4 mr-2" />
-            Chỉnh sửa
-          </Button>
-        </Link>
+          <Link href={`/growth-cycle/${cycle.id}/edit`}>
+            <Button>
+              <Edit className="w-4 h-4 mr-2" />
+              Chỉnh sửa
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -84,15 +84,23 @@ export default function GrowthCycleDetailPage({
               </Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Loại cây trồng</span>
+              <span className="text-sm text-muted-foreground">
+                {isPlant ? "Loại cây trồng" : "Đối tượng nuôi"}
+              </span>
               <span className="font-medium flex items-center gap-2">
-                <Leaf className="w-4 h-4 text-green-600" />
+                {isPlant ? (
+                  <Leaf className="w-4 h-4 text-green-600" />
+                ) : (
+                  <Fish className="w-4 h-4 text-blue-600" />
+                )}
                 {cycle.cropName}
               </span>
             </div>
             {varietyName && (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Giống cây</span>
+                <span className="text-sm text-muted-foreground">
+                  {isPlant ? "Giống cây" : "Giống / dòng"}
+                </span>
                 <span className="font-medium flex items-center gap-2">
                   <Sprout className="w-4 h-4 text-primary" />
                   {varietyName}
