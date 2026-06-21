@@ -7,6 +7,8 @@ import useVarietyStore from "../../stores/useVarietyStore";
 import { SeasonFormPage } from "./components/SeasonFormPage";
 import type { CreateSeasonForm, Season, SeasonFormData } from "./types/types";
 import {
+  calculateDurationFromStageMap,
+  calculateDurationFromSeasonForm,
   mapFilesToSeasonDocuments,
   removeGrowthCycleFromForm,
   validateSeasonForm,
@@ -41,6 +43,7 @@ function UpdateSeasonContent({ season }: { season: Season }) {
     description: season.description,
     duration: season.duration,
     status: season.status,
+    seasonType: season.seasonType ?? "plant",
     scope: season.scope,
     cropId: season.cropId,
     varietyId: season.varietyId,
@@ -51,7 +54,12 @@ function UpdateSeasonContent({ season }: { season: Season }) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleSave = () => {
-    if (!validateSeasonForm(formData as CreateSeasonForm)) {
+    const resolvedFormData = {
+      ...formData,
+      duration: calculateDurationFromSeasonForm(formData),
+    };
+
+    if (!validateSeasonForm(resolvedFormData as CreateSeasonForm)) {
       toast({
         title: "Lỗi",
         description: "Vui lòng điền đầy đủ thông tin bắt buộc",
@@ -61,17 +69,18 @@ function UpdateSeasonContent({ season }: { season: Season }) {
     }
 
     updateSeason(season.id, {
-      code: formData.code,
-      name: formData.name,
-      description: formData.description,
-      duration: formData.duration,
-      status: formData.status,
-      scope: formData.scope,
-      cropId: formData.cropId,
-      varietyId: formData.varietyId,
-      growthCycleIds: formData.growthCycleIds,
-      selectedStages: formData.selectedStages,
-      documents: mapFilesToSeasonDocuments(formData.documents),
+      code: resolvedFormData.code,
+      name: resolvedFormData.name,
+      description: resolvedFormData.description,
+      duration: resolvedFormData.duration,
+      status: resolvedFormData.status,
+      seasonType: resolvedFormData.seasonType,
+      scope: resolvedFormData.scope,
+      cropId: resolvedFormData.cropId,
+      varietyId: resolvedFormData.varietyId,
+      growthCycleIds: resolvedFormData.growthCycleIds,
+      selectedStages: resolvedFormData.selectedStages,
+      documents: mapFilesToSeasonDocuments(resolvedFormData.documents),
     });
 
     toast({ title: "Thành công", description: "Đã cập nhật mùa vụ" });
@@ -86,13 +95,19 @@ function UpdateSeasonContent({ season }: { season: Season }) {
       formData={formData}
       growthCycles={growthCycles}
       onBack={() => setLocation("/season")}
-      onCycleConfirm={(growthCycleId, selectedStages) =>
+      onCycleConfirm={(growthCycleId, selectedStages) => {
+        const selectedCycle = growthCycles.find((cycle) => cycle.id === growthCycleId);
         setFormData({
           ...formData,
+          duration: growthCycleId
+            ? calculateDurationFromStageMap(selectedStages) ||
+              selectedCycle?.totalDays ||
+              0
+            : 0,
           growthCycleIds: growthCycleId ? [growthCycleId] : [],
           selectedStages,
-        })
-      }
+        });
+      }}
       onDialogOpenChange={setDialogOpen}
       onFormChange={setFormData}
       onRemoveCycle={(cycleId) =>

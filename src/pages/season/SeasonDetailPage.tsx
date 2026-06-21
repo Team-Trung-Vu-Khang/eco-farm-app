@@ -20,10 +20,57 @@ import {
   Trees,
   Flower,
 } from "lucide-react";
+import { animalBreedOptions, animalCycleOptions } from "../growth-cycle/data/cycleSelectionData";
+import { CROP_OPTIONS } from "@/constants/crops";
 import useSeasonStore from "../../stores/useSeasonStore";
 import useGrowthCycleStore from "../../stores/useGrowthCycleStore";
 import useCropStore from "../../stores/useCropStore";
 import useVarietyStore from "../../stores/useVarietyStore";
+import type { SeasonDocument } from "./types/types";
+
+function resolveSeasonType(season: { seasonType?: "plant" | "animal" }) {
+  return season.seasonType ?? "plant";
+}
+
+function resolveSeasonTargetLabel(
+  season: {
+    seasonType?: "plant" | "animal";
+    scope: "crop" | "variety";
+    cropId?: string;
+    varietyId?: string;
+  },
+  getCropById: (id: number) => { name: string } | undefined,
+  getVarietyById: (id: string) => { varietyName: string } | undefined,
+) {
+  const seasonType = resolveSeasonType(season);
+
+  if (seasonType === "animal") {
+    const primary = animalCycleOptions.find(
+      (option) => option.id === season.cropId || option.name === season.cropId,
+    );
+    const breed = season.varietyId
+      ? animalBreedOptions.find((option) => option.id === season.varietyId)
+      : undefined;
+
+    if (season.scope === "variety") {
+      return breed?.name || season.varietyId || primary?.name || season.cropId || "Chưa xác định";
+    }
+
+    return primary?.name || season.cropId || "Chưa xác định";
+  }
+
+  const crop =
+    CROP_OPTIONS.find(
+      (item) => item.id === season.cropId || item.name === season.cropId,
+    ) || (season.cropId ? getCropById(Number(season.cropId)) : undefined);
+  const variety = season.varietyId ? getVarietyById(season.varietyId) : undefined;
+
+  if (season.scope === "variety") {
+    return variety?.varietyName || season.varietyId || crop?.name || season.cropId || "Chưa xác định";
+  }
+
+  return crop?.name || season.cropId || "Chưa xác định";
+}
 
 export default function SeasonDetailPage() {
   const [, params] = useRoute("/season/:id");
@@ -68,6 +115,8 @@ export default function SeasonDetailPage() {
     label: season.status,
     variant: "outline",
   };
+
+  const seasonType = resolveSeasonType(season);
 
   return (
     <AdminLayout
@@ -142,17 +191,19 @@ export default function SeasonDetailPage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <div className="space-y-1">
-                  <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-green-600" />
-                    Thời gian
-                  </span>
-                  <p className="font-bold text-lg">{season.duration} ngày</p>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    {season.scope === "crop" ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  <div className="space-y-1">
+                    <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-green-600" />
+                      Thời gian
+                    </span>
+                    <p className="font-bold text-lg">{season.duration} ngày</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    {seasonType === "animal" ? (
+                      <Flower className="w-4 h-4 text-green-600" />
+                    ) : season.scope === "crop" ? (
                       <Trees className="w-4 h-4 text-green-600" />
                     ) : (
                       <Flower className="w-4 h-4 text-green-600" />
@@ -160,23 +211,53 @@ export default function SeasonDetailPage() {
                     Phạm vi áp dụng
                   </span>
                   <p className="font-bold text-lg">
-                    {season.scope === "crop" ? (
-                      <>
-                        {season.cropId
-                          ? getCropById(Number(season.cropId))?.name ||
-                            "Theo loại cây trồng"
-                          : "Theo loại cây trồng"}
-                      </>
+                    {seasonType === "animal"
+                      ? season.scope === "crop"
+                        ? "Theo loại vật nuôi"
+                        : "Theo giống / dòng"
+                      : season.scope === "crop"
+                        ? "Theo loại cây trồng"
+                        : "Theo giống cụ thể"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div className="space-y-1">
+                  <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    {seasonType === "animal" ? (
+                      <Flower className="w-4 h-4 text-green-600" />
                     ) : (
-                      <>
-                        {season.varietyId
-                          ? getVarietyById(season.varietyId)?.varietyName ||
-                            "Theo giống cụ thể"
-                          : "Theo giống cụ thể"}
-                      </>
+                      <Trees className="w-4 h-4 text-green-600" />
+                    )}
+                    {seasonType === "animal" ? "Đối tượng nuôi" : "Loại cây trồng"}
+                  </span>
+                  <p className="font-bold text-lg">
+                    {resolveSeasonTargetLabel(
+                      season,
+                      getCropById,
+                      getVarietyById,
                     )}
                   </p>
                 </div>
+                {season.scope === "variety" && (
+                  <div className="space-y-1">
+                    <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <Flower className="w-4 h-4 text-green-600" />
+                      {seasonType === "animal" ? "Giống / dòng" : "Giống cây trồng"}
+                    </span>
+                    <p className="font-bold text-lg">
+                      {season.varietyId
+                        ? seasonType === "animal"
+                          ? animalBreedOptions.find(
+                              (item) => item.id === season.varietyId,
+                            )?.name || season.varietyId
+                          : getVarietyById(season.varietyId)?.varietyName ||
+                            season.varietyId
+                        : "Chưa xác định"}
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -274,7 +355,7 @@ export default function SeasonDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {season.documents.length > 0 ? (
-                season.documents.map((doc: any) => (
+                season.documents.map((doc: SeasonDocument) => (
                   <div
                     key={doc.id}
                     className="flex items-start gap-3 p-3 rounded-lg border bg-blue-50/50 hover:bg-blue-50 transition-colors cursor-pointer group"

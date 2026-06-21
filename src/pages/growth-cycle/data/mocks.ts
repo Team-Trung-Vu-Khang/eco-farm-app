@@ -268,6 +268,204 @@ export const initialGrowthCycles: GrowthCycle[] = [
     createdAt: now - 150 * 86400000,
     updatedAt: now - 25 * 86400000,
   },
+  // 6. QUY TRÌNH CHĂN NUÔI HEO THỊT
+  {
+    id: "GC006",
+    name: "Quy trình Heo thịt tăng trọng",
+    cycleType: "animal",
+    scope: "variety",
+    cropId: "heo",
+    cropName: "Heo",
+    variety: "heo-thit",
+    totalDays: 180,
+    numStages: 4,
+    stages: [
+      {
+        id: "p1_1",
+        name: "Úm heo con & Ổn định đàn",
+        duration: "28 ngày",
+        usePdf: false,
+        content: `
+          <p><strong>Chuồng trại:</strong> Giữ nhiệt độ 28-32 độ C, nền khô ráo, đủ ánh sáng và kín gió lùa.</p>
+          <p><strong>Dinh dưỡng:</strong> Dùng cám khởi động chất lượng cao, chia nhiều bữa nhỏ trong ngày.</p>`,
+      },
+      {
+        id: "p1_2",
+        name: "Tăng trọng giai đoạn 1",
+        duration: "52 ngày",
+        usePdf: false,
+        content: `
+          <p><strong>Quản lý tăng trọng:</strong> Tăng dần khẩu phần, theo dõi FCR và trọng lượng định kỳ.</p>
+          <p><strong>Chăm sóc sức khỏe:</strong> Tiêm phòng, tẩy ký sinh và bổ sung điện giải khi thời tiết thay đổi.</p>`,
+      },
+      {
+        id: "p1_3",
+        name: "Tăng trọng giai đoạn 2",
+        duration: "60 ngày",
+        usePdf: false,
+        content: `
+          <p><strong>Điều chỉnh dinh dưỡng:</strong> Tăng năng lượng khẩu phần, giảm stress nhiệt, đảm bảo nước sạch liên tục.</p>
+          <p><strong>Phòng bệnh:</strong> Kiểm soát hô hấp và tiêu chảy, vệ sinh chuồng trại hàng ngày.</p>`,
+      },
+      {
+        id: "p1_4",
+        name: "Vỗ béo & Xuất chuồng",
+        duration: "40 ngày",
+        usePdf: false,
+        content: `
+          <p><strong>Hoàn thiện trọng lượng:</strong> Đưa heo đạt khối lượng mục tiêu trước khi xuất bán.</p>
+          <p><strong>Trước xuất chuồng:</strong> Giảm stress vận chuyển, ngưng thuốc theo thời gian cách ly phù hợp.</p>`,
+      },
+    ],
+    createdAt: now - 10 * 86400000,
+    updatedAt: now - 2 * 86400000,
+  },
+  // 7. QUY TRÌNH CHĂN NUÔI GÀ THỊT
+  {
+    id: "GC007",
+    name: "Quy trình Gà thịt công nghiệp",
+    cycleType: "animal",
+    scope: "variety",
+    cropId: "ga",
+    cropName: "Gà",
+    variety: "ga-thit",
+    totalDays: 70,
+    numStages: 4,
+    stages: [
+      {
+        id: "g1_1",
+        name: "Úm gà con",
+        duration: "14 ngày",
+        usePdf: false,
+        content: `
+          <p><strong>Nhiệt độ:</strong> Duy trì nhiệt phù hợp, tăng cường chiếu sáng và hạn chế gió lùa.</p>
+          <p><strong>Nước & thức ăn:</strong> Cho uống nước sạch sớm, dùng cám úm chuyên dụng.</p>`,
+      },
+      {
+        id: "g1_2",
+        name: "Tăng trưởng nhanh",
+        duration: "21 ngày",
+        usePdf: false,
+        content: `
+          <p><strong>Dinh dưỡng:</strong> Điều chỉnh khẩu phần theo tuổi, đảm bảo đủ đạm và năng lượng.</p>
+          <p><strong>Mật độ nuôi:</strong> Giữ mật độ hợp lý để gà phát triển đồng đều.</p>`,
+      },
+      {
+        id: "g1_3",
+        name: "Hoàn thiện thể trạng",
+        duration: "20 ngày",
+        usePdf: false,
+        content: `
+          <p><strong>Quản lý đàn:</strong> Theo dõi đồng đều trọng lượng, tách loại những con phát triển chậm.</p>
+          <p><strong>An toàn sinh học:</strong> Siết chặt ra vào chuồng, khử trùng định kỳ.</p>`,
+      },
+      {
+        id: "g1_4",
+        name: "Xuất bán",
+        duration: "15 ngày",
+        usePdf: false,
+        content: `
+          <p><strong>Chuẩn bị bán:</strong> Ngừng thức ăn trước vận chuyển theo quy trình phù hợp, giữ đàn ổn định.</p>
+          <p><strong>Vận chuyển:</strong> Tránh stress nhiệt và dồn ép đàn.</p>`,
+      },
+    ],
+    createdAt: now - 8 * 86400000,
+    updatedAt: now - 1 * 86400000,
+  },
+  // 8. QUY TRÌNH CHĂN NUÔI HEO THỊT THEO LOẠI
+  {
+    id: "GC008",
+    name: "Quy trình Heo thịt theo loại",
+    cycleType: "animal",
+    scope: "crop",
+    cropId: "heo",
+    cropName: "Heo",
+    totalDays: 180,
+    numStages: 4,
+    stages: [
+      {
+        id: "hp1_1",
+        name: "Úm heo con",
+        duration: "28 ngày",
+        usePdf: false,
+        content: `
+          <p><strong>Mục tiêu:</strong> Ổn định đàn, giảm stress, bảo đảm heo con ăn uống tốt trong giai đoạn đầu.</p>`,
+      },
+      {
+        id: "hp1_2",
+        name: "Tăng trọng ban đầu",
+        duration: "52 ngày",
+        usePdf: false,
+        content: `
+          <p><strong>Mục tiêu:</strong> Tăng khối lượng ổn định, theo dõi sức khỏe và lịch vaccine định kỳ.</p>`,
+      },
+      {
+        id: "hp1_3",
+        name: "Tăng trọng hoàn thiện",
+        duration: "60 ngày",
+        usePdf: false,
+        content: `
+          <p><strong>Mục tiêu:</strong> Tăng năng lượng khẩu phần, kiểm soát stress nhiệt và tiêu hóa.</p>`,
+      },
+      {
+        id: "hp1_4",
+        name: "Vỗ béo & Xuất chuồng",
+        duration: "40 ngày",
+        usePdf: false,
+        content: `
+          <p><strong>Mục tiêu:</strong> Đạt trọng lượng xuất bán, giảm stress vận chuyển và ngừng thuốc đúng cách ly.</p>`,
+      },
+    ],
+    createdAt: now - 6 * 86400000,
+    updatedAt: now - 1 * 86400000,
+  },
+  // 9. QUY TRÌNH CHĂN NUÔI GÀ THỊT THEO LOẠI
+  {
+    id: "GC009",
+    name: "Quy trình Gà thịt theo loại",
+    cycleType: "animal",
+    scope: "crop",
+    cropId: "ga",
+    cropName: "Gà",
+    totalDays: 70,
+    numStages: 4,
+    stages: [
+      {
+        id: "gp1_1",
+        name: "Úm gà con",
+        duration: "14 ngày",
+        usePdf: false,
+        content: `
+          <p><strong>Mục tiêu:</strong> Giữ nhiệt ổn định, cung cấp nước sạch và thức ăn dễ tiêu.</p>`,
+      },
+      {
+        id: "gp1_2",
+        name: "Tăng trưởng sớm",
+        duration: "21 ngày",
+        usePdf: false,
+        content: `
+          <p><strong>Mục tiêu:</strong> Tăng trọng đều, đảm bảo mật độ nuôi và thông thoáng chuồng trại.</p>`,
+      },
+      {
+        id: "gp1_3",
+        name: "Tăng trưởng hoàn thiện",
+        duration: "20 ngày",
+        usePdf: false,
+        content: `
+          <p><strong>Mục tiêu:</strong> Tối ưu khẩu phần, kiểm soát hô hấp và tiêu chảy.</p>`,
+      },
+      {
+        id: "gp1_4",
+        name: "Xuất bán",
+        duration: "15 ngày",
+        usePdf: false,
+        content: `
+          <p><strong>Mục tiêu:</strong> Hoàn thiện trọng lượng, hạn chế stress trước xuất bán.</p>`,
+      },
+    ],
+    createdAt: now - 5 * 86400000,
+    updatedAt: now - 1 * 86400000,
+  },
 ];
 
 export const cropOptions = [

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,8 +15,9 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Search, Sprout, Calendar, FilterX } from "lucide-react";
 import useGrowthCycleStore from "../../../stores/useGrowthCycleStore";
-import useVarietyStore from "../../../stores/useVarietyStore";
 import { CROP_OPTIONS } from "../../../constants/crops";
+import { animalCycleOptions } from "../../growth-cycle/data/cycleSelectionData";
+import type { GrowthCycle } from "../../growth-cycle/types/types";
 
 interface GrowthCycleSelectDialogProps {
   open: boolean;
@@ -32,7 +33,9 @@ interface GrowthCycleSelectDialogProps {
   ) => void;
 }
 
-const EMPTY_STAGES: Record<string, Record<string, string>> = {};
+type EditableStages = Record<string, Record<string, string>>;
+
+const EMPTY_STAGES: EditableStages = {};
 
 function parseDuration(durationStr: string): { years: string; months: string; days: string } {
   const str = String(durationStr || "");
@@ -55,7 +58,7 @@ function formatDurationDisplay(durationStr: string): string {
   return parts.length > 0 ? parts.join(" ") : "-";
 }
 
-function computeCycleDuration(stages: any[]): string {
+function computeCycleDuration(stages: GrowthCycle["stages"]): string {
   let hasDays = false;
   let hasMonths = false;
   let hasYears = false;
@@ -95,19 +98,20 @@ export function GrowthCycleSelectDialog({
   onConfirm,
 }: GrowthCycleSelectDialogProps) {
   const { growthCycles } = useGrowthCycleStore();
-  const { varieties } = useVarietyStore();
   const [search, setSearch] = useState("");
   const [tempSelected, setTempSelected] = useState<string>(selectedId);
-  const [tempStages, setTempStages] =
-    useState<Record<string, Record<string, string>>>(selectedStages as any);
-
-  // Sync temp selection when dialog opens
-  React.useEffect(() => {
-    if (open) {
-      setTempSelected(selectedId);
-      setTempStages(selectedStages as any);
-    }
-  }, [open, selectedId, selectedStages]);
+  const [tempStages, setTempStages] = useState<EditableStages>(() => {
+    const nextStages: EditableStages = {};
+    Object.entries(selectedStages).forEach(([cycleId, stageMap]) => {
+      nextStages[cycleId] = Object.fromEntries(
+        Object.entries(stageMap).map(([stageId, duration]) => [
+          stageId,
+          String(duration ?? ""),
+        ]),
+      );
+    });
+    return nextStages;
+  });
 
   const filteredCycles = useMemo(() => {
     return growthCycles.filter((cycle) => {
@@ -116,7 +120,7 @@ export function GrowthCycleSelectDialog({
 
       // Filter by crop if selected
       if (cropId) {
-        if (cycle.cropName !== cropId) return false;
+        if (cycle.cropId !== cropId && cycle.cropName !== cropId) return false;
       }
 
       // Filter by variety if selected
@@ -128,12 +132,13 @@ export function GrowthCycleSelectDialog({
       return (
         cycle.name.toLowerCase().includes(searchLower) ||
         cycle.cropName.toLowerCase().includes(searchLower) ||
+        cycle.cropId.toLowerCase().includes(searchLower) ||
         (cycle.variety && cycle.variety.toLowerCase().includes(searchLower))
       );
     });
-  }, [growthCycles, search, scope, cropId, varietyId, varieties]);
+  }, [growthCycles, search, scope, cropId, varietyId]);
 
-  const toggleSelect = (cycle: any) => {
+  const toggleSelect = (cycle: GrowthCycle) => {
     const isSelected = tempSelected === cycle.id;
     if (isSelected) {
       // Deselect
@@ -142,7 +147,7 @@ export function GrowthCycleSelectDialog({
     } else {
       // Select this cycle, deselect any previous
       const initialStages: Record<string, string> = {};
-      cycle.stages.forEach((s: any) => {
+      cycle.stages.forEach((s) => {
         initialStages[s.id] = String(s.duration || "");
       });
       setTempSelected(cycle.id);
@@ -150,7 +155,10 @@ export function GrowthCycleSelectDialog({
     }
   };
 
-  const toggleStage = (cycleId: string, stage: any) => {
+  const toggleStage = (
+    cycleId: string,
+    stage: GrowthCycle["stages"][number],
+  ) => {
     setTempStages((prev) => {
       const current = prev[cycleId] || {};
       const isSelected = !!current[stage.id];
@@ -190,16 +198,38 @@ export function GrowthCycleSelectDialog({
   };
 
   const handleConfirm = () => {
-    onConfirm(tempSelected, tempStages as any);
+    onConfirm(tempSelected, tempStages);
     onOpenChange(false);
   };
 
   const getCropImage = (cropName: string) => {
-    return CROP_OPTIONS.find((c) => c.name === cropName)?.image;
+    return (
+      CROP_OPTIONS.find((c) => c.name === cropName)?.image ||
+      animalCycleOptions.find((option) => option.name === cropName)?.image
+    );
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (nextOpen) {
+          setTempSelected(selectedId);
+          const nextStages: EditableStages = {};
+          Object.entries(selectedStages).forEach(([cycleId, stageMap]) => {
+            nextStages[cycleId] = Object.fromEntries(
+              Object.entries(stageMap).map(([stageId, duration]) => [
+                stageId,
+                String(duration ?? ""),
+              ]),
+            );
+          });
+          setTempStages(nextStages);
+          setSearch("");
+        }
+        onOpenChange(nextOpen);
+      }}
+    >
       <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="p-6 pb-0!">
           <DialogTitle className="text-xl font-bold flex items-center gap-2 text-green-700">
@@ -303,7 +333,7 @@ export function GrowthCycleSelectDialog({
                         </span>
                       </div>
                       <div className="grid grid-cols-1 gap-2">
-                        {cycle.stages.map((stage: any) => {
+                        {cycle.stages.map((stage) => {
                           const currentCycleStages = tempStages[cycle.id] || {};
                           const stageDuration = currentCycleStages[stage.id];
                           const isStageSelected = stageDuration !== undefined;

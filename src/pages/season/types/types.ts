@@ -15,6 +15,7 @@ export interface Season {
   description: string;
   duration: number;
   status: "planning" | "active" | "completed" | "cancelled";
+  seasonType?: "plant" | "animal";
   scope: "crop" | "variety";
   cropId?: string;
   varietyId?: string;
@@ -43,6 +44,7 @@ export interface CreateSeasonForm {
   description: string;
   duration: number;
   status: SeasonStatus;
+  seasonType?: "plant" | "animal";
   scope: SeasonScope;
   cropId?: string;
   varietyId?: string;

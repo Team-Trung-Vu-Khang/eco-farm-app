@@ -20,6 +20,23 @@ function normalizeGrowthCycle(cycle: GrowthCycle): GrowthCycle {
   };
 }
 
+function mergeGrowthCycleSeeds(
+  persistedGrowthCycles: GrowthCycle[] | undefined,
+  currentGrowthCycles: GrowthCycle[],
+) {
+  const merged = new Map<string, GrowthCycle>();
+
+  currentGrowthCycles.forEach((cycle) => {
+    merged.set(cycle.id, normalizeGrowthCycle(cycle));
+  });
+
+  (persistedGrowthCycles ?? []).forEach((cycle) => {
+    merged.set(cycle.id, normalizeGrowthCycle(cycle));
+  });
+
+  return Array.from(merged.values());
+}
+
 interface GrowthCycleState {
   growthCycles: GrowthCycle[];
   isLoading: boolean;
@@ -127,9 +144,10 @@ const useGrowthCycleStore = create<GrowthCycleState>()(
           return {
             ...currentState,
             ...typedPersistedState,
-            growthCycles: (
-              typedPersistedState.growthCycles ?? currentState.growthCycles
-            ).map(normalizeGrowthCycle),
+            growthCycles: mergeGrowthCycleSeeds(
+              typedPersistedState.growthCycles,
+              currentState.growthCycles,
+            ),
           };
         },
       },

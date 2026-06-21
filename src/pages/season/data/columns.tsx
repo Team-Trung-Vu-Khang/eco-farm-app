@@ -2,7 +2,45 @@ import useVarietyStore from "@/stores/useVarietyStore";
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Calendar, FileText, Hash, Layers } from "lucide-react";
 import { Link } from "wouter";
+import { animalBreedOptions, animalCycleOptions } from "@/pages/growth-cycle/data/cycleSelectionData";
+import { CROP_OPTIONS } from "@/constants/crops";
 import type { Season } from "../types/types";
+
+function resolveSeasonType(season: Season) {
+  return season.seasonType ?? "plant";
+}
+
+function resolveSeasonTargetLabel(season: Season) {
+  const seasonType = resolveSeasonType(season);
+
+  if (seasonType === "animal") {
+    const primary = animalCycleOptions.find(
+      (option) => option.id === season.cropId || option.name === season.cropId,
+    );
+    const breed = season.varietyId
+      ? animalBreedOptions.find((option) => option.id === season.varietyId)
+      : undefined;
+
+    if (season.scope === "variety") {
+      return breed?.name || season.varietyId || primary?.name || season.cropId || "Chưa xác định";
+    }
+
+    return primary?.name || season.cropId || "Chưa xác định";
+  }
+
+  const crop = CROP_OPTIONS.find(
+    (item) => item.id === season.cropId || item.name === season.cropId,
+  );
+  const variety = season.varietyId
+    ? useVarietyStore.getState().getVarietyById(season.varietyId)
+    : null;
+
+  if (season.scope === "variety") {
+    return variety?.varietyName || season.varietyId || crop?.name || season.cropId || "Chưa xác định";
+  }
+
+  return crop?.name || season.cropId || "Chưa xác định";
+}
 export const seasonColumns: Column<Season>[] = [
   {
     key: "code",
@@ -91,13 +129,9 @@ export const seasonColumns: Column<Season>[] = [
     key: "applyFor",
     label: "Áp dụng cho",
     render: (_value: string[], season) => {
-      const variety = season.varietyId
-        ? useVarietyStore.getState().getVarietyById(season.varietyId)
-        : null;
-
       return (
         <div className="flex w-fit items-center gap-3 rounded-md border border-green-200 bg-green-100 px-2 py-1 font-mono text-xs font-bold text-green-600">
-          {variety?.varietyName || season.cropId}
+          {resolveSeasonTargetLabel(season)}
         </div>
       );
     },

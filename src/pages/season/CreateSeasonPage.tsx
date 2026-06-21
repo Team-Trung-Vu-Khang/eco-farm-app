@@ -8,6 +8,8 @@ import { SeasonFormPage } from "./components/SeasonFormPage";
 import type { CreateSeasonForm, SeasonFormData } from "./types/types";
 import {
   EMPTY_SEASON_FORM,
+  calculateDurationFromStageMap,
+  calculateDurationFromSeasonForm,
   mapFilesToSeasonDocuments,
   removeGrowthCycleFromForm,
   validateSeasonForm,
@@ -24,7 +26,12 @@ export default function CreateSeasonPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleSave = () => {
-    if (!validateSeasonForm(formData as CreateSeasonForm)) {
+    const resolvedFormData = {
+      ...formData,
+      duration: calculateDurationFromSeasonForm(formData),
+    };
+
+    if (!validateSeasonForm(resolvedFormData as CreateSeasonForm)) {
       toast({
         title: "Lỗi",
         description: "Vui lòng điền đầy đủ thông tin bắt buộc",
@@ -34,17 +41,18 @@ export default function CreateSeasonPage() {
     }
 
     addSeason({
-      code: formData.code,
-      name: formData.name,
-      description: formData.description,
-      duration: formData.duration,
+      code: resolvedFormData.code,
+      name: resolvedFormData.name,
+      description: resolvedFormData.description,
+      duration: resolvedFormData.duration,
       status: "planning",
-      scope: formData.scope,
-      cropId: formData.cropId,
-      varietyId: formData.varietyId,
-      growthCycleIds: formData.growthCycleIds,
-      selectedStages: formData.selectedStages,
-      documents: mapFilesToSeasonDocuments(formData.documents),
+      seasonType: resolvedFormData.seasonType,
+      scope: resolvedFormData.scope,
+      cropId: resolvedFormData.cropId,
+      varietyId: resolvedFormData.varietyId,
+      growthCycleIds: resolvedFormData.growthCycleIds,
+      selectedStages: resolvedFormData.selectedStages,
+      documents: mapFilesToSeasonDocuments(resolvedFormData.documents),
     });
 
     toast({ title: "Thành công", description: "Đã tạo mùa vụ mới" });
@@ -59,13 +67,19 @@ export default function CreateSeasonPage() {
       formData={formData}
       growthCycles={growthCycles}
       onBack={() => setLocation("/season")}
-      onCycleConfirm={(growthCycleId, selectedStages) =>
+      onCycleConfirm={(growthCycleId, selectedStages) => {
+        const selectedCycle = growthCycles.find((cycle) => cycle.id === growthCycleId);
         setFormData({
           ...formData,
+          duration: growthCycleId
+            ? calculateDurationFromStageMap(selectedStages) ||
+              selectedCycle?.totalDays ||
+              0
+            : 0,
           growthCycleIds: growthCycleId ? [growthCycleId] : [],
           selectedStages,
-        })
-      }
+        });
+      }}
       onDialogOpenChange={setDialogOpen}
       onFormChange={setFormData}
       onRemoveCycle={(cycleId) =>
