@@ -1,17 +1,14 @@
 import {
+  Combobox,
   FormDialog,
   Input,
   Label,
   MultiSelect,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { POSITION_GROUPS } from "../data/constants";
-import usePositionStore from "../../../stores/usePositionStore";
+import { useMemo } from "react";
+import usePositionStore from "@/stores/usePositionStore";
+import usePositionGroupStore from "@/stores/usePositionGroupStore";
 import type { PositionFormData } from "../types/types";
 
 interface PositionFormDialogProps {
@@ -32,11 +29,22 @@ export function PositionFormDialog({
   onSubmit,
 }: PositionFormDialogProps) {
   const positions = usePositionStore((state) => state.positions);
+  const allPositionGroups = usePositionGroupStore((s) => s.positionGroups);
 
-  const responsibilityOptions = positions.map((p) => ({
-    label: p.name,
-    value: p.name,
-  }));
+  const positionGroups = useMemo(
+    () => allPositionGroups.filter((g) => g.status === "active"),
+    [allPositionGroups],
+  );
+
+  const groupOptions = useMemo(
+    () => positionGroups.map((g) => ({ label: g.name, value: g.name })),
+    [positionGroups],
+  );
+
+  const responsibilityOptions = useMemo(
+    () => positions.map((p) => ({ label: p.name, value: p.name })),
+    [positions],
+  );
 
   return (
     <FormDialog
@@ -77,26 +85,16 @@ export function PositionFormDialog({
 
         <div className="space-y-2">
           <Label htmlFor="group">
-            Nhóm chức vụ/chức danh{" "}
-            <span className="text-red-500 ml-1">*</span>
+            Nhóm chức vụ/chức danh <span className="text-red-500 ml-1">*</span>
           </Label>
-          <Select
+          <Combobox
+            options={groupOptions}
             value={formData.group}
-            onValueChange={(value) =>
-              setFormData({ ...formData, group: value })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Chọn nhóm chức vụ" />
-            </SelectTrigger>
-            <SelectContent>
-              {POSITION_GROUPS.map((group) => (
-                <SelectItem key={group} value={group}>
-                  {group}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onChange={(value) => setFormData({ ...formData, group: value })}
+            placeholder="Chọn nhóm chức vụ"
+            searchPlaceholder="Tìm nhóm chức vụ..."
+            emptyText="Không tìm thấy nhóm chức vụ"
+          />
         </div>
 
         <div className="space-y-2">
