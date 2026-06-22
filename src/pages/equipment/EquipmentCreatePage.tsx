@@ -38,19 +38,16 @@ const EquipmentCreatePage = () => {
       id: "info",
       title: "Thông tin cơ bản",
       content: (
-        <EquipmentBasicInfoStep 
-          formData={formData} 
-          updateField={updateField} 
-        />
+        <EquipmentBasicInfoStep formData={formData} updateField={updateField} />
       ),
     },
     {
       id: "docs",
       title: "Tài liệu kỹ thuật",
       content: (
-        <EquipmentTechnicalDocsStep 
-          formData={formData} 
-          updateField={updateField} 
+        <EquipmentTechnicalDocsStep
+          formData={formData}
+          updateField={updateField}
         />
       ),
     },
@@ -76,6 +73,7 @@ const EquipmentCreatePage = () => {
 
   return (
     <AdminLayout
+      isRice
       title={isEdit ? "Cập nhật thiết bị" : "Thêm mới thiết bị"}
       description={
         isEdit

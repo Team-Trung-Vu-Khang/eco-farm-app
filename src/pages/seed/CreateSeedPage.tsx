@@ -149,6 +149,7 @@ export default function CreateSeedPage() {
 
   return (
     <AdminLayout
+      isRice
       title="Tạo mới hạt giống"
       description="Thêm mới hạt giống vào danh mục hệ thống"
     >

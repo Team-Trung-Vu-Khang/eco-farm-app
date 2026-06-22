@@ -95,6 +95,7 @@ export default function BranchFormPage() {
 
   return (
     <AdminLayout
+      isRice
       title={isEdit ? "Chỉnh sửa chi nhánh" : "Thêm chi nhánh mới"}
       description="Điền thông tin theo từng bước để tạo mới"
     >

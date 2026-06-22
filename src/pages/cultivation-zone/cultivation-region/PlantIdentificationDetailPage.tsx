@@ -32,6 +32,7 @@ const PlantIdentificationDetailPage = () => {
 
   return (
     <AdminLayout
+      isRice
       title={`Thông tin cây: ${plant.id}`}
       description="Chi tiết định danh và vị trí địa lý của cây trồng"
       actions={
@@ -43,7 +44,10 @@ const PlantIdentificationDetailPage = () => {
       }
     >
       <div className="space-y-6">
-        <PlantIdentificationIdentityCard plant={plant} formattedAge={formattedAge} />
+        <PlantIdentificationIdentityCard
+          plant={plant}
+          formattedAge={formattedAge}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">

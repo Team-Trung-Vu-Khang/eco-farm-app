@@ -18,12 +18,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import { point, polygon } from "@turf/helpers";
-import {
-  ChevronLeft,
-  MapPin,
-  Layers,
-  Trash2,
-} from "lucide-react";
+import { ChevronLeft, MapPin, Layers, Trash2 } from "lucide-react";
 
 import { type Plot, type SubArea } from "../constants";
 import useRegionStore from "../../../stores/useRegionStore";
@@ -46,9 +41,7 @@ const invalidIcon = getMarkerIcon("red");
 const PlotCreatePage = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [newMatch, newParams] = useRoute(
-    "/plot-distribution/edit/:id",
-  );
+  const [newMatch, newParams] = useRoute("/plot-distribution/edit/:id");
   const [legacyMatch, legacyParams] = useRoute(
     "/region-chart/plot-distribution/edit/:id",
   );
@@ -173,7 +166,9 @@ const PlotCreatePage = () => {
         if (parentArea) {
           setSelectedRegionId(parentArea.regionId);
           setSelectedAreaId(String(parentArea.id));
-          setSelectEnterpriseId(resolveEnterpriseIdFromRegion(parentArea.regionId));
+          setSelectEnterpriseId(
+            resolveEnterpriseIdFromRegion(parentArea.regionId),
+          );
         }
 
         setFormData({
@@ -562,7 +557,8 @@ const PlotCreatePage = () => {
                       (r) => r.id === selectedRegionId,
                     );
                     const area = region?.subAreas?.find(
-                      (subArea) => String(subArea.id) === String(selectedAreaId),
+                      (subArea) =>
+                        String(subArea.id) === String(selectedAreaId),
                     );
                     return (
                       <div className="space-y-3">
@@ -791,8 +787,9 @@ const PlotCreatePage = () => {
           selectedRegionId={selectedRegionId}
           selectedAreaId={selectedAreaId}
           selectedEnterpriseName={
-            enterprises.find((enterprise) =>
-              String(enterprise.id) === String(selectEnterpriseId),
+            enterprises.find(
+              (enterprise) =>
+                String(enterprise.id) === String(selectEnterpriseId),
             )?.name
           }
           formData={formData}
@@ -805,6 +802,7 @@ const PlotCreatePage = () => {
 
   return (
     <AdminLayout
+      isRice
       title={isEditMode ? "Chỉnh sửa lô" : "Thêm lô mới"}
       description={
         isEditMode ? "Cập nhật thông tin lô" : "Tạo lô đất mới vào khu vực"

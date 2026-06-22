@@ -22,6 +22,7 @@ export default function DocsPage() {
 
   return (
     <AdminLayout
+      isRice
       title="Quản lý tài liệu kỹ thuật"
       description="Xem và quản lý danh sách các tài liệu quy trình canh tác"
       actions={

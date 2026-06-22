@@ -33,7 +33,7 @@ const MaterialDetailPage = () => {
 
   if (!item) {
     return (
-      <AdminLayout title="Chi tiết vật tư">
+      <AdminLayout isRice title="Chi tiết vật tư">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin vật tư.
@@ -48,6 +48,7 @@ const MaterialDetailPage = () => {
 
   return (
     <AdminLayout
+      isRice
       title="Chi tiết vật tư"
       description={`Thông tin chi tiết cho ${item.name}`}
       actions={

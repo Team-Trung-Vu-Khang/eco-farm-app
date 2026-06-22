@@ -40,6 +40,7 @@ const EnterpriseFormPage = () => {
 
   return (
     <AdminLayout
+      isRice
       title="Danh mục tổ chức"
       description="Quản lý loại hình tổ chức và lĩnh vực hoạt động"
     >

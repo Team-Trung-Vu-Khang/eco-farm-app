@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@Team-Trung-Vu-Khang/eco-shared-ui@^0.0.5-beta.9":
-  version "0.0.5-beta.9"
-  resolved "https://npm.pkg.github.com/download/@Team-Trung-Vu-Khang/eco-shared-ui/0.0.5-beta.9/1462f54265ee871dfba306b4d09df1d3935ca9c7#1462f54265ee871dfba306b4d09df1d3935ca9c7"
-  integrity sha512-B5bxOeZcLX8S+lNCL6+gx8hA5nAT9sRz+ClemDFmLgETbHJnSr3M6bIvNwpJabmaXqXWEc1bT6QWTUVrgsw42w==
+"@Team-Trung-Vu-Khang/eco-shared-ui@^0.0.6-beta.3":
+  version "0.0.6-beta.3"
+  resolved "https://npm.pkg.github.com/download/@Team-Trung-Vu-Khang/eco-shared-ui/0.0.6-beta.3/a605986c6c7c29156b4b991ab177791cb2fbded7#a605986c6c7c29156b4b991ab177791cb2fbded7"
+  integrity sha512-MW71sNRg+Hw0ThUtXRSIOIZcRwncsQkQxZOlfHIf/gNPOkOf48RO5XHTlGjK/EwLIz0k2nnSqghblCanhWVfLg==
   dependencies:
     "@lexical/code" "^0.43.0"
     "@lexical/file" "^0.43.0"
@@ -796,9 +796,9 @@
     magic-string "^0.27.0"
 
 "@preact/signals-core@^1.14.1":
-  version "1.14.1"
-  resolved "https://registry.yarnpkg.com/@preact/signals-core/-/signals-core-1.14.1.tgz#2a5739381eca3d730519d2d447ceb8110508d0bc"
-  integrity sha512-vxPpfXqrwUe9lpjqfYNjAF/0RF/eFGeLgdJzdmIIZjpOnTmGmAB4BjWone562mJGMRP4frU6iZ6ei3PDsu52Ng==
+  version "1.14.3"
+  resolved "https://registry.yarnpkg.com/@preact/signals-core/-/signals-core-1.14.3.tgz#feb113a02b16c26306884e3ae603b72c9d2fb513"
+  integrity sha512-m0K3vnbSLC5rHs2ZVfeAMvBtT1zIyq4mxx5OlNncSgMj5Iz6W5Rn3kPrDxAC+iIKmiVe0lSl6U37t5ZkEWoVAw==
 
 "@radix-ui/number@1.1.1":
   version "1.1.1"

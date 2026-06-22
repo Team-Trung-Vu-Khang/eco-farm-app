@@ -23,6 +23,7 @@ export default function PesticidePage() {
 
   return (
     <AdminLayout
+      isRice
       title="Quản lý thuốc BVTV"
       description="Quản lý danh mục thuốc bảo vệ thực vật"
       actions={

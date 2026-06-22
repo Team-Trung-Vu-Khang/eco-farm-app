@@ -50,6 +50,7 @@ const AmendmentCyclePage = () => {
 
   return (
     <AdminLayout
+      isRice
       title="Chu kỳ cải tạo đất"
       description="Quản lý các quy trình và thời gian phục hồi đất canh tác"
       actions={
@@ -103,7 +104,9 @@ const AmendmentCyclePage = () => {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => handleViewDetail(item as AmendmentCycle)}
+                          onClick={() =>
+                            handleViewDetail(item as AmendmentCycle)
+                          }
                         >
                           Xem
                         </Button>

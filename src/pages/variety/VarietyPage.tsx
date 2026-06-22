@@ -28,6 +28,7 @@ const VarietyPage = () => {
 
   return (
     <AdminLayout
+      isRice
       title="Quản lý giống cây"
       description="Xem và quản lý danh sách các loại giống cây trồng"
       actions={

@@ -9,14 +9,11 @@ import { FertilizerDetailView } from "./components/details/FertilizerDetailView"
 import { MaterialDetailView } from "./components/details/MaterialDetailView";
 import { EquipmentDetailView } from "./components/details/EquipmentDetailView";
 import { type MaterialItem } from "./types/types";
-import {
-  CategorySidebar,
-} from "./components/CategorySidebar";
+import { CategorySidebar } from "./components/CategorySidebar";
 import { CATEGORIES } from "./constants/categories";
 import { MaterialSearchBar } from "./components/MaterialSearchBar";
 import { ResultsSummary } from "./components/ResultsSummary";
 import { DetailPanel } from "./components/DetailPanel";
-
 
 const MaterialLookupPage: FC = () => {
   const { toast } = useToast();
@@ -70,7 +67,7 @@ const MaterialLookupPage: FC = () => {
     : null;
 
   return (
-    <AdminLayout title="Hệ thống tra cứu vật tư">
+    <AdminLayout isRice title="Hệ thống tra cứu vật tư">
       <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-slate-50 font-sans">
         <CategorySidebar
           isCollapsed={isSidebarCollapsed}

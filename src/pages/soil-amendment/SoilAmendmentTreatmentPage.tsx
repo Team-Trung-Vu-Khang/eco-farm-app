@@ -67,6 +67,7 @@ export default function SoilAmendmentTreatmentPage() {
 
   return (
     <AdminLayout
+      isRice
       title="Cải tạo đất"
       description="Hệ thống quản lý phác đồ cải tạo đất với luồng tra cứu, handbook và dữ liệu kỹ thuật theo hiện trạng đất."
       actions={

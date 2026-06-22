@@ -28,6 +28,7 @@ export default function PersonnelPage() {
 
   return (
     <AdminLayout
+      isRice
       title="Quản lý nhân sự"
       description="Danh sách nhân sự của đơn vị"
       actions={

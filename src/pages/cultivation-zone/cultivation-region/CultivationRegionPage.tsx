@@ -21,6 +21,7 @@ const CultivationRegionPage = () => {
 
   return (
     <AdminLayout
+      isRice
       title="Vùng canh tác"
       description="Quản lý các thiết lập canh tác cho Vùng, Khu vực hoặc Lô"
       actions={
@@ -30,7 +31,12 @@ const CultivationRegionPage = () => {
         </Button>
       }
     >
-      <DataTable columns={columns} data={areas} onEdit={handleEdit} onDelete={handleDelete} />
+      <DataTable
+        columns={columns}
+        data={areas}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
 
       <DeleteDialog
         open={deleteOpen}

@@ -28,6 +28,7 @@ const DepartmentPage = () => {
 
   return (
     <AdminLayout
+      isRice
       title="Quản lý phòng ban"
       description="Quản lý phòng ban theo đơn vị sở hữu"
       actions={

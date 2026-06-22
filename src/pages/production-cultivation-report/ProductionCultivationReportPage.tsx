@@ -80,7 +80,10 @@ export default function ProductionCultivationReportPage() {
 
   const scopeOptions = useMemo<Option[]>(() => {
     if (scopeType === "season") {
-      return seasons.map((season) => ({ label: season.name, value: season.id }));
+      return seasons.map((season) => ({
+        label: season.name,
+        value: season.id,
+      }));
     }
 
     if (scopeType === "region") {
@@ -242,6 +245,7 @@ export default function ProductionCultivationReportPage() {
 
   return (
     <AdminLayout
+      isRice
       title="Báo cáo sản xuất/canh tác"
       description="Tổng hợp chỉ tiêu điều hành từ kế hoạch, công việc, mùa vụ và vùng canh tác"
       actions={

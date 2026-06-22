@@ -9,6 +9,7 @@ import { DashboardAlerts } from "./components/DashboardAlerts";
 export default function Dashboard() {
   return (
     <AdminLayout
+      isRice
       title="Dashboard"
       description="Tổng quan hệ thống quản lý nông trại"
     >

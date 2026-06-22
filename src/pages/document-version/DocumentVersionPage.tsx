@@ -37,6 +37,7 @@ export default function DocumentVersionPage() {
 
   return (
     <AdminLayout
+      isRice
       title="Quản lý phiên bản tài liệu"
       description="Quản trị phiên bản cho SOP, hồ sơ truy xuất, nhật ký mùa vụ và tài liệu chứng nhận với kiểm tra hiệu lực theo thời gian."
       actions={

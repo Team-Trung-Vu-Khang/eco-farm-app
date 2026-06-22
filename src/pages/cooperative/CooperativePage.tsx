@@ -10,13 +10,8 @@ import { CooperativeTable } from "./components/CooperativeTable";
 
 export default function CooperativePage() {
   const [, setLocation] = useLocation();
-  const {
-    data,
-    deleteOpen,
-    setDeleteOpen,
-    handleDelete,
-    handleConfirmDelete,
-  } = useCooperative();
+  const { data, deleteOpen, setDeleteOpen, handleDelete, handleConfirmDelete } =
+    useCooperative();
 
   const headerActions = (
     <Link href="/cooperative/create">
@@ -29,6 +24,7 @@ export default function CooperativePage() {
 
   return (
     <AdminLayout
+      isRice
       title="Quản lý hợp tác xã"
       description="Quản lý thông tin các hợp tác xã trong hệ thống"
       actions={headerActions}
@@ -49,5 +45,3 @@ export default function CooperativePage() {
     </AdminLayout>
   );
 }
-
-

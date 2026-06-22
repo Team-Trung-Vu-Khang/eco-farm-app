@@ -620,6 +620,7 @@ export default function UpdateDocsPage() {
 
   return (
     <AdminLayout
+      isRice
       title="Cập nhật tài liệu kỹ thuât"
       description="Cập nhật tài liệu kỹ thuật"
     >

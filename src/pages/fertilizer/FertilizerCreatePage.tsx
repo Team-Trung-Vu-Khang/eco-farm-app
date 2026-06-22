@@ -33,14 +33,20 @@ const FertilizerCreatePage = () => {
       id: "info",
       title: "Thông tin cơ bản",
       content: (
-        <FertilizerBasicInfoStep formData={formData} updateField={updateField} />
+        <FertilizerBasicInfoStep
+          formData={formData}
+          updateField={updateField}
+        />
       ),
     },
     {
       id: "supply",
       title: "Nhà cung cấp",
       content: (
-        <FertilizerSuppliersStep formData={formData} updateField={updateField} />
+        <FertilizerSuppliersStep
+          formData={formData}
+          updateField={updateField}
+        />
       ),
     },
     {
@@ -52,6 +58,7 @@ const FertilizerCreatePage = () => {
 
   return (
     <AdminLayout
+      isRice
       title={isEdit ? "Cập nhật phân bón" : "Thêm mới phân bón"}
       description={
         isEdit
@@ -89,7 +96,7 @@ const FertilizerCreatePage = () => {
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3" asChild>
               <div>
-                 <p>
+                <p>
                   {isEdit
                     ? "Bạn có chắc chắn muốn cập nhật thông tin phân bón này?"
                     : "Bạn có chắc chắn muốn thêm phân bón mới vào hệ thống?"}

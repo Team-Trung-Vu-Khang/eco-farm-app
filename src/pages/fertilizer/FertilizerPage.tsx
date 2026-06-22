@@ -21,10 +21,13 @@ export default function FertilizerPage() {
     setLocation,
   } = useFertilizerPage();
 
-  const columns = getFertilizerColumns((id) => setLocation(`/fertilizer/${id}`));
+  const columns = getFertilizerColumns((id) =>
+    setLocation(`/fertilizer/${id}`),
+  );
 
   return (
     <AdminLayout
+      isRice
       title="Quản lý chất bón"
       description="Quản lý danh mục phân bón, chất cải tạo đất"
       actions={

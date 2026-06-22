@@ -1,7 +1,4 @@
-import {
-  AdminLayout,
-  Button,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Save, X } from "lucide-react";
 import { BankFormCard } from "./components/BankFormCard";
 import { useBankFormPage } from "./hooks/useBankFormPage";
@@ -12,6 +9,7 @@ export default function BankCreatePage() {
 
   return (
     <AdminLayout
+      isRice
       title="Thêm mới tài khoản ngân hàng"
       description="Thêm tài khoản ngân hàng mới vào hệ thống"
       actions={

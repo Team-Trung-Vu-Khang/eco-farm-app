@@ -20,6 +20,7 @@ const PlantIdentificationListPage = () => {
 
   return (
     <AdminLayout
+      isRice
       title="Định danh cây trồng"
       description="Danh sách thông tin định danh và thông số sinh trưởng của cây trồng"
       actions={

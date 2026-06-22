@@ -16,6 +16,7 @@ const PlantIdentificationCreatePage = () => {
 
   return (
     <AdminLayout
+      isRice
       title="Thêm mới cây trồng"
       description="Định danh và thiết lập vị trí cho cây trồng mới"
     >

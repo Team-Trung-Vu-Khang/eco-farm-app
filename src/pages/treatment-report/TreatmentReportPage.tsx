@@ -93,7 +93,12 @@ const improvementOptions: Array<{
 
 const statusConfig: Record<
   TreatmentReportStatus,
-  { label: string; description: string; className: string; icon: typeof Activity }
+  {
+    label: string;
+    description: string;
+    className: string;
+    icon: typeof Activity;
+  }
 > = {
   "not-started": {
     label: "Chưa bắt đầu",
@@ -198,7 +203,9 @@ function buildSummary(
   entries: TreatmentReportEntry[],
 ): TreatmentReportSummary {
   const latestEntry = entries[0];
-  const completedTasks = tasks.filter((task) => task.status === "completed").length;
+  const completedTasks = tasks.filter(
+    (task) => task.status === "completed",
+  ).length;
   const completedTaskRate = tasks.length
     ? Math.round((completedTasks / tasks.length) * 100)
     : 0;
@@ -243,7 +250,9 @@ function buildSummary(
 }
 
 function getImprovementLabel(value: TreatmentReportImprovement) {
-  return improvementOptions.find((option) => option.value === value)?.label || value;
+  return (
+    improvementOptions.find((option) => option.value === value)?.label || value
+  );
 }
 
 export default function TreatmentReportPage() {
@@ -271,7 +280,10 @@ export default function TreatmentReportPage() {
   const selectedPlan = treatmentPlans.find(
     (plan) => plan.id.toString() === selectedPlanId,
   );
-  const targetOptions = useMemo(() => buildTargetOptions(selectedPlan), [selectedPlan]);
+  const targetOptions = useMemo(
+    () => buildTargetOptions(selectedPlan),
+    [selectedPlan],
+  );
   const [selectedTarget, setSelectedTarget] = useState(
     () => targetOptions[0]?.value || "",
   );
@@ -299,7 +311,10 @@ export default function TreatmentReportPage() {
   }, [selectedPlanId, treatmentPlans]);
 
   useEffect(() => {
-    if (targetOptions.length > 0 && !targetOptions.some((item) => item.value === selectedTarget)) {
+    if (
+      targetOptions.length > 0 &&
+      !targetOptions.some((item) => item.value === selectedTarget)
+    ) {
       setSelectedTarget(targetOptions[0].value);
     }
   }, [selectedTarget, targetOptions]);
@@ -308,9 +323,11 @@ export default function TreatmentReportPage() {
     (treatment) => treatment.id.toString() === selectedTreatmentId,
   );
   const selectedTargetLabel =
-    targetOptions.find((option) => option.value === selectedTarget)?.label || "";
+    targetOptions.find((option) => option.value === selectedTarget)?.label ||
+    "";
   const relatedTasks = useMemo(
-    () => tasks.filter((task) => selectedPlan && task.plan === selectedPlan.name),
+    () =>
+      tasks.filter((task) => selectedPlan && task.plan === selectedPlan.name),
     [selectedPlan, tasks],
   );
   const planEntries = useMemo(
@@ -336,7 +353,9 @@ export default function TreatmentReportPage() {
     value: string,
   ) => {
     setMaterials((current) =>
-      current.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+      current.map((item) =>
+        item.id === id ? { ...item, [field]: value } : item,
+      ),
     );
   };
 
@@ -389,7 +408,8 @@ export default function TreatmentReportPage() {
     if (!selectedTreatment || !selectedPlan || !selectedTargetLabel) {
       toast({
         title: "Thiếu thông tin theo dõi",
-        description: "Vui lòng chọn phác đồ, đối tượng áp dụng và đợt điều trị.",
+        description:
+          "Vui lòng chọn phác đồ, đối tượng áp dụng và đợt điều trị.",
         variant: "destructive",
       });
       return;
@@ -398,7 +418,8 @@ export default function TreatmentReportPage() {
     if (!symptoms.trim() || !actions.trim()) {
       toast({
         title: "Chưa đủ dữ liệu hiện trường",
-        description: "Vui lòng nhập triệu chứng và thao tác điều trị đã thực hiện.",
+        description:
+          "Vui lòng nhập triệu chứng và thao tác điều trị đã thực hiện.",
         variant: "destructive",
       });
       return;
@@ -412,7 +433,9 @@ export default function TreatmentReportPage() {
         );
         return {
           id: createDraftId(),
-          name: found ? `${found.code} - ${found.name}` : "Vật tư không xác định",
+          name: found
+            ? `${found.code} - ${found.name}`
+            : "Vật tư không xác định",
           quantity: item.quantity.trim() || "0",
           unit: item.unit.trim() || "đơn vị",
         };
@@ -449,6 +472,7 @@ export default function TreatmentReportPage() {
 
   return (
     <AdminLayout
+      isRice
       title="Theo dõi thực hiện phác đồ điều trị"
       description="Cập nhật hiện trường, vật tư sử dụng và trạng thái tái đánh giá cho từng đợt điều trị"
       actions={
@@ -469,13 +493,19 @@ export default function TreatmentReportPage() {
           <CardContent className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <div className="space-y-2">
               <Label>Phác đồ điều trị</Label>
-              <Select value={selectedTreatmentId} onValueChange={setSelectedTreatmentId}>
+              <Select
+                value={selectedTreatmentId}
+                onValueChange={setSelectedTreatmentId}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn phác đồ" />
                 </SelectTrigger>
                 <SelectContent>
                   {treatments.map((treatment: Treatment) => (
-                    <SelectItem key={treatment.id} value={treatment.id.toString()}>
+                    <SelectItem
+                      key={treatment.id}
+                      value={treatment.id.toString()}
+                    >
                       {treatment.code} - {treatment.name}
                     </SelectItem>
                   ))}
@@ -532,7 +562,11 @@ export default function TreatmentReportPage() {
           <StatusCard
             title="Số ngày điều trị"
             value={`${summary.elapsedDays} ngày`}
-            description={selectedPlan ? `${formatDate(selectedPlan.startDate)} - ${formatDate(selectedPlan.endDate)}` : "Chưa chọn đợt"}
+            description={
+              selectedPlan
+                ? `${formatDate(selectedPlan.startDate)} - ${formatDate(selectedPlan.endDate)}`
+                : "Chưa chọn đợt"
+            }
             icon={<CalendarClock className="w-5 h-5" />}
           />
           <StatusCard
@@ -586,7 +620,11 @@ export default function TreatmentReportPage() {
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                      {improvementOptions.find((item) => item.value === improvement)?.description}
+                      {
+                        improvementOptions.find(
+                          (item) => item.value === improvement,
+                        )?.description
+                      }
                     </p>
                   </div>
                 </div>
@@ -614,14 +652,22 @@ export default function TreatmentReportPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-3">
                     <Label>Vật tư sử dụng</Label>
-                    <Button type="button" variant="outline" size="sm" onClick={addMaterialRow}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addMaterialRow}
+                    >
                       <Plus className="w-4 h-4 mr-2" />
                       Thêm vật tư
                     </Button>
                   </div>
                   <div className="space-y-3">
                     {materials.map((item) => (
-                      <div key={item.id} className="grid grid-cols-1 gap-3 rounded-lg border bg-slate-50/70 p-3 md:grid-cols-[minmax(0,1fr)_120px_120px_40px]">
+                      <div
+                        key={item.id}
+                        className="grid grid-cols-1 gap-3 rounded-lg border bg-slate-50/70 p-3 md:grid-cols-[minmax(0,1fr)_120px_120px_40px]"
+                      >
                         <Select
                           value={item.materialId}
                           onValueChange={(value) =>
@@ -644,7 +690,13 @@ export default function TreatmentReportPage() {
                         </Select>
                         <Input
                           value={item.quantity}
-                          onChange={(event) => updateMaterial(item.id, "quantity", event.target.value)}
+                          onChange={(event) =>
+                            updateMaterial(
+                              item.id,
+                              "quantity",
+                              event.target.value,
+                            )
+                          }
                           placeholder="Số lượng"
                         />
                         <Select
@@ -685,7 +737,10 @@ export default function TreatmentReportPage() {
                   {evidences.length > 0 ? (
                     <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                       {evidences.map((item) => (
-                        <div key={item.id} className="flex items-center justify-between gap-3 rounded-lg border bg-white px-3 py-2 text-sm">
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between gap-3 rounded-lg border bg-white px-3 py-2 text-sm"
+                        >
                           <div className="min-w-0">
                             <p className="truncate font-medium">{item.name}</p>
                             <p className="text-xs text-muted-foreground">
@@ -711,7 +766,9 @@ export default function TreatmentReportPage() {
                   <Label>Ghi chú tái đánh giá</Label>
                   <Textarea
                     value={reassessmentNote}
-                    onChange={(event) => setReassessmentNote(event.target.value)}
+                    onChange={(event) =>
+                      setReassessmentNote(event.target.value)
+                    }
                     placeholder="Kết luận ngắn: tiếp tục phác đồ, tăng liều theo khuyến nghị, tái kiểm tra sau 3 ngày..."
                     rows={3}
                   />
@@ -719,9 +776,13 @@ export default function TreatmentReportPage() {
 
                 <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-muted-foreground">
-                    Dữ liệu minh chứng chỉ lưu metadata cục bộ, chưa upload backend.
+                    Dữ liệu minh chứng chỉ lưu metadata cục bộ, chưa upload
+                    backend.
                   </p>
-                  <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
+                  <Button
+                    type="submit"
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
                     <CheckCircle2 className="w-4 h-4 mr-2" />
                     Lưu cập nhật
                   </Button>
@@ -747,9 +808,12 @@ export default function TreatmentReportPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-xl border bg-slate-50 p-4">
-                <p className="text-sm font-medium text-slate-900">Kết luận tái đánh giá gần nhất</p>
+                <p className="text-sm font-medium text-slate-900">
+                  Kết luận tái đánh giá gần nhất
+                </p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {summary.latestReassessment || "Chưa có ghi chú tái đánh giá."}
+                  {summary.latestReassessment ||
+                    "Chưa có ghi chú tái đánh giá."}
                 </p>
               </div>
 
@@ -761,13 +825,17 @@ export default function TreatmentReportPage() {
                 {relatedTasks.length > 0 ? (
                   <div className="space-y-2">
                     {relatedTasks.map((task) => (
-                      <div key={task.id} className="rounded-lg border p-3 text-sm">
+                      <div
+                        key={task.id}
+                        className="rounded-lg border p-3 text-sm"
+                      >
                         <div className="flex items-center justify-between gap-3">
                           <p className="font-medium">{task.name}</p>
                           <TaskStatusBadge status={task.status} />
                         </div>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {formatDate(task.startDate)} - {formatDate(task.endDate)}
+                          {formatDate(task.startDate)} -{" "}
+                          {formatDate(task.endDate)}
                         </p>
                       </div>
                     ))}
@@ -797,14 +865,21 @@ export default function TreatmentReportPage() {
                 {planEntries.length > 0 ? (
                   <div className="space-y-3">
                     {planEntries.map((entry) => (
-                      <div key={entry.id} className="rounded-xl border bg-white p-4">
+                      <div
+                        key={entry.id}
+                        className="rounded-xl border bg-white p-4"
+                      >
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <p className="font-medium">{formatDate(entry.recordedAt)}</p>
+                          <p className="font-medium">
+                            {formatDate(entry.recordedAt)}
+                          </p>
                           <Badge variant="outline">
                             {getImprovementLabel(entry.improvement)}
                           </Badge>
                         </div>
-                        <p className="mt-2 text-sm leading-6 text-slate-600">{entry.symptoms}</p>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">
+                          {entry.symptoms}
+                        </p>
                         <p className="mt-2 text-sm leading-6 text-slate-700">
                           <span className="font-medium">Thao tác: </span>
                           {entry.actions}
@@ -812,7 +887,8 @@ export default function TreatmentReportPage() {
                         <div className="mt-3 flex flex-wrap gap-2">
                           {entry.materials.map((material) => (
                             <Badge key={material.id} variant="secondary">
-                              {material.name}: {material.quantity} {material.unit}
+                              {material.name}: {material.quantity}{" "}
+                              {material.unit}
                             </Badge>
                           ))}
                           {entry.evidences.length > 0 ? (
@@ -864,7 +940,9 @@ function StatusCard({
           <div className="rounded-full bg-white/70 p-2 shadow-sm">{icon}</div>
         </div>
         <p className="mt-3 min-h-10 text-sm opacity-75">{description}</p>
-        {typeof progress === "number" ? <Progress value={progress} className="mt-3" /> : null}
+        {typeof progress === "number" ? (
+          <Progress value={progress} className="mt-3" />
+        ) : null}
       </CardContent>
     </Card>
   );
@@ -873,9 +951,18 @@ function StatusCard({
 function TaskStatusBadge({ status }: { status: Task["status"] }) {
   const config: Record<Task["status"], { label: string; className: string }> = {
     pending: { label: "Chờ làm", className: "border-slate-200 bg-slate-50" },
-    "in-progress": { label: "Đang làm", className: "border-blue-200 bg-blue-50 text-blue-700" },
-    completed: { label: "Hoàn thành", className: "border-emerald-200 bg-emerald-50 text-emerald-700" },
-    overdue: { label: "Quá hạn", className: "border-red-200 bg-red-50 text-red-700" },
+    "in-progress": {
+      label: "Đang làm",
+      className: "border-blue-200 bg-blue-50 text-blue-700",
+    },
+    completed: {
+      label: "Hoàn thành",
+      className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    },
+    overdue: {
+      label: "Quá hạn",
+      className: "border-red-200 bg-red-50 text-red-700",
+    },
   };
 
   return (

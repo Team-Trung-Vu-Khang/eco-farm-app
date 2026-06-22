@@ -36,7 +36,7 @@ const PesticideDetailPage = () => {
 
   if (!item) {
     return (
-      <AdminLayout title="Chi tiết thuốc BVTV">
+      <AdminLayout isRice title="Chi tiết thuốc BVTV">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin thuốc BVTV.
@@ -51,6 +51,7 @@ const PesticideDetailPage = () => {
 
   return (
     <AdminLayout
+      isRice
       title="Chi tiết thuốc BVTV"
       description={`Thông tin chi tiết cho sản phẩm ${item.name}`}
       actions={

@@ -30,6 +30,7 @@ export default function EnterpriseCreatePage() {
   return (
     <EnterpriseFormContext.Provider value={formState}>
       <AdminLayout
+        isRice
         title="Tạo mới Doanh nghiệp"
         description="Điền thông tin theo từng bước để tạo mới doanh nghiệp"
       >
@@ -43,7 +44,10 @@ export default function EnterpriseCreatePage() {
             />
           </CardContent>
         </Card>
-        <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialog
+          open={showConfirmDialog}
+          onOpenChange={setShowConfirmDialog}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Xác nhận tạo mới</AlertDialogTitle>
@@ -56,7 +60,9 @@ export default function EnterpriseCreatePage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Hủy</AlertDialogCancel>
-              <AlertDialogAction onClick={submitForm}>Xác nhận</AlertDialogAction>
+              <AlertDialogAction onClick={submitForm}>
+                Xác nhận
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

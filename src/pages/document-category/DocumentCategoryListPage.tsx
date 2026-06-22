@@ -32,6 +32,7 @@ const DocumentCategoryListPage = () => {
 
   return (
     <AdminLayout
+      isRice
       title="Danh mục hồ sơ tài liệu"
       description="Quản lý các loại giấy tờ, hồ sơ cần thiết cho các đối tượng trong hệ thống"
       actions={

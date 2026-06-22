@@ -124,6 +124,7 @@ const CultivationRegionCreatePage = () => {
 
   return (
     <AdminLayout
+      isRice
       title="Thiết lập vùng canh tác"
       description="Quy trình khởi tạo và cấu hình tiêu chuẩn cho đơn vị canh tác"
     >

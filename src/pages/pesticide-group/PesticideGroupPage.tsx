@@ -17,6 +17,7 @@ const PesticideGroupPage = () => {
 
   return (
     <AdminLayout
+      isRice
       title="Danh mục thuốc BVTV"
       description="Quản lý phân loại thuốc bảo vệ thực vật theo công dụng, độ độc tính và nguồn gốc"
     >

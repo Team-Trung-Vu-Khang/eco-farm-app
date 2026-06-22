@@ -1,7 +1,4 @@
-import {
-  AdminLayout,
-  Button,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Save, X } from "lucide-react";
 import { useBranchCreate } from "./hooks/useBranchCreate";
 import { GeneralInfoCard } from "./components/GeneralInfoCard";
@@ -26,6 +23,7 @@ export default function BranchCreatePage() {
 
   return (
     <AdminLayout
+      isRice
       title="Thêm mới chi nhánh"
       description="Tạo chi nhánh mới cho đơn vị sở hữu"
       actions={

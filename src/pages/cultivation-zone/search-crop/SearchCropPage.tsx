@@ -464,7 +464,7 @@ const SearchCropPage = () => {
   })();
 
   return (
-    <AdminLayout title="Tìm kiếm & Truy xuất nguồn gốc">
+    <AdminLayout isRice title="Tìm kiếm & Truy xuất nguồn gốc">
       <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
         {/* TOP HEADER: Search & Advanced Search */}
         <div className="bg-white border-b rounded-md p-4 z-40 shadow-sm">

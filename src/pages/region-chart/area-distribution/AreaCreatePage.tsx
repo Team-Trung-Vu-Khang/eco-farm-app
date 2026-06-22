@@ -182,6 +182,7 @@ const AreaCreatePage = () => {
 
   return (
     <AdminLayout
+      isRice
       title={isEditMode ? "Cập nhật khu vực" : "Thêm mới khu vực"}
       description={
         isEditMode

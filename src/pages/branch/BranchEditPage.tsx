@@ -1,7 +1,4 @@
-import {
-  AdminLayout,
-  Button,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Save, X } from "lucide-react";
 import { useBranchEdit } from "./hooks/useBranchEdit";
 import { GeneralInfoCard } from "./components/GeneralInfoCard";
@@ -27,7 +24,7 @@ export default function BranchEditPage() {
   // Show not found state if branch doesn't exist
   if (branchId && !branch) {
     return (
-      <AdminLayout>
+      <AdminLayout isRice>
         <div className="flex flex-col items-center justify-center h-96">
           <h2 className="text-2xl font-bold mb-4">
             Không tìm thấy thông tin chi nhánh
@@ -43,6 +40,7 @@ export default function BranchEditPage() {
 
   return (
     <AdminLayout
+      isRice
       title="Chỉnh sửa chi nhánh"
       description={`Cập nhật thông tin chi nhánh #${branchId}`}
       actions={

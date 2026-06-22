@@ -1,4 +1,8 @@
-import { AdminLayout, Tabs, TabsContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  AdminLayout,
+  Tabs,
+  TabsContent,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { GeneralSettingsTab } from "./components/GeneralSettingsTab";
 import { NotificationSettingsTab } from "./components/NotificationSettingsTab";
 import { ProfileSettingsTab } from "./components/ProfileSettingsTab";
@@ -11,6 +15,7 @@ export default function SettingsPage() {
 
   return (
     <AdminLayout
+      isRice
       title="Cài đặt hệ thống"
       description="Quản lý cấu hình chung, bảo mật và thông báo"
     >

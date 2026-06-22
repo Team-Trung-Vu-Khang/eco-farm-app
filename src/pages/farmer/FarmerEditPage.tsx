@@ -134,7 +134,7 @@ export default function FarmerEditPage() {
   ];
 
   return (
-    <AdminLayout>
+    <AdminLayout isRice>
       <div className="p-6">
         <StepperForm
           steps={steps}
@@ -142,14 +142,18 @@ export default function FarmerEditPage() {
           onCancel={navigateBack}
         />
 
-        <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialog
+          open={showConfirmDialog}
+          onOpenChange={setShowConfirmDialog}
+        >
           <AlertDialogContent className="max-w-md">
             <AlertDialogHeader>
               <AlertDialogTitle className="text-xl">
                 Xác nhận cập nhật?
               </AlertDialogTitle>
               <AlertDialogDescription>
-                Mọi thay đổi sẽ được lưu vào hệ thống. Bạn có chắc chắn muốn hoàn tất việc chỉnh sửa nông hộ này?
+                Mọi thay đổi sẽ được lưu vào hệ thống. Bạn có chắc chắn muốn
+                hoàn tất việc chỉnh sửa nông hộ này?
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="gap-2 pt-4">

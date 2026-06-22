@@ -1,7 +1,4 @@
-import {
-  AdminLayout,
-  Button,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Save, X } from "lucide-react";
 import { usePersonnelForm } from "./hooks/usePersonnelForm";
 import { PersonnelFormTabs } from "./components/PersonnelFormTabs";
@@ -11,6 +8,7 @@ export default function PersonnelCreatePage() {
 
   return (
     <AdminLayout
+      isRice
       title="Thêm mới nhân sự"
       description="Thêm hồ sơ nhân sự mới vào hệ thống"
       actions={

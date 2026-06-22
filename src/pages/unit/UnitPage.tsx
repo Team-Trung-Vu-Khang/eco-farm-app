@@ -22,6 +22,7 @@ export default function UnitPage() {
 
   return (
     <AdminLayout
+      isRice
       title="Quản lý đơn vị"
       description="Quản lý danh sách đơn vị tính và quy tắc quy đổi về đơn vị chuẩn (kg, lít...)"
       actions={

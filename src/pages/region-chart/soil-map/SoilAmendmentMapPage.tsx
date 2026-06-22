@@ -119,6 +119,7 @@ export default function SoilAmendmentMapPage() {
 
   return (
     <AdminLayout
+      isRice
       title="Bản đồ cải tạo đất"
       description="Phân tích chất lượng đất và kế hoạch cải tạo"
       actions={

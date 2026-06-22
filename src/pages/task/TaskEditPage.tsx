@@ -645,12 +645,17 @@ export default function TaskEditPage() {
     }));
   };
 
-    const handleUpdateMaterial = useCallback((id: number, updates: Partial<MaterialAllocation>) => {
-    setFormData((prev) => ({
-      ...prev,
-      materials: prev.materials.map((m) => (m.id === id ? { ...m, ...updates } : m)),
-    }));
-  }, []);
+  const handleUpdateMaterial = useCallback(
+    (id: number, updates: Partial<MaterialAllocation>) => {
+      setFormData((prev) => ({
+        ...prev,
+        materials: prev.materials.map((m) =>
+          m.id === id ? { ...m, ...updates } : m,
+        ),
+      }));
+    },
+    [],
+  );
 
   const handleRemoveMaterial = (id: number) => {
     setFormData((prev) => ({
@@ -2561,6 +2566,7 @@ export default function TaskEditPage() {
 
   return (
     <AdminLayout
+      isRice
       title="Chỉnh sửa công việc"
       description={`Cập nhật thông tin cho mã: ${task.code}`}
       actions={

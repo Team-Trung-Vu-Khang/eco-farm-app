@@ -22,6 +22,7 @@ export default function EnterprisePage() {
 
   return (
     <AdminLayout
+      isRice
       title="Quản lý doanh nghiệp"
       description="Quản lý thông tin các doanh nghiệp trong hệ thống"
       actions={

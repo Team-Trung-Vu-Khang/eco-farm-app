@@ -50,6 +50,7 @@ export default function CertificatePage() {
 
   return (
     <AdminLayout
+      isRice
       title="Danh mục tiêu chuẩn"
       description="Quản lý loại tiêu chuẩn và tổ chức chứng nhận (Master Data)"
     >

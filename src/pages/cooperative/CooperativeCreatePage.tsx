@@ -148,6 +148,7 @@ export default function CooperativeCreatePage() {
 
   return (
     <AdminLayout
+      isRice
       title="Tạo mới Hợp tác xã"
       description="Điền thông tin theo từng bước để tạo mới hợp tác xã"
     >

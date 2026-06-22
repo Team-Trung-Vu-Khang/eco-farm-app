@@ -48,7 +48,7 @@ export function SeasonFormPage({
   );
 
   return (
-    <AdminLayout title={title} description={description}>
+    <AdminLayout isRice title={title} description={description}>
       <div className="mb-6">
         <Button
           variant="ghost"

@@ -391,7 +391,9 @@ export default function TaskCreatePage() {
   const personnel = usePersonnelStore((state) => state.personnel);
   const teams = useTeamStore((state) => state.teams);
   const treatments = useTreatmentStore((state) => state.treatments);
-  const amendmentRegimensRaw = useAmendmentRegimenStore((state) => state.regimens);
+  const amendmentRegimensRaw = useAmendmentRegimenStore(
+    (state) => state.regimens,
+  );
   const regimens = useMemo(() => {
     const mappedTreatments = treatments.map((t) => ({
       id: String(t.id),
@@ -401,12 +403,13 @@ export default function TaskCreatePage() {
       provider: t.author || "Chưa rõ",
       category: t.disease || "Điều trị",
       crop: t.crop || "Tất cả",
-      steps: t.procedures?.map((p: any) => ({
-        id: String(p.id),
-        day: p.startDay ? `Ngày ${p.startDay}` : `Ngày ${p.stepNumber}`,
-        title: p.name,
-        description: p.description,
-      })) || [],
+      steps:
+        t.procedures?.map((p: any) => ({
+          id: String(p.id),
+          day: p.startDay ? `Ngày ${p.startDay}` : `Ngày ${p.stepNumber}`,
+          title: p.name,
+          description: p.description,
+        })) || [],
     }));
 
     const mappedAmendments = amendmentRegimensRaw.map((t) => ({
@@ -417,12 +420,13 @@ export default function TaskCreatePage() {
       provider: t.authors?.[0]?.name || "Chưa rõ",
       category: t.soilIssue || "Cải tạo",
       crop: t.cropType || "Tất cả",
-      steps: t.procedures?.map((p: any) => ({
-        id: String(p.id),
-        day: p.timing || `Ngày ${p.stepNumber}`,
-        title: p.name,
-        description: p.description,
-      })) || [],
+      steps:
+        t.procedures?.map((p: any) => ({
+          id: String(p.id),
+          day: p.timing || `Ngày ${p.stepNumber}`,
+          title: p.name,
+          description: p.description,
+        })) || [],
     }));
 
     return [...mappedTreatments, ...mappedAmendments];
@@ -554,10 +558,16 @@ export default function TaskCreatePage() {
   const availableStages = useMemo((): string[] => {
     // Priority 1: If plan has its own selectedStages, use them (task/material allocations reference these)
     if (selectedPlan) {
-      if ("selectedStages" in selectedPlan && (selectedPlan as any).selectedStages?.length > 0) {
+      if (
+        "selectedStages" in selectedPlan &&
+        (selectedPlan as any).selectedStages?.length > 0
+      ) {
         return (selectedPlan as any).selectedStages;
       }
-      if ("allocations" in selectedPlan && (selectedPlan as any).allocations?.length > 0) {
+      if (
+        "allocations" in selectedPlan &&
+        (selectedPlan as any).allocations?.length > 0
+      ) {
         return Array.from(
           new Set((selectedPlan as any).allocations.map((a: any) => a.stage)),
         );
@@ -565,7 +575,8 @@ export default function TaskCreatePage() {
     }
 
     // Priority 2: If no plan stages but there's a regimen, use regimen step titles
-    const activeRegimenId = (selectedPlan as any)?.regimenId || formData.regimenId;
+    const activeRegimenId =
+      (selectedPlan as any)?.regimenId || formData.regimenId;
     if (
       (formData.objectiveType === "cai-tao-dat" ||
         formData.objectiveType === "tri-benh") &&
@@ -1092,7 +1103,9 @@ export default function TaskCreatePage() {
                               (formData.objectiveType === "cai-tao-dat" ||
                                 formData.objectiveType === "tri-benh")
                             ) {
-                              const reg = regimens.find((r) => r.id === p.regimenId);
+                              const reg = regimens.find(
+                                (r) => r.id === p.regimenId,
+                              );
                               if (reg?.steps && reg.steps.length > 0) {
                                 stages = reg.steps.map((s) => s.title);
                               }
@@ -1403,95 +1416,50 @@ export default function TaskCreatePage() {
                         {/* Multi-select Stages & Regimen */}
                         {formData.objectiveType !== "thu-hoach" && (
                           <div className="space-y-4">
-                            {formData.objectiveType === "cai-tao-dat" || formData.objectiveType === "tri-benh" ? (
-                              (() => {
-                                const hasPlanRegimen = !!(selectedPlan as any)?.regimenId;
-                                const planHasStages = !!(
-                                  selectedPlan &&
-                                  (("selectedStages" in selectedPlan && (selectedPlan as any).selectedStages?.length > 0) ||
-                                   ("allocations" in selectedPlan && (selectedPlan as any).allocations?.length > 0))
-                                );
-                                
-                                if (hasPlanRegimen) {
-                                  return (
-                                    <div className="px-5 py-4 rounded-[1.25rem] border border-blue-100 bg-blue-50/20 space-y-5">
-                                      <div className="space-y-3">
-                                        <Label className="text-sm font-bold text-slate-700">
-                                          {formData.objectiveType === "cai-tao-dat"
-                                            ? "Phác đồ cải tạo đất từ kế hoạch"
-                                            : "Phác đồ trị bệnh từ kế hoạch"}
-                                        </Label>
-                                        <RegimenSelector
-                                          regimens={regimens}
-                                          selectedRegimenId={formData.regimenId}
-                                          disabled={true}
-                                          type={
-                                            formData.objectiveType === "cai-tao-dat"
-                                              ? "amendment"
-                                              : "treatment"
-                                          }
-                                          onSelect={() => {}}
-                                        />
-                                      </div>
-                                      
-                                      <div className="h-px bg-blue-100/50 w-full" />
-                                      
-                                      <div className="space-y-3">
-                                        <Label className="text-sm font-bold text-slate-700 flex items-center justify-between">
-                                          Giai đoạn thực hiện *
-                                          <span className="text-[10px] text-slate-400 font-normal">
-                                            Từ phác đồ
-                                          </span>
-                                        </Label>
-                                        {renderStagesGrid()}
-                                      </div>
-                                    </div>
+                            {formData.objectiveType === "cai-tao-dat" ||
+                            formData.objectiveType === "tri-benh"
+                              ? (() => {
+                                  const hasPlanRegimen = !!(selectedPlan as any)
+                                    ?.regimenId;
+                                  const planHasStages = !!(
+                                    selectedPlan &&
+                                    (("selectedStages" in selectedPlan &&
+                                      (selectedPlan as any).selectedStages
+                                        ?.length > 0) ||
+                                      ("allocations" in selectedPlan &&
+                                        (selectedPlan as any).allocations
+                                          ?.length > 0))
                                   );
-                                } else if (planHasStages) {
-                                  return (
-                                    <div className="space-y-3">
-                                      <Label className="text-sm font-bold text-slate-700 flex items-center justify-between">
-                                        Giai đoạn thực hiện *
-                                        <span className="text-[10px] text-slate-400 font-normal">
-                                          Chọn nhiều
-                                        </span>
-                                      </Label>
-                                      {renderStagesGrid()}
-                                    </div>
-                                  );
-                                } else {
-                                  return (
-                                    <div className="space-y-5 mt-2 anim-fade-in">
-                                      <div className="space-y-3">
-                                        <Label className="text-sm font-bold text-slate-700">
-                                          {formData.objectiveType === "cai-tao-dat"
-                                            ? "Phác đồ cải tạo đất áp dụng (tùy chọn)"
-                                            : "Phác đồ trị bệnh áp dụng (tùy chọn)"}
-                                        </Label>
-                                        <RegimenSelector
-                                          regimens={regimens}
-                                          selectedRegimenId={formData.regimenId}
-                                          disabled={false}
-                                          type={
-                                            formData.objectiveType === "cai-tao-dat"
-                                              ? "amendment"
-                                              : "treatment"
-                                          }
-                                          onSelect={(regimen) => {
-                                            if (formData.regimenId !== regimen.id) {
-                                              const stepTitles = regimen.steps?.map((s) => s.title) || [];
-                                              setFormData((prev) => ({
-                                                ...prev,
-                                                regimenId: regimen.id,
-                                                selectedStages: stepTitles,
-                                              }));
-                                            }
-                                          }}
-                                        />
-                                      </div>
 
-                                      {formData.regimenId && availableStages.length > 0 && (
-                                        <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                                  if (hasPlanRegimen) {
+                                    return (
+                                      <div className="px-5 py-4 rounded-[1.25rem] border border-blue-100 bg-blue-50/20 space-y-5">
+                                        <div className="space-y-3">
+                                          <Label className="text-sm font-bold text-slate-700">
+                                            {formData.objectiveType ===
+                                            "cai-tao-dat"
+                                              ? "Phác đồ cải tạo đất từ kế hoạch"
+                                              : "Phác đồ trị bệnh từ kế hoạch"}
+                                          </Label>
+                                          <RegimenSelector
+                                            regimens={regimens}
+                                            selectedRegimenId={
+                                              formData.regimenId
+                                            }
+                                            disabled={true}
+                                            type={
+                                              formData.objectiveType ===
+                                              "cai-tao-dat"
+                                                ? "amendment"
+                                                : "treatment"
+                                            }
+                                            onSelect={() => {}}
+                                          />
+                                        </div>
+
+                                        <div className="h-px bg-blue-100/50 w-full" />
+
+                                        <div className="space-y-3">
                                           <Label className="text-sm font-bold text-slate-700 flex items-center justify-between">
                                             Giai đoạn thực hiện *
                                             <span className="text-[10px] text-slate-400 font-normal">
@@ -1500,30 +1468,93 @@ export default function TaskCreatePage() {
                                           </Label>
                                           {renderStagesGrid()}
                                         </div>
-                                      )}
-                                    </div>
-                                  );
-                                }
-                              })()
-                            ) : (
-                              (availableStages.length > 0 || !formData.regimenId) && (
-                                <div className="space-y-3">
-                                  <Label className="text-sm font-bold text-slate-700 flex items-center justify-between">
-                                    Giai đoạn thực hiện *
-                                    <span className="text-[10px] text-slate-400 font-normal">
-                                      Chọn nhiều
-                                    </span>
-                                  </Label>
-                                  {renderStagesGrid()}
-                                </div>
-                              )
-                            )}
+                                      </div>
+                                    );
+                                  } else if (planHasStages) {
+                                    return (
+                                      <div className="space-y-3">
+                                        <Label className="text-sm font-bold text-slate-700 flex items-center justify-between">
+                                          Giai đoạn thực hiện *
+                                          <span className="text-[10px] text-slate-400 font-normal">
+                                            Chọn nhiều
+                                          </span>
+                                        </Label>
+                                        {renderStagesGrid()}
+                                      </div>
+                                    );
+                                  } else {
+                                    return (
+                                      <div className="space-y-5 mt-2 anim-fade-in">
+                                        <div className="space-y-3">
+                                          <Label className="text-sm font-bold text-slate-700">
+                                            {formData.objectiveType ===
+                                            "cai-tao-dat"
+                                              ? "Phác đồ cải tạo đất áp dụng (tùy chọn)"
+                                              : "Phác đồ trị bệnh áp dụng (tùy chọn)"}
+                                          </Label>
+                                          <RegimenSelector
+                                            regimens={regimens}
+                                            selectedRegimenId={
+                                              formData.regimenId
+                                            }
+                                            disabled={false}
+                                            type={
+                                              formData.objectiveType ===
+                                              "cai-tao-dat"
+                                                ? "amendment"
+                                                : "treatment"
+                                            }
+                                            onSelect={(regimen) => {
+                                              if (
+                                                formData.regimenId !==
+                                                regimen.id
+                                              ) {
+                                                const stepTitles =
+                                                  regimen.steps?.map(
+                                                    (s) => s.title,
+                                                  ) || [];
+                                                setFormData((prev) => ({
+                                                  ...prev,
+                                                  regimenId: regimen.id,
+                                                  selectedStages: stepTitles,
+                                                }));
+                                              }
+                                            }}
+                                          />
+                                        </div>
+
+                                        {formData.regimenId &&
+                                          availableStages.length > 0 && (
+                                            <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                                              <Label className="text-sm font-bold text-slate-700 flex items-center justify-between">
+                                                Giai đoạn thực hiện *
+                                                <span className="text-[10px] text-slate-400 font-normal">
+                                                  Từ phác đồ
+                                                </span>
+                                              </Label>
+                                              {renderStagesGrid()}
+                                            </div>
+                                          )}
+                                      </div>
+                                    );
+                                  }
+                                })()
+                              : (availableStages.length > 0 ||
+                                  !formData.regimenId) && (
+                                  <div className="space-y-3">
+                                    <Label className="text-sm font-bold text-slate-700 flex items-center justify-between">
+                                      Giai đoạn thực hiện *
+                                      <span className="text-[10px] text-slate-400 font-normal">
+                                        Chọn nhiều
+                                      </span>
+                                    </Label>
+                                    {renderStagesGrid()}
+                                  </div>
+                                )}
                           </div>
                         )}
                       </div>
                     </div>
-
-
                   </div>
                 )}
 
@@ -2128,16 +2159,12 @@ export default function TaskCreatePage() {
                       (selectedPlan as any)?.enterpriseId ||
                       ""
                     }
-                    availableTasks={
-                      selectedPlan?.taskAllocations?.filter(
-                        (t: any) => t.stageId === stageName,
-                      )
-                    }
-                    availableMaterials={
-                      selectedPlan?.materialAllocations?.filter(
-                        (m: any) => m.stageId === stageName,
-                      )
-                    }
+                    availableTasks={selectedPlan?.taskAllocations?.filter(
+                      (t: any) => t.stageId === stageName,
+                    )}
+                    availableMaterials={selectedPlan?.materialAllocations?.filter(
+                      (m: any) => m.stageId === stageName,
+                    )}
                   />
                 ))
               ) : formData.objectiveType === "thu-hoach" ? (
@@ -2678,6 +2705,7 @@ export default function TaskCreatePage() {
 
   return (
     <AdminLayout
+      isRice
       title="Phân bổ công việc"
       description="Quy trình 3 bước lập lịch và quản lý nguồn lực"
       actions={

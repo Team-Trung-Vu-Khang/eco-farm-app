@@ -29,6 +29,7 @@ const AreaDetailPage = () => {
   if (!area) {
     return (
       <AdminLayout
+        isRice
         title="Chi tiết khu vực"
         description="Không tìm thấy thông tin khu vực"
         actions={
@@ -49,6 +50,7 @@ const AreaDetailPage = () => {
 
   return (
     <AdminLayout
+      isRice
       description={`Mã khu vực: ${area.id}`}
       title={`Chi tiết khu vực: ${area.name}`}
       actions={

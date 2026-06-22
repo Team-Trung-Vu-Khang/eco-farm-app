@@ -47,6 +47,7 @@ export default function DocsDetailPage() {
 
   return (
     <AdminLayout
+      isRice
       title={`Chi tiết tài liệu: ${doc.id}`}
       description="Xem thông tin chi tiết và nội dung tài liệu kỹ thuật"
       actions={

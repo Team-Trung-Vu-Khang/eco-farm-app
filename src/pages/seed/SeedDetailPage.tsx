@@ -78,6 +78,7 @@ export default function SeedDetailPage() {
   if (!baseSeed) {
     return (
       <AdminLayout
+        isRice
         title="Chi tiết hạt giống"
         description="Thông tin chi tiết về hạt giống"
       >
@@ -108,6 +109,7 @@ export default function SeedDetailPage() {
 
   return (
     <AdminLayout
+      isRice
       title="Chi tiết hạt giống"
       description={`Thông tin chi tiết về ${seed.varietyName}`}
       actions={

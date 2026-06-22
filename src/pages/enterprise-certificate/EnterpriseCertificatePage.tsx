@@ -45,6 +45,7 @@ const EnterpriseCertificatePage = () => {
 
   return (
     <AdminLayout
+      isRice
       title="Chứng nhận - Chứng chỉ"
       description="Quản lý chứng nhận cho doanh nghiệp và vùng trồng"
       actions={

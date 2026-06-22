@@ -27,9 +27,13 @@ import useEnterpriseStore from "@/stores/useEnterpriseStore";
 export default function CooperativeEditPage() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/cooperative/:id/edit");
-  const getEnterpriseById = useEnterpriseStore((state) => state.getEnterpriseById);
+  const getEnterpriseById = useEnterpriseStore(
+    (state) => state.getEnterpriseById,
+  );
   const enterpriseId = params?.id ? Number(params.id) : null;
-  const cooperativeData = enterpriseId ? getEnterpriseById(enterpriseId) : undefined;
+  const cooperativeData = enterpriseId
+    ? getEnterpriseById(enterpriseId)
+    : undefined;
 
   const initialData: Partial<CooperativeFormData> | null = cooperativeData
     ? {
@@ -215,6 +219,7 @@ export default function CooperativeEditPage() {
   if (!initialData) {
     return (
       <AdminLayout
+        isRice
         title="Cập nhật Hợp tác xã"
         description="Không tìm thấy dữ liệu hợp tác xã"
       >
@@ -227,6 +232,7 @@ export default function CooperativeEditPage() {
 
   return (
     <AdminLayout
+      isRice
       title={`Cập nhật Hợp tác xã`}
       description="Cập nhật thông tin chi tiết"
     >

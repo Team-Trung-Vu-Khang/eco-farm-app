@@ -13,7 +13,11 @@ const PlantIdentificationEditPage = () => {
 
   if (!data?.plant) {
     return (
-      <AdminLayout title="Không tìm thấy" description="Cây không tồn tại">
+      <AdminLayout
+        isRice
+        title="Không tìm thấy"
+        description="Cây không tồn tại"
+      >
         <div className="p-12 text-center text-slate-400">
           <Trees className="w-16 h-16 mx-auto mb-4 opacity-20" />
           <p>Không tìm thấy thông tin cây trồng để chỉnh sửa.</p>
@@ -31,6 +35,7 @@ const PlantIdentificationEditPage = () => {
 
   return (
     <AdminLayout
+      isRice
       title={`Chỉnh sửa: ${data.plant.code}`}
       description="Cập nhật thông tin định danh và thông số sinh trưởng"
     >

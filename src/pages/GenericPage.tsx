@@ -150,6 +150,7 @@ export function GenericPage({
 
   return (
     <AdminLayout
+      isRice
       title={title}
       description={description}
       actions={

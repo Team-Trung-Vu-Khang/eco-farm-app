@@ -52,7 +52,11 @@ const CultivationAreaDetailPage = () => {
 
   if (!data) {
     return (
-      <AdminLayout title="Chi tiết Khu vực canh tác" description="Đang tải...">
+      <AdminLayout
+        isRice
+        title="Chi tiết Khu vực canh tác"
+        description="Đang tải..."
+      >
         <div className="p-12 text-center text-slate-500">
           Không tìm thấy thông tin khu vực canh tác
         </div>
@@ -61,14 +65,12 @@ const CultivationAreaDetailPage = () => {
   }
   return (
     <AdminLayout
+      isRice
       title={data.name}
       description={`Cấu hình canh tác cho Khu vực #${data.id}`}
       actions={
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={goBack}
-          >
+          <Button variant="outline" onClick={goBack}>
             <ChevronLeft className="w-4 h-4 mr-2" />
             Quay lại
           </Button>

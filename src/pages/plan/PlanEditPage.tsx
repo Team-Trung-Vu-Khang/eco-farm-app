@@ -1428,7 +1428,7 @@ export default function PlanEditPage() {
   if (!plan) return null;
 
   return (
-    <AdminLayout title={pageTitle} description={pageDescription}>
+    <AdminLayout isRice title={pageTitle} description={pageDescription}>
       <div className="max-w-5xl mx-auto">
         <StepperForm
           steps={steps}

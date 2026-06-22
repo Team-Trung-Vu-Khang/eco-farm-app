@@ -368,10 +368,8 @@ const MapContent = () => {
       setVisibleLayers({ zone: true, area: false, plot: false, plant: false });
     } else if (zoom >= 14 && zoom < 16) {
       setVisibleLayers({ zone: false, area: true, plot: false, plant: false });
-    } else if (zoom >= 16 && zoom < 18) {
+    } else {
       setVisibleLayers({ zone: false, area: false, plot: true, plant: false });
-    } else if (zoom >= 18) {
-      setVisibleLayers({ zone: true, area: true, plot: true, plant: true }); // Keep context
     }
   };
 
@@ -837,7 +835,17 @@ const MapContent = () => {
                       onValueChange={setFilterRegion}
                     >
                       <SelectTrigger className="w-full pr-2">
-                        <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%", minWidth: 0, textAlign: "left" }}>
+                        <span
+                          style={{
+                            display: "block",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            width: "100%",
+                            minWidth: 0,
+                            textAlign: "left",
+                          }}
+                        >
                           <SelectValue placeholder="Tất cả" />
                         </span>
                       </SelectTrigger>
@@ -855,7 +863,17 @@ const MapContent = () => {
                     <Label>Khu vực</Label>
                     <Select value={filterArea} onValueChange={setFilterArea}>
                       <SelectTrigger className="w-full pr-2">
-                        <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%", minWidth: 0, textAlign: "left" }}>
+                        <span
+                          style={{
+                            display: "block",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            width: "100%",
+                            minWidth: 0,
+                            textAlign: "left",
+                          }}
+                        >
                           <SelectValue placeholder="Tất cả" />
                         </span>
                       </SelectTrigger>
@@ -879,7 +897,17 @@ const MapContent = () => {
                   <Label>Trạng thái cây</Label>
                   <Select value={filterStatus} onValueChange={setFilterStatus}>
                     <SelectTrigger className="w-full pr-2">
-                      <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%", minWidth: 0, textAlign: "left" }}>
+                      <span
+                        style={{
+                          display: "block",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          width: "100%",
+                          minWidth: 0,
+                          textAlign: "left",
+                        }}
+                      >
                         <SelectValue placeholder="Tất cả trạng thái" />
                       </span>
                     </SelectTrigger>
@@ -1538,6 +1566,7 @@ const MapViewPage = () => {
 
   return (
     <AdminLayout
+      isRice
       title="Bản đồ số nông nghiệp"
       description="Quản lý trực quan vùng trồng và cây trồng"
     >

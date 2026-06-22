@@ -44,6 +44,7 @@ const SearchUnitPage = () => {
 
   return (
     <AdminLayout
+      isRice
       title="Tìm kiếm đơn vị"
       description="Tìm kiếm và quản lý thông tin các đơn vị trong hệ thống"
     >

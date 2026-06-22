@@ -298,7 +298,11 @@ const CultivationPlotCreatePage = () => {
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[550px]">
           <div className="lg:col-span-2 relative rounded-2xl overflow-hidden border shadow-inner bg-slate-100">
-            <MapContainer center={mapCenter} zoom={17} className="h-full w-full">
+            <MapContainer
+              center={mapCenter}
+              zoom={17}
+              className="h-full w-full"
+            >
               <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
               <MapController center={mapCenter} />
 
@@ -458,7 +462,9 @@ const CultivationPlotCreatePage = () => {
                 className="h-7 text-[10px]"
                 onClick={() => {
                   const bounds = L.latLngBounds(plotPoints);
-                  const center = bounds.isValid() ? bounds.getCenter() : mapCenter;
+                  const center = bounds.isValid()
+                    ? bounds.getCenter()
+                    : mapCenter;
                   setPlotPoints((previous) => [
                     ...previous,
                     L.latLng(center.lat + 0.0002, center.lng + 0.0002),
@@ -493,7 +499,9 @@ const CultivationPlotCreatePage = () => {
                         onClick={(event) => {
                           event.stopPropagation();
                           setPlotPoints((previous) =>
-                            previous.filter((_, itemIndex) => itemIndex !== index),
+                            previous.filter(
+                              (_, itemIndex) => itemIndex !== index,
+                            ),
                           );
                           setActivePointIndex(null);
                         }}
@@ -562,7 +570,9 @@ const CultivationPlotCreatePage = () => {
               </Label>
               <Select
                 value={effectiveConfig.farmingMethodId}
-                onValueChange={(value) => setConfigField("farmingMethodId", value)}
+                onValueChange={(value) =>
+                  setConfigField("farmingMethodId", value)
+                }
               >
                 <SelectTrigger className="h-11 bg-white">
                   <SelectValue placeholder="Chọn phương pháp..." />
@@ -637,9 +647,8 @@ const CultivationPlotCreatePage = () => {
                 <ScrollArea className="flex-1 pr-2">
                   <div className="space-y-1.5">
                     {availableCrops.map((crop) => {
-                      const isSelected = effectiveConfig.selectedCrops?.includes(
-                        crop.id,
-                      );
+                      const isSelected =
+                        effectiveConfig.selectedCrops?.includes(crop.id);
                       const selectedSeeds =
                         effectiveConfig.seedSelections?.[crop.id] || [];
 
@@ -671,7 +680,9 @@ const CultivationPlotCreatePage = () => {
                             <div
                               className={cn(
                                 "text-sm shrink font-semibold truncate",
-                                isSelected ? "text-green-900" : "text-slate-700",
+                                isSelected
+                                  ? "text-green-900"
+                                  : "text-slate-700",
                               )}
                             >
                               {crop.varietyName}
@@ -682,7 +693,9 @@ const CultivationPlotCreatePage = () => {
                             {isSelected && selectedSeeds.length > 0 && (
                               <div className="mt-1.5 flex flex-wrap gap-1.5 min-w-0">
                                 {selectedSeeds.map((seedId) => {
-                                  const seed = seeds.find((item) => item.id === seedId);
+                                  const seed = seeds.find(
+                                    (item) => item.id === seedId,
+                                  );
                                   if (!seed) return null;
                                   return (
                                     <Badge
@@ -756,7 +769,9 @@ const CultivationPlotCreatePage = () => {
             </div>
             <div className="flex justify-between border-b pb-2">
               <span className="text-slate-400">Quản lý:</span>
-              <span className="font-bold">{selectedManager?.fullName || "Chưa gán"}</span>
+              <span className="font-bold">
+                {selectedManager?.fullName || "Chưa gán"}
+              </span>
             </div>
             <div className="flex flex-wrap gap-1">
               {selectedCertIds.map((id) => (
@@ -839,6 +854,7 @@ const CultivationPlotCreatePage = () => {
 
   return (
     <AdminLayout
+      isRice
       title={isEdit ? "Chỉnh sửa lô" : "Thiết lập lô"}
       description="Quy trình khởi tạo và cấu hình canh tác theo Khu vực (Lô)"
     >

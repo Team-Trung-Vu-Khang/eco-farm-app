@@ -1,7 +1,4 @@
-import {
-  AdminLayout,
-  Button,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Sprout } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { VarietyDetailContent } from "./components/VarietyDetailContent";
@@ -40,6 +37,7 @@ export default function VarietyDetailPage({
 
     return isStandalone ? (
       <AdminLayout
+        isRice
         title="Chi tiết giống cây"
         description="Không tìm thấy thông tin"
       >
@@ -50,10 +48,13 @@ export default function VarietyDetailPage({
     );
   }
 
-  const content = <VarietyDetailContent variety={variety} isStandalone={isStandalone} />;
+  const content = (
+    <VarietyDetailContent variety={variety} isStandalone={isStandalone} />
+  );
 
   return isStandalone ? (
     <AdminLayout
+      isRice
       title="Chi tiết giống cây"
       description={`Thông tin chi tiết về ${variety.varietyName}`}
     >

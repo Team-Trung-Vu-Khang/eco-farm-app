@@ -22,14 +22,12 @@ export default function TeamDetailPage() {
 
   if (!team) {
     return (
-      <AdminLayout title="Chi tiết đội nhóm">
+      <AdminLayout isRice title="Chi tiết đội nhóm">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin đội nhóm.
           </p>
-          <Button onClick={goBack}>
-            Quay lại danh sách
-          </Button>
+          <Button onClick={goBack}>Quay lại danh sách</Button>
         </div>
       </AdminLayout>
     );
@@ -37,6 +35,7 @@ export default function TeamDetailPage() {
 
   return (
     <AdminLayout
+      isRice
       title="Chi tiết đội nhóm"
       description={`Thông tin và danh sách thành viên của ${team.name}`}
       actions={

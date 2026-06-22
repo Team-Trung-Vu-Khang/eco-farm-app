@@ -26,7 +26,11 @@ export default function EnterpriseDetailPage() {
 
   if (!data) {
     return (
-      <AdminLayout title="Chi tiết đơn vị" description="Đang tải thông tin...">
+      <AdminLayout
+        isRice
+        title="Chi tiết đơn vị"
+        description="Đang tải thông tin..."
+      >
         <div className="flex flex-col items-center justify-center p-12 gap-4">
           <div className="text-muted-foreground">
             Không tìm thấy thông tin doanh nghiệp
@@ -42,6 +46,7 @@ export default function EnterpriseDetailPage() {
 
   return (
     <AdminLayout
+      isRice
       title={data.name}
       description={`Chi tiết thông tin ${
         data.type === "enterprise"

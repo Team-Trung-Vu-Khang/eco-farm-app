@@ -62,17 +62,37 @@ const fertilizerDetailExtras: Record<
     registrationNo: "BVTV-PB-001-2024",
     packaging: "Bao 50kg",
     shelfLife: "24 tháng",
-    storageCondition: "Bảo quản nơi khô ráo, thoáng mát, tránh ánh nắng trực tiếp",
-    usage: "Bón lót hoặc bón thúc. Liều lượng: 200-300kg/ha tùy loại cây trồng. Rải đều quanh gốc cây, cách gốc 15-20cm.",
+    storageCondition:
+      "Bảo quản nơi khô ráo, thoáng mát, tránh ánh nắng trực tiếp",
+    usage:
+      "Bón lót hoặc bón thúc. Liều lượng: 200-300kg/ha tùy loại cây trồng. Rải đều quanh gốc cây, cách gốc 15-20cm.",
     targetCrops: ["Lúa", "Ngô", "Rau màu", "Cây ăn quả"],
     hashtags: ["HieuQuaCao", "TangTruongNhanh", "CayCongNghiep"],
     supplierDetails: [
-      { supplierId: "sup1", quantity: "500", unit: "Bao", packaging: "Bao 50kg" },
-      { supplierId: "sup2", quantity: "200", unit: "Bao", packaging: "Bao 25kg" },
+      {
+        supplierId: "sup1",
+        quantity: "500",
+        unit: "Bao",
+        packaging: "Bao 50kg",
+      },
+      {
+        supplierId: "sup2",
+        quantity: "200",
+        unit: "Bao",
+        packaging: "Bao 25kg",
+      },
     ],
     documents: [
-      { name: "Tai_lieu_ky_thuat_PB001.pdf", size: "2.4 MB", updatedAt: "2 ngày trước" },
-      { name: "Phieu_kiem_dinh_chat_luong.pdf", size: "1.1 MB", updatedAt: "1 tuần trước" },
+      {
+        name: "Tai_lieu_ky_thuat_PB001.pdf",
+        size: "2.4 MB",
+        updatedAt: "2 ngày trước",
+      },
+      {
+        name: "Phieu_kiem_dinh_chat_luong.pdf",
+        size: "1.1 MB",
+        updatedAt: "1 tuần trước",
+      },
     ],
     safetyWarnings: [
       "Đeo khẩu trang và găng tay khi sử dụng",
@@ -87,14 +107,24 @@ const fertilizerDetailExtras: Record<
     packaging: "Bao 25kg",
     shelfLife: "18 tháng",
     storageCondition: "Bảo quản nơi khô ráo, tránh ẩm ướt",
-    usage: "Bón lót trước khi gieo trồng. Liều lượng: 1-2 tấn/ha. Trộn đều vào đất canh tác.",
+    usage:
+      "Bón lót trước khi gieo trồng. Liều lượng: 1-2 tấn/ha. Trộn đều vào đất canh tác.",
     targetCrops: ["Rau hữu cơ", "Cây ăn quả", "Cây công nghiệp"],
     hashtags: ["HuuCo", "CaiTaoDat", "AnToanSinhHoc"],
     supplierDetails: [
-      { supplierId: "sup3", quantity: "300", unit: "Bao", packaging: "Bao 25kg" },
+      {
+        supplierId: "sup3",
+        quantity: "300",
+        unit: "Bao",
+        packaging: "Bao 25kg",
+      },
     ],
     documents: [
-      { name: "Tai_lieu_ky_thuat_PB002.pdf", size: "1.8 MB", updatedAt: "5 ngày trước" },
+      {
+        name: "Tai_lieu_ky_thuat_PB002.pdf",
+        size: "1.8 MB",
+        updatedAt: "5 ngày trước",
+      },
     ],
     safetyWarnings: ["Sản phẩm an toàn, không gây hại cho người và môi trường"],
   },
@@ -109,15 +139,26 @@ function getExtras(id: number) {
     registrationNo: `BVTV-PB-${String(id).padStart(3, "0")}-2024`,
     packaging: "Bao 50kg",
     shelfLife: "24 tháng",
-    storageCondition: "Bảo quản nơi khô ráo, thoáng mát, tránh ánh nắng trực tiếp",
-    usage: "Bón lót hoặc bón thúc theo hướng dẫn kỹ thuật. Liều lượng tùy thuộc loại cây trồng.",
+    storageCondition:
+      "Bảo quản nơi khô ráo, thoáng mát, tránh ánh nắng trực tiếp",
+    usage:
+      "Bón lót hoặc bón thúc theo hướng dẫn kỹ thuật. Liều lượng tùy thuộc loại cây trồng.",
     targetCrops: ["Lúa", "Rau màu", "Cây ăn quả"],
     hashtags: ["HieuQuaCao", "TangTruongNhanh"],
     supplierDetails: [
-      { supplierId: "sup1", quantity: "100", unit: "Bao", packaging: "Bao 50kg" },
+      {
+        supplierId: "sup1",
+        quantity: "100",
+        unit: "Bao",
+        packaging: "Bao 50kg",
+      },
     ],
     documents: [
-      { name: `Tai_lieu_ky_thuat_PB${String(id).padStart(3, "0")}.pdf`, size: "2.0 MB", updatedAt: "3 ngày trước" },
+      {
+        name: `Tai_lieu_ky_thuat_PB${String(id).padStart(3, "0")}.pdf`,
+        size: "2.0 MB",
+        updatedAt: "3 ngày trước",
+      },
     ],
     safetyWarnings: [
       "Đeo khẩu trang khi sử dụng",
@@ -138,7 +179,11 @@ const FertilizerDetailPage = () => {
 
   if (!item) {
     return (
-      <AdminLayout title="Chi tiết phân bón" description="Đang tải thông tin...">
+      <AdminLayout
+        isRice
+        title="Chi tiết phân bón"
+        description="Đang tải thông tin..."
+      >
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin phân bón.
@@ -156,6 +201,7 @@ const FertilizerDetailPage = () => {
 
   return (
     <AdminLayout
+      isRice
       title="Chi tiết phân bón"
       description={`Thông tin chi tiết sản phẩm ${item.name}`}
       actions={
@@ -434,7 +480,9 @@ const FertilizerDetailPage = () => {
                             <Badge variant="outline">
                               {detail.quantity} {detail.unit}
                             </Badge>
-                            <Badge variant="secondary">{detail.packaging}</Badge>
+                            <Badge variant="secondary">
+                              {detail.packaging}
+                            </Badge>
                           </div>
                         </div>
                       );
@@ -525,9 +573,7 @@ const FertilizerDetailPage = () => {
                   variant={item.status === "active" ? "default" : "secondary"}
                   className="text-xs"
                 >
-                  {item.status === "active"
-                    ? "Hoạt động"
-                    : "Không hoạt động"}
+                  {item.status === "active" ? "Hoạt động" : "Không hoạt động"}
                 </Badge>
               </div>
             </CardContent>

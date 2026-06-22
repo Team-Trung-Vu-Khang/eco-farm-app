@@ -88,6 +88,7 @@ export default function LandPage() {
 
   return (
     <AdminLayout
+      isRice
       title="Quản lý đất"
       description="Phân loại và quản lý các loại đất canh tác"
       actions={

@@ -1,8 +1,5 @@
 import { ChevronLeft, Save } from "lucide-react";
-import {
-  AdminLayout,
-  Button,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { UnitBasicInfoCard } from "./components/UnitBasicInfoCard";
 import { UnitConfirmDialog } from "./components/UnitConfirmDialog";
 import { UnitConversionCard } from "./components/UnitConversionCard";
@@ -27,6 +24,7 @@ const UnitCreatePage = () => {
 
   return (
     <AdminLayout
+      isRice
       title={isEdit ? "Cập nhật đơn vị tính" : "Thêm mới đơn vị tính"}
       description={
         isEdit

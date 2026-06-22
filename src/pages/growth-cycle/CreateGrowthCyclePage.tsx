@@ -102,6 +102,7 @@ export default function CreateGrowthCyclePage() {
 
   return (
     <AdminLayout
+      isRice
       title="Thêm mới chu kỳ sinh trưởng"
       description="Thiết lập các giai đoạn phát triển cho cây trồng"
     >
@@ -139,7 +140,9 @@ export default function CreateGrowthCyclePage() {
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Phạm vi:</span>
                     <span className="font-medium">
-                      {formData.scope === "crop" ? "Theo loại cây" : "Theo giống"}
+                      {formData.scope === "crop"
+                        ? "Theo loại cây"
+                        : "Theo giống"}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
@@ -150,17 +153,22 @@ export default function CreateGrowthCyclePage() {
                     <div className="flex justify-between gap-4">
                       <span className="text-muted-foreground">Giống cây:</span>
                       <span className="font-medium">
-                        {varieties.find((variety) => variety.id === formData.variety)
-                          ?.varietyName || formData.variety}
+                        {varieties.find(
+                          (variety) => variety.id === formData.variety,
+                        )?.varietyName || formData.variety}
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Số giai đoạn:</span>
-                    <span className="font-medium">{formData.stages.length}</span>
+                    <span className="font-medium">
+                      {formData.stages.length}
+                    </span>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <span className="text-muted-foreground">Tổng thời gian:</span>
+                    <span className="text-muted-foreground">
+                      Tổng thời gian:
+                    </span>
                     <span className="font-medium">{totalDays} ngày</span>
                   </div>
                 </div>

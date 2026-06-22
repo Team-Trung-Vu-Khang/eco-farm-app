@@ -1694,6 +1694,7 @@ export default function CreateTreatmentPage() {
 
   return (
     <AdminLayout
+      isRice
       title={isEdit ? `Cập nhật phác đồ: ${formData.code}` : "Tạo phác đồ mới"}
       description={
         isEdit

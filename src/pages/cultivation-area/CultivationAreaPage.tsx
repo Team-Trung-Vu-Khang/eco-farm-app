@@ -21,6 +21,7 @@ const CultivationAreaPage = () => {
 
   return (
     <AdminLayout
+      isRice
       title="Khu vực canh tác"
       description="Quản lý các thiết lập canh tác theo Vùng trồng"
       actions={

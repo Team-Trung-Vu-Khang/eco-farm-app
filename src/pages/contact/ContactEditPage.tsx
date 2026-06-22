@@ -29,7 +29,11 @@ export default function ContactEditPage() {
 
   if (contactId && !contact) {
     return (
-      <AdminLayout title="Không tìm thấy" description="Liên hệ không tồn tại">
+      <AdminLayout
+        isRice
+        title="Không tìm thấy"
+        description="Liên hệ không tồn tại"
+      >
         <div className="flex flex-col items-center justify-center h-96">
           <h2 className="text-2xl font-bold mb-4">Không tìm thấy liên hệ</h2>
           <Button onClick={goBack}>
@@ -43,6 +47,7 @@ export default function ContactEditPage() {
 
   return (
     <AdminLayout
+      isRice
       title="Cập nhật liên hệ"
       description="Chỉnh sửa thông tin liên hệ"
       actions={

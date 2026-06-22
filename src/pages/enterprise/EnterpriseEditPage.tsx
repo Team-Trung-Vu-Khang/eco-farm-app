@@ -30,6 +30,7 @@ export default function EnterpriseEditPage() {
   return (
     <EnterpriseFormContext.Provider value={formState}>
       <AdminLayout
+        isRice
         title={`Cập nhật ${
           formData.type === "enterprise"
             ? "Doanh nghiệp"
@@ -49,7 +50,10 @@ export default function EnterpriseEditPage() {
             />
           </CardContent>
         </Card>
-        <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialog
+          open={showConfirmDialog}
+          onOpenChange={setShowConfirmDialog}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Xác nhận cập nhật</AlertDialogTitle>
@@ -67,7 +71,9 @@ export default function EnterpriseEditPage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Hủy</AlertDialogCancel>
-              <AlertDialogAction onClick={submitForm}>Xác nhận</AlertDialogAction>
+              <AlertDialogAction onClick={submitForm}>
+                Xác nhận
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

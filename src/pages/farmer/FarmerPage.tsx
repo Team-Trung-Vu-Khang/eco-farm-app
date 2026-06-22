@@ -23,6 +23,7 @@ export default function FarmerPage() {
 
   return (
     <AdminLayout
+      isRice
       title="Quản lý nông hộ"
       description="Quản lý thông tin các nông hộ trong hệ thống"
       actions={
