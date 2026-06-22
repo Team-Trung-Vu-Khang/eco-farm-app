@@ -270,19 +270,16 @@ const MapContent = () => {
     const lng = coords ? coords[0].toFixed(6) : "N/A";
 
     return `
-      <div class="min-w-[260px] max-w-[280px]">
-        <div class="flex items-start justify-between gap-3">
-          <div class="min-w-0">
-            <div class="text-[22px] font-bold leading-tight text-slate-900 truncate">${title}</div>
-            <div class="text-[15px] text-slate-700 mt-0.5">Mã: <span class="font-medium">${code}</span></div>
-            <div class="text-[15px] text-slate-700 mt-0.5">Trạng thái: <span class="font-medium">${statusLabel}</span></div>
-          </div>
-          <button class="shrink-0 text-slate-400 hover:text-slate-700" aria-label="Đóng">×</button>
+      <div class="min-w-[220px] max-w-[240px]">
+        <div class="min-w-0">
+          <div class="text-[18px] font-bold leading-tight text-slate-900 truncate">${title}</div>
+          <div class="text-[13px] text-slate-700 mt-0.5">Mã: <span class="font-medium">${code}</span></div>
+          <div class="text-[13px] text-slate-700 mt-0.5">Trạng thái: <span class="font-medium">${statusLabel}</span></div>
         </div>
 
-        <div class="my-3 border-t border-slate-200"></div>
+        <div class="my-2.5 border-t border-slate-200"></div>
 
-        <div class="space-y-2 text-[15px] text-slate-700">
+        <div class="space-y-1.5 text-[13px] text-slate-700">
           <div class="text-slate-500">📍 ${lat}, ${lng}</div>
           <div>🏠 Vùng: <span class="font-semibold">${locationInfo.zoneName || "Farm"}</span></div>
           <div>🌳 Khu vực: <span class="font-semibold">${locationInfo.areaName || "Chưa xác định"}</span></div>
@@ -733,6 +730,8 @@ const MapContent = () => {
             closeButton: true,
             autoClose: true,
             closeOnClick: true,
+            maxWidth: 240,
+            className: "plot-popup",
           });
           layer.openPopup(e.latlng);
         }
