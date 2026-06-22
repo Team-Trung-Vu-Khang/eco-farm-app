@@ -30,6 +30,7 @@ import {
 } from "react-leaflet";
 import type { GeoJsonObject, Feature } from "geojson";
 import L from "leaflet";
+import * as turf from "@turf/turf";
 import "leaflet/dist/leaflet.css";
 import {
   Search,
@@ -45,8 +46,6 @@ import {
   Activity,
 } from "lucide-react";
 import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-
-import { MOCK_REGIONS, MOCK_AREAS } from "../constants";
 
 // Import GeoJSON data directly
 import zoneData from "../../../assets/map/zone.json";
@@ -163,8 +162,32 @@ interface SelectedEntityStats {
   healthy: number;
   diseased: number;
   harvesting: number;
-  types: Record<string, number>;
+  varieties: Array<{
+    name: string;
+    count: number;
+  }>;
+  plots: Array<{
+    id: string;
+    name: string;
+    status: "healthy" | "diseased" | "harvesting";
+    pointCount: number;
+  }>;
 }
+
+type PlotStatus = "healthy" | "diseased" | "harvesting";
+
+type PlotDefinition = {
+  key: string;
+  name: string;
+  status: PlotStatus;
+  pointCount: number;
+  varieties: Array<{
+    name: string;
+    count: number;
+  }>;
+  center: [number, number] | null;
+  coordinates: [number, number][];
+};
 
 const MapContent = () => {
   const isFullScreenParam =
@@ -199,6 +222,30 @@ const MapContent = () => {
   const [soilData, setSoilData] = useState<Record<string, any>>({});
   const [isEditingSoil, setIsEditingSoil] = useState(false);
   const [tempSoil, setTempSoil] = useState<any>(null);
+
+  const derivePointStatus = (seed: string) => {
+    let hash = 0;
+    for (let i = 0; i < seed.length; i += 1) {
+      hash = (hash * 31 + seed.charCodeAt(i)) % 1000;
+    }
+
+    if (hash % 10 < 6) return "healthy" as const;
+    if (hash % 10 < 8) return "diseased" as const;
+    return "harvesting" as const;
+  };
+
+  const normalizeRiceVariety = (name: string) => {
+    return name
+      .replace(/^Cây\s+Lúa\s+/i, "")
+      .replace(/^Lúa\s+/i, "")
+      .trim();
+  };
+
+  const getPlotKey = (feature: any, index?: number) => {
+    const areaId = String(feature?.properties?.areaId || "area");
+    const name = String(feature?.properties?.name || `plot-${index ?? 0}`);
+    return `${areaId}:${name}`;
+  };
 
   // Initialize soil data with 0s if empty
   useEffect(() => {
@@ -252,18 +299,68 @@ const MapContent = () => {
     setIsEditingSoil(false);
   };
 
-  // Process Plant Data with Random Status
+  const plotDefinitions = useMemo<PlotDefinition[]>(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const plots = (plotData as any).features || [];
+
+    return plots.map((plot: any, index: number) => {
+      const plotCoords =
+        plot.geometry.type === "Polygon"
+          ? plot.geometry.coordinates[0]
+          : plot.geometry.type === "MultiPolygon"
+            ? plot.geometry.coordinates[0][0]
+            : [];
+
+      const plotCenterRaw = plot.center || getPolygonCenter(plot);
+      const plotCenter = Array.isArray(plotCenterRaw)
+        ? plotCenterRaw
+        : plotCenterRaw
+          ? ([plotCenterRaw.lng, plotCenterRaw.lat] as [number, number])
+          : null;
+
+      const status: PlotStatus =
+        index % 3 === 0
+          ? "healthy"
+          : index % 3 === 1
+            ? "diseased"
+            : "harvesting";
+
+      return {
+        key: getPlotKey(plot, index),
+        name: plot.properties?.name || "Lô",
+        status,
+        pointCount: 0,
+        varieties: [],
+        center: plotCenter,
+        coordinates: plotCoords as [number, number][],
+      };
+    });
+  }, []);
+
+  // Process point data so each point inherits the status of the plot it belongs to
   const processedPlantData = useMemo(() => {
-    const statuses = ["healthy", "diseased", "harvesting"];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const features = (plantData as any).features.map((feature: any) => {
-      const randomStatus =
-        statuses[Math.floor(Math.random() * statuses.length)];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const coords = feature.geometry?.coordinates as [number, number];
+      const matchedPlot = plotDefinitions.find(
+        (plot) => plot.coordinates.length >= 3 && isPointInPolygon(coords, plot.coordinates),
+      );
+      const seed =
+        String(
+          feature.properties?.code ||
+            feature.properties?.rowId ||
+            feature.properties?.id ||
+            "",
+        );
+      const derivedStatus =
+        matchedPlot?.status || derivePointStatus(seed);
       return {
         ...feature,
         properties: {
           ...feature.properties,
-          status: randomStatus,
+          status: derivedStatus,
+          plotKey: matchedPlot?.key || null,
         },
       };
     });
@@ -271,40 +368,101 @@ const MapContent = () => {
       ...plantData,
       features,
     } as GeoJsonObject;
-  }, []);
+  }, [plotDefinitions]);
+
+  const plotStatusMap = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const points = (processedPlantData as any).features || [];
+
+    return plotDefinitions.map((plot) => {
+      const pointsInPlot = points.filter((point: any) => {
+        const pointPlotKey = point.properties?.plotKey;
+        if (pointPlotKey) return pointPlotKey === plot.key;
+        return plot.coordinates.length >= 3
+          ? isPointInPolygon(point.geometry.coordinates, plot.coordinates)
+          : false;
+      });
+
+      const varietyCounts = pointsInPlot.reduce(
+        (acc: Record<string, number>, point: any) => {
+          const variety = normalizeRiceVariety(
+            String(point.properties?.name || "Không xác định"),
+          );
+          acc[variety] = (acc[variety] || 0) + 1;
+          return acc;
+        },
+        {},
+      );
+
+      return {
+        ...plot,
+        pointCount: pointsInPlot.length,
+        varieties: Object.entries(varietyCounts)
+          .map(([name, count]) => ({ name, count }))
+          .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
+      };
+    });
+  }, [plotDefinitions, processedPlantData]);
 
   // Helpers for Stats Calculation
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const calculateStats = (polyCoords: any[]): SelectedEntityStats => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const plants = (processedPlantData as any).features.filter((f: any) =>
-      isPointInPolygon(f.geometry.coordinates, polyCoords),
+  const calculateStats = (feature: any): SelectedEntityStats => {
+    const outerPolygon =
+      feature.geometry.type === "Polygon"
+        ? feature.geometry.coordinates[0]
+        : feature.geometry.type === "MultiPolygon"
+          ? feature.geometry.coordinates[0][0]
+          : [];
+
+    const plotsInScope = plotStatusMap.filter((plot) => {
+      if (outerPolygon.length < 3 || !plot.center) return false;
+      return isPointInPolygon(plot.center, outerPolygon);
+    });
+
+    const pointsInScope = (processedPlantData as any).features.filter((point: any) =>
+      outerPolygon.length >= 3
+        ? isPointInPolygon(point.geometry.coordinates, outerPolygon)
+        : false,
+    );
+
+    const varietyCounts = pointsInScope.reduce(
+      (acc: Record<string, number>, point: any) => {
+        const variety = normalizeRiceVariety(
+          String(point.properties?.name || "Không xác định"),
+        );
+        acc[variety] = (acc[variety] || 0) + 1;
+        return acc;
+      },
+      {},
     );
 
     const stats: SelectedEntityStats = {
-      total: plants.length,
+      total: plotsInScope.length,
       healthy: 0,
       diseased: 0,
       harvesting: 0,
-      types: {},
+      varieties: [],
+      plots: [],
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    plants.forEach((p: any) => {
-      // Status
-      if (p.properties.status === "healthy") stats.healthy++;
-      else if (p.properties.status === "diseased") stats.diseased++;
-      else if (p.properties.status === "harvesting") stats.harvesting++;
-
-      // Type/Name
-      const name = p.properties.name || "Unknown";
-      stats.types[name] = (stats.types[name] || 0) + 1;
+    plotsInScope.forEach((plot) => {
+      stats[plot.status] += 1;
+      stats.plots.push({
+        id: plot.key,
+        name: plot.name,
+        status: plot.status,
+        pointCount: plot.pointCount,
+      });
     });
+
+    stats.varieties = Object.entries(varietyCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 
     return stats;
   };
 
-  // Filter Plant Data based on Search and Status
+  // Filter point data based on search and status
   const filteredPlantData = useMemo(() => {
     if (!processedPlantData || !("features" in processedPlantData)) {
       return { type: "FeatureCollection", features: [] } as GeoJsonObject;
@@ -328,8 +486,7 @@ const MapContent = () => {
 
   // Statistics
   const stats = useMemo(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const plants = (processedPlantData as any).features || [];
+    const plots = plotStatusMap || [];
     return {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       regions: (zoneData as any).features?.length || 0,
@@ -337,30 +494,83 @@ const MapContent = () => {
       areas: (areaData as any).features?.length || 0,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       plots: (plotData as any).features?.length || 0,
-      plants: plants.length,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      healthy: plants.filter((p: any) => p.properties.status === "healthy")
-        .length,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      diseased: plants.filter((p: any) => p.properties.status === "diseased")
-        .length,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      harvesting: plants.filter(
-        (p: any) => p.properties.status === "harvesting",
-      ).length,
+      healthy: plots.filter((plot) => plot.status === "healthy").length,
+      diseased: plots.filter((plot) => plot.status === "diseased").length,
+      harvesting: plots.filter((plot) => plot.status === "harvesting").length,
     };
-  }, [processedPlantData]);
+  }, [plotStatusMap]);
 
-  // Handle auto-focus (Using Mocks for consistent ID lookup for now)
+  const zoneOptions = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const features = (zoneData as any).features || [];
+    return features
+      .map((feature: any, index: number) => {
+        const label = String(feature.properties?.name || `Vùng ${index + 1}`);
+        const value = String(feature.properties?.id || label);
+        const center = getPolygonCenter(feature);
+        return {
+          value,
+          label,
+          center: center ? ([center.lat, center.lng] as [number, number]) : null,
+        };
+      })
+      .filter(
+        (item, index, self) =>
+          self.findIndex((other) => other.value === item.value) === index,
+      );
+  }, []);
+
+  const areaOptions = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const areas = (areaData as any).features || [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const plots = (plotData as any).features || [];
+
+    return areas
+      .map((feature: any, index: number) => {
+        const label = String(feature.properties?.name || `Khu vực ${index + 1}`);
+        const value =
+          String(label.match(/Khu vực\s+([A-Z])/i)?.[1] || label.split(" ").pop() || index + 1);
+        const center = getPolygonCenter(feature);
+        const plotCount = plots.filter(
+          (plot: any) => String(plot.properties?.areaId || "") === value,
+        ).length;
+        return {
+          value,
+          label: `${label}${plotCount ? ` (${plotCount} lô)` : ""}`,
+          center: center ? ([center.lat, center.lng] as [number, number]) : null,
+        };
+      })
+      .filter(
+        (item, index, self) =>
+          self.findIndex((other) => other.value === item.value) === index,
+      );
+  }, []);
+
+  const totalAreaHa = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const source = zoneData as any;
+    return (turf.area(source) / 10000).toFixed(2);
+  }, []);
+
+  // Handle auto-focus using the current GeoJSON data
   useEffect(() => {
-    if (filterRegion !== "all") {
-      const reg = MOCK_REGIONS.find((r) => r.id.toString() === filterRegion);
-      if (reg && reg.coordinates.length > 0) {
-        setMapCenter([reg.coordinates[0].lat, reg.coordinates[0].lng]);
-        setMapZoom(14);
-      }
+    if (filterRegion === "all") return;
+    const zone = zoneOptions.find((item) => item.value === filterRegion);
+    if (zone?.center) {
+      setMapCenter(zone.center);
+      setMapZoom(14);
     }
-  }, [filterRegion]);
+  }, [filterRegion, zoneOptions]);
+
+  useEffect(() => {
+    if (filterArea === "all") return;
+    const area = areaOptions.find((item) => item.value === filterArea);
+    if (area?.center) {
+      setMapCenter(area.center);
+      setMapZoom(15);
+    }
+  }, [filterArea, areaOptions]);
 
   // Handle Zoom Change Logic
   const onZoomChange = (zoom: number) => {
@@ -381,7 +591,19 @@ const MapContent = () => {
     dashArray: "5, 5",
   };
   const areaStyle = { color: "#f03b20", weight: 2, fillOpacity: 0.1 };
-  const plotStyle = { color: "#31a354", weight: 2, fillOpacity: 0.2 };
+  const getPlotStyle = (feature: Feature) => {
+    const key = getPlotKey(feature as any);
+    const status =
+      plotStatusMap.find((plot) => plot.key === key)?.status || "healthy";
+
+    const styles = {
+      healthy: { color: "#22c55e", weight: 2, fillOpacity: 0.22 },
+      diseased: { color: "#ef4444", weight: 2, fillOpacity: 0.26 },
+      harvesting: { color: "#eab308", weight: 2, fillOpacity: 0.24 },
+    } as const;
+
+    return styles[status as keyof typeof styles];
+  };
 
   const pointToLayer = (feature: Feature, latlng: L.LatLng) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -463,7 +685,7 @@ const MapContent = () => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           polyCoords = (feature.geometry as any).coordinates[0][0];
 
-        const calculatedStats = calculateStats(polyCoords);
+        const calculatedStats = calculateStats(feature);
 
         setSelectedEntity({
           type: feature.properties?.name || "Selected Area",
@@ -518,7 +740,7 @@ const MapContent = () => {
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="text-sm text-muted-foreground">
-                          Đối tượng
+                          Đối tượng giám sát
                         </div>
                         <div className="text-xl font-bold text-primary">
                           {selectedEntity.type}
@@ -526,7 +748,7 @@ const MapContent = () => {
                       </div>
                       <div className="text-right">
                         <div className="text-sm text-muted-foreground">
-                          Mã số
+                          Mã lô
                         </div>
                         <div className="font-mono font-medium bg-slate-100 px-2 py-0.5 rounded text-sm inline-block">
                           {selectedEntity.properties?.code || "N/A"}
@@ -566,7 +788,7 @@ const MapContent = () => {
                 <div className="mb-6">
                   <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm text-slate-700">
                     <Sprout className="w-4 h-4" />
-                    Thống kê cây trồng
+                    Thống kê lô ruộng
                   </h4>
                   <div className="grid grid-cols-2 gap-3">
                     <Card className="bg-white border-none shadow-sm">
@@ -575,7 +797,7 @@ const MapContent = () => {
                           {selectedEntity.stats.total}
                         </div>
                         <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mt-1">
-                          Tổng cộng
+                          Tổng lô
                         </div>
                       </CardContent>
                     </Card>
@@ -585,7 +807,7 @@ const MapContent = () => {
                           {selectedEntity.stats.healthy}
                         </div>
                         <div className="text-xs font-medium text-green-700 uppercase tracking-wide mt-1">
-                          Khỏe mạnh
+                          Lô khỏe
                         </div>
                       </CardContent>
                     </Card>
@@ -595,7 +817,7 @@ const MapContent = () => {
                           {selectedEntity.stats.diseased}
                         </div>
                         <div className="text-xs font-medium text-red-700 uppercase tracking-wide mt-1">
-                          Sâu bệnh
+                          Lô sâu bệnh
                         </div>
                       </CardContent>
                     </Card>
@@ -605,7 +827,7 @@ const MapContent = () => {
                           {selectedEntity.stats.harvesting}
                         </div>
                         <div className="text-xs font-medium text-yellow-700 uppercase tracking-wide mt-1">
-                          Thu hoạch
+                          Lô thu hoạch
                         </div>
                       </CardContent>
                     </Card>
@@ -775,33 +997,78 @@ const MapContent = () => {
                   </Card>
                 </div>
 
-                {/* Plant Types List */}
+                {/* Plot List */}
                 <div className="mb-6">
                   <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm text-slate-700">
                     <Search className="w-4 h-4" />
-                    Phân loại cây (
-                    {Object.keys(selectedEntity.stats.types).length})
+                    Danh sách lô ({selectedEntity.stats.plots.length})
                   </h4>
                   <Card className="border-none shadow-sm overflow-hidden">
                     <div className="divide-y">
-                      {Object.entries(selectedEntity.stats.types).map(
-                        ([name, count]) => (
+                      {selectedEntity.stats.plots.map((plot) => {
+                        const statusLabel = {
+                          healthy: "Lô khỏe",
+                          diseased: "Lô sâu bệnh",
+                          harvesting: "Lô thu hoạch",
+                        }[plot.status];
+
+                        const statusClass = {
+                          healthy: "bg-green-50 text-green-700 border-green-200",
+                          diseased: "bg-red-50 text-red-700 border-red-200",
+                          harvesting:
+                            "bg-yellow-50 text-yellow-700 border-yellow-200",
+                        }[plot.status];
+
+                        return (
                           <div
-                            key={name}
-                            className="p-3 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                            key={plot.id}
+                            className="p-3 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors"
                           >
-                            <span className="text-sm font-medium text-slate-700">
-                              {name}
-                            </span>
-                            <span className="text-xs font-bold bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
-                              {count} cây
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium text-slate-700 truncate">
+                                {plot.name}
+                              </div>
+                            </div>
+                            <span
+                              className={`text-xs font-bold px-2 py-1 rounded-full border shrink-0 ${statusClass}`}
+                            >
+                              {statusLabel}
                             </span>
                           </div>
-                        ),
-                      )}
-                      {Object.keys(selectedEntity.stats.types).length === 0 && (
+                        );
+                      })}
+                      {selectedEntity.stats.plots.length === 0 && (
                         <div className="p-8 text-center text-muted-foreground text-sm">
-                          Chưa có dữ liệu cây trồng trong khu vực này.
+                          Chưa có lô nào nằm trong phạm vi này.
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                </div>
+
+                <div className="mb-6">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm text-slate-700">
+                    <Sprout className="w-4 h-4 text-green-600" />
+                    Giống lúa trong lô
+                  </h4>
+                  <Card className="border-none shadow-sm overflow-hidden">
+                    <div className="divide-y">
+                      {selectedEntity.stats.varieties.map((variety) => (
+                        <div
+                          key={variety.name}
+                          className="p-3 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors"
+                        >
+                          <span className="text-sm font-medium text-slate-700 truncate">
+                            {variety.name}
+                          </span>
+                          <span className="text-xs font-bold bg-green-50 text-green-700 px-2 py-1 rounded-full border border-green-200 shrink-0">
+                            {variety.count}
+                          </span>
+                        </div>
+                      ))}
+                      {selectedEntity.stats.varieties.length === 0 && (
+                        <div className="p-8 text-center text-muted-foreground text-sm">
+                          Chưa có dữ liệu giống lúa trong lô này.
                         </div>
                       )}
                     </div>
@@ -814,11 +1081,11 @@ const MapContent = () => {
             <>
               <div className="p-4 border-b space-y-4">
                 <div>
-                  <Label>Tìm kiếm cây trồng</Label>
+                  <Label>Tìm kiếm lô ruộng</Label>
                   <div className="relative mt-1">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Tên, mã cây..."
+                      placeholder="Tên, mã lô..."
                       className="pl-10"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
@@ -851,9 +1118,9 @@ const MapContent = () => {
                       </SelectTrigger>
                       <SelectContent className="z-[9999]">
                         <SelectItem value="all">Tất cả</SelectItem>
-                        {MOCK_REGIONS.map((r) => (
-                          <SelectItem key={r.id} value={r.id.toString()}>
-                            {r.code}
+                        {zoneOptions.map((zone) => (
+                          <SelectItem key={zone.value} value={zone.value}>
+                            {zone.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -879,13 +1146,9 @@ const MapContent = () => {
                       </SelectTrigger>
                       <SelectContent className="z-[9999]">
                         <SelectItem value="all">Tất cả</SelectItem>
-                        {MOCK_AREAS.filter(
-                          (a) =>
-                            filterRegion === "all" ||
-                            a.regionId.toString() === filterRegion,
-                        ).map((a) => (
-                          <SelectItem key={a.id} value={a.id.toString()}>
-                            {a.code}
+                        {areaOptions.map((area) => (
+                          <SelectItem key={area.value} value={area.value}>
+                            {area.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -894,7 +1157,7 @@ const MapContent = () => {
                 </div>
 
                 <div>
-                  <Label>Trạng thái cây</Label>
+                  <Label>Trạng thái lô</Label>
                   <Select value={filterStatus} onValueChange={setFilterStatus}>
                     <SelectTrigger className="w-full pr-2">
                       <span
@@ -913,9 +1176,9 @@ const MapContent = () => {
                     </SelectTrigger>
                     <SelectContent className="z-[9999]">
                       <SelectItem value="all">Tất cả</SelectItem>
-                      <SelectItem value="healthy">Khỏe mạnh</SelectItem>
-                      <SelectItem value="diseased">Bị bệnh</SelectItem>
-                      <SelectItem value="harvesting">Đang thu hoạch</SelectItem>
+                      <SelectItem value="healthy">Lô khỏe</SelectItem>
+                      <SelectItem value="diseased">Lô sâu bệnh</SelectItem>
+                      <SelectItem value="harvesting">Lô thu hoạch</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -932,7 +1195,7 @@ const MapContent = () => {
                         {stats.healthy}
                       </div>
                       <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                        <Sprout className="w-3 h-3" /> Cây khỏe
+                        <Sprout className="w-3 h-3" /> Lô khỏe
                       </div>
                     </CardContent>
                   </Card>
@@ -942,7 +1205,7 @@ const MapContent = () => {
                         {stats.diseased}
                       </div>
                       <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                        <AlertTriangle className="w-3 h-3" /> Cần xử lý
+                        <AlertTriangle className="w-3 h-3" /> Lô sâu bệnh
                       </div>
                     </CardContent>
                   </Card>
@@ -953,8 +1216,7 @@ const MapContent = () => {
                     <div className="flex justify-between py-2 border-b">
                       <span>Tổng diện tích</span>
                       <span className="font-medium">
-                        {/* Removed filteredRegions, using MOCK_REGIONS directly for sum */}
-                        {MOCK_REGIONS.reduce((acc, r) => acc + r.area, 0)} ha
+                        {totalAreaHa} ha
                       </span>
                     </div>
                     <div className="flex justify-between py-2 border-b">
@@ -966,7 +1228,7 @@ const MapContent = () => {
                       <span className="font-medium">{stats.areas}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b">
-                      <span>Số lô trồng</span>
+                      <span>Số lô</span>
                       <span className="font-medium">{stats.plots}</span>
                     </div>
                   </div>
@@ -1046,7 +1308,7 @@ const MapContent = () => {
                     <GeoJSON
                       key="layer-plot"
                       data={plotData as any}
-                      style={plotStyle}
+                      style={getPlotStyle}
                       onEachFeature={onEachFeature}
                     />
                   )}
@@ -1120,6 +1382,24 @@ const MapContent = () => {
               (plotData as any).features.map((f: any, i: number) => {
                 const center = getPolygonCenter(f);
                 if (!center) return null;
+                const plotKey = String(
+                  getPlotKey(f),
+                );
+                const plotStatus =
+                  plotStatusMap.find((plot) => plot.key === plotKey)?.status ||
+                  "healthy";
+                const dotClass =
+                  plotStatus === "diseased"
+                    ? "bg-red-500"
+                    : plotStatus === "harvesting"
+                      ? "bg-yellow-500"
+                      : "bg-green-500";
+                const textClass =
+                  plotStatus === "diseased"
+                    ? "text-red-900"
+                    : plotStatus === "harvesting"
+                      ? "text-yellow-900"
+                      : "text-green-900";
                 return (
                   <Marker
                     key={`label-plot-${i}`}
@@ -1128,8 +1408,8 @@ const MapContent = () => {
                       className: "bg-transparent border-none",
                       html: `
                         <div class="flex flex-col items-center justify-center">
-                          <div class="w-1.5 h-1.5 bg-green-500 rounded-full border border-white shadow-sm"></div>
-                          <div class="text-green-900 text-[9px] font-bold whitespace-nowrap drop-shadow-md mt-0.5">${f.properties.name}</div>
+                          <div class="w-1.5 h-1.5 ${dotClass} rounded-full border border-white shadow-sm"></div>
+                          <div class="${textClass} text-[9px] font-bold whitespace-nowrap drop-shadow-md mt-0.5">${f.properties.name}</div>
                         </div>
                       `,
                       iconSize: [0, 0],
@@ -1145,19 +1425,19 @@ const MapContent = () => {
                 className={`flex items-center gap-2 mb-1 ${visibleLayers.plant ? "opacity-100" : "opacity-40"}`}
               >
                 <div className="w-3 h-3 rounded-full bg-green-500 border border-white shadow-sm"></div>{" "}
-                Khỏe mạnh
+                Lô khỏe
               </div>
               <div
                 className={`flex items-center gap-2 mb-1 ${visibleLayers.plant ? "opacity-100" : "opacity-40"}`}
               >
                 <div className="w-3 h-3 rounded-full bg-yellow-500 border border-white shadow-sm"></div>{" "}
-                Thu hoạch
+                Lô thu hoạch
               </div>
               <div
                 className={`flex items-center gap-2 mb-1 ${visibleLayers.plant ? "opacity-100" : "opacity-40"}`}
               >
                 <div className="w-3 h-3 rounded-full bg-red-500 border border-white shadow-sm"></div>{" "}
-                Sâu bệnh
+                Lô sâu bệnh
               </div>
               <div
                 className={`flex items-center gap-2 mb-1 ${visibleLayers.zone ? "opacity-100" : "opacity-40"}`}
@@ -1236,7 +1516,7 @@ const MapContent = () => {
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="text-sm text-muted-foreground">
-                          Đối tượng
+                          Đối tượng giám sát
                         </div>
                         <div className="text-xl font-bold text-primary">
                           {selectedEntity.type}
@@ -1244,7 +1524,7 @@ const MapContent = () => {
                       </div>
                       <div className="text-right">
                         <div className="text-sm text-muted-foreground">
-                          Mã số
+                          Mã lô
                         </div>
                         <div className="font-mono font-medium bg-slate-100 px-2 py-0.5 rounded text-sm inline-block">
                           {selectedEntity.properties?.code || "N/A"}
@@ -1281,7 +1561,7 @@ const MapContent = () => {
                 <div className="mb-6">
                   <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm text-slate-700">
                     <Sprout className="w-4 h-4" />
-                    Thống kê cây trồng
+                    Thống kê lô ruộng
                   </h4>
                   <div className="grid grid-cols-2 gap-3">
                     <Card className="bg-white border-none shadow-sm">
@@ -1330,7 +1610,7 @@ const MapContent = () => {
                 <div className="mb-6">
                   <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm text-slate-700">
                     <Search className="w-4 h-4" />
-                    Phân loại cây (
+                    Phân loại điểm ghi nhận (
                     {Object.keys(selectedEntity.stats.types).length})
                   </h4>
                   <Card className="border-none shadow-sm overflow-hidden">
@@ -1345,14 +1625,14 @@ const MapContent = () => {
                               {name}
                             </span>
                             <span className="text-xs font-bold bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
-                              {count} cây
+                              {count} điểm
                             </span>
                           </div>
                         ),
                       )}
                       {Object.keys(selectedEntity.stats.types).length === 0 && (
                         <div className="p-8 text-center text-muted-foreground text-sm">
-                          Chưa có dữ liệu cây trồng trong khu vực này.
+                          Chưa có dữ liệu ghi nhận trong khu vực này.
                         </div>
                       )}
                     </div>
@@ -1568,7 +1848,7 @@ const MapViewPage = () => {
     <AdminLayout
       isRice
       title="Bản đồ số nông nghiệp"
-      description="Quản lý trực quan vùng trồng và cây trồng"
+      description="Quản lý trực quan vùng trồng và lô ruộng"
     >
       <MapContent />
     </AdminLayout>
