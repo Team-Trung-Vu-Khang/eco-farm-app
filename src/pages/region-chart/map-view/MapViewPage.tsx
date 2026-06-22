@@ -181,10 +181,7 @@ type PlotDefinition = {
   name: string;
   status: PlotStatus;
   pointCount: number;
-  varieties: Array<{
-    name: string;
-    count: number;
-  }>;
+  varietyName: string;
   center: [number, number] | null;
   coordinates: [number, number][];
 };
@@ -241,10 +238,58 @@ const MapContent = () => {
       .trim();
   };
 
+  const formatPlotStatusLabel = (status: PlotStatus) => {
+    if (status === "diseased") return "Sâu bệnh";
+    if (status === "harvesting") return "Đang thu hoạch";
+    return "Khỏe mạnh";
+  };
+
+  const getPlotStatusBadgeClass = (status: PlotStatus) => {
+    if (status === "diseased") return "bg-red-50 text-red-700";
+    if (status === "harvesting") return "bg-yellow-50 text-yellow-700";
+    return "bg-green-50 text-green-700";
+  };
+
   const getPlotKey = (feature: any, index?: number) => {
     const areaId = String(feature?.properties?.areaId || "area");
     const name = String(feature?.properties?.name || `plot-${index ?? 0}`);
     return `${areaId}:${name}`;
+  };
+
+  const buildPlotPopupHtml = (plot: PlotDefinition, feature: any) => {
+    const coords = plot.center;
+    const locationInfo = coords
+      ? getLocationInfo(coords[0], coords[1])
+      : {};
+    const variety = plot.varietyName || "Không xác định";
+    const title = variety !== "Không xác định" ? `Cây Lúa ${variety}` : plot.name;
+    const statusLabel = formatPlotStatusLabel(plot.status);
+    const badgeClass = getPlotStatusBadgeClass(plot.status);
+    const code = feature.properties?.code || plot.key;
+    const lat = coords ? coords[1].toFixed(6) : "N/A";
+    const lng = coords ? coords[0].toFixed(6) : "N/A";
+
+    return `
+      <div class="min-w-[260px] max-w-[280px]">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <div class="text-[22px] font-bold leading-tight text-slate-900 truncate">${title}</div>
+            <div class="text-[15px] text-slate-700 mt-0.5">Mã: <span class="font-medium">${code}</span></div>
+            <div class="text-[15px] text-slate-700 mt-0.5">Trạng thái: <span class="font-medium">${statusLabel}</span></div>
+          </div>
+          <button class="shrink-0 text-slate-400 hover:text-slate-700" aria-label="Đóng">×</button>
+        </div>
+
+        <div class="my-3 border-t border-slate-200"></div>
+
+        <div class="space-y-2 text-[15px] text-slate-700">
+          <div class="text-slate-500">📍 ${lat}, ${lng}</div>
+          <div>🏠 Vùng: <span class="font-semibold">${locationInfo.zoneName || "Farm"}</span></div>
+          <div>🌳 Khu vực: <span class="font-semibold">${locationInfo.areaName || "Chưa xác định"}</span></div>
+          <div>🌱 Lô: <span class="font-semibold">${plot.name}</span></div>
+        </div>
+      </div>
+    `;
   };
 
   // Initialize soil data with 0s if empty
@@ -318,6 +363,25 @@ const MapContent = () => {
           ? ([plotCenterRaw.lng, plotCenterRaw.lat] as [number, number])
           : null;
 
+      // Derive the one rice variety represented by this plot from the points it contains.
+      // We keep the model to one variety per plot and pick the most common one if data is mixed.
+      const varietyCounts: Record<string, number> = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (plantData as any).features.forEach((feature: any) => {
+        const coords = feature.geometry?.coordinates as [number, number];
+        if (!plotCoords || plotCoords.length < 3) return;
+        if (!isPointInPolygon(coords, plotCoords)) return;
+        const variety = normalizeRiceVariety(
+          String(feature.properties?.name || "Không xác định"),
+        );
+        varietyCounts[variety] = (varietyCounts[variety] || 0) + 1;
+      });
+
+      const varietyName =
+        Object.entries(varietyCounts).sort(
+          (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+        )[0]?.[0] || "Không xác định";
+
       const status: PlotStatus =
         index % 3 === 0
           ? "healthy"
@@ -330,7 +394,7 @@ const MapContent = () => {
         name: plot.properties?.name || "Lô",
         status,
         pointCount: 0,
-        varieties: [],
+        varietyName,
         center: plotCenter,
         coordinates: plotCoords as [number, number][],
       };
@@ -383,23 +447,9 @@ const MapContent = () => {
           : false;
       });
 
-      const varietyCounts = pointsInPlot.reduce(
-        (acc: Record<string, number>, point: any) => {
-          const variety = normalizeRiceVariety(
-            String(point.properties?.name || "Không xác định"),
-          );
-          acc[variety] = (acc[variety] || 0) + 1;
-          return acc;
-        },
-        {},
-      );
-
       return {
         ...plot,
         pointCount: pointsInPlot.length,
-        varieties: Object.entries(varietyCounts)
-          .map(([name, count]) => ({ name, count }))
-          .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
       };
     });
   }, [plotDefinitions, processedPlantData]);
@@ -418,23 +468,6 @@ const MapContent = () => {
       if (outerPolygon.length < 3 || !plot.center) return false;
       return isPointInPolygon(plot.center, outerPolygon);
     });
-
-    const pointsInScope = (processedPlantData as any).features.filter((point: any) =>
-      outerPolygon.length >= 3
-        ? isPointInPolygon(point.geometry.coordinates, outerPolygon)
-        : false,
-    );
-
-    const varietyCounts = pointsInScope.reduce(
-      (acc: Record<string, number>, point: any) => {
-        const variety = normalizeRiceVariety(
-          String(point.properties?.name || "Không xác định"),
-        );
-        acc[variety] = (acc[variety] || 0) + 1;
-        return acc;
-      },
-      {},
-    );
 
     const stats: SelectedEntityStats = {
       total: plotsInScope.length,
@@ -455,7 +488,13 @@ const MapContent = () => {
       });
     });
 
-    stats.varieties = Object.entries(varietyCounts)
+    stats.varieties = Object.entries(
+      plotsInScope.reduce((acc: Record<string, number>, plot) => {
+        const variety = plot.varietyName || "Không xác định";
+        acc[variety] = (acc[variety] || 0) + 1;
+        return acc;
+      }, {}),
+    )
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 
@@ -686,6 +725,17 @@ const MapContent = () => {
           polyCoords = (feature.geometry as any).coordinates[0][0];
 
         const calculatedStats = calculateStats(feature);
+        const plotKey = getPlotKey(feature as any);
+        const plotInfo = plotStatusMap.find((plot) => plot.key === plotKey);
+
+        if (feature.properties?.areaId && plotInfo) {
+          layer.bindPopup(buildPlotPopupHtml(plotInfo, feature), {
+            closeButton: true,
+            autoClose: true,
+            closeOnClick: true,
+          });
+          layer.openPopup(e.latlng);
+        }
 
         setSelectedEntity({
           type: feature.properties?.name || "Selected Area",
