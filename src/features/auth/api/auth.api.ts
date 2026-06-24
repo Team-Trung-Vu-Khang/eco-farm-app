@@ -18,13 +18,13 @@ const buildCallbackUrl = () =>
 
 export const authStorage = {
   getToken(): string | null {
-    return localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+    return sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
   },
   setToken(token: string) {
-    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
   },
   clearToken() {
-    localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+    sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
   },
 };
 
