@@ -40,6 +40,7 @@ import IoTDeviceGroupPage from "./pages/iot-device-group/IoTDeviceGroupPage";
 
 import NotFoundPage from "./pages/NotFoundPage";
 import { Toaster, TooltipProvider } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { AuthWrapper } from "./features/auth/components/AuthWrapper";
 import BankPage from "./pages/bank/BankPage";
 import BankDirectoryPage from "./pages/bank-directory/BankDirectoryPage";
 import BankCreatePage from "./pages/bank/BankCreatePage";
@@ -356,8 +357,14 @@ function Router() {
       <Route path="/crop/create" component={CropCreatePage} />
       <Route path="/crop/:id" component={CropDetailPage} />
       <Route path="/crop-foundation" component={CropFoundationPage} />
-      <Route path="/crop-foundation/create" component={CropFoundationCreatePage} />
-      <Route path="/crop-foundation/:id/edit" component={CropFoundationEditPage} />
+      <Route
+        path="/crop-foundation/create"
+        component={CropFoundationCreatePage}
+      />
+      <Route
+        path="/crop-foundation/:id/edit"
+        component={CropFoundationEditPage}
+      />
       <Route path="/crop-foundation/:id" component={CropFoundationDetailPage} />
       <Route path="/document-category" component={DocumentCategoryListPage} />
       <Route
@@ -380,8 +387,14 @@ function Router() {
       <Route path="/variety" component={VarietyPage} />
       <Route path="/variety/create" component={CreateVarietyPage} />
       <Route path="/variety-foudation" component={VarietyFoundationPage} />
-      <Route path="/variety-foudation/create" component={CreateVarietyFoundationPage} />
-      <Route path="/variety-foudation/:id/edit" component={VarietyFoundationEditPage} />
+      <Route
+        path="/variety-foudation/create"
+        component={CreateVarietyFoundationPage}
+      />
+      <Route
+        path="/variety-foudation/:id/edit"
+        component={VarietyFoundationEditPage}
+      />
       {/* <Route path="/variety/:id">
         {(params) => <VarietyDetailPage id={params.id} />}
       </Route> */}
@@ -483,14 +496,11 @@ function App() {
   return (
     <TooltipProvider>
       <Toaster />
-      <Router />
+      <AuthWrapper>
+        <Router />
+      </AuthWrapper>
     </TooltipProvider>
   );
 }
 
 export default App;
-// export const mount = (el: HTMLElement, props: any) => {
-//   const root = createRoot(el);
-//   root.render(<App basename={props.basename} />);
-//   return () => root.unmount();
-// };
