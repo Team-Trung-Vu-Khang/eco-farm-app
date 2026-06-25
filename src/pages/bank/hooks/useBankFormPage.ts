@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { vietQrBankData } from "../../../constants/banks";
+import { useCreateBank } from "../../../features/bank/hooks/useCreateBank";
 import useBankStore from "../../../stores/useBankStore";
 import { BANK_LOGOS, emptyBankFormData } from "../data/constants";
+import type { BankDirectoryCreateRequest } from "../../../features/bank/types/bank.type";
 import type { BankFormData } from "../types/types";
 
 interface UseBankFormPageOptions {
@@ -14,9 +17,22 @@ export function useBankFormPage({ mode }: UseBankFormPageOptions) {
   const [, params] = useRoute("/bank/:id/edit");
   const { toast } = useToast();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const createBank = useCreateBank({
+    onSuccess: () => {
+      toast({
+        title: "Thành công",
+        description: "Đã thêm tài khoản ngân hàng",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Không thể thêm",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
-  const bankAccounts = useBankStore((state) => state.bankAccounts);
-  const addBankAccount = useBankStore((state) => state.addBankAccount);
   const getBankAccountById = useBankStore((state) => state.getBankAccountById);
   const updateBankAccount = useBankStore((state) => state.updateBankAccount);
   const deleteBankAccount = useBankStore((state) => state.deleteBankAccount);
@@ -68,7 +84,7 @@ export function useBankFormPage({ mode }: UseBankFormPageOptions) {
     return true;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) {
       return;
     }
@@ -84,25 +100,31 @@ export function useBankFormPage({ mode }: UseBankFormPageOptions) {
         description: `Đã cập nhật tài khoản "${formData.bankName} - ${formData.accountNumber}"`,
       });
     } else {
-      const newId =
-        bankAccounts.length > 0 ? Math.max(...bankAccounts.map((b) => b.id)) + 1 : 1;
+      const bankInfo = vietQrBankData.find(
+        (bank) =>
+          bank.shortName === formData.bankName || bank.name === formData.bankName,
+      );
 
-      addBankAccount({
-        id: newId,
-        bankName: formData.bankName,
-        accountNumber: formData.accountNumber,
-        accountHolder: formData.accountHolder,
-        branch: formData.branch,
+      const payload: BankDirectoryCreateRequest = {
+        code: bankInfo?.code ?? formData.bankName.trim().toUpperCase(),
+        bin: formData.accountNumber.trim(),
+        shortName: bankInfo?.shortName ?? formData.bankName.trim(),
+        name: bankInfo?.name ?? formData.accountHolder.trim(),
+        logoUrl: bankInfo?.logo ?? formData.logo,
+        swiftCode: bankInfo?.swift_code ?? null,
+        transferSupported: bankInfo ? Boolean(bankInfo.transferSupported) : true,
+        lookupSupported: bankInfo ? Boolean(bankInfo.lookupSupported) : true,
+        displayOrder: bankInfo?.id ?? 0,
         status: formData.status,
-        note: formData.note,
-        logo: formData.logo,
-        createdAt: new Date().toISOString(),
-      });
+        metadataJson: {
+          source: "manual",
+          accountHolder: formData.accountHolder,
+          branch: formData.branch,
+          note: formData.note,
+        },
+      };
 
-      toast({
-        title: "Thành công",
-        description: `Đã thêm tài khoản ngân hàng "${formData.bankName} - ${formData.accountNumber}"`,
-      });
+      await createBank.mutateAsync(payload);
     }
 
     setLocation("/bank");
