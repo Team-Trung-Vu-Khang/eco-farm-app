@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { bankApi } from "../api/bank.api";
+import { bankDirectoryApi } from "../api/bank-directory.api";
 import type {
   BankDirectoryUpdateRequest,
   BankDirectoryUpdateResponse,
-} from "../types/bank.type";
+} from "../types/bank-directory.type";
 
 interface UseUpdateBankOptions {
   onSuccess?: (
@@ -15,7 +15,7 @@ interface UseUpdateBankOptions {
   invalidateDetail?: boolean;
 }
 
-export function useUpdateBank({
+export function useUpdateBankDirectory({
   onSuccess,
   onError,
   invalidateDirectory = true,
@@ -28,7 +28,7 @@ export function useUpdateBank({
     Error,
     { id: number | string; payload: BankDirectoryUpdateRequest }
   >({
-    mutationFn: ({ id, payload }) => bankApi.updateBank(id, payload),
+    mutationFn: ({ id, payload }) => bankDirectoryApi.updateBank(id, payload),
     onSuccess: async (data, variables) => {
       if (invalidateDirectory) {
         await queryClient.invalidateQueries({
@@ -49,6 +49,6 @@ export function useUpdateBank({
 
   return {
     ...mutation,
-    updateBank: mutation.mutateAsync,
+    updateBankDirectory: mutation.mutateAsync,
   };
 }

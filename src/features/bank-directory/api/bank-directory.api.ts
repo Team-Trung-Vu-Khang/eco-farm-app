@@ -12,7 +12,7 @@ import type {
   BankDirectoryResponse,
   BankDirectoryUpdateRequest,
   BankDirectoryUpdateResponse,
-} from "../types/bank.type";
+} from "../types/bank-directory.type";
 
 const BANK_DIRECTORY_PATH = MASTER_DATA_PATHS.banks;
 
@@ -22,7 +22,7 @@ const getAuthHeaders = () => {
   return token ? { Authorization: `Bearer ${token}` } : undefined;
 };
 
-export const bankApi = {
+export const bankDirectoryApi = {
   async getBanks(
     params: BankDirectoryQueryParams = {},
   ): Promise<BankDirectoryResponse<BankDirectoryItem>> {

@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { bankApi } from "../api/bank.api";
+import { bankDirectoryApi } from "../api/bank-directory.api";
 import type {
   BankDirectoryCreateRequest,
   BankDirectoryCreateResponse,
-} from "../types/bank.type";
+} from "../types/bank-directory.type";
 
 interface UseCreateBankOptions {
   onSuccess?: (
@@ -14,7 +14,7 @@ interface UseCreateBankOptions {
   invalidateDirectory?: boolean;
 }
 
-export function useCreateBank({
+export function useCreateBankDirectory({
   onSuccess,
   onError,
   invalidateDirectory = true,
@@ -26,7 +26,7 @@ export function useCreateBank({
     Error,
     BankDirectoryCreateRequest
   >({
-    mutationFn: (payload) => bankApi.createBank(payload),
+    mutationFn: (payload) => bankDirectoryApi.createBank(payload),
     onSuccess: async (data, variables, context) => {
       if (invalidateDirectory) {
         await queryClient.invalidateQueries({
@@ -42,6 +42,6 @@ export function useCreateBank({
 
   return {
     ...mutation,
-    createBank: mutation.mutateAsync,
+    createBankDirectory: mutation.mutateAsync,
   };
 }

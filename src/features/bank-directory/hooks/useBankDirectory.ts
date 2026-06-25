@@ -1,11 +1,11 @@
 import { useEffect, useMemo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { bankApi } from "../api/bank.api";
+import { bankDirectoryApi } from "../api/bank-directory.api";
 import type {
   BankDirectoryItem,
   BankDirectoryQueryParams,
   BankDirectoryResponse,
-} from "../types/bank.type";
+} from "../types/bank-directory.type";
 
 const EMPTY_QUERY: BankDirectoryQueryParams = {};
 
@@ -40,7 +40,7 @@ export function useBankDirectory({
       pageSize,
     ],
     queryFn: ({ pageParam = initialPage }) =>
-      bankApi.getBanks({
+      bankDirectoryApi.getBanks({
         ...initialQuery,
         page: pageParam as number,
         size: pageSize,

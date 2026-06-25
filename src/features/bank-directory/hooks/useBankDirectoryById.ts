@@ -1,14 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { bankApi } from "../api/bank.api";
-import type { BankDirectoryItem } from "../types/bank.type";
+import { bankDirectoryApi } from "../api/bank-directory.api";
+import type { BankDirectoryItem } from "../types/bank-directory.type";
 
 interface UseBankByIdOptions {
   enabled?: boolean;
 }
 
-export function useBankById(id: number | string | null | undefined, {
-  enabled = true,
-}: UseBankByIdOptions = {}) {
+export function useBankDirectoryById(
+  id: number | string | null | undefined,
+  { enabled = true }: UseBankByIdOptions = {},
+) {
   const queryResult = useQuery<BankDirectoryItem, Error>({
     queryKey: ["bank-directory", "detail", id ?? ""],
     queryFn: () => {
@@ -16,7 +17,7 @@ export function useBankById(id: number | string | null | undefined, {
         throw new Error("Missing bank directory id");
       }
 
-      return bankApi.getBankById(id);
+      return bankDirectoryApi.getBankById(id);
     },
     enabled: enabled && id !== null && id !== undefined && id !== "",
   });

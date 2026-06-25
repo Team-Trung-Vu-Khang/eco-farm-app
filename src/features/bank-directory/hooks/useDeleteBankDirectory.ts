@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { bankApi } from "../api/bank.api";
+import { bankDirectoryApi } from "../api/bank-directory.api";
 
 interface UseDeleteBankOptions {
   onSuccess?: (data: void, variables: number | string) => void;
@@ -8,7 +8,7 @@ interface UseDeleteBankOptions {
   invalidateDetail?: boolean;
 }
 
-export function useDeleteBank({
+export function useDeleteBankDirectory({
   onSuccess,
   onError,
   invalidateDirectory = true,
@@ -17,7 +17,7 @@ export function useDeleteBank({
   const queryClient = useQueryClient();
 
   const mutation = useMutation<void, Error, number | string>({
-    mutationFn: (id) => bankApi.deleteBank(id),
+    mutationFn: (id) => bankDirectoryApi.deleteBank(id),
     onSuccess: async (data, variables) => {
       if (invalidateDirectory) {
         await queryClient.invalidateQueries({
@@ -38,6 +38,6 @@ export function useDeleteBank({
 
   return {
     ...mutation,
-    deleteBank: mutation.mutateAsync,
+    deleteBankDirectory: mutation.mutateAsync,
   };
 }
