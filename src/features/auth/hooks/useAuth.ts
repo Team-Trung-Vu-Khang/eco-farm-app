@@ -1,52 +1,26 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { authApi } from "../api/auth.api";
 import type { AuthMeResponse, AuthProvider } from "../types/auth.type";
 
 export function useAuth() {
   const token = authApi.getToken();
-  const [currentUser, setCurrentUser] = useState<AuthMeResponse | null>(null);
-  const [loadingCurrentUser, setLoadingCurrentUser] = useState(Boolean(token));
+  const currentUserQuery = useQuery<AuthMeResponse, Error>({
+    queryKey: ["auth-current-user", token ?? ""],
+    queryFn: () => authApi.getCurrentUser(token),
+    enabled: Boolean(token),
+    staleTime: 1000 * 60 * 5,
+  });
 
   useEffect(() => {
-    let isMounted = true;
-
-    const loadCurrentUser = async () => {
-      if (!token) {
-        setCurrentUser(null);
-        setLoadingCurrentUser(false);
-        return;
-      }
-
-      setLoadingCurrentUser(true);
-
-      try {
-        const user = await authApi.getCurrentUser(token);
-        if (isMounted) {
-          setCurrentUser(user);
-        }
-      } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 403) {
-          void authApi.logout();
-          return;
-        }
-
-        if (isMounted) {
-          setCurrentUser(null);
-        }
-      } finally {
-        if (isMounted) {
-          setLoadingCurrentUser(false);
-        }
-      }
-    };
-
-    void loadCurrentUser();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [token]);
+    if (
+      axios.isAxiosError(currentUserQuery.error) &&
+      currentUserQuery.error.response?.status === 403
+    ) {
+      void authApi.logout();
+    }
+  }, [currentUserQuery.error]);
 
   const login = (
     provider: AuthProvider = authApi.getDefaultProvider(),
@@ -59,13 +33,12 @@ export function useAuth() {
   return {
     token,
     isAuthenticated: Boolean(token),
-    currentUser,
-    loadingCurrentUser,
+    currentUser: currentUserQuery.data ?? null,
+    loadingCurrentUser: currentUserQuery.isLoading,
     login,
     logout,
     clearSession: () => {
       authApi.logout();
-      setCurrentUser(null);
     },
   };
 }
