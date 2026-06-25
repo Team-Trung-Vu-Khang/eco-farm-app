@@ -25,6 +25,25 @@ export interface BankDirectoryItem {
   updatedAt: string;
 }
 
+export interface BankDirectoryCreateRequest {
+  code: string;
+  bin: string;
+  shortName: string;
+  name: string;
+  logoUrl: string;
+  swiftCode?: string | null;
+  transferSupported: boolean;
+  lookupSupported: boolean;
+  displayOrder: number;
+  status: BankDirectoryStatus;
+  metadataJson?: BankDirectoryMetadata | null;
+}
+
+export type BankDirectoryCreateResponse = BankDirectoryItem;
+export type BankDirectoryUpdateRequest = BankDirectoryCreateRequest;
+export type BankDirectoryUpdateResponse = BankDirectoryItem;
+export type BankDirectoryDeleteResponse = void;
+
 export interface BankDirectoryResponse<T = BankDirectoryItem> {
   content: T[];
   page: number;
