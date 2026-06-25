@@ -1,4 +1,5 @@
 import axios from "axios";
+import { authApi } from "../../auth/api/auth.api";
 import { apiEnv } from "../../../shared/config/api.env";
 import { API_REQUEST_TIMEOUT } from "../../../shared/config/api.config";
 import { MASTER_DATA_PATHS } from "../../../shared/constants/master-data.constants";
@@ -15,6 +16,12 @@ import type {
 
 const BANK_DIRECTORY_PATH = MASTER_DATA_PATHS.banks;
 
+const getAuthHeaders = () => {
+  const token = authApi.getToken();
+
+  return token ? { Authorization: `Bearer ${token}` } : undefined;
+};
+
 export const bankApi = {
   async getBanks(
     params: BankDirectoryQueryParams = {},
@@ -25,6 +32,7 @@ export const bankApi = {
         baseURL: apiEnv.apiBaseUrl,
         timeout: API_REQUEST_TIMEOUT,
         params,
+        headers: getAuthHeaders(),
       },
     );
 
@@ -36,6 +44,7 @@ export const bankApi = {
       {
         baseURL: apiEnv.apiBaseUrl,
         timeout: API_REQUEST_TIMEOUT,
+        headers: getAuthHeaders(),
       },
     );
 
@@ -50,6 +59,7 @@ export const bankApi = {
       {
         baseURL: apiEnv.apiBaseUrl,
         timeout: API_REQUEST_TIMEOUT,
+        headers: getAuthHeaders(),
       },
     );
 
@@ -65,6 +75,7 @@ export const bankApi = {
       {
         baseURL: apiEnv.apiBaseUrl,
         timeout: API_REQUEST_TIMEOUT,
+        headers: getAuthHeaders(),
       },
     );
 
@@ -74,6 +85,7 @@ export const bankApi = {
     await axios.delete(`${BANK_DIRECTORY_PATH}/${id}`, {
       baseURL: apiEnv.apiBaseUrl,
       timeout: API_REQUEST_TIMEOUT,
+      headers: getAuthHeaders(),
     });
   },
 };
