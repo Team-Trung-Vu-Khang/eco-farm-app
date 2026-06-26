@@ -1,133 +1,294 @@
+import { useEffect, useMemo } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Combobox,
   FormDialog,
   Input,
   Label,
   MultiSelect,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useMemo } from "react";
-import { useMasterData } from "@/features/master-data";
-import usePositionStore from "@/stores/usePositionStore";
-import type { PositionFormData } from "../types/types";
+import { Controller, useForm, type SubmitHandler } from "react-hook-form";
+import {
+  POSITION_FORM_STATUSES,
+  positionFormSchema,
+  type PositionFormValues,
+} from "../data/position-form.schema";
+import { emptyPositionFormData } from "../data/constants";
+import type { PositionItem, PositionMetadata } from "../types";
 
 interface PositionFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  isEdit: boolean;
-  formData: PositionFormData;
-  setFormData: (data: PositionFormData) => void;
-  onSubmit: () => void;
+  editItem: PositionItem | null;
+  groupOptions: { label: string; value: string }[];
+  responsibilityOptions: { label: string; value: string }[];
+  onSubmit: (data: PositionFormValues) => void;
+}
+
+function readMetadata(item: PositionItem | null): PositionMetadata {
+  return (item?.metadataJson ?? {}) as PositionMetadata;
+}
+
+function normalizeStatus(
+  status: PositionItem["status"] | null | undefined,
+): PositionFormValues["status"] {
+  if (
+    POSITION_FORM_STATUSES.includes(
+      status as (typeof POSITION_FORM_STATUSES)[number],
+    )
+  ) {
+    return status as PositionFormValues["status"];
+  }
+
+  return "active";
+}
+
+function buildDefaultValues(editItem: PositionItem | null): PositionFormValues {
+  if (!editItem) {
+    return {
+      ...emptyPositionFormData,
+      status: "active",
+    };
+  }
+
+  const metadata = readMetadata(editItem);
+
+  return {
+    code: editItem.code ?? "",
+    name: editItem.name ?? "",
+    group: metadata.group ?? "",
+    description: editItem.description ?? "",
+    responsibilities: metadata.responsibilities ?? [],
+    status: normalizeStatus(editItem.status),
+  };
 }
 
 export function PositionFormDialog({
   open,
   onOpenChange,
-  isEdit,
-  formData,
-  setFormData,
+  editItem,
+  groupOptions,
+  responsibilityOptions,
   onSubmit,
 }: PositionFormDialogProps) {
-  const positions = usePositionStore((state) => state.positions);
-  const positionGroupQuery = useMasterData("position-groups", {
-    params: {
-      status: "active",
-      size: 100,
-    },
+  const defaultValues = useMemo(() => buildDefaultValues(editItem), [editItem]);
+
+  const filteredResponsibilities = useMemo(
+    () =>
+      responsibilityOptions.filter((option) => option.value !== editItem?.name),
+    [editItem?.name, responsibilityOptions],
+  );
+
+  const {
+    control,
+    handleSubmit: handleRHFSubmit,
+    clearErrors,
+    reset,
+    formState: { errors },
+  } = useForm<PositionFormValues>({
+    defaultValues,
+    resolver: zodResolver(positionFormSchema),
   });
 
-  const positionGroups = useMemo(
-    () => positionGroupQuery.items,
-    [positionGroupQuery.items],
-  );
+  useEffect(() => {
+    if (open) {
+      reset(defaultValues);
+      clearErrors();
+    }
+  }, [clearErrors, defaultValues, open, reset]);
 
-  const groupOptions = useMemo(
-    () => positionGroups.map((g) => ({ label: g.name, value: g.name })),
-    [positionGroups],
-  );
-
-  const responsibilityOptions = useMemo(
-    () => positions.map((p) => ({ label: p.name, value: p.name })),
-    [positions],
-  );
+  const submitForm: SubmitHandler<PositionFormValues> = (values) => {
+    onSubmit({
+      ...values,
+      status: editItem ? values.status : "active",
+    });
+  };
 
   return (
     <FormDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={isEdit ? "Chỉnh sửa chức vụ" : "Thêm chức vụ mới"}
-      onSubmit={onSubmit}
+      title={editItem ? "Chỉnh sửa chức vụ" : "Thêm chức vụ mới"}
+      onSubmit={handleRHFSubmit(submitForm)}
     >
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="code">
-              Mã vai trò <span className="text-red-500 ml-1">*</span>
+            <Label htmlFor="code" required>
+              Mã vai trò
             </Label>
-            <Input
-              id="code"
-              value={formData.code}
-              onChange={(e) =>
-                setFormData({ ...formData, code: e.target.value })
-              }
-              placeholder="VD: POS-GD"
+            <Controller
+              control={control}
+              name="code"
+              render={({ field }) => (
+                <Input
+                  id="code"
+                  placeholder="VD: POS-GD"
+                  aria-invalid={!!errors.code}
+                  value={field.value}
+                  onChange={(e) => {
+                    clearErrors("code");
+                    field.onChange(e.target.value.toUpperCase());
+                  }}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                />
+              )}
             />
+            {errors.code ? (
+              <p className="text-xs text-red-600">{errors.code.message}</p>
+            ) : null}
           </div>
+
           <div className="space-y-2">
-            <Label htmlFor="name">
-              Tên vai trò <span className="text-red-500 ml-1">*</span>
+            <Label htmlFor="name" required>
+              Tên vai trò
             </Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              placeholder="VD: Giám Đốc"
+            <Controller
+              control={control}
+              name="name"
+              render={({ field }) => (
+                <Input
+                  id="name"
+                  placeholder="VD: Giám Đốc"
+                  aria-invalid={!!errors.name}
+                  value={field.value}
+                  onChange={(e) => {
+                    clearErrors("name");
+                    field.onChange(e.target.value);
+                  }}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                />
+              )}
             />
+            {errors.name ? (
+              <p className="text-xs text-red-600">{errors.name.message}</p>
+            ) : null}
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="group">
-            Nhóm chức vụ/chức danh <span className="text-red-500 ml-1">*</span>
+          <Label htmlFor="group" required>
+            Bộ phận
           </Label>
-          <Combobox
-            options={groupOptions}
-            value={formData.group}
-            onChange={(value) => setFormData({ ...formData, group: value })}
-            placeholder="Chọn nhóm chức vụ"
-            searchPlaceholder="Tìm nhóm chức vụ..."
-            emptyText="Không tìm thấy nhóm chức vụ"
+          <Controller
+            control={control}
+            name="group"
+            render={({ field }) => (
+              <Combobox
+                options={groupOptions}
+                value={field.value}
+                onChange={(value) => {
+                  clearErrors("group");
+                  field.onChange(value);
+                }}
+                placeholder="Chọn bộ phận"
+                searchPlaceholder="Tìm bộ phận..."
+                emptyText="Không tìm thấy bộ phận"
+              />
+            )}
           />
+          {errors.group ? (
+            <p className="text-xs text-red-600">{errors.group.message}</p>
+          ) : null}
         </div>
 
         <div className="space-y-2">
           <Label>Danh sách trách nhiệm</Label>
-          <MultiSelect
-            options={responsibilityOptions}
-            value={formData.responsibilities ?? []}
-            placeholder="Chọn các trách nhiệm..."
-            emptyText="Không tìm thấy vai trò"
-            searchPlaceholder="Tìm vai trò..."
-            onChange={(values) =>
-              setFormData({ ...formData, responsibilities: values })
-            }
+          <Controller
+            control={control}
+            name="responsibilities"
+            render={({ field }) => (
+              <MultiSelect
+                options={filteredResponsibilities}
+                value={field.value ?? []}
+                placeholder="Chọn các trách nhiệm..."
+                emptyText="Không tìm thấy vai trò"
+                searchPlaceholder="Tìm vai trò..."
+                onChange={(values) => {
+                  clearErrors("responsibilities");
+                  field.onChange(values);
+                }}
+              />
+            )}
           />
+          {errors.responsibilities ? (
+            <p className="text-xs text-red-600">
+              {errors.responsibilities.message}
+            </p>
+          ) : null}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="description">Mô tả</Label>
-          <Textarea
-            id="description"
-            value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
-            placeholder="Mô tả trách nhiệm và quyền hạn của chức vụ..."
-            rows={4}
+          <Controller
+            control={control}
+            name="description"
+            render={({ field }) => (
+              <Textarea
+                id="description"
+                placeholder="Mô tả trách nhiệm và quyền hạn của chức vụ..."
+                rows={4}
+                aria-invalid={!!errors.description}
+                value={field.value}
+                onChange={(e) => {
+                  clearErrors("description");
+                  field.onChange(e.target.value);
+                }}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+              />
+            )}
           />
+          {errors.description ? (
+            <p className="text-xs text-red-600">{errors.description.message}</p>
+          ) : null}
         </div>
+
+        {editItem ? (
+          <div className="space-y-2">
+            <Label htmlFor="status" required>
+              Trạng thái
+            </Label>
+            <Controller
+              control={control}
+              name="status"
+              render={({ field }) => (
+                <Select
+                  value={field.value}
+                  onValueChange={(value) => {
+                    clearErrors("status");
+                    field.onChange(
+                      normalizeStatus(value as PositionItem["status"]),
+                    );
+                  }}
+                >
+                  <SelectTrigger id="status" aria-invalid={!!errors.status}>
+                    <SelectValue placeholder="Chọn trạng thái" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Hoạt động</SelectItem>
+                    <SelectItem value="inactive">Ngừng hoạt động</SelectItem>
+                    <SelectItem value="archived">Đã lưu trữ</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.status ? (
+              <p className="text-xs text-red-600">{errors.status.message}</p>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </FormDialog>
   );
