@@ -1,8 +1,4 @@
-export type BankDirectoryStatus =
-  | "active"
-  | "inactive"
-  | "archived"
-  | (string & {});
+export type BankDirectoryStatus = "active" | "inactive" | "archived";
 
 export interface BankDirectoryMetadata {
   [key: string]: unknown;

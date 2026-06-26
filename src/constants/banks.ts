@@ -5,10 +5,14 @@ export interface Bank {
   fullName: string;
   shortName?: string;
   bin?: string;
-  address?: string;
   swiftCode?: string;
-  bicCode?: string;
   routingCode?: string;
+  status?: "active" | "inactive" | "archived";
+  transferSupported?: boolean;
+  lookupSupported?: boolean;
+  displayOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export const vietQrBankData = [

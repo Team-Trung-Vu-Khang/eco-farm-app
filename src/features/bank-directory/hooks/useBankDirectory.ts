@@ -1,5 +1,4 @@
-import { useEffect, useMemo } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { bankDirectoryApi } from "../api/bank-directory.api";
 import type {
   BankDirectoryItem,
@@ -24,9 +23,9 @@ export function useBankDirectory({
     Math.max(initialQuery.size ?? DEFAULT_PAGE_SIZE, 1),
     DEFAULT_PAGE_SIZE,
   );
-  const initialPage = initialQuery.page ?? 0;
+  const page = initialQuery.page ?? 0;
 
-  const queryResult = useInfiniteQuery<
+  const queryResult = useQuery<
     BankDirectoryResponse<BankDirectoryItem>,
     Error
   >({
@@ -36,41 +35,23 @@ export function useBankDirectory({
       initialQuery.transferSupported ?? null,
       initialQuery.lookupSupported ?? null,
       initialQuery.status ?? "",
-      initialPage,
+      page,
       pageSize,
     ],
-    queryFn: ({ pageParam = initialPage }) =>
+    queryFn: () =>
       bankDirectoryApi.getBanks({
         ...initialQuery,
-        page: pageParam as number,
+        page,
         size: pageSize,
       }),
-    initialPageParam: initialPage,
-    getNextPageParam: (lastPage) =>
-      lastPage.last ? undefined : lastPage.page + 1,
     enabled,
   });
 
-  useEffect(() => {
-    if (queryResult.hasNextPage && !queryResult.isFetchingNextPage) {
-      void queryResult.fetchNextPage();
-    }
-  }, [
-    queryResult.fetchNextPage,
-    queryResult.hasNextPage,
-    queryResult.isFetchingNextPage,
-  ]);
-
-  const banks = useMemo(
-    () => queryResult.data?.pages.flatMap((page) => page.content) ?? [],
-    [queryResult.data],
-  );
-
   return {
     ...queryResult,
-    banks,
-    response: queryResult.data?.pages.at(-1) ?? null,
-    loading: queryResult.isLoading || queryResult.isFetchingNextPage,
+    banks: queryResult.data?.content ?? [],
+    response: queryResult.data ?? null,
+    loading: queryResult.isLoading,
     error: queryResult.error?.message ?? null,
     refetch: queryResult.refetch,
   };
