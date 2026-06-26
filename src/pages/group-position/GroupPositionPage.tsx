@@ -4,10 +4,10 @@ import {
   Button,
   DataTable,
   DeleteDialog,
-  FormDialog,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
+import { POSITION_GROUP_STATUS_OPTIONS } from "./data/constants";
 import { PositionGroupForm } from "./components/PositionGroupForm";
 import { useGroupPositionForm } from "./hooks/useGroupPositionForm";
 import type { PositionGroup } from "./types";
@@ -37,8 +37,21 @@ const columns: Column<PositionGroup>[] = [
     key: "status",
     label: "Trạng thái",
     render: (value) => (
-      <Badge variant={value === "active" ? "default" : "secondary"}>
-        {value === "active" ? "Đang sử dụng" : "Ngừng sử dụng"}
+      <Badge
+        variant="outline"
+        className={
+          value === "active"
+            ? "rounded-full border-emerald-200 bg-emerald-50 px-2.5 py-1 font-medium text-emerald-700"
+            : value === "inactive"
+              ? "rounded-full border-slate-200 bg-slate-50 px-2.5 py-1 font-medium text-slate-600"
+              : "rounded-full border-amber-200 bg-amber-50 px-2.5 py-1 font-medium text-amber-700"
+        }
+      >
+        {value === "active"
+          ? "Đang sử dụng"
+          : value === "inactive"
+            ? "Ngừng sử dụng"
+            : "Đã lưu trữ"}
       </Badge>
     ),
   },
@@ -47,8 +60,15 @@ const columns: Column<PositionGroup>[] = [
 export default function GroupPositionPage() {
   const {
     data,
-    formData,
-    setFormData,
+    loading,
+    error,
+    response,
+    handleSearch,
+    handleFilterChange,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
     formOpen,
     setFormOpen,
     deleteOpen,
@@ -73,27 +93,43 @@ export default function GroupPositionPage() {
         </Button>
       }
     >
-      <DataTable
-        columns={columns}
-        data={data}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm nhóm chức vụ..."
-      />
+      {error ? (
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+          ⚠️ {error}
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={data}
+          searchable
+          searchPlaceholder="Tìm kiếm nhóm chức vụ..."
+          pageSize={pageSize}
+          currentIndex={currentIndex}
+          totalElements={response?.totalElements}
+          totalPages={response?.totalPages}
+          onSearch={handleSearch}
+          onPageSize={setPageSize}
+          onIndexChange={setCurrentIndex}
+          onFilterChange={handleFilterChange}
+          filters={[
+            {
+              key: "status",
+              label: "Trạng thái",
+              options: POSITION_GROUP_STATUS_OPTIONS,
+            },
+          ]}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          loading={loading}
+        />
+      )}
 
-      <FormDialog
+      <PositionGroupForm
         open={formOpen}
         onOpenChange={setFormOpen}
-        title={editItem ? "Chỉnh sửa nhóm chức vụ" : "Thêm nhóm chức vụ mới"}
+        editItem={editItem}
         onSubmit={handleSubmit}
-      >
-        <PositionGroupForm
-          formData={formData}
-          onChange={(updates) =>
-            setFormData((prev) => ({ ...prev, ...updates }))
-          }
-        />
-      </FormDialog>
+      />
 
       <DeleteDialog
         open={deleteOpen}

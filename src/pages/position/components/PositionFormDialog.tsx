@@ -7,8 +7,8 @@ import {
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useMemo } from "react";
+import { useMasterData } from "@/features/master-data";
 import usePositionStore from "@/stores/usePositionStore";
-import usePositionGroupStore from "@/stores/usePositionGroupStore";
 import type { PositionFormData } from "../types/types";
 
 interface PositionFormDialogProps {
@@ -29,11 +29,16 @@ export function PositionFormDialog({
   onSubmit,
 }: PositionFormDialogProps) {
   const positions = usePositionStore((state) => state.positions);
-  const allPositionGroups = usePositionGroupStore((s) => s.positionGroups);
+  const positionGroupQuery = useMasterData("position-groups", {
+    params: {
+      status: "active",
+      size: 100,
+    },
+  });
 
   const positionGroups = useMemo(
-    () => allPositionGroups.filter((g) => g.status === "active"),
-    [allPositionGroups],
+    () => positionGroupQuery.items,
+    [positionGroupQuery.items],
   );
 
   const groupOptions = useMemo(
