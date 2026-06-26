@@ -1,9 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
-import { uploadFileApi, type StorageFileResponse } from "../api/storage.api";
+import { uploadFileApi } from "../api/storage.api";
+import type { StorageFileUploadResponse } from "../types/storage-file.type";
 
 export function useFileUpload() {
   const uploadFile = useMutation<
-    StorageFileResponse,
+    StorageFileUploadResponse,
     Error,
     { file: File; folder?: string }
   >({

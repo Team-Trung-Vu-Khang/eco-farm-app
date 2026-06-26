@@ -249,7 +249,7 @@ export function useCropFoundationEditForm() {
             file: formData.illustration,
             folder: "crops-illustrations",
           });
-          illustrationUrl = res.fileUrl || res.url;
+          illustrationUrl = res.fileUrl;
           if (illustrationUrl) {
             uploadedFilesCache.current.set(formData.illustration, {
               fileUrl: illustrationUrl,
@@ -299,8 +299,8 @@ export function useCropFoundationEditForm() {
             file: farmingFile,
             folder: "crops/documents",
           });
-          farmingFileUrl = res.fileUrl || res.url;
-          farmingFileName = res.fileName || res.name || farmingFile.name;
+          farmingFileUrl = res.fileUrl;
+          farmingFileName = res.fileName || farmingFile.name;
           if (farmingFileUrl) {
             uploadedFilesCache.current.set(farmingFile, {
               fileUrl: farmingFileUrl,

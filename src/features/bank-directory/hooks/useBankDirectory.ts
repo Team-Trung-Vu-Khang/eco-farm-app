@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { bankApi } from "../api/bank.api";
+import { bankDirectoryApi } from "../api/bank-directory.api";
 import type {
   BankDirectoryItem,
   BankDirectoryQueryParams,
   BankDirectoryResponse,
-} from "../types/bank.type";
+} from "../types/bank-directory.type";
 
 const EMPTY_QUERY: BankDirectoryQueryParams = {};
 
@@ -13,15 +13,19 @@ interface UseBankDirectoryOptions {
   enabled?: boolean;
 }
 
-type UseBankDirectoryResult = ReturnType<
-  typeof useQuery<BankDirectoryResponse<BankDirectoryItem>, Error>
->;
+const DEFAULT_PAGE_SIZE = 100;
 
 export function useBankDirectory({
   initialQuery = EMPTY_QUERY,
   enabled = true,
 }: UseBankDirectoryOptions = {}) {
-  const queryResult: UseBankDirectoryResult = useQuery<
+  const pageSize = Math.min(
+    Math.max(initialQuery.size ?? DEFAULT_PAGE_SIZE, 1),
+    DEFAULT_PAGE_SIZE,
+  );
+  const page = initialQuery.page ?? 0;
+
+  const queryResult = useQuery<
     BankDirectoryResponse<BankDirectoryItem>,
     Error
   >({
@@ -31,10 +35,15 @@ export function useBankDirectory({
       initialQuery.transferSupported ?? null,
       initialQuery.lookupSupported ?? null,
       initialQuery.status ?? "",
-      initialQuery.page ?? null,
-      initialQuery.size ?? null,
+      page,
+      pageSize,
     ],
-    queryFn: () => bankApi.getBanks(initialQuery),
+    queryFn: () =>
+      bankDirectoryApi.getBanks({
+        ...initialQuery,
+        page,
+        size: pageSize,
+      }),
     enabled,
   });
 

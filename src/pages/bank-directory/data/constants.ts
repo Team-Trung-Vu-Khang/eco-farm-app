@@ -7,8 +7,9 @@ export const emptyBankFormData: Bank = {
   fullName: "",
   shortName: "",
   bin: "",
-  address: "",
   swiftCode: "",
-  bicCode: "",
-  routingCode: "",
+  status: "active",
+  transferSupported: true,
+  lookupSupported: true,
+  displayOrder: 0,
 };

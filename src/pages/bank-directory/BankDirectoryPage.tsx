@@ -14,6 +14,12 @@ export default function BankDirectoryPage() {
     data,
     loading,
     error,
+    response,
+    pageSize,
+    currentIndex,
+    setSearch,
+    setPageSize,
+    setCurrentIndex,
     formData,
     formOpen,
     setFormOpen,
@@ -21,7 +27,7 @@ export default function BankDirectoryPage() {
     setDeleteOpen,
     editItem,
     logoPreview,
-    updateFormData,
+    isUploadingLogo,
     handleAdd,
     handleEdit,
     handleDelete,
@@ -47,19 +53,22 @@ export default function BankDirectoryPage() {
         <div className="flex items-center gap-3 rounded-xl bg-red-50 border border-red-200 p-4 text-red-700 text-sm font-medium">
           ⚠️ {error}
         </div>
-      ) : loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
-          <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-blue-500 animate-spin" />
-          <span className="text-sm">Đang tải dữ liệu ngân hàng...</span>
-        </div>
       ) : (
         <DataTable
           columns={bankDirectoryColumns}
           data={data}
-          pageSize={10}
+          searchable
           searchPlaceholder="Tìm kiếm tên, SWIFT code, BIC..."
+          pageSize={pageSize}
+          currentIndex={currentIndex}
+          totalElements={response?.totalElements}
+          totalPages={response?.totalPages}
+          onSearch={setSearch}
+          onPageSize={setPageSize}
+          onIndexChange={setCurrentIndex}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          loading={loading}
         />
       )}
 
@@ -68,8 +77,8 @@ export default function BankDirectoryPage() {
         onOpenChange={setFormOpen}
         editItem={editItem}
         formData={formData}
-        onFormUpdate={updateFormData}
         logoPreview={logoPreview}
+        isUploadingLogo={isUploadingLogo}
         onLogoUpload={handleLogoUpload}
         onRemoveLogo={handleRemoveLogo}
         onSubmit={handleSubmit}

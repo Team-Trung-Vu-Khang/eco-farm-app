@@ -15,7 +15,9 @@ export function useCropFoundationForm() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadedFilesCache = useRef<Map<File, { fileUrl: string; fileName?: string }>>(new Map());
+  const uploadedFilesCache = useRef<
+    Map<File, { fileUrl: string; fileName?: string }>
+  >(new Map());
   const { createCrop } = useCropMutations();
 
   const { uploadFile } = useFileUpload();
@@ -157,15 +159,19 @@ export function useCropFoundationForm() {
       let illustrationUrl = formData.illustration as string | undefined;
       if (formData.illustration instanceof File) {
         if (uploadedFilesCache.current.has(formData.illustration)) {
-          illustrationUrl = uploadedFilesCache.current.get(formData.illustration)?.fileUrl;
+          illustrationUrl = uploadedFilesCache.current.get(
+            formData.illustration,
+          )?.fileUrl;
         } else {
           const res = await uploadFile.mutateAsync({
             file: formData.illustration,
             folder: "crops-illustrations",
           });
-          illustrationUrl = res.fileUrl || res.url;
+          illustrationUrl = res.fileUrl;
           if (illustrationUrl) {
-            uploadedFilesCache.current.set(formData.illustration, { fileUrl: illustrationUrl });
+            uploadedFilesCache.current.set(formData.illustration, {
+              fileUrl: illustrationUrl,
+            });
           }
         }
       }
@@ -210,12 +216,15 @@ export function useCropFoundationForm() {
         } else {
           const res = await uploadFile.mutateAsync({
             file: farmingFile,
-            folder: "crops/documents",
+            folder: "crops-documents",
           });
-          farmingFileUrl = res.fileUrl || res.url;
-          farmingFileName = res.fileName || res.name || farmingFile.name;
+          farmingFileUrl = res.fileUrl;
+          farmingFileName = res.fileName || farmingFile.name;
           if (farmingFileUrl) {
-            uploadedFilesCache.current.set(farmingFile, { fileUrl: farmingFileUrl, fileName: farmingFileName });
+            uploadedFilesCache.current.set(farmingFile, {
+              fileUrl: farmingFileUrl,
+              fileName: farmingFileName,
+            });
           }
         }
       }

@@ -2,17 +2,13 @@ import axios from "axios";
 import type { AuthMeResponse, AuthProvider } from "../types/auth.type";
 import { AUTH_PATHS } from "../../../shared/constants/auth.constants";
 import { authEnv } from "../../../shared/config/auth.env";
+import { apiEnv } from "../../../shared/config/api.env";
+import {
+  API_REQUEST_TIMEOUT,
+  buildApiUrl,
+} from "../../../shared/config/api.config";
 
 const AUTH_TOKEN_STORAGE_KEY = "accessToken";
-const getApiBaseUrl = () => authEnv.apiBaseUrl;
-
-const buildApiUrl = (path: string) => {
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
-  const baseUrl = getApiBaseUrl();
-
-  return baseUrl ? `${baseUrl}${cleanPath}` : cleanPath;
-};
-
 const buildCallbackUrl = () =>
   `${window.location.origin}${authEnv.callbackPath}`;
 
@@ -43,7 +39,10 @@ export const authApi = {
   },
   buildLoginUrl(provider: AuthProvider) {
     const callbackUrl = this.getCallbackUrl();
-    return `${buildApiUrl(`${AUTH_PATHS.login}/${encodeURIComponent(provider)}`)}?callback_url=${encodeURIComponent(callbackUrl)}`;
+    return `${buildApiUrl(
+      apiEnv.apiBaseUrl,
+      `${AUTH_PATHS.login}/${encodeURIComponent(provider)}`,
+    )}?callback_url=${encodeURIComponent(callbackUrl)}`;
   },
   startLogin(provider: AuthProvider) {
     window.location.replace(this.buildLoginUrl(provider));
@@ -57,8 +56,8 @@ export const authApi = {
     }
 
     const response = await axios.get<AuthMeResponse>(AUTH_PATHS.me, {
-      baseURL: authEnv.apiBaseUrl,
-      timeout: 30000,
+      baseURL: apiEnv.apiBaseUrl,
+      timeout: API_REQUEST_TIMEOUT,
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -76,8 +75,8 @@ export const authApi = {
 
     try {
       await axios.post(AUTH_PATHS.logout, null, {
-        baseURL: authEnv.apiBaseUrl,
-        timeout: 30000,
+        baseURL: apiEnv.apiBaseUrl,
+        timeout: API_REQUEST_TIMEOUT,
         headers: {
           Authorization: `Bearer ${token}`,
         },

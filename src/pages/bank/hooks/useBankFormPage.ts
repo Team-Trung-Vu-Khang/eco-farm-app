@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useBankStore from "../../../stores/useBankStore";
-import { BANK_LOGOS, emptyBankFormData } from "../data/constants";
 import type { BankFormData } from "../types/types";
+import { BANK_LOGOS, emptyBankFormData } from "../data/constants";
 
 interface UseBankFormPageOptions {
   mode: "create" | "edit";
@@ -15,9 +15,8 @@ export function useBankFormPage({ mode }: UseBankFormPageOptions) {
   const { toast } = useToast();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const bankAccounts = useBankStore((state) => state.bankAccounts);
-  const addBankAccount = useBankStore((state) => state.addBankAccount);
   const getBankAccountById = useBankStore((state) => state.getBankAccountById);
+  const addBankAccount = useBankStore((state) => state.addBankAccount);
   const updateBankAccount = useBankStore((state) => state.updateBankAccount);
   const deleteBankAccount = useBankStore((state) => state.deleteBankAccount);
 
@@ -68,7 +67,7 @@ export function useBankFormPage({ mode }: UseBankFormPageOptions) {
     return true;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) {
       return;
     }
@@ -84,11 +83,13 @@ export function useBankFormPage({ mode }: UseBankFormPageOptions) {
         description: `Đã cập nhật tài khoản "${formData.bankName} - ${formData.accountNumber}"`,
       });
     } else {
-      const newId =
-        bankAccounts.length > 0 ? Math.max(...bankAccounts.map((b) => b.id)) + 1 : 1;
+      const nextId = Math.max(
+        0,
+        ...useBankStore.getState().bankAccounts.map((account) => account.id),
+      );
 
       addBankAccount({
-        id: newId,
+        id: nextId + 1,
         bankName: formData.bankName,
         accountNumber: formData.accountNumber,
         accountHolder: formData.accountHolder,
@@ -96,12 +97,12 @@ export function useBankFormPage({ mode }: UseBankFormPageOptions) {
         status: formData.status,
         note: formData.note,
         logo: formData.logo,
-        createdAt: new Date().toISOString(),
+        createdAt: new Date().toISOString().split("T")[0],
       });
 
       toast({
-        title: "Thành công",
-        description: `Đã thêm tài khoản ngân hàng "${formData.bankName} - ${formData.accountNumber}"`,
+        title: "Thêm thành công",
+        description: `Đã thêm tài khoản "${formData.bankName} - ${formData.accountNumber}"`,
       });
     }
 

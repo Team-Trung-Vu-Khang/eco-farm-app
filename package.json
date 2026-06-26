@@ -10,7 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@Team-Trung-Vu-Khang/eco-shared-ui": "^0.0.6-beta.1",
+    "@Team-Trung-Vu-Khang/eco-shared-ui": "^0.0.6-beta.7",
+    "@hookform/resolvers": "^5.4.0",
     "@originjs/vite-plugin-federation": "^1.4.1",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-query": "^5.101.1",
@@ -31,6 +32,7 @@
     "tailwindcss": "^4.1.18",
     "wouter": "^3.9.0",
     "xlsx": "^0.18.5",
+    "zod": "^4.4.3",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
