@@ -27,6 +27,7 @@ export default function BankDirectoryPage() {
     setDeleteOpen,
     editItem,
     logoPreview,
+    isUploadingLogo,
     handleAdd,
     handleEdit,
     handleDelete,
@@ -77,6 +78,7 @@ export default function BankDirectoryPage() {
         editItem={editItem}
         formData={formData}
         logoPreview={logoPreview}
+        isUploadingLogo={isUploadingLogo}
         onLogoUpload={handleLogoUpload}
         onRemoveLogo={handleRemoveLogo}
         onSubmit={handleSubmit}

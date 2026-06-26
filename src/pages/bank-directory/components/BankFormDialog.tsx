@@ -23,7 +23,8 @@ interface BankFormDialogProps {
   editItem: Bank | null;
   formData: Bank;
   logoPreview: string;
-  onLogoUpload: (e: ChangeEvent<HTMLInputElement>) => void;
+  isUploadingLogo: boolean;
+  onLogoUpload: (e: ChangeEvent<HTMLInputElement>) => Promise<void> | void;
   onRemoveLogo: () => void;
   onSubmit: (data: Bank) => void;
 }
@@ -34,6 +35,7 @@ export default function BankFormDialog({
   editItem,
   formData,
   logoPreview,
+  isUploadingLogo,
   onLogoUpload,
   onRemoveLogo,
   onSubmit,
@@ -118,7 +120,7 @@ export default function BankFormDialog({
       onSubmit={handleRHFSubmit(submitForm)}
       size="xl"
     >
-      <div className="space-y-4 max-h-[70dvh] overflow-y-auto px-1">
+      <div className="space-y-4 max-h-[70dvh] overflow-y-scroll overflow-x-clip px-1">
         {/* ID */}
         <div className="space-y-2">
           <Label htmlFor="id" required>
@@ -270,7 +272,7 @@ export default function BankFormDialog({
           ) : null}
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        {editItem ? (
           <div className="space-y-2">
             <Label htmlFor="status" required>
               Trạng thái
@@ -301,42 +303,7 @@ export default function BankFormDialog({
               <p className="text-xs text-red-600">{errors.status.message}</p>
             ) : null}
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="displayOrder" required>
-              Thứ tự hiển thị
-            </Label>
-            <Controller
-              control={control}
-              name="displayOrder"
-              render={({ field }) => (
-                <Input
-                  id="displayOrder"
-                  type="number"
-                  min={0}
-                  placeholder="VD: 10"
-                  className="font-mono"
-                  aria-invalid={!!errors.displayOrder}
-                  value={field.value ?? ""}
-                  onChange={(e) => {
-                    clearErrors("displayOrder");
-                    field.onChange(
-                      e.target.value === "" ? undefined : Number(e.target.value),
-                    );
-                  }}
-                  onBlur={field.onBlur}
-                  ref={field.ref}
-                  name={field.name}
-                />
-              )}
-            />
-            {errors.displayOrder ? (
-              <p className="text-xs text-red-600">
-                {errors.displayOrder.message}
-              </p>
-            ) : null}
-          </div>
-        </div>
+        ) : null}
 
         <div className="grid grid-cols-2 gap-3">
           <div className="flex items-center gap-3 rounded-lg border px-4 py-3">
@@ -436,9 +403,10 @@ export default function BankFormDialog({
                 id="logo-upload"
                 type="file"
                 accept="image/*"
+                disabled={isUploadingLogo}
                 onChange={(e) => {
                   clearErrors("logo");
-                  onLogoUpload(e);
+                  void onLogoUpload(e);
                 }}
                 className="hidden"
               />
@@ -446,6 +414,9 @@ export default function BankFormDialog({
           )}
           {errors.logo ? (
             <p className="text-xs text-red-600">{errors.logo.message}</p>
+          ) : null}
+          {isUploadingLogo ? (
+            <p className="text-xs text-muted-foreground">Đang tải logo...</p>
           ) : null}
         </div>
       </div>

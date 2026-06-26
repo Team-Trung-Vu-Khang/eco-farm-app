@@ -4,6 +4,7 @@ import { useBankDirectory as useBankDirectoryQuery } from "../../../features/ban
 import { useCreateBankDirectory } from "../../../features/bank-directory/hooks/useCreateBankDirectory";
 import { useDeleteBankDirectory } from "../../../features/bank-directory/hooks/useDeleteBankDirectory";
 import { useUpdateBankDirectory } from "../../../features/bank-directory/hooks/useUpdateBankDirectory";
+import { useUploadStorageFile } from "../../../features/storage/hooks/useUploadStorageFile";
 import type {
   BankDirectoryCreateRequest,
   BankDirectoryItem,
@@ -71,7 +72,8 @@ function buildUpdatePayload(
     name: normalizeText(formData.fullName),
     logoUrl: formData.logo,
     swiftCode: normalizeText(formData.swiftCode).toUpperCase() || null,
-    transferSupported: formData.transferSupported ?? currentItem.transferSupported,
+    transferSupported:
+      formData.transferSupported ?? currentItem.transferSupported,
     lookupSupported: formData.lookupSupported ?? currentItem.lookupSupported,
     displayOrder: formData.displayOrder ?? currentItem.displayOrder,
     status: formData.status ?? currentItem.status,
@@ -151,6 +153,16 @@ export function useBankDirectory() {
     },
   });
 
+  const uploadLogo = useUploadStorageFile({
+    onError: (err) => {
+      toast({
+        title: "Không thể tải logo",
+        description: err.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const data = useMemo(
     () => directoryBanks.map(mapDirectoryItemToBank),
     [directoryBanks],
@@ -211,15 +223,16 @@ export function useBankDirectory() {
     setDeleteOpen(true);
   };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setLogoPreview(result);
-      };
-      reader.readAsDataURL(file);
+      const uploaded = await uploadLogo.uploadStorageFile({
+        file,
+        folder: "bank-directory",
+      });
+
+      setLogoPreview(uploaded.fileUrl);
+      e.target.value = "";
     }
   };
 
@@ -298,6 +311,7 @@ export function useBankDirectory() {
     setDeleteOpen,
     editItem,
     logoPreview,
+    isUploadingLogo: uploadLogo.isPending,
     handleAdd,
     handleEdit,
     handleDelete,
