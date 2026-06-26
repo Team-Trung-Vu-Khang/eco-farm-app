@@ -3,11 +3,11 @@ import { Image as ImageIcon } from "lucide-react";
 import { Link } from "wouter";
 
 import { categories, cropFoundationTypeOptions } from "./mocks";
-import type { CropFoundation } from "../types/types";
+import type { FoundationCropResponse } from "../../../features/foundation";
 
 export const TABLE_FILTERS = [
   {
-    key: "cropFoundationGroup",
+    key: "cropGroupName",
     label: "Nhóm cây",
     options: categories.map((c) => ({ label: c, value: c })),
   },
@@ -18,11 +18,11 @@ export const TABLE_FILTERS = [
   },
 ];
 
-export const COLUMNS: Column<CropFoundation>[] = [
+export const COLUMNS: Column<FoundationCropResponse>[] = [
   {
     key: "code",
     label: "Mã cây",
-    render: (value: string, item: CropFoundation) => (
+    render: (value: string, item: FoundationCropResponse) => (
       <Link href={`/crop-foundation/${item.id}`}>
         <span className="text-green-600 hover:text-green-700 hover:underline cursor-pointer transition-colors">
           {value}
@@ -31,7 +31,7 @@ export const COLUMNS: Column<CropFoundation>[] = [
     ),
   },
   {
-    key: "illustration",
+    key: "imageUrl",
     label: "Hình ảnh",
     render: (value: string | null) => (
       <div className="w-12 h-12 rounded-lg border bg-muted overflow-hidden flex items-center justify-center shrink-0">
@@ -57,7 +57,7 @@ export const COLUMNS: Column<CropFoundation>[] = [
     ),
   },
   {
-    key: "cropFoundationGroup",
+    key: "cropGroupName",
     label: "Nhóm cây trồng",
     render: (value: string) => (
       <span className="text-sm text-muted-foreground">{value}</span>
@@ -66,10 +66,11 @@ export const COLUMNS: Column<CropFoundation>[] = [
   {
     key: "origin",
     label: "Nguồn gốc",
-    render: (_: any, item: CropFoundation) => (
+    render: (_: any, item: FoundationCropResponse) => (
       <span className="text-sm text-foreground">
         {item.technicalSpecs?.origin || "---"}
       </span>
     ),
   },
 ];
+

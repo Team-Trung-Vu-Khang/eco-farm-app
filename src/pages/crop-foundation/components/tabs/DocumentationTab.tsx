@@ -14,10 +14,10 @@ import {
   Leaf,
   Presentation,
 } from "lucide-react";
-import type { CropFoundation } from "../../types/types";
+import type { FoundationCropResponse } from "../../../../features/foundation";
 
 interface DocumentationTabProps {
-  cropFoundation: CropFoundation;
+  cropFoundation: FoundationCropResponse;
 }
 
 type FileIconConfig = {
@@ -78,7 +78,32 @@ function formatFileSize(bytes: number): string {
 }
 
 export function DocumentationTab({ cropFoundation }: DocumentationTabProps) {
-  const doc = cropFoundation.docs?.farmingTechnique;
+  let doc: any = null;
+  
+  if (cropFoundation.documents && cropFoundation.documents.length > 0) {
+    const farmingDoc = cropFoundation.documents.find((d: any) => d.name === "Kỹ thuật canh tác");
+    if (farmingDoc) {
+      doc = {
+        type: farmingDoc.type || "editor",
+        content: farmingDoc.content,
+        file: farmingDoc.fileUrl ? { name: farmingDoc.fileName || "Tài liệu đính kèm" } : null,
+      };
+    }
+  } else {
+    // Fallback for older data format
+    let docs: any = null;
+    try {
+      if (cropFoundation.metadataJson) {
+        const meta = typeof cropFoundation.metadataJson === "string" 
+          ? JSON.parse(cropFoundation.metadataJson) 
+          : cropFoundation.metadataJson;
+        docs = meta.docs;
+      }
+    } catch (error) {
+      console.error("Failed to parse metadataJson", error);
+    }
+    doc = docs?.farmingTechnique;
+  }
 
   if (!doc) {
     return (
@@ -206,3 +231,4 @@ export function DocumentationTab({ cropFoundation }: DocumentationTabProps) {
     </div>
   );
 }
+

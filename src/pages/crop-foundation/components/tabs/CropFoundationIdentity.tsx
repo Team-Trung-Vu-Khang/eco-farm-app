@@ -1,10 +1,9 @@
 import { Badge, Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Hash, Image as ImageIcon, Sprout } from "lucide-react";
-import { harvestMethodOptions } from "../../data/mocks";
-import type { CropFoundation } from "../../types/types";
+import { Hash, Image as ImageIcon } from "lucide-react";
+import type { FoundationCropResponse } from "../../../../features/foundation";
 
 interface CropFoundationIdentityProps {
-  cropFoundation: CropFoundation;
+  cropFoundation: FoundationCropResponse;
 }
 
 export function CropFoundationIdentity({
@@ -16,9 +15,9 @@ export function CropFoundationIdentity({
         <div className="flex flex-col md:flex-row gap-8 items-center">
           <div className="md:w-[280px] shrink-0">
             <div className="w-full h-[180px] bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 relative group">
-              {cropFoundation.illustration ? (
+              {cropFoundation.imageUrl ? (
                 <img
-                  src={cropFoundation.illustration}
+                  src={cropFoundation.imageUrl}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   alt={cropFoundation.name}
                 />
@@ -39,10 +38,7 @@ export function CropFoundationIdentity({
                 </h2>
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-none px-3 py-1 text-xs font-bold transition-colors">
-                    {cropFoundation.cropFoundationGroup}
-                  </Badge>
-                  <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-none px-3 py-1 text-xs font-bold transition-colors">
-                    {cropFoundation.cropFoundationType}
+                    {cropFoundation.cropGroupName || "Chưa phân nhóm"}
                   </Badge>
                 </div>
               </div>
@@ -62,21 +58,6 @@ export function CropFoundationIdentity({
                   </div>
                 </div>
 
-                {/* <div className="space-y-1.5">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                    Phương pháp thu hoạch
-                  </p>
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center text-emerald-600">
-                      <Sprout className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="text-sm font-bold text-slate-700">
-                      {harvestMethodOptions.find(
-                        (opt) => opt.value === cropFoundation.harvestMethod,
-                      )?.label || cropFoundation.harvestMethod}
-                    </span>
-                  </div>
-                </div> */}
               </div>
             </div>
           </div>
@@ -85,3 +66,4 @@ export function CropFoundationIdentity({
     </Card>
   );
 }
+

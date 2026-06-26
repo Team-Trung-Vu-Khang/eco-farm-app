@@ -3,6 +3,7 @@ export const AUTH_PATHS = {
   login: "/auth/login",
   logout: "/auth/logout",
   me: "/auth/me",
+  refresh: "/auth/refresh",
 } as const;
 
 export const AUTH_DEFAULT_POST_LOGOUT_REDIRECT_URI =

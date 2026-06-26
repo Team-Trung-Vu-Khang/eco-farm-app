@@ -1,4 +1,4 @@
-import useGroupCropStore from "@/stores/useGroupCropStore";
+import { useCatalog } from "../../../../features/foundation";
 import {
   Combobox,
   Input,
@@ -27,10 +27,10 @@ export function BasicInfoStep({
   fileInputRef,
   illustrationPreview,
 }: BasicInfoStepProps) {
-  const { groupCrops } = useGroupCropStore();
+  const { items: groupCrops } = useCatalog("crop-groups");
 
   const groupCropOptions = groupCrops.map((g) => ({
-    value: g.name,
+    value: String(g.id),
     label: g.name,
   }));
 
@@ -77,14 +77,15 @@ export function BasicInfoStep({
 
           <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
-              <Label className="text-sm font-semibold">Nhóm cây trồng</Label>
+              <Label className="text-sm font-semibold">Nhóm cây trồng *</Label>
               <Combobox
                 options={groupCropOptions}
                 placeholder="Chọn nhóm..."
-                value={formData.cropFoundationGroup ?? ""}
-                onChange={(v) => handleUpdateField("cropFoundationGroup", v)}
+                value={formData.cropGroupId ?? ""}
+                onChange={(v) => handleUpdateField("cropGroupId", v)}
               />
             </div>
+
             {/* <div className="space-y-2">
               <Label className="text-sm font-semibold">
                 Phương pháp thu hoạch *

@@ -45,7 +45,10 @@ function VarietyFoundationDetailModal({
         </button>
         <div className="p-6 sm:p-8">
           {varietyFoundation ? (
-            <VarietyFoundationDetailContent varietyFoundation={varietyFoundation} isStandalone={false} />
+            <VarietyFoundationDetailContent
+              varietyFoundation={varietyFoundation}
+              isStandalone={false}
+            />
           ) : (
             <div className="flex flex-col items-center justify-center py-20">
               <p className="text-muted-foreground">
@@ -62,6 +65,7 @@ function VarietyFoundationDetailModal({
 
 const VarietyFoundationPage = () => {
   const {
+    loading,
     varieties,
     deleteOpen,
     setDeleteOpen,
@@ -89,16 +93,23 @@ const VarietyFoundationPage = () => {
         </div>
       }
     >
-      <DataTable
-        columns={varietyFoundationColumns}
-        data={varieties}
-        selectable={false}
-        onView={handleView}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm giống cây (nền tảng)..."
-        filters={varietyFoundationFilters}
-      />
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
+          <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-green-500 animate-spin" />
+          <span className="text-sm">Đang tải danh sách giống cây trồng...</span>
+        </div>
+      ) : (
+        <DataTable
+          columns={varietyFoundationColumns}
+          data={varieties}
+          selectable={false}
+          onView={handleView}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          searchPlaceholder="Tìm kiếm giống cây (nền tảng)..."
+          filters={varietyFoundationFilters}
+        />
+      )}
 
       <VarietyFoundationDetailModal
         open={detailOpen}

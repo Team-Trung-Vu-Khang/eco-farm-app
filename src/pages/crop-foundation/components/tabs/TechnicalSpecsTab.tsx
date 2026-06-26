@@ -5,13 +5,15 @@ import {
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Droplets, FlaskConical, Ruler, Thermometer } from "lucide-react";
-import type { CropFoundation } from "../../types/types";
+import type { FoundationCropResponse } from "../../../../features/foundation";
 
 interface TechnicalSpecsTabProps {
-  cropFoundation: CropFoundation;
+  cropFoundation: FoundationCropResponse;
 }
 
 export function TechnicalSpecsTab({ cropFoundation }: TechnicalSpecsTabProps) {
+  const specs = cropFoundation.technicalSpecs;
+
   return (
     <Card className="border-none shadow-sm ring-1 ring-slate-200/50 bg-white rounded-xl animate-in fade-in slide-in-from-bottom-2 duration-500">
       <CardHeader className="border-b border-slate-100 pb-4">
@@ -32,15 +34,15 @@ export function TechnicalSpecsTab({ cropFoundation }: TechnicalSpecsTabProps) {
               {[
                 {
                   label: "Tên khoa học",
-                  value: cropFoundation.technicalSpecs?.scientificName,
+                  value: specs?.scientificName,
                 },
                 {
                   label: "Họ thực vật",
-                  value: cropFoundation.technicalSpecs?.family,
+                  value: specs?.family,
                 },
                 {
                   label: "Nguồn gốc",
-                  value: cropFoundation.technicalSpecs?.origin,
+                  value: specs?.origin,
                 },
               ].map((item) => (
                 <div
@@ -67,7 +69,9 @@ export function TechnicalSpecsTab({ cropFoundation }: TechnicalSpecsTabProps) {
                   <span className="text-xs font-bold uppercase">Nhiệt độ</span>
                 </div>
                 <p className="text-lg font-bold text-slate-900">
-                  {cropFoundation.technicalSpecs?.tempRange || "--"}
+                  {specs?.temperatureFrom && specs?.temperatureTo
+                    ? `${specs.temperatureFrom} - ${specs.temperatureTo}°C`
+                    : "--"}
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-100 space-y-2">
@@ -76,7 +80,9 @@ export function TechnicalSpecsTab({ cropFoundation }: TechnicalSpecsTabProps) {
                   <span className="text-xs font-bold uppercase">Độ ẩm</span>
                 </div>
                 <p className="text-lg font-bold text-slate-900">
-                  {cropFoundation.technicalSpecs?.humidityRange || "--"}
+                  {specs?.humidityFrom && specs?.humidityTo
+                    ? `${specs.humidityFrom} - ${specs.humidityTo}%`
+                    : "--"}
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-purple-50/50 border border-purple-100 space-y-2">
@@ -85,7 +91,9 @@ export function TechnicalSpecsTab({ cropFoundation }: TechnicalSpecsTabProps) {
                   <span className="text-xs font-bold uppercase">Độ pH đất</span>
                 </div>
                 <p className="text-lg font-bold text-slate-900">
-                  {cropFoundation.technicalSpecs?.phRange || "--"}
+                  {specs?.phFrom && specs?.phTo
+                    ? `${specs.phFrom} - ${specs.phTo}`
+                    : "--"}
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-amber-50/50 border border-amber-100 space-y-2">
@@ -94,7 +102,7 @@ export function TechnicalSpecsTab({ cropFoundation }: TechnicalSpecsTabProps) {
                   <span className="text-xs font-bold uppercase">Mật độ</span>
                 </div>
                 <p className="text-sm font-bold text-slate-900 line-clamp-2">
-                  {cropFoundation.technicalSpecs?.plantingDensity || "--"}
+                  {specs?.plantingDensity || "--"}
                 </p>
               </div>
             </div>
@@ -104,3 +112,4 @@ export function TechnicalSpecsTab({ cropFoundation }: TechnicalSpecsTabProps) {
     </Card>
   );
 }
+

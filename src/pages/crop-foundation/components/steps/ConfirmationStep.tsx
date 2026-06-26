@@ -15,6 +15,7 @@ import {
   Presentation,
   Sprout,
 } from "lucide-react";
+import { useCatalog } from "../../../../features/foundation";
 
 import type { CreateCropFoundationForm } from "../../types/types";
 
@@ -80,6 +81,9 @@ interface ConfirmationStepProps {
 }
 
 export function ConfirmationStep({ formData }: ConfirmationStepProps) {
+  const { items: groupCrops } = useCatalog("crop-groups");
+  const groupName = groupCrops.find(g => String(g.id) === formData.cropGroupId)?.name;
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="text-center space-y-4 py-6">
@@ -109,7 +113,7 @@ export function ConfirmationStep({ formData }: ConfirmationStepProps) {
             {[
               { label: "Mã cây", value: formData.code },
               { label: "Tên cây", value: formData.name },
-              { label: "Nhóm", value: formData.cropFoundationGroup },
+              { label: "Nhóm", value: groupName },
               { label: "Thu hoạch", value: formData.harvestMethod },
             ].map((item) => (
               <div

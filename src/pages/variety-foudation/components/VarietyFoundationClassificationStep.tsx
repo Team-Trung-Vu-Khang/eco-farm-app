@@ -10,7 +10,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Input, Label, cn, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import useCropStore from "../../../stores/useCropStore";
+import { useCrops } from "../../../features/foundation";
 import type { CreateVarietyFoundationForm } from "../types/types";
 
 interface VarietyFoundationClassificationStepProps {
@@ -25,14 +25,14 @@ export function VarietyFoundationClassificationStep({
   formData,
   updateField,
 }: VarietyFoundationClassificationStepProps) {
-  const crops = useCropStore((state) => state.crops);
+  const { items: apiCrops, loading } = useCrops();
   const [startIndex, setStartIndex] = useState(0);
 
-  const cropOptions = crops.map((c) => ({
+  const cropOptions = apiCrops.map((c) => ({
     id: String(c.id),
     name: c.name,
-    image: c.illustration || "",
-    group: c.cropGroup,
+    image: c.imageUrl || "",
+    group: c.cropGroupName || "N/A",
   }));
 
   // Group into columns of 2 items
@@ -88,10 +88,10 @@ export function VarietyFoundationClassificationStep({
                   {col.map((crop) => (
                     <div
                       key={crop.id}
-                      onClick={() => updateField("crop", crop.name)}
+                      onClick={() => updateField("crop", crop.id)}
                       className={cn(
                         "group relative overflow-hidden cursor-pointer rounded-xl border-2 transition-all duration-300 hover:shadow-md p-[5px]",
-                        formData.crop === crop.name
+                        formData.crop === crop.id
                           ? "border-green-600 ring-2 ring-green-600/20 bg-green-50/10"
                           : "border-transparent bg-slate-50 hover:bg-white hover:border-green-200",
                       )}
@@ -103,7 +103,7 @@ export function VarietyFoundationClassificationStep({
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
                         <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
-                        {formData.crop === crop.name && (
+                        {formData.crop === crop.id && (
                           <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-green-600 flex items-center justify-center shadow-lg animate-in zoom-in">
                             <Check className="w-3.5 h-3.5 text-white" />
                           </div>

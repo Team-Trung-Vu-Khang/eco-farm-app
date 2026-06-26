@@ -14,7 +14,22 @@ import { TechnicalSpecsTab } from "./components/tabs/TechnicalSpecsTab";
 import { useCropFoundationDetail } from "./hooks/useCropFoundationDetail";
 
 export default function CropFoundationDetailPage() {
-  const { cropFoundation } = useCropFoundationDetail();
+  const { cropFoundation, loading } = useCropFoundationDetail();
+
+  if (loading) {
+    return (
+      <AdminLayout
+        isDev={true}
+        title="Chi tiết cây trồng"
+        description="Đang tải thông tin chi tiết về cây trồng"
+      >
+        <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400 bg-white rounded-3xl shadow-sm border border-slate-100">
+          <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-green-500 animate-spin" />
+          <span className="text-sm font-medium">Đang tải thông tin cây trồng...</span>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   if (!cropFoundation) {
     return (
@@ -79,3 +94,4 @@ export default function CropFoundationDetailPage() {
     </AdminLayout>
   );
 }
+

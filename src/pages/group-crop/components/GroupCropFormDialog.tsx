@@ -13,6 +13,7 @@ interface GroupCropFormDialogProps {
   formData: GroupCropFormData;
   setFormData: (data: GroupCropFormData) => void;
   onSubmit: () => void;
+  isPending?: boolean;
 }
 
 export const GroupCropFormDialog = ({
@@ -22,6 +23,7 @@ export const GroupCropFormDialog = ({
   formData,
   setFormData,
   onSubmit,
+  isPending,
 }: GroupCropFormDialogProps) => {
   return (
     <FormDialog
@@ -32,6 +34,8 @@ export const GroupCropFormDialog = ({
       }
       size="xl"
       onSubmit={onSubmit}
+      disabled={isPending}
+
     >
       <div className="space-y-6 pt-2 pb-4">
         <div className="grid grid-cols-2 gap-6">

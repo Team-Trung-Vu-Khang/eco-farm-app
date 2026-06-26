@@ -1,38 +1,34 @@
 import { useParams } from "wouter";
-import useCropFoundationStore from "@/stores/useCropFoundationStore";
-import type { CropFoundation } from "../types/types";
-import {
-  generateSeedInfo,
-  generateCropFoundationStatus,
-  generateFarmingHistory,
-  generateDiseaseHistory,
-  generateHarvestHistory,
-  generateIoTData,
-} from "../utils/mockGenerators";
+import { useCropById } from "../../../features/foundation";
+import { useEffect } from "react";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 export function useCropFoundationDetail() {
   const { id } = useParams();
-  const { getCropFoundationById } = useCropFoundationStore();
-  const baseCropFoundation = getCropFoundationById(Number(id));
+  const { toast } = useToast();
 
-  const cropFoundation: CropFoundation | null = baseCropFoundation
-    ? {
-        ...baseCropFoundation,
-        seedInfo: baseCropFoundation.seedInfo || generateSeedInfo(),
-        statusInfo:
-          baseCropFoundation.statusInfo || generateCropFoundationStatus(),
-        farmingHistory:
-          baseCropFoundation.farmingHistory || generateFarmingHistory(),
-        diseaseHistory:
-          baseCropFoundation.diseaseHistory || generateDiseaseHistory(),
-        harvestHistory:
-          baseCropFoundation.harvestHistory || generateHarvestHistory(),
-        iotData: baseCropFoundation.iotData || generateIoTData(),
-      }
-    : null;
+  const cropId = id ? Number(id) : 0;
+  
+  const { data: cropFoundation, isLoading: loading, error } = useCropById(
+    cropId,
+    { enabled: !!cropId }
+  );
+
+  useEffect(() => {
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi tải dữ liệu",
+        description: error.message,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]);
 
   return {
     id,
     cropFoundation,
+    loading,
   };
 }
+

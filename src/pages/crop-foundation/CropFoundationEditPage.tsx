@@ -39,7 +39,7 @@ export default function CropFoundationEditPage() {
       isValid:
         formData.code.length > 0 &&
         formData.name.length > 0 &&
-        formData.cropFoundationGroup.length > 0,
+        formData.cropGroupId.length > 0,
     },
     {
       id: "technical",

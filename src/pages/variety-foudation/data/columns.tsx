@@ -1,4 +1,4 @@
-import { FileText, Hash, Leaf, Sprout } from "lucide-react";
+import { Hash, Leaf, Sprout } from "lucide-react";
 import type { Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { VarietyFoundation } from "../types/types";
 

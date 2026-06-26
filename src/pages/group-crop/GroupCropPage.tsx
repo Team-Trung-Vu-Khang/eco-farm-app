@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   AdminLayout,
   Button,
@@ -12,6 +13,7 @@ import { GroupCropFormDialog } from "./components/GroupCropFormDialog";
 export default function GroupCropPage() {
   const {
     groupCrops,
+    loading,
     formOpen,
     setFormOpen,
     deleteOpen,
@@ -24,7 +26,17 @@ export default function GroupCropPage() {
     handleDelete,
     handleSubmit,
     handleConfirmDelete,
+    isPending,
   } = useGroupCropPage();
+
+  // Workaround for Radix UI Dialog bug where pointer-events: none is left on body
+  useEffect(() => {
+    if (!formOpen && !deleteOpen) {
+      setTimeout(() => {
+        document.body.style.pointerEvents = "auto";
+      }, 500);
+    }
+  }, [formOpen, deleteOpen]);
 
   return (
     <AdminLayout
@@ -41,13 +53,20 @@ export default function GroupCropPage() {
         </Button>
       }
     >
-      <DataTable
-        data={groupCrops}
-        columns={groupCropColumns}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm mã, tên loại cây..."
-      />
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
+          <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-green-500 animate-spin" />
+          <span className="text-sm">Đang tải danh sách nhóm cây trồng...</span>
+        </div>
+      ) : (
+        <DataTable
+          data={groupCrops}
+          columns={groupCropColumns}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          searchPlaceholder="Tìm kiếm mã, tên loại cây..."
+        />
+      )}
 
       <GroupCropFormDialog
         open={formOpen}
@@ -56,12 +75,14 @@ export default function GroupCropPage() {
         formData={formData}
         setFormData={setFormData}
         onSubmit={handleSubmit}
+        isPending={isPending}
       />
 
       <DeleteDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
+        description="Bạn có chắc chắn muốn xóa nhóm cây trồng này? Chỉ có thể xóa khi chưa có dữ liệu gắn kết."
       />
     </AdminLayout>
   );

@@ -2,7 +2,8 @@ import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 
-import useCropFoundationStore from "@/stores/useCropFoundationStore";
+import { useCropMutations } from "../../../features/foundation";
+import { useFileUpload } from "../../../features/storage";
 import { safeConvertLexicalToHtml } from "@/utils/commons";
 import { initialEditorValue } from "../data/mocks";
 import type {
@@ -14,12 +15,15 @@ export function useCropFoundationForm() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { addCropFoundation } = useCropFoundationStore();
+  const uploadedFilesCache = useRef<Map<File, { fileUrl: string; fileName?: string }>>(new Map());
+  const { createCrop } = useCropMutations();
+
+  const { uploadFile } = useFileUpload();
 
   const [formData, setFormData] = useState<CreateCropFoundationForm>({
     code: "TREE-" + Math.floor(1000 + Math.random() * 9000),
     name: "",
-    cropFoundationGroup: "",
+    cropGroupId: "",
     cropFoundationType: "",
     variety: "",
     illustration: null,
@@ -85,7 +89,7 @@ export function useCropFoundationForm() {
   ) => {
     setFormData((prev) => {
       const newData = { ...prev, [field]: value };
-      if (field === "cropFoundationGroup") {
+      if (field === "cropGroupId") {
         newData.cropFoundationType = "";
         newData.variety = "";
       } else if (field === "cropFoundationType") {
@@ -148,53 +152,151 @@ export function useCropFoundationForm() {
   };
 
   const handleComplete = async () => {
-    const illustrationUrl = formData.illustration
-      ? URL.createObjectURL(formData.illustration)
-      : null;
-
-    // Convert doc contents to HTML string if they are editor state
-    const processDocContent = async (doc: any) => {
-      if (doc.type === "editor" && typeof doc.content !== "string") {
-        return await safeConvertLexicalToHtml(doc.content);
+    try {
+      // 1. Upload illustration if it's a File
+      let illustrationUrl = formData.illustration as string | undefined;
+      if (formData.illustration instanceof File) {
+        if (uploadedFilesCache.current.has(formData.illustration)) {
+          illustrationUrl = uploadedFilesCache.current.get(formData.illustration)?.fileUrl;
+        } else {
+          const res = await uploadFile.mutateAsync({
+            file: formData.illustration,
+            folder: "crops-illustrations",
+          });
+          illustrationUrl = res.fileUrl || res.url;
+          if (illustrationUrl) {
+            uploadedFilesCache.current.set(formData.illustration, { fileUrl: illustrationUrl });
+          }
+        }
       }
-      return doc.content;
-    };
 
-    const finalFarmingTechniqueContent = await processDocContent(
-      formData.docs.farmingTechnique,
-    );
-    const finalQualityStandardContent = await processDocContent(
-      formData.docs.qualityStandard,
-    );
+      const processDocContent = async (doc: any) => {
+        if (doc.type === "editor" && typeof doc.content !== "string") {
+          return await safeConvertLexicalToHtml(doc.content);
+        }
+        return doc.content;
+      };
 
-    const finalDocs = {
-      farmingTechnique: {
-        ...formData.docs.farmingTechnique,
-        content: finalFarmingTechniqueContent,
-      },
-      qualityStandard: {
-        ...formData.docs.qualityStandard,
-        content: finalQualityStandardContent,
-      },
-    };
+      const finalFarmingTechniqueContent = await processDocContent(
+        formData.docs.farmingTechnique,
+      );
+      const finalQualityStandardContent = await processDocContent(
+        formData.docs.qualityStandard,
+      );
 
-    addCropFoundation({
-      code: formData.code,
-      name: formData.name,
-      cropFoundationType: formData.cropFoundationType,
-      cropFoundationGroup: formData.cropFoundationGroup,
-      harvestMethod: formData.harvestMethod,
-      illustration: illustrationUrl,
-      technicalSpecs: formData.technicalSpecs,
-      // @ts-ignore - Assuming docs will be supported in the model
-      docs: finalDocs,
-    });
+      const finalDocs = {
+        farmingTechnique: {
+          ...formData.docs.farmingTechnique,
+          content: finalFarmingTechniqueContent,
+        },
+        qualityStandard: {
+          ...formData.docs.qualityStandard,
+          content: finalQualityStandardContent,
+        },
+      };
 
-    toast({
-      title: "Thành công",
-      description: `Đã tạo cây trồng "${formData.name}"`,
-    });
-    setLocation("/crop-foundation");
+      // Prepare documents array for API
+      const documents = [];
+      const farmingFile = finalDocs.farmingTechnique.file;
+
+      let farmingFileUrl: string | undefined = undefined;
+      let farmingFileName: string | undefined = undefined;
+
+      if (farmingFile instanceof File) {
+        if (uploadedFilesCache.current.has(farmingFile)) {
+          const cached = uploadedFilesCache.current.get(farmingFile);
+          farmingFileUrl = cached?.fileUrl;
+          farmingFileName = cached?.fileName;
+        } else {
+          const res = await uploadFile.mutateAsync({
+            file: farmingFile,
+            folder: "crops/documents",
+          });
+          farmingFileUrl = res.fileUrl || res.url;
+          farmingFileName = res.fileName || res.name || farmingFile.name;
+          if (farmingFileUrl) {
+            uploadedFilesCache.current.set(farmingFile, { fileUrl: farmingFileUrl, fileName: farmingFileName });
+          }
+        }
+      }
+
+      if (finalDocs.farmingTechnique.content || farmingFileUrl) {
+        documents.push({
+          type: finalDocs.farmingTechnique.type,
+          name: "Kỹ thuật canh tác",
+          content:
+            typeof finalDocs.farmingTechnique.content === "string"
+              ? finalDocs.farmingTechnique.content
+              : undefined,
+          fileUrl: farmingFileUrl,
+          fileName: farmingFileName,
+        });
+      }
+
+      // parse tempRange back to from/to
+      const tempRange = formData.technicalSpecs.tempRange;
+      const humidityRange = formData.technicalSpecs.humidityRange;
+      const phRange = formData.technicalSpecs.phRange;
+
+      const payload = {
+        code: formData.code || undefined,
+        name: formData.name || undefined,
+        cropGroupId: Number(formData.cropGroupId),
+        description: formData.description || undefined,
+        harvestMethod: formData.harvestMethod || undefined,
+        imageUrl: illustrationUrl,
+        status: "active" as const,
+        technicalSpecs: {
+          scientificName: formData.technicalSpecs.scientificName || undefined,
+          family: formData.technicalSpecs.family || undefined,
+          origin: formData.technicalSpecs.origin || undefined,
+          temperatureFrom: tempRange
+            ? Number(tempRange.split("-")[0]) || undefined
+            : undefined,
+          temperatureTo: tempRange
+            ? Number(tempRange.split("-")[1]) || undefined
+            : undefined,
+          humidityFrom: humidityRange
+            ? Number(humidityRange.split("-")[0]) || undefined
+            : undefined,
+          humidityTo: humidityRange
+            ? Number(humidityRange.split("-")[1]) || undefined
+            : undefined,
+          phFrom: phRange
+            ? Number(phRange.split("-")[0]) || undefined
+            : undefined,
+          phTo: phRange
+            ? Number(phRange.split("-")[1]) || undefined
+            : undefined,
+          plantingDensity: formData.technicalSpecs.plantingDensity || undefined,
+        },
+        documents,
+        metadataJson: { source: "farm-admin" },
+      };
+
+      createCrop.mutate(payload, {
+        onSuccess: () => {
+          toast({
+            title: "Thành công",
+            description: `Đã khởi tạo cây trồng "${formData.name}"`,
+          });
+          setLocation("/crop-foundation");
+        },
+        onError: (err) => {
+          toast({
+            variant: "destructive",
+            title: "Lỗi",
+            description: err.message,
+          });
+        },
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: error.message || "Đã xảy ra lỗi khi tải file lên",
+      });
+    }
   };
 
   const handleCancel = () => setLocation("/crop-foundation");
@@ -213,5 +315,6 @@ export function useCropFoundationForm() {
     handleUpdateDocs,
     handleComplete,
     handleCancel,
+    isPending: createCrop.isPending,
   };
 }

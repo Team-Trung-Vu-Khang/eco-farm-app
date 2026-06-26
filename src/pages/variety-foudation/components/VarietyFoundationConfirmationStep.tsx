@@ -9,8 +9,9 @@ import type { CreateVarietyFoundationForm } from "../types/types";
 interface VarietyFoundationConfirmationStepProps {
   formData: CreateVarietyFoundationForm;
   selectedCrop?: {
-    image: string;
-    group: string;
+    name?: string;
+    image?: string;
+    group?: string;
   };
   mode: "create" | "edit";
 }
@@ -57,7 +58,7 @@ export function VarietyFoundationConfirmationStep({
               ) : null}
               <div>
                 <h4 className="font-bold text-lg text-slate-900">
-                  {formData.crop || "---"}
+                  {selectedCrop?.name || formData.crop || "---"}
                 </h4>
                 <p className="text-sm text-slate-500 font-medium">
                   Nhóm: {selectedCrop?.group || "---"}

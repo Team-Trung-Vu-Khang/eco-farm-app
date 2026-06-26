@@ -2,7 +2,8 @@ import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
 
-import useCropFoundationStore from "@/stores/useCropFoundationStore";
+import { useCropById, useCropMutations } from "../../../features/foundation";
+import { useFileUpload } from "../../../features/storage";
 import { safeConvertLexicalToHtml } from "@/utils/commons";
 import { initialEditorValue } from "../data/mocks";
 import type {
@@ -15,12 +16,19 @@ export function useCropFoundationEditForm() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { getCropFoundationById, updateCropFoundation } = useCropFoundationStore();
+  const uploadedFilesCache = useRef<
+    Map<File, { fileUrl: string; fileName?: string }>
+  >(new Map());
+
+  const cropId = id ? parseInt(id, 10) : 0;
+  const { data: existingData } = useCropById(cropId, { enabled: !!cropId });
+  const { updateCrop } = useCropMutations();
+  const { uploadFile } = useFileUpload();
 
   const [formData, setFormData] = useState<CreateCropFoundationForm>({
     code: "",
     name: "",
-    cropFoundationGroup: "",
+    cropGroupId: "",
     cropFoundationType: "",
     variety: "",
     illustration: null,
@@ -53,50 +61,92 @@ export function useCropFoundationEditForm() {
   });
 
   const [seedSearch, setSeedSearch] = useState("");
-  const [illustrationPreview, setIllustrationPreview] = useState<string | null>(null);
+  const [illustrationPreview, setIllustrationPreview] = useState<string | null>(
+    null,
+  );
 
-  // Initialize form data from store
+  // Initialize form data from api
   useEffect(() => {
-    if (!id) return;
-    const cropFoundationId = parseInt(id, 10);
-    const existingData = getCropFoundationById(cropFoundationId);
-
     if (existingData) {
+      let docs = {
+        farmingTechnique: {
+          type: "editor",
+          content: initialEditorValue,
+          file: null,
+        },
+        qualityStandard: {
+          type: "editor",
+          content: initialEditorValue,
+          file: null,
+        },
+      };
+
+      if (existingData.documents && existingData.documents.length > 0) {
+        const farmingDoc = existingData.documents.find(
+          (d: any) => d.name === "Kỹ thuật canh tác",
+        );
+        if (farmingDoc) {
+          docs.farmingTechnique = {
+            type: (farmingDoc.type as any) || "editor",
+            content: farmingDoc.content || initialEditorValue,
+            file: farmingDoc.fileUrl
+              ? new File([], farmingDoc.fileName || "file", {
+                  type: "application/octet-stream",
+                })
+              : (null as any),
+          };
+        }
+      } else if (existingData.metadataJson) {
+        // Fallback for older data format
+        try {
+          const meta =
+            typeof existingData.metadataJson === "string"
+              ? JSON.parse(existingData.metadataJson)
+              : existingData.metadataJson;
+          if (meta.docs) docs = meta.docs;
+        } catch (e) {
+          console.error("Failed to parse metadataJson");
+        }
+      }
+
+      const specs = existingData.technicalSpecs || {};
+      const tempRange =
+        specs.temperatureFrom && specs.temperatureTo
+          ? `${specs.temperatureFrom}-${specs.temperatureTo}`
+          : "";
+      const humidityRange =
+        specs.humidityFrom && specs.humidityTo
+          ? `${specs.humidityFrom}-${specs.humidityTo}`
+          : "";
+      const phRange =
+        specs.phFrom && specs.phTo ? `${specs.phFrom}-${specs.phTo}` : "";
+
       setFormData({
         code: existingData.code || "",
         name: existingData.name || "",
-        cropFoundationGroup: existingData.cropFoundationGroup || "",
-        cropFoundationType: existingData.cropFoundationType || "",
+        cropGroupId: String(existingData.cropGroupId),
+        cropFoundationType: "",
         variety: "",
-        illustration: existingData.illustration || null,
-        description: "",
+        illustration: existingData.imageUrl || null,
+        description: existingData.description || "",
         selectedSeedIds: [],
         harvestMethod: existingData.harvestMethod || "manual",
-        technicalSpecs: existingData.technicalSpecs || {
-          scientificName: "",
-          family: "",
-          origin: "",
-          tempRange: "",
-          humidityRange: "",
-          phRange: "",
-          plantingDensity: "",
+        technicalSpecs: {
+          scientificName: specs.scientificName || "",
+          family: specs.family || "",
+          origin: specs.origin || "",
+          tempRange,
+          humidityRange,
+          phRange,
+          plantingDensity: specs.plantingDensity || "",
           watering: "",
         },
         growthCycles: [],
-        docs: existingData.docs || {
-          farmingTechnique: { type: "editor", content: initialEditorValue, file: null },
-          qualityStandard: { type: "editor", content: initialEditorValue, file: null },
-        },
+        // @ts-ignore
+        docs,
       });
-    } else {
-      toast({
-        title: "Lỗi",
-        description: "Không tìm thấy thông tin cây trồng",
-        variant: "destructive",
-      });
-      setLocation("/crop-foundation");
     }
-  }, [id, getCropFoundationById, setLocation, toast]);
+  }, [existingData]);
 
   useEffect(() => {
     if (!formData.illustration) {
@@ -122,7 +172,7 @@ export function useCropFoundationEditForm() {
   ) => {
     setFormData((prev) => {
       const newData = { ...prev, [field]: value };
-      if (field === "cropFoundationGroup") {
+      if (field === "cropGroupId") {
         newData.cropFoundationType = "";
         newData.variety = "";
       } else if (field === "cropFoundationType") {
@@ -186,58 +236,171 @@ export function useCropFoundationEditForm() {
 
   const handleComplete = async () => {
     if (!id) return;
-    
-    // If it's a new file, create object URL. If string, keep it.
-    let illustrationUrl = formData.illustration as string | null;
-    if (formData.illustration instanceof File) {
-      illustrationUrl = URL.createObjectURL(formData.illustration);
-    }
 
-    const processDocContent = async (doc: any) => {
-      if (doc.type === "editor" && typeof doc.content !== "string") {
-        return await safeConvertLexicalToHtml(doc.content);
+    try {
+      let illustrationUrl = formData.illustration as string | undefined;
+      if (formData.illustration instanceof File) {
+        if (uploadedFilesCache.current.has(formData.illustration)) {
+          illustrationUrl = uploadedFilesCache.current.get(
+            formData.illustration,
+          )?.fileUrl;
+        } else {
+          const res = await uploadFile.mutateAsync({
+            file: formData.illustration,
+            folder: "crops-illustrations",
+          });
+          illustrationUrl = res.fileUrl || res.url;
+          if (illustrationUrl) {
+            uploadedFilesCache.current.set(formData.illustration, {
+              fileUrl: illustrationUrl,
+            });
+          }
+        }
       }
-      return doc.content;
-    };
 
-    const finalFarmingTechniqueContent = await processDocContent(
-      formData.docs.farmingTechnique,
-    );
-    const finalQualityStandardContent = await processDocContent(
-      formData.docs.qualityStandard,
-    );
+      const processDocContent = async (doc: any) => {
+        if (doc.type === "editor" && typeof doc.content !== "string") {
+          return await safeConvertLexicalToHtml(doc.content);
+        }
+        return doc.content;
+      };
 
-    const finalDocs = {
-      farmingTechnique: {
-        ...formData.docs.farmingTechnique,
-        content: finalFarmingTechniqueContent,
-      },
-      qualityStandard: {
-        ...formData.docs.qualityStandard,
-        content: finalQualityStandardContent,
-      },
-    };
+      const finalFarmingTechniqueContent = await processDocContent(
+        formData.docs.farmingTechnique,
+      );
+      const finalQualityStandardContent = await processDocContent(
+        formData.docs.qualityStandard,
+      );
 
-    updateCropFoundation(parseInt(id, 10), {
-      code: formData.code,
-      name: formData.name,
-      cropFoundationType: formData.cropFoundationType,
-      cropFoundationGroup: formData.cropFoundationGroup,
-      harvestMethod: formData.harvestMethod,
-      illustration: illustrationUrl,
-      technicalSpecs: formData.technicalSpecs,
-      // @ts-ignore
-      docs: finalDocs,
-    });
+      const finalDocs = {
+        farmingTechnique: {
+          ...formData.docs.farmingTechnique,
+          content: finalFarmingTechniqueContent,
+        },
+        qualityStandard: {
+          ...formData.docs.qualityStandard,
+          content: finalQualityStandardContent,
+        },
+      };
 
-    toast({
-      title: "Thành công",
-      description: `Đã cập nhật cây trồng "${formData.name}"`,
-    });
-    setLocation(`/crop-foundation/${id}`);
+      const documents = [];
+      const farmingFile = finalDocs.farmingTechnique.file;
+
+      let farmingFileUrl: string | undefined = undefined;
+      let farmingFileName: string | undefined = undefined;
+
+      if (farmingFile instanceof File && farmingFile.size > 0) {
+        if (uploadedFilesCache.current.has(farmingFile)) {
+          const cached = uploadedFilesCache.current.get(farmingFile);
+          farmingFileUrl = cached?.fileUrl;
+          farmingFileName = cached?.fileName;
+        } else {
+          const res = await uploadFile.mutateAsync({
+            file: farmingFile,
+            folder: "crops/documents",
+          });
+          farmingFileUrl = res.fileUrl || res.url;
+          farmingFileName = res.fileName || res.name || farmingFile.name;
+          if (farmingFileUrl) {
+            uploadedFilesCache.current.set(farmingFile, {
+              fileUrl: farmingFileUrl,
+              fileName: farmingFileName,
+            });
+          }
+        }
+      } else if (existingData?.documents) {
+        const existingDoc = existingData.documents.find(
+          (d: any) => d.name === "Kỹ thuật canh tác",
+        );
+        if (existingDoc) {
+          farmingFileUrl = existingDoc.fileUrl;
+          farmingFileName = existingDoc.fileName;
+        }
+      }
+
+      if (finalDocs.farmingTechnique.content || farmingFileUrl) {
+        documents.push({
+          type: finalDocs.farmingTechnique.type,
+          name: "Kỹ thuật canh tác",
+          content:
+            typeof finalDocs.farmingTechnique.content === "string"
+              ? finalDocs.farmingTechnique.content
+              : undefined,
+          fileUrl: farmingFileUrl,
+          fileName: farmingFileName,
+        });
+      }
+
+      const tempRange = formData.technicalSpecs.tempRange;
+      const humidityRange = formData.technicalSpecs.humidityRange;
+      const phRange = formData.technicalSpecs.phRange;
+
+      const payload = {
+        code: formData.code || undefined,
+        name: formData.name || undefined,
+        cropGroupId: Number(formData.cropGroupId),
+        description: formData.description || undefined,
+        harvestMethod: formData.harvestMethod || undefined,
+        imageUrl: illustrationUrl || undefined,
+        status: "active" as const,
+        technicalSpecs: {
+          scientificName: formData.technicalSpecs.scientificName || undefined,
+          family: formData.technicalSpecs.family || undefined,
+          origin: formData.technicalSpecs.origin || undefined,
+          temperatureFrom: tempRange
+            ? Number(tempRange.split("-")[0]) || undefined
+            : undefined,
+          temperatureTo: tempRange
+            ? Number(tempRange.split("-")[1]) || undefined
+            : undefined,
+          humidityFrom: humidityRange
+            ? Number(humidityRange.split("-")[0]) || undefined
+            : undefined,
+          humidityTo: humidityRange
+            ? Number(humidityRange.split("-")[1]) || undefined
+            : undefined,
+          phFrom: phRange
+            ? Number(phRange.split("-")[0]) || undefined
+            : undefined,
+          phTo: phRange
+            ? Number(phRange.split("-")[1]) || undefined
+            : undefined,
+          plantingDensity: formData.technicalSpecs.plantingDensity || undefined,
+        },
+        documents,
+        metadataJson: { source: "farm-admin" },
+      };
+
+      updateCrop.mutate(
+        { id: parseInt(id, 10), data: payload },
+        {
+          onSuccess: () => {
+            toast({
+              title: "Thành công",
+              description: `Đã cập nhật cây trồng "${formData.name}"`,
+            });
+            setLocation(`/crop-foundation/${id}`);
+          },
+          onError: (err) => {
+            toast({
+              variant: "destructive",
+              title: "Lỗi",
+              description: err.message,
+            });
+          },
+        },
+      );
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: error.message || "Đã xảy ra lỗi khi tải file lên",
+      });
+    }
   };
 
-  const handleCancel = () => setLocation(id ? `/crop-foundation/${id}` : "/crop-foundation");
+  const handleCancel = () =>
+    setLocation(id ? `/crop-foundation/${id}` : "/crop-foundation");
 
   return {
     formData,
@@ -253,5 +416,6 @@ export function useCropFoundationEditForm() {
     handleUpdateDocs,
     handleComplete,
     handleCancel,
+    isPending: updateCrop.isPending || uploadFile.isPending,
   };
 }
