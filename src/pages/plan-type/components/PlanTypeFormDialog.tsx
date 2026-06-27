@@ -9,8 +9,11 @@ import {
   SelectValue,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { CATEGORY_LABELS } from "../data/constants";
-import type { PlanTypeCategory, PlanTypeFormData } from "../types/types";
+import { PLAN_TYPE_STATUS_OPTIONS } from "../data/constants";
+import type {
+  PlanGroupOption,
+  PlanTypeFormData,
+} from "../types/types";
 
 interface PlanTypeFormDialogProps {
   open: boolean;
@@ -18,6 +21,7 @@ interface PlanTypeFormDialogProps {
   isEdit: boolean;
   formData: PlanTypeFormData;
   setFormData: (data: PlanTypeFormData) => void;
+  planGroupOptions: PlanGroupOption[];
   onSubmit: () => void;
 }
 
@@ -27,6 +31,7 @@ export function PlanTypeFormDialog({
   isEdit,
   formData,
   setFormData,
+  planGroupOptions,
   onSubmit,
 }: PlanTypeFormDialogProps) {
   return (
@@ -37,7 +42,7 @@ export function PlanTypeFormDialog({
       onSubmit={onSubmit}
     >
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label
               htmlFor="code"
@@ -54,71 +59,105 @@ export function PlanTypeFormDialog({
                   code: e.target.value.toUpperCase(),
                 })
               }
-              placeholder="VD: KHCT, BVTV..."
+              placeholder="VD: KHCT"
             />
           </div>
+
           <div className="space-y-2">
-            <Label htmlFor="category">Nhóm phân loại</Label>
+            <Label
+              htmlFor="name"
+              className="after:ml-0.5 after:text-red-500 after:content-['*']"
+            >
+              Tên loại kế hoạch
+            </Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              placeholder="VD: Kế hoạch canh tác"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="planGroupId" required>
+              Nhóm kế hoạch
+            </Label>
             <Select
-              value={formData.category}
+              value={formData.planGroupId}
               onValueChange={(value) =>
-                setFormData({
-                  ...formData,
-                  category: value as PlanTypeCategory,
-                })
+                setFormData({ ...formData, planGroupId: value })
               }
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn nhóm" />
+              <SelectTrigger id="planGroupId">
+                <SelectValue placeholder="Chọn nhóm kế hoạch" />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>
-                    {label}
+                {planGroupOptions.map((option) => (
+                  <SelectItem key={option.id} value={String(option.id)}>
+                    {option.name} ({option.code})
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-        </div>
 
-        <div className="space-y-2">
-          <Label
-            htmlFor="name"
-            className="after:ml-0.5 after:text-red-500 after:content-['*']"
-          >
-            Tên loại kế hoạch
-          </Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="VD: Kế hoạch vụ Đông Xuân..."
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="color">Màu nhận diện</Label>
-          <div className="flex gap-2">
-            <Input
-              id="color"
-              type="color"
-              value={formData.color}
-              onChange={(e) =>
-                setFormData({ ...formData, color: e.target.value })
-              }
-              className="h-10 w-12 cursor-pointer p-1"
-            />
-            <Input
-              value={formData.color}
-              onChange={(e) =>
-                setFormData({ ...formData, color: e.target.value })
-              }
-              placeholder="#000000"
-              className="flex-1"
-            />
+          <div className="space-y-2">
+            <Label htmlFor="color">Màu nhận diện</Label>
+            <div className="flex gap-2">
+              <Input
+                id="color"
+                type="color"
+                value={formData.color}
+                onChange={(e) =>
+                  setFormData({ ...formData, color: e.target.value })
+                }
+                className="h-10 w-12 cursor-pointer p-1"
+              />
+              <Input
+                value={formData.color}
+                onChange={(e) =>
+                  setFormData({ ...formData, color: e.target.value })
+                }
+                placeholder="#10b981"
+                className="flex-1"
+              />
+            </div>
           </div>
         </div>
+
+        {isEdit ? (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="status" required>
+                Trạng thái
+              </Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    status: value as PlanTypeFormData["status"],
+                  })
+                }
+              >
+                <SelectTrigger id="status">
+                  <SelectValue placeholder="Chọn trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PLAN_TYPE_STATUS_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        ) : null}
 
         <div className="space-y-2">
           <Label htmlFor="description">Mô tả chi tiết</Label>

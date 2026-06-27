@@ -1,24 +1,24 @@
-export type PlanTypeCategory =
-  | "cultivation"
-  | "processing"
-  | "distribution"
-  | "financial"
-  | "other";
+import type {
+  MasterDataStatus,
+  PlanGroupRecord,
+  PlanTypeRecord,
+} from "@/features/master-data/types/master-data.type";
 
-export interface PlanType {
-  id: number;
-  code: string;
-  name: string;
-  category: PlanTypeCategory;
-  description: string;
-  color: string;
-  createdAt: string;
-}
+export type PlanType = PlanTypeRecord;
 
 export interface PlanTypeFormData {
   code: string;
   name: string;
-  category: PlanTypeCategory;
   description: string;
   color: string;
+  displayOrder: number;
+  status: MasterDataStatus;
+  planGroupId: string;
 }
+
+export interface PlanTypeFormOption {
+  label: string;
+  value: string;
+}
+
+export type PlanGroupOption = Pick<PlanGroupRecord, "id" | "name" | "code">;

@@ -1,5 +1,8 @@
 import { apiClient } from "@/shared/lib/axios";
-import { MASTER_DATA_PATHS, type MasterDataCatalog } from "@/shared/constants/master-data.constants";
+import {
+  MASTER_DATA_PATHS,
+  type MasterDataCatalog,
+} from "@/shared/constants/master-data.constants";
 
 import type {
   BusinessLineCreateRequest,
@@ -17,6 +20,10 @@ import type {
   MasterDataQueryParams,
   MasterDataRecord,
   MasterDataUpdateRequest,
+  PlanGroupCreateRequest,
+  PlanTypeCreateRequest,
+  PlanTypeRecord,
+  PlanTypeUpdateRequest,
   PositionResponsibilitiesQueryParams,
   PositionResponsibilitiesResponse,
   VsicIndustryCreateRequest,
@@ -25,6 +32,8 @@ import type {
   VsicIndustryTreeQueryParams,
   VsicIndustryTreeResponse,
   VsicIndustryUpdateRequest,
+  PlanGroupRecord,
+  PlanGroupUpdateRequest,
 } from "../types/master-data.type";
 
 export const masterDataApi = {
@@ -33,10 +42,9 @@ export const masterDataApi = {
     params?: MasterDataQueryParams,
   ) =>
     apiClient
-      .get<MasterDataPageResponse<MasterDataRecord<C>>>(
-        `${MASTER_DATA_PATHS.base}/${catalog}`,
-        { params },
-      )
+      .get<
+        MasterDataPageResponse<MasterDataRecord<C>>
+      >(`${MASTER_DATA_PATHS.base}/${catalog}`, { params })
       .then((response) => response.data),
 
   getById: <C extends MasterDataCatalog>(catalog: C, id: number | string) =>
@@ -49,7 +57,9 @@ export const masterDataApi = {
     payload: MasterDataCreateRequest<C>,
   ) =>
     apiClient
-      .post<MasterDataRecord<C>>(`${MASTER_DATA_PATHS.base}/${catalog}`, payload)
+      .post<
+        MasterDataRecord<C>
+      >(`${MASTER_DATA_PATHS.base}/${catalog}`, payload)
       .then((response) => response.data),
 
   update: <C extends MasterDataCatalog>(
@@ -58,10 +68,9 @@ export const masterDataApi = {
     payload: MasterDataUpdateRequest<C>,
   ) =>
     apiClient
-      .put<MasterDataRecord<C>>(
-        `${MASTER_DATA_PATHS.base}/${catalog}/${id}`,
-        payload,
-      )
+      .put<
+        MasterDataRecord<C>
+      >(`${MASTER_DATA_PATHS.base}/${catalog}/${id}`, payload)
       .then((response) => response.data),
 
   delete: <C extends MasterDataCatalog>(
@@ -85,18 +94,16 @@ export const masterDataApi = {
 
   listCertificateIssuers: (params?: MasterDataQueryParams) =>
     apiClient
-      .get<MasterDataPageResponse<CertificateIssuerRecord>>(
-        `${MASTER_DATA_PATHS.base}/certificate-issuers`,
-        { params },
-      )
+      .get<
+        MasterDataPageResponse<CertificateIssuerRecord>
+      >(`${MASTER_DATA_PATHS.base}/certificate-issuers`, { params })
       .then((response) => response.data),
 
   listBusinessLines: (params?: MasterDataQueryParams) =>
     apiClient
-      .get<MasterDataPageResponse<BusinessLineRecord>>(
-        MASTER_DATA_PATHS.businessLines,
-        { params },
-      )
+      .get<
+        MasterDataPageResponse<BusinessLineRecord>
+      >(MASTER_DATA_PATHS.businessLines, { params })
       .then((response) => response.data),
 
   getCertificateIssuerById: (id: number | string) =>
@@ -108,9 +115,7 @@ export const masterDataApi = {
 
   getBusinessLineById: (id: number | string) =>
     apiClient
-      .get<BusinessLineRecord>(
-        `${MASTER_DATA_PATHS.businessLines}/${id}`,
-      )
+      .get<BusinessLineRecord>(`${MASTER_DATA_PATHS.businessLines}/${id}`)
       .then((response) => response.data),
 
   createCertificateIssuer: (payload: CertificateIssuerCreateRequest) =>
@@ -123,10 +128,7 @@ export const masterDataApi = {
 
   createBusinessLine: (payload: BusinessLineCreateRequest) =>
     apiClient
-      .post<BusinessLineRecord>(
-        MASTER_DATA_PATHS.businessLines,
-        payload,
-      )
+      .post<BusinessLineRecord>(MASTER_DATA_PATHS.businessLines, payload)
       .then((response) => response.data),
 
   updateCertificateIssuer: (
@@ -161,26 +163,78 @@ export const masterDataApi = {
       .delete(`${MASTER_DATA_PATHS.businessLines}/${id}`)
       .then(() => undefined),
 
+  listPlanGroups: (params?: MasterDataQueryParams) =>
+    apiClient
+      .get<
+        MasterDataPageResponse<PlanGroupRecord>
+      >(MASTER_DATA_PATHS.planGroups, { params })
+      .then((response) => response.data),
+
+  getPlanGroupById: (id: number | string) =>
+    apiClient
+      .get<PlanGroupRecord>(`${MASTER_DATA_PATHS.planGroups}/${id}`)
+      .then((response) => response.data),
+
+  createPlanGroup: (payload: PlanGroupCreateRequest) =>
+    apiClient
+      .post<PlanGroupRecord>(MASTER_DATA_PATHS.planGroups, payload)
+      .then((response) => response.data),
+
+  updatePlanGroup: (
+    id: number | string,
+    payload: PlanGroupUpdateRequest,
+  ) =>
+    apiClient
+      .put<PlanGroupRecord>(`${MASTER_DATA_PATHS.planGroups}/${id}`, payload)
+      .then((response) => response.data),
+
+  deletePlanGroup: (id: number | string): Promise<void> =>
+    apiClient
+      .delete(`${MASTER_DATA_PATHS.planGroups}/${id}`)
+      .then(() => undefined),
+
+  listPlanTypes: (params?: MasterDataQueryParams) =>
+    apiClient
+      .get<
+        MasterDataPageResponse<PlanTypeRecord>
+      >(MASTER_DATA_PATHS.planTypes, { params })
+      .then((response) => response.data),
+
+  getPlanTypeById: (id: number | string) =>
+    apiClient
+      .get<PlanTypeRecord>(`${MASTER_DATA_PATHS.planTypes}/${id}`)
+      .then((response) => response.data),
+
+  createPlanType: (payload: PlanTypeCreateRequest) =>
+    apiClient
+      .post<PlanTypeRecord>(MASTER_DATA_PATHS.planTypes, payload)
+      .then((response) => response.data),
+
+  updatePlanType: (id: number | string, payload: PlanTypeUpdateRequest) =>
+    apiClient
+      .put<PlanTypeRecord>(`${MASTER_DATA_PATHS.planTypes}/${id}`, payload)
+      .then((response) => response.data),
+
+  deletePlanType: (id: number | string): Promise<void> =>
+    apiClient
+      .delete(`${MASTER_DATA_PATHS.planTypes}/${id}`)
+      .then(() => undefined),
+
   listVsicIndustries: (params?: MasterDataQueryParams) =>
     apiClient
-      .get<MasterDataPageResponse<VsicIndustryRecord>>(
-        MASTER_DATA_PATHS.vsicIndustries,
-        { params },
-      )
+      .get<
+        MasterDataPageResponse<VsicIndustryRecord>
+      >(MASTER_DATA_PATHS.vsicIndustries, { params })
       .then((response) => response.data),
 
   getVsicIndustryById: (id: number | string) =>
     apiClient
-      .get<VsicIndustryRecord>(
-        `${MASTER_DATA_PATHS.vsicIndustries}/${id}`,
-      )
+      .get<VsicIndustryRecord>(`${MASTER_DATA_PATHS.vsicIndustries}/${id}`)
       .then((response) => response.data),
 
   getVsicIndustryByCode: (code: string) =>
     apiClient
-      .get<VsicIndustryRecord>(
-        `${MASTER_DATA_PATHS.vsicIndustries}/${code}`,
-      )
+      .get<VsicIndustryRecord>(`${MASTER_DATA_PATHS.vsicIndustries}/${code}`)
       .then((response) => response.data),
 
   listVsicIndustryChildrenByCode: (code: string) =>
@@ -200,10 +254,7 @@ export const masterDataApi = {
 
   createVsicIndustry: (payload: VsicIndustryCreateRequest) =>
     apiClient
-      .post<VsicIndustryRecord>(
-        MASTER_DATA_PATHS.vsicIndustries,
-        payload,
-      )
+      .post<VsicIndustryRecord>(MASTER_DATA_PATHS.vsicIndustries, payload)
       .then((response) => response.data),
 
   updateVsicIndustry: (
@@ -240,10 +291,9 @@ export const masterDataApi = {
 
   listCertificateStandards: (params?: MasterDataQueryParams) =>
     apiClient
-      .get<MasterDataPageResponse<CertificateStandardRecord>>(
-        `${MASTER_DATA_PATHS.base}/certificate-standards`,
-        { params },
-      )
+      .get<
+        MasterDataPageResponse<CertificateStandardRecord>
+      >(`${MASTER_DATA_PATHS.base}/certificate-standards`, { params })
       .then((response) => response.data),
 
   getCertificateStandardById: (id: number | string) =>

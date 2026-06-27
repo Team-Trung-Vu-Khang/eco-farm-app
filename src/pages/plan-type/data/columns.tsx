@@ -1,12 +1,13 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { CATEGORY_LABELS } from "./constants";
 import type { PlanType } from "../types/types";
 
 export const planTypeColumns: Column<PlanType>[] = [
   {
     key: "code",
     label: "Mã loại",
-    render: (value) => <span className="font-medium font-mono">{value}</span>,
+    render: (value) => (
+      <span className="font-medium font-mono">{String(value ?? "")}</span>
+    ),
   },
   {
     key: "name",
@@ -17,16 +18,33 @@ export const planTypeColumns: Column<PlanType>[] = [
           className="h-3 w-3 rounded-full shadow-sm"
           style={{ backgroundColor: row.color }}
         />
-        <span className="font-semibold">{value}</span>
+        <span className="font-semibold">{String(value ?? "")}</span>
       </div>
     ),
   },
   {
-    key: "category",
-    label: "Nhóm",
-    render: (value) => (
+    key: "planGroup",
+    label: "Nhóm kế hoạch",
+    render: (_value, row) => (
       <Badge variant="outline" className="bg-background">
-        {CATEGORY_LABELS[value as string] || value}
+        {row.planGroup?.name ?? row.planGroup?.code ?? "Chưa phân nhóm"}
+      </Badge>
+    ),
+  },
+  {
+    key: "status",
+    label: "Trạng thái",
+    render: (value) => (
+      <Badge
+        variant={
+          (value as PlanType["status"]) === "active" ? "default" : "secondary"
+        }
+      >
+        {(value as PlanType["status"]) === "active"
+          ? "Hoạt động"
+          : (value as PlanType["status"]) === "inactive"
+            ? "Ngừng hoạt động"
+            : "Đã lưu trữ"}
       </Badge>
     ),
   },
@@ -35,10 +53,10 @@ export const planTypeColumns: Column<PlanType>[] = [
     label: "Mô tả",
     render: (value) => (
       <span
-        className="block max-w-[300px] truncate text-muted-foreground"
-        title={value}
+        className="block max-w-[320px] truncate text-muted-foreground"
+        title={String(value ?? "")}
       >
-        {value}
+        {String(value ?? "")}
       </span>
     ),
   },

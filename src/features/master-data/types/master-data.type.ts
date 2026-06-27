@@ -66,6 +66,7 @@ export interface MasterDataAttributesMap {
     ld50Threshold?: string;
   };
   "plan-groups": Record<string, unknown>;
+  "plan-types": Record<string, unknown>;
   "position-groups": Record<string, unknown>;
   positions: Record<string, never>;
   "certificate-issuers": Record<string, unknown>;
@@ -90,6 +91,10 @@ export interface MasterDataRequestExtraFieldsMap {
     validityMonths?: number | null;
     issuerIds?: number[];
     documents?: CertificateStandardDocumentInput[];
+  };
+  "plan-types": {
+    color: string;
+    planGroupId?: number | null;
   };
   "vsic-industries": {
     level: number;
@@ -116,6 +121,10 @@ export interface MasterDataRecordExtraFieldsMap {
     validityMonths: number;
     issuers: CertificateIssuerRecord[];
     documents: CertificateStandardDocument[];
+  };
+  "plan-types": {
+    color: string;
+    planGroup?: PlanGroupRecord | null;
   };
   "vsic-industries": {
     level: number;
@@ -256,6 +265,9 @@ export type PositionResponsibilitiesResponse = PositionResponsibilityItem[];
 
 export type CertificateIssuerRecord = MasterDataRecord<"certificate-issuers">;
 export type BusinessLineRecord = MasterDataRecord<"business-lines">;
+export type PlanGroupRecord = MasterDataRecord<"plan-groups">;
+export type PlanGroupCreateRequest = MasterDataCreateRequest<"plan-groups">;
+export type PlanGroupUpdateRequest = MasterDataUpdateRequest<"plan-groups">;
 
 export type CertificateIssuerCreateRequest =
   MasterDataCreateRequest<"certificate-issuers"> &
@@ -266,12 +278,14 @@ export type CertificateIssuerUpdateRequest =
     Partial<CertificateIssuerFields>;
 
 export type CertificateStandardRecord = MasterDataRecord<"certificate-standards">;
+export type PlanTypeRecord = MasterDataRecord<"plan-types">;
 export type VsicIndustryRecord = MasterDataRecord<"vsic-industries">;
 export type VsicIndustryChildrenRecord = VsicIndustryRecord[];
 export type VsicIndustryTreeRecord = VsicIndustryRecord & {
   children?: Array<VsicIndustryTreeRecord | string>;
 };
 export type VsicIndustryTreeResponse = VsicIndustryTreeRecord[];
+export type PlanTypePageResponse = MasterDataPageResponse<PlanTypeRecord>;
 
 export type BusinessLineCreateRequest = MasterDataCreateRequest<"business-lines">;
 export type BusinessLineUpdateRequest = MasterDataUpdateRequest<"business-lines">;
@@ -288,6 +302,20 @@ export interface VsicIndustryMutationRequest {
 
 export type VsicIndustryCreateRequest = VsicIndustryMutationRequest;
 export type VsicIndustryUpdateRequest = VsicIndustryMutationRequest;
+
+export interface PlanTypeMutationRequest {
+  code: string;
+  name: string;
+  color: string;
+  description: string;
+  planGroupId: number;
+  displayOrder: number;
+  status: MasterDataStatus;
+  metadataJson?: Record<string, unknown> | null;
+}
+
+export type PlanTypeCreateRequest = PlanTypeMutationRequest;
+export type PlanTypeUpdateRequest = PlanTypeMutationRequest;
 
 export interface CertificateStandardCreateRequest {
   code: string;
