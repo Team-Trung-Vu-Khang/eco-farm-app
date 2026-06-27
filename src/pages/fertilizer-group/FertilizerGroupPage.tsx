@@ -6,24 +6,37 @@ import {
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useFertilizerGroupPage } from "./hooks/useFertilizerGroupPage";
-import { fertilizerGroupColumns } from "./data/columns";
+import { fertilizerGroupColumns } from "./data/columns.tsx";
 import { FertilizerGroupFormDialog } from "./components/FertilizerGroupFormDialog";
+
+const FERTILIZER_GROUP_STATUS_OPTIONS = [
+  { value: "active", label: "Hoạt động" },
+  { value: "inactive", label: "Ngừng hoạt động" },
+  { value: "archived", label: "Đã lưu trữ" },
+] as const;
 
 const FertilizerGroupPage = () => {
   const {
     data,
+    loading,
+    error,
+    response,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
     formOpen,
     setFormOpen,
     deleteOpen,
     setDeleteOpen,
     editItem,
-    formData,
-    setFormData,
     handleAdd,
     handleEdit,
     handleDelete,
     handleSubmit,
     handleConfirmDelete,
+    handleSearch,
+    handleFilterChange,
   } = useFertilizerGroupPage();
 
   return (
@@ -38,20 +51,41 @@ const FertilizerGroupPage = () => {
         </Button>
       }
     >
-      <DataTable
-        columns={fertilizerGroupColumns}
-        data={data}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm nhóm phân bón..."
-      />
+      {error ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+          ⚠️ {error}
+        </div>
+      ) : (
+        <DataTable
+          columns={fertilizerGroupColumns}
+          data={data}
+          searchable
+          searchPlaceholder="Tìm kiếm nhóm phân bón..."
+          pageSize={pageSize}
+          currentIndex={currentIndex}
+          totalElements={response?.totalElements}
+          totalPages={response?.totalPages}
+          onSearch={handleSearch}
+          onPageSize={setPageSize}
+          onIndexChange={setCurrentIndex}
+          onFilterChange={handleFilterChange}
+          filters={[
+            {
+              key: "status",
+              label: "Trạng thái",
+              options: [...FERTILIZER_GROUP_STATUS_OPTIONS],
+            },
+          ]}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          loading={loading}
+        />
+      )}
 
       <FertilizerGroupFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
-        isEdit={!!editItem}
-        formData={formData}
-        setFormData={setFormData}
+        editItem={editItem}
         onSubmit={handleSubmit}
       />
 

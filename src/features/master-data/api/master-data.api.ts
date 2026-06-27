@@ -20,6 +20,9 @@ import type {
   MasterDataQueryParams,
   MasterDataRecord,
   MasterDataUpdateRequest,
+  FertilizerGroupCreateRequest,
+  FertilizerGroupRecord,
+  FertilizerGroupUpdateRequest,
   MaterialGroupCreateRequest,
   MaterialGroupRecord,
   MaterialGroupUpdateRequest,
@@ -173,6 +176,40 @@ export const masterDataApi = {
   deleteBusinessLine: (id: number | string): Promise<void> =>
     apiClient
       .delete(`${MASTER_DATA_PATHS.businessLines}/${id}`)
+      .then(() => undefined),
+
+  listFertilizerGroups: (params?: MasterDataQueryParams) =>
+    apiClient
+      .get<MasterDataPageResponse<FertilizerGroupRecord>>(
+        MASTER_DATA_PATHS.fertilizerGroups,
+        { params },
+      )
+      .then((response) => response.data),
+
+  getFertilizerGroupById: (id: number | string) =>
+    apiClient
+      .get<FertilizerGroupRecord>(`${MASTER_DATA_PATHS.fertilizerGroups}/${id}`)
+      .then((response) => response.data),
+
+  createFertilizerGroup: (payload: FertilizerGroupCreateRequest) =>
+    apiClient
+      .post<FertilizerGroupRecord>(MASTER_DATA_PATHS.fertilizerGroups, payload)
+      .then((response) => response.data),
+
+  updateFertilizerGroup: (
+    id: number | string,
+    payload: FertilizerGroupUpdateRequest,
+  ) =>
+    apiClient
+      .put<FertilizerGroupRecord>(
+        `${MASTER_DATA_PATHS.fertilizerGroups}/${id}`,
+        payload,
+      )
+      .then((response) => response.data),
+
+  deleteFertilizerGroup: (id: number | string): Promise<void> =>
+    apiClient
+      .delete(`${MASTER_DATA_PATHS.fertilizerGroups}/${id}`)
       .then(() => undefined),
 
   listMaterialGroups: (params?: MasterDataQueryParams) =>

@@ -92,6 +92,7 @@ export interface MasterDataRequestExtraFieldsMap {
     issuerIds?: number[];
     documents?: CertificateStandardDocumentInput[];
   };
+  "fertilizer-groups": Record<string, never>;
   "material-groups": Record<string, never>;
   "pesticide-groups": Record<string, never>;
   "pesticide-origins": Record<string, never>;
@@ -130,6 +131,7 @@ export interface MasterDataRecordExtraFieldsMap {
     issuers: CertificateIssuerRecord[];
     documents: CertificateStandardDocument[];
   };
+  "fertilizer-groups": Record<string, never>;
   "material-groups": Record<string, never>;
   "pesticide-groups": Record<string, never>;
   "pesticide-origins": Record<string, never>;
@@ -283,6 +285,7 @@ export type PositionResponsibilitiesResponse = PositionResponsibilityItem[];
 
 export type CertificateIssuerRecord = MasterDataRecord<"certificate-issuers">;
 export type BusinessLineRecord = MasterDataRecord<"business-lines">;
+export type FertilizerGroupRecord = MasterDataRecord<"fertilizer-groups">;
 export type MaterialGroupRecord = MasterDataRecord<"material-groups">;
 export type MaterialGroupPageResponse =
   MasterDataPageResponse<MaterialGroupRecord>;
@@ -295,6 +298,10 @@ export type PesticideGroupCreateRequest =
   MasterDataCreateRequest<"pesticide-groups">;
 export type PesticideGroupUpdateRequest =
   MasterDataUpdateRequest<"pesticide-groups">;
+export type FertilizerGroupCreateRequest =
+  MasterDataCreateRequest<"fertilizer-groups">;
+export type FertilizerGroupUpdateRequest =
+  MasterDataUpdateRequest<"fertilizer-groups">;
 export type MaterialGroupCreateRequest =
   MasterDataCreateRequest<"material-groups">;
 export type MaterialGroupUpdateRequest =
