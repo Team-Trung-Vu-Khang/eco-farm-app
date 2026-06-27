@@ -7,39 +7,39 @@ import {
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
-import type { FertilizerGroupRecord } from "@/features/master-data/types/master-data.type";
 import {
-  FERTILIZER_GROUP_FORM_STATUSES,
-  fertilizerGroupFormSchema,
-  type FertilizerGroupFormInput,
-  type FertilizerGroupFormValues,
-} from "../data/fertilizer-group-form.schema";
-import { emptyFertilizerGroupFormData } from "../data/constants";
+  PESTICIDE_PURPOSE_FORM_STATUSES,
+  pesticidePurposeFormSchema,
+  type PesticidePurposeFormInput,
+  type PesticidePurposeFormValues,
+} from "../data/pesticide-purpose-form.schema";
+import { emptyPesticideCategoryFormData } from "../data/constants";
+import type { PesticideCategoryItem } from "../types";
 
-interface FertilizerGroupFormDialogProps {
+interface PesticidePurposeFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  editItem: FertilizerGroupRecord | null;
-  onSubmit: (data: FertilizerGroupFormValues) => Promise<void> | void;
+  editItem: PesticideCategoryItem | null;
+  onSubmit: (data: PesticidePurposeFormValues) => Promise<void> | void;
 }
 
 function normalizeStatus(
-  status: FertilizerGroupRecord["status"] | null | undefined,
-): FertilizerGroupFormValues["status"] {
-  if (FERTILIZER_GROUP_FORM_STATUSES.includes(status as never)) {
-    return status as FertilizerGroupFormValues["status"];
+  status: PesticideCategoryItem["status"] | null | undefined,
+): PesticidePurposeFormValues["status"] {
+  if (PESTICIDE_PURPOSE_FORM_STATUSES.includes(status as never)) {
+    return status as PesticidePurposeFormValues["status"];
   }
 
   return "active";
 }
 
-export function FertilizerGroupFormDialog({
+export function PesticidePurposeFormDialog({
   open,
   onOpenChange,
   editItem,
   onSubmit,
-}: FertilizerGroupFormDialogProps) {
-  const defaultValues = useMemo<FertilizerGroupFormInput>(
+}: PesticidePurposeFormDialogProps) {
+  const defaultValues = useMemo<PesticidePurposeFormInput>(
     () =>
       editItem
         ? {
@@ -49,7 +49,7 @@ export function FertilizerGroupFormDialog({
             status: normalizeStatus(editItem.status),
           }
         : {
-            ...emptyFertilizerGroupFormData,
+            ...emptyPesticideCategoryFormData,
             status: "active",
           },
     [editItem],
@@ -61,9 +61,9 @@ export function FertilizerGroupFormDialog({
     clearErrors,
     reset,
     formState: { errors },
-  } = useForm<FertilizerGroupFormInput, unknown, FertilizerGroupFormValues>({
+  } = useForm<PesticidePurposeFormInput, unknown, PesticidePurposeFormValues>({
     defaultValues,
-    resolver: zodResolver(fertilizerGroupFormSchema),
+    resolver: zodResolver(pesticidePurposeFormSchema),
   });
 
   useEffect(() => {
@@ -73,7 +73,7 @@ export function FertilizerGroupFormDialog({
     }
   }, [clearErrors, defaultValues, open, reset]);
 
-  const submitForm: SubmitHandler<FertilizerGroupFormValues> = (values) => {
+  const submitForm: SubmitHandler<PesticidePurposeFormValues> = (values) => {
     onSubmit({
       ...values,
       status: editItem ? values.status : "active",
@@ -84,14 +84,14 @@ export function FertilizerGroupFormDialog({
     <FormDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={editItem ? "Chỉnh sửa nhóm phân bón" : "Thêm nhóm phân bón mới"}
+      title={editItem ? "Chỉnh sửa phân loại công dụng" : "Thêm phân loại công dụng mới"}
       onSubmit={handleRHFSubmit(submitForm)}
     >
       <div className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="code" required>
-              Mã nhóm
+              Mã công dụng
             </Label>
             <Controller
               control={control}
@@ -99,7 +99,7 @@ export function FertilizerGroupFormDialog({
               render={({ field }) => (
                 <Input
                   id="code"
-                  placeholder="VD: ORGANIC, NPK..."
+                  placeholder="VD: INSECTICIDE, HERBICIDE..."
                   aria-invalid={!!errors.code}
                   value={field.value}
                   onChange={(e) => {
@@ -116,10 +116,9 @@ export function FertilizerGroupFormDialog({
               <p className="text-xs text-red-600">{errors.code.message}</p>
             ) : null}
           </div>
-
           <div className="space-y-2">
             <Label htmlFor="name" required>
-              Tên nhóm
+              Tên công dụng
             </Label>
             <Controller
               control={control}
@@ -127,7 +126,7 @@ export function FertilizerGroupFormDialog({
               render={({ field }) => (
                 <Input
                   id="name"
-                  placeholder="VD: Phân hữu cơ..."
+                  placeholder="VD: Thuốc trừ sâu..."
                   aria-invalid={!!errors.name}
                   value={field.value}
                   onChange={(e) => {
@@ -162,7 +161,7 @@ export function FertilizerGroupFormDialog({
                   onChange={(e) => {
                     clearErrors("status");
                     field.onChange(
-                      e.target.value as (typeof FERTILIZER_GROUP_FORM_STATUSES)[number],
+                      e.target.value as (typeof PESTICIDE_PURPOSE_FORM_STATUSES)[number],
                     );
                   }}
                   onBlur={field.onBlur}
@@ -189,7 +188,7 @@ export function FertilizerGroupFormDialog({
             render={({ field }) => (
               <Textarea
                 id="description"
-                placeholder="Mô tả chi tiết về nhóm phân bón..."
+                placeholder="Mô tả chi tiết về công dụng..."
                 rows={3}
                 aria-invalid={!!errors.description}
                 value={field.value}

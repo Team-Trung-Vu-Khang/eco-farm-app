@@ -1,11 +1,12 @@
-export type PesticideGroupStatus = "active" | "inactive";
+import type { MasterDataStatus } from "@/features/master-data/types/master-data.type";
+import type { PesticidePurposeFormValues } from "./data/pesticide-purpose-form.schema";
 
 export interface PesticideCategoryItem {
   id: number;
   code: string;
   name: string;
   description: string;
-  status: PesticideGroupStatus;
+  status: MasterDataStatus;
   createdAt: string;
 }
 
@@ -13,8 +14,10 @@ export interface PesticideCategoryFormData {
   code: string;
   name: string;
   description: string;
-  status: PesticideGroupStatus;
+  status: MasterDataStatus;
 }
+
+export type PesticidePurposeFormData = PesticidePurposeFormValues;
 
 export type PesticideWhoClass = "Ia" | "Ib" | "II" | "III" | "IV";
 

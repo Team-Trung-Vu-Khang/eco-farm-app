@@ -6,12 +6,23 @@ import {
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { PlanTypeFormDialog } from "./components/PlanTypeFormDialog";
+import { PLAN_TYPE_STATUS_OPTIONS } from "./data/constants";
 import { planTypeColumns } from "./data/columns";
 import { usePlanTypePage } from "./hooks/usePlanTypePage";
 
 const PlanTypePage = () => {
   const {
     planTypes,
+    planGroupOptions,
+    loading,
+    error,
+    response,
+    handleSearch,
+    handleFilterChange,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
     formOpen,
     setFormOpen,
     deleteOpen,
@@ -39,13 +50,36 @@ const PlanTypePage = () => {
         </Button>
       }
     >
-      <DataTable
-        columns={planTypeColumns}
-        data={planTypes}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm loại kế hoạch..."
-      />
+      {error ? (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+          ⚠️ {error}
+        </div>
+      ) : (
+        <DataTable
+          columns={planTypeColumns}
+          data={planTypes}
+          searchable
+          searchPlaceholder="Tìm kiếm loại kế hoạch..."
+          pageSize={pageSize}
+          currentIndex={currentIndex}
+          totalElements={response?.totalElements}
+          totalPages={response?.totalPages}
+          onSearch={handleSearch}
+          onPageSize={setPageSize}
+          onIndexChange={setCurrentIndex}
+          onFilterChange={handleFilterChange}
+          filters={[
+            {
+              key: "status",
+              label: "Trạng thái",
+              options: [...PLAN_TYPE_STATUS_OPTIONS],
+            },
+          ]}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          loading={loading}
+        />
+      )}
 
       <PlanTypeFormDialog
         open={formOpen}
@@ -53,6 +87,7 @@ const PlanTypePage = () => {
         isEdit={Boolean(editItem)}
         formData={formData}
         setFormData={setFormData}
+        planGroupOptions={planGroupOptions}
         onSubmit={handleSubmit}
       />
 

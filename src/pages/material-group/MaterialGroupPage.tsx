@@ -9,21 +9,34 @@ import { MaterialGroupFormDialog } from "./components/MaterialGroupFormDialog";
 import { materialGroupColumns } from "./data/columns";
 import { useMaterialGroupPage } from "./hooks/useMaterialGroupPage";
 
+const MATERIAL_GROUP_STATUS_OPTIONS = [
+  { value: "active", label: "Hoạt động" },
+  { value: "inactive", label: "Ngừng hoạt động" },
+  { value: "archived", label: "Đã lưu trữ" },
+] as const;
+
 const MaterialGroupPage = () => {
   const {
     data,
+    loading,
+    error,
+    response,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
     formOpen,
     setFormOpen,
     deleteOpen,
     setDeleteOpen,
     editItem,
-    formData,
-    setFormData,
     handleAdd,
     handleEdit,
     handleDelete,
     handleSubmit,
     handleConfirmDelete,
+    handleSearch,
+    handleFilterChange,
   } = useMaterialGroupPage();
 
   return (
@@ -38,20 +51,41 @@ const MaterialGroupPage = () => {
         </Button>
       }
     >
-      <DataTable
-        columns={materialGroupColumns}
-        data={data}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm nhóm vật tư..."
-      />
+      {error ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+          ⚠️ {error}
+        </div>
+      ) : (
+        <DataTable
+          columns={materialGroupColumns}
+          data={data}
+          searchable
+          searchPlaceholder="Tìm kiếm nhóm vật tư..."
+          pageSize={pageSize}
+          currentIndex={currentIndex}
+          totalElements={response?.totalElements}
+          totalPages={response?.totalPages}
+          onSearch={handleSearch}
+          onPageSize={setPageSize}
+          onIndexChange={setCurrentIndex}
+          onFilterChange={handleFilterChange}
+          filters={[
+            {
+              key: "status",
+              label: "Trạng thái",
+              options: [...MATERIAL_GROUP_STATUS_OPTIONS],
+            },
+          ]}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          loading={loading}
+        />
+      )}
 
       <MaterialGroupFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
-        isEdit={!!editItem}
-        formData={formData}
-        setFormData={setFormData}
+        editItem={editItem}
         onSubmit={handleSubmit}
       />
 

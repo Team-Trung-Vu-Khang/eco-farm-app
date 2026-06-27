@@ -4,6 +4,8 @@ import type {
   PesticideToxicityFormData,
   PesticideToxicityItem,
 } from "../types";
+import type { PesticideOriginFormValues } from "./pesticide-origin-form.schema";
+import type { PesticideToxicityFormValues } from "./pesticide-toxicity-form.schema";
 
 export const initialPesticidePurposes: PesticideCategoryItem[] = [
   {
@@ -169,7 +171,20 @@ export const initialPesticideToxicities: PesticideToxicityItem[] = [
   },
 ];
 
+export const PESTICIDE_GROUP_STATUS_OPTIONS = [
+  { value: "active", label: "Hoạt động" },
+  { value: "inactive", label: "Ngừng hoạt động" },
+  { value: "archived", label: "Đã lưu trữ" },
+] as const;
+
 export const emptyPesticideCategoryFormData: PesticideCategoryFormData = {
+  code: "",
+  name: "",
+  description: "",
+  status: "active",
+};
+
+export const emptyPesticideOriginFormData: PesticideOriginFormValues = {
   code: "",
   name: "",
   description: "",
@@ -184,4 +199,14 @@ export const emptyPesticideToxicityFormData: PesticideToxicityFormData = {
   ld50Range: "",
   description: "",
   status: "active",
+};
+
+export const emptyPesticideToxicityClassFormData: PesticideToxicityFormValues = {
+  code: "",
+  name: "",
+  description: "",
+  status: "active",
+  whoGroup: "III",
+  bandColor: "#3B82F6",
+  ld50Threshold: "",
 };

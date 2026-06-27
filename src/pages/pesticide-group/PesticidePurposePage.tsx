@@ -4,36 +4,34 @@ import {
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { PesticideCategoryFormDialog } from "./components/PesticideCategoryFormDialog";
-import {
-  emptyPesticideCategoryFormData,
-  initialPesticidePurposes,
-} from "./data/constants";
+import { PesticidePurposeFormDialog } from "./components/PesticidePurposeFormDialog";
+import { PESTICIDE_GROUP_STATUS_OPTIONS } from "./data/constants";
 import { pesticideCategoryColumns } from "./data/columns";
 import { usePesticideCategoryPage } from "./hooks/usePesticideCategoryPage";
 
 const PesticidePurposePage = () => {
   const {
     data,
+    loading,
+    error,
+    response,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
     formOpen,
     setFormOpen,
     deleteOpen,
     setDeleteOpen,
     editItem,
-    formData,
-    setFormData,
     handleAdd,
     handleEdit,
     handleDelete,
     handleSubmit,
     handleConfirmDelete,
-  } = usePesticideCategoryPage({
-    initialData: initialPesticidePurposes,
-    emptyFormData: emptyPesticideCategoryFormData,
-    createSuccessMessage: "Đã thêm phân loại công dụng mới",
-    updateSuccessMessage: "Đã cập nhật phân loại công dụng",
-    deleteSuccessMessage: "Đã xóa phân loại công dụng",
-  });
+    handleSearch,
+    handleFilterChange,
+  } = usePesticideCategoryPage();
 
   return (
     <div className="space-y-6">
@@ -50,26 +48,41 @@ const PesticidePurposePage = () => {
         </Button>
       </div>
 
-      <DataTable
-        columns={pesticideCategoryColumns("Mã công dụng", "Tên công dụng")}
-        data={data}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm theo công dụng..."
-      />
+      {error ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+          ⚠️ {error}
+        </div>
+      ) : (
+        <DataTable
+          columns={pesticideCategoryColumns("Mã công dụng", "Tên công dụng")}
+          data={data}
+          searchable
+          searchPlaceholder="Tìm kiếm theo công dụng..."
+          pageSize={pageSize}
+          currentIndex={currentIndex}
+          totalElements={response?.totalElements}
+          totalPages={response?.totalPages}
+          onSearch={handleSearch}
+          onPageSize={setPageSize}
+          onIndexChange={setCurrentIndex}
+          onFilterChange={handleFilterChange}
+          filters={[
+            {
+              key: "status",
+              label: "Trạng thái",
+              options: [...PESTICIDE_GROUP_STATUS_OPTIONS],
+            },
+          ]}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          loading={loading}
+        />
+      )}
 
-      <PesticideCategoryFormDialog
+      <PesticidePurposeFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
-        isEdit={!!editItem}
-        title="phân loại công dụng"
-        codeLabel="Mã công dụng"
-        nameLabel="Tên công dụng"
-        codePlaceholder="VD: INSECTICIDE, HERBICIDE..."
-        namePlaceholder="VD: Thuốc trừ sâu..."
-        descriptionPlaceholder="Mô tả chi tiết về công dụng..."
-        formData={formData}
-        setFormData={setFormData}
+        editItem={editItem}
         onSubmit={handleSubmit}
       />
 

@@ -1,104 +1,178 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useMasterData, useMasterDataMutations } from "@/features/master-data";
+import type {
+  FertilizerGroupRecord,
+  MasterDataStatus,
+} from "@/features/master-data/types/master-data.type";
 import {
-  initialFertilizerGroups,
-  type FertilizerGroup,
+  emptyFertilizerGroupFormData,
 } from "../data/constants";
+import type { FertilizerGroupFormValues } from "../data/fertilizer-group-form.schema";
 
-export type FertilizerGroupFormData = Omit<
-  FertilizerGroup,
-  "id" | "createdAt"
->;
+const ALL_STATUS = "all" as const;
+const DEFAULT_PAGE_SIZE = 10;
 
-const emptyFormData: FertilizerGroupFormData = {
-  code: "",
-  name: "",
-  description: "",
-  status: "active",
-};
+type FertilizerGroupStatusFilter = MasterDataStatus | typeof ALL_STATUS;
+
+function buildPayload(values: FertilizerGroupFormValues) {
+  return {
+    code: values.code.trim().toUpperCase(),
+    name: values.name.trim(),
+    description: values.description.trim(),
+    displayOrder: 1,
+    status: values.status,
+    metadataJson: {
+      source: "manual",
+    },
+  };
+}
 
 export function useFertilizerGroupPage() {
   const { toast } = useToast();
-
-  const [data, setData] = useState<FertilizerGroup[]>(initialFertilizerGroups);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<FertilizerGroupStatusFilter>(ALL_STATUS);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [currentIndex, setCurrentIndex] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [editItem, setEditItem] = useState<FertilizerGroup | null>(null);
-  const [deleteItem, setDeleteItem] = useState<FertilizerGroup | null>(null);
-  const [formData, setFormData] = useState<FertilizerGroupFormData>(emptyFormData);
+  const [editItem, setEditItem] = useState<FertilizerGroupRecord | null>(null);
+  const [deleteItem, setDeleteItem] = useState<FertilizerGroupRecord | null>(
+    null,
+  );
+
+  const query = useMasterData("fertilizer-groups", {
+    params: {
+      keyword: search.trim() || undefined,
+      status: status === ALL_STATUS ? undefined : status,
+      page: Math.max(currentIndex - 1, 0),
+      size: pageSize,
+    },
+  });
+
+  const { createMasterData, updateMasterData, deleteMasterData } =
+    useMasterDataMutations("fertilizer-groups");
+
+  const data = useMemo(() => query.items, [query.items]);
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setCurrentIndex(1);
+  };
+
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "status") {
+      setStatus(value === ALL_STATUS ? ALL_STATUS : (value as MasterDataStatus));
+      setCurrentIndex(1);
+    }
+  };
 
   const handleAdd = () => {
     setEditItem(null);
-    setFormData(emptyFormData);
     setFormOpen(true);
   };
 
-  const handleEdit = (item: FertilizerGroup) => {
+  const handleEdit = (item: FertilizerGroupRecord) => {
     setEditItem(item);
-    setFormData({
-      code: item.code,
-      name: item.name,
-      description: item.description,
-      status: item.status,
-    });
     setFormOpen(true);
   };
 
-  const handleDelete = (item: FertilizerGroup) => {
+  const handleDelete = (item: FertilizerGroupRecord) => {
     setDeleteItem(item);
     setDeleteOpen(true);
   };
 
-  const handleSubmit = () => {
-    if (editItem) {
-      setData((prev) =>
-        prev.map((item) =>
-          item.id === editItem.id ? { ...item, ...formData } : item,
-        ),
-      );
+  const handleSubmit = async (values: FertilizerGroupFormValues) => {
+    const payload = buildPayload(values);
+
+    if (!payload.code || !payload.name) {
       toast({
-        title: "Thành công",
-        description: "Đã cập nhật danh mục phân bón",
+        title: "Thiếu thông tin",
+        description: "Vui lòng nhập mã và tên nhóm phân bón.",
+        variant: "destructive",
       });
-    } else {
-      const newItem: FertilizerGroup = {
-        id: Date.now(),
-        ...formData,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setData((prev) => [...prev, newItem]);
+      return;
+    }
+
+    try {
+      if (editItem) {
+        await updateMasterData.mutateAsync({
+          id: editItem.id,
+          data: payload,
+        });
+      } else {
+        await createMasterData.mutateAsync(payload);
+      }
+
       toast({
         title: "Thành công",
-        description: "Đã thêm danh mục phân bón mới",
+        description: editItem
+          ? "Đã cập nhật danh mục phân bón."
+          : "Đã thêm danh mục phân bón mới.",
+      });
+      setFormOpen(false);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+
+      toast({
+        title: editItem ? "Không thể cập nhật" : "Không thể thêm",
+        description: message,
+        variant: "destructive",
       });
     }
-    setFormOpen(false);
   };
 
-  const handleConfirmDelete = () => {
-    if (deleteItem) {
-      setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
+  const handleConfirmDelete = async () => {
+    if (!deleteItem) {
+      setDeleteOpen(false);
+      return;
+    }
+
+    try {
+      await deleteMasterData.mutateAsync(deleteItem.id);
       toast({
         title: "Thành công",
-        description: "Đã xóa danh mục phân bón",
+        description: "Đã xóa danh mục phân bón.",
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+
+      toast({
+        title: "Không thể xóa",
+        description: message,
+        variant: "destructive",
       });
     }
+
     setDeleteOpen(false);
+    setDeleteItem(null);
   };
 
   return {
     data,
+    loading: query.loading,
+    error: query.error,
+    response: query.response,
+    search,
+    status,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
     formOpen,
     setFormOpen,
     deleteOpen,
     setDeleteOpen,
     editItem,
-    formData,
-    setFormData,
+    deleteItem,
     handleAdd,
     handleEdit,
     handleDelete,
     handleSubmit,
     handleConfirmDelete,
+    handleSearch,
+    handleFilterChange,
   };
 }

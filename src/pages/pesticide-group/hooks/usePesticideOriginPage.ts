@@ -1,18 +1,15 @@
 import { useMemo, useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useMasterData, useMasterDataMutations } from "@/features/master-data";
-import type {
-  MasterDataStatus,
-  MaterialGroupRecord,
-} from "@/features/master-data/types/master-data.type";
-import type { MaterialGroupFormValues } from "../data/material-group-form.schema";
+import type { MasterDataStatus, PesticideOriginRecord } from "@/features/master-data/types/master-data.type";
+import type { PesticideOriginFormValues } from "../data/pesticide-origin-form.schema";
 
 const ALL_STATUS = "all" as const;
 const DEFAULT_PAGE_SIZE = 10;
 
-type MaterialGroupStatusFilter = MasterDataStatus | typeof ALL_STATUS;
+type PesticideOriginStatusFilter = MasterDataStatus | typeof ALL_STATUS;
 
-function buildPayload(values: MaterialGroupFormValues) {
+function buildPayload(values: PesticideOriginFormValues) {
   return {
     code: values.code.trim().toUpperCase(),
     name: values.name.trim(),
@@ -25,20 +22,20 @@ function buildPayload(values: MaterialGroupFormValues) {
   };
 }
 
-export function useMaterialGroupPage() {
+export function usePesticideOriginPage() {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<MaterialGroupStatusFilter>(ALL_STATUS);
+  const [status, setStatus] = useState<PesticideOriginStatusFilter>(ALL_STATUS);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [currentIndex, setCurrentIndex] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [editItem, setEditItem] = useState<MaterialGroupRecord | null>(null);
-  const [deleteItem, setDeleteItem] = useState<MaterialGroupRecord | null>(
+  const [editItem, setEditItem] = useState<PesticideOriginRecord | null>(null);
+  const [deleteItem, setDeleteItem] = useState<PesticideOriginRecord | null>(
     null,
   );
 
-  const query = useMasterData("material-groups", {
+  const query = useMasterData("pesticide-origins", {
     params: {
       keyword: search.trim() || undefined,
       status: status === ALL_STATUS ? undefined : status,
@@ -48,7 +45,7 @@ export function useMaterialGroupPage() {
   });
 
   const { createMasterData, updateMasterData, deleteMasterData } =
-    useMasterDataMutations("material-groups");
+    useMasterDataMutations("pesticide-origins");
 
   const data = useMemo(() => query.items, [query.items]);
 
@@ -69,23 +66,30 @@ export function useMaterialGroupPage() {
     setFormOpen(true);
   };
 
-  const handleEdit = (item: MaterialGroupRecord) => {
+  const handleFormOpenChange = (open: boolean) => {
+    setFormOpen(open);
+    if (!open) {
+      setEditItem(null);
+    }
+  };
+
+  const handleEdit = (item: PesticideOriginRecord) => {
     setEditItem(item);
     setFormOpen(true);
   };
 
-  const handleDelete = (item: MaterialGroupRecord) => {
+  const handleDelete = (item: PesticideOriginRecord) => {
     setDeleteItem(item);
     setDeleteOpen(true);
   };
 
-  const handleSubmit = async (values: MaterialGroupFormValues) => {
+  const handleSubmit = async (values: PesticideOriginFormValues) => {
     const payload = buildPayload(values);
 
     if (!payload.code || !payload.name) {
       toast({
         title: "Thiếu thông tin",
-        description: "Vui lòng nhập mã và tên nhóm vật tư.",
+        description: "Vui lòng nhập mã và tên nguồn gốc.",
         variant: "destructive",
       });
       return;
@@ -104,10 +108,10 @@ export function useMaterialGroupPage() {
       toast({
         title: "Thành công",
         description: editItem
-          ? "Đã cập nhật danh mục vật tư."
-          : "Đã thêm danh mục vật tư mới.",
+          ? "Đã cập nhật nguồn gốc."
+          : "Đã thêm nguồn gốc mới.",
       });
-      setFormOpen(false);
+      handleFormOpenChange(false);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
@@ -130,7 +134,7 @@ export function useMaterialGroupPage() {
       await deleteMasterData.mutateAsync(deleteItem.id);
       toast({
         title: "Thành công",
-        description: "Đã xóa danh mục vật tư.",
+        description: "Đã xóa nguồn gốc.",
       });
     } catch (error) {
       const message =
@@ -159,10 +163,11 @@ export function useMaterialGroupPage() {
     currentIndex,
     setCurrentIndex,
     formOpen,
-    setFormOpen,
+    setFormOpen: handleFormOpenChange,
     deleteOpen,
     setDeleteOpen,
     editItem,
+    deleteItem,
     handleAdd,
     handleEdit,
     handleDelete,

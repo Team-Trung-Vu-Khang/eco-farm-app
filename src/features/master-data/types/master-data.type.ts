@@ -66,6 +66,7 @@ export interface MasterDataAttributesMap {
     ld50Threshold?: string;
   };
   "plan-groups": Record<string, unknown>;
+  "plan-types": Record<string, unknown>;
   "position-groups": Record<string, unknown>;
   positions: Record<string, never>;
   "certificate-issuers": Record<string, unknown>;
@@ -90,6 +91,19 @@ export interface MasterDataRequestExtraFieldsMap {
     validityMonths?: number | null;
     issuerIds?: number[];
     documents?: CertificateStandardDocumentInput[];
+  };
+  "fertilizer-groups": Record<string, never>;
+  "material-groups": Record<string, never>;
+  "pesticide-groups": Record<string, never>;
+  "pesticide-origins": Record<string, never>;
+  "pesticide-toxicity-classes": {
+    whoGroup: string;
+    bandColor: string;
+    ld50Threshold: string;
+  };
+  "plan-types": {
+    color: string;
+    planGroupId?: number | null;
   };
   "vsic-industries": {
     level: number;
@@ -116,6 +130,19 @@ export interface MasterDataRecordExtraFieldsMap {
     validityMonths: number;
     issuers: CertificateIssuerRecord[];
     documents: CertificateStandardDocument[];
+  };
+  "fertilizer-groups": Record<string, never>;
+  "material-groups": Record<string, never>;
+  "pesticide-groups": Record<string, never>;
+  "pesticide-origins": Record<string, never>;
+  "pesticide-toxicity-classes": {
+    whoGroup?: string | null;
+    bandColor?: string | null;
+    ld50Threshold?: string | null;
+  };
+  "plan-types": {
+    color: string;
+    planGroup?: PlanGroupRecord | null;
   };
   "vsic-industries": {
     level: number;
@@ -207,16 +234,18 @@ export interface MasterDataCommonFields {
 export type MasterDataCreateRequest<
   C extends MasterDataCatalog = MasterDataCatalog,
   TAttributes = MasterDataAttributes<C>,
-> = MasterDataCommonFields & MasterDataRequestExtraFields<C> & {
-  attributes?: TAttributes;
-};
+> = MasterDataCommonFields &
+  MasterDataRequestExtraFields<C> & {
+    attributes?: TAttributes;
+  };
 
 export type MasterDataUpdateRequest<
   C extends MasterDataCatalog = MasterDataCatalog,
   TAttributes = MasterDataAttributes<C>,
-> = MasterDataCommonFields & MasterDataRequestExtraFields<C> & {
-  attributes?: TAttributes;
-};
+> = MasterDataCommonFields &
+  MasterDataRequestExtraFields<C> & {
+    attributes?: TAttributes;
+  };
 
 export type MasterDataDeleteResponse = void;
 
@@ -256,6 +285,39 @@ export type PositionResponsibilitiesResponse = PositionResponsibilityItem[];
 
 export type CertificateIssuerRecord = MasterDataRecord<"certificate-issuers">;
 export type BusinessLineRecord = MasterDataRecord<"business-lines">;
+export type FertilizerGroupRecord = MasterDataRecord<"fertilizer-groups">;
+export type MaterialGroupRecord = MasterDataRecord<"material-groups">;
+export type MaterialGroupPageResponse =
+  MasterDataPageResponse<MaterialGroupRecord>;
+export type PesticideGroupRecord = MasterDataRecord<"pesticide-groups">;
+export type PesticideOriginRecord = MasterDataRecord<"pesticide-origins">;
+export type PesticideToxicityClassRecord =
+  MasterDataRecord<"pesticide-toxicity-classes">;
+export type PlanGroupRecord = MasterDataRecord<"plan-groups">;
+export type PesticideGroupCreateRequest =
+  MasterDataCreateRequest<"pesticide-groups">;
+export type PesticideGroupUpdateRequest =
+  MasterDataUpdateRequest<"pesticide-groups">;
+export type FertilizerGroupCreateRequest =
+  MasterDataCreateRequest<"fertilizer-groups">;
+export type FertilizerGroupUpdateRequest =
+  MasterDataUpdateRequest<"fertilizer-groups">;
+export type MaterialGroupCreateRequest =
+  MasterDataCreateRequest<"material-groups">;
+export type MaterialGroupUpdateRequest =
+  MasterDataUpdateRequest<"material-groups">;
+export type MaterialGroupMutationRequest = MaterialGroupCreateRequest;
+export type MaterialGroupDeleteResponse = void;
+export type PesticideOriginCreateRequest =
+  MasterDataCreateRequest<"pesticide-origins">;
+export type PesticideOriginUpdateRequest =
+  MasterDataUpdateRequest<"pesticide-origins">;
+export type PesticideToxicityClassCreateRequest =
+  MasterDataCreateRequest<"pesticide-toxicity-classes">;
+export type PesticideToxicityClassUpdateRequest =
+  MasterDataUpdateRequest<"pesticide-toxicity-classes">;
+export type PlanGroupCreateRequest = MasterDataCreateRequest<"plan-groups">;
+export type PlanGroupUpdateRequest = MasterDataUpdateRequest<"plan-groups">;
 
 export type CertificateIssuerCreateRequest =
   MasterDataCreateRequest<"certificate-issuers"> &
@@ -265,16 +327,21 @@ export type CertificateIssuerUpdateRequest =
   MasterDataUpdateRequest<"certificate-issuers"> &
     Partial<CertificateIssuerFields>;
 
-export type CertificateStandardRecord = MasterDataRecord<"certificate-standards">;
+export type CertificateStandardRecord =
+  MasterDataRecord<"certificate-standards">;
+export type PlanTypeRecord = MasterDataRecord<"plan-types">;
 export type VsicIndustryRecord = MasterDataRecord<"vsic-industries">;
 export type VsicIndustryChildrenRecord = VsicIndustryRecord[];
 export type VsicIndustryTreeRecord = VsicIndustryRecord & {
   children?: Array<VsicIndustryTreeRecord | string>;
 };
 export type VsicIndustryTreeResponse = VsicIndustryTreeRecord[];
+export type PlanTypePageResponse = MasterDataPageResponse<PlanTypeRecord>;
 
-export type BusinessLineCreateRequest = MasterDataCreateRequest<"business-lines">;
-export type BusinessLineUpdateRequest = MasterDataUpdateRequest<"business-lines">;
+export type BusinessLineCreateRequest =
+  MasterDataCreateRequest<"business-lines">;
+export type BusinessLineUpdateRequest =
+  MasterDataUpdateRequest<"business-lines">;
 
 export interface VsicIndustryMutationRequest {
   code: string;
@@ -288,6 +355,20 @@ export interface VsicIndustryMutationRequest {
 
 export type VsicIndustryCreateRequest = VsicIndustryMutationRequest;
 export type VsicIndustryUpdateRequest = VsicIndustryMutationRequest;
+
+export interface PlanTypeMutationRequest {
+  code: string;
+  name: string;
+  color: string;
+  description: string;
+  planGroupId: number;
+  displayOrder: number;
+  status: MasterDataStatus;
+  metadataJson?: Record<string, unknown> | null;
+}
+
+export type PlanTypeCreateRequest = PlanTypeMutationRequest;
+export type PlanTypeUpdateRequest = PlanTypeMutationRequest;
 
 export interface CertificateStandardCreateRequest {
   code: string;

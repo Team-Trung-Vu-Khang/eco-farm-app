@@ -18,7 +18,7 @@ import {
   Plus,
   TreePine,
 } from "lucide-react";
-import { EnterpriseGroupForm } from "./components/EnterpriseGroupForm";
+import { EnterpriseTypeForm } from "./components/EnterpriseTypeForm";
 import { useEnterpriseGroupForm } from "./hooks/useEnterpriseGroupForm";
 import type { VsicIndustry } from "./types";
 import type { VsicIndustryTreeRecord } from "@/features/master-data/types/master-data.type";
@@ -168,47 +168,6 @@ const EnterpriseTypePage = () => {
       }
     >
       <div className="space-y-6">
-        <Card className="border-slate-200 shadow-sm">
-          <CardContent className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-xl bg-slate-50 p-4">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
-                <Layers3 className="h-4 w-4" />
-                Tổng ngành nghề
-              </div>
-              <p className="mt-2 text-2xl font-bold text-slate-900">
-                {response?.totalElements ?? 0}
-              </p>
-            </div>
-            <div className="rounded-xl bg-emerald-50 p-4">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-emerald-700">
-                <BadgeCheck className="h-4 w-4" />
-                Đang hoạt động
-              </div>
-              <p className="mt-2 text-2xl font-bold text-emerald-900">
-                {activeCount}
-              </p>
-            </div>
-            <div className="rounded-xl bg-sky-50 p-4">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-sky-700">
-                <TreePine className="h-4 w-4" />
-                Nhánh gốc
-              </div>
-              <p className="mt-2 text-2xl font-bold text-sky-900">
-                {rootCount}
-              </p>
-            </div>
-            <div className="rounded-xl bg-amber-50 p-4">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-amber-700">
-                <ChevronRight className="h-4 w-4" />
-                Mục trong cây
-              </div>
-              <p className="mt-2 text-2xl font-bold text-amber-900">
-                {treeItemCount}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)]">
           <div className="min-w-0">
             {error ? (
@@ -290,7 +249,7 @@ const EnterpriseTypePage = () => {
         </div>
       </div>
 
-      <EnterpriseGroupForm
+      <EnterpriseTypeForm
         open={formOpen}
         onOpenChange={setFormOpen}
         editItem={editItem}

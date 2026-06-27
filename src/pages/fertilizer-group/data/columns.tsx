@@ -1,7 +1,7 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { MaterialGroupRecord } from "@/features/master-data/types/master-data.type";
+import type { FertilizerGroupRecord } from "@/features/master-data/types/master-data.type";
 
-export const materialGroupColumns: Column<MaterialGroupRecord>[] = [
+export const fertilizerGroupColumns: Column<FertilizerGroupRecord>[] = [
   {
     key: "code",
     label: "Mã nhóm",

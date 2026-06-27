@@ -6,6 +6,13 @@ export const MASTER_DATA_PATHS = {
   businessLines: `${MASTER_DATA_BASE_PATH}/business-lines`,
   certificateIssuers: `${MASTER_DATA_BASE_PATH}/certificate-issuers`,
   certificateStandards: `${MASTER_DATA_BASE_PATH}/certificate-standards`,
+  fertilizerGroups: `${MASTER_DATA_BASE_PATH}/fertilizer-groups`,
+  materialGroups: `${MASTER_DATA_BASE_PATH}/material-groups`,
+  pesticideGroups: `${MASTER_DATA_BASE_PATH}/pesticide-groups`,
+  pesticideOrigins: `${MASTER_DATA_BASE_PATH}/pesticide-origins`,
+  pesticideToxicityClasses: `${MASTER_DATA_BASE_PATH}/pesticide-toxicity-classes`,
+  planGroups: `${MASTER_DATA_BASE_PATH}/plan-groups`,
+  planTypes: `${MASTER_DATA_BASE_PATH}/plan-types`,
   vsicIndustries: `${MASTER_DATA_BASE_PATH}/vsic-industries`,
 } as const;
 
@@ -21,6 +28,7 @@ export const MASTER_DATA_CATALOGS = [
   "pesticide-origins",
   "pesticide-toxicity-classes",
   "plan-groups",
+  "plan-types",
   "position-groups",
   "positions",
   "certificate-issuers",

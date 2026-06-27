@@ -1,4 +1,8 @@
-import type { MaterialGroup, MaterialGroupFormData } from "../types/types";
+import type {
+  MaterialGroup,
+  MaterialGroupFormData,
+} from "../types/types";
+import type { MaterialGroupFormValues } from "./material-group-form.schema";
 
 export const initialMaterialGroups: MaterialGroup[] = [
   {
@@ -67,7 +71,7 @@ export const initialMaterialGroups: MaterialGroup[] = [
   },
 ];
 
-export const emptyMaterialGroupFormData: MaterialGroupFormData = {
+export const emptyMaterialGroupFormData: MaterialGroupFormValues = {
   code: "",
   name: "",
   description: "",

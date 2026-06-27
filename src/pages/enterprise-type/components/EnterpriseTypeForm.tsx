@@ -19,7 +19,7 @@ import {
   type VsicIndustryFormValues,
 } from "../data/vsic-industry-form.schema";
 
-interface EnterpriseGroupFormProps {
+interface EnterpriseTypeFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editItem: VsicIndustry | null;
@@ -52,12 +52,12 @@ function buildDefaultValues(
   };
 }
 
-export function EnterpriseGroupForm({
+export function EnterpriseTypeForm({
   open,
   onOpenChange,
   editItem,
   onSubmit,
-}: EnterpriseGroupFormProps) {
+}: EnterpriseTypeFormProps) {
   const defaultValues = useMemo(
     () => buildDefaultValues(editItem),
     [editItem],
