@@ -96,6 +96,7 @@ import ContactEditPage from "./pages/contact/ContactEditPage";
 import DepartmentPage from "./pages/department/DepartmentPage";
 import GroupPositionPage from "./pages/group-position/GroupPositionPage";
 import PositionPage from "./pages/position/PositionPage";
+import PositionDetailPage from "./pages/position/PositionDetailPage";
 import PersonnelPage from "./pages/personnel/PersonnelPage";
 import PersonnelCreatePage from "./pages/personnel/PersonnelCreatePage";
 import PersonnelEditPage from "./pages/personnel/PersonnelEditPage";
@@ -216,6 +217,7 @@ function Router() {
       <Route path="/department" component={DepartmentPage} />
       <Route path="/group-position" component={GroupPositionPage} />
       <Route path="/position" component={PositionPage} />
+      <Route path="/position/:id/detail" component={PositionDetailPage} />
       <Route path="/personnel" component={PersonnelPage} />
       <Route path="/personnel/create" component={PersonnelCreatePage} />
       <Route path="/personnel/:id/edit" component={PersonnelEditPage} />

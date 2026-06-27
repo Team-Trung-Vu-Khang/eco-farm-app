@@ -1,27 +1,142 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  emptyOrganizationFormData,
-  emptyStandardFormData,
-  initialOrganizations,
-  initialStandards,
-} from "../data/constants";
+  type CertificateStandardRecord,
+  useCreateMasterData,
+  useDeleteMasterData,
+  useMasterData,
+  useUpdateMasterData,
+  type CertificateIssuerCreateRequest,
+  type CertificateStandardCreateRequest,
+} from "@/features/master-data";
+import type { StandardFormValues } from "../data/standard-form.schema";
 import type {
   CategoryType,
   Certificate,
   CertificationOrganization,
   OrganizationFormData,
-  StandardFormData,
 } from "../types/types";
+
+function normalizeStatus(
+  status: Certificate["status"] | string | null | undefined,
+): Certificate["status"] {
+  return status === "inactive" ? "inactive" : "active";
+}
+
+function mapStandardRecordToItem(
+  item: CertificateStandardRecord,
+  organizations: CertificationOrganization[],
+): Certificate {
+  const issuers = item.issuers ?? [];
+  const organizationIds = issuers.map((issuer) => issuer.id);
+
+  const matchedOrganizations = issuers.length
+    ? issuers
+    : organizations.filter((organization) =>
+        organizationIds.includes(organization.id),
+      );
+
+  return {
+    id: item.id,
+    code: item.code ?? "",
+    name: item.name ?? "",
+    organizationIds,
+    issuers: matchedOrganizations,
+    documents: item.documents ?? [],
+    content: item.documents?.[0]?.content ?? "",
+    contentType: item.documents?.[0]?.type === "pdf" ? "file" : "editor",
+    fileUrl: item.documents?.[0]?.fileUrl ?? "",
+    stampUrl: item.stampUrl ?? "",
+    stampType: item.stampUrl ? "url" : "file",
+    stampFileUrl: "",
+    validityMonths: item.validityMonths ?? 0,
+    description: item.description ?? "",
+    status: normalizeStatus(item.status),
+    createdAt: item.createdAt,
+  };
+}
+
+function buildStandardPayload(
+  formData: StandardFormValues,
+): CertificateStandardCreateRequest {
+  return {
+    code: formData.code.trim().toUpperCase(),
+    name: formData.name.trim(),
+    stampUrl: formData.stampUrl.trim(),
+    description: formData.description.trim() || undefined,
+    validityMonths: formData.validityMonths,
+    issuerIds: formData.organizationIds,
+    documents: formData.documents.map((document) => ({
+      type: document.type,
+      name: document.name.trim(),
+      content: document.content?.trim() || "",
+      fileUrl: document.fileUrl.trim(),
+      fileName: document.fileName.trim(),
+    })),
+    status: formData.status,
+    metadataJson: null,
+  };
+}
+
+function buildOrganizationPayload(formData: OrganizationFormData) {
+  return {
+    code: formData.code.trim().toUpperCase(),
+    name: formData.name.trim(),
+    address: formData.address.trim(),
+    phone: formData.phone.trim(),
+    email: formData.email.trim(),
+    website: formData.website.trim(),
+    description: formData.description?.trim() || undefined,
+    status: formData.status,
+  };
+}
 
 export function useCertificate() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<CategoryType>("standards");
+  const [organizationSearchQuery, setOrganizationSearchQuery] = useState("");
+  const [organizationStatusFilter, setOrganizationStatusFilter] =
+    useState("all");
 
-  const [organizations, setOrganizations] =
-    useState<CertificationOrganization[]>(initialOrganizations);
+  const organizationsQuery = useMasterData("certificate-issuers", {
+    params: {
+      keyword: organizationSearchQuery.trim() || undefined,
+      status:
+        organizationStatusFilter === "all"
+          ? undefined
+          : organizationStatusFilter,
+      page: 0,
+      size: 100,
+    },
+  });
 
-  const [standards, setStandards] = useState<Certificate[]>(initialStandards);
+  const createOrganization = useCreateMasterData("certificate-issuers");
+  const updateOrganization = useUpdateMasterData("certificate-issuers");
+  const deleteOrganization = useDeleteMasterData("certificate-issuers");
+
+  const organizations = useMemo<CertificationOrganization[]>(
+    () => organizationsQuery.items,
+    [organizationsQuery.items],
+  );
+
+  const standardsQuery = useMasterData("certificate-standards", {
+    params: {
+      page: 0,
+      size: 100,
+    },
+  });
+
+  const standards = useMemo<Certificate[]>(
+    () =>
+      standardsQuery.items.map((item) =>
+        mapStandardRecordToItem(item as CertificateStandardRecord, organizations),
+      ),
+    [organizations, standardsQuery.items],
+  );
+
+  const createStandard = useCreateMasterData("certificate-standards");
+  const updateStandard = useUpdateMasterData("certificate-standards");
+  const deleteStandard = useDeleteMasterData("certificate-standards");
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<
@@ -31,79 +146,115 @@ export function useCertificate() {
   // Form states for Standards
   const [standardFormOpen, setStandardFormOpen] = useState(false);
   const [editStandard, setEditStandard] = useState<Certificate | null>(null);
-  const [standardFormData, setStandardFormData] =
-    useState<StandardFormData>(emptyStandardFormData);
 
   // Form states for Organizations
   const [orgFormOpen, setOrgFormOpen] = useState(false);
-  const [editOrg, setEditOrg] = useState<CertificationOrganization | null>(null);
-  const [orgFormData, setOrgFormData] =
-    useState<OrganizationFormData>(emptyOrganizationFormData);
+  const [editOrg, setEditOrg] = useState<CertificationOrganization | null>(
+    null,
+  );
 
   const [orgSearchQuery, setOrgSearchQuery] = useState("");
 
   const handleAddStandard = () => {
     setEditStandard(null);
-    setStandardFormData(emptyStandardFormData);
-    setOrgSearchQuery("");
     setStandardFormOpen(true);
   };
 
   const handleEditStandard = (item: Certificate) => {
     setEditStandard(item);
-    setStandardFormData({ ...item });
-    setOrgSearchQuery("");
     setStandardFormOpen(true);
   };
 
-  const handleSubmitStandard = () => {
+  const handleSubmitStandard = async (formData: StandardFormValues) => {
     if (editStandard) {
-      setStandards((prev) =>
-        prev.map((s) =>
-          s.id === editStandard.id ? { ...s, ...standardFormData } : s,
-        ),
-      );
-      toast({ title: "Thành công", description: "Đã cập nhật loại tiêu chuẩn" });
+      const payload = buildStandardPayload(formData);
+
+      try {
+        await updateStandard.mutateAsync({
+          id: editStandard.id,
+          data: payload,
+        });
+        toast({
+          title: "Thành công",
+          description: "Đã cập nhật loại tiêu chuẩn",
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+
+        toast({
+          title: "Không thể cập nhật",
+          description: message,
+          variant: "destructive",
+        });
+        return;
+      }
     } else {
-      const newStandard: Certificate = {
-        id: Date.now(),
-        ...standardFormData,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setStandards((prev) => [...prev, newStandard]);
-      toast({ title: "Thành công", description: "Đã thêm loại tiêu chuẩn mới" });
+      const payload = buildStandardPayload(formData);
+
+      try {
+        await createStandard.mutateAsync(payload);
+        toast({
+          title: "Thành công",
+          description: "Đã thêm loại tiêu chuẩn mới",
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+
+        toast({
+          title: "Không thể thêm",
+          description: message,
+          variant: "destructive",
+        });
+        return;
+      }
     }
     setStandardFormOpen(false);
+    setEditStandard(null);
   };
 
   const handleAddOrg = () => {
     setEditOrg(null);
-    setOrgFormData(emptyOrganizationFormData);
     setOrgFormOpen(true);
   };
 
   const handleEditOrg = (item: CertificationOrganization) => {
     setEditOrg(item);
-    setOrgFormData({ ...item });
     setOrgFormOpen(true);
   };
 
-  const handleSubmitOrg = () => {
-    if (editOrg) {
-      setOrganizations((prev) =>
-        prev.map((o) => (o.id === editOrg.id ? { ...o, ...orgFormData } : o)),
-      );
-      toast({ title: "Thành công", description: "Đã cập nhật tổ chức" });
-    } else {
-      const newOrg: CertificationOrganization = {
-        id: Date.now(),
-        ...orgFormData,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setOrganizations((prev) => [...prev, newOrg]);
-      toast({ title: "Thành công", description: "Đã thêm tổ chức mới" });
+  const handleSubmitOrg = async (
+    formData: OrganizationFormData,
+  ): Promise<void> => {
+    const payload: CertificateIssuerCreateRequest = buildOrganizationPayload(
+      formData,
+    );
+
+    try {
+      if (editOrg) {
+        await updateOrganization.mutateAsync({
+          id: editOrg.id,
+          data: payload,
+        });
+        toast({ title: "Thành công", description: "Đã cập nhật tổ chức" });
+      } else {
+        await createOrganization.mutateAsync(payload);
+        toast({ title: "Thành công", description: "Đã thêm tổ chức mới" });
+      }
+
+      setOrgFormOpen(false);
+      setEditOrg(null);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+
+      toast({
+        title: editOrg ? "Không thể cập nhật" : "Không thể thêm",
+        description: message,
+        variant: "destructive",
+      });
     }
-    setOrgFormOpen(false);
   };
 
   const handleDelete = (item: Certificate | CertificationOrganization) => {
@@ -111,16 +262,31 @@ export function useCertificate() {
     setDeleteOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (deleteItem) {
+  const handleConfirmDelete = async () => {
+    if (!deleteItem) {
+      setDeleteOpen(false);
+      return;
+    }
+
+    try {
       if (activeTab === "standards") {
-        setStandards((prev) => prev.filter((s) => s.id !== deleteItem.id));
+        await deleteStandard.mutateAsync(deleteItem.id);
         toast({ title: "Thành công", description: "Đã xóa loại tiêu chuẩn" });
       } else {
-        setOrganizations((prev) => prev.filter((o) => o.id !== deleteItem.id));
+        await deleteOrganization.mutateAsync(deleteItem.id);
         toast({ title: "Thành công", description: "Đã xóa tổ chức" });
       }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+
+      toast({
+        title: "Không thể xóa",
+        description: message,
+        variant: "destructive",
+      });
     }
+
     setDeleteOpen(false);
   };
 
@@ -129,14 +295,18 @@ export function useCertificate() {
     setActiveTab,
     standards,
     organizations,
+    organizationSearchQuery,
+    setOrganizationSearchQuery,
+    organizationStatusFilter,
+    setOrganizationStatusFilter,
+    organizationsLoading: organizationsQuery.loading,
+    organizationsError: organizationsQuery.error,
+    standardsLoading: standardsQuery.loading,
+    standardsError: standardsQuery.error,
     standardFormOpen,
     setStandardFormOpen,
     orgFormOpen,
     setOrgFormOpen,
-    standardFormData,
-    setStandardFormData,
-    orgFormData,
-    setOrgFormData,
     editStandard,
     editOrg,
     orgSearchQuery,
@@ -151,5 +321,13 @@ export function useCertificate() {
     handleSubmitOrg,
     handleDelete,
     handleConfirmDelete,
+    standardsPending:
+      createStandard.isPending ||
+      updateStandard.isPending ||
+      deleteStandard.isPending,
+    organizationsPending:
+      createOrganization.isPending ||
+      updateOrganization.isPending ||
+      deleteOrganization.isPending,
   };
 }

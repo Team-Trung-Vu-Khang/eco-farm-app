@@ -1,7 +1,4 @@
-import axios from "axios";
-import { authApi } from "../../auth/api/auth.api";
-import { apiEnv } from "../../../shared/config/api.env";
-import { API_REQUEST_TIMEOUT } from "../../../shared/config/api.config";
+import { apiClient } from "../../../shared/lib/axios";
 import { MASTER_DATA_PATHS } from "../../../shared/constants/master-data.constants";
 import type {
   BankDirectoryCreateRequest,
@@ -16,36 +13,20 @@ import type {
 
 const BANK_DIRECTORY_PATH = MASTER_DATA_PATHS.banks;
 
-const getAuthHeaders = () => {
-  const token = authApi.getToken();
-
-  return token ? { Authorization: `Bearer ${token}` } : undefined;
-};
-
 export const bankDirectoryApi = {
   async getBanks(
     params: BankDirectoryQueryParams = {},
   ): Promise<BankDirectoryResponse<BankDirectoryItem>> {
-    const response = await axios.get<BankDirectoryResponse<BankDirectoryItem>>(
+    const response = await apiClient.get<BankDirectoryResponse<BankDirectoryItem>>(
       BANK_DIRECTORY_PATH,
-      {
-        baseURL: apiEnv.apiBaseUrl,
-        timeout: API_REQUEST_TIMEOUT,
-        params,
-        headers: getAuthHeaders(),
-      },
+      { params },
     );
 
     return response.data;
   },
   async getBankById(id: number | string): Promise<BankDirectoryItem> {
-    const response = await axios.get<BankDirectoryItem>(
+    const response = await apiClient.get<BankDirectoryItem>(
       `${BANK_DIRECTORY_PATH}/${id}`,
-      {
-        baseURL: apiEnv.apiBaseUrl,
-        timeout: API_REQUEST_TIMEOUT,
-        headers: getAuthHeaders(),
-      },
     );
 
     return response.data;
@@ -53,14 +34,9 @@ export const bankDirectoryApi = {
   async createBank(
     payload: BankDirectoryCreateRequest,
   ): Promise<BankDirectoryCreateResponse> {
-    const response = await axios.post<BankDirectoryCreateResponse>(
+    const response = await apiClient.post<BankDirectoryCreateResponse>(
       BANK_DIRECTORY_PATH,
       payload,
-      {
-        baseURL: apiEnv.apiBaseUrl,
-        timeout: API_REQUEST_TIMEOUT,
-        headers: getAuthHeaders(),
-      },
     );
 
     return response.data;
@@ -69,23 +45,14 @@ export const bankDirectoryApi = {
     id: number | string,
     payload: BankDirectoryUpdateRequest,
   ): Promise<BankDirectoryUpdateResponse> {
-    const response = await axios.put<BankDirectoryUpdateResponse>(
+    const response = await apiClient.put<BankDirectoryUpdateResponse>(
       `${BANK_DIRECTORY_PATH}/${id}`,
       payload,
-      {
-        baseURL: apiEnv.apiBaseUrl,
-        timeout: API_REQUEST_TIMEOUT,
-        headers: getAuthHeaders(),
-      },
     );
 
     return response.data;
   },
   async deleteBank(id: number | string): Promise<BankDirectoryDeleteResponse> {
-    await axios.delete(`${BANK_DIRECTORY_PATH}/${id}`, {
-      baseURL: apiEnv.apiBaseUrl,
-      timeout: API_REQUEST_TIMEOUT,
-      headers: getAuthHeaders(),
-    });
+    await apiClient.delete(`${BANK_DIRECTORY_PATH}/${id}`);
   },
 };

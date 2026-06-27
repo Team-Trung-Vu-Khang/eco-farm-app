@@ -1,35 +1,44 @@
 import { Input, Label, Textarea } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { EnterpriseTypeFormData } from "../types";
+import type { FieldErrors, UseFormRegister } from "react-hook-form";
+import type { EnterpriseFormInput } from "../data/enterprise-form.schema";
 
 interface EnterpriseTypeFormProps {
-  formData: EnterpriseTypeFormData;
-  onChange: (data: Partial<EnterpriseTypeFormData>) => void;
+  register: UseFormRegister<EnterpriseFormInput>;
+  errors: FieldErrors<EnterpriseFormInput>;
 }
 
 export const EnterpriseTypeForm = ({
-  formData,
-  onChange,
+  register,
+  errors,
 }: EnterpriseTypeFormProps) => {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="code">Mã</Label>
+          <Label htmlFor="code" required>
+            Mã
+          </Label>
           <Input
             id="code"
-            value={formData.code}
-            onChange={(e) => onChange({ code: e.target.value })}
             placeholder="VD: HTX, SX, CB..."
+            {...register("code")}
           />
+          {errors.code ? (
+            <p className="text-xs text-red-600">{errors.code.message}</p>
+          ) : null}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="name">Tên</Label>
+          <Label htmlFor="name" required>
+            Tên
+          </Label>
           <Input
             id="name"
-            value={formData.name}
-            onChange={(e) => onChange({ name: e.target.value })}
             placeholder="VD: Hợp tác xã, Sản xuất..."
+            {...register("name")}
           />
+          {errors.name ? (
+            <p className="text-xs text-red-600">{errors.name.message}</p>
+          ) : null}
         </div>
       </div>
 
@@ -37,11 +46,13 @@ export const EnterpriseTypeForm = ({
         <Label htmlFor="description">Mô tả</Label>
         <Textarea
           id="description"
-          value={formData.description}
-          onChange={(e) => onChange({ description: e.target.value })}
           placeholder="Mô tả chi tiết..."
           rows={3}
+          {...register("description")}
         />
+        {errors.description ? (
+          <p className="text-xs text-red-600">{errors.description.message}</p>
+        ) : null}
       </div>
     </div>
   );

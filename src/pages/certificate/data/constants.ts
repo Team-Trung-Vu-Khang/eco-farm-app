@@ -17,6 +17,7 @@ export const initialOrganizations: CertificationOrganization[] = [
     description: "Cơ quan quản lý nhà nước về nông nghiệp",
     status: "active",
     createdAt: "2024-01-01",
+    updatedAt: "2024-01-01",
   },
   {
     id: 2,
@@ -29,6 +30,7 @@ export const initialOrganizations: CertificationOrganization[] = [
     description: "Cơ quan chuyên môn thuộc Bộ NN&PTNT",
     status: "active",
     createdAt: "2024-01-02",
+    updatedAt: "2024-01-02",
   },
   {
     id: 3,
@@ -41,6 +43,7 @@ export const initialOrganizations: CertificationOrganization[] = [
     description: "Tổ chức tiêu chuẩn nông nghiệp toàn cầu",
     status: "active",
     createdAt: "2024-01-03",
+    updatedAt: "2024-01-03",
   },
 ];
 
@@ -50,6 +53,7 @@ export const initialStandards: Certificate[] = [
     code: "CH001",
     name: "Global GAP",
     organizationIds: [3],
+    validityMonths: 36,
     content: "Chứng nhận thực hành nông nghiệp tốt toàn cầu",
     contentType: "editor",
     stampUrl: "https://lifarm.vn/wp-content/uploads/2025/03/globalgap-1.png",
@@ -64,6 +68,7 @@ export const emptyStandardFormData: StandardFormData = {
   code: "",
   name: "",
   organizationIds: [],
+  validityMonths: 12,
   content: "",
   contentType: "editor",
   fileUrl: "",

@@ -1,10 +1,5 @@
-// Re-export from the Zustand store so the rest of the group-position
-// feature imports from a single source of truth.
-export type { PositionGroup } from "../../../stores/usePositionGroupStore";
+import type { MasterDataRecord } from "@/features/master-data";
+import type { PositionGroupFormValues } from "../data/position-group-form.schema";
 
-export type PositionGroupFormData = {
-  code: string;
-  name: string;
-  description: string;
-  status: "active" | "inactive";
-};
+export type PositionGroup = MasterDataRecord<"position-groups">;
+export type PositionGroupFormData = PositionGroupFormValues;

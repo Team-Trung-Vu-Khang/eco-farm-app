@@ -15,6 +15,7 @@ interface StandardTabProps {
   onAdd: () => void;
   onEdit: (item: Certificate) => void;
   onDelete: (item: Certificate) => void;
+  loading?: boolean;
 }
 
 export function StandardTab({
@@ -23,6 +24,7 @@ export function StandardTab({
   onAdd,
   onEdit,
   onDelete,
+  loading,
 }: StandardTabProps) {
   return (
     <div className="space-y-4">
@@ -44,6 +46,7 @@ export function StandardTab({
         onEdit={onEdit}
         onDelete={onDelete}
         searchPlaceholder="Tìm kiếm tiêu chuẩn..."
+        loading={loading}
       />
     </div>
   );

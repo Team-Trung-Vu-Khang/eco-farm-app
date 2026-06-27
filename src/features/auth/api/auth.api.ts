@@ -1,12 +1,9 @@
-import axios from "axios";
+import { apiClient } from "@/shared/lib/axios";
 import type { AuthMeResponse, AuthProvider } from "../types/auth.type";
 import { AUTH_PATHS } from "../../../shared/constants/auth.constants";
 import { authEnv } from "../../../shared/config/auth.env";
 import { apiEnv } from "../../../shared/config/api.env";
-import {
-  API_REQUEST_TIMEOUT,
-  buildApiUrl,
-} from "../../../shared/config/api.config";
+import { buildApiUrl } from "../../../shared/config/api.config";
 
 const AUTH_TOKEN_STORAGE_KEY = "accessToken";
 const buildCallbackUrl = () =>
@@ -55,9 +52,7 @@ export const authApi = {
       throw new Error("Missing auth token");
     }
 
-    const response = await axios.get<AuthMeResponse>(AUTH_PATHS.me, {
-      baseURL: apiEnv.apiBaseUrl,
-      timeout: API_REQUEST_TIMEOUT,
+    const response = await apiClient.get<AuthMeResponse>(AUTH_PATHS.me, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -74,9 +69,7 @@ export const authApi = {
     }
 
     try {
-      await axios.post(AUTH_PATHS.logout, null, {
-        baseURL: apiEnv.apiBaseUrl,
-        timeout: API_REQUEST_TIMEOUT,
+      await apiClient.post(AUTH_PATHS.logout, null, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

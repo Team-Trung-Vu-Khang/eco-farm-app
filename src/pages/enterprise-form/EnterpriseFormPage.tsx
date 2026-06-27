@@ -21,13 +21,15 @@ const EnterpriseFormPage = () => {
     setActiveTab,
     organizationData,
     businessData,
+    businessLoading,
+    setBusinessSearchQuery,
     formOpen,
     setFormOpen,
     deleteOpen,
     setDeleteOpen,
     editItem,
-    formData,
-    setFormData,
+    register,
+    errors,
     handleAdd,
     handleEdit,
     handleDelete,
@@ -100,7 +102,10 @@ const EnterpriseFormPage = () => {
             data={businessData}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            searchable
             searchPlaceholder="Tìm kiếm lĩnh vực hoạt động..."
+            onSearch={setBusinessSearchQuery}
+            loading={businessLoading}
           />
         </TabsContent>
       </Tabs>
@@ -112,10 +117,8 @@ const EnterpriseFormPage = () => {
         onSubmit={handleSubmit}
       >
         <EnterpriseTypeForm
-          formData={formData}
-          onChange={(updates) =>
-            setFormData((prev) => ({ ...prev, ...updates }))
-          }
+          register={register}
+          errors={errors}
         />
       </FormDialog>
 
