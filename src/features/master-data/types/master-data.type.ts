@@ -28,6 +28,11 @@ export interface MasterDataQueryParams {
   parentCode?: string;
 }
 
+export interface VsicIndustryTreeQueryParams {
+  rootCode?: string;
+  status?: MasterDataStatus;
+}
+
 export interface PositionGroup {
   id: number;
   code: string;
@@ -262,6 +267,11 @@ export type CertificateIssuerUpdateRequest =
 
 export type CertificateStandardRecord = MasterDataRecord<"certificate-standards">;
 export type VsicIndustryRecord = MasterDataRecord<"vsic-industries">;
+export type VsicIndustryChildrenRecord = VsicIndustryRecord[];
+export type VsicIndustryTreeRecord = VsicIndustryRecord & {
+  children?: Array<VsicIndustryTreeRecord | string>;
+};
+export type VsicIndustryTreeResponse = VsicIndustryTreeRecord[];
 
 export type BusinessLineCreateRequest = MasterDataCreateRequest<"business-lines">;
 export type BusinessLineUpdateRequest = MasterDataUpdateRequest<"business-lines">;

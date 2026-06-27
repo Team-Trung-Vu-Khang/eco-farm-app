@@ -20,7 +20,10 @@ import type {
   PositionResponsibilitiesQueryParams,
   PositionResponsibilitiesResponse,
   VsicIndustryCreateRequest,
+  VsicIndustryChildrenRecord,
   VsicIndustryRecord,
+  VsicIndustryTreeQueryParams,
+  VsicIndustryTreeResponse,
   VsicIndustryUpdateRequest,
 } from "../types/master-data.type";
 
@@ -177,6 +180,21 @@ export const masterDataApi = {
     apiClient
       .get<VsicIndustryRecord>(
         `${MASTER_DATA_PATHS.vsicIndustries}/${code}`,
+      )
+      .then((response) => response.data),
+
+  listVsicIndustryChildrenByCode: (code: string) =>
+    apiClient
+      .get<VsicIndustryChildrenRecord>(
+        `${MASTER_DATA_PATHS.vsicIndustries}/${code}/children`,
+      )
+      .then((response) => response.data),
+
+  listVsicIndustryTree: (params?: VsicIndustryTreeQueryParams) =>
+    apiClient
+      .get<VsicIndustryTreeResponse>(
+        `${MASTER_DATA_PATHS.vsicIndustries}/tree`,
+        { params },
       )
       .then((response) => response.data),
 

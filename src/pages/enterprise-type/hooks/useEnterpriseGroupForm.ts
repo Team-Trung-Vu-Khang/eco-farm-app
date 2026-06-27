@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { masterDataApi } from "@/features/master-data";
@@ -23,6 +23,20 @@ export function useEnterpriseGroupForm() {
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
     },
+  });
+
+  const {
+    data: tree,
+    isLoading: treeLoading,
+    error: treeQueryError,
+  } = useQuery({
+    queryKey: ["master-data", "vsic-industries", "tree", status] as const,
+    queryFn: () =>
+      masterDataApi.listVsicIndustryTree({
+        status: status === "all" ? undefined : status,
+      }),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const [formOpen, setFormOpen] = useState(false);
@@ -142,8 +156,11 @@ export function useEnterpriseGroupForm() {
 
   return {
     data: items,
+    tree,
     loading,
+    treeLoading,
     error,
+    treeError: treeQueryError?.message ?? null,
     response,
     search,
     status,
