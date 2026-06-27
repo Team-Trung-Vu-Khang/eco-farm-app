@@ -4,6 +4,7 @@ import type {
   PesticideToxicityFormData,
   PesticideToxicityItem,
 } from "../types";
+import type { PesticideOriginFormValues } from "./pesticide-origin-form.schema";
 
 export const initialPesticidePurposes: PesticideCategoryItem[] = [
   {
@@ -176,6 +177,13 @@ export const PESTICIDE_GROUP_STATUS_OPTIONS = [
 ] as const;
 
 export const emptyPesticideCategoryFormData: PesticideCategoryFormData = {
+  code: "",
+  name: "",
+  description: "",
+  status: "active",
+};
+
+export const emptyPesticideOriginFormData: PesticideOriginFormValues = {
   code: "",
   name: "",
   description: "",

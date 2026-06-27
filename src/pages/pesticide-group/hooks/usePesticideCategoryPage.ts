@@ -3,9 +3,11 @@ import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useMasterData, useMasterDataMutations } from "@/features/master-data";
 import type { MasterDataStatus } from "@/features/master-data/types/master-data.type";
 import type {
+  PesticideCategoryFormData,
   PesticideCategoryItem,
 } from "../types";
 import type { PesticidePurposeFormValues } from "../data/pesticide-purpose-form.schema";
+import { emptyPesticideCategoryFormData } from "../data/constants";
 
 export function usePesticideCategoryPage() {
   const { toast } = useToast();
@@ -18,6 +20,9 @@ export function usePesticideCategoryPage() {
   const [editItem, setEditItem] = useState<PesticideCategoryItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<PesticideCategoryItem | null>(
     null,
+  );
+  const [formData, setFormData] = useState<PesticideCategoryFormData>(
+    emptyPesticideCategoryFormData,
   );
 
   const {
@@ -44,11 +49,18 @@ export function usePesticideCategoryPage() {
 
   const handleAdd = () => {
     setEditItem(null);
+    setFormData(emptyPesticideCategoryFormData);
     setFormOpen(true);
   };
 
   const handleEdit = (item: PesticideCategoryItem) => {
     setEditItem(item);
+    setFormData({
+      code: item.code,
+      name: item.name,
+      description: item.description ?? "",
+      status: item.status,
+    });
     setFormOpen(true);
   };
 
@@ -165,6 +177,8 @@ export function usePesticideCategoryPage() {
     deleteOpen,
     setDeleteOpen,
     editItem,
+    formData,
+    setFormData,
     handleAdd,
     handleEdit,
     handleDelete,

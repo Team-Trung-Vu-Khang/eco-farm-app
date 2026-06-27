@@ -23,6 +23,9 @@ import type {
   PesticideGroupCreateRequest,
   PesticideGroupRecord,
   PesticideGroupUpdateRequest,
+  PesticideOriginCreateRequest,
+  PesticideOriginRecord,
+  PesticideOriginUpdateRequest,
   PlanGroupCreateRequest,
   PlanTypeCreateRequest,
   PlanTypeRecord,
@@ -198,6 +201,42 @@ export const masterDataApi = {
   deletePesticideGroup: (id: number | string): Promise<void> =>
     apiClient
       .delete(`${MASTER_DATA_PATHS.pesticideGroups}/${id}`)
+      .then(() => undefined),
+
+  listPesticideOrigins: (params?: MasterDataQueryParams) =>
+    apiClient
+      .get<MasterDataPageResponse<PesticideOriginRecord>>(
+        MASTER_DATA_PATHS.pesticideOrigins,
+        { params },
+      )
+      .then((response) => response.data),
+
+  getPesticideOriginById: (id: number | string) =>
+    apiClient
+      .get<PesticideOriginRecord>(
+        `${MASTER_DATA_PATHS.pesticideOrigins}/${id}`,
+      )
+      .then((response) => response.data),
+
+  createPesticideOrigin: (payload: PesticideOriginCreateRequest) =>
+    apiClient
+      .post<PesticideOriginRecord>(MASTER_DATA_PATHS.pesticideOrigins, payload)
+      .then((response) => response.data),
+
+  updatePesticideOrigin: (
+    id: number | string,
+    payload: PesticideOriginUpdateRequest,
+  ) =>
+    apiClient
+      .put<PesticideOriginRecord>(
+        `${MASTER_DATA_PATHS.pesticideOrigins}/${id}`,
+        payload,
+      )
+      .then((response) => response.data),
+
+  deletePesticideOrigin: (id: number | string): Promise<void> =>
+    apiClient
+      .delete(`${MASTER_DATA_PATHS.pesticideOrigins}/${id}`)
       .then(() => undefined),
 
   listPlanGroups: (params?: MasterDataQueryParams) =>

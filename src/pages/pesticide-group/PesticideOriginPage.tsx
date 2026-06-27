@@ -4,36 +4,34 @@ import {
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { PesticideCategoryFormDialog } from "./components/PesticideCategoryFormDialog";
-import {
-  emptyPesticideCategoryFormData,
-  initialPesticideOrigins,
-} from "./data/constants";
 import { pesticideCategoryColumns } from "./data/columns";
-import { usePesticideCategoryPage } from "./hooks/usePesticideCategoryPage";
+import { PESTICIDE_GROUP_STATUS_OPTIONS } from "./data/constants";
+import { PesticideOriginFormDialog } from "./components/PesticideOriginFormDialog";
+import { usePesticideOriginPage } from "./hooks/usePesticideOriginPage";
 
 const PesticideOriginPage = () => {
   const {
     data,
+    loading,
+    error,
+    response,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
     formOpen,
     setFormOpen,
     deleteOpen,
     setDeleteOpen,
     editItem,
-    formData,
-    setFormData,
     handleAdd,
     handleEdit,
     handleDelete,
     handleSubmit,
     handleConfirmDelete,
-  } = usePesticideCategoryPage({
-    initialData: initialPesticideOrigins,
-    emptyFormData: emptyPesticideCategoryFormData,
-    createSuccessMessage: "Đã thêm phân loại nguồn gốc mới",
-    updateSuccessMessage: "Đã cập nhật phân loại nguồn gốc",
-    deleteSuccessMessage: "Đã xóa phân loại nguồn gốc",
-  });
+    handleSearch,
+    handleFilterChange,
+  } = usePesticideOriginPage();
 
   return (
     <div className="space-y-6">
@@ -50,26 +48,41 @@ const PesticideOriginPage = () => {
         </Button>
       </div>
 
-      <DataTable
-        columns={pesticideCategoryColumns("Mã nguồn gốc", "Tên nguồn gốc")}
-        data={data}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm theo nguồn gốc..."
-      />
+      {error ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+          ⚠️ {error}
+        </div>
+      ) : (
+        <DataTable
+          columns={pesticideCategoryColumns("Mã nguồn gốc", "Tên nguồn gốc")}
+          data={data}
+          searchable
+          searchPlaceholder="Tìm kiếm theo nguồn gốc..."
+          pageSize={pageSize}
+          currentIndex={currentIndex}
+          totalElements={response?.totalElements}
+          totalPages={response?.totalPages}
+          onSearch={handleSearch}
+          onPageSize={setPageSize}
+          onIndexChange={setCurrentIndex}
+          onFilterChange={handleFilterChange}
+          filters={[
+            {
+              key: "status",
+              label: "Trạng thái",
+              options: [...PESTICIDE_GROUP_STATUS_OPTIONS],
+            },
+          ]}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          loading={loading}
+        />
+      )}
 
-      <PesticideCategoryFormDialog
+      <PesticideOriginFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
-        isEdit={!!editItem}
-        title="phân loại nguồn gốc"
-        codeLabel="Mã nguồn gốc"
-        nameLabel="Tên nguồn gốc"
-        codePlaceholder="VD: CHEMICAL, BIOLOGICAL..."
-        namePlaceholder="VD: Thuốc hóa học..."
-        descriptionPlaceholder="Mô tả chi tiết về nguồn gốc và thành phần..."
-        formData={formData}
-        setFormData={setFormData}
+        editItem={editItem}
         onSubmit={handleSubmit}
       />
 

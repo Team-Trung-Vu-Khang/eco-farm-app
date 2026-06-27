@@ -71,7 +71,6 @@ export interface MasterDataAttributesMap {
   positions: Record<string, never>;
   "certificate-issuers": Record<string, unknown>;
   "certificate-standards": Record<string, unknown>;
-  "pesticide-groups": Record<string, unknown>;
   "vsic-industries": Record<string, unknown>;
 }
 
@@ -94,6 +93,7 @@ export interface MasterDataRequestExtraFieldsMap {
     documents?: CertificateStandardDocumentInput[];
   };
   "pesticide-groups": Record<string, never>;
+  "pesticide-origins": Record<string, never>;
   "plan-types": {
     color: string;
     planGroupId?: number | null;
@@ -125,6 +125,7 @@ export interface MasterDataRecordExtraFieldsMap {
     documents: CertificateStandardDocument[];
   };
   "pesticide-groups": Record<string, never>;
+  "pesticide-origins": Record<string, never>;
   "plan-types": {
     color: string;
     planGroup?: PlanGroupRecord | null;
@@ -219,16 +220,18 @@ export interface MasterDataCommonFields {
 export type MasterDataCreateRequest<
   C extends MasterDataCatalog = MasterDataCatalog,
   TAttributes = MasterDataAttributes<C>,
-> = MasterDataCommonFields & MasterDataRequestExtraFields<C> & {
-  attributes?: TAttributes;
-};
+> = MasterDataCommonFields &
+  MasterDataRequestExtraFields<C> & {
+    attributes?: TAttributes;
+  };
 
 export type MasterDataUpdateRequest<
   C extends MasterDataCatalog = MasterDataCatalog,
   TAttributes = MasterDataAttributes<C>,
-> = MasterDataCommonFields & MasterDataRequestExtraFields<C> & {
-  attributes?: TAttributes;
-};
+> = MasterDataCommonFields &
+  MasterDataRequestExtraFields<C> & {
+    attributes?: TAttributes;
+  };
 
 export type MasterDataDeleteResponse = void;
 
@@ -269,9 +272,16 @@ export type PositionResponsibilitiesResponse = PositionResponsibilityItem[];
 export type CertificateIssuerRecord = MasterDataRecord<"certificate-issuers">;
 export type BusinessLineRecord = MasterDataRecord<"business-lines">;
 export type PesticideGroupRecord = MasterDataRecord<"pesticide-groups">;
+export type PesticideOriginRecord = MasterDataRecord<"pesticide-origins">;
 export type PlanGroupRecord = MasterDataRecord<"plan-groups">;
-export type PesticideGroupCreateRequest = MasterDataCreateRequest<"pesticide-groups">;
-export type PesticideGroupUpdateRequest = MasterDataUpdateRequest<"pesticide-groups">;
+export type PesticideGroupCreateRequest =
+  MasterDataCreateRequest<"pesticide-groups">;
+export type PesticideGroupUpdateRequest =
+  MasterDataUpdateRequest<"pesticide-groups">;
+export type PesticideOriginCreateRequest =
+  MasterDataCreateRequest<"pesticide-origins">;
+export type PesticideOriginUpdateRequest =
+  MasterDataUpdateRequest<"pesticide-origins">;
 export type PlanGroupCreateRequest = MasterDataCreateRequest<"plan-groups">;
 export type PlanGroupUpdateRequest = MasterDataUpdateRequest<"plan-groups">;
 
@@ -283,7 +293,8 @@ export type CertificateIssuerUpdateRequest =
   MasterDataUpdateRequest<"certificate-issuers"> &
     Partial<CertificateIssuerFields>;
 
-export type CertificateStandardRecord = MasterDataRecord<"certificate-standards">;
+export type CertificateStandardRecord =
+  MasterDataRecord<"certificate-standards">;
 export type PlanTypeRecord = MasterDataRecord<"plan-types">;
 export type VsicIndustryRecord = MasterDataRecord<"vsic-industries">;
 export type VsicIndustryChildrenRecord = VsicIndustryRecord[];
@@ -293,8 +304,10 @@ export type VsicIndustryTreeRecord = VsicIndustryRecord & {
 export type VsicIndustryTreeResponse = VsicIndustryTreeRecord[];
 export type PlanTypePageResponse = MasterDataPageResponse<PlanTypeRecord>;
 
-export type BusinessLineCreateRequest = MasterDataCreateRequest<"business-lines">;
-export type BusinessLineUpdateRequest = MasterDataUpdateRequest<"business-lines">;
+export type BusinessLineCreateRequest =
+  MasterDataCreateRequest<"business-lines">;
+export type BusinessLineUpdateRequest =
+  MasterDataUpdateRequest<"business-lines">;
 
 export interface VsicIndustryMutationRequest {
   code: string;
