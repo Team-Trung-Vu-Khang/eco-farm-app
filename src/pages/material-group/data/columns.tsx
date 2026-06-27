@@ -1,8 +1,16 @@
-import type { Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { MaterialGroup } from "../types/types";
+import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import type { MaterialGroupRecord } from "@/features/master-data/types/master-data.type";
 
-export const materialGroupColumns: Column<MaterialGroup>[] = [
-  { key: "code", label: "Mã nhóm" },
+export const materialGroupColumns: Column<MaterialGroupRecord>[] = [
+  {
+    key: "code",
+    label: "Mã nhóm",
+    render: (value) => (
+      <Badge variant="outline" className="bg-background font-mono">
+        {String(value ?? "")}
+      </Badge>
+    ),
+  },
   { key: "name", label: "Tên nhóm" },
   { key: "description", label: "Mô tả" },
 ];

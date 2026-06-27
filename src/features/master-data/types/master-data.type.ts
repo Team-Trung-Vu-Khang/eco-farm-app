@@ -92,6 +92,7 @@ export interface MasterDataRequestExtraFieldsMap {
     issuerIds?: number[];
     documents?: CertificateStandardDocumentInput[];
   };
+  "material-groups": Record<string, never>;
   "pesticide-groups": Record<string, never>;
   "pesticide-origins": Record<string, never>;
   "pesticide-toxicity-classes": {
@@ -129,6 +130,7 @@ export interface MasterDataRecordExtraFieldsMap {
     issuers: CertificateIssuerRecord[];
     documents: CertificateStandardDocument[];
   };
+  "material-groups": Record<string, never>;
   "pesticide-groups": Record<string, never>;
   "pesticide-origins": Record<string, never>;
   "pesticide-toxicity-classes": {
@@ -281,6 +283,9 @@ export type PositionResponsibilitiesResponse = PositionResponsibilityItem[];
 
 export type CertificateIssuerRecord = MasterDataRecord<"certificate-issuers">;
 export type BusinessLineRecord = MasterDataRecord<"business-lines">;
+export type MaterialGroupRecord = MasterDataRecord<"material-groups">;
+export type MaterialGroupPageResponse =
+  MasterDataPageResponse<MaterialGroupRecord>;
 export type PesticideGroupRecord = MasterDataRecord<"pesticide-groups">;
 export type PesticideOriginRecord = MasterDataRecord<"pesticide-origins">;
 export type PesticideToxicityClassRecord =
@@ -290,6 +295,12 @@ export type PesticideGroupCreateRequest =
   MasterDataCreateRequest<"pesticide-groups">;
 export type PesticideGroupUpdateRequest =
   MasterDataUpdateRequest<"pesticide-groups">;
+export type MaterialGroupCreateRequest =
+  MasterDataCreateRequest<"material-groups">;
+export type MaterialGroupUpdateRequest =
+  MasterDataUpdateRequest<"material-groups">;
+export type MaterialGroupMutationRequest = MaterialGroupCreateRequest;
+export type MaterialGroupDeleteResponse = void;
 export type PesticideOriginCreateRequest =
   MasterDataCreateRequest<"pesticide-origins">;
 export type PesticideOriginUpdateRequest =

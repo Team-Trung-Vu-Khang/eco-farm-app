@@ -20,6 +20,9 @@ import type {
   MasterDataQueryParams,
   MasterDataRecord,
   MasterDataUpdateRequest,
+  MaterialGroupCreateRequest,
+  MaterialGroupRecord,
+  MaterialGroupUpdateRequest,
   PesticideGroupCreateRequest,
   PesticideGroupRecord,
   PesticideGroupUpdateRequest,
@@ -170,6 +173,40 @@ export const masterDataApi = {
   deleteBusinessLine: (id: number | string): Promise<void> =>
     apiClient
       .delete(`${MASTER_DATA_PATHS.businessLines}/${id}`)
+      .then(() => undefined),
+
+  listMaterialGroups: (params?: MasterDataQueryParams) =>
+    apiClient
+      .get<MasterDataPageResponse<MaterialGroupRecord>>(
+        MASTER_DATA_PATHS.materialGroups,
+        { params },
+      )
+      .then((response) => response.data),
+
+  getMaterialGroupById: (id: number | string) =>
+    apiClient
+      .get<MaterialGroupRecord>(`${MASTER_DATA_PATHS.materialGroups}/${id}`)
+      .then((response) => response.data),
+
+  createMaterialGroup: (payload: MaterialGroupCreateRequest) =>
+    apiClient
+      .post<MaterialGroupRecord>(MASTER_DATA_PATHS.materialGroups, payload)
+      .then((response) => response.data),
+
+  updateMaterialGroup: (
+    id: number | string,
+    payload: MaterialGroupUpdateRequest,
+  ) =>
+    apiClient
+      .put<MaterialGroupRecord>(
+        `${MASTER_DATA_PATHS.materialGroups}/${id}`,
+        payload,
+      )
+      .then((response) => response.data),
+
+  deleteMaterialGroup: (id: number | string): Promise<void> =>
+    apiClient
+      .delete(`${MASTER_DATA_PATHS.materialGroups}/${id}`)
       .then(() => undefined),
 
   listPesticideGroups: (params?: MasterDataQueryParams) =>
