@@ -39,6 +39,7 @@ const PositionPage = () => {
     handleDelete,
     handleSubmit,
     handleConfirmDelete,
+    handleView,
   } = usePositionPage();
 
   return (
@@ -79,6 +80,7 @@ const PositionPage = () => {
             options: POSITION_FILTER_STATUS_OPTIONS,
           },
         ]}
+        onView={(item) => handleView(item)}
         onEdit={handleEdit}
         onDelete={handleDelete}
         loading={loading}

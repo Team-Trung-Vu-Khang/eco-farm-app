@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
+import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   type MasterDataCreateRequest,
   type MasterDataStatus,
   type MasterDataUpdateRequest,
+  type PositionResponsibilityDocumentType,
   useCreateMasterData,
   useDeleteMasterData,
   useMasterData,
@@ -35,7 +37,7 @@ function mapPositionRecordToItem(item: PositionRecord): PositionItem {
 function mapFormDocuments(formDocuments: PositionFormData["documents"]) {
   return formDocuments.map((document) => ({
     ...(document.id != null ? { id: document.id } : {}),
-    type: document.type.trim(),
+    type: document.type.trim() as PositionResponsibilityDocumentType,
     name: document.name.trim(),
     content: document.content?.trim() || undefined,
     fileUrl: document.fileUrl?.trim() || undefined,
@@ -93,6 +95,7 @@ function buildUpdatePayload(
 
 export function usePositionPage() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<PositionStatusFilter>(ALL_STATUS);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -160,6 +163,10 @@ export function usePositionPage() {
   const handleEdit = (item: PositionItem) => {
     setEditItem(item);
     setFormOpen(true);
+  };
+
+  const handleView = (item: PositionItem) => {
+    setLocation(`/position/${item.id}/detail`);
   };
 
   const handleDelete = (item: PositionItem) => {
@@ -243,6 +250,7 @@ export function usePositionPage() {
     setDeleteOpen,
     editItem,
     handleAdd,
+    handleView,
     handleEdit,
     handleDelete,
     handleSubmit,

@@ -30,7 +30,7 @@ export const positionColumns: Column<PositionItem>[] = [
   {
     key: "positionGroup",
     label: "Nhóm chức vụ",
-    render: (value, row) => (
+    render: (_value, row) => (
       <span className="text-sm text-slate-700">
         {(row.positionGroup && row.positionGroup.name) || "—"}
       </span>
