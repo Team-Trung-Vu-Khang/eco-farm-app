@@ -8,6 +8,7 @@ export const MASTER_DATA_PATHS = {
   certificateStandards: `${MASTER_DATA_BASE_PATH}/certificate-standards`,
   pesticideGroups: `${MASTER_DATA_BASE_PATH}/pesticide-groups`,
   pesticideOrigins: `${MASTER_DATA_BASE_PATH}/pesticide-origins`,
+  pesticideToxicityClasses: `${MASTER_DATA_BASE_PATH}/pesticide-toxicity-classes`,
   planGroups: `${MASTER_DATA_BASE_PATH}/plan-groups`,
   planTypes: `${MASTER_DATA_BASE_PATH}/plan-types`,
   vsicIndustries: `${MASTER_DATA_BASE_PATH}/vsic-industries`,

@@ -5,6 +5,7 @@ import type {
   PesticideToxicityItem,
 } from "../types";
 import type { PesticideOriginFormValues } from "./pesticide-origin-form.schema";
+import type { PesticideToxicityFormValues } from "./pesticide-toxicity-form.schema";
 
 export const initialPesticidePurposes: PesticideCategoryItem[] = [
   {
@@ -198,4 +199,14 @@ export const emptyPesticideToxicityFormData: PesticideToxicityFormData = {
   ld50Range: "",
   description: "",
   status: "active",
+};
+
+export const emptyPesticideToxicityClassFormData: PesticideToxicityFormValues = {
+  code: "",
+  name: "",
+  description: "",
+  status: "active",
+  whoGroup: "III",
+  bandColor: "#3B82F6",
+  ld50Threshold: "",
 };

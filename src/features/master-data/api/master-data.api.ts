@@ -26,6 +26,9 @@ import type {
   PesticideOriginCreateRequest,
   PesticideOriginRecord,
   PesticideOriginUpdateRequest,
+  PesticideToxicityClassCreateRequest,
+  PesticideToxicityClassRecord,
+  PesticideToxicityClassUpdateRequest,
   PlanGroupCreateRequest,
   PlanTypeCreateRequest,
   PlanTypeRecord,
@@ -237,6 +240,47 @@ export const masterDataApi = {
   deletePesticideOrigin: (id: number | string): Promise<void> =>
     apiClient
       .delete(`${MASTER_DATA_PATHS.pesticideOrigins}/${id}`)
+      .then(() => undefined),
+
+  listPesticideToxicityClasses: (params?: MasterDataQueryParams) =>
+    apiClient
+      .get<MasterDataPageResponse<PesticideToxicityClassRecord>>(
+        MASTER_DATA_PATHS.pesticideToxicityClasses,
+        { params },
+      )
+      .then((response) => response.data),
+
+  getPesticideToxicityClassById: (id: number | string) =>
+    apiClient
+      .get<PesticideToxicityClassRecord>(
+        `${MASTER_DATA_PATHS.pesticideToxicityClasses}/${id}`,
+      )
+      .then((response) => response.data),
+
+  createPesticideToxicityClass: (
+    payload: PesticideToxicityClassCreateRequest,
+  ) =>
+    apiClient
+      .post<PesticideToxicityClassRecord>(
+        MASTER_DATA_PATHS.pesticideToxicityClasses,
+        payload,
+      )
+      .then((response) => response.data),
+
+  updatePesticideToxicityClass: (
+    id: number | string,
+    payload: PesticideToxicityClassUpdateRequest,
+  ) =>
+    apiClient
+      .put<PesticideToxicityClassRecord>(
+        `${MASTER_DATA_PATHS.pesticideToxicityClasses}/${id}`,
+        payload,
+      )
+      .then((response) => response.data),
+
+  deletePesticideToxicityClass: (id: number | string): Promise<void> =>
+    apiClient
+      .delete(`${MASTER_DATA_PATHS.pesticideToxicityClasses}/${id}`)
       .then(() => undefined),
 
   listPlanGroups: (params?: MasterDataQueryParams) =>

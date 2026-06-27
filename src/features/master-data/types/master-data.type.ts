@@ -94,6 +94,11 @@ export interface MasterDataRequestExtraFieldsMap {
   };
   "pesticide-groups": Record<string, never>;
   "pesticide-origins": Record<string, never>;
+  "pesticide-toxicity-classes": {
+    whoGroup: string;
+    bandColor: string;
+    ld50Threshold: string;
+  };
   "plan-types": {
     color: string;
     planGroupId?: number | null;
@@ -126,6 +131,11 @@ export interface MasterDataRecordExtraFieldsMap {
   };
   "pesticide-groups": Record<string, never>;
   "pesticide-origins": Record<string, never>;
+  "pesticide-toxicity-classes": {
+    whoGroup?: string | null;
+    bandColor?: string | null;
+    ld50Threshold?: string | null;
+  };
   "plan-types": {
     color: string;
     planGroup?: PlanGroupRecord | null;
@@ -273,6 +283,8 @@ export type CertificateIssuerRecord = MasterDataRecord<"certificate-issuers">;
 export type BusinessLineRecord = MasterDataRecord<"business-lines">;
 export type PesticideGroupRecord = MasterDataRecord<"pesticide-groups">;
 export type PesticideOriginRecord = MasterDataRecord<"pesticide-origins">;
+export type PesticideToxicityClassRecord =
+  MasterDataRecord<"pesticide-toxicity-classes">;
 export type PlanGroupRecord = MasterDataRecord<"plan-groups">;
 export type PesticideGroupCreateRequest =
   MasterDataCreateRequest<"pesticide-groups">;
@@ -282,6 +294,10 @@ export type PesticideOriginCreateRequest =
   MasterDataCreateRequest<"pesticide-origins">;
 export type PesticideOriginUpdateRequest =
   MasterDataUpdateRequest<"pesticide-origins">;
+export type PesticideToxicityClassCreateRequest =
+  MasterDataCreateRequest<"pesticide-toxicity-classes">;
+export type PesticideToxicityClassUpdateRequest =
+  MasterDataUpdateRequest<"pesticide-toxicity-classes">;
 export type PlanGroupCreateRequest = MasterDataCreateRequest<"plan-groups">;
 export type PlanGroupUpdateRequest = MasterDataUpdateRequest<"plan-groups">;
 

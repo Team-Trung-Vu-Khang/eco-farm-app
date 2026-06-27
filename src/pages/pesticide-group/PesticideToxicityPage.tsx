@@ -6,23 +6,31 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { PesticideToxicityFormDialog } from "./components/PesticideToxicityFormDialog";
 import { pesticideToxicityColumns } from "./data/columns";
+import { PESTICIDE_GROUP_STATUS_OPTIONS } from "./data/constants";
 import { usePesticideToxicityPage } from "./hooks/usePesticideToxicityPage";
 
 const PesticideToxicityPage = () => {
   const {
     data,
+    loading,
+    error,
+    response,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
     formOpen,
     setFormOpen,
     deleteOpen,
     setDeleteOpen,
     editItem,
-    formData,
-    setFormData,
     handleAdd,
     handleEdit,
     handleDelete,
     handleSubmit,
     handleConfirmDelete,
+    handleSearch,
+    handleFilterChange,
   } = usePesticideToxicityPage();
 
   return (
@@ -40,20 +48,41 @@ const PesticideToxicityPage = () => {
         </Button>
       </div>
 
-      <DataTable
-        columns={pesticideToxicityColumns}
-        data={data}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm theo độ độc tính..."
-      />
+      {error ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+          ⚠️ {error}
+        </div>
+      ) : (
+        <DataTable
+          columns={pesticideToxicityColumns}
+          data={data}
+          searchable
+          searchPlaceholder="Tìm kiếm theo độ độc tính..."
+          pageSize={pageSize}
+          currentIndex={currentIndex}
+          totalElements={response?.totalElements}
+          totalPages={response?.totalPages}
+          onSearch={handleSearch}
+          onPageSize={setPageSize}
+          onIndexChange={setCurrentIndex}
+          onFilterChange={handleFilterChange}
+          filters={[
+            {
+              key: "status",
+              label: "Trạng thái",
+              options: [...PESTICIDE_GROUP_STATUS_OPTIONS],
+            },
+          ]}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          loading={loading}
+        />
+      )}
 
       <PesticideToxicityFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
-        isEdit={!!editItem}
-        formData={formData}
-        setFormData={setFormData}
+        editItem={editItem}
         onSubmit={handleSubmit}
       />
 
