@@ -28,6 +28,10 @@ export interface MasterDataQueryParams {
   parentCode?: string;
 }
 
+export interface ProvinceWardQueryParams extends MasterDataQueryParams {
+  provinceCode: string;
+}
+
 export interface VsicIndustryTreeQueryParams {
   rootCode?: string;
   status?: MasterDataStatus;
@@ -191,6 +195,36 @@ export interface CertificateStandardDocument {
   fileName: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ProvinceWardRecord {
+  code: string;
+  name: string;
+  nameEn?: string | null;
+  fullName?: string | null;
+  fullNameEn?: string | null;
+  codeName?: string | null;
+  provinceCode?: string | null;
+  administrativeUnitId?: number | null;
+  status?: MasterDataStatus;
+  metadataJson?: Record<string, unknown> | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ProvinceRecord {
+  code: string;
+  name: string;
+  nameEn?: string | null;
+  fullName?: string | null;
+  fullNameEn?: string | null;
+  codeName?: string | null;
+  administrativeUnitId?: number | null;
+  status: MasterDataStatus;
+  metadataJson?: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+  wards?: ProvinceWardRecord[];
 }
 
 export type MasterDataAttributes<C extends MasterDataCatalog> =

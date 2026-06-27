@@ -6,6 +6,8 @@ export const MASTER_DATA_PATHS = {
   businessLines: `${MASTER_DATA_BASE_PATH}/business-lines`,
   certificateIssuers: `${MASTER_DATA_BASE_PATH}/certificate-issuers`,
   certificateStandards: `${MASTER_DATA_BASE_PATH}/certificate-standards`,
+  geoProvinces: `${MASTER_DATA_BASE_PATH}/geo/provinces`,
+  geoWards: `${MASTER_DATA_BASE_PATH}/geo/wards`,
   equipmentToolGroups: `${MASTER_DATA_BASE_PATH}/equipment-tool-groups`,
   fertilizerGroups: `${MASTER_DATA_BASE_PATH}/fertilizer-groups`,
   materialGroups: `${MASTER_DATA_BASE_PATH}/material-groups`,

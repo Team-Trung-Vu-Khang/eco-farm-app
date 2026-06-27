@@ -47,6 +47,7 @@ import type {
   PlanTypeUpdateRequest,
   PositionResponsibilitiesQueryParams,
   PositionResponsibilitiesResponse,
+  ProvinceWardQueryParams,
   VsicIndustryCreateRequest,
   VsicIndustryChildrenRecord,
   VsicIndustryRecord,
@@ -55,6 +56,8 @@ import type {
   VsicIndustryUpdateRequest,
   PlanGroupRecord,
   PlanGroupUpdateRequest,
+  ProvinceRecord,
+  ProvinceWardRecord,
 } from "../types/master-data.type";
 
 export const masterDataApi = {
@@ -137,6 +140,26 @@ export const masterDataApi = {
   getBusinessLineById: (id: number | string) =>
     apiClient
       .get<BusinessLineRecord>(`${MASTER_DATA_PATHS.businessLines}/${id}`)
+      .then((response) => response.data),
+
+  listGeoProvinces: (params?: MasterDataQueryParams) =>
+    apiClient
+      .get<MasterDataPageResponse<ProvinceRecord>>(
+        MASTER_DATA_PATHS.geoProvinces,
+        { params },
+      )
+      .then((response) => response.data),
+
+  getGeoProvinceByCode: (code: string) =>
+    apiClient
+      .get<ProvinceRecord>(`${MASTER_DATA_PATHS.geoProvinces}/${code}`)
+      .then((response) => response.data),
+
+  listGeoWards: (params: ProvinceWardQueryParams) =>
+    apiClient
+      .get<MasterDataPageResponse<ProvinceWardRecord>>(MASTER_DATA_PATHS.geoWards, {
+        params,
+      })
       .then((response) => response.data),
 
   listEquipmentToolGroups: (params?: MasterDataQueryParams) =>
