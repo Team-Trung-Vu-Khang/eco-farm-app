@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useCropVarietyMutations } from "../../../features/foundation";
 import { useFileUpload } from "../../../features/storage";
 import { safeConvertLexicalToHtml } from "@/utils/commons";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { VarietyFoundationFormValues } from "../schemas/varietyFoundationSchema";
 
 function parseDurationToDays(duration: string): number | undefined {
@@ -38,7 +38,10 @@ export function useVarietyFoundationForm() {
     Map<File, { fileUrl: string; fileName?: string }>
   >(new Map());
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleComplete = async (formData: VarietyFoundationFormValues) => {
+    setIsSubmitting(true);
     try {
       let illustrationUrl = formData.illustration as unknown as
         | string
@@ -136,6 +139,7 @@ export function useVarietyFoundationForm() {
 
       createCropVariety.mutate(payload as any, {
         onSuccess: () => {
+          setIsSubmitting(false);
           toast({
             title: "Thành công",
             description: `Đã tạo giống cây (nền tảng) "${formData.varietyFoundationName}"`,
@@ -143,6 +147,7 @@ export function useVarietyFoundationForm() {
           setLocation("/variety-foundation");
         },
         onError: (err: any) => {
+          setIsSubmitting(false);
           toast({
             variant: "destructive",
             title: "Lỗi",
@@ -154,6 +159,7 @@ export function useVarietyFoundationForm() {
         },
       });
     } catch (err: any) {
+      setIsSubmitting(false);
       toast({
         variant: "destructive",
         title: "Lỗi",
@@ -170,5 +176,6 @@ export function useVarietyFoundationForm() {
   return {
     handleComplete,
     handleCancel,
+    isSubmitting,
   };
 }

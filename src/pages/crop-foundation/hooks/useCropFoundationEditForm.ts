@@ -1,5 +1,5 @@
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
 
 import { safeConvertLexicalToHtml } from "@/utils/commons";
@@ -12,7 +12,6 @@ export function useCropFoundationEditForm() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadedFilesCache = useRef<
     Map<File, { fileUrl: string; fileName?: string }>
   >(new Map());
@@ -23,6 +22,7 @@ export function useCropFoundationEditForm() {
   });
   const { updateCrop } = useCropMutations();
   const { uploadFile } = useFileUpload();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize form data from api
   const initialValues =
@@ -100,6 +100,7 @@ export function useCropFoundationEditForm() {
 
   const handleComplete = async (formData: CropFoundationFormValues) => {
     if (!id) return;
+    setIsSubmitting(true);
 
     try {
       let illustrationUrl = formData.illustration as string | undefined;
@@ -224,6 +225,7 @@ export function useCropFoundationEditForm() {
         { id: parseInt(id, 10), data: payload },
         {
           onSuccess: () => {
+            setIsSubmitting(false);
             toast({
               title: "Thành công",
               description: `Đã cập nhật cây trồng "${formData.name}"`,
@@ -231,6 +233,7 @@ export function useCropFoundationEditForm() {
             setLocation(`/crop-foundation/${id}`);
           },
           onError: (err) => {
+            setIsSubmitting(false);
             toast({
               variant: "destructive",
               title: "Lỗi",
@@ -240,6 +243,7 @@ export function useCropFoundationEditForm() {
         },
       );
     } catch (error: any) {
+      setIsSubmitting(false);
       toast({
         variant: "destructive",
         title: "Lỗi",
@@ -256,6 +260,6 @@ export function useCropFoundationEditForm() {
     handleComplete,
     handleCancel,
     isLoadingCrop,
-    isPending: updateCrop.isPending || uploadFile.isPending,
+    isSubmitting,
   };
 }

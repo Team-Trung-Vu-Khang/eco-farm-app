@@ -273,6 +273,7 @@ export default function UpdateGrowthCyclePage() {
                 crops={crops}
                 onComplete={() => setConfirmOpen(true)}
                 onCancel={() => setLocation("/growth-cycle")}
+                isSubmitting={isSubmitting}
               />
             </Form>
           </FormProvider>

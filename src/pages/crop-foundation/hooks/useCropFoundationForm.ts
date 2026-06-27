@@ -1,5 +1,5 @@
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useLocation } from "wouter";
 
 import { safeConvertLexicalToHtml } from "@/utils/commons";
@@ -16,8 +16,10 @@ export function useCropFoundationForm() {
   >(new Map());
   const { createCrop } = useCropMutations();
   const { uploadFile } = useFileUpload();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleComplete = async (formData: CropFoundationFormValues) => {
+    setIsSubmitting(true);
     try {
       // 1. Upload illustration if it's a File
       let illustrationUrl = formData.illustration as string | undefined;
@@ -133,6 +135,7 @@ export function useCropFoundationForm() {
 
       createCrop.mutate(payload, {
         onSuccess: () => {
+          setIsSubmitting(false);
           toast({
             title: "Thành công",
             description: `Đã khởi tạo cây trồng "${formData.name}"`,
@@ -140,6 +143,7 @@ export function useCropFoundationForm() {
           setLocation("/crop-foundation");
         },
         onError: (err) => {
+          setIsSubmitting(false);
           toast({
             variant: "destructive",
             title: "Lỗi",
@@ -148,6 +152,7 @@ export function useCropFoundationForm() {
         },
       });
     } catch (error: any) {
+      setIsSubmitting(false);
       toast({
         variant: "destructive",
         title: "Lỗi",
@@ -161,6 +166,6 @@ export function useCropFoundationForm() {
   return {
     handleComplete,
     handleCancel,
-    isPending: createCrop.isPending,
+    isSubmitting,
   };
 }

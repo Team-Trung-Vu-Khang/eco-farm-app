@@ -28,11 +28,13 @@ function CropFoundationEditFormContent({
   handleComplete,
   handleCancel,
   isLoadingCrop,
+  isSubmitting,
 }: {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   handleComplete: (data: CropFoundationFormValues) => Promise<void>;
   handleCancel: () => void;
   isLoadingCrop: boolean;
+  isSubmitting: boolean;
 }) {
   const { watch, handleSubmit } = useFormContext<CropFoundationFormValues>();
   const watchedValues = watch();
@@ -76,6 +78,7 @@ function CropFoundationEditFormContent({
             onComplete={handleSubmit(handleComplete)}
             completeLabel="Cập nhật thông tin"
             onCancel={handleCancel}
+            loading={isSubmitting}
           />
         )}
       </CardContent>
@@ -84,8 +87,13 @@ function CropFoundationEditFormContent({
 }
 
 export default function CropFoundationEditPage() {
-  const { initialValues, handleComplete, handleCancel, isLoadingCrop } =
-    useCropFoundationEditForm();
+  const {
+    initialValues,
+    handleComplete,
+    handleCancel,
+    isLoadingCrop,
+    isSubmitting,
+  } = useCropFoundationEditForm();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -115,6 +123,7 @@ export default function CropFoundationEditPage() {
             handleComplete={handleComplete}
             handleCancel={handleCancel}
             isLoadingCrop={isLoadingCrop}
+            isSubmitting={isSubmitting}
           />
         </Form>
       </FormProvider>

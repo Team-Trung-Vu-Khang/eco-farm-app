@@ -28,10 +28,12 @@ function CropFoundationCreateFormContent({
   fileInputRef,
   handleComplete,
   handleCancel,
+  isSubmitting,
 }: {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   handleComplete: (data: CropFoundationFormValues) => Promise<void>;
   handleCancel: () => void;
+  isSubmitting: boolean;
 }) {
   const { watch, handleSubmit } = useFormContext<CropFoundationFormValues>();
   const watchedValues = watch();
@@ -70,6 +72,7 @@ function CropFoundationCreateFormContent({
           onComplete={handleSubmit(handleComplete)}
           completeLabel="Khởi tạo cây trồng"
           onCancel={handleCancel}
+          loading={isSubmitting}
         />
       </CardContent>
     </Card>
@@ -77,7 +80,8 @@ function CropFoundationCreateFormContent({
 }
 
 export default function CropFoundationCreatePage() {
-  const { handleComplete, handleCancel } = useCropFoundationForm();
+  const { handleComplete, handleCancel, isSubmitting } =
+    useCropFoundationForm();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -142,6 +146,7 @@ export default function CropFoundationCreatePage() {
             fileInputRef={fileInputRef}
             handleComplete={handleComplete}
             handleCancel={handleCancel}
+            isSubmitting={isSubmitting}
           />
         </Form>
       </FormProvider>

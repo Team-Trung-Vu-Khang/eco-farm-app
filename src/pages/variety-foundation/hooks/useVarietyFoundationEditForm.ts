@@ -6,7 +6,7 @@ import {
 } from "../../../features/foundation";
 import { useFileUpload } from "../../../features/storage";
 import { safeConvertLexicalToHtml } from "@/utils/commons";
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useState } from "react";
 import type { VarietyFoundationFormValues } from "../schemas/varietyFoundationSchema";
 
 function parseDurationToDays(duration: string): number | undefined {
@@ -64,6 +64,8 @@ export function useVarietyFoundationEditForm() {
     Map<File, { fileUrl: string; fileName?: string }>
   >(new Map());
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const initialValues =
     useMemo((): Partial<VarietyFoundationFormValues> | null => {
       if (!existingData) return null;
@@ -110,6 +112,7 @@ export function useVarietyFoundationEditForm() {
 
   const handleComplete = async (formData: VarietyFoundationFormValues) => {
     if (!varietyId) return;
+    setIsSubmitting(true);
 
     try {
       let illustrationUrl = formData.illustration as unknown as
@@ -220,6 +223,7 @@ export function useVarietyFoundationEditForm() {
         { id: varietyId, data: payload as any },
         {
           onSuccess: () => {
+            setIsSubmitting(false);
             toast({
               title: "Thành công",
               description: `Đã cập nhật giống cây (nền tảng) "${formData.varietyFoundationName}"`,
@@ -227,6 +231,7 @@ export function useVarietyFoundationEditForm() {
             setLocation("/variety-foundation");
           },
           onError: (err: any) => {
+            setIsSubmitting(false);
             toast({
               variant: "destructive",
               title: "Lỗi",
@@ -239,6 +244,7 @@ export function useVarietyFoundationEditForm() {
         },
       );
     } catch (err: any) {
+      setIsSubmitting(false);
       toast({
         variant: "destructive",
         title: "Lỗi",
@@ -256,5 +262,6 @@ export function useVarietyFoundationEditForm() {
     handleComplete,
     handleCancel,
     isLoadingVariety,
+    isSubmitting,
   };
 }

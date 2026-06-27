@@ -17,6 +17,7 @@ interface GrowthCycleStepsProps {
   schema: z.ZodType<any, any, any>;
   onComplete: () => void;
   onCancel: () => void;
+  isSubmitting?: boolean;
 }
 
 export function GrowthCycleSteps({
@@ -25,6 +26,7 @@ export function GrowthCycleSteps({
   schema,
   onComplete,
   onCancel,
+  isSubmitting = false,
 }: GrowthCycleStepsProps) {
   const { watch, handleSubmit } = useFormContext<GrowthCycleFormValues>();
   const values = watch();
@@ -95,6 +97,7 @@ export function GrowthCycleSteps({
       onComplete={handleSubmit(onComplete)}
       onCancel={onCancel}
       completeLabel="Hoàn thành"
+      loading={isSubmitting}
     />
   );
 }

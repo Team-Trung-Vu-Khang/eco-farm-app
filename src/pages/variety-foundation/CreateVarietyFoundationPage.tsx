@@ -29,6 +29,7 @@ function VarietyFoundationCreateFormContent({
   onPickIllustration,
   handleComplete,
   handleCancel,
+  isSubmitting,
 }: {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   pdfInputRef: React.RefObject<HTMLInputElement | null>;
@@ -37,6 +38,7 @@ function VarietyFoundationCreateFormContent({
   onPickIllustration: (file?: File | null) => void;
   handleComplete: (data: VarietyFoundationFormValues) => Promise<void>;
   handleCancel: () => void;
+  isSubmitting: boolean;
 }) {
   const { watch, handleSubmit } = useFormContext<VarietyFoundationFormValues>();
   const watchedValues = watch();
@@ -86,6 +88,7 @@ function VarietyFoundationCreateFormContent({
           onComplete={handleSubmit(handleComplete)}
           completeLabel="Tạo giống cây (nền tảng)"
           onCancel={handleCancel}
+          loading={isSubmitting}
         />
       </CardContent>
     </Card>
@@ -93,7 +96,8 @@ function VarietyFoundationCreateFormContent({
 }
 
 export default function CreateVarietyFoundationPage() {
-  const { handleComplete, handleCancel } = useVarietyFoundationForm();
+  const { handleComplete, handleCancel, isSubmitting } =
+    useVarietyFoundationForm();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const [illustrationPreview, setIllustrationPreview] = React.useState("");
@@ -138,6 +142,7 @@ export default function CreateVarietyFoundationPage() {
             onPickIllustration={onPickIllustration}
             handleComplete={handleComplete}
             handleCancel={handleCancel}
+            isSubmitting={isSubmitting}
           />
         </Form>
       </FormProvider>

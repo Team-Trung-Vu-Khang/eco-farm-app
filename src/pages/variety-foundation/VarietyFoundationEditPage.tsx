@@ -32,6 +32,7 @@ function VarietyFoundationEditFormContent({
   onPickIllustration,
   handleComplete,
   handleCancel,
+  isSubmitting,
 }: {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   pdfInputRef: React.RefObject<HTMLInputElement | null>;
@@ -40,6 +41,7 @@ function VarietyFoundationEditFormContent({
   onPickIllustration: (file?: File | null) => void;
   handleComplete: (data: VarietyFoundationFormValues) => Promise<void>;
   handleCancel: () => void;
+  isSubmitting: boolean;
 }) {
   const { watch, handleSubmit } = useFormContext<VarietyFoundationFormValues>();
   const watchedValues = watch();
@@ -107,6 +109,7 @@ function VarietyFoundationEditFormContent({
           onComplete={handleSubmit(handleComplete)}
           completeLabel="Lưu thay đổi"
           onCancel={handleCancel}
+          loading={isSubmitting}
         />
       </CardContent>
     </Card>
@@ -114,8 +117,13 @@ function VarietyFoundationEditFormContent({
 }
 
 export default function VarietyFoundationEditPage() {
-  const { initialValues, handleComplete, handleCancel, isLoadingVariety } =
-    useVarietyFoundationEditForm();
+  const {
+    initialValues,
+    handleComplete,
+    handleCancel,
+    isLoadingVariety,
+    isSubmitting,
+  } = useVarietyFoundationEditForm();
   const [, setLocation] = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
@@ -195,6 +203,7 @@ export default function VarietyFoundationEditPage() {
             onPickIllustration={onPickIllustration}
             handleComplete={handleComplete}
             handleCancel={handleCancel}
+            isSubmitting={isSubmitting}
           />
         </Form>
       </FormProvider>
