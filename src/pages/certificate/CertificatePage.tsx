@@ -14,6 +14,12 @@ import { StandardFormDialog } from "./components/StandardFormDialog";
 import { OrganizationFormDialog } from "./components/OrganizationFormDialog";
 import type { CategoryType } from "./types/types";
 
+const ORGANIZATION_STATUS_OPTIONS = [
+  { value: "active", label: "Hoạt động" },
+  { value: "inactive", label: "Ngừng hoạt động" },
+  { value: "archived", label: "Đã lưu trữ" },
+];
+
 /**
  * Certificate page component.
  * Manages standards and certification organizations using a tabbed interface.
@@ -24,18 +30,20 @@ export default function CertificatePage() {
     setActiveTab,
     standards,
     organizations,
+    setOrganizationSearchQuery,
+    setOrganizationStatusFilter,
     standardFormOpen,
     setStandardFormOpen,
     orgFormOpen,
     setOrgFormOpen,
     standardFormData,
     setStandardFormData,
-    orgFormData,
-    setOrgFormData,
     editStandard,
     editOrg,
     orgSearchQuery,
     setOrgSearchQuery,
+    organizationsLoading,
+    organizationsError,
     deleteOpen,
     setDeleteOpen,
     handleAddStandard,
@@ -54,6 +62,12 @@ export default function CertificatePage() {
       title="Danh mục tiêu chuẩn"
       description="Quản lý loại tiêu chuẩn và tổ chức chứng nhận (Master Data)"
     >
+      {organizationsError ? (
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+          ⚠️ {organizationsError}
+        </div>
+      ) : null}
+
       <Tabs
         value={activeTab}
         onValueChange={(val) => setActiveTab(val as CategoryType)}
@@ -86,6 +100,22 @@ export default function CertificatePage() {
             onAdd={handleAddOrg}
             onEdit={handleEditOrg}
             onDelete={handleDelete}
+            loading={organizationsLoading}
+            searchable
+            searchPlaceholder="Tìm kiếm tổ chức..."
+            onSearch={setOrganizationSearchQuery}
+            filters={[
+              {
+                key: "status",
+                label: "Trạng thái",
+                options: ORGANIZATION_STATUS_OPTIONS,
+              },
+            ]}
+            onFilterChange={(key, value) => {
+              if (key === "status") {
+                setOrganizationStatusFilter(value);
+              }
+            }}
           />
         </TabsContent>
       </Tabs>
@@ -106,8 +136,6 @@ export default function CertificatePage() {
         open={orgFormOpen}
         onOpenChange={setOrgFormOpen}
         editItem={editOrg}
-        formData={orgFormData}
-        setFormData={setOrgFormData}
         onSubmit={handleSubmitOrg}
       />
 

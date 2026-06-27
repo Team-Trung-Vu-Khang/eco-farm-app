@@ -11,6 +11,16 @@ interface OrganizationTabProps {
   onAdd: () => void;
   onEdit: (item: CertificationOrganization) => void;
   onDelete: (item: CertificationOrganization) => void;
+  loading?: boolean;
+  searchable?: boolean;
+  searchPlaceholder?: string;
+  onSearch?: (value: string) => void;
+  filters?: Array<{
+    key: string;
+    label: string;
+    options: Array<{ value: string; label: string }>;
+  }>;
+  onFilterChange?: (key: string, value: string) => void;
 }
 
 export function OrganizationTab({
@@ -18,6 +28,12 @@ export function OrganizationTab({
   onAdd,
   onEdit,
   onDelete,
+  loading,
+  searchable = true,
+  searchPlaceholder = "Tìm kiếm tổ chức...",
+  onSearch,
+  filters,
+  onFilterChange,
 }: OrganizationTabProps) {
   return (
     <div className="space-y-4">
@@ -38,7 +54,12 @@ export function OrganizationTab({
         data={organizations}
         onEdit={onEdit}
         onDelete={onDelete}
-        searchPlaceholder="Tìm kiếm tổ chức..."
+        searchable={searchable}
+        searchPlaceholder={searchPlaceholder}
+        onSearch={onSearch}
+        filters={filters}
+        onFilterChange={onFilterChange}
+        loading={loading}
       />
     </div>
   );

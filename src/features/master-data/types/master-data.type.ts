@@ -60,6 +60,8 @@ export interface MasterDataAttributesMap {
   "plan-groups": Record<string, unknown>;
   "position-groups": Record<string, unknown>;
   positions: Record<string, never>;
+  "certificate-issuers": Record<string, unknown>;
+  "certificate-standards": Record<string, unknown>;
 }
 
 export interface MasterDataRequestExtraFieldsMap {
@@ -67,6 +69,18 @@ export interface MasterDataRequestExtraFieldsMap {
     positionGroupId?: number | null;
     responsibilityDescription?: string | null;
     documents?: PositionResponsibilityDocumentInput[];
+  };
+  "certificate-issuers": {
+    phone?: string | null;
+    email?: string | null;
+    website?: string | null;
+    address?: string | null;
+  };
+  "certificate-standards": {
+    stampUrl?: string | null;
+    validityMonths?: number | null;
+    issuerIds?: number[];
+    documents?: CertificateStandardDocumentInput[];
   };
 }
 
@@ -77,6 +91,57 @@ export interface MasterDataRecordExtraFieldsMap {
     responsibilityDescription?: string | null;
     documents?: PositionResponsibilityDocument[];
   };
+  "certificate-issuers": {
+    phone: string;
+    email: string;
+    website: string;
+    address: string;
+  };
+  "certificate-standards": {
+    stampUrl: string;
+    validityMonths: number;
+    issuers: CertificateIssuerRecord[];
+    documents: CertificateStandardDocument[];
+  };
+}
+
+export interface CertificateIssuerFields {
+  phone: string;
+  email: string;
+  website: string;
+  address: string;
+}
+
+export interface CertificateStandardIssuerInput {
+  id?: number;
+  code?: string;
+  name?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  address?: string;
+  description?: string;
+  status?: MasterDataStatus;
+}
+
+export interface CertificateStandardDocumentInput {
+  id?: number;
+  type: PositionResponsibilityDocumentType;
+  name: string;
+  content?: string;
+  fileUrl?: string;
+  fileName?: string;
+}
+
+export interface CertificateStandardDocument {
+  id: number;
+  type: PositionResponsibilityDocumentType;
+  name: string;
+  content: string;
+  fileUrl: string;
+  fileName: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type MasterDataAttributes<C extends MasterDataCatalog> =
@@ -168,3 +233,39 @@ export interface PositionResponsibilitiesQueryParams {
 }
 
 export type PositionResponsibilitiesResponse = PositionResponsibilityItem[];
+
+export type CertificateIssuerRecord = MasterDataRecord<"certificate-issuers">;
+
+export type CertificateIssuerCreateRequest =
+  MasterDataCreateRequest<"certificate-issuers"> &
+    Partial<CertificateIssuerFields>;
+
+export type CertificateIssuerUpdateRequest =
+  MasterDataUpdateRequest<"certificate-issuers"> &
+    Partial<CertificateIssuerFields>;
+
+export type CertificateStandardRecord = MasterDataRecord<"certificate-standards">;
+
+export interface CertificateStandardCreateRequest {
+  code: string;
+  name: string;
+  stampUrl: string;
+  description?: string;
+  validityMonths: number;
+  issuerIds: number[];
+  documents?: CertificateStandardDocumentInput[];
+  status: MasterDataStatus;
+  metadataJson?: Record<string, unknown> | null;
+}
+
+export interface CertificateStandardUpdateRequest {
+  code: string;
+  name: string;
+  stampUrl: string;
+  description?: string;
+  validityMonths: number;
+  issuerIds: number[];
+  documents?: CertificateStandardDocumentInput[];
+  status: MasterDataStatus;
+  metadataJson?: Record<string, unknown> | null;
+}

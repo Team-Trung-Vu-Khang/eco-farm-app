@@ -2,6 +2,12 @@ import { apiClient } from "@/shared/lib/axios";
 import { MASTER_DATA_PATHS, type MasterDataCatalog } from "@/shared/constants/master-data.constants";
 
 import type {
+  CertificateIssuerCreateRequest,
+  CertificateIssuerRecord,
+  CertificateIssuerUpdateRequest,
+  CertificateStandardCreateRequest,
+  CertificateStandardRecord,
+  CertificateStandardUpdateRequest,
   MasterDataCreateRequest,
   MasterDataDeleteResponse,
   MasterDataPageResponse,
@@ -67,4 +73,82 @@ export const masterDataApi = {
         { params },
       )
       .then((response) => response.data),
+
+  listCertificateIssuers: (params?: MasterDataQueryParams) =>
+    apiClient
+      .get<MasterDataPageResponse<CertificateIssuerRecord>>(
+        `${MASTER_DATA_PATHS.base}/certificate-issuers`,
+        { params },
+      )
+      .then((response) => response.data),
+
+  getCertificateIssuerById: (id: number | string) =>
+    apiClient
+      .get<CertificateIssuerRecord>(
+        `${MASTER_DATA_PATHS.base}/certificate-issuers/${id}`,
+      )
+      .then((response) => response.data),
+
+  createCertificateIssuer: (payload: CertificateIssuerCreateRequest) =>
+    apiClient
+      .post<CertificateIssuerRecord>(
+        `${MASTER_DATA_PATHS.base}/certificate-issuers`,
+        payload,
+      )
+      .then((response) => response.data),
+
+  updateCertificateIssuer: (
+    id: number | string,
+    payload: CertificateIssuerUpdateRequest,
+  ) =>
+    apiClient
+      .put<CertificateIssuerRecord>(
+        `${MASTER_DATA_PATHS.base}/certificate-issuers/${id}`,
+        payload,
+      )
+      .then((response) => response.data),
+
+  deleteCertificateIssuer: (id: number | string): Promise<void> =>
+    apiClient
+      .delete(`${MASTER_DATA_PATHS.base}/certificate-issuers/${id}`)
+      .then(() => undefined),
+
+  listCertificateStandards: (params?: MasterDataQueryParams) =>
+    apiClient
+      .get<MasterDataPageResponse<CertificateStandardRecord>>(
+        `${MASTER_DATA_PATHS.base}/certificate-standards`,
+        { params },
+      )
+      .then((response) => response.data),
+
+  getCertificateStandardById: (id: number | string) =>
+    apiClient
+      .get<CertificateStandardRecord>(
+        `${MASTER_DATA_PATHS.base}/certificate-standards/${id}`,
+      )
+      .then((response) => response.data),
+
+  createCertificateStandard: (payload: CertificateStandardCreateRequest) =>
+    apiClient
+      .post<CertificateStandardRecord>(
+        `${MASTER_DATA_PATHS.base}/certificate-standards`,
+        payload,
+      )
+      .then((response) => response.data),
+
+  updateCertificateStandard: (
+    id: number | string,
+    payload: CertificateStandardUpdateRequest,
+  ) =>
+    apiClient
+      .put<CertificateStandardRecord>(
+        `${MASTER_DATA_PATHS.base}/certificate-standards/${id}`,
+        payload,
+      )
+      .then((response) => response.data),
+
+  deleteCertificateStandard: (id: number | string): Promise<void> =>
+    apiClient
+      .delete(`${MASTER_DATA_PATHS.base}/certificate-standards/${id}`)
+      .then(() => undefined),
 };

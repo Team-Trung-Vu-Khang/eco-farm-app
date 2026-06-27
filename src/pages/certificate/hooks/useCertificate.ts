@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  emptyOrganizationFormData,
+  useCreateMasterData,
+  useDeleteMasterData,
+  useMasterData,
+  useUpdateMasterData,
+  type CertificateIssuerCreateRequest,
+} from "@/features/master-data";
+import {
   emptyStandardFormData,
-  initialOrganizations,
   initialStandards,
 } from "../data/constants";
 import type {
@@ -14,12 +19,46 @@ import type {
   StandardFormData,
 } from "../types/types";
 
+function buildOrganizationPayload(formData: OrganizationFormData) {
+  return {
+    code: formData.code.trim().toUpperCase(),
+    name: formData.name.trim(),
+    address: formData.address.trim(),
+    phone: formData.phone.trim(),
+    email: formData.email.trim(),
+    website: formData.website.trim(),
+    description: formData.description?.trim() || undefined,
+    status: formData.status,
+  };
+}
+
 export function useCertificate() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<CategoryType>("standards");
+  const [organizationSearchQuery, setOrganizationSearchQuery] = useState("");
+  const [organizationStatusFilter, setOrganizationStatusFilter] =
+    useState("all");
 
-  const [organizations, setOrganizations] =
-    useState<CertificationOrganization[]>(initialOrganizations);
+  const organizationsQuery = useMasterData("certificate-issuers", {
+    params: {
+      keyword: organizationSearchQuery.trim() || undefined,
+      status:
+        organizationStatusFilter === "all"
+          ? undefined
+          : organizationStatusFilter,
+      page: 0,
+      size: 100,
+    },
+  });
+
+  const createOrganization = useCreateMasterData("certificate-issuers");
+  const updateOrganization = useUpdateMasterData("certificate-issuers");
+  const deleteOrganization = useDeleteMasterData("certificate-issuers");
+
+  const organizations = useMemo<CertificationOrganization[]>(
+    () => organizationsQuery.items,
+    [organizationsQuery.items],
+  );
 
   const [standards, setStandards] = useState<Certificate[]>(initialStandards);
 
@@ -36,9 +75,9 @@ export function useCertificate() {
 
   // Form states for Organizations
   const [orgFormOpen, setOrgFormOpen] = useState(false);
-  const [editOrg, setEditOrg] = useState<CertificationOrganization | null>(null);
-  const [orgFormData, setOrgFormData] =
-    useState<OrganizationFormData>(emptyOrganizationFormData);
+  const [editOrg, setEditOrg] = useState<CertificationOrganization | null>(
+    null,
+  );
 
   const [orgSearchQuery, setOrgSearchQuery] = useState("");
 
@@ -78,32 +117,45 @@ export function useCertificate() {
 
   const handleAddOrg = () => {
     setEditOrg(null);
-    setOrgFormData(emptyOrganizationFormData);
     setOrgFormOpen(true);
   };
 
   const handleEditOrg = (item: CertificationOrganization) => {
     setEditOrg(item);
-    setOrgFormData({ ...item });
     setOrgFormOpen(true);
   };
 
-  const handleSubmitOrg = () => {
-    if (editOrg) {
-      setOrganizations((prev) =>
-        prev.map((o) => (o.id === editOrg.id ? { ...o, ...orgFormData } : o)),
-      );
-      toast({ title: "Thành công", description: "Đã cập nhật tổ chức" });
-    } else {
-      const newOrg: CertificationOrganization = {
-        id: Date.now(),
-        ...orgFormData,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setOrganizations((prev) => [...prev, newOrg]);
-      toast({ title: "Thành công", description: "Đã thêm tổ chức mới" });
+  const handleSubmitOrg = async (
+    formData: OrganizationFormData,
+  ): Promise<void> => {
+    const payload: CertificateIssuerCreateRequest = buildOrganizationPayload(
+      formData,
+    );
+
+    try {
+      if (editOrg) {
+        await updateOrganization.mutateAsync({
+          id: editOrg.id,
+          data: payload,
+        });
+        toast({ title: "Thành công", description: "Đã cập nhật tổ chức" });
+      } else {
+        await createOrganization.mutateAsync(payload);
+        toast({ title: "Thành công", description: "Đã thêm tổ chức mới" });
+      }
+
+      setOrgFormOpen(false);
+      setEditOrg(null);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+
+      toast({
+        title: editOrg ? "Không thể cập nhật" : "Không thể thêm",
+        description: message,
+        variant: "destructive",
+      });
     }
-    setOrgFormOpen(false);
   };
 
   const handleDelete = (item: Certificate | CertificationOrganization) => {
@@ -111,16 +163,31 @@ export function useCertificate() {
     setDeleteOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (deleteItem) {
+  const handleConfirmDelete = async () => {
+    if (!deleteItem) {
+      setDeleteOpen(false);
+      return;
+    }
+
+    try {
       if (activeTab === "standards") {
         setStandards((prev) => prev.filter((s) => s.id !== deleteItem.id));
         toast({ title: "Thành công", description: "Đã xóa loại tiêu chuẩn" });
       } else {
-        setOrganizations((prev) => prev.filter((o) => o.id !== deleteItem.id));
+        await deleteOrganization.mutateAsync(deleteItem.id);
         toast({ title: "Thành công", description: "Đã xóa tổ chức" });
       }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+
+      toast({
+        title: "Không thể xóa",
+        description: message,
+        variant: "destructive",
+      });
     }
+
     setDeleteOpen(false);
   };
 
@@ -129,14 +196,18 @@ export function useCertificate() {
     setActiveTab,
     standards,
     organizations,
+    organizationSearchQuery,
+    setOrganizationSearchQuery,
+    organizationStatusFilter,
+    setOrganizationStatusFilter,
+    organizationsLoading: organizationsQuery.loading,
+    organizationsError: organizationsQuery.error,
     standardFormOpen,
     setStandardFormOpen,
     orgFormOpen,
     setOrgFormOpen,
     standardFormData,
     setStandardFormData,
-    orgFormData,
-    setOrgFormData,
     editStandard,
     editOrg,
     orgSearchQuery,
@@ -151,5 +222,9 @@ export function useCertificate() {
     handleSubmitOrg,
     handleDelete,
     handleConfirmDelete,
+    organizationsPending:
+      createOrganization.isPending ||
+      updateOrganization.isPending ||
+      deleteOrganization.isPending,
   };
 }
