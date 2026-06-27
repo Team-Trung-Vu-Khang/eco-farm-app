@@ -19,6 +19,9 @@ import type {
   MasterDataUpdateRequest,
   PositionResponsibilitiesQueryParams,
   PositionResponsibilitiesResponse,
+  VsicIndustryCreateRequest,
+  VsicIndustryRecord,
+  VsicIndustryUpdateRequest,
 } from "../types/master-data.type";
 
 export const masterDataApi = {
@@ -153,6 +156,68 @@ export const masterDataApi = {
   deleteBusinessLine: (id: number | string): Promise<void> =>
     apiClient
       .delete(`${MASTER_DATA_PATHS.businessLines}/${id}`)
+      .then(() => undefined),
+
+  listVsicIndustries: (params?: MasterDataQueryParams) =>
+    apiClient
+      .get<MasterDataPageResponse<VsicIndustryRecord>>(
+        MASTER_DATA_PATHS.vsicIndustries,
+        { params },
+      )
+      .then((response) => response.data),
+
+  getVsicIndustryById: (id: number | string) =>
+    apiClient
+      .get<VsicIndustryRecord>(
+        `${MASTER_DATA_PATHS.vsicIndustries}/${id}`,
+      )
+      .then((response) => response.data),
+
+  getVsicIndustryByCode: (code: string) =>
+    apiClient
+      .get<VsicIndustryRecord>(
+        `${MASTER_DATA_PATHS.vsicIndustries}/${code}`,
+      )
+      .then((response) => response.data),
+
+  createVsicIndustry: (payload: VsicIndustryCreateRequest) =>
+    apiClient
+      .post<VsicIndustryRecord>(
+        MASTER_DATA_PATHS.vsicIndustries,
+        payload,
+      )
+      .then((response) => response.data),
+
+  updateVsicIndustry: (
+    id: number | string,
+    payload: VsicIndustryUpdateRequest,
+  ) =>
+    apiClient
+      .put<VsicIndustryRecord>(
+        `${MASTER_DATA_PATHS.vsicIndustries}/${id}`,
+        payload,
+      )
+      .then((response) => response.data),
+
+  updateVsicIndustryByCode: (
+    code: string,
+    payload: VsicIndustryUpdateRequest,
+  ) =>
+    apiClient
+      .put<VsicIndustryRecord>(
+        `${MASTER_DATA_PATHS.vsicIndustries}/${code}`,
+        payload,
+      )
+      .then((response) => response.data),
+
+  deleteVsicIndustry: (id: number | string): Promise<void> =>
+    apiClient
+      .delete(`${MASTER_DATA_PATHS.vsicIndustries}/${id}`)
+      .then(() => undefined),
+
+  deleteVsicIndustryByCode: (code: string): Promise<void> =>
+    apiClient
+      .delete(`${MASTER_DATA_PATHS.vsicIndustries}/${code}`)
       .then(() => undefined),
 
   listCertificateStandards: (params?: MasterDataQueryParams) =>

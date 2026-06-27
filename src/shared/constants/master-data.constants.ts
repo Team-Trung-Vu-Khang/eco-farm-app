@@ -6,6 +6,7 @@ export const MASTER_DATA_PATHS = {
   businessLines: `${MASTER_DATA_BASE_PATH}/business-lines`,
   certificateIssuers: `${MASTER_DATA_BASE_PATH}/certificate-issuers`,
   certificateStandards: `${MASTER_DATA_BASE_PATH}/certificate-standards`,
+  vsicIndustries: `${MASTER_DATA_BASE_PATH}/vsic-industries`,
 } as const;
 
 export const MASTER_DATA_CATALOGS = [
@@ -24,6 +25,7 @@ export const MASTER_DATA_CATALOGS = [
   "positions",
   "certificate-issuers",
   "certificate-standards",
+  "vsic-industries",
 ] as const;
 
 export type MasterDataCatalog = (typeof MASTER_DATA_CATALOGS)[number];

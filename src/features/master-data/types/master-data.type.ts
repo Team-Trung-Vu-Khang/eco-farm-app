@@ -23,6 +23,9 @@ export interface MasterDataQueryParams {
   status?: MasterDataStatus;
   page?: number;
   size?: number;
+  level?: number;
+  parentId?: number;
+  parentCode?: string;
 }
 
 export interface PositionGroup {
@@ -62,6 +65,7 @@ export interface MasterDataAttributesMap {
   positions: Record<string, never>;
   "certificate-issuers": Record<string, unknown>;
   "certificate-standards": Record<string, unknown>;
+  "vsic-industries": Record<string, unknown>;
 }
 
 export interface MasterDataRequestExtraFieldsMap {
@@ -81,6 +85,11 @@ export interface MasterDataRequestExtraFieldsMap {
     validityMonths?: number | null;
     issuerIds?: number[];
     documents?: CertificateStandardDocumentInput[];
+  };
+  "vsic-industries": {
+    level: number;
+    parentCode?: string | null;
+    parentId?: number | null;
   };
 }
 
@@ -102,6 +111,12 @@ export interface MasterDataRecordExtraFieldsMap {
     validityMonths: number;
     issuers: CertificateIssuerRecord[];
     documents: CertificateStandardDocument[];
+  };
+  "vsic-industries": {
+    level: number;
+    parentId?: number | null;
+    parentCode?: string | null;
+    parentName?: string | null;
   };
 }
 
@@ -246,9 +261,23 @@ export type CertificateIssuerUpdateRequest =
     Partial<CertificateIssuerFields>;
 
 export type CertificateStandardRecord = MasterDataRecord<"certificate-standards">;
+export type VsicIndustryRecord = MasterDataRecord<"vsic-industries">;
 
 export type BusinessLineCreateRequest = MasterDataCreateRequest<"business-lines">;
 export type BusinessLineUpdateRequest = MasterDataUpdateRequest<"business-lines">;
+
+export interface VsicIndustryMutationRequest {
+  code: string;
+  name: string;
+  level: number;
+  parentCode?: string | null;
+  displayOrder: number;
+  status: MasterDataStatus;
+  metadataJson?: Record<string, unknown> | null;
+}
+
+export type VsicIndustryCreateRequest = VsicIndustryMutationRequest;
+export type VsicIndustryUpdateRequest = VsicIndustryMutationRequest;
 
 export interface CertificateStandardCreateRequest {
   code: string;

@@ -1,66 +1,191 @@
-import { Input, Label, Textarea } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { EnterpriseGroupFormData } from "../types";
+import { useEffect, useMemo } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  FormDialog,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useForm } from "react-hook-form";
+import type { VsicIndustry } from "../types";
+import {
+  VSIC_INDUSTRY_STATUSES,
+  vsicIndustryFormSchema,
+  type VsicIndustryFormInput,
+  type VsicIndustryFormValues,
+} from "../data/vsic-industry-form.schema";
 
 interface EnterpriseGroupFormProps {
-  formData: EnterpriseGroupFormData;
-  onChange: (updates: Partial<EnterpriseGroupFormData>) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  editItem: VsicIndustry | null;
+  onSubmit: (data: VsicIndustryFormValues) => Promise<void> | void;
 }
 
-export const EnterpriseGroupForm = ({
-  formData,
-  onChange,
-}: EnterpriseGroupFormProps) => {
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="code">
-            Mã nhóm <span className="text-red-500">*</span>
-          </Label>
-          <Input
-            id="code"
-            value={formData.code}
-            onChange={(e) => onChange({ code: e.target.value })}
-            placeholder="VD: DN, HTX..."
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="name">
-            Tên nhóm <span className="text-red-500">*</span>
-          </Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => onChange({ name: e.target.value })}
-            placeholder="VD: Nhóm Doanh nghiệp..."
-          />
-        </div>
-      </div>
+function buildDefaultValues(
+  editItem: VsicIndustry | null,
+): VsicIndustryFormInput {
+  if (!editItem) {
+    return {
+      code: "",
+      name: "",
+      level: 1,
+      parentCode: "",
+      status: "active",
+    };
+  }
 
-      <div className="space-y-2">
-        <Label htmlFor="description">Mô tả</Label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => onChange({ description: e.target.value })}
-          placeholder="Mô tả chi tiết..."
-          rows={3}
-        />
-      </div>
+  return {
+    code: editItem.code ?? "",
+    name: editItem.name ?? "",
+    level: editItem.level ?? 1,
+    parentCode: editItem.parentCode ?? "",
+    status: VSIC_INDUSTRY_STATUSES.includes(
+      editItem.status as (typeof VSIC_INDUSTRY_STATUSES)[number],
+    )
+      ? (editItem.status as VsicIndustryFormValues["status"])
+      : "active",
+  };
+}
 
-      {/* <div className="space-y-2">
-        <Label htmlFor="status">Trạng thái</Label>
-        <select
-          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          value={formData.status}
-          onChange={(e) =>
-            onChange({ status: e.target.value as "active" | "inactive" })
-          }
-        >
-          <option value="active">Đang sử dụng</option>
-          <option value="inactive">Ngưng sử dụng</option>
-        </select>
-      </div> */}
-    </div>
+export function EnterpriseGroupForm({
+  open,
+  onOpenChange,
+  editItem,
+  onSubmit,
+}: EnterpriseGroupFormProps) {
+  const defaultValues = useMemo(
+    () => buildDefaultValues(editItem),
+    [editItem],
   );
-};
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<VsicIndustryFormInput, unknown, VsicIndustryFormValues>({
+    defaultValues,
+    resolver: zodResolver(vsicIndustryFormSchema),
+  });
+
+  useEffect(() => {
+    if (open) {
+      reset(defaultValues);
+    }
+  }, [defaultValues, open, reset]);
+
+  const handleFormSubmit = handleSubmit((values) => onSubmit(values));
+
+  return (
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={editItem ? "Chỉnh sửa ngành nghề" : "Thêm ngành nghề mới"}
+      onSubmit={handleFormSubmit}
+    >
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="code" required>
+              Mã ngành
+            </Label>
+            <Input
+              id="code"
+              placeholder="VD: 01110"
+              aria-invalid={!!errors.code}
+              {...register("code")}
+            />
+            {errors.code ? (
+              <p className="text-xs text-red-600">{errors.code.message}</p>
+            ) : null}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="name" required>
+              Tên ngành
+            </Label>
+            <Input
+              id="name"
+              placeholder="VD: Trồng lúa"
+              aria-invalid={!!errors.name}
+              {...register("name")}
+            />
+            {errors.name ? (
+              <p className="text-xs text-red-600">{errors.name.message}</p>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="level" required>
+              Cấp ngành
+            </Label>
+            <Input
+              id="level"
+              type="number"
+              min={1}
+              max={5}
+              aria-invalid={!!errors.level}
+              {...register("level", {
+                setValueAs: (value) => Number(value),
+              })}
+            />
+            {errors.level ? (
+              <p className="text-xs text-red-600">{errors.level.message}</p>
+            ) : null}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="parentCode">Mã ngành cha</Label>
+            <Input
+              id="parentCode"
+              placeholder="VD: 0111"
+              aria-invalid={!!errors.parentCode}
+              {...register("parentCode")}
+            />
+            {errors.parentCode ? (
+              <p className="text-xs text-red-600">
+                {errors.parentCode.message}
+              </p>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="status" required>
+              Trạng thái
+            </Label>
+            <Select
+              value={watch("status")}
+              onValueChange={(value) =>
+                setValue("status", value as VsicIndustryFormValues["status"], {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
+            >
+              <SelectTrigger id="status" aria-invalid={!!errors.status}>
+                <SelectValue placeholder="Chọn trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Hoạt động</SelectItem>
+                <SelectItem value="inactive">Ngừng hoạt động</SelectItem>
+                <SelectItem value="archived">Lưu trữ</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.status ? (
+              <p className="text-xs text-red-600">{errors.status.message}</p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </FormDialog>
+  );
+}
