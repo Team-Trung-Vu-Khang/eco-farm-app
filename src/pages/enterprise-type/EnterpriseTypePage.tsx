@@ -18,7 +18,7 @@ import {
   Plus,
   TreePine,
 } from "lucide-react";
-import { EnterpriseGroupForm } from "./components/EnterpriseGroupForm";
+import { EnterpriseTypeForm } from "./components/EnterpriseTypeForm";
 import { useEnterpriseGroupForm } from "./hooks/useEnterpriseGroupForm";
 import type { VsicIndustry } from "./types";
 import type { VsicIndustryTreeRecord } from "@/features/master-data/types/master-data.type";
@@ -249,7 +249,7 @@ const EnterpriseTypePage = () => {
         </div>
       </div>
 
-      <EnterpriseGroupForm
+      <EnterpriseTypeForm
         open={formOpen}
         onOpenChange={setFormOpen}
         editItem={editItem}
