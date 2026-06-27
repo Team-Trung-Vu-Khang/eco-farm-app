@@ -169,6 +169,12 @@ export const initialPesticideToxicities: PesticideToxicityItem[] = [
   },
 ];
 
+export const PESTICIDE_GROUP_STATUS_OPTIONS = [
+  { value: "active", label: "Hoạt động" },
+  { value: "inactive", label: "Ngừng hoạt động" },
+  { value: "archived", label: "Đã lưu trữ" },
+] as const;
+
 export const emptyPesticideCategoryFormData: PesticideCategoryFormData = {
   code: "",
   name: "",

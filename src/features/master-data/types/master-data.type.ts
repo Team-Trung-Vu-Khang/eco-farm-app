@@ -71,6 +71,7 @@ export interface MasterDataAttributesMap {
   positions: Record<string, never>;
   "certificate-issuers": Record<string, unknown>;
   "certificate-standards": Record<string, unknown>;
+  "pesticide-groups": Record<string, unknown>;
   "vsic-industries": Record<string, unknown>;
 }
 
@@ -92,6 +93,7 @@ export interface MasterDataRequestExtraFieldsMap {
     issuerIds?: number[];
     documents?: CertificateStandardDocumentInput[];
   };
+  "pesticide-groups": Record<string, never>;
   "plan-types": {
     color: string;
     planGroupId?: number | null;
@@ -122,6 +124,7 @@ export interface MasterDataRecordExtraFieldsMap {
     issuers: CertificateIssuerRecord[];
     documents: CertificateStandardDocument[];
   };
+  "pesticide-groups": Record<string, never>;
   "plan-types": {
     color: string;
     planGroup?: PlanGroupRecord | null;
@@ -265,7 +268,10 @@ export type PositionResponsibilitiesResponse = PositionResponsibilityItem[];
 
 export type CertificateIssuerRecord = MasterDataRecord<"certificate-issuers">;
 export type BusinessLineRecord = MasterDataRecord<"business-lines">;
+export type PesticideGroupRecord = MasterDataRecord<"pesticide-groups">;
 export type PlanGroupRecord = MasterDataRecord<"plan-groups">;
+export type PesticideGroupCreateRequest = MasterDataCreateRequest<"pesticide-groups">;
+export type PesticideGroupUpdateRequest = MasterDataUpdateRequest<"pesticide-groups">;
 export type PlanGroupCreateRequest = MasterDataCreateRequest<"plan-groups">;
 export type PlanGroupUpdateRequest = MasterDataUpdateRequest<"plan-groups">;
 
