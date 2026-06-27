@@ -8,6 +8,8 @@ import type {
   MasterDataQueryParams,
   MasterDataRecord,
   MasterDataUpdateRequest,
+  PositionResponsibilitiesQueryParams,
+  PositionResponsibilitiesResponse,
 } from "../types/master-data.type";
 
 export const masterDataApi = {
@@ -54,4 +56,15 @@ export const masterDataApi = {
     apiClient
       .delete(`${MASTER_DATA_PATHS.base}/${catalog}/${id}`)
       .then(() => undefined),
+
+  listPositionResponsibilities: (
+    positionId: number | string,
+    params?: PositionResponsibilitiesQueryParams,
+  ) =>
+    apiClient
+      .get<PositionResponsibilitiesResponse>(
+        `${MASTER_DATA_PATHS.base}/positions/${positionId}/responsibilities`,
+        { params },
+      )
+      .then((response) => response.data),
 };

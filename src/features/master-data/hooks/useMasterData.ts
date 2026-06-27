@@ -5,6 +5,8 @@ import type {
   MasterDataPageResponse,
   MasterDataQueryParams,
   MasterDataRecord,
+  PositionResponsibilitiesQueryParams,
+  PositionResponsibilitiesResponse,
 } from "../types/master-data.type";
 
 export const masterDataKeys = {
@@ -57,6 +59,21 @@ export function useMasterDataById<C extends MasterDataCatalog>(
     queryKey: masterDataKeys.detail(catalog, id),
     queryFn: () => masterDataApi.getById(catalog, id),
     enabled: enabled && id !== null && id !== undefined && id !== "",
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function usePositionResponsibilities(
+  positionId: number | string,
+  params?: PositionResponsibilitiesQueryParams,
+  { enabled = true }: UseMasterDataOptions = {},
+) {
+  return useQuery<PositionResponsibilitiesResponse, Error>({
+    queryKey: ["master-data", "positions", positionId, "responsibilities", params ?? {}] as const,
+    queryFn: () =>
+      masterDataApi.listPositionResponsibilities(positionId, params),
+    enabled: enabled && positionId !== null && positionId !== undefined && positionId !== "",
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });

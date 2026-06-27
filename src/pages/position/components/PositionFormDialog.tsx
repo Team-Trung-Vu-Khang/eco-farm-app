@@ -1,38 +1,38 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Combobox,
+  Button,
   FormDialog,
   Input,
   Label,
-  MultiSelect,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
   Textarea,
+  useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Controller, useForm, type SubmitHandler } from "react-hook-form";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { Plus, Trash2, Upload } from "lucide-react";
+import { useMasterDataById } from "@/features/master-data";
+import { useUploadStorageFile } from "@/features/storage/hooks/useUploadStorageFile";
 import {
   POSITION_FORM_STATUSES,
   positionFormSchema,
+  type PositionFormInput,
   type PositionFormValues,
 } from "../data/position-form.schema";
 import { emptyPositionFormData } from "../data/constants";
-import type { PositionItem, PositionMetadata } from "../types";
+import type { PositionItem, PositionRecord } from "../types";
 
 interface PositionFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editItem: PositionItem | null;
   groupOptions: { label: string; value: string }[];
-  responsibilityOptions: { label: string; value: string }[];
   onSubmit: (data: PositionFormValues) => void;
-}
-
-function readMetadata(item: PositionItem | null): PositionMetadata {
-  return (item?.metadataJson ?? {}) as PositionMetadata;
 }
 
 function normalizeStatus(
@@ -49,7 +49,9 @@ function normalizeStatus(
   return "active";
 }
 
-function buildDefaultValues(editItem: PositionItem | null): PositionFormValues {
+type PositionFormSource = PositionItem | PositionRecord | null;
+
+function buildDefaultValues(editItem: PositionFormSource): PositionFormInput {
   if (!editItem) {
     return {
       ...emptyPositionFormData,
@@ -57,14 +59,22 @@ function buildDefaultValues(editItem: PositionItem | null): PositionFormValues {
     };
   }
 
-  const metadata = readMetadata(editItem);
-
   return {
     code: editItem.code ?? "",
     name: editItem.name ?? "",
-    group: metadata.group ?? "",
+    positionGroupId:
+      editItem.positionGroupId != null ? String(editItem.positionGroupId) : "",
     description: editItem.description ?? "",
-    responsibilities: metadata.responsibilities ?? [],
+    responsibilityDescription: editItem.responsibilityDescription ?? "",
+    displayOrder: editItem.displayOrder ?? 1,
+    documents: (editItem.documents ?? []).map((document) => ({
+      id: document.id,
+      type: document.type ?? "editor",
+      name: document.name ?? "",
+      content: document.content ?? "",
+      fileUrl: document.fileUrl ?? "",
+      fileName: document.fileName ?? "",
+    })),
     status: normalizeStatus(editItem.status),
   };
 }
@@ -74,54 +84,131 @@ export function PositionFormDialog({
   onOpenChange,
   editItem,
   groupOptions,
-  responsibilityOptions,
   onSubmit,
 }: PositionFormDialogProps) {
-  const defaultValues = useMemo(() => buildDefaultValues(editItem), [editItem]);
+  const { toast } = useToast();
+  const positionDetailQuery = useMasterDataById(
+    "positions",
+    editItem?.id ?? 0,
+    {
+      enabled: open && !!editItem,
+    },
+  );
 
-  const filteredResponsibilities = useMemo(
-    () =>
-      responsibilityOptions.filter((option) => option.value !== editItem?.name),
-    [editItem?.name, responsibilityOptions],
+  const resolvedEditItem =
+    (positionDetailQuery.data as PositionRecord | null) ?? editItem;
+
+  const resolvedDefaultValues = useMemo(
+    () => buildDefaultValues(resolvedEditItem),
+    [resolvedEditItem],
   );
 
   const {
     control,
+    register,
+    getValues,
+    setValue,
     handleSubmit: handleRHFSubmit,
     clearErrors,
     reset,
     formState: { errors },
-  } = useForm<PositionFormValues>({
-    defaultValues,
+  } = useForm<PositionFormInput, unknown, PositionFormValues>({
+    defaultValues: resolvedDefaultValues,
     resolver: zodResolver(positionFormSchema),
+  });
+
+  const {
+    fields: documentFields,
+    append: appendDocument,
+    remove: removeDocument,
+  } = useFieldArray({
+    control,
+    name: "documents",
+  });
+
+  const [uploadingDocumentIndex, setUploadingDocumentIndex] = useState<
+    number | null
+  >(null);
+
+  const uploadDocumentWithErrorToast = useUploadStorageFile({
+    onError: (error) => {
+      toast({
+        title: "Không thể tải tài liệu",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   useEffect(() => {
     if (open) {
-      reset(defaultValues);
+      reset(resolvedDefaultValues);
       clearErrors();
+      setUploadingDocumentIndex(null);
     }
-  }, [clearErrors, defaultValues, open, reset]);
+  }, [clearErrors, open, reset, resolvedDefaultValues]);
 
-  const submitForm: SubmitHandler<PositionFormValues> = (values) => {
+  const handleDocumentFileSelect = async (
+    index: number,
+    file: File | undefined,
+  ) => {
+    if (!file) return;
+
+    try {
+      setUploadingDocumentIndex(index);
+      const uploaded = await uploadDocumentWithErrorToast.uploadStorageFile({
+        file,
+        folder: "positions-documents",
+      });
+
+      const currentName = getValues(`documents.${index}.name`) ?? "";
+
+      setValue(`documents.${index}.fileUrl`, uploaded.fileUrl, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      setValue(`documents.${index}.fileName`, uploaded.fileName, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      if (!currentName.trim()) {
+        setValue(`documents.${index}.name`, uploaded.fileName, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+      clearErrors(`documents.${index}.fileUrl`);
+      clearErrors(`documents.${index}.fileName`);
+    } finally {
+      setUploadingDocumentIndex(null);
+    }
+  };
+
+  const handleOpenDocument = (fileUrl: string) => {
+    if (!fileUrl) return;
+    window.open(fileUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const handleDialogSubmit = handleRHFSubmit((values) => {
     onSubmit({
       ...values,
       status: editItem ? values.status : "active",
     });
-  };
+  });
 
   return (
     <FormDialog
       open={open}
       onOpenChange={onOpenChange}
       title={editItem ? "Chỉnh sửa chức vụ" : "Thêm chức vụ mới"}
-      onSubmit={handleRHFSubmit(submitForm)}
+      onSubmit={handleDialogSubmit}
+      size="xl"
     >
-      <div className="space-y-4">
+      <div className="space-y-4 max-h-[70dvh] overflow-y-auto px-1">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="code" required>
-              Mã vai trò
+              Mã chức vụ
             </Label>
             <Controller
               control={control}
@@ -149,7 +236,7 @@ export function PositionFormDialog({
 
           <div className="space-y-2">
             <Label htmlFor="name" required>
-              Tên vai trò
+              Tên chức vụ
             </Label>
             <Controller
               control={control}
@@ -177,59 +264,64 @@ export function PositionFormDialog({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="group" required>
-            Bộ phận
+          <Label htmlFor="positionGroupId" required>
+            Nhóm chức vụ
           </Label>
           <Controller
             control={control}
-            name="group"
+            name="positionGroupId"
             render={({ field }) => (
               <Combobox
                 options={groupOptions}
                 value={field.value}
                 onChange={(value) => {
-                  clearErrors("group");
+                  clearErrors("positionGroupId");
                   field.onChange(value);
                 }}
-                placeholder="Chọn bộ phận"
-                searchPlaceholder="Tìm bộ phận..."
-                emptyText="Không tìm thấy bộ phận"
+                placeholder="Chọn nhóm chức vụ"
+                searchPlaceholder="Tìm nhóm chức vụ..."
+                emptyText="Không tìm thấy nhóm chức vụ"
               />
             )}
           />
-          {errors.group ? (
-            <p className="text-xs text-red-600">{errors.group.message}</p>
-          ) : null}
-        </div>
-
-        <div className="space-y-2">
-          <Label>Danh sách trách nhiệm</Label>
-          <Controller
-            control={control}
-            name="responsibilities"
-            render={({ field }) => (
-              <MultiSelect
-                options={filteredResponsibilities}
-                value={field.value ?? []}
-                placeholder="Chọn các trách nhiệm..."
-                emptyText="Không tìm thấy vai trò"
-                searchPlaceholder="Tìm vai trò..."
-                onChange={(values) => {
-                  clearErrors("responsibilities");
-                  field.onChange(values);
-                }}
-              />
-            )}
-          />
-          {errors.responsibilities ? (
+          {errors.positionGroupId ? (
             <p className="text-xs text-red-600">
-              {errors.responsibilities.message}
+              {errors.positionGroupId.message}
             </p>
           ) : null}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="description">Mô tả</Label>
+          <Label htmlFor="responsibilityDescription">Mô tả trách nhiệm</Label>
+          <Controller
+            control={control}
+            name="responsibilityDescription"
+            render={({ field }) => (
+              <Textarea
+                id="responsibilityDescription"
+                placeholder="Mô tả ngắn về trách nhiệm của chức vụ..."
+                rows={4}
+                aria-invalid={!!errors.responsibilityDescription}
+                value={field.value}
+                onChange={(e) => {
+                  clearErrors("responsibilityDescription");
+                  field.onChange(e.target.value);
+                }}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+              />
+            )}
+          />
+          {errors.responsibilityDescription ? (
+            <p className="text-xs text-red-600">
+              {errors.responsibilityDescription.message}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Mô tả chức vụ</Label>
           <Controller
             control={control}
             name="description"
@@ -254,6 +346,269 @@ export function PositionFormDialog({
             <p className="text-xs text-red-600">{errors.description.message}</p>
           ) : null}
         </div>
+        <div className="space-y-3 rounded-xl border bg-slate-50/80 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <Label className="text-sm font-medium">Tài liệu</Label>
+              <p className="text-xs text-slate-500">Thêm tài liệu đính kèm.</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                appendDocument({
+                  type: "editor",
+                  name: "",
+                  content: "",
+                  fileUrl: "",
+                  fileName: "",
+                })
+              }
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Thêm tài liệu
+            </Button>
+          </div>
+
+          {documentFields.length > 0 ? (
+            <div className="space-y-3">
+              {documentFields.map((field, index) => (
+                <div
+                  key={field.id}
+                  className="rounded-lg border border-slate-200 bg-white p-3"
+                >
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-sm font-medium text-slate-700">
+                      Tài liệu {index + 1}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-slate-500 hover:text-red-600"
+                      onClick={() => removeDocument(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <Controller
+                    control={control}
+                    name={`documents.${index}.type` as const}
+                    render={({ field: typeField }) => {
+                      const isEditor = typeField.value === "editor";
+
+                      return (
+                        <div className="space-y-3">
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label
+                                htmlFor={`documents.${index}.type`}
+                                required
+                              >
+                                Loại tài liệu
+                              </Label>
+                              <Select
+                                value={typeField.value}
+                                onValueChange={(value) => {
+                                  clearErrors(`documents.${index}.type`);
+                                  typeField.onChange(value);
+                                  if (value === "editor") {
+                                    setValue(`documents.${index}.fileUrl`, "", {
+                                      shouldDirty: true,
+                                      shouldValidate: true,
+                                    });
+                                    setValue(
+                                      `documents.${index}.fileName`,
+                                      "",
+                                      {
+                                        shouldDirty: true,
+                                        shouldValidate: true,
+                                      },
+                                    );
+                                  } else {
+                                    setValue(`documents.${index}.content`, "", {
+                                      shouldDirty: true,
+                                      shouldValidate: true,
+                                    });
+                                  }
+                                }}
+                              >
+                                <SelectTrigger
+                                  id={`documents.${index}.type`}
+                                  aria-invalid={
+                                    !!errors.documents?.[index]?.type
+                                  }
+                                >
+                                  <SelectValue placeholder="Chọn loại tài liệu" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="editor">Editor</SelectItem>
+                                  <SelectItem value="pdf">PDF</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              {errors.documents?.[index]?.type ? (
+                                <p className="text-xs text-red-600">
+                                  {errors.documents[index]?.type?.message}
+                                </p>
+                              ) : null}
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label
+                                htmlFor={`documents.${index}.name`}
+                                required
+                              >
+                                Tên tài liệu
+                              </Label>
+                              <Input
+                                id={`documents.${index}.name`}
+                                placeholder="VD: Kỹ thuật canh tác"
+                                aria-invalid={!!errors.documents?.[index]?.name}
+                                {...register(
+                                  `documents.${index}.name` as const,
+                                )}
+                              />
+                              {errors.documents?.[index]?.name ? (
+                                <p className="text-xs text-red-600">
+                                  {errors.documents[index]?.name?.message}
+                                </p>
+                              ) : null}
+                            </div>
+
+                            {isEditor ? (
+                              <div className="space-y-2 md:col-span-2">
+                                <Label
+                                  htmlFor={`documents.${index}.content`}
+                                  required
+                                >
+                                  Nội dung
+                                </Label>
+                                <Textarea
+                                  id={`documents.${index}.content`}
+                                  rows={3}
+                                  placeholder="Nội dung tài liệu..."
+                                  aria-invalid={
+                                    !!errors.documents?.[index]?.content
+                                  }
+                                  {...register(
+                                    `documents.${index}.content` as const,
+                                  )}
+                                />
+                                {errors.documents?.[index]?.content ? (
+                                  <p className="text-xs text-red-600">
+                                    {errors.documents[index]?.content?.message}
+                                  </p>
+                                ) : null}
+                              </div>
+                            ) : null}
+
+                            {!isEditor ? (
+                              <div className="space-y-2 md:col-span-2">
+                                <Label
+                                  htmlFor={`documents.${index}.upload`}
+                                  required
+                                >
+                                  File PDF
+                                </Label>
+                                <div className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3">
+                                  <input
+                                    id={`documents.${index}.upload`}
+                                    type="file"
+                                    className="hidden"
+                                    accept=".pdf"
+                                    onChange={(e) => {
+                                      void handleDocumentFileSelect(
+                                        index,
+                                        e.target.files?.[0],
+                                      );
+                                      e.target.value = "";
+                                    }}
+                                  />
+                                  <div className="flex items-center justify-between gap-3">
+                                    <div className="min-w-0 flex-1">
+                                      <p className="truncate text-sm font-medium text-slate-700">
+                                        {field.fileName || "Chưa tải file PDF"}
+                                      </p>
+                                      <p className="truncate text-xs text-slate-500">
+                                        {field.fileUrl ||
+                                          "Chọn file PDF để tải lên storage"}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      {field.fileUrl ? (
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          onClick={() =>
+                                            handleOpenDocument(field.fileUrl ?? "")
+                                          }
+                                        >
+                                          Xem
+                                        </Button>
+                                      ) : null}
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                          const input =
+                                            globalThis.document.getElementById(
+                                              `documents.${index}.upload`,
+                                            ) as HTMLInputElement | null;
+                                          input?.click();
+                                        }}
+                                        disabled={
+                                          uploadingDocumentIndex === index
+                                        }
+                                      >
+                                        <Upload className="mr-2 h-4 w-4" />
+                                        {uploadingDocumentIndex === index
+                                          ? "Đang tải..."
+                                          : field.fileUrl
+                                            ? "Đổi PDF"
+                                            : "Tải PDF"}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  {errors.documents?.[index]?.fileUrl ? (
+                                    <p className="text-xs text-red-600">
+                                      {
+                                        errors.documents[index]?.fileUrl
+                                          ?.message
+                                      }
+                                    </p>
+                                  ) : null}
+                                  {errors.documents?.[index]?.fileName ? (
+                                    <p className="text-xs text-red-600">
+                                      {
+                                        errors.documents[index]?.fileName
+                                          ?.message
+                                      }
+                                    </p>
+                                  ) : null}
+                                </div>
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                      );
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-slate-300 bg-white px-4 py-6 text-sm text-slate-500">
+              Chưa có tài liệu nào. Bấm "Thêm tài liệu" để tạo mục mới.
+            </div>
+          )}
+        </div>
+        {(resolvedEditItem?.documents?.length ?? 0) > 0 ? (
+          <div className="rounded-lg border bg-slate-50 p-3 text-sm text-slate-600">
+            Đã đính kèm {resolvedEditItem?.documents?.length ?? 0} tài liệu
+            trong bản ghi này.
+          </div>
+        ) : null}
 
         {editItem ? (
           <div className="space-y-2">

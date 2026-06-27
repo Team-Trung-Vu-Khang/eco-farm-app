@@ -20,7 +20,6 @@ const PositionPage = () => {
   const {
     positions,
     groupOptions,
-    responsibilityOptions,
     loading,
     error,
     response,
@@ -46,7 +45,7 @@ const PositionPage = () => {
     <AdminLayout
       isDev={true}
       title="Quản lý chức vụ"
-      description="Quản lý chức vụ theo đơn vị sở hữu"
+      description="Quản lý chức vụ theo nhóm chức vụ"
       actions={
         <Button onClick={handleAdd}>
           <Plus className="w-4 h-4 mr-2" />
@@ -90,7 +89,6 @@ const PositionPage = () => {
         onOpenChange={setFormOpen}
         editItem={editItem}
         groupOptions={groupOptions}
-        responsibilityOptions={responsibilityOptions}
         onSubmit={handleSubmit}
       />
 

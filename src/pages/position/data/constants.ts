@@ -9,8 +9,10 @@ export const POSITION_STATUS_OPTIONS = [
 export const emptyPositionFormData: PositionFormData = {
   code: "",
   name: "",
-  group: "",
+  positionGroupId: "",
   description: "",
-  responsibilities: [],
+  responsibilityDescription: "",
+  displayOrder: 1,
+  documents: [],
   status: "active",
 };

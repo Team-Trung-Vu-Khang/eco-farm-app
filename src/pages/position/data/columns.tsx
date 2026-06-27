@@ -27,8 +27,28 @@ export const positionColumns: Column<PositionItem>[] = [
     ),
   },
   { key: "name", label: "Tên chức vụ" },
-  { key: "department", label: "Bộ phận" },
-  { key: "description", label: "Mô tả" },
+  {
+    key: "positionGroup",
+    label: "Nhóm chức vụ",
+    render: (value, row) => (
+      <span className="text-sm text-slate-700">
+        {(row.positionGroup && row.positionGroup.name) || "—"}
+      </span>
+    ),
+  },
+  { key: "description", label: "Mô tả chức vụ" },
+  {
+    key: "responsibilityDescription",
+    label: "Mô tả trách nhiệm",
+    render: (value) => (
+      <span
+        className="block max-w-[280px] truncate text-sm text-slate-600"
+        title={String(value ?? "")}
+      >
+        {String(value ?? "—")}
+      </span>
+    ),
+  },
   {
     key: "status",
     label: "Trạng thái",

@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   type MasterDataCreateRequest,
-  type MasterDataRecord,
   type MasterDataStatus,
   type MasterDataUpdateRequest,
   useCreateMasterData,
@@ -14,7 +13,7 @@ import {
 import type {
   PositionFormData,
   PositionItem,
-  PositionMetadata,
+  PositionRecord,
 } from "../types";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -22,36 +21,45 @@ const ALL_STATUS = "all" as const;
 
 export type PositionStatusFilter = MasterDataStatus | typeof ALL_STATUS;
 
-function readPositionMetadata(
-  item: MasterDataRecord<"positions"> | PositionItem,
-): PositionMetadata {
-  return (item.metadataJson ?? {}) as PositionMetadata;
-}
-
-function mapPositionRecordToItem(
-  item: MasterDataRecord<"positions">,
-): PositionItem {
-  const metadata = readPositionMetadata(item);
-
+function mapPositionRecordToItem(item: PositionRecord): PositionItem {
   return {
     ...item,
-    group: metadata.group ?? "",
-    responsibilities: metadata.responsibilities ?? [],
+    positionGroupId: item.positionGroupId ?? null,
+    positionGroup: item.positionGroup ?? null,
+    responsibilityDescription: item.responsibilityDescription ?? "",
+    displayOrder: item.displayOrder ?? 1,
+    documents: item.documents ?? [],
   };
+}
+
+function mapFormDocuments(formDocuments: PositionFormData["documents"]) {
+  return formDocuments.map((document) => ({
+    ...(document.id != null ? { id: document.id } : {}),
+    type: document.type.trim(),
+    name: document.name.trim(),
+    content: document.content?.trim() || undefined,
+    fileUrl: document.fileUrl?.trim() || undefined,
+    fileName: document.fileName?.trim() || undefined,
+  }));
 }
 
 function buildCreatePayload(
   formData: PositionFormData,
 ): MasterDataCreateRequest<"positions"> {
+  const positionGroupIdValue = formData.positionGroupId.trim();
+  const positionGroupId = positionGroupIdValue ? Number(positionGroupIdValue) : undefined;
+
   return {
     code: formData.code.trim().toUpperCase(),
     name: formData.name.trim(),
     description: formData.description.trim() || undefined,
     status: "active",
+    displayOrder: formData.displayOrder,
+    positionGroupId: Number.isNaN(positionGroupId) ? undefined : positionGroupId,
+    responsibilityDescription: formData.responsibilityDescription.trim() || undefined,
+    documents: mapFormDocuments(formData.documents),
     metadataJson: {
       source: "manual",
-      group: formData.group,
-      responsibilities: formData.responsibilities,
     },
   };
 }
@@ -60,17 +68,25 @@ function buildUpdatePayload(
   formData: PositionFormData,
   currentItem: PositionItem,
 ): MasterDataUpdateRequest<"positions"> {
+  const positionGroupIdValue = formData.positionGroupId.trim();
+  const positionGroupId = positionGroupIdValue ? Number(positionGroupIdValue) : undefined;
+
   return {
     code: formData.code.trim().toUpperCase(),
     name: formData.name.trim(),
     description: formData.description.trim() || undefined,
     status: formData.status,
-    displayOrder: currentItem.displayOrder,
+    displayOrder: formData.displayOrder,
+    positionGroupId:
+      Number.isNaN(positionGroupId)
+        ? currentItem.positionGroupId ?? undefined
+        : positionGroupId,
+    responsibilityDescription:
+      formData.responsibilityDescription.trim() || undefined,
+    documents: mapFormDocuments(formData.documents),
     metadataJson: {
       ...(currentItem.metadataJson ?? {}),
       source: "manual",
-      group: formData.group,
-      responsibilities: formData.responsibilities,
     },
   };
 }
@@ -98,23 +114,20 @@ export function usePositionPage() {
   const positionGroupQuery = useMasterData("position-groups", {
     params: {
       status: "active",
-      keyword: search.trim() || undefined,
       page: 0,
-      size: pageSize,
+      size: 100,
     },
   });
 
   const createPosition = useCreateMasterData("positions");
   const updatePosition = useUpdateMasterData("positions");
   const deletePosition = useDeleteMasterData("positions");
-  const responsibilityQuery = useMasterData("positions", {
-    params: {
-      size: pageSize,
-    },
-  });
 
   const positions = useMemo(
-    () => positionsQuery.items.map(mapPositionRecordToItem),
+    () =>
+      positionsQuery.items.map((item) =>
+        mapPositionRecordToItem(item as PositionRecord),
+      ),
     [positionsQuery.items],
   );
 
@@ -122,18 +135,9 @@ export function usePositionPage() {
     () =>
       positionGroupQuery.items.map((group) => ({
         label: group.name,
-        value: group.name,
+        value: String(group.id),
       })),
     [positionGroupQuery.items],
-  );
-
-  const responsibilityOptions = useMemo(
-    () =>
-      responsibilityQuery.items.map((item) => ({
-        label: item.name,
-        value: item.name,
-      })),
-    [responsibilityQuery.items],
   );
 
   const handleSearch = (value: string) => {
@@ -224,15 +228,8 @@ export function usePositionPage() {
   return {
     positions,
     groupOptions,
-    responsibilityOptions,
-    loading:
-      positionsQuery.loading ||
-      positionGroupQuery.loading ||
-      responsibilityQuery.loading,
-    error:
-      positionsQuery.error ||
-      positionGroupQuery.error ||
-      responsibilityQuery.error,
+    loading: positionsQuery.loading || positionGroupQuery.loading,
+    error: positionsQuery.error || positionGroupQuery.error,
     response: positionsQuery.response,
     handleSearch,
     handleFilterChange,
