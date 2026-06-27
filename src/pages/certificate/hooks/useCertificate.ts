@@ -1,23 +1,82 @@
 import { useMemo, useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
+  type CertificateStandardRecord,
   useCreateMasterData,
   useDeleteMasterData,
   useMasterData,
   useUpdateMasterData,
   type CertificateIssuerCreateRequest,
+  type CertificateStandardCreateRequest,
 } from "@/features/master-data";
-import {
-  emptyStandardFormData,
-  initialStandards,
-} from "../data/constants";
+import type { StandardFormValues } from "../data/standard-form.schema";
 import type {
   CategoryType,
   Certificate,
   CertificationOrganization,
   OrganizationFormData,
-  StandardFormData,
 } from "../types/types";
+
+function normalizeStatus(
+  status: Certificate["status"] | string | null | undefined,
+): Certificate["status"] {
+  return status === "inactive" ? "inactive" : "active";
+}
+
+function mapStandardRecordToItem(
+  item: CertificateStandardRecord,
+  organizations: CertificationOrganization[],
+): Certificate {
+  const issuers = item.issuers ?? [];
+  const organizationIds = issuers.map((issuer) => issuer.id);
+
+  const matchedOrganizations = issuers.length
+    ? issuers
+    : organizations.filter((organization) =>
+        organizationIds.includes(organization.id),
+      );
+
+  return {
+    id: item.id,
+    code: item.code ?? "",
+    name: item.name ?? "",
+    organizationIds,
+    issuers: matchedOrganizations,
+    documents: item.documents ?? [],
+    content: item.documents?.[0]?.content ?? "",
+    contentType: item.documents?.[0]?.type === "pdf" ? "file" : "editor",
+    fileUrl: item.documents?.[0]?.fileUrl ?? "",
+    stampUrl: item.stampUrl ?? "",
+    stampType: item.stampUrl ? "url" : "file",
+    stampFileUrl: "",
+    validityMonths: item.validityMonths ?? 0,
+    description: item.description ?? "",
+    status: normalizeStatus(item.status),
+    createdAt: item.createdAt,
+  };
+}
+
+function buildStandardPayload(
+  formData: StandardFormValues,
+): CertificateStandardCreateRequest {
+  return {
+    code: formData.code.trim().toUpperCase(),
+    name: formData.name.trim(),
+    stampUrl: formData.stampUrl.trim(),
+    description: formData.description.trim() || undefined,
+    validityMonths: formData.validityMonths,
+    issuerIds: formData.organizationIds,
+    documents: formData.documents.map((document) => ({
+      type: document.type,
+      name: document.name.trim(),
+      content: document.content?.trim() || "",
+      fileUrl: document.fileUrl.trim(),
+      fileName: document.fileName.trim(),
+    })),
+    status: formData.status,
+    metadataJson: null,
+  };
+}
 
 function buildOrganizationPayload(formData: OrganizationFormData) {
   return {
@@ -60,7 +119,24 @@ export function useCertificate() {
     [organizationsQuery.items],
   );
 
-  const [standards, setStandards] = useState<Certificate[]>(initialStandards);
+  const standardsQuery = useMasterData("certificate-standards", {
+    params: {
+      page: 0,
+      size: 100,
+    },
+  });
+
+  const standards = useMemo<Certificate[]>(
+    () =>
+      standardsQuery.items.map((item) =>
+        mapStandardRecordToItem(item as CertificateStandardRecord, organizations),
+      ),
+    [organizations, standardsQuery.items],
+  );
+
+  const createStandard = useCreateMasterData("certificate-standards");
+  const updateStandard = useUpdateMasterData("certificate-standards");
+  const deleteStandard = useDeleteMasterData("certificate-standards");
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<
@@ -70,8 +146,6 @@ export function useCertificate() {
   // Form states for Standards
   const [standardFormOpen, setStandardFormOpen] = useState(false);
   const [editStandard, setEditStandard] = useState<Certificate | null>(null);
-  const [standardFormData, setStandardFormData] =
-    useState<StandardFormData>(emptyStandardFormData);
 
   // Form states for Organizations
   const [orgFormOpen, setOrgFormOpen] = useState(false);
@@ -83,36 +157,61 @@ export function useCertificate() {
 
   const handleAddStandard = () => {
     setEditStandard(null);
-    setStandardFormData(emptyStandardFormData);
-    setOrgSearchQuery("");
     setStandardFormOpen(true);
   };
 
   const handleEditStandard = (item: Certificate) => {
     setEditStandard(item);
-    setStandardFormData({ ...item });
-    setOrgSearchQuery("");
     setStandardFormOpen(true);
   };
 
-  const handleSubmitStandard = () => {
+  const handleSubmitStandard = async (formData: StandardFormValues) => {
     if (editStandard) {
-      setStandards((prev) =>
-        prev.map((s) =>
-          s.id === editStandard.id ? { ...s, ...standardFormData } : s,
-        ),
-      );
-      toast({ title: "Thành công", description: "Đã cập nhật loại tiêu chuẩn" });
+      const payload = buildStandardPayload(formData);
+
+      try {
+        await updateStandard.mutateAsync({
+          id: editStandard.id,
+          data: payload,
+        });
+        toast({
+          title: "Thành công",
+          description: "Đã cập nhật loại tiêu chuẩn",
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+
+        toast({
+          title: "Không thể cập nhật",
+          description: message,
+          variant: "destructive",
+        });
+        return;
+      }
     } else {
-      const newStandard: Certificate = {
-        id: Date.now(),
-        ...standardFormData,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setStandards((prev) => [...prev, newStandard]);
-      toast({ title: "Thành công", description: "Đã thêm loại tiêu chuẩn mới" });
+      const payload = buildStandardPayload(formData);
+
+      try {
+        await createStandard.mutateAsync(payload);
+        toast({
+          title: "Thành công",
+          description: "Đã thêm loại tiêu chuẩn mới",
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+
+        toast({
+          title: "Không thể thêm",
+          description: message,
+          variant: "destructive",
+        });
+        return;
+      }
     }
     setStandardFormOpen(false);
+    setEditStandard(null);
   };
 
   const handleAddOrg = () => {
@@ -171,7 +270,7 @@ export function useCertificate() {
 
     try {
       if (activeTab === "standards") {
-        setStandards((prev) => prev.filter((s) => s.id !== deleteItem.id));
+        await deleteStandard.mutateAsync(deleteItem.id);
         toast({ title: "Thành công", description: "Đã xóa loại tiêu chuẩn" });
       } else {
         await deleteOrganization.mutateAsync(deleteItem.id);
@@ -202,12 +301,12 @@ export function useCertificate() {
     setOrganizationStatusFilter,
     organizationsLoading: organizationsQuery.loading,
     organizationsError: organizationsQuery.error,
+    standardsLoading: standardsQuery.loading,
+    standardsError: standardsQuery.error,
     standardFormOpen,
     setStandardFormOpen,
     orgFormOpen,
     setOrgFormOpen,
-    standardFormData,
-    setStandardFormData,
     editStandard,
     editOrg,
     orgSearchQuery,
@@ -222,6 +321,10 @@ export function useCertificate() {
     handleSubmitOrg,
     handleDelete,
     handleConfirmDelete,
+    standardsPending:
+      createStandard.isPending ||
+      updateStandard.isPending ||
+      deleteStandard.isPending,
     organizationsPending:
       createOrganization.isPending ||
       updateOrganization.isPending ||

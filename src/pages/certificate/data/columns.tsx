@@ -30,6 +30,18 @@ export function getStandardColumns(
     { key: "code", label: "Mã số" },
     { key: "name", label: "Tên tiêu chuẩn" },
     {
+      key: "validityMonths",
+      label: "Hiệu lực",
+      render: (value) => (
+        <Badge
+          variant="outline"
+          className="rounded-full border-amber-200 bg-amber-50 px-2.5 py-1 font-medium text-amber-700"
+        >
+          {value !== null && value !== undefined ? `${value} tháng` : "—"}
+        </Badge>
+      ),
+    },
+    {
       key: "stampUrl",
       label: "Dấu mộc",
       render: (value) =>
@@ -46,20 +58,23 @@ export function getStandardColumns(
     {
       key: "organizationIds",
       label: "Tổ chức cấp",
-      render: (value) => {
-        const orgIds = value as number[];
-        const orgNames = organizations
-          .filter((org) => orgIds.includes(org.id))
-          .map((org) => org.name);
+      render: (_value, row) => {
+        const issuers = row.issuers ?? [];
+        const issuerNames =
+          issuers.length > 0
+            ? issuers.map((issuer) => issuer.name)
+            : organizations
+                .filter((org) => row.organizationIds.includes(org.id))
+                .map((org) => org.name);
 
-        if (orgNames.length === 0) return <span>-</span>;
-        if (orgNames.length === 1) return <span>{orgNames[0]}</span>;
+        if (issuerNames.length === 0) return <span>-</span>;
+        if (issuerNames.length === 1) return <span>{issuerNames[0]}</span>;
 
         return (
           <div className="flex flex-wrap gap-1">
-            <Badge variant="secondary">{orgNames[0]}</Badge>
-            {orgNames.length > 1 && (
-              <Badge variant="outline">+{orgNames.length - 1}</Badge>
+            <Badge variant="secondary">{issuerNames[0]}</Badge>
+            {issuerNames.length > 1 && (
+              <Badge variant="outline">+{issuerNames.length - 1}</Badge>
             )}
           </div>
         );

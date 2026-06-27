@@ -32,16 +32,14 @@ export default function CertificatePage() {
     organizations,
     setOrganizationSearchQuery,
     setOrganizationStatusFilter,
+    standardsLoading,
+    standardsError,
     standardFormOpen,
     setStandardFormOpen,
     orgFormOpen,
     setOrgFormOpen,
-    standardFormData,
-    setStandardFormData,
     editStandard,
     editOrg,
-    orgSearchQuery,
-    setOrgSearchQuery,
     organizationsLoading,
     organizationsError,
     deleteOpen,
@@ -62,6 +60,12 @@ export default function CertificatePage() {
       title="Danh mục tiêu chuẩn"
       description="Quản lý loại tiêu chuẩn và tổ chức chứng nhận (Master Data)"
     >
+      {standardsError ? (
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+          ⚠️ {standardsError}
+        </div>
+      ) : null}
+
       {organizationsError ? (
         <div className="mb-4 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
           ⚠️ {organizationsError}
@@ -91,6 +95,7 @@ export default function CertificatePage() {
             onAdd={handleAddStandard}
             onEdit={handleEditStandard}
             onDelete={handleDelete}
+            loading={standardsLoading}
           />
         </TabsContent>
 
@@ -124,12 +129,8 @@ export default function CertificatePage() {
         open={standardFormOpen}
         onOpenChange={setStandardFormOpen}
         editItem={editStandard}
-        formData={standardFormData}
-        setFormData={setStandardFormData}
         organizations={organizations}
         onSubmit={handleSubmitStandard}
-        searchQuery={orgSearchQuery}
-        setSearchQuery={setOrgSearchQuery}
       />
 
       <OrganizationFormDialog
