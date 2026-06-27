@@ -1,122 +1,195 @@
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMasterData, useMasterDataMutations } from "@/features/master-data";
+import { INITIAL_ORGANIZATION_DATA } from "../data/constants";
 import {
-  INITIAL_BUSINESS_DATA,
-  INITIAL_ORGANIZATION_DATA,
-} from "../data/constants";
+  enterpriseFormSchema,
+  type EnterpriseFormInput,
+  type EnterpriseFormValues,
+} from "../data/enterprise-form.schema";
+import type { CategoryType, EnterpriseType } from "../types";
 import type {
-  CategoryType,
-  EnterpriseType,
-  EnterpriseTypeFormData,
-} from "../types";
+  BusinessLineCreateRequest,
+  BusinessLineRecord,
+  BusinessLineUpdateRequest,
+} from "@/features/master-data/types/master-data.type";
+import { useForm } from "react-hook-form";
+
+type EnterpriseRow = EnterpriseType | BusinessLineRecord;
 
 export function useEnterpriseForm() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<CategoryType>("organization");
+  const [businessSearchQuery, setBusinessSearchQuery] = useState("");
+  const businessParams = useMemo(
+    () => ({
+      keyword: businessSearchQuery.trim() || undefined,
+    }),
+    [businessSearchQuery],
+  );
+  const businessQuery = useMasterData("business-lines", {
+    enabled: activeTab === "business",
+    params: businessParams,
+  });
+  const {
+    createMasterData: createBusinessLine,
+    updateMasterData: updateBusinessLine,
+    deleteMasterData: deleteBusinessLine,
+  } = useMasterDataMutations("business-lines");
 
   // State for data
   const [organizationData, setOrganizationData] = useState<EnterpriseType[]>(
     INITIAL_ORGANIZATION_DATA,
   );
-  const [businessData, setBusinessData] = useState<EnterpriseType[]>(
-    INITIAL_BUSINESS_DATA,
-  );
 
   // Dialog states
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [editItem, setEditItem] = useState<EnterpriseType | null>(null);
-  const [deleteItem, setDeleteItem] = useState<EnterpriseType | null>(null);
+  const [editItem, setEditItem] = useState<EnterpriseRow | null>(null);
+  const [deleteItem, setDeleteItem] = useState<EnterpriseRow | null>(null);
 
-  const [formData, setFormData] = useState<EnterpriseTypeFormData>({
-    code: "",
-    name: "",
-    description: "",
-    status: "active",
-  });
-
-  const getCurrentData = () => {
-    return activeTab === "organization" ? organizationData : businessData;
-  };
-
-  const updateCurrentData = (
-    updater: (prev: EnterpriseType[]) => EnterpriseType[],
-  ) => {
-    if (activeTab === "organization") {
-      setOrganizationData(updater);
-    } else {
-      setBusinessData(updater);
-    }
-  };
-
-  const handleAdd = () => {
-    setEditItem(null);
-    setFormData({
+  const defaultFormValues = useMemo<EnterpriseFormInput>(
+    () => ({
       code: "",
       name: "",
       description: "",
       status: "active",
-    });
+      metadataJson: null,
+    }),
+    [],
+  );
+
+  const form = useForm<EnterpriseFormInput, unknown, EnterpriseFormValues>({
+    defaultValues: defaultFormValues,
+    resolver: zodResolver(enterpriseFormSchema),
+  });
+
+  const {
+    register,
+    reset,
+    handleSubmit: handleFormSubmit,
+    formState: { errors },
+  } = form;
+
+  const businessData = businessQuery.items;
+
+  const handleAdd = () => {
+    setEditItem(null);
+    reset(defaultFormValues);
     setFormOpen(true);
   };
 
-  const handleEdit = (item: EnterpriseType) => {
+  const handleEdit = (item: EnterpriseRow) => {
     setEditItem(item);
-    setFormData({
+    reset({
       code: item.code,
       name: item.name,
-      description: item.description,
-      status: item.status,
-    });
+      description: item.description ?? "",
+      status:
+        item.status === "active" ||
+        item.status === "inactive" ||
+        item.status === "archived"
+          ? item.status
+          : "active",
+      metadataJson: "metadataJson" in item ? (item.metadataJson ?? null) : null,
+    } as EnterpriseFormInput);
     setFormOpen(true);
   };
 
-  const handleDelete = (item: EnterpriseType) => {
+  const handleDelete = (item: EnterpriseRow) => {
     setDeleteItem(item);
     setDeleteOpen(true);
   };
 
-  const handleSubmit = () => {
+  const submitForm = handleFormSubmit(async (values) => {
     const categoryName =
       activeTab === "organization" ? "loại hình tổ chức" : "lĩnh vực hoạt động";
 
-    if (editItem) {
-      updateCurrentData((prev) =>
-        prev.map((item) =>
-          item.id === editItem.id ? { ...item, ...formData } : item,
-        ),
-      );
+    if (activeTab === "organization") {
+      if (editItem) {
+        setOrganizationData((prev) =>
+          prev.map((item) =>
+            item.id === editItem.id
+              ? {
+                  ...item,
+                  code: values.code,
+                  name: values.name,
+                  description: values.description,
+                  status: values.status,
+                }
+              : item,
+          ),
+        );
+        toast({
+          title: "Thành công",
+          description: `Đã cập nhật ${categoryName}`,
+        });
+      } else {
+        const newItem: EnterpriseType = {
+          id: Date.now(),
+          code: values.code,
+          name: values.name,
+          description: values.description,
+          status: values.status === "archived" ? "inactive" : values.status,
+          createdAt: new Date().toISOString().split("T")[0],
+        };
+        setOrganizationData((prev) => [...prev, newItem]);
+        toast({
+          title: "Thành công",
+          description: `Đã thêm ${categoryName} mới`,
+        });
+      }
+    } else if (editItem) {
+      const businessPayload = {
+        ...values,
+        displayOrder: 1,
+      };
+      await updateBusinessLine.mutateAsync({
+        id: editItem.id,
+        data: businessPayload as BusinessLineUpdateRequest,
+      });
       toast({
         title: "Thành công",
         description: `Đã cập nhật ${categoryName}`,
       });
     } else {
-      const newItem: EnterpriseType = {
-        id: Date.now(),
-        ...formData,
-        createdAt: new Date().toISOString().split("T")[0],
+      const businessPayload = {
+        ...values,
+        displayOrder: 1,
       };
-      updateCurrentData((prev) => [...prev, newItem]);
+      await createBusinessLine.mutateAsync(
+        businessPayload as BusinessLineCreateRequest,
+      );
       toast({
         title: "Thành công",
         description: `Đã thêm ${categoryName} mới`,
       });
     }
-    setFormOpen(false);
-  };
 
-  const handleConfirmDelete = () => {
+    setFormOpen(false);
+  });
+
+  const handleConfirmDelete = async () => {
     const categoryName =
       activeTab === "organization" ? "loại hình tổ chức" : "lĩnh vực hoạt động";
 
     if (deleteItem) {
-      updateCurrentData((prev) =>
-        prev.filter((item) => item.id !== deleteItem.id),
-      );
-      toast({
-        title: "Thành công",
-        description: `Đã xóa ${categoryName}`,
-      });
+      if (activeTab === "organization") {
+        setOrganizationData((prev) =>
+          prev.filter((item) => item.id !== deleteItem.id),
+        );
+        toast({
+          title: "Thành công",
+          description: `Đã xóa ${categoryName}`,
+        });
+      } else {
+        await deleteBusinessLine.mutateAsync(deleteItem.id);
+        toast({
+          title: "Thành công",
+          description: `Đã xóa ${categoryName}`,
+        });
+      }
     }
     setDeleteOpen(false);
   };
@@ -141,17 +214,20 @@ export function useEnterpriseForm() {
     setActiveTab,
     organizationData,
     businessData,
+    businessLoading: businessQuery.loading,
+    businessSearchQuery,
+    setBusinessSearchQuery,
     formOpen,
     setFormOpen,
     deleteOpen,
     setDeleteOpen,
     editItem,
-    formData,
-    setFormData,
+    register,
+    errors,
     handleAdd,
     handleEdit,
     handleDelete,
-    handleSubmit,
+    handleSubmit: submitForm,
     handleConfirmDelete,
     getDialogTitles,
   };

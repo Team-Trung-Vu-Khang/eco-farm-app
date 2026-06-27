@@ -235,6 +235,7 @@ export interface PositionResponsibilitiesQueryParams {
 export type PositionResponsibilitiesResponse = PositionResponsibilityItem[];
 
 export type CertificateIssuerRecord = MasterDataRecord<"certificate-issuers">;
+export type BusinessLineRecord = MasterDataRecord<"business-lines">;
 
 export type CertificateIssuerCreateRequest =
   MasterDataCreateRequest<"certificate-issuers"> &
@@ -245,6 +246,9 @@ export type CertificateIssuerUpdateRequest =
     Partial<CertificateIssuerFields>;
 
 export type CertificateStandardRecord = MasterDataRecord<"certificate-standards">;
+
+export type BusinessLineCreateRequest = MasterDataCreateRequest<"business-lines">;
+export type BusinessLineUpdateRequest = MasterDataUpdateRequest<"business-lines">;
 
 export interface CertificateStandardCreateRequest {
   code: string;

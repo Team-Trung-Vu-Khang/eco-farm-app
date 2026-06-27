@@ -3,6 +3,7 @@ export const MASTER_DATA_BASE_PATH = "/api/master-data" as const;
 export const MASTER_DATA_PATHS = {
   base: MASTER_DATA_BASE_PATH,
   banks: `${MASTER_DATA_BASE_PATH}/banks`,
+  businessLines: `${MASTER_DATA_BASE_PATH}/business-lines`,
   certificateIssuers: `${MASTER_DATA_BASE_PATH}/certificate-issuers`,
   certificateStandards: `${MASTER_DATA_BASE_PATH}/certificate-standards`,
 } as const;

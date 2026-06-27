@@ -2,6 +2,9 @@ import { apiClient } from "@/shared/lib/axios";
 import { MASTER_DATA_PATHS, type MasterDataCatalog } from "@/shared/constants/master-data.constants";
 
 import type {
+  BusinessLineCreateRequest,
+  BusinessLineRecord,
+  BusinessLineUpdateRequest,
   CertificateIssuerCreateRequest,
   CertificateIssuerRecord,
   CertificateIssuerUpdateRequest,
@@ -82,6 +85,14 @@ export const masterDataApi = {
       )
       .then((response) => response.data),
 
+  listBusinessLines: (params?: MasterDataQueryParams) =>
+    apiClient
+      .get<MasterDataPageResponse<BusinessLineRecord>>(
+        MASTER_DATA_PATHS.businessLines,
+        { params },
+      )
+      .then((response) => response.data),
+
   getCertificateIssuerById: (id: number | string) =>
     apiClient
       .get<CertificateIssuerRecord>(
@@ -89,10 +100,25 @@ export const masterDataApi = {
       )
       .then((response) => response.data),
 
+  getBusinessLineById: (id: number | string) =>
+    apiClient
+      .get<BusinessLineRecord>(
+        `${MASTER_DATA_PATHS.businessLines}/${id}`,
+      )
+      .then((response) => response.data),
+
   createCertificateIssuer: (payload: CertificateIssuerCreateRequest) =>
     apiClient
       .post<CertificateIssuerRecord>(
         `${MASTER_DATA_PATHS.base}/certificate-issuers`,
+        payload,
+      )
+      .then((response) => response.data),
+
+  createBusinessLine: (payload: BusinessLineCreateRequest) =>
+    apiClient
+      .post<BusinessLineRecord>(
+        MASTER_DATA_PATHS.businessLines,
         payload,
       )
       .then((response) => response.data),
@@ -108,9 +134,25 @@ export const masterDataApi = {
       )
       .then((response) => response.data),
 
+  updateBusinessLine: (
+    id: number | string,
+    payload: BusinessLineUpdateRequest,
+  ) =>
+    apiClient
+      .put<BusinessLineRecord>(
+        `${MASTER_DATA_PATHS.businessLines}/${id}`,
+        payload,
+      )
+      .then((response) => response.data),
+
   deleteCertificateIssuer: (id: number | string): Promise<void> =>
     apiClient
       .delete(`${MASTER_DATA_PATHS.base}/certificate-issuers/${id}`)
+      .then(() => undefined),
+
+  deleteBusinessLine: (id: number | string): Promise<void> =>
+    apiClient
+      .delete(`${MASTER_DATA_PATHS.businessLines}/${id}`)
       .then(() => undefined),
 
   listCertificateStandards: (params?: MasterDataQueryParams) =>
