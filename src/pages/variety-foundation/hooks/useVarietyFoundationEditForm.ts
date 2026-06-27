@@ -1,16 +1,13 @@
-import { isContaintHtmlTag, safeConvertLexicalToHtml } from "@/utils/commons";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import {
   useCropVarietyById,
   useCropVarietyMutations,
-  useCrops,
 } from "../../../features/foundation";
 import { useFileUpload } from "../../../features/storage";
-import { initialEditorValue } from "../../docs/mocks";
-import { MAX_IMAGE_SIZE } from "../data/constants";
-import type { CreateVarietyFoundationForm } from "../types/types";
+import { safeConvertLexicalToHtml } from "@/utils/commons";
+import { useRef, useMemo } from "react";
+import type { VarietyFoundationFormValues } from "../schemas/varietyFoundationSchema";
 
 function parseDurationToDays(duration: string): number | undefined {
   if (!duration) return undefined;
@@ -51,56 +48,31 @@ function formatDaysToDuration(days: number | undefined): string {
   return parts.join(" ");
 }
 
-interface UseVarietyFoundationFormPageOptions {
-  mode: "create" | "edit";
-}
-
-export function useVarietyFoundationFormPage({
-  mode,
-}: UseVarietyFoundationFormPageOptions) {
-  const params = useParams<{ id: string }>();
+export function useVarietyFoundationEditForm() {
+  const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const varietyId = mode === "edit" && params?.id ? Number(params.id) : 0;
-  const { data: existingData, isLoading: isFetching } = useCropVarietyById(
-    varietyId,
-    { enabled: !!varietyId },
-  );
-  const { createCropVariety, updateCropVariety } = useCropVarietyMutations();
+  const varietyId = id ? parseInt(id, 10) : 0;
+  const { data: existingData, isLoading: isLoadingVariety } =
+    useCropVarietyById(varietyId, { enabled: !!varietyId });
+
+  const { updateCropVariety } = useCropVarietyMutations();
   const { uploadFile } = useFileUpload();
 
-  const [formData, setFormData] = useState<CreateVarietyFoundationForm>({
-    varietyFoundationCode: "",
-    varietyFoundationName: "",
-    scientificName: "",
-    crop: "",
-    origin: "",
-    growthDuration: "",
-    averageYield: "",
-    description: "",
-    illustration: null,
-    contentType: "editor",
-    pdfFile: null,
-    editorContent: "",
-  });
-
-  const [illustrationPreview, setIllustrationPreview] = useState<string>("");
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const pdfInputRef = useRef<HTMLInputElement | null>(null);
   const uploadedFilesCache = useRef<
     Map<File, { fileUrl: string; fileName?: string }>
   >(new Map());
 
-  useEffect(() => {
-    if (mode === "edit" && existingData) {
+  const initialValues =
+    useMemo((): Partial<VarietyFoundationFormValues> | null => {
+      if (!existingData) return null;
+
       let metadata: any = {};
       if (existingData.metadataJson) {
         try {
-          metadata =
-            typeof existingData.metadataJson === "string"
-              ? JSON.parse(existingData.metadataJson)
-              : existingData.metadataJson;
+          const meta = existingData.metadataJson || {};
+          metadata = meta;
         } catch (e) {
           console.error("Failed to parse metadataJson");
         }
@@ -113,7 +85,7 @@ export function useVarietyFoundationFormPage({
       let contentType: "pdf" | "editor" = "editor";
       if (pdfDoc) contentType = "pdf";
 
-      setFormData({
+      return {
         varietyFoundationCode: existingData.code || "",
         varietyFoundationName: existingData.name || "",
         scientificName: metadata.scientificName || "",
@@ -133,59 +105,12 @@ export function useVarietyFoundationFormPage({
             })
           : (null as any),
         editorContent: editorDoc?.content || "",
-      });
+      };
+    }, [existingData]);
 
-      if (metadata.illustrationUrl) {
-        setIllustrationPreview(metadata.illustrationUrl);
-      }
-    }
-  }, [existingData, mode]);
+  const handleComplete = async (formData: VarietyFoundationFormValues) => {
+    if (!varietyId) return;
 
-  const updateField = <K extends keyof CreateVarietyFoundationForm>(
-    key: K,
-    value: CreateVarietyFoundationForm[K],
-  ) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const onPickIllustration = (file?: File | null) => {
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast({ title: "Lỗi", description: "Vui lòng chọn file ảnh." });
-      return;
-    }
-    if (file.size > MAX_IMAGE_SIZE) {
-      toast({ title: "Lỗi", description: "Ảnh quá lớn (tối đa 5MB)." });
-      return;
-    }
-    setFormData((prev) => ({ ...prev, illustration: file }));
-    setIllustrationPreview(URL.createObjectURL(file));
-  };
-
-  const handleContentTypeChange = async (value: "pdf" | "editor") => {
-    if (value === "editor") {
-      if (!formData.editorContent) {
-        setFormData((prev) => ({
-          ...prev,
-          contentType: value,
-          editorContent: initialEditorValue as unknown as string,
-        }));
-        return;
-      }
-
-      if (isContaintHtmlTag(formData.editorContent)) {
-        setFormData((prev) => ({
-          ...prev,
-          contentType: value,
-        }));
-        return;
-      }
-    }
-
-    setFormData((prev) => ({ ...prev, contentType: value }));
-  };
-
-  const handleComplete = async () => {
     try {
       let illustrationUrl = formData.illustration as unknown as
         | string
@@ -200,13 +125,15 @@ export function useVarietyFoundationFormPage({
             file: formData.illustration,
             folder: "varieties-illustrations",
           });
-          illustrationUrl = res.fileUrl || res.url;
+          illustrationUrl = res.fileUrl;
           if (illustrationUrl) {
             uploadedFilesCache.current.set(formData.illustration, {
               fileUrl: illustrationUrl,
             });
           }
         }
+      } else if (formData.illustration === null) {
+        illustrationUrl = undefined;
       }
 
       let pdfUrl: string | undefined = undefined;
@@ -226,8 +153,8 @@ export function useVarietyFoundationFormPage({
             file: formData.pdfFile,
             folder: "varieties-documents",
           });
-          pdfUrl = res.fileUrl || res.url;
-          pdfName = res.fileName || res.name || formData.pdfFile.name;
+          pdfUrl = res.fileUrl;
+          pdfName = res.fileName || formData.pdfFile.name;
           if (pdfUrl) {
             uploadedFilesCache.current.set(formData.pdfFile, {
               fileUrl: pdfUrl,
@@ -236,7 +163,6 @@ export function useVarietyFoundationFormPage({
           }
         }
       } else if (formData.contentType === "pdf" && existingData) {
-        // preserve existing pdf if not changed
         const existingPdf = existingData.documents?.find(
           (d) => d.type === "pdf",
         );
@@ -267,10 +193,10 @@ export function useVarietyFoundationFormPage({
         });
       }
 
-      const metadataJson = JSON.stringify({
+      const metadataJson = {
         illustrationUrl,
         scientificName: formData.scientificName,
-      });
+      };
 
       const payload = {
         code: formData.varietyFoundationCode,
@@ -278,7 +204,7 @@ export function useVarietyFoundationFormPage({
         cropId: Number(formData.crop),
         description: formData.description,
         origin: formData.origin,
-        growthDurationDays: parseDurationToDays(formData.growthDuration),
+        growthDurationDays: parseDurationToDays(formData.growthDuration || ""),
         avgYieldFrom: formData.averageYield
           ? Number(formData.averageYield.split("-")[0]) || undefined
           : undefined,
@@ -290,89 +216,45 @@ export function useVarietyFoundationFormPage({
         documents,
       };
 
-      if (mode === "edit" && varietyId) {
-        updateCropVariety.mutate(
-          { id: varietyId, data: payload as any },
-          {
-            onSuccess: () => {
-              toast({
-                title: "Thành công",
-                description: `Đã cập nhật giống cây (nền tảng) "${formData.varietyFoundationName}"`,
-              });
-              setLocation("/variety-foudation");
-            },
-            onError: (err) => {
-              toast({
-                variant: "destructive",
-                title: "Lỗi",
-                description: err.message,
-              });
-            },
-          },
-        );
-      } else {
-        createCropVariety.mutate(payload as any, {
+      updateCropVariety.mutate(
+        { id: varietyId, data: payload as any },
+        {
           onSuccess: () => {
             toast({
               title: "Thành công",
-              description: `Đã tạo giống cây (nền tảng) "${formData.varietyFoundationName}"`,
+              description: `Đã cập nhật giống cây (nền tảng) "${formData.varietyFoundationName}"`,
             });
-            setLocation("/variety-foudation");
+            setLocation("/variety-foundation");
           },
-          onError: (err) => {
+          onError: (err: any) => {
             toast({
               variant: "destructive",
               title: "Lỗi",
-              description: err.message,
+              description:
+                err?.response?.data?.message ||
+                err?.message ||
+                "Không thể cập nhật giống cây (nền tảng)",
             });
           },
-        });
-      }
-    } catch (error: any) {
+        },
+      );
+    } catch (err: any) {
       toast({
         variant: "destructive",
         title: "Lỗi",
-        description: error.message || "Đã xảy ra lỗi khi tải file lên",
+        description: err?.message || "Đã xảy ra lỗi khi cập nhật",
       });
     }
   };
 
-  const { items: apiCrops } = useCrops();
-
-  const selectedCrop = useMemo(() => {
-    const crop = apiCrops.find((c) => String(c.id) === formData.crop);
-    if (!crop) return undefined;
-    return {
-      name: crop.name,
-      image: crop.imageUrl || "",
-      group: crop.cropGroupName || "",
-    };
-  }, [formData.crop, apiCrops]);
+  const handleCancel = () => {
+    setLocation("/variety-foundation");
+  };
 
   return {
-    mode,
-    formData,
-    updateField,
-    illustrationPreview,
-    setIllustrationPreview,
-    fileInputRef,
-    pdfInputRef,
-    onPickIllustration,
-    handleContentTypeChange,
+    initialValues,
     handleComplete,
-    selectedCrop,
-    goBack: () => setLocation("/variety-foudation"),
-    notFound: mode === "edit" && !isFetching && !existingData,
-    existingVarietyFoundation: existingData,
-    isClassificationValid:
-      formData.varietyFoundationCode.trim().length > 0 &&
-      formData.varietyFoundationName.trim().length > 0 &&
-      formData.crop.trim().length > 0,
-    isDocumentsValid:
-      formData.contentType === "editor" || Boolean(formData.pdfFile),
-    isPending:
-      createCropVariety.isPending ||
-      updateCropVariety.isPending ||
-      uploadFile.isPending,
+    handleCancel,
+    isLoadingVariety,
   };
 }

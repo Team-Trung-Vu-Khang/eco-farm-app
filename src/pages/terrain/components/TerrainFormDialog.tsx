@@ -1,74 +1,142 @@
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import {
   FormDialog,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
   Input,
-  Label,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { TerrainFormData } from "../types/types";
+
+const formSchema = z.object({
+  code: z.string().min(1, { message: "Mã địa hình là bắt buộc" }),
+  name: z.string().min(1, { message: "Tên địa hình là bắt buộc" }),
+  description: z.string().optional(),
+});
 
 interface TerrainFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   isEdit: boolean;
-  formData: TerrainFormData;
-  setFormData: (value: TerrainFormData) => void;
-  onSubmit: () => void;
+  initialData: TerrainFormData;
+  onSubmit: (data: TerrainFormData) => void;
+  isSubmitting?: boolean;
 }
 
 export function TerrainFormDialog({
   open,
   onOpenChange,
   isEdit,
-  formData,
-  setFormData,
+  initialData,
   onSubmit,
+  isSubmitting,
 }: TerrainFormDialogProps) {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      code: "",
+      name: "",
+      description: "",
+    },
+  });
+
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        code: initialData.code || "",
+        name: initialData.name || "",
+        description: initialData.description || "",
+      });
+    }
+  }, [open, initialData, form]);
+
+  const handleSubmit = (values: z.infer<typeof formSchema>) => {
+    onSubmit({
+      code: values.code,
+      name: values.name,
+      description: values.description || "",
+    });
+  };
+
   return (
     <FormDialog
       open={open}
       onOpenChange={onOpenChange}
       title={isEdit ? "Chỉnh sửa địa hình" : "Thêm địa hình mới"}
-      onSubmit={onSubmit}
+      onSubmit={form.handleSubmit(handleSubmit)}
+      loading={isSubmitting}
     >
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="code">Mã địa hình</Label>
-          <Input
-            id="code"
-            value={formData.code}
-            onChange={(event) =>
-              setFormData({ ...formData, code: event.target.value })
-            }
-            placeholder="VD: DH001"
-            data-testid="input-code"
+      <Form {...form}>
+        <div className="space-y-4 pt-2">
+          <FormField
+            control={form.control}
+            name="code"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Mã địa hình
+                  <span className="text-destructive ml-1">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="VD: DH001"
+                    disabled={isEdit}
+                    clearable={!isEdit}
+                    data-testid="input-code"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Tên địa hình
+                  <span className="text-destructive ml-1">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="VD: Đồng bằng"
+                    data-testid="input-name"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Mô tả</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Mô tả chi tiết về loại địa hình"
+                    rows={3}
+                    data-testid="input-description"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="name">Tên địa hình</Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(event) =>
-              setFormData({ ...formData, name: event.target.value })
-            }
-            placeholder="VD: Đồng bằng"
-            data-testid="input-name"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="description">Mô tả</Label>
-          <Textarea
-            id="description"
-            value={formData.description}
-            onChange={(event) =>
-              setFormData({ ...formData, description: event.target.value })
-            }
-            placeholder="Mô tả chi tiết về loại địa hình"
-            rows={3}
-            data-testid="input-description"
-          />
-        </div>
-      </div>
+      </Form>
     </FormDialog>
   );
 }

@@ -1,29 +1,60 @@
-import { Input, Label } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  Input,
+  Label,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Droplets, FlaskConical, Ruler, Thermometer } from "lucide-react";
-
-import type { CreateCropFoundationForm } from "../../types/types";
-
-interface TechnicalSpecsStepProps {
-  formData: CreateCropFoundationForm;
-  handleUpdateTechnicalSpecs: (
-    updates: Partial<CreateCropFoundationForm["technicalSpecs"]>,
-  ) => void;
-}
+import { useFormContext } from "react-hook-form";
+import type { CropFoundationFormValues } from "../../schemas/cropFoundationSchema";
 
 const RangeInput = ({
-  value = "",
+  value,
   onChange,
+  fromValue,
+  toValue,
+  onFromChange,
+  onToChange,
   placeholder1 = "Từ",
   placeholder2 = "Đến",
 }: {
-  value: string;
-  onChange: (v: string) => void;
+  value?: string;
+  onChange?: (v: string) => void;
+  fromValue?: number | string | null;
+  toValue?: number | string | null;
+  onFromChange?: (v: number | string) => void;
+  onToChange?: (v: number | string) => void;
   placeholder1?: string;
   placeholder2?: string;
 }) => {
-  const parts = value.split(" - ");
-  const from = parts[0] || "";
-  const to = parts.length > 1 ? parts[1] : "";
+  const isStringMode = value !== undefined;
+
+  const parts = isStringMode ? (value || "").split(" - ") : [];
+  const displayFrom = isStringMode ? parts[0] || "" : (fromValue ?? "");
+  const displayTo = isStringMode
+    ? parts.length > 1
+      ? parts[1]
+      : ""
+    : (toValue ?? "");
+
+  const handleFromChange = (newFrom: string) => {
+    if (isStringMode && onChange) {
+      onChange(newFrom || displayTo ? `${newFrom} - ${displayTo}` : "");
+    } else if (onFromChange) {
+      onFromChange(newFrom !== "" ? Number(newFrom) : "");
+    }
+  };
+
+  const handleToChange = (newTo: string) => {
+    if (isStringMode && onChange) {
+      onChange(displayFrom || newTo ? `${displayFrom} - ${newTo}` : "");
+    } else if (onToChange) {
+      onToChange(newTo !== "" ? Number(newTo) : "");
+    }
+  };
 
   return (
     <div className="flex h-9 w-full items-center rounded-md border border-input bg-transparent px-3 py-1 text-base md:text-sm shadow-sm transition-colors focus-within:outline-none focus-within:ring-1 focus-within:ring-ring focus-visible:ring-ring focus-visible:ring-1">
@@ -31,31 +62,24 @@ const RangeInput = ({
         type="number"
         className="flex-1 bg-transparent outline-none focus:outline-none min-w-0 p-0 placeholder:text-muted-foreground border-0 focus:ring-0 focus:border-transparent"
         placeholder={placeholder1}
-        value={from}
-        onChange={(e) => {
-          const newFrom = e.target.value;
-          onChange(newFrom || to ? `${newFrom} - ${to}` : "");
-        }}
+        value={displayFrom}
+        onChange={(e) => handleFromChange(e.target.value)}
       />
       <span className="text-muted-foreground mx-2">-</span>
       <input
         type="number"
         className="flex-1 bg-transparent outline-none focus:outline-none min-w-0 p-0 placeholder:text-muted-foreground text-right border-0 focus:ring-0 focus:border-transparent"
         placeholder={placeholder2}
-        value={to}
-        onChange={(e) => {
-          const newTo = e.target.value;
-          onChange(from || newTo ? `${from} - ${newTo}` : "");
-        }}
+        value={displayTo}
+        onChange={(e) => handleToChange(e.target.value)}
       />
     </div>
   );
 };
 
-export function TechnicalSpecsStep({
-  formData,
-  handleUpdateTechnicalSpecs,
-}: TechnicalSpecsStepProps) {
+export function TechnicalSpecsStep() {
+  const { control } = useFormContext<CropFoundationFormValues>();
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="relative overflow-hidden rounded-xl border border-cyan-200 bg-linear-to-r from-cyan-50 via-white to-cyan-50 p-6">
@@ -77,36 +101,51 @@ export function TechnicalSpecsStep({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
         <div className="space-y-6">
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold">Tên khoa học</Label>
-            <Input
-              value={formData.technicalSpecs.scientificName}
-              onChange={(e) =>
-                handleUpdateTechnicalSpecs({ scientificName: e.target.value })
-              }
-              placeholder="VD: Solanum lycopersicum"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold">Họ thực vật</Label>
-            <Input
-              value={formData.technicalSpecs.family}
-              onChange={(e) =>
-                handleUpdateTechnicalSpecs({ family: e.target.value })
-              }
-              placeholder="VD: Solanaceae"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold">Nguồn gốc</Label>
-            <Input
-              value={formData.technicalSpecs.origin}
-              onChange={(e) =>
-                handleUpdateTechnicalSpecs({ origin: e.target.value })
-              }
-              placeholder="VD: Nam Mỹ"
-            />
-          </div>
+          <FormField
+            control={control}
+            name="technicalSpecs.scientificName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-semibold">
+                  Tên khoa học
+                </FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="VD: Solanum lycopersicum" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="technicalSpecs.family"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-semibold">
+                  Họ thực vật
+                </FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="VD: Solanaceae" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="technicalSpecs.origin"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-semibold">
+                  Nguồn gốc
+                </FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="VD: Nam Mỹ" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <div className="space-y-6">
@@ -116,11 +155,29 @@ export function TechnicalSpecsStep({
                 <Thermometer className="w-4 h-4 text-rose-500" />
                 Nhiệt độ (°C)
               </Label>
-              <RangeInput
-                value={formData.technicalSpecs.tempRange}
-                onChange={(val) =>
-                  handleUpdateTechnicalSpecs({ tempRange: val })
-                }
+              <FormField
+                control={control}
+                name="technicalSpecs.temperatureFrom"
+                render={({ field: fromField }) => (
+                  <FormItem>
+                    <FormField
+                      control={control}
+                      name="technicalSpecs.temperatureTo"
+                      render={({ field: toField }) => (
+                        <FormItem>
+                          <RangeInput
+                            fromValue={fromField.value}
+                            toValue={toField.value}
+                            onFromChange={fromField.onChange}
+                            onToChange={toField.onChange}
+                          />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
             <div className="space-y-2">
@@ -128,11 +185,29 @@ export function TechnicalSpecsStep({
                 <Droplets className="w-4 h-4 text-blue-500" />
                 Độ ẩm (%)
               </Label>
-              <RangeInput
-                value={formData.technicalSpecs.humidityRange}
-                onChange={(val) =>
-                  handleUpdateTechnicalSpecs({ humidityRange: val })
-                }
+              <FormField
+                control={control}
+                name="technicalSpecs.humidityFrom"
+                render={({ field: fromField }) => (
+                  <FormItem>
+                    <FormField
+                      control={control}
+                      name="technicalSpecs.humidityTo"
+                      render={({ field: toField }) => (
+                        <FormItem>
+                          <RangeInput
+                            fromValue={fromField.value}
+                            toValue={toField.value}
+                            onFromChange={fromField.onChange}
+                            onToChange={toField.onChange}
+                          />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
           </div>
@@ -142,25 +217,48 @@ export function TechnicalSpecsStep({
               <FlaskConical className="w-4 h-4 text-purple-500" />
               Độ pH đất
             </Label>
-            <RangeInput
-              value={formData.technicalSpecs.phRange}
-              onChange={(val) => handleUpdateTechnicalSpecs({ phRange: val })}
+            <FormField
+              control={control}
+              name="technicalSpecs.phFrom"
+              render={({ field: fromField }) => (
+                <FormItem>
+                  <FormField
+                    control={control}
+                    name="technicalSpecs.phTo"
+                    render={({ field: toField }) => (
+                      <FormItem>
+                        <RangeInput
+                          fromValue={fromField.value}
+                          toValue={toField.value}
+                          onFromChange={fromField.onChange}
+                          onToChange={toField.onChange}
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold flex items-center gap-2 mb-1">
-              <Ruler className="w-4 h-4 text-amber-500" />
-              Mật độ trồng
-            </Label>
-            <Input
-              value={formData.technicalSpecs.plantingDensity}
-              onChange={(e) =>
-                handleUpdateTechnicalSpecs({ plantingDensity: e.target.value })
-              }
-              placeholder="VD: 30cm x 50cm"
-            />
-          </div>
+          <FormField
+            control={control}
+            name="technicalSpecs.plantingDensity"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-semibold flex items-center gap-2 mb-1">
+                  <Ruler className="w-4 h-4 text-amber-500" />
+                  Mật độ trồng
+                </FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="VD: 30cm x 50cm" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
       </div>
     </div>

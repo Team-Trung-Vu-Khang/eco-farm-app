@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { catalogApi } from "../api/foundation.api";
 import type {
   CatalogType,
@@ -24,9 +24,7 @@ interface UseCatalogOptions {
   enabled?: boolean;
 }
 
-type UseCatalogResult = ReturnType<
-  typeof useQuery<PageResponse<CatalogRecordResponse>, Error>
->;
+type UseCatalogResult<T> = UseQueryResult<PageResponse<T>, Error>;
 
 /**
  * Generic hook để query danh sách cho bất kỳ catalog type nào.
@@ -35,16 +33,13 @@ type UseCatalogResult = ReturnType<
  * const { items } = useCatalog("crop-groups");
  * const { items } = useCatalog("soil-types", { params: { status: "active" } });
  */
-export function useCatalog(
+export function useCatalog<T = CatalogRecordResponse>(
   catalog: CatalogType,
   { params, enabled = true }: UseCatalogOptions = {},
 ) {
-  const queryResult: UseCatalogResult = useQuery<
-    PageResponse<CatalogRecordResponse>,
-    Error
-  >({
+  const queryResult: UseCatalogResult<T> = useQuery<PageResponse<T>, Error>({
     queryKey: catalogKeys.list(catalog, params),
-    queryFn: () => catalogApi.list(catalog, params),
+    queryFn: () => catalogApi.list(catalog, params) as Promise<PageResponse<T>>,
     enabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
@@ -71,14 +66,14 @@ interface UseCatalogByIdOptions {
  * @example
  * const { data } = useCatalogById("crop-groups", 5);
  */
-export function useCatalogById(
+export function useCatalogById<T = CatalogRecordResponse>(
   catalog: CatalogType,
   id: number,
   { enabled = true }: UseCatalogByIdOptions = {},
 ) {
-  return useQuery<CatalogRecordResponse, Error>({
+  return useQuery<T, Error>({
     queryKey: catalogKeys.detail(catalog, id),
-    queryFn: () => catalogApi.getById(catalog, id),
+    queryFn: () => catalogApi.getById(catalog, id) as Promise<T>,
     enabled: enabled && !!id,
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,

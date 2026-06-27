@@ -37,7 +37,7 @@ export function VarietyFoundationDetailContent({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           {isStandalone && (
-            <Link href="/variety-foudation">
+            <Link href="/variety-foundation">
               <Button variant="ghost" size="icon" className="rounded-full">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
@@ -52,7 +52,7 @@ export function VarietyFoundationDetailContent({
             </p>
           </div>
         </div>
-        <Link href={`/variety-foudation/${varietyFoundation.id}/edit`}>
+        <Link href={`/variety-foundation/${varietyFoundation.id}/edit`}>
           <Button className="bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg transition-all">
             <Edit className="w-4 h-4 mr-2" />
             Chỉnh sửa thông tin

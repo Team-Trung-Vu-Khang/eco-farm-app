@@ -1,3 +1,5 @@
+import { safeConvertLexicalToHtml } from "@/utils/commons";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AdminLayout,
   AlertDialog,
@@ -11,216 +13,243 @@ import {
   Button,
   Card,
   CardContent,
-  StepperForm,
+  Form,
   useToast,
-  type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useMemo, useState } from "react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useForm, FormProvider } from "react-hook-form";
 import { useLocation, useRoute } from "wouter";
-import { ArrowLeft } from "lucide-react";
-import type { CreateGrowthCycleForm, GrowthStage } from "./types/types";
-import { CROP_OPTIONS } from "../../constants/crops";
-import useGrowthCycleStore from "../../stores/useGrowthCycleStore";
-import useVarietyStore from "../../stores/useVarietyStore";
-import { initialEditorValue } from "./data/mocks";
-import { GrowthCycleBasicInfoStep } from "./components/steps/GrowthCycleBasicInfoStep";
-import { GrowthCycleStagesStep } from "./components/steps/GrowthCycleStagesStep";
-import { GrowthCycleConfirmStep } from "./components/steps/GrowthCycleConfirmStep";
-
-function createInitialFormData(): CreateGrowthCycleForm {
-  return {
-    cycleType: "plant",
-    scope: "crop",
-    cropId: "",
-    variety: "",
-    totalDays: 0,
-    stages: [
-      {
-        id: "1",
-        name: "Giai đoạn 1",
-        duration: 0,
-        usePdf: false,
-        content: initialEditorValue,
-      },
-    ],
-  };
-}
+import {
+  useCrops,
+  useCropVarieties,
+  useGrowthCycleTemplateById,
+  useGrowthCycleTemplateMutations,
+} from "../../features/foundation";
+import { useFileUpload } from "../../features/storage";
+import { GrowthCycleSteps } from "./components/GrowthCycleSteps";
+import {
+  growthCycleFormSchema,
+  type GrowthCycleFormValues,
+} from "./schemas/growthCycleSchema";
+import { formatDaysToDuration, parseDurationToDays } from "./utils/duration";
 
 export default function UpdateGrowthCyclePage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [, setLocation] = useLocation();
-  const [match, params] = useRoute("/growth-cycle/:id/edit");
+  const [, params] = useRoute("/growth-cycle/:id/edit");
   const { toast } = useToast();
-  const { growthCycles, updateGrowthCycle } = useGrowthCycleStore();
-  const { varieties } = useVarietyStore();
-  const currentCycle =
-    match && params?.id
-      ? growthCycles.find((cycle) => cycle.id === params.id)
-      : undefined;
+  const { data: currentCycle, isLoading } = useGrowthCycleTemplateById(
+    Number(params?.id),
+    { enabled: !!params?.id },
+  );
+  const { updateTemplate } = useGrowthCycleTemplateMutations();
+  const { items: crops } = useCrops();
+  const { items: cropVarieties } = useCropVarieties();
+  const { uploadFile } = useFileUpload();
 
-  const [formData, setFormData] = useState<CreateGrowthCycleForm>(() => {
-    if (!currentCycle) return createInitialFormData();
-
-    return {
-      cycleType: currentCycle.cycleType ?? "plant",
-      scope: currentCycle.scope || "variety",
-      cropId: currentCycle.cropId,
-      variety: currentCycle.variety,
-      totalDays: currentCycle.totalDays,
-      stages: currentCycle.stages,
-    };
+  const form = useForm<GrowthCycleFormValues>({
+    resolver: zodResolver(growthCycleFormSchema),
+    mode: "onChange",
   });
+
+  const { watch, reset } = form;
+  const watchedScope = watch("scope");
+  const watchedCropId = watch("cropId");
+  const watchedVariety = watch("variety");
+  const watchedStages = watch("stages") || [];
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    if (currentCycle && !isLoaded) {
+      const metadata: Record<string, unknown> = currentCycle.metadataJson || {};
+      reset({
+        cycleType: String(metadata.cycleType || "plant") as "plant" | "animal",
+        scope: currentCycle.cropVarietyId ? "variety" : "crop",
+        cropId: String(currentCycle.cropId),
+        variety: currentCycle.cropVarietyId
+          ? String(currentCycle.cropVarietyId)
+          : "",
+        totalDays: currentCycle.expectedDays || 0,
+        stages: (currentCycle.stages || []).map((s) => {
+          let usePdf = false;
+          let content = "";
+          let pdfFile = null;
+
+          if (s.document) {
+            if (s.document.type === "pdf") {
+              usePdf = true;
+              pdfFile = {
+                name: s.document.fileName || "document.pdf",
+                size: 0,
+                url: s.document.fileUrl,
+              };
+            } else if (s.document.type === "editor") {
+              content = s.document.content || "";
+            }
+          } else if (s.description && s.description !== s.name) {
+            content = s.description; // fallback to legacy description
+          }
+
+          return {
+            id: String(s.id),
+            name: s.name,
+            duration: formatDaysToDuration(s.durationDays || 0),
+            usePdf: usePdf,
+            content: content,
+            pdfFile: pdfFile as any,
+          };
+        }),
+      });
+      setIsLoaded(true);
+    }
+  }, [currentCycle, reset, isLoaded]);
 
   const totalDays = useMemo(
     () =>
-      formData.stages.reduce(
-        (sum, stage) => sum + (Number(stage.duration) || 0),
+      watchedStages.reduce(
+        (sum, stage) => sum + parseDurationToDays(String(stage.duration)),
         0,
-      ),
-    [formData.stages],
+      ) || 0,
+    [watchedStages],
   );
 
   // Filtered varieties based on selected crop
-  const filteredVarieties = useMemo(() => {
-    if (!formData.cropId) return [];
-    return varieties.filter((v) => v.crop === formData.cropId);
-  }, [formData.cropId, varieties]);
+  // const filteredVarieties = useMemo(() => {
+  //   if (!watchedCropId) return [];
+  //   return cropVarieties.filter((v) => String(v.cropId) === watchedCropId);
+  // }, [watchedCropId, cropVarieties]);
 
   const varietyName =
-    varieties.find((variety) => variety.id === formData.variety)?.varietyName ||
-    formData.variety;
+    cropVarieties.find((variety) => String(variety.id) === watchedVariety)
+      ?.name || watchedVariety;
 
-  const handleComplete = () => {
+  const handleComplete = async (values: GrowthCycleFormValues) => {
     if (!params?.id) return;
 
-    const cropName =
-      CROP_OPTIONS.find((c) => c.name === formData.cropId)?.name ||
-      formData.cropId;
-    const resolvedVarietyName =
-      varieties.find((variety) => variety.id === formData.variety)
-        ?.varietyName || formData.variety;
+    setIsSubmitting(true);
+    try {
+      const cropName =
+        crops.find((c) => String(c.id) === values.cropId)?.name ||
+        values.cropId;
+      const resolvedVarietyName =
+        cropVarieties.find((variety) => String(variety.id) === values.variety)
+          ?.name || values.variety;
 
-    updateGrowthCycle(params.id, {
-      name: `Chu kỳ sinh trưởng ${cropName}${resolvedVarietyName ? ` - ${resolvedVarietyName}` : ""}`,
-      cycleType: formData.cycleType,
-      scope: formData.scope,
-      cropId: formData.cropId,
-      cropName: cropName,
-      variety: formData.variety,
-      totalDays,
-      stages: formData.stages.map((s) => ({
-        ...s,
-        pdfFile:
-          s.pdfFile instanceof File
-            ? { name: s.pdfFile.name, size: s.pdfFile.size }
-            : s.pdfFile,
-      })),
-    });
+      const generatedName = `Chu kỳ sinh trưởng ${cropName}${
+        values.scope === "variety" && resolvedVarietyName
+          ? ` - ${resolvedVarietyName}`
+          : ""
+      }`;
 
-    toast({
-      title: "Thành công",
-      description: "Đã cập nhật chu kỳ sinh trưởng",
-    });
-    setLocation("/growth-cycle");
-  };
+      // Upload PDFs and prepare stages
+      const preparedStages = await Promise.all(
+        values.stages.map(async (stage, index) => {
+          let documentData: any = undefined;
 
-  const onAddStage = () => {
-    const nextId = (formData.stages.length + 1).toString();
-    setFormData((prev) => ({
-      ...prev,
-      stages: [
-        ...prev.stages,
-        {
-          id: nextId,
-          name: `Giai đoạn ${nextId}`,
-          duration: 0,
-          usePdf: false,
-          content: initialEditorValue,
+          if (stage.usePdf) {
+            if (stage.pdfFile instanceof File) {
+              const res = await uploadFile.mutateAsync({
+                file: stage.pdfFile,
+                folder: "growth-cycle-stages",
+              });
+              if (res.fileUrl) {
+                documentData = {
+                  type: "pdf",
+                  name: "Tài liệu kỹ thuật",
+                  fileUrl: res.fileUrl,
+                  fileName: res.fileName || stage.pdfFile.name,
+                };
+              }
+            } else if (stage.pdfFile && "url" in stage.pdfFile) {
+              // Retain existing URL
+              documentData = {
+                type: "pdf",
+                name: "Tài liệu kỹ thuật",
+                fileUrl: stage.pdfFile.url,
+                fileName: stage.pdfFile.name,
+              };
+            }
+          } else {
+            const html = (await safeConvertLexicalToHtml(stage.content)) || "";
+            if (html && html !== "<p><br></p>") {
+              documentData = {
+                type: "editor",
+                name: "Tài liệu kỹ thuật",
+                content: html,
+              };
+            }
+          }
+
+          return {
+            id: isNaN(Number(stage.id)) ? undefined : Number(stage.id), // Send ID if it exists for updates
+            name: stage.name,
+            durationDays: parseDurationToDays(String(stage.duration)),
+            description: stage.name,
+            document: documentData,
+            displayOrder: index + 1,
+          };
+        }),
+      );
+
+      const metadataJson = { cycleType: values.cycleType };
+
+      await updateTemplate.mutateAsync({
+        id: Number(params.id),
+        data: {
+          code: currentCycle?.code || `GC-${Date.now()}`,
+          name: generatedName,
+          cropId: Number(values.cropId),
+          cropVarietyId:
+            values.scope === "variety" && values.variety
+              ? Number(values.variety)
+              : undefined,
+          cropGroupId:
+            crops.find((c) => String(c.id) === values.cropId)?.cropGroupId || 1, // Fallback
+          expectedDays: totalDays,
+          description: currentCycle?.description || "Chu kỳ sinh trưởng",
+          stages: preparedStages,
+          displayOrder: currentCycle?.displayOrder || 1,
+          status: "active",
+          metadataJson: metadataJson,
         },
-      ],
-    }));
+      });
+
+      toast({
+        title: "Thành công",
+        description: "Đã cập nhật chu kỳ sinh trưởng",
+      });
+      setLocation("/growth-cycle");
+    } catch (err: unknown) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description:
+          err instanceof Error
+            ? err.message
+            : "Đã xảy ra lỗi trong quá trình tải tệp hoặc lưu dữ liệu",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const onRemoveStage = (id: string) => {
-    if (formData.stages.length === 1) return;
-    setFormData((prev) => ({
-      ...prev,
-      stages: prev.stages.filter((s) => s.id !== id),
-    }));
-  };
-
-  const updateStage = (id: string, updates: Partial<GrowthStage>) => {
-    setFormData((prev) => ({
-      ...prev,
-      stages: prev.stages.map((s) => (s.id === id ? { ...s, ...updates } : s)),
-    }));
-  };
-
-  const steps: Step[] = [
-    {
-      id: "basic",
-      title: "Bước 1",
-      description: "Thông tin chung",
-      content: (
-        <GrowthCycleBasicInfoStep
-          formData={formData}
-          filteredVarieties={filteredVarieties}
-          onCycleTypeChange={(cycleType) =>
-            setFormData((prev) => ({
-              ...prev,
-              cycleType,
-              cropId: "",
-              variety: "",
-            }))
-          }
-          onScopeChange={(scope) =>
-            setFormData((prev) => ({ ...prev, scope, variety: "" }))
-          }
-          onCropChange={(cropId) =>
-            setFormData((prev) => ({ ...prev, cropId, variety: "" }))
-          }
-          onVarietyChange={(variety) =>
-            setFormData((prev) => ({ ...prev, variety }))
-          }
-        />
-      ),
-      isValid:
-        formData.cropId !== "" &&
-        (formData.scope === "crop" || formData.variety !== ""),
-    },
-    {
-      id: "stages",
-      title: "Bước 2",
-      description: "Danh sách giai đoạn",
-      content: (
-        <GrowthCycleStagesStep
-          stages={formData.stages}
-          onAddStage={onAddStage}
-          onRemoveStage={onRemoveStage}
-          onUpdateStage={updateStage}
-        />
-      ),
-      isValid: formData.stages.every((stage) => stage.name.trim() !== ""),
-    },
-    {
-      id: "confirm",
-      title: "Bước 3",
-      description: "Xác nhận",
-      content: (
-        <GrowthCycleConfirmStep
-          formData={{ ...formData, totalDays }}
-          varieties={varieties}
-        />
-      ),
-      isValid: true,
-    },
-  ];
+  if (isLoading || !isLoaded)
+    return (
+      <AdminLayout isDev={true} title="Đang tải..." description="Vui lòng chờ">
+        <div className="flex justify-center py-20">
+          <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+        </div>
+      </AdminLayout>
+    );
 
   return (
     <AdminLayout
       isDev={true}
       title="Cập nhật chu kỳ sinh trưởng"
-      description={`Chỉnh sửa thông tin cho ${varietyName || formData.cropId}`}
+      description={`Chỉnh sửa thông tin cho ${varietyName || watchedCropId}`}
     >
       <div className="mb-6">
         <Button
@@ -236,16 +265,24 @@ export default function UpdateGrowthCyclePage() {
 
       <Card>
         <CardContent className="p-6">
-          <StepperForm
-            steps={steps}
-            onComplete={() => setConfirmOpen(true)}
-            onCancel={() => setLocation("/growth-cycle")}
-            completeLabel="Lưu thay đổi"
-          />
+          <FormProvider {...form}>
+            <Form {...form}>
+              <GrowthCycleSteps
+                schema={growthCycleFormSchema}
+                varieties={cropVarieties}
+                crops={crops}
+                onComplete={() => setConfirmOpen(true)}
+                onCancel={() => setLocation("/growth-cycle")}
+              />
+            </Form>
+          </FormProvider>
         </CardContent>
       </Card>
 
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <AlertDialog
+        open={confirmOpen}
+        onOpenChange={(open) => !isSubmitting && setConfirmOpen(open)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
@@ -258,22 +295,18 @@ export default function UpdateGrowthCyclePage() {
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Chu kỳ:</span>
                     <span className="font-medium">
-                      {varietyName || formData.cropId}
+                      {varietyName || watchedCropId}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Phạm vi:</span>
                     <span className="font-medium">
-                      {formData.scope === "crop"
-                        ? "Theo loại cây"
-                        : "Theo giống"}
+                      {watchedScope === "crop" ? "Theo loại cây" : "Theo giống"}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Số giai đoạn:</span>
-                    <span className="font-medium">
-                      {formData.stages.length}
-                    </span>
+                    <span className="font-medium">{watchedStages.length}</span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">
@@ -286,8 +319,17 @@ export default function UpdateGrowthCyclePage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleComplete}>
+            <AlertDialogCancel disabled={isSubmitting}>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isSubmitting}
+              onClick={(e) => {
+                e.preventDefault();
+                handleComplete(form.getValues());
+              }}
+            >
+              {isSubmitting && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
               Xác nhận cập nhật
             </AlertDialogAction>
           </AlertDialogFooter>

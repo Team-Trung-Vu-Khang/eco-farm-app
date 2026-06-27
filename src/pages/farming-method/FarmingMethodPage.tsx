@@ -1,9 +1,27 @@
 import GenericPage from "../GenericPage";
+import { useCatalog } from "../../features/foundation/hooks/useCatalog";
+import { useCatalogMutations } from "../../features/foundation/hooks/useCatalogMutations";
+import React from "react";
+import {
+  convertLexicalToHtml,
+  type EditorState,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 const columns = [
   { key: "code", label: "Mã" },
   { key: "name", label: "Tên" },
-  { key: "description", label: "Mô tả" },
+  {
+    key: "description",
+    label: "Mô tả",
+    render(value: unknown) {
+      return (
+        <div
+          className="line-clamp-2"
+          dangerouslySetInnerHTML={{ __html: value as string }}
+        />
+      );
+    },
+  },
 ];
 
 const fieldConfig = {
@@ -12,6 +30,52 @@ const fieldConfig = {
 };
 
 const FarmingMethodPage = () => {
+  const { items, loading } = useCatalog("farming-methods");
+  const { createCatalog, updateCatalog, deleteCatalog } =
+    useCatalogMutations("farming-methods");
+
+  const data = React.useMemo(() => {
+    return items.map((item) => ({
+      id: item.id,
+      code: item.code || "",
+      name: item.name || "",
+      description: item.description || "",
+      status: (item.status as "active" | "inactive") || "active",
+      createdAt: item.createdAt ? item.createdAt.split("T")[0] : "",
+    }));
+  }, [items]);
+
+  const handleSubmit = async (
+    formData: {
+      code?: string;
+      name?: string;
+      description?: string | EditorState;
+    },
+    id: number | null,
+  ) => {
+    let textDescription = formData?.description;
+
+    if (typeof textDescription === "object") {
+      textDescription = await convertLexicalToHtml(textDescription.toJSON());
+    }
+
+    const payload = {
+      code: formData.code,
+      name: formData.name,
+      status: "active" as const,
+      description: textDescription,
+    };
+    if (id) {
+      await updateCatalog.mutateAsync({ id, data: payload });
+    } else {
+      await createCatalog.mutateAsync(payload);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    await deleteCatalog.mutateAsync(id);
+  };
+
   return (
     <GenericPage
       title="Quản lý phương thức canh tác"
@@ -20,40 +84,10 @@ const FarmingMethodPage = () => {
       fieldConfig={fieldConfig}
       withRichTextEditor
       columns={columns}
-      initialData={[
-        {
-          id: 1,
-          code: "PT001",
-          name: "Canh tác hữu cơ",
-          description: "Không sử dụng hóa chất, tuân thủ tiêu chuẩn hữu cơ",
-          status: "active",
-          createdAt: "2024-01-10",
-        },
-        {
-          id: 2,
-          code: "PT002",
-          name: "Canh tác truyền thống",
-          description: "Phương pháp canh tác truyền thống địa phương",
-          status: "active",
-          createdAt: "2024-01-11",
-        },
-        {
-          id: 3,
-          code: "PT003",
-          name: "Canh tác công nghệ cao",
-          description: "Áp dụng IoT, tưới tự động, nhà màng",
-          status: "active",
-          createdAt: "2024-01-12",
-        },
-        {
-          id: 4,
-          code: "PT004",
-          name: "Thủy canh",
-          description: "Trồng cây trong dung dịch dinh dưỡng",
-          status: "active",
-          createdAt: "2024-01-13",
-        },
-      ]}
+      initialData={data}
+      isLoading={loading}
+      onSubmit={handleSubmit}
+      onDelete={handleDelete}
     />
   );
 };

@@ -73,15 +73,15 @@ export function useGroupCropPage() {
     setDeleteOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (data: GroupCropFormData) => {
     // biological được lưu vào attributes.biological vì API catalog không có field riêng
     const payload = {
-      code: formData.code || undefined,
-      name: formData.name || undefined,
-      description: formData.description || undefined,
+      code: data.code || undefined,
+      name: data.name || undefined,
+      description: data.description || undefined,
       status: "active" as const,
-      attributes: formData.biological
-        ? { biological: formData.biological }
+      attributes: data.biological
+        ? { biological: data.biological }
         : undefined,
     };
 

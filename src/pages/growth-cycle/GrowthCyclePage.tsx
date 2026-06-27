@@ -16,6 +16,7 @@ import { useMemo, useState } from "react";
 import { useGrowthCyclePage } from "./hooks/useGrowthCyclePage";
 import { growthCycleColumns } from "./data/columns";
 import GrowthCycleDetailPage from "./GrowthCycleDetailPage";
+import { useDialogBugWorkaround } from "@/shared/hooks/useDialogBugWorkaround";
 
 const GrowthCyclePage = () => {
   const [activeTab, setActiveTab] = useState<"plant" | "animal">("plant");
@@ -30,21 +31,20 @@ const GrowthCyclePage = () => {
     handleEdit,
     handleDelete,
     handleConfirmDelete,
+    loading,
   } = useGrowthCyclePage();
+
+  useDialogBugWorkaround([deleteOpen, detailOpen]);
 
   const plantCycles = useMemo(
     () =>
-      growthCycles.filter(
-        (cycle) => (cycle.cycleType ?? "plant") === "plant",
-      ),
+      growthCycles.filter((cycle) => (cycle.cycleType ?? "plant") === "plant"),
     [growthCycles],
   );
 
   const animalCycles = useMemo(
     () =>
-      growthCycles.filter(
-        (cycle) => (cycle.cycleType ?? "plant") === "animal",
-      ),
+      growthCycles.filter((cycle) => (cycle.cycleType ?? "plant") === "animal"),
     [growthCycles],
   );
 
@@ -71,36 +71,46 @@ const GrowthCyclePage = () => {
         className="w-full"
       >
         <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger
-            value="plant"
-            className="gap-2"
-          >
+          <TabsTrigger value="plant" className="gap-2">
             <Leaf className="w-4 h-4" />
             Thực vật
           </TabsTrigger>
-          <TabsTrigger
-            value="animal"
-            className="gap-2"
-          >
+          <TabsTrigger value="animal" className="gap-2">
             <PawPrint className="w-4 h-4" />
             Vật nuôi / Thủy sản
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="plant">
-          <DataTable
-            data={plantCycles}
-            selectable={false}
-            columns={growthCycleColumns}
-            onView={handleView}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            searchPlaceholder="Tìm kiếm chu kỳ thực vật..."
-          />
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
+              <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-green-500 animate-spin" />
+              <span className="text-sm">
+                Đang tải danh sách chu kỳ thực vật...
+              </span>
+            </div>
+          ) : (
+            <DataTable
+              data={plantCycles}
+              selectable={false}
+              columns={growthCycleColumns}
+              onView={handleView}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              searchPlaceholder="Tìm kiếm chu kỳ thực vật..."
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="animal">
-          {animalCycles.length > 0 ? (
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
+              <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-blue-500 animate-spin" />
+              <span className="text-sm">
+                Đang tải danh sách chu kỳ vật nuôi / thủy sản...
+              </span>
+            </div>
+          ) : animalCycles.length > 0 ? (
             <DataTable
               data={animalCycles}
               selectable={false}

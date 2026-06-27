@@ -6,7 +6,7 @@ import { Hash } from "lucide-react";
 export interface LandFormData {
   code: string;
   name: string;
-  image: string;
+  imageUrl: string;
   description: string;
 }
 
@@ -16,14 +16,14 @@ export const INVALID_IMAGE_PLACEHOLDER =
 export const createEmptyLandFormData = (): LandFormData => ({
   code: "",
   name: "",
-  image: "",
+  imageUrl: "",
   description: "",
 });
 
 export const createLandFormDataFromItem = (item: Land): LandFormData => ({
   code: item.code,
   name: item.name,
-  image: item.image || "",
+  imageUrl: item.imageUrl || "",
   description: item.description,
 });
 
@@ -31,26 +31,27 @@ export const landColumns: Column<Land>[] = [
   {
     key: "code",
     label: "Mã",
-    render: (value) => {
+    render: (value: unknown) => {
       return (
         <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-muted-foreground bg-muted/50 px-2 py-1 rounded-md border w-fit">
           <Hash className="w-3 h-3 opacity-60" />
-          {value}
+          {value as string}
         </div>
       );
     },
   },
   {
-    key: "image",
+    key: "imageUrl",
     label: "Hình ảnh",
-    render: (value) =>
-      value ? (
+    render: (value) => {
+      return value ? (
         <img
+          alt={"item"}
           src={value as string}
-          alt="item"
           className="h-10 w-10 rounded-md border object-cover"
         />
-      ) : null,
+      ) : null;
+    },
   },
   { key: "name", label: "Tên loại đất" },
   { key: "description", label: "Mô tả" },

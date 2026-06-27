@@ -1,6 +1,10 @@
 // ─── Shared ───────────────────────────────────────────────────────────────────
 
-export type FoundationStatus = "active" | "inactive" | "archived" | (string & {});
+export type FoundationStatus =
+  | "active"
+  | "inactive"
+  | "archived"
+  | (string & {});
 
 /** Generic paginated response — khớp với tất cả PageResponse* schemas trong api.json */
 export interface PageResponse<T> {
@@ -37,7 +41,7 @@ export interface CatalogRecordRequest {
   description?: string;
   displayOrder?: number;
   status?: FoundationStatus;
-  metadataJson?: string;
+  metadataJson?: Record<string, unknown>;
   attributes?: Record<string, unknown>;
 }
 
@@ -48,10 +52,11 @@ export interface CatalogRecordResponse {
   description?: string;
   displayOrder?: number;
   status: FoundationStatus;
-  metadataJson?: string;
+  metadataJson?: Record<string, unknown>;
   attributes?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
+  imageUrl?: string;
 }
 
 export type CatalogQueryParams = BaseQueryParams;
@@ -93,7 +98,7 @@ export interface FoundationCropRequest {
   documents?: FoundationDocument[];
   displayOrder?: number;
   status?: FoundationStatus;
-  metadataJson?: string | Record<string, any>;
+  metadataJson?: Record<string, unknown>;
 }
 
 export interface FoundationCropResponse {
@@ -110,7 +115,7 @@ export interface FoundationCropResponse {
   documents?: FoundationDocument[];
   displayOrder?: number;
   status: FoundationStatus;
-  metadataJson?: string | Record<string, any>;
+  metadataJson?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
@@ -132,7 +137,7 @@ export interface FoundationCropVarietyRequest {
   avgYieldTo?: number;
   displayOrder?: number;
   status?: FoundationStatus;
-  metadataJson?: string;
+  metadataJson?: Record<string, unknown>;
   documents?: FoundationDocument[];
 }
 
@@ -150,7 +155,7 @@ export interface FoundationCropVarietyResponse {
   avgYieldTo?: number;
   displayOrder?: number;
   status: FoundationStatus;
-  metadataJson?: string;
+  metadataJson?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
   documents?: FoundationDocument[];
@@ -169,6 +174,7 @@ export interface FoundationGrowthCycleStageRequest {
   durationDays: number; // required
   description?: string;
   displayOrder?: number;
+  document?: FoundationDocument;
 }
 
 export interface FoundationGrowthCycleStageResponse {
@@ -178,6 +184,7 @@ export interface FoundationGrowthCycleStageResponse {
   durationDays: number;
   description?: string;
   displayOrder?: number;
+  document?: FoundationDocument;
   status: FoundationStatus;
   createdAt: string;
   updatedAt: string;
@@ -194,7 +201,7 @@ export interface FoundationGrowthCycleTemplateRequest {
   stages?: FoundationGrowthCycleStageRequest[];
   displayOrder?: number;
   status?: FoundationStatus;
-  metadataJson?: string;
+  metadataJson?: Record<string, unknown>;
 }
 
 export interface FoundationGrowthCycleTemplateResponse {
@@ -215,7 +222,7 @@ export interface FoundationGrowthCycleTemplateResponse {
   stages?: FoundationGrowthCycleStageResponse[];
   displayOrder?: number;
   status: FoundationStatus;
-  metadataJson?: string;
+  metadataJson?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
@@ -240,6 +247,7 @@ export interface CropAssignmentView {
   cropGroupId?: number;
   cropGroupCode?: string;
   cropGroupName?: string;
+  varieties?: { id: number; code?: string; name?: string }[];
 }
 
 export interface FarmingMethodCropRequest {

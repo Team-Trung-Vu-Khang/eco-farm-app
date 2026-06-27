@@ -12,7 +12,11 @@ import {
 import { Image as ImageIcon, Leaf } from "lucide-react";
 import type { RefObject } from "react";
 
-import { CROP_HIERARCHY, categories, harvestMethodOptions } from "../../data/mocks";
+import {
+  CROP_HIERARCHY,
+  categories,
+  harvestMethodOptions,
+} from "../../data/mocks";
 import type { CreateCropForm } from "../../types/types";
 
 interface BasicInfoStepProps {
@@ -36,9 +40,12 @@ export function BasicInfoStep({
             <Leaf className="w-7 h-7" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Thông tin cơ bản</h3>
+            <h3 className="text-lg font-bold text-slate-900">
+              Thông tin cơ bản
+            </h3>
             <p className="text-sm text-slate-500">
-              Thiết lập các thông tin định danh và phân loại cho giống cây trồng mới
+              Thiết lập các thông tin định danh và phân loại cho giống cây trồng
+              mới
             </p>
           </div>
         </div>
@@ -94,16 +101,22 @@ export function BasicInfoStep({
               >
                 <SelectTrigger>
                   <SelectValue
-                    placeholder={formData.cropGroup ? "Chọn loại cây" : "Vui lòng chọn nhóm"}
+                    placeholder={
+                      formData.cropGroup
+                        ? "Chọn loại cây"
+                        : "Vui lòng chọn nhóm"
+                    }
                   />
                 </SelectTrigger>
                 <SelectContent>
                   {formData.cropGroup &&
-                    Object.keys(CROP_HIERARCHY[formData.cropGroup] || {}).map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
+                    Object.keys(CROP_HIERARCHY[formData.cropGroup] || {}).map(
+                      (type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ),
+                    )}
                 </SelectContent>
               </Select>
             </div>
@@ -118,13 +131,20 @@ export function BasicInfoStep({
             >
               <SelectTrigger>
                 <SelectValue
-                  placeholder={formData.cropType ? "Chọn giống cây" : "Vui lòng chọn loại cây"}
+                  placeholder={
+                    formData.cropType
+                      ? "Chọn giống cây"
+                      : "Vui lòng chọn loại cây"
+                  }
                 />
               </SelectTrigger>
               <SelectContent>
                 {formData.cropGroup &&
                   formData.cropType &&
-                  (CROP_HIERARCHY[formData.cropGroup]?.[formData.cropType] || []).map((v) => (
+                  (
+                    CROP_HIERARCHY[formData.cropGroup]?.[formData.cropType] ||
+                    []
+                  ).map((v) => (
                     <SelectItem key={v} value={v}>
                       {v}
                     </SelectItem>
@@ -134,7 +154,9 @@ export function BasicInfoStep({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-semibold">Phương pháp thu hoạch *</Label>
+            <Label className="text-sm font-semibold">
+              Phương pháp thu hoạch *
+            </Label>
             <Select
               value={formData.harvestMethod}
               onValueChange={(v) => handleUpdateField("harvestMethod", v)}
@@ -164,20 +186,28 @@ export function BasicInfoStep({
               onClick={() => fileInputRef.current?.click()}
             >
               {illustrationPreview ? (
-                <img src={illustrationPreview} alt="Preview" className="w-full h-full object-cover" />
+                <img
+                  src={illustrationPreview}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <>
                   <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                     <ImageIcon className="w-6 h-6 text-muted-foreground/60" />
                   </div>
-                  <p className="text-sm text-muted-foreground font-medium">Kéo thả ảnh tại đây</p>
+                  <p className="text-sm text-muted-foreground font-medium">
+                    Kéo thả ảnh tại đây
+                  </p>
                 </>
               )}
               <input
                 type="file"
                 ref={fileInputRef}
                 className="hidden"
-                onChange={(e) => handleUpdateField("illustration", e.target.files?.[0])}
+                onChange={(e) =>
+                  handleUpdateField("illustration", e.target.files?.[0])
+                }
                 accept="image/*"
               />
             </div>

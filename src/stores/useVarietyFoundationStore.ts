@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import type { VarietyFoundation } from "../pages/variety-foudation/types";
-import { initialData } from "../pages/variety-foudation/mocks";
+import type { VarietyFoundation } from "../pages/variety-foundation/types";
+import { initialData } from "../pages/variety-foundation/mocks";
 
 interface VarietyFoundationState {
   varieties: VarietyFoundation[];

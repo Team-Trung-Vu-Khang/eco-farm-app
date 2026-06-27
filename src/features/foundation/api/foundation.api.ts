@@ -28,7 +28,9 @@ const BASE = "/api/foundation";
 export const catalogApi = {
   list: (catalog: CatalogType, params?: CatalogQueryParams) =>
     apiClient
-      .get<PageResponse<CatalogRecordResponse>>(`${BASE}/${catalog}`, { params })
+      .get<
+        PageResponse<CatalogRecordResponse>
+      >(`${BASE}/${catalog}`, { params })
       .then((r) => r.data),
 
   getById: (catalog: CatalogType, id: number) =>
@@ -81,9 +83,12 @@ export const cropApi = {
 export const cropVarietyApi = {
   list: (params?: CropVarietyQueryParams) =>
     apiClient
-      .get<PageResponse<FoundationCropVarietyResponse>>(`${BASE}/crop-varieties`, {
-        params,
-      })
+      .get<PageResponse<FoundationCropVarietyResponse>>(
+        `${BASE}/crop-varieties`,
+        {
+          params,
+        },
+      )
       .then((r) => r.data),
 
   getById: (id: number) =>
@@ -109,10 +114,9 @@ export const cropVarietyApi = {
 export const growthCycleTemplateApi = {
   list: (params?: GrowthCycleTemplateQueryParams) =>
     apiClient
-      .get<PageResponse<FoundationGrowthCycleTemplateResponse>>(
-        `${BASE}/growth-cycle-templates`,
-        { params },
-      )
+      .get<
+        PageResponse<FoundationGrowthCycleTemplateResponse>
+      >(`${BASE}/growth-cycle-templates`, { params })
       .then((r) => r.data),
 
   getById: (id: number) =>
@@ -147,10 +151,9 @@ export const growthCycleTemplateApi = {
 export const farmingMethodCropApi = {
   list: (params?: FarmingMethodCropQueryParams) =>
     apiClient
-      .get<PageResponse<FarmingMethodCropResponse>>(
-        `${BASE}/farming-method-crops`,
-        { params },
-      )
+      .get<
+        PageResponse<FarmingMethodCropResponse>
+      >(`${BASE}/farming-method-crops`, { params })
       .then((r) => r.data),
 
   getById: (id: number) =>
@@ -165,7 +168,10 @@ export const farmingMethodCropApi = {
 
   update: (id: number, data: FarmingMethodCropRequest) =>
     apiClient
-      .put<FarmingMethodCropResponse>(`${BASE}/farming-method-crops/${id}`, data)
+      .put<FarmingMethodCropResponse>(
+        `${BASE}/farming-method-crops/${id}`,
+        data,
+      )
       .then((r) => r.data),
 
   delete: (id: number) =>

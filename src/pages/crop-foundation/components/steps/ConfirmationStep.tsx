@@ -16,8 +16,8 @@ import {
   Sprout,
 } from "lucide-react";
 import { useCatalog } from "../../../../features/foundation";
-
-import type { CreateCropFoundationForm } from "../../types/types";
+import { useFormContext } from "react-hook-form";
+import type { CropFoundationFormValues } from "../../schemas/cropFoundationSchema";
 
 type FileIconConfig = {
   icon: React.ElementType;
@@ -76,13 +76,13 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-interface ConfirmationStepProps {
-  formData: CreateCropFoundationForm;
-}
-
-export function ConfirmationStep({ formData }: ConfirmationStepProps) {
+export function ConfirmationStep() {
+  const { getValues } = useFormContext<CropFoundationFormValues>();
+  const formData = getValues();
   const { items: groupCrops } = useCatalog("crop-groups");
-  const groupName = groupCrops.find(g => String(g.id) === formData.cropGroupId)?.name;
+  const groupName = groupCrops.find(
+    (g) => String(g.id) === formData.cropGroupId,
+  )?.name;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -145,17 +145,28 @@ export function ConfirmationStep({ formData }: ConfirmationStepProps) {
                 },
                 {
                   label: "Nhiệt độ",
-                  value: formData.technicalSpecs.tempRange
-                    ? `${formData.technicalSpecs.tempRange} °C`
-                    : "",
+                  value:
+                    formData.technicalSpecs.temperatureFrom != null &&
+                    formData.technicalSpecs.temperatureTo != null
+                      ? `${formData.technicalSpecs.temperatureFrom} - ${formData.technicalSpecs.temperatureTo} °C`
+                      : "",
                 },
                 {
                   label: "Độ ẩm",
-                  value: formData.technicalSpecs.humidityRange
-                    ? `${formData.technicalSpecs.humidityRange} %`
-                    : "",
+                  value:
+                    formData.technicalSpecs.humidityFrom != null &&
+                    formData.technicalSpecs.humidityTo != null
+                      ? `${formData.technicalSpecs.humidityFrom} - ${formData.technicalSpecs.humidityTo} %`
+                      : "",
                 },
-                { label: "Độ pH", value: formData.technicalSpecs.phRange },
+                {
+                  label: "Độ pH",
+                  value:
+                    formData.technicalSpecs.phFrom != null &&
+                    formData.technicalSpecs.phTo != null
+                      ? `${formData.technicalSpecs.phFrom} - ${formData.technicalSpecs.phTo}`
+                      : "",
+                },
               ].map((item) => (
                 <div key={item.label} className="space-y-1">
                   <p className="text-[10px] font-bold text-muted-foreground uppercase">

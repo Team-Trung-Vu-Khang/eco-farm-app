@@ -9,25 +9,37 @@ import {
   cn,
   type SerializedEditorState,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useFormContext } from "react-hook-form";
+import type { VarietyFoundationFormValues } from "../schemas/varietyFoundationSchema";
+import { isContaintHtmlTag } from "@/utils/commons";
 import { initialEditorValue } from "../../docs/mocks";
-import type { CreateVarietyFoundationForm } from "../types/types";
 
 interface VarietyFoundationDocumentsStepProps {
-  formData: CreateVarietyFoundationForm;
-  updateField: <K extends keyof CreateVarietyFoundationForm>(
-    key: K,
-    value: CreateVarietyFoundationForm[K],
-  ) => void;
   pdfInputRef: React.RefObject<HTMLInputElement | null>;
-  onContentTypeChange: (value: "pdf" | "editor") => void;
 }
 
 export function VarietyFoundationDocumentsStep({
-  formData,
-  updateField,
   pdfInputRef,
-  onContentTypeChange,
 }: VarietyFoundationDocumentsStepProps) {
+  const { watch, setValue } = useFormContext<VarietyFoundationFormValues>();
+  const watchedContentType = watch("contentType");
+  const watchedPdfFile = watch("pdfFile");
+  const watchedEditorContent = watch("editorContent");
+
+  const handleContentTypeChange = (value: "pdf" | "editor") => {
+    if (value === "editor") {
+      if (!watchedEditorContent) {
+        setValue("contentType", value);
+        setValue("editorContent", initialEditorValue as unknown as string);
+        return;
+      }
+      if (isContaintHtmlTag(watchedEditorContent)) {
+        setValue("contentType", value);
+        return;
+      }
+    }
+    setValue("contentType", value);
+  };
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="relative overflow-hidden rounded-xl border border-purple-200 bg-linear-to-r from-purple-50 via-white to-purple-50 p-6 shadow-sm">
@@ -55,8 +67,8 @@ export function VarietyFoundationDocumentsStep({
           </Label>
           <RadioGroup
             defaultValue="pdf"
-            value={formData.contentType}
-            onValueChange={onContentTypeChange}
+            value={watchedContentType}
+            onValueChange={handleContentTypeChange}
             className="grid grid-cols-2 p-1.5 bg-slate-100 rounded-2xl w-full max-w-md"
           >
             <div className="relative">
@@ -65,7 +77,7 @@ export function VarietyFoundationDocumentsStep({
                 htmlFor="pdf"
                 className={cn(
                   "flex items-center justify-center gap-2 py-3 px-6 rounded-xl cursor-pointer font-bold text-sm transition-all duration-300",
-                  formData.contentType === "pdf"
+                  watchedContentType === "pdf"
                     ? "bg-white text-purple-700 shadow-sm ring-1 ring-black/5"
                     : "text-slate-500 hover:text-slate-900 hover:bg-slate-200/50",
                 )}
@@ -84,7 +96,7 @@ export function VarietyFoundationDocumentsStep({
                 htmlFor="editor"
                 className={cn(
                   "flex items-center justify-center gap-2 py-3 px-6 rounded-xl cursor-pointer font-bold text-sm transition-all duration-300",
-                  formData.contentType === "editor"
+                  watchedContentType === "editor"
                     ? "bg-white text-purple-700 shadow-sm ring-1 ring-black/5"
                     : "text-slate-500 hover:text-slate-900 hover:bg-slate-200/50",
                 )}
@@ -97,14 +109,14 @@ export function VarietyFoundationDocumentsStep({
         </div>
 
         <div className="min-h-[400px]">
-          {formData.contentType === "pdf" ? (
+          {watchedContentType === "pdf" ? (
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
               <div className="md:col-span-8">
                 <div
                   onClick={() => pdfInputRef.current?.click()}
                   className={cn(
                     "group flex flex-col items-center justify-center rounded-3xl border-2 border-dashed h-[400px] transition-all cursor-pointer bg-white relative overflow-hidden",
-                    formData.pdfFile
+                    watchedPdfFile
                       ? "bg-purple-50/30 border-purple-500/30"
                       : "hover:bg-purple-50/30 hover:border-purple-500/50 border-slate-200",
                   )}
@@ -115,21 +127,21 @@ export function VarietyFoundationDocumentsStep({
                     ref={pdfInputRef}
                     className="hidden"
                     onChange={(event) =>
-                      updateField("pdfFile", event.target.files?.[0] || null)
+                      setValue("pdfFile", event.target.files?.[0] || null, { shouldValidate: true })
                     }
                   />
                   <div className="absolute inset-0 bg-linear-to-br from-transparent to-purple-50/30 pointer-events-none" />
 
-                  {formData.pdfFile ? (
+                  {watchedPdfFile ? (
                     <div className="flex flex-col items-center text-center p-8 z-10 w-full max-w-sm mx-auto animate-in zoom-in duration-300">
                       <div className="w-20 h-20 rounded-2xl bg-white shadow-xl shadow-purple-100 flex items-center justify-center text-red-500 mb-6 ring-4 ring-white">
                         <FileText className="w-10 h-10" />
                       </div>
                       <h4 className="text-lg font-bold text-slate-900 line-clamp-2 break-all">
-                        {formData.pdfFile.name}
+                        {watchedPdfFile.name}
                       </h4>
                       <p className="text-sm text-slate-500 mt-2 font-medium bg-slate-100 px-3 py-1 rounded-full">
-                        {(formData.pdfFile.size / 1024 / 1024).toFixed(2)} MB
+                        {(watchedPdfFile.size / 1024 / 1024).toFixed(2)} MB
                       </p>
                       <Button
                         variant="destructive"
@@ -137,7 +149,7 @@ export function VarietyFoundationDocumentsStep({
                         className="mt-8 rounded-full px-6 shadow-red-200 shadow-lg"
                         onClick={(event) => {
                           event.stopPropagation();
-                          updateField("pdfFile", null);
+                          setValue("pdfFile", null, { shouldValidate: true });
                         }}
                       >
                         <Trash className="w-4 h-4 mr-2" />
@@ -205,17 +217,17 @@ export function VarietyFoundationDocumentsStep({
                     maxLength={2000000}
                     contentEditableClassname="h-[500px] p-8 focus:outline-none bg-white font-serif text-base leading-loose text-slate-700"
                     initialHtml={
-                      typeof formData.editorContent === "string"
-                        ? formData.editorContent
+                      typeof watchedEditorContent === "string"
+                        ? watchedEditorContent
                         : undefined
                     }
                     editorSerializedState={
-                      typeof formData.editorContent !== "string"
-                        ? (formData.editorContent as unknown as SerializedEditorState)
+                      typeof watchedEditorContent !== "string"
+                        ? (watchedEditorContent as unknown as SerializedEditorState)
                         : undefined
                     }
                     onSerializedChange={(content) =>
-                      updateField("editorContent", content as unknown as string)
+                      setValue("editorContent", content as unknown as string, { shouldValidate: true })
                     }
                   />
                 </Card>

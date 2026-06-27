@@ -9,6 +9,7 @@ import { Link } from "wouter";
 import { DeleteCropFoundationDialog } from "./components/DeleteCropFoundationDialog";
 import { COLUMNS, TABLE_FILTERS } from "./data/tableConfig";
 import { useCropFoundationPage } from "./hooks/useCropFoundationPage";
+import { useDialogBugWorkaround } from "@/shared/hooks/useDialogBugWorkaround";
 
 export default function CropFoundationPage() {
   const {
@@ -22,6 +23,8 @@ export default function CropFoundationPage() {
     handleConfirmDelete,
     isPending,
   } = useCropFoundationPage();
+
+  useDialogBugWorkaround([deleteOpen]);
 
   return (
     <AdminLayout
@@ -70,4 +73,3 @@ export default function CropFoundationPage() {
     </AdminLayout>
   );
 }
-

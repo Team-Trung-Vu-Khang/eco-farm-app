@@ -15,6 +15,7 @@ import {
   type Column,
   type EditorState,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useDialogBugWorkaround } from "../shared/hooks/useDialogBugWorkaround";
 
 interface GenericItem {
   id: number;
@@ -49,6 +50,12 @@ interface GenericPageProps {
   withRichTextEditor?: boolean;
   columns?: Column<GenericItem>[];
   fieldConfig?: GenericPageFieldConfig;
+  isLoading?: boolean;
+  onSubmit?: (
+    data: Partial<GenericItem>,
+    editId: number | null,
+  ) => Promise<void> | void;
+  onDelete?: (id: number) => Promise<void> | void;
 }
 
 export function GenericPage({
@@ -60,9 +67,17 @@ export function GenericPage({
   enableImage = false,
   withRichTextEditor = false,
   fieldConfig = {},
+  isLoading = false,
+  onSubmit,
+  onDelete,
 }: GenericPageProps) {
   const { toast } = useToast();
   const [data, setData] = useState<GenericItem[]>(initialData);
+
+  React.useEffect(() => {
+    setData(initialData);
+  }, [initialData]);
+
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editItem, setEditItem] = useState<GenericItem | null>(null);
@@ -122,7 +137,7 @@ export function GenericPage({
       code: item.code,
       name: item.name,
       image: item.image || "",
-      description: item.description,
+      description: item?.description,
     });
     setFormOpen(true);
   };
@@ -132,12 +147,15 @@ export function GenericPage({
     setDeleteOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Validate required fields
     const requiredFields: Array<keyof typeof formData> = [];
-    if (fieldConfig.code?.required && !formData.code?.trim()) requiredFields.push("code");
-    if (fieldConfig.name?.required !== false && !formData.name?.trim()) requiredFields.push("name");
-    if (fieldConfig.description?.required && !formData.description) requiredFields.push("description");
+    if (fieldConfig.code?.required && !formData.code?.trim())
+      requiredFields.push("code");
+    if (fieldConfig.name?.required !== false && !formData.name?.trim())
+      requiredFields.push("name");
+    if (fieldConfig.description?.required && !formData.description)
+      requiredFields.push("description");
 
     if (requiredFields.length > 0) {
       toast({
@@ -148,36 +166,70 @@ export function GenericPage({
       return;
     }
 
-    if (editItem) {
-      setData((prev) =>
-        prev.map((item) =>
-          item.id === editItem.id ? { ...item, ...formData } : item,
-        ),
-      );
-      toast({ title: "Thành công", description: `Đã cập nhật ${entityName}` });
-    } else {
-      const newItem: GenericItem = {
-        id: Date.now(),
-        code: formData.code || "",
-        name: formData.name || "",
-        description: formData.description || "",
-        image: formData.image,
-        status: "active",
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setData((prev) => [...prev, newItem]);
-      toast({ title: "Thành công", description: `Đã thêm ${entityName} mới` });
+    try {
+      if (onSubmit) {
+        await onSubmit(formData, editItem?.id || null);
+        setFormOpen(false);
+        return;
+      }
+
+      if (editItem) {
+        setData((prev) =>
+          prev.map((item) =>
+            item.id === editItem.id ? { ...item, ...formData } : item,
+          ),
+        );
+        toast({
+          title: "Thành công",
+          description: `Đã cập nhật ${entityName}`,
+        });
+      } else {
+        const newItem: GenericItem = {
+          id: Date.now(),
+          code: formData.code || "",
+          name: formData.name || "",
+          description: formData.description || "",
+          image: formData.image,
+          status: "active",
+          createdAt: new Date().toISOString().split("T")[0],
+        };
+        setData((prev) => [...prev, newItem]);
+        toast({
+          title: "Thành công",
+          description: `Đã thêm ${entityName} mới`,
+        });
+      }
+      setFormOpen(false);
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: e.message || "Đã xảy ra lỗi",
+      });
     }
-    setFormOpen(false);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (deleteItem) {
-      setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
-      toast({ title: "Thành công", description: `Đã xóa ${entityName}` });
+      try {
+        if (onDelete) {
+          await onDelete(deleteItem.id);
+        } else {
+          setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
+          toast({ title: "Thành công", description: `Đã xóa ${entityName}` });
+        }
+        setDeleteOpen(false);
+      } catch (e: any) {
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: e.message || "Đã xảy ra lỗi",
+        });
+      }
     }
-    setDeleteOpen(false);
   };
+
+  useDialogBugWorkaround([formOpen, deleteOpen]);
 
   return (
     <AdminLayout
@@ -191,13 +243,22 @@ export function GenericPage({
         </Button>
       }
     >
-      <DataTable
-        columns={_columns}
-        data={data}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder={`Tìm kiếm ${entityName}...`}
-      />
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
+          <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-green-500 animate-spin" />
+          <span className="text-sm">
+            Đang tải danh sách {entityName.toLowerCase()}...
+          </span>
+        </div>
+      ) : (
+        <DataTable
+          columns={_columns}
+          data={data}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          searchPlaceholder={`Tìm kiếm ${entityName}...`}
+        />
+      )}
 
       <FormDialog
         size="lg"
@@ -211,7 +272,9 @@ export function GenericPage({
             <div className="space-y-2">
               <Label htmlFor="code">
                 {fieldConfig.code?.label ?? "Mã"}
-                {fieldConfig.code?.required && <span className="text-red-500 ml-1">*</span>}
+                {fieldConfig.code?.required && (
+                  <span className="text-red-500 ml-1">*</span>
+                )}
               </Label>
               <Input
                 id="code"
@@ -228,7 +291,9 @@ export function GenericPage({
             <div className="space-y-2">
               <Label htmlFor="name">
                 {fieldConfig.name?.label ?? "Tên"}
-                {fieldConfig.name?.required !== false && <span className="text-red-500 ml-1">*</span>}
+                {fieldConfig.name?.required !== false && (
+                  <span className="text-red-500 ml-1">*</span>
+                )}
               </Label>
               <Input
                 id="name"
@@ -289,12 +354,14 @@ export function GenericPage({
             <div className="space-y-2">
               <Label htmlFor="description">
                 {fieldConfig.description?.label ?? "Mô tả"}
-                {fieldConfig.description?.required && <span className="text-red-500 ml-1">*</span>}
+                {fieldConfig.description?.required && (
+                  <span className="text-red-500 ml-1">*</span>
+                )}
               </Label>
               {withRichTextEditor ? (
                 <Editor
                   contentEditableClassname="min-h-[300px] max-h-[500px] h-auto overflow-y-auto"
-                  initialText={
+                  initialHtml={
                     typeof formData.description === "string"
                       ? formData.description
                       : ""
@@ -320,7 +387,9 @@ export function GenericPage({
                       description: e.target.value,
                     })
                   }
-                  placeholder={fieldConfig.description?.placeholder ?? "Nhập mô tả"}
+                  placeholder={
+                    fieldConfig.description?.placeholder ?? "Nhập mô tả"
+                  }
                   rows={3}
                   data-testid="input-description"
                 />

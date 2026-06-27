@@ -12,6 +12,7 @@ import { varietyFoundationColumns } from "./data/columns";
 import { varietyFoundationFilters } from "./data/constants";
 import { useVarietyFoundationPage } from "./hooks/useVarietyFoundationPage";
 import type { VarietyFoundation } from "./types/types";
+import { useDialogBugWorkaround } from "@/shared/hooks/useDialogBugWorkaround";
 
 function VarietyFoundationDetailModal({
   open,
@@ -78,6 +79,8 @@ const VarietyFoundationPage = () => {
     handleEdit,
   } = useVarietyFoundationPage();
 
+  useDialogBugWorkaround([deleteOpen]);
+
   return (
     <AdminLayout
       isDev={true}
@@ -85,7 +88,7 @@ const VarietyFoundationPage = () => {
       description="Xem và quản lý danh sách các loại giống cây trồng (nền tảng)"
       actions={
         <div className="flex gap-2">
-          <Link href="/variety-foudation/create">
+          <Link href="/variety-foundation/create">
             <Button className="shadow-sm hover:shadow-md transition-all active:scale-95 bg-green-600 hover:bg-green-700">
               Thêm mới
             </Button>

@@ -8,6 +8,7 @@ import {
 import { TerrainFormDialog } from "./components/TerrainFormDialog";
 import { terrainColumns } from "./data/columns";
 import { useTerrainPage } from "./hooks/useTerrainPage";
+import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
 
 export default function TerrainPage() {
   const {
@@ -24,7 +25,11 @@ export default function TerrainPage() {
     handleDelete,
     handleSubmit,
     handleConfirmDelete,
+    loading,
+    isPending,
   } = useTerrainPage();
+
+  useDialogBugWorkaround([formOpen, deleteOpen]);
 
   return (
     <AdminLayout
@@ -38,21 +43,28 @@ export default function TerrainPage() {
         </Button>
       }
     >
-      <DataTable
-        columns={terrainColumns}
-        data={terrains}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm địa hình..."
-      />
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
+          <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-green-500 animate-spin" />
+          <span className="text-sm">Đang tải danh sách địa hình...</span>
+        </div>
+      ) : (
+        <DataTable
+          columns={terrainColumns}
+          data={terrains}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          searchPlaceholder="Tìm kiếm địa hình..."
+        />
+      )}
 
       <TerrainFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
-        isEdit={Boolean(editItem)}
-        formData={formData}
-        setFormData={setFormData}
+        isEdit={!!editItem}
+        initialData={formData}
         onSubmit={handleSubmit}
+        isSubmitting={isPending}
       />
 
       <DeleteDialog
@@ -60,6 +72,7 @@ export default function TerrainPage() {
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa địa hình này? Chỉ có thể xóa khi chưa có dữ liệu gắn kết."
+        loading={isPending}
       />
     </AdminLayout>
   );

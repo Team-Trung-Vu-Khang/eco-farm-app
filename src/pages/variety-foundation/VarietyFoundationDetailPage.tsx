@@ -27,7 +27,7 @@ export default function VarietyFoundationDetailPage({
         <p className="text-slate-500 font-medium text-lg">
           Không tìm thấy thông tin giống cây (nền tảng) này.
         </p>
-        <Link href="/variety-foudation">
+        <Link href="/variety-foundation">
           <Button variant="outline" className="mt-4">
             Quay lại danh sách
           </Button>

@@ -2,32 +2,52 @@ import { useCatalog } from "../../../../features/foundation";
 import {
   Combobox,
   Input,
-  Label,
   Textarea,
   cn,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Image as ImageIcon, Leaf } from "lucide-react";
-import type { RefObject } from "react";
-
-import type { CreateCropFoundationForm } from "../../types/types";
+import { useEffect, useState, type RefObject } from "react";
+import { useFormContext } from "react-hook-form";
+import type { CropFoundationFormValues } from "../../schemas/cropFoundationSchema";
 
 interface BasicInfoStepProps {
-  formData: CreateCropFoundationForm;
-  handleUpdateField: (
-    field: keyof CreateCropFoundationForm,
-    value: any,
-  ) => void;
+  isEdit?: boolean;
   fileInputRef: RefObject<HTMLInputElement | null>;
-  illustrationPreview: string | null;
 }
 
-export function BasicInfoStep({
-  formData,
-  handleUpdateField,
-  fileInputRef,
-  illustrationPreview,
-}: BasicInfoStepProps) {
+export function BasicInfoStep({ fileInputRef, isEdit }: BasicInfoStepProps) {
+  const { control, setValue, watch } =
+    useFormContext<CropFoundationFormValues>();
   const { items: groupCrops } = useCatalog("crop-groups");
+
+  const illustration = watch("illustration");
+  const [illustrationPreview, setIllustrationPreview] = useState<string | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (!illustration) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIllustrationPreview(null);
+      return;
+    }
+    if (typeof illustration === "string") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIllustrationPreview(illustration);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setIllustrationPreview(reader.result as string);
+    };
+    reader.readAsDataURL(illustration as File);
+  }, [illustration]);
 
   const groupCropOptions = groupCrops.map((g) => ({
     value: String(g.id),
@@ -57,67 +77,84 @@ export function BasicInfoStep({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8">
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold">Mã *</Label>
-              <Input
-                value={formData.code}
-                onChange={(e) => handleUpdateField("code", e.target.value)}
-                placeholder="VD: TREE-7867"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold">Tên cây *</Label>
-              <Input
-                value={formData.name}
-                onChange={(e) => handleUpdateField("name", e.target.value)}
-                placeholder="Nhập tên cây trồng"
-              />
-            </div>
+            <FormField
+              control={control}
+              name="code"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-semibold">
+                    Mã <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      disabled={isEdit}
+                      clearable={!isEdit}
+                      placeholder="VD: TREE-7867"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-semibold">
+                    Tên cây <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Nhập tên cây trồng" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
           <div className="grid grid-cols-1 gap-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold">Nhóm cây trồng *</Label>
-              <Combobox
-                options={groupCropOptions}
-                placeholder="Chọn nhóm..."
-                value={formData.cropGroupId ?? ""}
-                onChange={(v) => handleUpdateField("cropGroupId", v)}
-              />
-            </div>
-
-            {/* <div className="space-y-2">
-              <Label className="text-sm font-semibold">
-                Phương pháp thu hoạch *
-              </Label>
-              <Select
-                value={formData.harvestMethod}
-                onValueChange={(v) => handleUpdateField("harvestMethod", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn phương pháp" />
-                </SelectTrigger>
-                <SelectContent>
-                  {harvestMethodOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div> */}
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold">Mô tả</Label>
-            <Textarea
-              value={formData.description}
-              onChange={(e) => handleUpdateField("description", e.target.value)}
-              placeholder="Nhập mô tả về cây trồng"
-              rows={3}
-              className="resize-none"
+            <FormField
+              control={control}
+              name="cropGroupId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-semibold">
+                    Nhóm cây trồng <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Combobox
+                      options={groupCropOptions}
+                      placeholder="Chọn nhóm..."
+                      value={field.value ?? ""}
+                      onChange={(v) => field.onChange(v)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </div>
+
+          <FormField
+            control={control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-semibold">Mô tả</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    placeholder="Nhập mô tả về cây trồng"
+                    rows={3}
+                    className="resize-none"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <div className="space-y-6">
@@ -150,9 +187,7 @@ export function BasicInfoStep({
                 type="file"
                 ref={fileInputRef}
                 className="hidden"
-                onChange={(e) =>
-                  handleUpdateField("illustration", e.target.files?.[0])
-                }
+                onChange={(e) => setValue("illustration", e.target.files?.[0])}
                 accept="image/*"
               />
             </div>

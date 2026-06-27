@@ -1,3 +1,4 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AdminLayout,
   AlertDialog,
@@ -11,102 +12,59 @@ import {
   Button,
   Card,
   CardContent,
-  StepperForm,
-  type Step,
+  Form,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { useForm, FormProvider } from "react-hook-form";
+import { GrowthCycleSteps } from "./components/GrowthCycleSteps";
 import { useCreateGrowthCycleForm } from "./hooks/useCreateGrowthCycleForm";
-import { GrowthCycleBasicInfoStep } from "./components/steps/GrowthCycleBasicInfoStep";
-import { GrowthCycleStagesStep } from "./components/steps/GrowthCycleStagesStep";
-import { GrowthCycleConfirmStep } from "./components/steps/GrowthCycleConfirmStep";
+import {
+  growthCycleFormSchema,
+  type GrowthCycleFormValues,
+} from "./schemas/growthCycleSchema";
+import { parseDurationToDays } from "./utils/duration";
 
 export default function CreateGrowthCyclePage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const {
-    formData,
-    setFormData,
-    totalDays,
-    filteredVarieties,
-    varieties,
-    handleComplete,
-    onAddStage,
-    onRemoveStage,
-    updateStage,
-    setLocation,
-  } = useCreateGrowthCycleForm();
+  const form = useForm<GrowthCycleFormValues>({
+    resolver: zodResolver(growthCycleFormSchema),
+    mode: "onChange",
+    defaultValues: {
+      cropId: "",
+      variety: "",
+      totalDays: 0,
+      scope: "crop",
+      cycleType: "plant",
+      stages: [
+        {
+          id: "1",
+          content: "",
+          duration: "",
+          usePdf: false,
+          name: "Giai đoạn 1",
+        },
+      ],
+    },
+  });
 
-  const steps: Step[] = useMemo(
-    () => [
-      {
-        id: "basic",
-        title: "Bước 1",
-        description: "Thông tin chung",
-        content: (
-          <GrowthCycleBasicInfoStep
-            formData={formData}
-            filteredVarieties={filteredVarieties}
-            onCycleTypeChange={(cycleType) =>
-              setFormData((prev) => ({
-                ...prev,
-                cycleType,
-                cropId: "",
-                variety: "",
-              }))
-            }
-            onScopeChange={(scope) =>
-              setFormData((prev) => ({ ...prev, scope, variety: "" }))
-            }
-            onCropChange={(cropId) =>
-              setFormData((prev) => ({ ...prev, cropId, variety: "" }))
-            }
-            onVarietyChange={(variety) =>
-              setFormData((prev) => ({ ...prev, variety }))
-            }
-          />
-        ),
-        isValid:
-          formData.cropId !== "" &&
-          (formData.scope === "crop" || formData.variety !== ""),
-      },
-      {
-        id: "stages",
-        title: "Bước 2",
-        description: "Danh sách giai đoạn",
-        content: (
-          <GrowthCycleStagesStep
-            stages={formData.stages}
-            onAddStage={onAddStage}
-            onRemoveStage={onRemoveStage}
-            onUpdateStage={updateStage}
-          />
-        ),
-        isValid: formData.stages.every((stage) => stage.name.trim() !== ""),
-      },
-      {
-        id: "confirm",
-        title: "Bước 3",
-        description: "Xác nhận",
-        content: (
-          <GrowthCycleConfirmStep
-            formData={{ ...formData, totalDays }}
-            varieties={varieties}
-          />
-        ),
-        isValid: true,
-      },
-    ],
-    [
-      filteredVarieties,
-      formData,
-      onAddStage,
-      onRemoveStage,
-      setFormData,
-      totalDays,
-      updateStage,
-      varieties,
-    ],
+  const { watch } = form;
+  const watchedScope = watch("scope");
+  const watchedCropId = watch("cropId");
+  const watchedVariety = watch("variety");
+  const watchedStages = watch("stages") || [];
+
+  const totalDays = useMemo(
+    () =>
+      watchedStages.reduce(
+        (sum, stage) => sum + parseDurationToDays(String(stage.duration)),
+        0,
+      ),
+    [watchedStages],
   );
+
+  const { varieties, crops, handleComplete, setLocation, isSubmitting } =
+    useCreateGrowthCycleForm();
 
   return (
     <AdminLayout
@@ -128,16 +86,24 @@ export default function CreateGrowthCyclePage() {
 
       <Card>
         <CardContent className="p-6">
-          <StepperForm
-            steps={steps}
-            onComplete={() => setConfirmOpen(true)}
-            onCancel={() => setLocation("/growth-cycle")}
-            completeLabel="Hoàn thành"
-          />
+          <FormProvider {...form}>
+            <Form {...form}>
+              <GrowthCycleSteps
+                schema={growthCycleFormSchema}
+                varieties={varieties}
+                crops={crops}
+                onComplete={() => setConfirmOpen(true)}
+                onCancel={() => setLocation("/growth-cycle")}
+              />
+            </Form>
+          </FormProvider>
         </CardContent>
       </Card>
 
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <AlertDialog
+        open={confirmOpen}
+        onOpenChange={(open) => !isSubmitting && setConfirmOpen(open)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Xác nhận tạo chu kỳ sinh trưởng</AlertDialogTitle>
@@ -148,30 +114,26 @@ export default function CreateGrowthCyclePage() {
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Phạm vi:</span>
                     <span className="font-medium">
-                      {formData.scope === "crop"
-                        ? "Theo loại cây"
-                        : "Theo giống"}
+                      {watchedScope === "crop" ? "Theo loại cây" : "Theo giống"}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Loại cây:</span>
-                    <span className="font-medium">{formData.cropId}</span>
+                    <span className="font-medium">{watchedCropId}</span>
                   </div>
-                  {formData.scope === "variety" && (
+                  {watchedScope === "variety" && (
                     <div className="flex justify-between gap-4">
                       <span className="text-muted-foreground">Giống cây:</span>
                       <span className="font-medium">
                         {varieties.find(
-                          (variety) => variety.id === formData.variety,
-                        )?.varietyName || formData.variety}
+                          (variety) => String(variety.id) === watchedVariety,
+                        )?.name || watchedVariety}
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Số giai đoạn:</span>
-                    <span className="font-medium">
-                      {formData.stages.length}
-                    </span>
+                    <span className="font-medium">{watchedStages.length}</span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">
@@ -184,8 +146,17 @@ export default function CreateGrowthCyclePage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleComplete}>
+            <AlertDialogCancel disabled={isSubmitting}>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isSubmitting}
+              onClick={(e) => {
+                e.preventDefault();
+                handleComplete(form.getValues());
+              }}
+            >
+              {isSubmitting && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
               Xác nhận tạo mới
             </AlertDialogAction>
           </AlertDialogFooter>

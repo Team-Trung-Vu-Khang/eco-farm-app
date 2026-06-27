@@ -1,90 +1,35 @@
-import { useState, type ChangeEvent } from "react";
 import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
-  useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import useLandStore, { type Land } from "../../stores/useLandStore";
+import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
 import LandFormDialog from "./components/LandFormDialog";
-import {
-  createEmptyLandFormData,
-  createLandFormDataFromItem,
-  landColumns,
-  type LandFormData,
-} from "./data/land.constants";
+import { landColumns } from "./data/land.constants";
+import { useLandPage } from "./hooks/useLandPage";
 
 export default function LandPage() {
-  const { toast } = useToast();
-  const { lands: data, addLand, updateLand, deleteLand } = useLandStore();
+  const {
+    data,
+    loading,
+    formOpen,
+    setFormOpen,
+    deleteOpen,
+    setDeleteOpen,
+    editItem,
+    formData,
+    isSubmitting,
+    handleAdd,
+    handleEdit,
+    handleDelete,
+    handleFileSelect,
+    handleSubmit,
+    handleConfirmDelete,
+  } = useLandPage();
 
-  const [formOpen, setFormOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [editItem, setEditItem] = useState<Land | null>(null);
-  const [deleteItem, setDeleteItem] = useState<Land | null>(null);
-  const [formData, setFormData] = useState<LandFormData>(() =>
-    createEmptyLandFormData(),
-  );
-
-  const handleFormDataChange = (data: Partial<LandFormData>) => {
-    setFormData((current) => ({ ...current, ...data }));
-  };
-
-  const handleAdd = () => {
-    setEditItem(null);
-    setFormData(createEmptyLandFormData());
-    setFormOpen(true);
-  };
-
-  const handleEdit = (item: Land) => {
-    setEditItem(item);
-    setFormData(createLandFormDataFromItem(item));
-    setFormOpen(true);
-  };
-
-  const handleDelete = (item: Land) => {
-    setDeleteItem(item);
-    setDeleteOpen(true);
-  };
-
-  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    handleFormDataChange({ image: URL.createObjectURL(file) });
-  };
-
-  const handleSubmit = () => {
-    if (editItem) {
-      updateLand(editItem.id, formData);
-      toast({
-        title: "Thành công",
-        description: "Đã cập nhật thông tin loại đất",
-      });
-    } else {
-      addLand({
-        code: formData.code || "",
-        name: formData.name || "",
-        image: formData.image,
-        description: formData.description || "",
-      });
-      toast({ title: "Thành công", description: "Đã thêm loại đất mới" });
-    }
-    setFormOpen(false);
-  };
-
-  const handleConfirmDelete = () => {
-    if (deleteItem) {
-      deleteLand(deleteItem.id);
-      toast({ title: "Thành công", description: "Đã xóa loại đất" });
-    }
-    setDeleteOpen(false);
-  };
+  useDialogBugWorkaround([formOpen, deleteOpen]);
 
   return (
     <AdminLayout
@@ -98,22 +43,29 @@ export default function LandPage() {
         </Button>
       }
     >
-      <DataTable
-        columns={landColumns}
-        data={data}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm loại đất..."
-      />
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
+          <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-green-500 animate-spin" />
+          <span className="text-sm">Đang tải danh sách loại đất...</span>
+        </div>
+      ) : (
+        <DataTable
+          columns={landColumns}
+          data={data}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          searchPlaceholder="Tìm kiếm loại đất..."
+        />
+      )}
 
       <LandFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
-        editItem={editItem}
-        formData={formData}
-        onFormDataChange={handleFormDataChange}
-        onImageUpload={handleImageUpload}
+        isEdit={!!editItem}
+        initialData={formData}
+        onFileSelect={handleFileSelect}
         onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
       />
 
       <DeleteDialog
@@ -121,6 +73,7 @@ export default function LandPage() {
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa loại đất này? Chỉ có thể xóa khi chưa có dữ liệu gắn kết."
+        loading={isSubmitting}
       />
     </AdminLayout>
   );

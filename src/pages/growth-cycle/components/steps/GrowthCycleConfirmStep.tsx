@@ -7,24 +7,30 @@ import {
   Layout,
   Sprout,
 } from "lucide-react";
-import type { CreateGrowthCycleForm } from "../../types/types";
-import type { Variety } from "@/pages/variety/types";
-import { CROP_OPTIONS } from "@/constants/crops";
+import { useFormContext } from "react-hook-form";
+import type { GrowthCycleFormValues } from "../../schemas/growthCycleSchema";
+import type {
+  FoundationCropResponse,
+  FoundationCropVarietyResponse,
+} from "../../../../features/foundation/types/foundation.type";
 
 interface GrowthCycleConfirmStepProps {
-  formData: CreateGrowthCycleForm;
-  varieties: Variety[];
+  varieties: FoundationCropVarietyResponse[];
+  crops: FoundationCropResponse[];
 }
 
 export function GrowthCycleConfirmStep({
-  formData,
   varieties,
+  crops,
 }: GrowthCycleConfirmStepProps) {
+  const { watch } = useFormContext<GrowthCycleFormValues>();
+  const formData = watch();
+  
   const cropName =
-    CROP_OPTIONS.find((crop) => crop.name === formData.cropId)?.name ||
+    crops.find((crop) => String(crop.id) === formData.cropId)?.name ||
     formData.cropId;
   const varietyName =
-    varieties.find((variety) => variety.id === formData.variety)?.varietyName ||
+    varieties.find((variety) => String(variety.id) === formData.variety)?.name ||
     formData.variety;
   const isPlant = (formData.cycleType ?? "plant") === "plant";
 

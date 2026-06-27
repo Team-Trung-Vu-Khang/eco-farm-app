@@ -36,11 +36,23 @@ export function CropFoundationIdentity({
                 <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-3">
                   {cropFoundation.name}
                 </h2>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 mb-4">
                   <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-none px-3 py-1 text-xs font-bold transition-colors">
                     {cropFoundation.cropGroupName || "Chưa phân nhóm"}
                   </Badge>
+                  {cropFoundation.harvestMethod && (
+                    <Badge className="bg-amber-50 text-amber-700 hover:bg-amber-100 border-none px-3 py-1 text-xs font-bold transition-colors">
+                      {cropFoundation.harvestMethod === "manual" ? "Thu hoạch thủ công" : 
+                       cropFoundation.harvestMethod === "machine" ? "Thu hoạch bằng máy" : 
+                       cropFoundation.harvestMethod}
+                    </Badge>
+                  )}
                 </div>
+                {cropFoundation.description && (
+                  <p className="text-sm text-slate-600 leading-relaxed max-w-2xl">
+                    {cropFoundation.description}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-wrap gap-x-16 gap-y-6 pt-2 border-t border-slate-50">

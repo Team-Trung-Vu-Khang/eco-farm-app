@@ -1,19 +1,21 @@
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
-import { useCrops, useCropMutations } from "../../../features/foundation";
 import type { FoundationCropResponse } from "../../../features/foundation";
+import { useCropMutations, useCrops } from "../../../features/foundation";
 
 export function useCropFoundationPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  
+
   const { items: cropFoundations, loading, error } = useCrops();
   const { deleteCrop } = useCropMutations();
-  
+
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<FoundationCropResponse | null>(null);
+  const [deleteItem, setDeleteItem] = useState<FoundationCropResponse | null>(
+    null,
+  );
 
   useEffect(() => {
     if (error) {
@@ -71,4 +73,3 @@ export function useCropFoundationPage() {
     isPending: deleteCrop.isPending,
   };
 }
-

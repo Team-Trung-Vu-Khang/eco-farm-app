@@ -4,10 +4,10 @@ import {
   FileText,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { CreateVarietyFoundationForm } from "../types/types";
+import { useFormContext } from "react-hook-form";
+import type { VarietyFoundationFormValues } from "../schemas/varietyFoundationSchema";
 
 interface VarietyFoundationConfirmationStepProps {
-  formData: CreateVarietyFoundationForm;
   selectedCrop?: {
     name?: string;
     image?: string;
@@ -17,10 +17,12 @@ interface VarietyFoundationConfirmationStepProps {
 }
 
 export function VarietyFoundationConfirmationStep({
-  formData,
   selectedCrop,
   mode,
 }: VarietyFoundationConfirmationStepProps) {
+  const { watch } = useFormContext<VarietyFoundationFormValues>();
+  const formData = watch();
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="text-center space-y-4 py-8">

@@ -9,23 +9,32 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { Input, Label, cn, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  Input,
+  Label,
+  cn,
+  Button,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useCrops } from "../../../features/foundation";
-import type { CreateVarietyFoundationForm } from "../types/types";
+import { useFormContext } from "react-hook-form";
+import type { VarietyFoundationFormValues } from "../schemas/varietyFoundationSchema";
 
 interface VarietyFoundationClassificationStepProps {
-  formData: CreateVarietyFoundationForm;
-  updateField: <K extends keyof CreateVarietyFoundationForm>(
-    key: K,
-    value: CreateVarietyFoundationForm[K],
-  ) => void;
+  isEdit?: boolean;
 }
 
 export function VarietyFoundationClassificationStep({
-  formData,
-  updateField,
+  isEdit,
 }: VarietyFoundationClassificationStepProps) {
-  const { items: apiCrops, loading } = useCrops();
+  const { control, watch, setValue } =
+    useFormContext<VarietyFoundationFormValues>();
+  const watchedCrop = watch("crop");
+  const { items: apiCrops } = useCrops();
   const [startIndex, setStartIndex] = useState(0);
 
   const cropOptions = apiCrops.map((c) => ({
@@ -88,10 +97,12 @@ export function VarietyFoundationClassificationStep({
                   {col.map((crop) => (
                     <div
                       key={crop.id}
-                      onClick={() => updateField("crop", crop.id)}
+                      onClick={() =>
+                        setValue("crop", crop.id, { shouldValidate: true })
+                      }
                       className={cn(
                         "group relative overflow-hidden cursor-pointer rounded-xl border-2 transition-all duration-300 hover:shadow-md p-[5px]",
-                        formData.crop === crop.id
+                        watchedCrop === crop.id
                           ? "border-green-600 ring-2 ring-green-600/20 bg-green-50/10"
                           : "border-transparent bg-slate-50 hover:bg-white hover:border-green-200",
                       )}
@@ -103,7 +114,7 @@ export function VarietyFoundationClassificationStep({
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
                         <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
-                        {formData.crop === crop.id && (
+                        {watchedCrop === crop.id && (
                           <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-green-600 flex items-center justify-center shadow-lg animate-in zoom-in">
                             <Check className="w-3.5 h-3.5 text-white" />
                           </div>
@@ -147,69 +158,96 @@ export function VarietyFoundationClassificationStep({
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-1">
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold text-slate-700">
-            Mã <span className="text-red-500">*</span>
-          </Label>
-          <div className="relative group">
-            <Barcode className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-green-600 transition-colors" />
-            <Input
-              value={formData.varietyFoundationCode}
-              onChange={(event) =>
-                updateField("varietyFoundationCode", event.target.value)
-              }
-              placeholder="VD: VAR-SR6"
-              className="pl-10 border-slate-200 focus:border-green-500 focus:ring-green-500/20"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-1">
+            <FormField
+              control={control}
+              name="varietyFoundationCode"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="text-sm font-semibold text-slate-700">
+                    Mã <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <div className="relative group">
+                    <Barcode className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-green-600 transition-colors" />
+                    <FormControl>
+                      <Input
+                        {...field}
+                        disabled={isEdit}
+                        clearable={!isEdit}
+                        placeholder="VD: VAR-SR6"
+                        className="pl-10 border-slate-200 focus:border-green-500 focus:ring-green-500/20"
+                      />
+                    </FormControl>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold text-slate-700">
-            Tên giống <span className="text-red-500">*</span>
-          </Label>
-          <div className="relative group">
-            <Sprout className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-green-600 transition-colors" />
-            <Input
-              value={formData.varietyFoundationName}
-              onChange={(event) =>
-                updateField("varietyFoundationName", event.target.value)
-              }
-              placeholder="VD: Sầu riêng Ri6"
-              className="pl-10 border-slate-200 focus:border-green-500 focus:ring-green-500/20"
+            <FormField
+              control={control}
+              name="varietyFoundationName"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="text-sm font-semibold text-slate-700">
+                    Tên giống <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <div className="relative group">
+                    <Sprout className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-green-600 transition-colors" />
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="VD: Sầu riêng Ri6"
+                        className="pl-10 border-slate-200 focus:border-green-500 focus:ring-green-500/20"
+                      />
+                    </FormControl>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold text-slate-700">
-            Tên khoa học
-          </Label>
-          <div className="relative group">
-            <FlaskConical className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-green-600 transition-colors" />
-            <Input
-              value={formData.scientificName}
-              onChange={(event) =>
-                updateField("scientificName", event.target.value)
-              }
-              placeholder="VD: Durio zibethinus"
-              className="pl-10 italic font-serif border-slate-200 focus:border-green-500 focus:ring-green-500/20"
+            <FormField
+              control={control}
+              name="scientificName"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="text-sm font-semibold text-slate-700">
+                    Tên khoa học
+                  </FormLabel>
+                  <div className="relative group">
+                    <FlaskConical className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-green-600 transition-colors" />
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="VD: Durio zibethinus"
+                        className="pl-10 italic font-serif border-slate-200 focus:border-green-500 focus:ring-green-500/20"
+                      />
+                    </FormControl>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold text-slate-700">
-            Nguồn gốc/Xuất xứ
-          </Label>
-          <div className="relative group">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-green-600 transition-colors" />
-            <Input
-              value={formData.origin}
-              onChange={(event) => updateField("origin", event.target.value)}
-              placeholder="VD: Thái Lan, Việt Nam..."
-              className="pl-10 border-slate-200 focus:border-green-500 focus:ring-green-500/20"
+            <FormField
+              control={control}
+              name="origin"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="text-sm font-semibold text-slate-700">
+                    Nguồn gốc
+                  </FormLabel>
+                  <div className="relative group">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-green-600 transition-colors" />
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="VD: Việt Nam, Thái Lan..."
+                        className="pl-10 border-slate-200 focus:border-green-500 focus:ring-green-500/20"
+                      />
+                    </FormControl>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </div>
         </div>

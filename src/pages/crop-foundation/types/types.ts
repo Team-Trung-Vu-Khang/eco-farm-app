@@ -113,9 +113,15 @@ export interface TechnicalSpecs {
   scientificName: string;
   family: string;
   origin: string;
-  tempRange: string;
-  humidityRange: string;
-  phRange: string;
+  temperatureFrom?: number | null;
+  temperatureTo?: number | null;
+  humidityFrom?: number | null;
+  humidityTo?: number | null;
+  phFrom?: number | null;
+  phTo?: number | null;
+  tempRange?: string;
+  humidityRange?: string;
+  phRange?: string;
   plantingDensity: string;
   watering: string;
 }

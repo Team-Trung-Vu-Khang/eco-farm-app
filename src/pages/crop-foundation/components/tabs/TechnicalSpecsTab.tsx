@@ -69,7 +69,7 @@ export function TechnicalSpecsTab({ cropFoundation }: TechnicalSpecsTabProps) {
                   <span className="text-xs font-bold uppercase">Nhiệt độ</span>
                 </div>
                 <p className="text-lg font-bold text-slate-900">
-                  {specs?.temperatureFrom && specs?.temperatureTo
+                  {specs?.temperatureFrom != null && specs?.temperatureTo != null
                     ? `${specs.temperatureFrom} - ${specs.temperatureTo}°C`
                     : "--"}
                 </p>
@@ -80,7 +80,7 @@ export function TechnicalSpecsTab({ cropFoundation }: TechnicalSpecsTabProps) {
                   <span className="text-xs font-bold uppercase">Độ ẩm</span>
                 </div>
                 <p className="text-lg font-bold text-slate-900">
-                  {specs?.humidityFrom && specs?.humidityTo
+                  {specs?.humidityFrom != null && specs?.humidityTo != null
                     ? `${specs.humidityFrom} - ${specs.humidityTo}%`
                     : "--"}
                 </p>
@@ -91,7 +91,7 @@ export function TechnicalSpecsTab({ cropFoundation }: TechnicalSpecsTabProps) {
                   <span className="text-xs font-bold uppercase">Độ pH đất</span>
                 </div>
                 <p className="text-lg font-bold text-slate-900">
-                  {specs?.phFrom && specs?.phTo
+                  {specs?.phFrom != null && specs?.phTo != null
                     ? `${specs.phFrom} - ${specs.phTo}`
                     : "--"}
                 </p>

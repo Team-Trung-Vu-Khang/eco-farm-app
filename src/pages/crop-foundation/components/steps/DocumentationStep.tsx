@@ -18,15 +18,8 @@ import {
   X,
 } from "lucide-react";
 
-import type { CreateCropFoundationForm } from "../../types/types";
-
-interface DocumentationStepProps {
-  formData: CreateCropFoundationForm;
-  handleUpdateDocs: (
-    docKey: "farmingTechnique" | "qualityStandard",
-    updates: any,
-  ) => void;
-}
+import { useFormContext } from "react-hook-form";
+import type { CropFoundationFormValues } from "../../schemas/cropFoundationSchema";
 
 const ACCEPTED_DOC_TYPES =
   ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.odt,.ods";
@@ -245,10 +238,9 @@ function UploadZone({ docKey, file, onFileChange }: UploadZoneProps) {
   );
 }
 
-export function DocumentationStep({
-  formData,
-  handleUpdateDocs,
-}: DocumentationStepProps) {
+export function DocumentationStep() {
+  const { setValue, watch } = useFormContext<CropFoundationFormValues>();
+  const docs = watch("docs");
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="relative overflow-hidden rounded-xl border border-purple-200 bg-linear-to-r from-purple-50 via-white to-purple-50 p-6">
@@ -268,13 +260,15 @@ export function DocumentationStep({
 
       <div className="space-y-12">
         {(["farmingTechnique"] as const).map((docKey) => {
-          const doc = formData.docs[docKey];
+          const doc = docs[docKey];
           return (
             <div key={docKey} className="space-y-6">
               <div className="space-y-4">
                 <RadioGroup
                   value={doc.type}
-                  onValueChange={(v) => handleUpdateDocs(docKey, { type: v })}
+                  onValueChange={(v) =>
+                    setValue(`docs.${docKey}.type`, v as "editor" | "pdf")
+                  }
                   className="flex items-center gap-6 pl-1"
                 >
                   <div className="flex items-center space-x-2">
@@ -315,7 +309,7 @@ export function DocumentationStep({
                           : undefined
                       }
                       onSerializedChange={(content) =>
-                        handleUpdateDocs(docKey, { content })
+                        setValue(`docs.${docKey}.content`, content)
                       }
                     />
                   </Card>
@@ -323,7 +317,9 @@ export function DocumentationStep({
                   <UploadZone
                     docKey={docKey}
                     file={doc.file}
-                    onFileChange={(file) => handleUpdateDocs(docKey, { file })}
+                    onFileChange={(file) =>
+                      setValue(`docs.${docKey}.file`, file)
+                    }
                   />
                 )}
               </div>

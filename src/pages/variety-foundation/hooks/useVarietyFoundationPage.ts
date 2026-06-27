@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 import {
   useCropVarieties,
   useCropVarietyMutations,
@@ -27,7 +27,7 @@ function formatDaysToDuration(days: number | undefined): string {
 export function useVarietyFoundationPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const { items, loading, error, refetch } = useCropVarieties();
+  const { items, loading, error } = useCropVarieties();
   const { deleteCropVariety } = useCropVarietyMutations();
 
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -37,17 +37,7 @@ export function useVarietyFoundationPage() {
 
   // Parse items from API into UI VarietyFoundation interface
   const varieties: VarietyFoundation[] = items.map((item) => {
-    let metadata: any = {};
-    if (item.metadataJson) {
-      try {
-        metadata =
-          typeof item.metadataJson === "string"
-            ? JSON.parse(item.metadataJson)
-            : item.metadataJson;
-      } catch (e) {
-        console.error("Failed to parse metadataJson", e);
-      }
-    }
+    const metadata = item.metadataJson || {};
 
     const docs = item.documents || [];
     const pdfDoc = docs.find((d) => d.type === "pdf");
@@ -146,6 +136,6 @@ export function useVarietyFoundationPage() {
     handleConfirmDelete,
     handleView,
     handleEdit: (item: VarietyFoundation) =>
-      setLocation(`/variety-foudation/${item.id}/edit`),
+      setLocation(`/variety-foundation/${item.id}/edit`),
   };
 }

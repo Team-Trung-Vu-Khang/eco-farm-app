@@ -39,7 +39,11 @@ import IoTMapViewPage from "./pages/iot-device/monitoring/IoTMapViewPage";
 import IoTDeviceGroupPage from "./pages/iot-device-group/IoTDeviceGroupPage";
 
 import NotFoundPage from "./pages/NotFoundPage";
-import { Toaster, TooltipProvider } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  Toaster,
+  RadixToaster,
+  TooltipProvider,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { AuthWrapper } from "./features/auth/components/AuthWrapper";
 import BankPage from "./pages/bank/BankPage";
 import BankDirectoryPage from "./pages/bank-directory/BankDirectoryPage";
@@ -101,9 +105,9 @@ import TeamDetailPage from "./pages/team/TeamDetailPage";
 import VarietyPage from "./pages/variety/VarietyPage";
 import CreateVarietyPage from "./pages/variety/CreateVarietyPage";
 import VarietyEditPage from "./pages/variety/VarietyEditPage";
-import VarietyFoundationPage from "./pages/variety-foudation/VarietyFoundationPage";
-import CreateVarietyFoundationPage from "./pages/variety-foudation/CreateVarietyFoundationPage";
-import VarietyFoundationEditPage from "./pages/variety-foudation/VarietyFoundationEditPage";
+import VarietyFoundationPage from "./pages/variety-foundation/VarietyFoundationPage";
+import CreateVarietyFoundationPage from "./pages/variety-foundation/CreateVarietyFoundationPage";
+import VarietyFoundationEditPage from "./pages/variety-foundation/VarietyFoundationEditPage";
 import MaterialPage from "./pages/material/MaterialPage";
 import FertilizerPage from "./pages/fertilizer/FertilizerPage";
 import ContractPage from "./pages/contract/ContractPage";
@@ -386,13 +390,13 @@ function Router() {
       <Route path="/docs/:id" component={DocsDetailPage} />
       <Route path="/variety" component={VarietyPage} />
       <Route path="/variety/create" component={CreateVarietyPage} />
-      <Route path="/variety-foudation" component={VarietyFoundationPage} />
+      <Route path="/variety-foundation" component={VarietyFoundationPage} />
       <Route
-        path="/variety-foudation/create"
+        path="/variety-foundation/create"
         component={CreateVarietyFoundationPage}
       />
       <Route
-        path="/variety-foudation/:id/edit"
+        path="/variety-foundation/:id/edit"
         component={VarietyFoundationEditPage}
       />
       {/* <Route path="/variety/:id">
@@ -495,7 +499,8 @@ function Router() {
 function App() {
   return (
     <TooltipProvider>
-      <Toaster />
+      {/* <Toaster /> */}
+      <RadixToaster />
       <AuthWrapper>
         <Router />
       </AuthWrapper>

@@ -1,159 +1,23 @@
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { useLocation } from "wouter";
 
+import { safeConvertLexicalToHtml } from "@/utils/commons";
 import { useCropMutations } from "../../../features/foundation";
 import { useFileUpload } from "../../../features/storage";
-import { safeConvertLexicalToHtml } from "@/utils/commons";
-import { initialEditorValue } from "../data/mocks";
-import type {
-  CreateCropFoundationForm,
-  GrowthCycleDetail,
-} from "../types/types";
+
+import type { CropFoundationFormValues } from "../schemas/cropFoundationSchema";
 
 export function useCropFoundationForm() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadedFilesCache = useRef<
     Map<File, { fileUrl: string; fileName?: string }>
   >(new Map());
   const { createCrop } = useCropMutations();
-
   const { uploadFile } = useFileUpload();
 
-  const [formData, setFormData] = useState<CreateCropFoundationForm>({
-    code: "TREE-" + Math.floor(1000 + Math.random() * 9000),
-    name: "",
-    cropGroupId: "",
-    cropFoundationType: "",
-    variety: "",
-    illustration: null,
-    description: "",
-    selectedSeedIds: [],
-    harvestMethod: "manual",
-    technicalSpecs: {
-      scientificName: "",
-      family: "",
-      origin: "",
-      tempRange: "",
-      humidityRange: "",
-      phRange: "",
-      plantingDensity: "",
-      watering: "",
-    },
-    growthCycles: [
-      {
-        id: "1",
-        name: "Kiến thiết cơ bản",
-        stages: ["Gieo hạt", "Cây con"],
-        estimatedDays: "10",
-      },
-    ],
-    docs: {
-      farmingTechnique: {
-        type: "editor",
-        content: initialEditorValue,
-        file: null,
-      },
-      qualityStandard: {
-        type: "editor",
-        content: initialEditorValue,
-        file: null,
-      },
-    },
-  });
-
-  const [seedSearch, setSeedSearch] = useState("");
-  const [illustrationPreview, setIllustrationPreview] = useState<string | null>(
-    null,
-  );
-
-  useEffect(() => {
-    if (!formData.illustration) {
-      setIllustrationPreview(null);
-      return;
-    }
-    if (typeof formData.illustration === "string") {
-      setIllustrationPreview(formData.illustration);
-      return;
-    }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setIllustrationPreview(reader.result as string);
-    };
-    reader.readAsDataURL(formData.illustration as File);
-  }, [formData.illustration]);
-
-  const handleUpdateField = (
-    field: keyof CreateCropFoundationForm,
-    value: any,
-  ) => {
-    setFormData((prev) => {
-      const newData = { ...prev, [field]: value };
-      if (field === "cropGroupId") {
-        newData.cropFoundationType = "";
-        newData.variety = "";
-      } else if (field === "cropFoundationType") {
-        newData.variety = "";
-      }
-      return newData;
-    });
-  };
-
-  const handleUpdateTechnicalSpecs = (
-    updates: Partial<typeof formData.technicalSpecs>,
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      technicalSpecs: { ...prev.technicalSpecs, ...updates },
-    }));
-  };
-
-  const handleAddGrowthCycle = () => {
-    const newId = (formData.growthCycles.length + 1).toString();
-    setFormData((prev) => ({
-      ...prev,
-      growthCycles: [
-        ...prev.growthCycles,
-        { id: newId, name: "", stages: [], estimatedDays: "" },
-      ],
-    }));
-  };
-
-  const handleRemoveGrowthCycle = (id: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      growthCycles: prev.growthCycles.filter((c) => c.id !== id),
-    }));
-  };
-
-  const handleUpdateGrowthCycle = (
-    id: string,
-    updates: Partial<GrowthCycleDetail>,
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      growthCycles: prev.growthCycles.map((c) =>
-        c.id === id ? { ...c, ...updates } : c,
-      ),
-    }));
-  };
-
-  const handleUpdateDocs = (
-    docKey: "farmingTechnique" | "qualityStandard",
-    updates: any,
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      docs: {
-        ...prev.docs,
-        [docKey]: { ...prev.docs[docKey], ...updates },
-      },
-    }));
-  };
-
-  const handleComplete = async () => {
+  const handleComplete = async (formData: CropFoundationFormValues) => {
     try {
       // 1. Upload illustration if it's a File
       let illustrationUrl = formData.illustration as string | undefined;
@@ -242,11 +106,6 @@ export function useCropFoundationForm() {
         });
       }
 
-      // parse tempRange back to from/to
-      const tempRange = formData.technicalSpecs.tempRange;
-      const humidityRange = formData.technicalSpecs.humidityRange;
-      const phRange = formData.technicalSpecs.phRange;
-
       const payload = {
         code: formData.code || undefined,
         name: formData.name || undefined,
@@ -259,25 +118,14 @@ export function useCropFoundationForm() {
           scientificName: formData.technicalSpecs.scientificName || undefined,
           family: formData.technicalSpecs.family || undefined,
           origin: formData.technicalSpecs.origin || undefined,
-          temperatureFrom: tempRange
-            ? Number(tempRange.split("-")[0]) || undefined
-            : undefined,
-          temperatureTo: tempRange
-            ? Number(tempRange.split("-")[1]) || undefined
-            : undefined,
-          humidityFrom: humidityRange
-            ? Number(humidityRange.split("-")[0]) || undefined
-            : undefined,
-          humidityTo: humidityRange
-            ? Number(humidityRange.split("-")[1]) || undefined
-            : undefined,
-          phFrom: phRange
-            ? Number(phRange.split("-")[0]) || undefined
-            : undefined,
-          phTo: phRange
-            ? Number(phRange.split("-")[1]) || undefined
-            : undefined,
+          temperatureFrom: formData.technicalSpecs.temperatureFrom || undefined,
+          temperatureTo: formData.technicalSpecs.temperatureTo || undefined,
+          humidityFrom: formData.technicalSpecs.humidityFrom || undefined,
+          humidityTo: formData.technicalSpecs.humidityTo || undefined,
+          phFrom: formData.technicalSpecs.phFrom || undefined,
+          phTo: formData.technicalSpecs.phTo || undefined,
           plantingDensity: formData.technicalSpecs.plantingDensity || undefined,
+          watering: formData.technicalSpecs.watering || undefined,
         },
         documents,
         metadataJson: { source: "farm-admin" },
@@ -311,17 +159,6 @@ export function useCropFoundationForm() {
   const handleCancel = () => setLocation("/crop-foundation");
 
   return {
-    formData,
-    seedSearch,
-    setSeedSearch,
-    illustrationPreview,
-    fileInputRef,
-    handleUpdateField,
-    handleUpdateTechnicalSpecs,
-    handleAddGrowthCycle,
-    handleRemoveGrowthCycle,
-    handleUpdateGrowthCycle,
-    handleUpdateDocs,
     handleComplete,
     handleCancel,
     isPending: createCrop.isPending,

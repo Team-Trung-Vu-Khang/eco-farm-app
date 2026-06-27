@@ -1,37 +1,38 @@
 import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
-import type { GrowthStage } from "../../types/types";
 import { GrowthStageCard } from "../GrowthStageCard";
 
-interface GrowthCycleStagesStepProps {
-  stages: GrowthStage[];
-  onAddStage: () => void;
-  onRemoveStage: (id: string) => void;
-  onUpdateStage: (id: string, updates: Partial<GrowthStage>) => void;
-}
+import { useFieldArray, useFormContext } from "react-hook-form";
+import type { GrowthCycleFormValues } from "../../schemas/growthCycleSchema";
 
-export function GrowthCycleStagesStep({
-  stages,
-  onAddStage,
-  onRemoveStage,
-  onUpdateStage,
-}: GrowthCycleStagesStepProps) {
+export function GrowthCycleStagesStep() {
+  const { control } = useFormContext<GrowthCycleFormValues>();
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "stages",
+  });
   return (
     <div className="max-w-5xl mx-auto space-y-8 py-4">
       <div className="space-y-6">
-        {stages.map((stage, index) => (
+        {fields.map((field, index) => (
           <GrowthStageCard
-            key={stage.id}
-            stage={stage}
+            key={field.id}
             index={index}
-            onRemove={onRemoveStage}
-            onUpdate={onUpdateStage}
+            onRemove={() => remove(index)}
           />
         ))}
 
         <Button
           variant="outline"
-          onClick={onAddStage}
+          onClick={() =>
+            append({
+              id: `new-${fields.length + 1}`,
+              name: `Giai đoạn ${fields.length + 1}`,
+              duration: "",
+              usePdf: false,
+              content: "",
+            })
+          }
           className="w-full flex items-center justify-center gap-2 h-12 border-dashed border-2 hover:bg-primary/5 hover:border-primary/50 transition-all rounded-xl font-medium"
         >
           <Plus className="h-4 w-4" />

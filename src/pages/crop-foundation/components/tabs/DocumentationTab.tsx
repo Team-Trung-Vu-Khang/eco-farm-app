@@ -14,6 +14,7 @@ import {
   Leaf,
   Presentation,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { FoundationCropResponse } from "../../../../features/foundation";
 
 interface DocumentationTabProps {
@@ -79,14 +80,18 @@ function formatFileSize(bytes: number): string {
 
 export function DocumentationTab({ cropFoundation }: DocumentationTabProps) {
   let doc: any = null;
-  
+
   if (cropFoundation.documents && cropFoundation.documents.length > 0) {
-    const farmingDoc = cropFoundation.documents.find((d: any) => d.name === "Kỹ thuật canh tác");
+    const farmingDoc = cropFoundation.documents.find(
+      (d: any) => d.name === "Kỹ thuật canh tác",
+    );
     if (farmingDoc) {
       doc = {
         type: farmingDoc.type || "editor",
         content: farmingDoc.content,
-        file: farmingDoc.fileUrl ? { name: farmingDoc.fileName || "Tài liệu đính kèm" } : null,
+        file: farmingDoc.fileUrl
+          ? { name: farmingDoc.fileName || "Tài liệu đính kèm" }
+          : null,
       };
     }
   } else {
@@ -94,9 +99,7 @@ export function DocumentationTab({ cropFoundation }: DocumentationTabProps) {
     let docs: any = null;
     try {
       if (cropFoundation.metadataJson) {
-        const meta = typeof cropFoundation.metadataJson === "string" 
-          ? JSON.parse(cropFoundation.metadataJson) 
-          : cropFoundation.metadataJson;
+        const meta = cropFoundation.metadataJson;
         docs = meta.docs;
       }
     } catch (error) {
@@ -117,78 +120,6 @@ export function DocumentationTab({ cropFoundation }: DocumentationTabProps) {
       </Card>
     );
   }
-
-  const renderFilePreview = () => {
-    const file = doc.file as File | null | undefined;
-    // Ưu tiên dùng File object nếu còn trong memory
-    const fileName: string | null =
-      file?.name ??
-      (typeof doc.content === "string" && doc.type === "pdf"
-        ? doc.content
-        : null);
-
-    if (!fileName) {
-      return (
-        <div className="flex flex-col items-center justify-center py-10 bg-slate-50 rounded-lg border border-dashed border-slate-200">
-          <FileText className="w-10 h-10 text-slate-300 mb-3" />
-          <p className="text-sm font-bold text-slate-700">
-            Tài liệu đã được tải lên
-          </p>
-          <p className="text-xs text-slate-500 mt-1">
-            Tính năng xem trước đang được phát triển
-          </p>
-        </div>
-      );
-    }
-
-    const {
-      icon: Icon,
-      color,
-      bg,
-      border,
-      badge,
-    } = getFileIconConfig(fileName);
-    const ext = fileName.split(".").pop()?.toUpperCase() ?? "FILE";
-
-    return (
-      <div
-        className={cn(
-          "flex items-center gap-4 rounded-xl border px-4 py-3",
-          bg,
-          border,
-        )}
-      >
-        <div
-          className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm border",
-            border,
-          )}
-        >
-          <Icon className={cn("h-5 w-5", color)} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
-            <p className="truncate text-sm font-semibold text-slate-800">
-              {fileName}
-            </p>
-            <span
-              className={cn(
-                "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase",
-                badge,
-              )}
-            >
-              {ext}
-            </span>
-          </div>
-          {file && (
-            <p className="text-xs text-slate-500">
-              {formatFileSize(file.size)}
-            </p>
-          )}
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="space-y-6">
@@ -224,7 +155,7 @@ export function DocumentationTab({ cropFoundation }: DocumentationTabProps) {
               Dữ liệu tài liệu đang ở định dạng chưa được biên dịch (JSON).
             </p>
           ) : (
-            renderFilePreview()
+            <FilePreview doc={doc} />
           )}
         </CardContent>
       </Card>
@@ -232,3 +163,93 @@ export function DocumentationTab({ cropFoundation }: DocumentationTabProps) {
   );
 }
 
+function FilePreview({ doc }: { doc: any }) {
+  const [remoteSize, setRemoteSize] = useState<number | null>(null);
+  const file = doc.file as File | null | undefined;
+
+  useEffect(() => {
+    if (!file && doc.fileUrl) {
+      fetch(doc.fileUrl, { method: "HEAD" })
+        .then((res) => {
+          if (res.ok) {
+            const size = res.headers.get("content-length");
+            if (size) setRemoteSize(Number(size));
+          }
+        })
+        .catch(() => {
+          // Ignore CORS or fetch errors gracefully
+        });
+    }
+  }, [file, doc.fileUrl]);
+
+  const fileName: string | null =
+    file?.name ??
+    doc.fileName ??
+    (typeof doc.content === "string" && doc.type === "pdf"
+      ? doc.content
+      : null);
+
+  if (!fileName) {
+    return (
+      <div className="flex flex-col items-center justify-center py-10 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+        <FileText className="w-10 h-10 text-slate-300 mb-3" />
+        <p className="text-sm font-bold text-slate-700">
+          Tài liệu đã được tải lên nhưng không rõ tên file
+        </p>
+      </div>
+    );
+  }
+
+  const { icon: Icon, color, bg, border, badge } = getFileIconConfig(fileName);
+  const ext = fileName.split(".").pop()?.toUpperCase() ?? "FILE";
+
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-4 rounded-xl border px-4 py-3",
+        bg,
+        border,
+      )}
+    >
+      <div
+        className={cn(
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm border",
+          border,
+        )}
+      >
+        <Icon className={cn("h-5 w-5", color)} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          {doc.fileUrl ? (
+            <a
+              href={doc.fileUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="truncate text-sm font-semibold text-blue-600 hover:underline"
+            >
+              {fileName}
+            </a>
+          ) : (
+            <p className="truncate text-sm font-semibold text-slate-800">
+              {fileName}
+            </p>
+          )}
+          <span
+            className={cn(
+              "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase",
+              badge,
+            )}
+          >
+            {ext}
+          </span>
+        </div>
+        {(file || remoteSize !== null) && (
+          <p className="text-xs text-slate-500">
+            {formatFileSize(file?.size ?? remoteSize ?? 0)}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

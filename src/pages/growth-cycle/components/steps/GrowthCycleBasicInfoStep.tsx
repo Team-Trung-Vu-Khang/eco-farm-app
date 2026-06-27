@@ -1,4 +1,8 @@
 import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
   Label,
   RadioGroup,
   RadioGroupItem,
@@ -7,15 +11,24 @@ import {
   TabsList,
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ChevronDown, Fish, Flower2, PawPrint, TreeDeciduous } from "lucide-react";
+import {
+  ChevronDown,
+  Fish,
+  Flower2,
+  PawPrint,
+  TreeDeciduous,
+} from "lucide-react";
 import { useState, type ReactNode } from "react";
-import type { CreateGrowthCycleForm } from "../../types/types";
-import type { Variety } from "@/pages/variety/types";
+import { useFormContext } from "react-hook-form";
+import type {
+  FoundationCropResponse,
+  FoundationCropVarietyResponse,
+} from "../../../../features/foundation/types/foundation.type";
 import {
   animalBreedOptions,
   animalCycleOptions,
-  plantCycleOptions,
 } from "../../data/cycleSelectionData";
+import type { GrowthCycleFormValues } from "../../schemas/growthCycleSchema";
 import {
   GrowthCycleHierarchyDialog,
   type GrowthCycleHierarchyChildOption,
@@ -23,12 +36,8 @@ import {
 } from "../GrowthCycleHierarchyDialog";
 
 interface GrowthCycleBasicInfoStepProps {
-  formData: CreateGrowthCycleForm;
-  filteredVarieties: Variety[];
-  onCycleTypeChange: (cycleType: "plant" | "animal") => void;
-  onScopeChange: (scope: "crop" | "variety") => void;
-  onCropChange: (cropId: string) => void;
-  onVarietyChange: (variety: string) => void;
+  filteredVarieties: FoundationCropVarietyResponse[];
+  crops: FoundationCropResponse[];
 }
 
 function ScopeOption({
@@ -69,7 +78,10 @@ function ScopeOption({
       <div className="flex-1 space-y-1">
         <div className="flex items-center space-x-2">
           <RadioGroupItem value={value} id={inputId} />
-          <Label htmlFor={inputId} className="cursor-pointer text-base font-bold">
+          <Label
+            htmlFor={inputId}
+            className="cursor-pointer text-base font-bold"
+          >
             {title}
           </Label>
         </div>
@@ -126,7 +138,11 @@ function SelectionCard({
         <div className="flex min-w-0 items-center gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 shadow-sm">
             {image ? (
-              <img src={image} alt={title} className="h-full w-full object-cover" />
+              <img
+                src={image}
+                alt={title}
+                className="h-full w-full object-cover"
+              />
             ) : (
               <span className="text-muted-foreground">{fallbackIcon}</span>
             )}
@@ -168,7 +184,9 @@ function SelectionCard({
             }`}
           >
             <div className="min-w-0 space-y-1">
-              <p className="text-sm font-semibold text-slate-900">{secondaryTitle}</p>
+              <p className="text-sm font-semibold text-slate-900">
+                {secondaryTitle}
+              </p>
               <p className="text-xs text-muted-foreground">
                 {secondarySubtitle || secondaryPlaceholder}
               </p>
@@ -194,39 +212,57 @@ function SelectionCard({
 }
 
 export function GrowthCycleBasicInfoStep({
-  formData,
   filteredVarieties,
-  onCycleTypeChange,
-  onScopeChange,
-  onCropChange,
-  onVarietyChange,
+  crops,
 }: GrowthCycleBasicInfoStepProps) {
+  const { watch, setValue, control } = useFormContext<GrowthCycleFormValues>();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const isPlant = (formData.cycleType ?? "plant") === "plant";
-  const primaryOptions = isPlant ? plantCycleOptions : animalCycleOptions;
+
+  const watchedCycleType = watch("cycleType") ?? "plant";
+  const watchedScope = watch("scope");
+  const watchedCropId = watch("cropId");
+  const watchedVariety = watch("variety");
+
+  const isPlant = watchedCycleType === "plant";
+  const primaryOptions = isPlant
+    ? crops.map((c) => ({
+        id: String(c.id),
+        name: c.name,
+        group: c.cropGroupName,
+        image: c.imageUrl ?? "",
+        description: c.description ?? "",
+      }))
+    : animalCycleOptions;
 
   const primaryMap = new Map<string, GrowthCycleHierarchyPrimaryOption>(
     primaryOptions.map((item) => [item.id, item]),
   );
 
   const childOptions: GrowthCycleHierarchyChildOption[] = isPlant
-    ? filteredVarieties.map((variety) => ({
-        id: variety.id,
-        primaryId: variety.crop,
-        name: variety.varietyName,
-        group: variety.scientificName || variety.crop,
-        image:
-          typeof variety.illustration === "string" ? variety.illustration : "",
-        description: variety.description || "",
-        code: variety.varietyCode,
-      }))
+    ? filteredVarieties.map((variety) => {
+        const metadata: Record<string, unknown> = variety.metadataJson || {};
+        return {
+          id: String(variety.id),
+          primaryId: String(variety.cropId),
+          name: variety.name,
+          group: String(metadata.scientificName || variety.cropName),
+          image:
+            typeof metadata.illustrationUrl === "string"
+              ? metadata.illustrationUrl
+              : "",
+          description: variety.description || "",
+          code: variety.code,
+        };
+      })
     : animalBreedOptions.map((breed) => ({
         ...breed,
-        group: primaryMap.get(breed.primaryId)?.group || breed.group,
+        group: primaryMap.get(breed.primaryId)?.group || "",
       }));
 
-  const selectedPrimary = primaryOptions.find((item) => item.id === formData.cropId);
-  const selectedChild = childOptions.find((item) => item.id === formData.variety);
+  const selectedPrimary = primaryOptions.find(
+    (item) => item.id === watchedCropId,
+  );
+  const selectedChild = childOptions.find((item) => item.id === watchedVariety);
 
   const selectionTitle = selectedPrimary
     ? selectedPrimary.name
@@ -262,7 +298,7 @@ export function GrowthCycleBasicInfoStep({
     ? isPlant
       ? "Vùng chọn này sẽ bật sau khi chọn loại cây."
       : "Vùng chọn này sẽ bật sau khi chọn đối tượng nuôi."
-    : formData.scope === "variety"
+    : watchedScope === "variety"
       ? selectedChild
         ? selectedChild.description || ""
         : isPlant
@@ -272,7 +308,9 @@ export function GrowthCycleBasicInfoStep({
         ? "Phạm vi đang là theo loại cây nên không cần chọn giống riêng."
         : "Phạm vi đang là theo đối tượng nuôi nên không cần chọn giống riêng.";
 
-  const cycleIntroTitle = isPlant ? "Dùng cho chu kỳ cây trồng" : "Dùng cho chu kỳ vật nuôi / thủy sản";
+  const cycleIntroTitle = isPlant
+    ? "Dùng cho chu kỳ cây trồng"
+    : "Dùng cho chu kỳ vật nuôi / thủy sản";
   const cycleIntroDescription = isPlant
     ? "Từ nảy mầm đến ra hoa, đậu trái hoặc thu hoạch."
     : "Từ sơ sinh đến nuôi lớn, sinh sản hoặc xuất chuồng.";
@@ -308,94 +346,144 @@ export function GrowthCycleBasicInfoStep({
       <div className="space-y-6">
         <div className="space-y-3">
           <Label className="text-base font-semibold">Nhóm chu kỳ</Label>
-          <Tabs
-            value={formData.cycleType ?? "plant"}
-            onValueChange={(value) =>
-              onCycleTypeChange(value as "plant" | "animal")
-            }
-            className="w-full"
-          >
-            <TabsList className="grid w-full grid-cols-2 mb-0">
-              <TabsTrigger value="plant" className="gap-2">
-                <TreeDeciduous className="w-4 h-4" />
-                Thực vật
-              </TabsTrigger>
-              <TabsTrigger value="animal" className="gap-2">
-                <Fish className="w-4 h-4" />
-                Vật nuôi / Thủy sản
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="plant" className="mt-4 space-y-3">
-              <div className="rounded-lg border bg-emerald-50/40 p-4 text-sm text-emerald-900">
-                {cycleIntroTitle}: {cycleIntroDescription}
-              </div>
-            </TabsContent>
-            <TabsContent value="animal" className="mt-4 space-y-3">
-              <div className="rounded-lg border bg-blue-50/50 p-4 text-sm text-blue-900">
-                {cycleIntroTitle}: {cycleIntroDescription}
-              </div>
-            </TabsContent>
-          </Tabs>
+          <FormField
+            control={control}
+            name="cycleType"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <Tabs
+                    value={field.value ?? "plant"}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      setValue("cropId", "");
+                      setValue("variety", "");
+                    }}
+                    className="w-full"
+                  >
+                    <TabsList className="grid w-full grid-cols-2 mb-0">
+                      <TabsTrigger value="plant" className="gap-2">
+                        <TreeDeciduous className="w-4 h-4" />
+                        Thực vật
+                      </TabsTrigger>
+                      <TabsTrigger value="animal" className="gap-2">
+                        <Fish className="w-4 h-4" />
+                        Vật nuôi / Thủy sản
+                      </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="plant" className="mt-4 space-y-3">
+                      <div className="rounded-lg border bg-emerald-50/40 p-4 text-sm text-emerald-900">
+                        {cycleIntroTitle}: {cycleIntroDescription}
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="animal" className="mt-4 space-y-3">
+                      <div className="rounded-lg border bg-blue-50/50 p-4 text-sm text-blue-900">
+                        {cycleIntroTitle}: {cycleIntroDescription}
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <div className="space-y-3">
           <Label className="text-base font-semibold">Phạm vi áp dụng</Label>
-          <RadioGroup
-            value={formData.scope}
-            onValueChange={onScopeChange}
-            className="grid grid-cols-1 gap-4 md:grid-cols-2"
-          >
-            <ScopeOption
-              checked={formData.scope === "crop"}
-              icon={scopeCropIcon}
-              inputId="scope-crop"
-              title={scopeCropTitle}
-              value="crop"
-              description={scopeCropDescription}
-              onClick={() => onScopeChange("crop")}
-            />
-            <ScopeOption
-              checked={formData.scope === "variety"}
-              icon={scopeVarietyIcon}
-              inputId="scope-variety"
-              title="Theo giống cụ thể"
-              value="variety"
-              description={scopeVarietyDescription}
-              onClick={() => onScopeChange("variety")}
-            />
-          </RadioGroup>
+          <FormField
+            control={control}
+            name="scope"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      setValue("variety", "");
+                    }}
+                    className="grid grid-cols-1 gap-4 md:grid-cols-2"
+                  >
+                    <ScopeOption
+                      checked={field.value === "crop"}
+                      icon={scopeCropIcon}
+                      inputId="scope-crop"
+                      title={scopeCropTitle}
+                      value="crop"
+                      description={scopeCropDescription}
+                      onClick={() => {
+                        field.onChange("crop");
+                        setValue("variety", "");
+                      }}
+                    />
+                    <ScopeOption
+                      checked={field.value === "variety"}
+                      icon={scopeVarietyIcon}
+                      inputId="scope-variety"
+                      title="Theo giống cụ thể"
+                      value="variety"
+                      description={scopeVarietyDescription}
+                      onClick={() => {
+                        field.onChange("variety");
+                        setValue("variety", "");
+                      }}
+                    />
+                  </RadioGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <div className="space-y-2">
           <Label className="text-sm font-semibold">
             {isPlant ? "Loại cây trồng" : "Đối tượng nuôi"}
           </Label>
-          <SelectionCard
-            title={selectionTitle}
-            subtitle={selectionSubtitle}
-            image={selectedPrimary?.image}
-            fallbackIcon={primaryFallbackIcon}
-            group={selectedPrimary?.group}
-            detail={selectionDetail}
-            placeholder={
-              isPlant ? "Chọn loại cây trong dialog" : "Chọn đối tượng nuôi trong dialog"
-            }
-            showSecondary={formData.scope === "variety"}
-            secondaryTitle={varietyTitle}
-            secondarySubtitle={varietySubtitle}
-            secondaryPlaceholder={
-              isPlant ? "Chọn giống cây trong dialog" : "Chọn giống / dòng trong dialog"
-            }
-            secondaryDetail={varietyDetail}
-            secondaryGroup={
-              formData.scope === "variety" && selectedChild?.group ? selectedChild.group : undefined
-            }
-            secondaryDisabled={!selectedPrimary}
-            onPrimaryClick={() => setDialogOpen(true)}
-            onSecondaryClick={() => {
-              if (!selectedPrimary) return;
-              setDialogOpen(true);
-            }}
+          <FormField
+            control={control}
+            name="cropId"
+            render={() => (
+              <FormItem>
+                <FormControl>
+                  <SelectionCard
+                    title={selectionTitle}
+                    subtitle={selectionSubtitle}
+                    image={selectedPrimary?.image}
+                    fallbackIcon={primaryFallbackIcon}
+                    group={selectedPrimary?.group}
+                    detail={selectionDetail}
+                    placeholder={
+                      isPlant
+                        ? "Chọn loại cây trong dialog"
+                        : "Chọn đối tượng nuôi trong dialog"
+                    }
+                    showSecondary={watchedScope === "variety"}
+                    secondaryTitle={varietyTitle}
+                    secondarySubtitle={varietySubtitle}
+                    secondaryPlaceholder={
+                      isPlant
+                        ? "Chọn giống cây trong dialog"
+                        : "Chọn giống / dòng trong dialog"
+                    }
+                    secondaryDetail={varietyDetail}
+                    secondaryGroup={
+                      watchedScope === "variety" && selectedChild?.group
+                        ? selectedChild.group
+                        : undefined
+                    }
+                    secondaryDisabled={!selectedPrimary}
+                    onPrimaryClick={() => setDialogOpen(true)}
+                    onSecondaryClick={() => {
+                      if (!selectedPrimary) return;
+                      setDialogOpen(true);
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
       </div>
@@ -403,28 +491,34 @@ export function GrowthCycleBasicInfoStep({
       <GrowthCycleHierarchyDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        title={isPlant ? "Chọn loại và giống cây" : "Chọn đối tượng nuôi và giống / dòng"}
+        title={
+          isPlant
+            ? "Chọn loại và giống cây"
+            : "Chọn đối tượng nuôi và giống / dòng"
+        }
         description={
           isPlant
             ? "Chọn loại cây ở trên, sau đó chọn giống ở bên dưới nếu cần."
             : "Chọn đối tượng nuôi ở trên, sau đó chọn giống / dòng ở bên dưới nếu cần."
         }
         searchPlaceholder={
-          isPlant ? "Tìm loại cây hoặc giống..." : "Tìm đối tượng nuôi hoặc giống..."
+          isPlant
+            ? "Tìm loại cây hoặc giống..."
+            : "Tìm đối tượng nuôi hoặc giống..."
         }
-        selectedPrimaryId={formData.cropId}
-        selectedChildId={formData.variety || ""}
+        selectedPrimaryId={watchedCropId}
+        selectedChildId={watchedVariety || ""}
         primaryOptions={primaryOptions}
         childOptions={childOptions}
         primaryLabel={isPlant ? "Loại cây trồng" : "Đối tượng nuôi"}
         childLabel={isPlant ? "Giống cây trồng" : "Giống / dòng"}
-        showChildSection={formData.scope === "variety"}
+        showChildSection={watchedScope === "variety"}
         onConfirm={({ primary, child }) => {
-          onCropChange(primary.id);
-          if (formData.scope === "variety") {
-            onVarietyChange(child?.id || "");
+          setValue("cropId", primary.id, { shouldValidate: true });
+          if (watchedScope === "variety") {
+            setValue("variety", child?.id || "", { shouldValidate: true });
           } else {
-            onVarietyChange("");
+            setValue("variety", "", { shouldValidate: true });
           }
         }}
       />

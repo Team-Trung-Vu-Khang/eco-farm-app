@@ -1,10 +1,10 @@
-import { useEffect } from "react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
 import { Plus } from "lucide-react";
 import { useGroupCropPage } from "./hooks/useGroupCropPage";
 import { groupCropColumns } from "./data/columns";
@@ -20,7 +20,6 @@ export default function GroupCropPage() {
     setDeleteOpen,
     editItem,
     formData,
-    setFormData,
     handleAdd,
     handleEdit,
     handleDelete,
@@ -29,14 +28,7 @@ export default function GroupCropPage() {
     isPending,
   } = useGroupCropPage();
 
-  // Workaround for Radix UI Dialog bug where pointer-events: none is left on body
-  useEffect(() => {
-    if (!formOpen && !deleteOpen) {
-      setTimeout(() => {
-        document.body.style.pointerEvents = "auto";
-      }, 500);
-    }
-  }, [formOpen, deleteOpen]);
+  useDialogBugWorkaround([formOpen, deleteOpen]);
 
   return (
     <AdminLayout
@@ -72,8 +64,7 @@ export default function GroupCropPage() {
         open={formOpen}
         onOpenChange={setFormOpen}
         isEdit={!!editItem}
-        formData={formData}
-        setFormData={setFormData}
+        initialData={formData}
         onSubmit={handleSubmit}
         isPending={isPending}
       />

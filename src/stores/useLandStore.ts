@@ -5,7 +5,7 @@ export interface Land {
   id: number;
   code: string;
   name: string;
-  image?: string;
+  imageUrl?: string;
   description: string;
   status: "active" | "inactive";
   createdAt: string;
@@ -16,7 +16,7 @@ const initialLands: Land[] = [
     id: 1,
     code: "phusa",
     name: "Đất phù sa",
-    image: "https://sudospaces.com/vietchem/2024/03/dat-phu-sa-1.jpg",
+    imageUrl: "https://sudospaces.com/vietchem/2024/03/dat-phu-sa-1.jpg",
     description:
       "Giàu dinh dưỡng, tơi xốp, khả năng giữ nước tốt, thường được bồi đắp liên tục tại các lưu vực sông ngòi.",
     status: "active",
@@ -26,7 +26,7 @@ const initialLands: Land[] = [
     id: 2,
     code: "feralit",
     name: "Đất feralit",
-    image:
+    imageUrl:
       "https://cdn.thuviennhadat.vn/upload/hinh-anh-bai-viet/TTMN/thang-04-2025/17-4-2025/dat-feralit-o-nuoc-ta-thuong-bi-chua-chu-yeu-la-do-dau.jpg",
     description:
       "Thường có màu đỏ hoặc vàng, giàu sắt và nhôm. Phổ biến ở vùng đồi núi nhưng rất dễ bị xói mòn nếu thiếu thảm thực vật che phủ.",
@@ -37,7 +37,7 @@ const initialLands: Land[] = [
     id: 3,
     code: "mun",
     name: "Đất mùn",
-    image: "https://sfarm.vn/wp-content/uploads/2021/01/mun-huu-co-la-gi.jpg",
+    imageUrl: "https://sfarm.vn/wp-content/uploads/2021/01/mun-huu-co-la-gi.jpg",
     description:
       "Rất giàu chất hữu cơ, kết cấu tơi xốp, thường hình thành ở các vùng đồi núi cao có điều kiện khí hậu mát mẻ.",
     status: "active",
@@ -47,7 +47,7 @@ const initialLands: Land[] = [
     id: 4,
     code: "xam",
     name: "Đất xám",
-    image:
+    imageUrl:
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRwQYFS5DSBfO3vTYZvEb7LgDn2PkbfkBUPeA&s",
     description:
       "Có kết cấu nhẹ, nghèo dinh dưỡng, thường xuyên khô cằn và cần có biện pháp cải tạo phù hợp để có thể canh tác nông nghiệp.",
@@ -58,7 +58,7 @@ const initialLands: Land[] = [
     id: 5,
     code: "phen",
     name: "Đất phèn",
-    image: "https://tanhuyhoang.net/wp-content/uploads/2021/10/Picture44.jpg",
+    imageUrl: "https://tanhuyhoang.net/wp-content/uploads/2021/10/Picture44.jpg",
     description:
       "Có độ chua (pH) cao, chứa nhiều hợp chất phèn độc hại cho rễ cây, cần được cải tạo kỹ lưỡng bằng phương pháp thau chua rửa phèn hoặc bón vôi.",
     status: "active",
@@ -68,7 +68,7 @@ const initialLands: Land[] = [
     id: 6,
     code: "cat",
     name: "Đất cát",
-    image:
+    imageUrl:
       "https://chaunhuatrongcayblog.wordpress.com/wp-content/uploads/2023/09/image-6.png",
     description:
       "Kết cấu rời rạc, khả năng thoát nước và hấp thụ nhiệt rất nhanh nhưng lại nghèo chất dinh dưỡng.",
@@ -79,7 +79,7 @@ const initialLands: Land[] = [
     id: 7,
     code: "bazan",
     name: "Đất bazan",
-    image:
+    imageUrl:
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlmrvqQAVCVUx0FvNxr-07y7p_B9K2dnaUMg&s",
     description:
       "Đặc trưng bởi màu đỏ nâu, vô cùng tơi xốp, dồi dào dinh dưỡng và giữ ẩm tốt. Rất phù hợp để trồng cây công nghiệp lâu năm.",
@@ -90,7 +90,7 @@ const initialLands: Land[] = [
     id: 8,
     code: "man",
     name: "Đất mặn",
-    image:
+    imageUrl:
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSIAYBsCMJ6MMb0Bkh1U-3RvBomWf7Nyb9XIQ&s",
     description:
       "Chứa hàm lượng muối hòa tan cao, cản trở sự sinh trưởng của thực vật thông thường. Cần cải tạo bằng rửa mặn hoặc chuyên canh cây chịu mặn.",

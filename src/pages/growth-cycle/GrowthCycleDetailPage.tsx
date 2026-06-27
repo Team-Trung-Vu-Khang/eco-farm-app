@@ -6,10 +6,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ArrowLeft, Calendar, Edit, FileText, Fish, Layers, Leaf, Sprout } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  Edit,
+  FileText,
+  Fish,
+  Layers,
+  Leaf,
+  Sprout,
+} from "lucide-react";
+import { formatDaysToDuration } from "./utils/duration";
 import { Link, useParams } from "wouter";
-import useGrowthCycleStore from "../../stores/useGrowthCycleStore";
-import useVarietyStore from "../../stores/useVarietyStore";
+import { useGrowthCycleTemplateById } from "../../features/foundation";
 
 interface GrowthCycleDetailPageProps {
   id?: string;
@@ -20,24 +29,34 @@ export default function GrowthCycleDetailPage({
 }: GrowthCycleDetailPageProps) {
   const params = useParams<{ id: string }>();
   const id = propId ?? params?.id;
-  const { getGrowthCycleById } = useGrowthCycleStore();
-  const { getVarietyById } = useVarietyStore();
+  const { data: cycle, isLoading } = useGrowthCycleTemplateById(Number(id), {
+    enabled: !!id,
+  });
 
-  const cycle = getGrowthCycleById(id || "");
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin mb-3" />
+        <p className="text-muted-foreground">Đang tải...</p>
+      </div>
+    );
+  }
 
   if (!cycle) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <Sprout className="w-12 h-12 text-muted-foreground/40 mb-3" />
-        <p className="text-muted-foreground">Không tìm thấy chu kỳ sinh trưởng.</p>
+        <p className="text-muted-foreground">
+          Không tìm thấy chu kỳ sinh trưởng.
+        </p>
       </div>
     );
   }
 
-  const varietyName = cycle.variety
-    ? getVarietyById(cycle.variety)?.varietyName || cycle.variety
-    : null;
-  const isPlant = (cycle.cycleType ?? "plant") === "plant";
+  const metadata = cycle.metadataJson || {};
+
+  const varietyName = cycle.cropVarietyName || null;
+  const isPlant = (metadata.cycleType ?? "plant") === "plant";
 
   return (
     <div className="space-y-6">
@@ -53,7 +72,9 @@ export default function GrowthCycleDetailPage({
             )}
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-2xl font-bold">Chi tiết chu kỳ sinh trưởng</h2>
+                <h2 className="text-2xl font-bold">
+                  Chi tiết chu kỳ sinh trưởng
+                </h2>
                 <Badge variant={isPlant ? "default" : "secondary"}>
                   {isPlant ? "Thực vật" : "Vật nuôi / Thủy sản"}
                 </Badge>
@@ -79,8 +100,8 @@ export default function GrowthCycleDetailPage({
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Phạm vi</span>
-              <Badge variant={cycle.scope === "crop" ? "default" : "secondary"}>
-                {cycle.scope === "crop" ? "Theo loại cây" : "Theo giống"}
+              <Badge variant={cycle.cropVarietyId ? "secondary" : "default"}>
+                {!cycle.cropVarietyId ? "Theo loại cây" : "Theo giống"}
               </Badge>
             </div>
             <div className="flex items-center justify-between">
@@ -108,12 +129,18 @@ export default function GrowthCycleDetailPage({
               </div>
             )}
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Tổng thời gian</span>
-              <Badge variant="secondary">{cycle.totalDays} ngày</Badge>
+              <span className="text-sm text-muted-foreground">
+                Tổng thời gian
+              </span>
+              <Badge variant="secondary">{cycle.expectedDays || 0} ngày</Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Số giai đoạn</span>
-              <span className="font-medium">{cycle.numStages} giai đoạn</span>
+              <span className="text-sm text-muted-foreground">
+                Số giai đoạn
+              </span>
+              <span className="font-medium">
+                {cycle.stages?.length || 0} giai đoạn
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -147,24 +174,61 @@ export default function GrowthCycleDetailPage({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {cycle.stages.map((stage, index) => (
-            <div
-              key={stage.id}
-              className="rounded-lg border p-4 flex items-center justify-between"
-            >
-              <div className="space-y-1">
-                <p className="font-semibold">
-                  Giai đoạn {index + 1}: {stage.name}
-                </p>
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  {stage.duration} ngày
-                </p>
+          {cycle.stages?.map((stage, index) => (
+            <div key={stage.id} className="rounded-lg border p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="font-semibold">
+                    Giai đoạn {index + 1}: {stage.name}
+                  </p>
+                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    {formatDaysToDuration(stage.durationDays)}
+                  </p>
+                </div>
+                {stage.document?.type === "pdf" ? (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <FileText className="w-3 h-3 text-blue-500" />
+                    Tài liệu đính kèm
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <FileText className="w-3 h-3" />
+                    Soạn thảo
+                  </Badge>
+                )}
               </div>
-              <Badge variant="outline" className="flex items-center gap-1">
-                <FileText className="w-3 h-3" />
-                {stage.usePdf ? "PDF" : "Soạn thảo"}
-              </Badge>
+
+              {/* Document Content */}
+              {stage.document?.type === "pdf" && stage.document.fileUrl && (
+                <div className="mt-2 flex items-center gap-2 rounded-md bg-slate-50 p-3 text-sm border border-slate-100">
+                  <FileText className="w-5 h-5 text-blue-500 shrink-0" />
+                  <a
+                    href={stage.document.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline font-medium line-clamp-1"
+                    title={stage.document.fileName || "Tài liệu đính kèm"}
+                  >
+                    {stage.document.fileName || "Tài liệu đính kèm"}
+                  </a>
+                </div>
+              )}
+              {stage.document?.type === "editor" && stage.document.content && (
+                <div
+                  className="prose prose-sm max-w-none mt-2 text-slate-700 border-t pt-3"
+                  dangerouslySetInnerHTML={{ __html: stage.document.content }}
+                />
+              )}
+              {/* Fallback for older data that still uses description for HTML */}
+              {!stage.document &&
+                stage.description &&
+                stage.description !== stage.name && (
+                  <div
+                    className="prose prose-sm max-w-none mt-2 text-slate-700 border-t pt-3"
+                    dangerouslySetInnerHTML={{ __html: stage.description }}
+                  />
+                )}
             </div>
           ))}
         </CardContent>
