@@ -14,6 +14,9 @@ import type {
   CertificateStandardCreateRequest,
   CertificateStandardRecord,
   CertificateStandardUpdateRequest,
+  EquipmentToolGroupCreateRequest,
+  EquipmentToolGroupRecord,
+  EquipmentToolGroupUpdateRequest,
   MasterDataCreateRequest,
   MasterDataDeleteResponse,
   MasterDataPageResponse,
@@ -132,6 +135,45 @@ export const masterDataApi = {
     apiClient
       .get<BusinessLineRecord>(`${MASTER_DATA_PATHS.businessLines}/${id}`)
       .then((response) => response.data),
+
+  listEquipmentToolGroups: (params?: MasterDataQueryParams) =>
+    apiClient
+      .get<MasterDataPageResponse<EquipmentToolGroupRecord>>(
+        MASTER_DATA_PATHS.equipmentToolGroups,
+        { params },
+      )
+      .then((response) => response.data),
+
+  getEquipmentToolGroupById: (id: number | string) =>
+    apiClient
+      .get<EquipmentToolGroupRecord>(
+        `${MASTER_DATA_PATHS.equipmentToolGroups}/${id}`,
+      )
+      .then((response) => response.data),
+
+  createEquipmentToolGroup: (payload: EquipmentToolGroupCreateRequest) =>
+    apiClient
+      .post<EquipmentToolGroupRecord>(
+        MASTER_DATA_PATHS.equipmentToolGroups,
+        payload,
+      )
+      .then((response) => response.data),
+
+  updateEquipmentToolGroup: (
+    id: number | string,
+    payload: EquipmentToolGroupUpdateRequest,
+  ) =>
+    apiClient
+      .put<EquipmentToolGroupRecord>(
+        `${MASTER_DATA_PATHS.equipmentToolGroups}/${id}`,
+        payload,
+      )
+      .then((response) => response.data),
+
+  deleteEquipmentToolGroup: (id: number | string): Promise<void> =>
+    apiClient
+      .delete(`${MASTER_DATA_PATHS.equipmentToolGroups}/${id}`)
+      .then(() => undefined),
 
   createCertificateIssuer: (payload: CertificateIssuerCreateRequest) =>
     apiClient

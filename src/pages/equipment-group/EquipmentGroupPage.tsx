@@ -4,18 +4,27 @@ import {
   Button,
   DataTable,
   DeleteDialog,
-  FormDialog,
-  type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { EquipmentGroupForm } from "./components/EquipmentGroupForm";
+import { EquipmentGroupFormDialog } from "./components/EquipmentGroupFormDialog";
+import { equipmentGroupColumns } from "./data/columns.tsx";
 import { useEquipmentGroupForm } from "./hooks/useEquipmentGroupForm";
-import type { EquipmentGroup } from "./types";
+
+const EQUIPMENT_GROUP_STATUS_OPTIONS = [
+  { value: "active", label: "Hoạt động" },
+  { value: "inactive", label: "Ngừng hoạt động" },
+  { value: "archived", label: "Đã lưu trữ" },
+] as const;
 
 const EquipmentGroupPage = () => {
   const {
     data,
-    formData,
-    setFormData,
+    loading,
+    error,
+    response,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
     formOpen,
     setFormOpen,
     deleteOpen,
@@ -26,13 +35,9 @@ const EquipmentGroupPage = () => {
     handleDelete,
     handleSubmit,
     handleConfirmDelete,
+    handleSearch,
+    handleFilterChange,
   } = useEquipmentGroupForm();
-
-  const columns: Column<EquipmentGroup>[] = [
-    { key: "code", label: "Mã nhóm" },
-    { key: "name", label: "Tên nhóm" },
-    { key: "description", label: "Mô tả" },
-  ];
 
   return (
     <AdminLayout
@@ -46,27 +51,43 @@ const EquipmentGroupPage = () => {
         </Button>
       }
     >
-      <DataTable
-        columns={columns}
-        data={data}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm nhóm máy móc..."
-      />
+      {error ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+          ⚠️ {error}
+        </div>
+      ) : (
+        <DataTable
+          columns={equipmentGroupColumns}
+          data={data}
+          searchable
+          searchPlaceholder="Tìm kiếm nhóm máy móc..."
+          pageSize={pageSize}
+          currentIndex={currentIndex}
+          totalElements={response?.totalElements}
+          totalPages={response?.totalPages}
+          onSearch={handleSearch}
+          onPageSize={setPageSize}
+          onIndexChange={setCurrentIndex}
+          onFilterChange={handleFilterChange}
+          filters={[
+            {
+              key: "status",
+              label: "Trạng thái",
+              options: [...EQUIPMENT_GROUP_STATUS_OPTIONS],
+            },
+          ]}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          loading={loading}
+        />
+      )}
 
-      <FormDialog
+      <EquipmentGroupFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
-        title={editItem ? "Chỉnh sửa nhóm máy móc" : "Thêm nhóm máy móc mới"}
+        editItem={editItem}
         onSubmit={handleSubmit}
-      >
-        <EquipmentGroupForm
-          formData={formData}
-          onChange={(updates) =>
-            setFormData((prev) => ({ ...prev, ...updates }))
-          }
-        />
-      </FormDialog>
+      />
 
       <DeleteDialog
         open={deleteOpen}
