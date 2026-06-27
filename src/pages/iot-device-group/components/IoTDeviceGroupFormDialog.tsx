@@ -1,242 +1,215 @@
-import { useState } from "react";
+import { useEffect, useMemo } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  Badge,
-  Button,
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  FormDialog,
   Input,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Layers3, Plus, Settings2 } from "lucide-react";
-import { IoTDeviceTypeSelectorDialog } from "./IoTDeviceTypeSelectorDialog";
-import type { IoTDeviceGroupFormData } from "../types";
+import { Controller, useForm, type SubmitHandler } from "react-hook-form";
+import type { IoTDeviceGroupRecord } from "@/features/master-data/types/master-data.type";
+import {
+  IOT_DEVICE_GROUP_FORM_STATUSES,
+  iotDeviceGroupFormSchema,
+  type IoTDeviceGroupFormInput,
+  type IoTDeviceGroupFormValues,
+} from "../data/iot-device-group-form.schema";
+import { emptyIoTDeviceGroupFormData } from "../data/constants";
 
 interface IoTDeviceGroupFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  isEdit: boolean;
-  formData: IoTDeviceGroupFormData;
-  setFormData: (data: IoTDeviceGroupFormData) => void;
-  onSubmit: () => void;
+  editItem: IoTDeviceGroupRecord | null;
+  onSubmit: (data: IoTDeviceGroupFormValues) => Promise<void> | void;
+}
+
+function normalizeStatus(
+  status: IoTDeviceGroupRecord["status"] | null | undefined,
+): IoTDeviceGroupFormValues["status"] {
+  if (IOT_DEVICE_GROUP_FORM_STATUSES.includes(status as never)) {
+    return status as IoTDeviceGroupFormValues["status"];
+  }
+
+  return "active";
 }
 
 export function IoTDeviceGroupFormDialog({
   open,
   onOpenChange,
-  isEdit,
-  formData,
-  setFormData,
+  editItem,
   onSubmit,
 }: IoTDeviceGroupFormDialogProps) {
-  const [isTypeSelectorOpen, setIsTypeSelectorOpen] = useState(false);
+  const defaultValues = useMemo<IoTDeviceGroupFormInput>(
+    () =>
+      editItem
+        ? {
+            code: editItem.code ?? "",
+            name: editItem.name ?? "",
+            description: editItem.description ?? "",
+            status: normalizeStatus(editItem.status),
+          }
+        : {
+            ...emptyIoTDeviceGroupFormData,
+            status: "active",
+          },
+    [editItem],
+  );
+
+  const {
+    control,
+    handleSubmit: handleRHFSubmit,
+    clearErrors,
+    reset,
+    formState: { errors },
+  } = useForm<IoTDeviceGroupFormInput, unknown, IoTDeviceGroupFormValues>({
+    defaultValues,
+    resolver: zodResolver(iotDeviceGroupFormSchema),
+  });
+
+  useEffect(() => {
+    if (open) {
+      reset(defaultValues);
+      clearErrors();
+    }
+  }, [clearErrors, defaultValues, open, reset]);
+
+  const submitForm: SubmitHandler<IoTDeviceGroupFormValues> = (values) => {
+    onSubmit({
+      ...values,
+      status: editItem ? values.status : "active",
+    });
+  };
 
   return (
-    <>
-      <Dialog
-        open={open}
-        onOpenChange={(nextOpen) => {
-          if (!nextOpen) {
-            setIsTypeSelectorOpen(false);
-          }
-          onOpenChange(nextOpen);
-        }}
-      >
-        <DialogContent className="flex h-[90vh] max-h-[90vh] max-w-4xl flex-col overflow-hidden rounded-2xl border-none p-0 shadow-2xl">
-          <DialogHeader className="shrink-0 border-b bg-slate-50 px-6 py-5">
-            <DialogTitle className="flex items-center gap-2 text-lg">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <Layers3 className="h-4 w-4" />
-              </div>
-              {isEdit ? "Chỉnh sửa nhóm IoT" : "Thêm nhóm IoT mới"}
-            </DialogTitle>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Cập nhật thông tin nhóm, loại thiết bị hỗ trợ và số lượng triển khai dự kiến.
-            </p>
-          </DialogHeader>
-
-          <div className="min-h-0 flex-1 overflow-y-auto bg-white px-6 py-6">
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-              <div className="space-y-6 lg:col-span-8">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="code">Mã nhóm</Label>
-                    <Input
-                      id="code"
-                      value={formData.code}
-                      onChange={(event) =>
-                        setFormData({ ...formData, code: event.target.value })
-                      }
-                      placeholder="VD: ENV_SENSOR"
-                      className="h-11 rounded-xl bg-slate-50"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Tên nhóm</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(event) =>
-                        setFormData({ ...formData, name: event.target.value })
-                      }
-                      placeholder="VD: Nhóm cảm biến môi trường"
-                      className="h-11 rounded-xl bg-slate-50"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Mô tả</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(event) =>
-                      setFormData({
-                        ...formData,
-                        description: event.target.value,
-                      })
-                    }
-                    placeholder="Mô tả phạm vi quản lý, vùng triển khai hoặc chức năng của nhóm..."
-                    rows={4}
-                    className="rounded-xl bg-slate-50"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="plannedDeviceCount">
-                      Số thiết bị dự kiến
-                    </Label>
-                    <Input
-                      id="plannedDeviceCount"
-                      type="number"
-                      min={1}
-                      value={formData.plannedDeviceCount}
-                      onChange={(event) =>
-                        setFormData({
-                          ...formData,
-                          plannedDeviceCount: Number(event.target.value) || 1,
-                        })
-                      }
-                      placeholder="VD: 12"
-                      className="h-11 rounded-xl bg-slate-50"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="status">Trạng thái</Label>
-                    <Select
-                      value={formData.status}
-                      onValueChange={(value: "active" | "inactive") =>
-                        setFormData({ ...formData, status: value })
-                      }
-                    >
-                      <SelectTrigger
-                        id="status"
-                        className="h-11 rounded-xl bg-slate-50"
-                      >
-                        <SelectValue placeholder="Chọn trạng thái" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Đang hoạt động</SelectItem>
-                        <SelectItem value="inactive">Tạm dừng</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4 lg:col-span-4">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <Label className="text-sm font-semibold text-slate-700">
-                        Loại thiết bị hỗ trợ
-                      </Label>
-                      <p className="mt-1 text-xs text-slate-500">
-                        Chọn một hoặc nhiều loại thiết bị cho nhóm này.
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="shrink-0 rounded-xl"
-                      onClick={() => setIsTypeSelectorOpen(true)}
-                    >
-                      <Settings2 className="mr-2 h-4 w-4" />
-                      Chọn loại
-                    </Button>
-                  </div>
-
-                  <div className="mt-4 space-y-3">
-                    {formData.deviceTypes.length > 0 ? (
-                      formData.deviceTypes.map((type) => (
-                        <div
-                          key={type}
-                          className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3"
-                        >
-                          <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-md bg-emerald-600 text-white">
-                            <Plus className="h-3 w-3 rotate-45" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-semibold text-slate-900">
-                              {type}
-                            </div>
-                            <div className="text-xs text-slate-500">
-                              {type === "Sensor"
-                                ? "Đo lường và giám sát"
-                                : type === "Actuator"
-                                  ? "Điều khiển thiết bị"
-                                  : type === "Gateway"
-                                    ? "Kết nối và chuyển tiếp"
-                                    : "Điều phối trung tâm"}
-                            </div>
-                          </div>
-                          <Badge
-                            variant="secondary"
-                            className="rounded-full bg-white text-emerald-700"
-                          >
-                            Đã chọn
-                          </Badge>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
-                        Chưa chọn loại thiết bị nào.
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-              </div>
-            </div>
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={editItem ? "Chỉnh sửa nhóm IoT" : "Thêm nhóm IoT mới"}
+      onSubmit={handleRHFSubmit(submitForm)}
+    >
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="code" required>
+              Mã nhóm
+            </Label>
+            <Controller
+              control={control}
+              name="code"
+              render={({ field }) => (
+                <Input
+                  id="code"
+                  placeholder="VD: ENV_SENSOR"
+                  aria-invalid={!!errors.code}
+                  value={field.value}
+                  onChange={(e) => {
+                    clearErrors("code");
+                    field.onChange(e.target.value.toUpperCase());
+                  }}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                />
+              )}
+            />
+            {errors.code ? (
+              <p className="text-xs text-red-600">{errors.code.message}</p>
+            ) : null}
           </div>
 
-          <DialogFooter className="shrink-0 border-t bg-white px-6 py-4">
-            <Button variant="ghost" onClick={() => onOpenChange(false)}>
-              Hủy
-            </Button>
-            <Button onClick={onSubmit} className="bg-primary hover:bg-primary/90">
-              Lưu
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <div className="space-y-2">
+            <Label htmlFor="name" required>
+              Tên nhóm
+            </Label>
+            <Controller
+              control={control}
+              name="name"
+              render={({ field }) => (
+                <Input
+                  id="name"
+                  placeholder="VD: Nhóm cảm biến môi trường"
+                  aria-invalid={!!errors.name}
+                  value={field.value}
+                  onChange={(e) => {
+                    clearErrors("name");
+                    field.onChange(e.target.value);
+                  }}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                />
+              )}
+            />
+            {errors.name ? (
+              <p className="text-xs text-red-600">{errors.name.message}</p>
+            ) : null}
+          </div>
+        </div>
 
-      <IoTDeviceTypeSelectorDialog
-        open={isTypeSelectorOpen}
-        onOpenChange={setIsTypeSelectorOpen}
-        selectedTypes={formData.deviceTypes}
-        onSelect={(types) => setFormData({ ...formData, deviceTypes: types })}
-      />
-    </>
+        {editItem ? (
+          <div className="space-y-2">
+            <Label htmlFor="status" required>
+              Trạng thái
+            </Label>
+            <Controller
+              control={control}
+              name="status"
+              render={({ field }) => (
+                <select
+                  id="status"
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={field.value}
+                  onChange={(e) => {
+                    clearErrors("status");
+                    field.onChange(
+                      e.target.value as (typeof IOT_DEVICE_GROUP_FORM_STATUSES)[number],
+                    );
+                  }}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                >
+                  <option value="active">Hoạt động</option>
+                  <option value="inactive">Ngừng hoạt động</option>
+                  <option value="archived">Đã lưu trữ</option>
+                </select>
+              )}
+            />
+            {errors.status ? (
+              <p className="text-xs text-red-600">{errors.status.message}</p>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Mô tả</Label>
+          <Controller
+            control={control}
+            name="description"
+            render={({ field }) => (
+              <Textarea
+                id="description"
+                placeholder="Mô tả chi tiết về nhóm thiết bị IoT..."
+                rows={3}
+                aria-invalid={!!errors.description}
+                value={field.value}
+                onChange={(e) => {
+                  clearErrors("description");
+                  field.onChange(e.target.value);
+                }}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+              />
+            )}
+          />
+          {errors.description ? (
+            <p className="text-xs text-red-600">
+              {errors.description.message}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </FormDialog>
   );
 }

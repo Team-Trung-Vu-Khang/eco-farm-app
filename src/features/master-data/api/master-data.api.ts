@@ -17,6 +17,9 @@ import type {
   EquipmentToolGroupCreateRequest,
   EquipmentToolGroupRecord,
   EquipmentToolGroupUpdateRequest,
+  IoTDeviceGroupCreateRequest,
+  IoTDeviceGroupRecord,
+  IoTDeviceGroupUpdateRequest,
   MasterDataCreateRequest,
   MasterDataDeleteResponse,
   MasterDataPageResponse,
@@ -173,6 +176,45 @@ export const masterDataApi = {
   deleteEquipmentToolGroup: (id: number | string): Promise<void> =>
     apiClient
       .delete(`${MASTER_DATA_PATHS.equipmentToolGroups}/${id}`)
+      .then(() => undefined),
+
+  listIoTDeviceGroups: (params?: MasterDataQueryParams) =>
+    apiClient
+      .get<MasterDataPageResponse<IoTDeviceGroupRecord>>(
+        `${MASTER_DATA_PATHS.base}/iot-device-groups`,
+        { params },
+      )
+      .then((response) => response.data),
+
+  getIoTDeviceGroupById: (id: number | string) =>
+    apiClient
+      .get<IoTDeviceGroupRecord>(
+        `${MASTER_DATA_PATHS.base}/iot-device-groups/${id}`,
+      )
+      .then((response) => response.data),
+
+  createIoTDeviceGroup: (payload: IoTDeviceGroupCreateRequest) =>
+    apiClient
+      .post<IoTDeviceGroupRecord>(
+        `${MASTER_DATA_PATHS.base}/iot-device-groups`,
+        payload,
+      )
+      .then((response) => response.data),
+
+  updateIoTDeviceGroup: (
+    id: number | string,
+    payload: IoTDeviceGroupUpdateRequest,
+  ) =>
+    apiClient
+      .put<IoTDeviceGroupRecord>(
+        `${MASTER_DATA_PATHS.base}/iot-device-groups/${id}`,
+        payload,
+      )
+      .then((response) => response.data),
+
+  deleteIoTDeviceGroup: (id: number | string): Promise<void> =>
+    apiClient
+      .delete(`${MASTER_DATA_PATHS.base}/iot-device-groups/${id}`)
       .then(() => undefined),
 
   createCertificateIssuer: (payload: CertificateIssuerCreateRequest) =>

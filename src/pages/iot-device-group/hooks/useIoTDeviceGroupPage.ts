@@ -1,148 +1,145 @@
 import { useMemo, useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import useIoTDeviceStore from "../../../stores/useIoTDeviceStore";
-import {
-  emptyIoTDeviceGroupFormData,
-  initialIoTDeviceGroups,
-} from "../data/constants";
+import { useMasterData, useMasterDataMutations } from "@/features/master-data";
 import type {
-  IoTDeviceGroup,
-  IoTDeviceGroupFormData,
-} from "../types";
+  IoTDeviceGroupRecord,
+  MasterDataStatus,
+} from "@/features/master-data/types/master-data.type";
+import type { IoTDeviceGroupFormValues } from "../data/iot-device-group-form.schema";
+
+const ALL_STATUS = "all" as const;
+const DEFAULT_PAGE_SIZE = 10;
+
+type IoTDeviceGroupStatusFilter = MasterDataStatus | typeof ALL_STATUS;
+
+function buildPayload(values: IoTDeviceGroupFormValues) {
+  return {
+    code: values.code.trim().toUpperCase(),
+    name: values.name.trim(),
+    description: values.description.trim(),
+    displayOrder: 1,
+    status: values.status,
+    metadataJson: {
+      source: "manual",
+    },
+  };
+}
 
 export function useIoTDeviceGroupPage() {
   const { toast } = useToast();
-  const { devices } = useIoTDeviceStore();
-
-  const [data, setData] = useState<IoTDeviceGroup[]>(initialIoTDeviceGroups);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<IoTDeviceGroupStatusFilter>(ALL_STATUS);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [currentIndex, setCurrentIndex] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [editItem, setEditItem] = useState<IoTDeviceGroup | null>(null);
-  const [deleteItem, setDeleteItem] = useState<IoTDeviceGroup | null>(null);
-  const [formData, setFormData] = useState<IoTDeviceGroupFormData>(
-    emptyIoTDeviceGroupFormData,
+  const [editItem, setEditItem] = useState<IoTDeviceGroupRecord | null>(null);
+  const [deleteItem, setDeleteItem] = useState<IoTDeviceGroupRecord | null>(
+    null,
   );
 
-  const actualDeviceCountByGroup = useMemo(() => {
-    const counts = new Map<number, number>();
+  const query = useMasterData("iot-device-groups", {
+    params: {
+      keyword: search.trim() || undefined,
+      status: status === ALL_STATUS ? undefined : status,
+      page: Math.max(currentIndex - 1, 0),
+      size: pageSize,
+    },
+  });
 
-    data.forEach((group) => {
-      const count = devices.filter((device) =>
-        group.deviceTypes.some(
-          (type) => device.type.toLowerCase() === type.toLowerCase(),
-        ),
-      ).length;
+  const { createMasterData, updateMasterData, deleteMasterData } =
+    useMasterDataMutations("iot-device-groups");
 
-      counts.set(group.id, count);
-    });
+  const data = useMemo(() => query.items, [query.items]);
 
-    return counts;
-  }, [data, devices]);
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setCurrentIndex(1);
+  };
 
-  const getActualDeviceCount = (groupId: number) =>
-    actualDeviceCountByGroup.get(groupId) ?? 0;
-
-  const stats = useMemo(() => {
-    const totalGroups = data.length;
-    const activeGroups = data.filter((group) => group.status === "active").length;
-    const plannedDevices = data.reduce(
-      (sum, group) => sum + group.plannedDeviceCount,
-      0,
-    );
-    const actualDevices = Array.from(actualDeviceCountByGroup.values()).reduce(
-      (sum, count) => sum + count,
-      0,
-    );
-    const onlineDevices = devices.filter(
-      (device) =>
-        data.some((group) =>
-          group.deviceTypes.some(
-            (type) => device.type.toLowerCase() === type.toLowerCase(),
-          ),
-        ) && device.status === "online",
-    ).length;
-    const alertDevices = devices.filter(
-      (device) =>
-        data.some((group) =>
-          group.deviceTypes.some(
-            (type) => device.type.toLowerCase() === type.toLowerCase(),
-          ),
-        ) && (device.status === "low_battery" || device.status === "error"),
-    ).length;
-
-    return {
-      totalGroups,
-      activeGroups,
-      plannedDevices,
-      actualDevices,
-      onlineDevices,
-      alertDevices,
-    };
-  }, [actualDeviceCountByGroup, data, devices]);
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "status") {
+      setStatus(value === ALL_STATUS ? ALL_STATUS : (value as MasterDataStatus));
+      setCurrentIndex(1);
+    }
+  };
 
   const handleAdd = () => {
     setEditItem(null);
-    setFormData(emptyIoTDeviceGroupFormData);
     setFormOpen(true);
   };
 
-  const handleEdit = (item: IoTDeviceGroup) => {
+  const handleEdit = (item: IoTDeviceGroupRecord) => {
     setEditItem(item);
-    setFormData({
-      code: item.code,
-      name: item.name,
-      description: item.description,
-      deviceTypes: item.deviceTypes,
-      plannedDeviceCount: item.plannedDeviceCount,
-      status: item.status,
-    });
     setFormOpen(true);
   };
 
-  const handleDelete = (item: IoTDeviceGroup) => {
+  const handleDelete = (item: IoTDeviceGroupRecord) => {
     setDeleteItem(item);
     setDeleteOpen(true);
   };
 
-  const handleSubmit = () => {
-    const nextTimestamp = new Date().toISOString().split("T")[0];
+  const handleSubmit = async (values: IoTDeviceGroupFormValues) => {
+    const payload = buildPayload(values);
 
-    if (editItem) {
-      setData((prev) =>
-        prev.map((item) =>
-          item.id === editItem.id
-            ? { ...item, ...formData, updatedAt: nextTimestamp }
-            : item,
-        ),
-      );
+    if (!payload.code || !payload.name) {
       toast({
-        title: "Thành công",
-        description: "Đã cập nhật nhóm thiết bị IoT",
+        title: "Thiếu thông tin",
+        description: "Vui lòng nhập mã và tên nhóm IoT.",
+        variant: "destructive",
       });
-    } else {
-      const newItem: IoTDeviceGroup = {
-        id: Date.now(),
-        ...formData,
-        createdAt: nextTimestamp,
-        updatedAt: nextTimestamp,
-      };
-
-      setData((prev) => [newItem, ...prev]);
-      toast({
-        title: "Thành công",
-        description: "Đã thêm nhóm thiết bị IoT mới",
-      });
+      return;
     }
 
-    setFormOpen(false);
-  };
+    try {
+      if (editItem) {
+        await updateMasterData.mutateAsync({
+          id: editItem.id,
+          data: payload,
+        });
+      } else {
+        await createMasterData.mutateAsync(payload);
+      }
 
-  const handleConfirmDelete = () => {
-    if (deleteItem) {
-      setData((prev) => prev.filter((item) => item.id !== deleteItem.id));
       toast({
         title: "Thành công",
-        description: "Đã xóa nhóm thiết bị IoT",
+        description: editItem
+          ? "Đã cập nhật nhóm thiết bị IoT."
+          : "Đã thêm nhóm thiết bị IoT mới.",
+      });
+      setFormOpen(false);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+
+      toast({
+        title: editItem ? "Không thể cập nhật" : "Không thể thêm",
+        description: message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteItem) {
+      setDeleteOpen(false);
+      return;
+    }
+
+    try {
+      await deleteMasterData.mutateAsync(deleteItem.id);
+      toast({
+        title: "Thành công",
+        description: "Đã xóa nhóm thiết bị IoT.",
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+
+      toast({
+        title: "Không thể xóa",
+        description: message,
+        variant: "destructive",
       });
     }
 
@@ -152,20 +149,24 @@ export function useIoTDeviceGroupPage() {
 
   return {
     data,
+    loading: query.loading,
+    error: query.error,
+    response: query.response,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
     formOpen,
     setFormOpen,
     deleteOpen,
     setDeleteOpen,
     editItem,
-    deleteItem,
-    formData,
-    setFormData,
     handleAdd,
     handleEdit,
     handleDelete,
     handleSubmit,
     handleConfirmDelete,
-    getActualDeviceCount,
-    stats,
+    handleSearch,
+    handleFilterChange,
   };
 }

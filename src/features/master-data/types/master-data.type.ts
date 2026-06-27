@@ -289,6 +289,7 @@ export type CertificateIssuerRecord = MasterDataRecord<"certificate-issuers">;
 export type BusinessLineRecord = MasterDataRecord<"business-lines">;
 export type EquipmentToolGroupRecord =
   MasterDataRecord<"equipment-tool-groups">;
+export type IoTDeviceGroupRecord = MasterDataRecord<"iot-device-groups">;
 export type FertilizerGroupRecord = MasterDataRecord<"fertilizer-groups">;
 export type MaterialGroupRecord = MasterDataRecord<"material-groups">;
 export type MaterialGroupPageResponse =
@@ -314,6 +315,10 @@ export type EquipmentToolGroupCreateRequest =
   MasterDataCreateRequest<"equipment-tool-groups">;
 export type EquipmentToolGroupUpdateRequest =
   MasterDataUpdateRequest<"equipment-tool-groups">;
+export type IoTDeviceGroupCreateRequest =
+  MasterDataCreateRequest<"iot-device-groups">;
+export type IoTDeviceGroupUpdateRequest =
+  MasterDataUpdateRequest<"iot-device-groups">;
 export type MaterialGroupMutationRequest = MaterialGroupCreateRequest;
 export type MaterialGroupDeleteResponse = void;
 export type PesticideOriginCreateRequest =
