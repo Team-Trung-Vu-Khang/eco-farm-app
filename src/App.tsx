@@ -1,179 +1,391 @@
 import { Route, Switch } from "wouter";
-import Dashboard from "./pages/dashboard/Dashboard";
-import TerrainPage from "./pages/terrain/TerrainPage";
+import { lazy, Suspense } from "react";
+import { AppLoadingState } from "./components/AppLoadingState";
+const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"));
+const TerrainPage = lazy(() => import("./pages/terrain/TerrainPage"));
 
-import EnterprisePage from "./pages/enterprise/EnterprisePage";
-import EnterpriseCreatePage from "./pages/enterprise/EnterpriseCreatePage";
-import EnterpriseDetailPage from "./pages/enterprise/EnterpriseDetailPage";
-import EnterpriseEditPage from "./pages/enterprise/EnterpriseEditPage";
-import BranchPage from "./pages/branch/BranchPage";
-import BranchFormPage from "./pages/branch/BranchFormPage";
-import BranchDetailPage from "./pages/branch/BranchDetailPage";
-import CropPage from "./pages/crop/CropPage";
-import CropCreatePage from "./pages/crop/CropCreatePage";
-import CropDetailPage from "./pages/crop/CropDetailPage";
-import CropFoundationPage from "./pages/crop-foundation/CropFoundationPage";
-import CropFoundationCreatePage from "./pages/crop-foundation/CropFoundationCreatePage";
-import CropFoundationDetailPage from "./pages/crop-foundation/CropFoundationDetailPage";
-import CropFoundationEditPage from "./pages/crop-foundation/CropFoundationEditPage";
+const EnterprisePage = lazy(() => import("./pages/enterprise/EnterprisePage"));
+const EnterpriseCreatePage = lazy(
+  () => import("./pages/enterprise/EnterpriseCreatePage"),
+);
+const EnterpriseDetailPage = lazy(
+  () => import("./pages/enterprise/EnterpriseDetailPage"),
+);
+const EnterpriseEditPage = lazy(
+  () => import("./pages/enterprise/EnterpriseEditPage"),
+);
+const BranchPage = lazy(() => import("./pages/branch/BranchPage"));
+const BranchFormPage = lazy(() => import("./pages/branch/BranchFormPage"));
+const BranchDetailPage = lazy(() => import("./pages/branch/BranchDetailPage"));
+const CropPage = lazy(() => import("./pages/crop/CropPage"));
+const CropCreatePage = lazy(() => import("./pages/crop/CropCreatePage"));
+const CropDetailPage = lazy(() => import("./pages/crop/CropDetailPage"));
+const CropFoundationPage = lazy(
+  () => import("./pages/crop-foundation/CropFoundationPage"),
+);
+const CropFoundationCreatePage = lazy(
+  () => import("./pages/crop-foundation/CropFoundationCreatePage"),
+);
+const CropFoundationDetailPage = lazy(
+  () => import("./pages/crop-foundation/CropFoundationDetailPage"),
+);
+const CropFoundationEditPage = lazy(
+  () => import("./pages/crop-foundation/CropFoundationEditPage"),
+);
 
-import PesticidePage from "./pages/pesticide/PesticidePage";
-import PesticideCreatePage from "./pages/pesticide/PesticideCreatePage";
-import PesticideDetailPage from "./pages/pesticide/PesticideDetailPage";
-import PlanPage from "./pages/plan/PlanPage";
-import PlanCreatePage from "./pages/plan/PlanCreatePage";
-import PlanDetailPage from "./pages/plan/PlanDetailPage";
-import PlanEditPage from "./pages/plan/PlanEditPage";
-import PlanTypePage from "./pages/plan-type/PlanTypePage";
-import FertilizerCreatePage from "./pages/fertilizer/FertilizerCreatePage";
-import FertilizerDetailPage from "./pages/fertilizer/FertilizerDetailPage";
-import MaterialCreatePage from "./pages/material/MaterialCreatePage";
-import MaterialDetailPage from "./pages/material/MaterialDetailPage";
-import EquipmentCreatePage from "./pages/equipment/EquipmentCreatePage";
-import EquipmentDetailPage from "./pages/equipment/EquipmentDetailPage";
-import UnitCreatePage from "./pages/unit/UnitCreatePage";
-import IoTDevicePage from "./pages/iot-device/IoTDevicePage";
-import IoTDeviceCreatePage from "./pages/iot-device/IoTDeviceCreatePage";
-import IoTDeviceDetailPage from "./pages/iot-device/IoTDeviceDetailPage";
-import IoTMapViewPage from "./pages/iot-device/monitoring/IoTMapViewPage";
-import IoTDeviceGroupPage from "./pages/iot-device-group/IoTDeviceGroupPage";
+const PesticidePage = lazy(() => import("./pages/pesticide/PesticidePage"));
+const PesticideCreatePage = lazy(
+  () => import("./pages/pesticide/PesticideCreatePage"),
+);
+const PesticideDetailPage = lazy(
+  () => import("./pages/pesticide/PesticideDetailPage"),
+);
+const PlanPage = lazy(() => import("./pages/plan/PlanPage"));
+const PlanCreatePage = lazy(() => import("./pages/plan/PlanCreatePage"));
+const PlanDetailPage = lazy(() => import("./pages/plan/PlanDetailPage"));
+const PlanEditPage = lazy(() => import("./pages/plan/PlanEditPage"));
+const PlanTypePage = lazy(() => import("./pages/plan-type/PlanTypePage"));
+const FertilizerCreatePage = lazy(
+  () => import("./pages/fertilizer/FertilizerCreatePage"),
+);
+const FertilizerDetailPage = lazy(
+  () => import("./pages/fertilizer/FertilizerDetailPage"),
+);
+const MaterialCreatePage = lazy(
+  () => import("./pages/material/MaterialCreatePage"),
+);
+const MaterialDetailPage = lazy(
+  () => import("./pages/material/MaterialDetailPage"),
+);
+const EquipmentCreatePage = lazy(
+  () => import("./pages/equipment/EquipmentCreatePage"),
+);
+const EquipmentDetailPage = lazy(
+  () => import("./pages/equipment/EquipmentDetailPage"),
+);
+const UnitCreatePage = lazy(() => import("./pages/unit/UnitCreatePage"));
+const IoTDevicePage = lazy(() => import("./pages/iot-device/IoTDevicePage"));
+const IoTDeviceCreatePage = lazy(
+  () => import("./pages/iot-device/IoTDeviceCreatePage"),
+);
+const IoTDeviceDetailPage = lazy(
+  () => import("./pages/iot-device/IoTDeviceDetailPage"),
+);
+const IoTMapViewPage = lazy(
+  () => import("./pages/iot-device/monitoring/IoTMapViewPage"),
+);
+const IoTDeviceGroupPage = lazy(
+  () => import("./pages/iot-device-group/IoTDeviceGroupPage"),
+);
 
-import NotFoundPage from "./pages/NotFoundPage";
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 import {
-  Toaster,
   RadixToaster,
   TooltipProvider,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { AuthWrapper } from "./features/auth/components/AuthWrapper";
-import BankPage from "./pages/bank/BankPage";
-import BankDirectoryPage from "./pages/bank-directory/BankDirectoryPage";
-import BankCreatePage from "./pages/bank/BankCreatePage";
-import BankEditPage from "./pages/bank/BankEditPage";
-import GeoZonePage from "./pages/geo-zone/GeoZonePage";
+const BankPage = lazy(() => import("./pages/bank/BankPage"));
+const BankDirectoryPage = lazy(
+  () => import("./pages/bank-directory/BankDirectoryPage"),
+);
+const BankCreatePage = lazy(() => import("./pages/bank/BankCreatePage"));
+const BankEditPage = lazy(() => import("./pages/bank/BankEditPage"));
+const GeoZonePage = lazy(() => import("./pages/geo-zone/GeoZonePage"));
 
 // Region Chart Pages
-import RegionDistributionPage from "./pages/region-chart/region-distribution/RegionDistributionPage";
-import RegionCreatePage from "./pages/region-chart/region-distribution/RegionCreatePage";
-import AreaDistributionPage from "./pages/region-chart/area-distribution/AreaDistributionPage";
-import AreaCreatePage from "./pages/region-chart/area-distribution/AreaCreatePage";
-import AreaDetailPage from "./pages/region-chart/area-distribution/AreaDetailPage";
-import PlotDistributionPage from "./pages/region-chart/plot-distribution/PlotDistributionPage";
-import PlotCreatePage from "./pages/region-chart/plot-distribution/PlotCreatePage";
-import PlotDetailPage from "./pages/region-chart/plot-distribution/PlotDetailPage";
-import MapViewPage from "./pages/region-chart/map-view/MapViewPage";
-import SoilAmendmentMapPage from "./pages/region-chart/soil-map/SoilAmendmentMapPage";
-import AmendmentCyclePage from "./pages/soil-amendment/AmendmentCyclePage";
-import AmendmentMethodPage from "./pages/soil-amendment/AmendmentMethodPage";
-import AmendmentPlanPage from "./pages/soil-amendment/AmendmentPlanPage";
-import AmendmentPlanCreatePage from "./pages/soil-amendment/AmendmentPlanCreatePage";
-import AmendmentTaskPage from "./pages/soil-amendment/AmendmentTaskPage";
-import SoilAmendmentTreatmentPage from "./pages/soil-amendment/SoilAmendmentTreatmentPage";
+const RegionDistributionPage = lazy(
+  () =>
+    import("./pages/region-chart/region-distribution/RegionDistributionPage"),
+);
+const RegionCreatePage = lazy(
+  () => import("./pages/region-chart/region-distribution/RegionCreatePage"),
+);
+const AreaDistributionPage = lazy(
+  () => import("./pages/region-chart/area-distribution/AreaDistributionPage"),
+);
+const AreaCreatePage = lazy(
+  () => import("./pages/region-chart/area-distribution/AreaCreatePage"),
+);
+const AreaDetailPage = lazy(
+  () => import("./pages/region-chart/area-distribution/AreaDetailPage"),
+);
+const PlotDistributionPage = lazy(
+  () => import("./pages/region-chart/plot-distribution/PlotDistributionPage"),
+);
+const PlotCreatePage = lazy(
+  () => import("./pages/region-chart/plot-distribution/PlotCreatePage"),
+);
+const PlotDetailPage = lazy(
+  () => import("./pages/region-chart/plot-distribution/PlotDetailPage"),
+);
+const MapViewPage = lazy(
+  () => import("./pages/region-chart/map-view/MapViewPage"),
+);
+const SoilAmendmentMapPage = lazy(
+  () => import("./pages/region-chart/soil-map/SoilAmendmentMapPage"),
+);
+const AmendmentCyclePage = lazy(
+  () => import("./pages/soil-amendment/AmendmentCyclePage"),
+);
+const AmendmentMethodPage = lazy(
+  () => import("./pages/soil-amendment/AmendmentMethodPage"),
+);
+const AmendmentPlanPage = lazy(
+  () => import("./pages/soil-amendment/AmendmentPlanPage"),
+);
+const AmendmentPlanCreatePage = lazy(
+  () => import("./pages/soil-amendment/AmendmentPlanCreatePage"),
+);
+const AmendmentTaskPage = lazy(
+  () => import("./pages/soil-amendment/AmendmentTaskPage"),
+);
+const SoilAmendmentTreatmentPage = lazy(
+  () => import("./pages/soil-amendment/SoilAmendmentTreatmentPage"),
+);
 
 // Cultivation Zone Sub-pages
-import CultivationRegionPage from "./pages/cultivation-zone/cultivation-region/CultivationRegionPage";
-import CultivationRegionCreatePage from "./pages/cultivation-zone/cultivation-region/CultivationRegionCreatePage";
-import DistributionDetailPage from "./pages/cultivation-zone/distribution-detail/DistributionDetailPage";
-import PlantDistributionCreatePage from "./pages/cultivation-zone/distribution-detail/PlantDistributionCreatePage";
-import SearchCropPage from "./pages/cultivation-zone/search-crop/SearchCropPage";
-import SearchZonePage from "./pages/cultivation-zone/search-zone/SearchZonePage";
-import SearchUnitPage from "./pages/enterprise/search-unit/SearchUnitPage";
+const CultivationRegionPage = lazy(
+  () =>
+    import("./pages/cultivation-zone/cultivation-region/CultivationRegionPage"),
+);
+const CultivationRegionCreatePage = lazy(
+  () =>
+    import("./pages/cultivation-zone/cultivation-region/CultivationRegionCreatePage"),
+);
+const DistributionDetailPage = lazy(
+  () =>
+    import("./pages/cultivation-zone/distribution-detail/DistributionDetailPage"),
+);
+const PlantDistributionCreatePage = lazy(
+  () =>
+    import("./pages/cultivation-zone/distribution-detail/PlantDistributionCreatePage"),
+);
+const SearchCropPage = lazy(
+  () => import("./pages/cultivation-zone/search-crop/SearchCropPage"),
+);
+const SearchZonePage = lazy(
+  () => import("./pages/cultivation-zone/search-zone/SearchZonePage"),
+);
+const SearchUnitPage = lazy(
+  () => import("./pages/enterprise/search-unit/SearchUnitPage"),
+);
 
-import SeedPage from "./pages/seed/SeedPage";
-import GrowthCyclePage from "./pages/growth-cycle/GrowthCyclePage";
-import CreateGrowthCyclePage from "./pages/growth-cycle/CreateGrowthCyclePage";
-import UpdateGrowthCyclePage from "./pages/growth-cycle/UpdateGrowthCyclePage";
-import SeasonPage from "./pages/season/SeasonPage";
-import CreateSeasonPage from "./pages/season/CreateSeasonPage";
-import UpdateSeasonPage from "./pages/season/UpdateSeasonPage";
-import SeasonDetailPage from "./pages/season/SeasonDetailPage";
-import LandPage from "./pages/land/LandPage";
-import FarmingMethodPage from "./pages/farming-method/FarmingMethodPage";
-import FarmingMethodCropPage from "./pages/farming-method/FarmingMethodCropPage";
-import CertificatePage from "./pages/certificate/CertificatePage";
-import ContactPage from "./pages/contact/ContactPage";
-import ContactCreatePage from "./pages/contact/ContactCreatePage";
-import ContactEditPage from "./pages/contact/ContactEditPage";
-import DepartmentPage from "./pages/department/DepartmentPage";
-import GroupPositionPage from "./pages/group-position/GroupPositionPage";
-import PositionPage from "./pages/position/PositionPage";
-import PositionDetailPage from "./pages/position/PositionDetailPage";
-import PersonnelPage from "./pages/personnel/PersonnelPage";
-import PersonnelCreatePage from "./pages/personnel/PersonnelCreatePage";
-import PersonnelEditPage from "./pages/personnel/PersonnelEditPage";
-import TeamPage from "./pages/team/TeamPage";
-import TeamCreatePage from "./pages/team/TeamCreatePage";
-import TeamDetailPage from "./pages/team/TeamDetailPage";
-import VarietyPage from "./pages/variety/VarietyPage";
-import CreateVarietyPage from "./pages/variety/CreateVarietyPage";
-import VarietyEditPage from "./pages/variety/VarietyEditPage";
-import VarietyFoundationPage from "./pages/variety-foundation/VarietyFoundationPage";
-import CreateVarietyFoundationPage from "./pages/variety-foundation/CreateVarietyFoundationPage";
-import VarietyFoundationEditPage from "./pages/variety-foundation/VarietyFoundationEditPage";
-import MaterialPage from "./pages/material/MaterialPage";
-import FertilizerPage from "./pages/fertilizer/FertilizerPage";
-import ContractPage from "./pages/contract/ContractPage";
-import EquipmentPage from "./pages/equipment/EquipmentPage";
-import UnitPage from "./pages/unit/UnitPage";
-import TaskPage from "./pages/task/TaskPage";
-import TaskCreatePage from "./pages/task/TaskCreatePage";
-import TaskEditPage from "./pages/task/TaskEditPage";
-import SettingsPage from "./pages/settings/SettingsPage";
-import RegionDetailPage from "./pages/region-chart/region-distribution/RegionDetailPage";
-import CultivationRegionDetailPage from "./pages/cultivation-zone/cultivation-region/CultivationRegionDetailPage";
-import CultivationRegionEditPage from "./pages/cultivation-zone/cultivation-region/CultivationRegionEditPage";
-import ContractDetailPage from "./pages/contract/ContractDetailPage";
-import ContractCreatePage from "./pages/contract/ContractCreatePage";
-import ContractEditPage from "./pages/contract/ContractEditPage";
-import TreatmentPage from "./pages/treatment/TreatmentPage";
-import GroupCropPage from "./pages/group-crop/GroupCropPage";
-import DocsPage from "./pages/docs/DocsPage";
-import CreateDocsPage from "./pages/docs/CreateDocsPage";
-import UpdateDocsPage from "./pages/docs/UpdateDocsPage";
-import DocsDetailPage from "./pages/docs/DocsDetailPage";
-import DocumentCategoryListPage from "./pages/document-category/DocumentCategoryListPage";
-import DocumentCategoryCreatePage from "./pages/document-category/DocumentCategoryCreatePage";
-import DocumentCategoryEditPage from "./pages/document-category/DocumentCategoryEditPage";
-import DocumentCategoryDetailPage from "./pages/document-category/DocumentCategoryDetailPage";
-import DocumentVersionPage from "./pages/document-version/DocumentVersionPage";
-import RoleResponsibilityDetailPage from "./pages/role-responsibility/RoleResponsibilityDetailPage";
-import RoleResponsibilityFormPage from "./pages/role-responsibility/RoleResponsibilityFormPage";
-import RoleResponsibilityPage from "./pages/role-responsibility/RoleResponsibilityPage";
-import CreateSeedPage from "./pages/seed/CreateSeedPage";
-import SeedDetailPage from "./pages/seed/SeedDetailPage";
-import UpdateSeedPage from "./pages/seed/UpdateSeedPage";
-import CreateTreatmentPage from "./pages/treatment/CreateTreatmentPage";
-import PlantDistributionListPage from "./pages/cultivation-zone/distribution-detail/PlantDistributionListPage";
-import FarmerPage from "./pages/farmer/FarmerPage";
-import FarmerCreatePage from "./pages/farmer/FarmerCreatePage";
-import FarmerEditPage from "./pages/farmer/FarmerEditPage";
-import FarmerDetailPage from "./pages/farmer/FarmerDetailPage";
-import CooperativePage from "./pages/cooperative/CooperativePage";
-import CooperativeCreatePage from "./pages/cooperative/CooperativeCreatePage";
-import CooperativeEditPage from "./pages/cooperative/CooperativeEditPage";
-import CooperativeDetailPage from "./pages/cooperative/CooperativeDetailPage";
-import EnterpriseTypePage from "./pages/enterprise-type/EnterpriseTypePage";
-import EnterpriseFormPage from "./pages/enterprise-form/EnterpriseFormPage";
-import EnterpriseCertificatePage from "./pages/enterprise-certificate/EnterpriseCertificatePage";
-import EnterpriseCertificateFormPage from "./pages/enterprise-certificate/EnterpriseCertificateFormPage";
-import MaterialGroupPage from "./pages/material-group/MaterialGroupPage";
-import FertilizerGroupPage from "./pages/fertilizer-group/FertilizerGroupPage";
-import PesticideGroupPage from "./pages/pesticide-group/PesticideGroupPage";
-import EquipmentGroupPage from "./pages/equipment-group/EquipmentGroupPage";
-import PlantIdentificationListPage from "./pages/cultivation-zone/cultivation-region/PlantIdentificationListPage";
-import PlantIdentificationDetailPage from "./pages/cultivation-zone/cultivation-region/PlantIdentificationDetailPage";
-import PlantIdentificationCreatePage from "./pages/cultivation-zone/cultivation-region/PlantIdentificationCreatePage";
-import PlantIdentificationEditPage from "./pages/cultivation-zone/cultivation-region/PlantIdentificationEditPage";
-import CultivationAreaPage from "./pages/cultivation-area/CultivationAreaPage";
-import CultivationAreaCreatePage from "./pages/cultivation-area/CultivationAreaCreatePage";
-import CultivationAreaDetailPage from "./pages/cultivation-area/CultivationAreaDetailPage";
-import CultivationPlotPage from "./pages/cultivation-plot/CultivationPlotPage";
-import CultivationPlotCreatePage from "./pages/cultivation-plot/CultivationPlotCreatePage";
-import CultivationPlotDetailPage from "./pages/cultivation-plot/CultivationPlotDetailPage";
-import MaterialLookupPage from "./pages/material-lookup/MaterialLookupPage";
-import ProductionCultivationReportPage from "./pages/production-cultivation-report/ProductionCultivationReportPage";
-import TreatmentReportPage from "./pages/treatment-report/TreatmentReportPage";
-import ProvincePage from "./pages/province/ProvincePage";
-import LandSpecsPage from "./pages/land-specs/LandSpecsPage";
+const SeedPage = lazy(() => import("./pages/seed/SeedPage"));
+const GrowthCyclePage = lazy(
+  () => import("./pages/growth-cycle/GrowthCyclePage"),
+);
+const CreateGrowthCyclePage = lazy(
+  () => import("./pages/growth-cycle/CreateGrowthCyclePage"),
+);
+const UpdateGrowthCyclePage = lazy(
+  () => import("./pages/growth-cycle/UpdateGrowthCyclePage"),
+);
+const SeasonPage = lazy(() => import("./pages/season/SeasonPage"));
+const CreateSeasonPage = lazy(() => import("./pages/season/CreateSeasonPage"));
+const UpdateSeasonPage = lazy(() => import("./pages/season/UpdateSeasonPage"));
+const SeasonDetailPage = lazy(() => import("./pages/season/SeasonDetailPage"));
+const LandPage = lazy(() => import("./pages/land/LandPage"));
+const FarmingMethodPage = lazy(
+  () => import("./pages/farming-method/FarmingMethodPage"),
+);
+const FarmingMethodCropPage = lazy(
+  () => import("./pages/farming-method/FarmingMethodCropPage"),
+);
+const CertificatePage = lazy(
+  () => import("./pages/certificate/CertificatePage"),
+);
+const ContactPage = lazy(() => import("./pages/contact/ContactPage"));
+const ContactCreatePage = lazy(
+  () => import("./pages/contact/ContactCreatePage"),
+);
+const ContactEditPage = lazy(() => import("./pages/contact/ContactEditPage"));
+const DepartmentPage = lazy(() => import("./pages/department/DepartmentPage"));
+const GroupPositionPage = lazy(
+  () => import("./pages/group-position/GroupPositionPage"),
+);
+const PositionPage = lazy(() => import("./pages/position/PositionPage"));
+const PositionDetailPage = lazy(
+  () => import("./pages/position/PositionDetailPage"),
+);
+const PersonnelPage = lazy(() => import("./pages/personnel/PersonnelPage"));
+const PersonnelCreatePage = lazy(
+  () => import("./pages/personnel/PersonnelCreatePage"),
+);
+const PersonnelEditPage = lazy(
+  () => import("./pages/personnel/PersonnelEditPage"),
+);
+const TeamPage = lazy(() => import("./pages/team/TeamPage"));
+const TeamCreatePage = lazy(() => import("./pages/team/TeamCreatePage"));
+const TeamDetailPage = lazy(() => import("./pages/team/TeamDetailPage"));
+const VarietyPage = lazy(() => import("./pages/variety/VarietyPage"));
+const CreateVarietyPage = lazy(
+  () => import("./pages/variety/CreateVarietyPage"),
+);
+const VarietyEditPage = lazy(() => import("./pages/variety/VarietyEditPage"));
+const VarietyFoundationPage = lazy(
+  () => import("./pages/variety-foundation/VarietyFoundationPage"),
+);
+const CreateVarietyFoundationPage = lazy(
+  () => import("./pages/variety-foundation/CreateVarietyFoundationPage"),
+);
+const VarietyFoundationEditPage = lazy(
+  () => import("./pages/variety-foundation/VarietyFoundationEditPage"),
+);
+const MaterialPage = lazy(() => import("./pages/material/MaterialPage"));
+const FertilizerPage = lazy(() => import("./pages/fertilizer/FertilizerPage"));
+const ContractPage = lazy(() => import("./pages/contract/ContractPage"));
+const EquipmentPage = lazy(() => import("./pages/equipment/EquipmentPage"));
+const UnitPage = lazy(() => import("./pages/unit/UnitPage"));
+const TaskPage = lazy(() => import("./pages/task/TaskPage"));
+const TaskCreatePage = lazy(() => import("./pages/task/TaskCreatePage"));
+const TaskEditPage = lazy(() => import("./pages/task/TaskEditPage"));
+const SettingsPage = lazy(() => import("./pages/settings/SettingsPage"));
+const RegionDetailPage = lazy(
+  () => import("./pages/region-chart/region-distribution/RegionDetailPage"),
+);
+const CultivationRegionDetailPage = lazy(
+  () =>
+    import("./pages/cultivation-zone/cultivation-region/CultivationRegionDetailPage"),
+);
+const CultivationRegionEditPage = lazy(
+  () =>
+    import("./pages/cultivation-zone/cultivation-region/CultivationRegionEditPage"),
+);
+const ContractDetailPage = lazy(
+  () => import("./pages/contract/ContractDetailPage"),
+);
+const ContractCreatePage = lazy(
+  () => import("./pages/contract/ContractCreatePage"),
+);
+const ContractEditPage = lazy(
+  () => import("./pages/contract/ContractEditPage"),
+);
+const TreatmentPage = lazy(() => import("./pages/treatment/TreatmentPage"));
+const GroupCropPage = lazy(() => import("./pages/group-crop/GroupCropPage"));
+const DocsPage = lazy(() => import("./pages/docs/DocsPage"));
+const CreateDocsPage = lazy(() => import("./pages/docs/CreateDocsPage"));
+const UpdateDocsPage = lazy(() => import("./pages/docs/UpdateDocsPage"));
+const DocsDetailPage = lazy(() => import("./pages/docs/DocsDetailPage"));
+const DocumentCategoryListPage = lazy(
+  () => import("./pages/document-category/DocumentCategoryListPage"),
+);
+const DocumentCategoryCreatePage = lazy(
+  () => import("./pages/document-category/DocumentCategoryCreatePage"),
+);
+const DocumentCategoryEditPage = lazy(
+  () => import("./pages/document-category/DocumentCategoryEditPage"),
+);
+const DocumentCategoryDetailPage = lazy(
+  () => import("./pages/document-category/DocumentCategoryDetailPage"),
+);
+const DocumentVersionPage = lazy(
+  () => import("./pages/document-version/DocumentVersionPage"),
+);
+const RoleResponsibilityDetailPage = lazy(
+  () => import("./pages/role-responsibility/RoleResponsibilityDetailPage"),
+);
+const RoleResponsibilityFormPage = lazy(
+  () => import("./pages/role-responsibility/RoleResponsibilityFormPage"),
+);
+const RoleResponsibilityPage = lazy(
+  () => import("./pages/role-responsibility/RoleResponsibilityPage"),
+);
+const CreateSeedPage = lazy(() => import("./pages/seed/CreateSeedPage"));
+const SeedDetailPage = lazy(() => import("./pages/seed/SeedDetailPage"));
+const UpdateSeedPage = lazy(() => import("./pages/seed/UpdateSeedPage"));
+const CreateTreatmentPage = lazy(
+  () => import("./pages/treatment/CreateTreatmentPage"),
+);
+const PlantDistributionListPage = lazy(
+  () =>
+    import("./pages/cultivation-zone/distribution-detail/PlantDistributionListPage"),
+);
+const FarmerPage = lazy(() => import("./pages/farmer/FarmerPage"));
+const FarmerCreatePage = lazy(() => import("./pages/farmer/FarmerCreatePage"));
+const FarmerEditPage = lazy(() => import("./pages/farmer/FarmerEditPage"));
+const FarmerDetailPage = lazy(() => import("./pages/farmer/FarmerDetailPage"));
+const CooperativePage = lazy(
+  () => import("./pages/cooperative/CooperativePage"),
+);
+const CooperativeCreatePage = lazy(
+  () => import("./pages/cooperative/CooperativeCreatePage"),
+);
+const CooperativeEditPage = lazy(
+  () => import("./pages/cooperative/CooperativeEditPage"),
+);
+const CooperativeDetailPage = lazy(
+  () => import("./pages/cooperative/CooperativeDetailPage"),
+);
+const EnterpriseTypePage = lazy(
+  () => import("./pages/enterprise-type/EnterpriseTypePage"),
+);
+const EnterpriseFormPage = lazy(
+  () => import("./pages/enterprise-form/EnterpriseFormPage"),
+);
+const EnterpriseCertificatePage = lazy(
+  () => import("./pages/enterprise-certificate/EnterpriseCertificatePage"),
+);
+const EnterpriseCertificateFormPage = lazy(
+  () => import("./pages/enterprise-certificate/EnterpriseCertificateFormPage"),
+);
+const MaterialGroupPage = lazy(
+  () => import("./pages/material-group/MaterialGroupPage"),
+);
+const FertilizerGroupPage = lazy(
+  () => import("./pages/fertilizer-group/FertilizerGroupPage"),
+);
+const PesticideGroupPage = lazy(
+  () => import("./pages/pesticide-group/PesticideGroupPage"),
+);
+const EquipmentGroupPage = lazy(
+  () => import("./pages/equipment-group/EquipmentGroupPage"),
+);
+const PlantIdentificationListPage = lazy(
+  () =>
+    import("./pages/cultivation-zone/cultivation-region/PlantIdentificationListPage"),
+);
+const PlantIdentificationDetailPage = lazy(
+  () =>
+    import("./pages/cultivation-zone/cultivation-region/PlantIdentificationDetailPage"),
+);
+const PlantIdentificationCreatePage = lazy(
+  () =>
+    import("./pages/cultivation-zone/cultivation-region/PlantIdentificationCreatePage"),
+);
+const PlantIdentificationEditPage = lazy(
+  () =>
+    import("./pages/cultivation-zone/cultivation-region/PlantIdentificationEditPage"),
+);
+const CultivationAreaPage = lazy(
+  () => import("./pages/cultivation-area/CultivationAreaPage"),
+);
+const CultivationAreaCreatePage = lazy(
+  () => import("./pages/cultivation-area/CultivationAreaCreatePage"),
+);
+const CultivationAreaDetailPage = lazy(
+  () => import("./pages/cultivation-area/CultivationAreaDetailPage"),
+);
+const CultivationPlotPage = lazy(
+  () => import("./pages/cultivation-plot/CultivationPlotPage"),
+);
+const CultivationPlotCreatePage = lazy(
+  () => import("./pages/cultivation-plot/CultivationPlotCreatePage"),
+);
+const CultivationPlotDetailPage = lazy(
+  () => import("./pages/cultivation-plot/CultivationPlotDetailPage"),
+);
+const MaterialLookupPage = lazy(
+  () => import("./pages/material-lookup/MaterialLookupPage"),
+);
+const ProductionCultivationReportPage = lazy(
+  () =>
+    import("./pages/production-cultivation-report/ProductionCultivationReportPage"),
+);
+const TreatmentReportPage = lazy(
+  () => import("./pages/treatment-report/TreatmentReportPage"),
+);
+const ProvincePage = lazy(() => import("./pages/province/ProvincePage"));
+const LandSpecsPage = lazy(() => import("./pages/land-specs/LandSpecsPage"));
 function Router() {
   return (
     <Switch>
@@ -501,10 +713,11 @@ function Router() {
 function App() {
   return (
     <TooltipProvider>
-      {/* <Toaster /> */}
-      <RadixToaster />
       <AuthWrapper>
-        <Router />
+        <Suspense fallback={<AppLoadingState />}>
+          <Router />
+        </Suspense>
+        <RadixToaster />
       </AuthWrapper>
     </TooltipProvider>
   );
