@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@Team-Trung-Vu-Khang/eco-shared-ui@^0.0.6-beta.12":
-  version "0.0.6-beta.12"
-  resolved "https://npm.pkg.github.com/download/@Team-Trung-Vu-Khang/eco-shared-ui/0.0.6-beta.12/306bbe8a8e80d1beadf97eb89633d970a72592f7#306bbe8a8e80d1beadf97eb89633d970a72592f7"
-  integrity sha512-DvI0nzu1HAHZGR2HSyd/srX+4nnn+XOyLbt2tRJkl8vobHqkuJiFovYvT0Tg9mywJwG+Jff9TcCgjRafdA7Orw==
+"@Team-Trung-Vu-Khang/eco-shared-ui@^0.0.6-beta.16":
+  version "0.0.6-beta.16"
+  resolved "https://npm.pkg.github.com/download/@Team-Trung-Vu-Khang/eco-shared-ui/0.0.6-beta.16/d190e37881f3cb589ba972035771ffae806f6ce8#d190e37881f3cb589ba972035771ffae806f6ce8"
+  integrity sha512-xTa5rs9DljrZId0pS6IPPYs7LTicfxHJk4xzT+cy9rsZvMgpG/rGVS/h/3hMOI4nHktwjXgS7V4s5ARox6uQog==
   dependencies:
     "@lexical/code" "^0.43.0"
     "@lexical/file" "^0.43.0"
@@ -48,6 +48,7 @@
     "@radix-ui/react-toggle" "^1.1.10"
     "@radix-ui/react-toggle-group" "^1.1.11"
     "@radix-ui/react-tooltip" "^1.2.8"
+    axios "^1.18.1"
     class-variance-authority "^0.7.1"
     clsx "^2.1.1"
     cmdk "^1.1.1"
