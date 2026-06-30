@@ -334,8 +334,8 @@ export function EnterpriseBankAccountsStep() {
               </p>
             </div>
             <div className="space-y-2">
-              <Label className="text-sm font-semibold">
-                Số tài khoản <span className="text-red-500">*</span>
+              <Label className="text-sm font-semibold" required>
+                Số tài khoản
               </Label>
               <Input
                 value={newBankAccount.accountNumber}
@@ -350,8 +350,8 @@ export function EnterpriseBankAccountsStep() {
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-sm font-semibold">
-                Chủ tài khoản <span className="text-red-500">*</span>
+              <Label className="text-sm font-semibold" required>
+                Chủ tài khoản
               </Label>
               <Input
                 value={newBankAccount.accountHolder}

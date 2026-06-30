@@ -13,11 +13,21 @@ export default function EnterprisePage() {
     filterEnterprises,
     columns,
     filters,
+    pageSize,
+    currentIndex,
+    setCurrentIndex,
     deleteOpen,
     setDeleteOpen,
     handleDelete,
     handleConfirmDelete,
     setLocation,
+    handleSearch,
+    handleFilterChange,
+    setPageSize,
+    totalPages,
+    totalElements,
+    loading,
+    error,
   } = useEnterprisePage();
 
   return (
@@ -33,16 +43,32 @@ export default function EnterprisePage() {
           </Button>
         </Link>
       }
-    >
+      >
+      {error ? (
+        <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          {error}
+        </div>
+      ) : null}
+
       <DataTable
         columns={columns}
         data={filterEnterprises}
+        searchable
         onView={(item) => setLocation(`/enterprise/${item.id}`)}
         onEdit={(item) => setLocation(`/enterprise/${item.id}/edit`)}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm doanh nghiệp..."
         filters={filters}
         selectable={false}
+        loading={loading}
+        currentIndex={currentIndex}
+        pageSize={pageSize}
+        totalPages={totalPages}
+        totalElements={totalElements}
+        onSearch={handleSearch}
+        onIndexChange={setCurrentIndex}
+        onPageSize={setPageSize}
+        onFilterChange={handleFilterChange}
       />
 
       <DeleteDialog

@@ -4,12 +4,18 @@ import type { StorageFileUploadResponse } from "../types/storage-file.type";
 export interface StorageFileUploadRequest {
   file: File;
   folder?: string;
+  workspaceId?: number | string | null;
 }
 
-export const uploadFileApi = async (
-  file: File,
-  folder?: string,
-): Promise<StorageFileUploadResponse> => {
+export const uploadFileApi = async ({
+  file,
+  folder,
+  workspaceId,
+}: StorageFileUploadRequest): Promise<StorageFileUploadResponse> => {
+  if (workspaceId === null || workspaceId === undefined || workspaceId === "") {
+    throw new Error("Missing workspace id for file upload.");
+  }
+
   const formData = new FormData();
   formData.append("file", file);
 
@@ -19,6 +25,7 @@ export const uploadFileApi = async (
     {
       headers: {
         "Content-Type": "multipart/form-data",
+        "X-Workspace-Id": String(workspaceId),
       },
       params: {
         folder,

@@ -1,4 +1,5 @@
 import { vietQrBankData } from "@/constants/banks";
+import { useMasterData } from "@/features/master-data";
 import {
   Badge,
   Card,
@@ -46,6 +47,16 @@ export function EnterpriseConfirmationStep() {
   const { formData } = useEnterpriseFormContext();
   const [confirmBankSearchQuery, setConfirmBankSearchQuery] = useState("");
   const defaultContact = formData.contacts[0];
+  const organizationTypesQuery = useMasterData("organization-types", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
+  const organizationType = organizationTypesQuery.items.find(
+    (item) => String(item.id) === String(formData.organizationTypeId),
+  );
 
   return (
     <div className="space-y-10 max-w-6xl mx-auto">
@@ -136,6 +147,19 @@ export function EnterpriseConfirmationStep() {
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center shadow-sm border">
+                    <Building2 className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                      Loại hình tổ chức
+                    </p>
+                    <p className="font-bold text-base">
+                      {organizationType?.name || "Chưa chọn"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center shadow-sm border">
                     <Calendar className="w-4 h-4 text-primary" />
                   </div>
                   <div>
@@ -167,7 +191,6 @@ export function EnterpriseConfirmationStep() {
                     <p className="text-sm font-medium leading-normal">
                       {formData.address}
                       {formData.ward && `, ${formData.ward}`}
-                      {formData.district && `, ${formData.district}`}
                       {formData.province && `, ${formData.province}`}
                     </p>
                   </div>

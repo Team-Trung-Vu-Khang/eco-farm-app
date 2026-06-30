@@ -1,12 +1,16 @@
 import { useToast, type Step } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import QrScanner from "qr-scanner";
+import { useEffect, useMemo, useRef, useState, type SetStateAction } from "react";
+import readXlsxFile from "read-excel-file";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { useLocation } from "wouter";
 
 import { vietQrBankData } from "@/constants/banks";
-import useEnterpriseStore from "@/stores/useEnterpriseStore";
-import { parseVietQR } from "@/utils/commons";
-import QrScanner from "qr-scanner";
-import { useEffect, useMemo, useState } from "react";
-import readXlsxFile from "read-excel-file";
-import { useLocation } from "wouter";
+import { useCreateOrganization } from "@/features/organization";
+import { useMasterData } from "@/features/master-data";
+import { useUploadStorageFile } from "@/features/storage/hooks/useUploadStorageFile";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 import { EnterpriseBankAccountsStep } from "../components/steps/EnterpriseBankAccountsStep";
 import { EnterpriseBasicInfoStep } from "../components/steps/EnterpriseBasicInfoStep";
 import { EnterpriseContactsStep } from "../components/steps/EnterpriseContactsStep";
@@ -15,40 +19,115 @@ import { EnterpriseConfirmationStep } from "../components/steps/EnterpriseConfir
 import { EnterpriseDocumentsStep } from "../components/steps/EnterpriseDocumentsStep";
 
 import type { BankAccount, Branch, Contact } from "../data/constants";
+import {
+  defaultEnterpriseFormValues,
+  enterpriseFormSchema,
+  type EnterpriseFormInput,
+  type EnterpriseFormValues,
+} from "../data/enterprise-form.schema";
 import type { EnterpriseFormData } from "../types";
+import { parseVietQR } from "@/utils/commons";
+
+type BusinessLineRecord = {
+  id: number | string;
+  code: string;
+  name: string;
+};
+
+const CLASSIFICATION_TO_BUSINESS_LINE: Record<string, string> = {
+  production: "SX",
+  processing: "CB",
+  trading: "TM",
+  service: "DV",
+  other: "KHAC",
+};
+
+const CLASSIFICATION_LABELS: Record<string, string> = {
+  production: "Sản xuất",
+  processing: "Chế biến",
+  trading: "Thương mại",
+  service: "Dịch vụ",
+  other: "Khác",
+};
+
+const normalizeBytes = (size?: string) => {
+  if (!size) return undefined;
+  const numeric = Number.parseFloat(size.replace(/[^0-9.,]/g, "").replace(",", "."));
+  if (!Number.isFinite(numeric)) return undefined;
+  const unit = size.toLowerCase();
+  if (unit.includes("kb")) return Math.round(numeric * 1024);
+  if (unit.includes("mb")) return Math.round(numeric * 1024 * 1024);
+  if (unit.includes("gb")) return Math.round(numeric * 1024 * 1024 * 1024);
+  return Math.round(numeric);
+};
 
 export function useEnterpriseCreateForm() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const workspaceId = useSelectedWorkspaceId();
 
-  const [formData, setFormData] = useState<EnterpriseFormData>({
-    type: "enterprise",
-    code: "",
-    name: "",
-    brandName: "",
-    taxCode: "",
-    taxAddress: "",
-    taxAuthority: "",
-    issueDate: "",
-    classification: [],
-    foundedDate: "",
-    representative: "",
-    website: "",
-    phone: "",
-    email: "",
-    province: "",
-    district: "",
-    ward: "",
-    latitude: undefined,
-    longitude: undefined,
-    address: "",
-    image: "",
-    description: "",
-    contacts: [],
-    branches: [],
-    bankAccounts: [],
-    documents: [],
+  const businessLinesQuery = useMasterData("business-lines", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
   });
+
+  const createOrganization = useCreateOrganization({
+    onSuccess: () => {
+      toast({
+        title: "Thành công",
+        description: "Đã tạo doanh nghiệp mới",
+      });
+      setLocation("/enterprise");
+    },
+    onError: (error) => {
+      toast({
+        title: "Lỗi",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const uploadLogo = useUploadStorageFile({
+    onError: (error) => {
+      toast({
+        title: "Không thể tải logo",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const businessLineRecords = useMemo(
+    () => businessLinesQuery.items as BusinessLineRecord[],
+    [businessLinesQuery.items],
+  );
+  const logoUploadSeqRef = useRef(0);
+
+  const form = useForm<EnterpriseFormInput, unknown, EnterpriseFormValues>({
+    defaultValues: defaultEnterpriseFormValues,
+    resolver: zodResolver(enterpriseFormSchema),
+    mode: "onSubmit",
+  });
+
+  const { watch, getValues, setValue, handleSubmit, control } = form;
+  const formData = watch() as EnterpriseFormData;
+  const setFormData = (updater: SetStateAction<EnterpriseFormData>) => {
+    const nextValue =
+      typeof updater === "function"
+        ? updater(getValues() as EnterpriseFormData)
+        : updater;
+
+    Object.entries(nextValue).forEach(([key, value]) => {
+      setValue(key as keyof EnterpriseFormInput, value as never, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    });
+  };
 
   const [newBankAccount, setNewBankAccount] = useState<BankAccount>({
     bankName: "",
@@ -151,7 +230,7 @@ export function useEnterpriseCreateForm() {
       if (newAccounts.length > 0) {
         setFormData((prev) => ({
           ...prev,
-          bankAccounts: [...newAccounts, ...prev.bankAccounts],
+          bankAccounts: [...newAccounts, ...(prev.bankAccounts ?? [])],
         }));
         toast({
           title: "Nhập Excel thành công",
@@ -215,7 +294,7 @@ export function useEnterpriseCreateForm() {
       if (importedBranches.length > 0) {
         setFormData((prev) => ({
           ...prev,
-          branches: [...prev.branches, ...importedBranches],
+          branches: [...(prev.branches ?? []), ...importedBranches],
         }));
         toast({
           title: "Thành công",
@@ -320,40 +399,70 @@ export function useEnterpriseCreateForm() {
     }
   };
 
-  const processLogoImage = (file: File) => {
-    const url = URL.createObjectURL(file);
-    setFormData((prev) => ({ ...prev, image: url }));
+  const processLogoImage = async (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+
+    const previewUrl = URL.createObjectURL(file);
+    setFormData((prev) => ({ ...prev, image: previewUrl }));
+
+    const requestSeq = ++logoUploadSeqRef.current;
+
+    try {
+      const uploaded = await uploadLogo.uploadStorageFile({
+        file,
+        folder: "organizations",
+      });
+
+      if (logoUploadSeqRef.current !== requestSeq) return;
+
+      setFormData((prev) => ({ ...prev, image: uploaded.fileUrl }));
+      URL.revokeObjectURL(previewUrl);
+      toast({
+        title: "Thành công",
+        description: "Đã tải lên logo doanh nghiệp",
+      });
+    } catch {
+      // Error toast is handled by the mutation callback.
+    }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) processLogoImage(file);
+    if (file) {
+      await processLogoImage(file);
+      e.target.value = "";
+    }
   };
 
-  const handleLogoDrop = (e: React.DragEvent) => {
+  const handleLogoDrop = async (e: React.DragEvent) => {
     handleDrag("logo", e);
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith("image/")) {
-      processLogoImage(file);
+      await processLogoImage(file);
     }
   };
 
   const handleDocumentDelete = (index: number) => {
     setFormData((prev) => ({
       ...prev,
-      documents: prev.documents.filter((_, i) => i !== index),
+      documents: (prev.documents ?? []).filter((_, i) => i !== index),
     }));
   };
 
   const processDocuments = (files: FileList) => {
     const file = files[0];
     if (!file) return;
+    const fileUrl = URL.createObjectURL(file);
 
     const newDoc = {
       name: file.name,
       type: file.type,
       size: (file.size / (1024 * 1024)).toFixed(1) + " MB",
-      url: URL.createObjectURL(file),
+      url: fileUrl,
+      fileName: file.name,
+      fileUrl,
+      mimeType: file.type,
+      sizeBytes: file.size,
     };
 
     setFormData((prev) => ({
@@ -380,7 +489,7 @@ export function useEnterpriseCreateForm() {
     if (newBankAccount.bankName && newBankAccount.accountNumber) {
       setFormData((prev) => ({
         ...prev,
-        bankAccounts: [newBankAccount, ...prev.bankAccounts],
+        bankAccounts: [newBankAccount, ...(prev.bankAccounts ?? [])],
       }));
       setNewBankAccount({
         bankName: "",
@@ -403,7 +512,7 @@ export function useEnterpriseCreateForm() {
   const removeBankAccount = (index: number) => {
     setFormData({
       ...formData,
-      bankAccounts: formData.bankAccounts.filter((_, i) => i !== index),
+      bankAccounts: (formData.bankAccounts ?? []).filter((_, i) => i !== index),
     });
   };
 
@@ -411,7 +520,7 @@ export function useEnterpriseCreateForm() {
     if (newContact.name.trim() && newContact.phone.trim()) {
       setFormData((prev) => ({
         ...prev,
-        contacts: [...prev.contacts, newContact],
+        contacts: [...(prev.contacts ?? []), newContact],
       }));
       setNewContact({
         name: "",
@@ -430,7 +539,7 @@ export function useEnterpriseCreateForm() {
   const removeContact = (index: number) => {
     setFormData({
       ...formData,
-      contacts: formData.contacts.filter((_, i) => i !== index),
+      contacts: (formData.contacts ?? []).filter((_, i) => i !== index),
     });
   };
 
@@ -438,7 +547,7 @@ export function useEnterpriseCreateForm() {
     if (newBranch.name.trim()) {
       setFormData({
         ...formData,
-        branches: [...formData.branches, newBranch],
+        branches: [...(formData.branches ?? []), newBranch],
       });
       setNewBranch({
         name: "",
@@ -461,7 +570,7 @@ export function useEnterpriseCreateForm() {
   const removeBranch = (index: number) => {
     setFormData({
       ...formData,
-      branches: formData.branches.filter((_, i) => i !== index),
+      branches: (formData.branches ?? []).filter((_, i) => i !== index),
     });
   };
 
@@ -471,53 +580,144 @@ export function useEnterpriseCreateForm() {
     setShowConfirmDialog(true);
   };
 
-  const addEnterprise = useEnterpriseStore((state) => state.addEnterprise);
+  const submitForm = handleSubmit(async (values: EnterpriseFormValues) => {
+    if (workspaceId === null) {
+      toast({
+        title: "Thiếu workspace",
+        description: "Vui lòng chọn workspace trước khi tạo doanh nghiệp.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  const submitForm = () => {
-    const newEnterprise = {
-      code: formData.code,
-      name: formData.name,
-      brandName: formData.brandName,
-      image: formData.image,
-      type: formData.type,
-      classification: formData.classification as (
-        | "production"
-        | "processing"
-        | "trading"
-        | "service"
-        | "other"
-      )[],
-      taxCode: formData.taxCode,
-      taxAddress: formData.taxAddress,
-      taxAuthority: formData.taxAuthority,
-      issueDate: formData.issueDate,
-      address: formData.address,
-      ward: formData.ward,
-      district: formData.district,
-      province: formData.province,
-      latitude: formData.latitude,
-      longitude: formData.longitude,
-      foundedDate: formData.foundedDate,
-      representative: formData.representative,
-      website: formData.website,
-      description: formData.description,
-      phone: formData.phone,
-      email: formData.email,
+    const businessLines: BusinessLineRecord[] = values.classification.map(
+      (classification: string) => {
+      const mappedCode =
+        CLASSIFICATION_TO_BUSINESS_LINE[classification] || classification;
+      const mappedName =
+        CLASSIFICATION_LABELS[classification] || classification;
+      const record = businessLineRecords.find(
+        (item) =>
+          item.code === mappedCode ||
+          item.name.toLowerCase() === mappedName.toLowerCase(),
+      );
+
+      return (
+        record || {
+          id: mappedCode,
+          code: mappedCode,
+          name: mappedName,
+        }
+      );
+      },
+    );
+
+    const payload = {
+      type: values.type,
+      organizationTypeId: values.organizationTypeId,
+      code: values.code.trim(),
+      name: values.name.trim(),
+      brandName: values.brandName.trim(),
+      taxCode: values.taxCode.trim(),
+      taxAuthority: values.taxAuthority.trim(),
+      taxAddress: values.taxAddress.trim(),
+      issueDate: values.issueDate || undefined,
+      businessLines,
+      representative: values.representative.trim(),
+      foundedDate: values.foundedDate || undefined,
+      website: values.website.trim(),
+      province: values.province.trim(),
+      ward: values.ward.trim(),
+      address: values.address.trim(),
+      latitude: values.latitude ?? 0,
+      longitude: values.longitude ?? 0,
+      imageUrl: values.image.trim(),
+      description: values.description.trim(),
       status: "active" as const,
-      contacts: formData.contacts,
-      documents: formData.documents,
-      branches: formData.branches,
-      bankAccounts: formData.bankAccounts,
+      contacts: values.contacts.map((contact, index) => ({
+        contactId: index + 1,
+        name: contact.name,
+        position: "",
+        phone: contact.phone,
+        email: contact.email,
+        isPrimary: index === 0,
+      })),
+      branches: values.branches.map((branch, index) => ({
+        id: index + 1,
+        code: branch.name.slice(0, 10).toUpperCase(),
+        name: branch.name,
+        taxCode: branch.taxCode,
+        taxAddress: branch.taxAddress,
+        website: "",
+        address: branch.address,
+        city: "",
+        ward: "",
+        imageUrl: "",
+        latitude: 0,
+        longitude: 0,
+        status: "active" as const,
+        contacts: branch.phone || branch.email
+          ? [
+              {
+                contactId: index + 1,
+                name: branch.name,
+                position: "",
+                phone: branch.phone,
+                email: branch.email,
+                isPrimary: true,
+              },
+            ]
+          : [],
+        bankAccounts: [],
+        metadataJson: null,
+      })),
+      bankAccounts: values.bankAccounts.map((account, index) => {
+        const bankInfo = vietQrBankData.find(
+          (bank) =>
+            bank.bin === account.bin ||
+            bank.name.toLowerCase() === account.bankName.toLowerCase() ||
+            bank.shortName.toLowerCase() === account.bankName.toLowerCase(),
+        );
+
+        return {
+          id: index + 1,
+          ownerType: values.type,
+          bankCode: bankInfo?.bin || account.bin || account.bankName,
+          bankName: account.bankName,
+          bin: account.bin || bankInfo?.bin || "",
+          accountNumber: account.accountNumber,
+          accountHolder: account.accountHolder,
+          branch: account.branch,
+          note: account.note,
+          logoUrl: account.logo || bankInfo?.logo || "",
+          status: "active" as const,
+          isPrimary: index === 0,
+          metadataJson: null,
+        };
+      }),
+      documents: values.documents.map((doc, index) => ({
+        id: index + 1,
+        documentType: doc.type,
+        name: doc.name,
+        fileUrl: doc.fileUrl || doc.url || "",
+        fileName: doc.fileName || doc.name,
+        mimeType: doc.mimeType || doc.type,
+        sizeBytes: doc.sizeBytes ?? normalizeBytes(doc.size),
+        content: doc.content,
+      })),
+      metadataJson: null,
     };
 
-    addEnterprise(newEnterprise);
-    setShowConfirmDialog(false);
-    toast({
-      title: "Thành công",
-      description: `Đã tạo doanh nghiệp "${formData.name}"`,
-    });
-    setLocation("/enterprise");
-  };
+    try {
+      await createOrganization.createOrganization({
+        payload,
+        workspaceId,
+      });
+      setShowConfirmDialog(false);
+    } catch {
+      // Error toast is handled by the mutation callback.
+    }
+  });
 
   const steps: Step[] = useMemo(() => {
     const nextSteps: Step[] = [
@@ -526,7 +726,10 @@ export function useEnterpriseCreateForm() {
         title: "Thông tin cơ bản",
         description: "Tên, thương hiệu, mã, thuế",
         content: <EnterpriseBasicInfoStep />,
-        isValid: formData.name.length > 0 && formData.code.length > 0,
+        isValid:
+          formData.name.length > 0 &&
+          formData.code.length > 0 &&
+          formData.organizationTypeId !== "",
       },
       {
         id: "contacts",
@@ -592,6 +795,7 @@ export function useEnterpriseCreateForm() {
     formData.code,
     formData.contacts.length,
     formData.name,
+    formData.organizationTypeId,
     formData.type,
   ]);
 
@@ -632,6 +836,7 @@ export function useEnterpriseCreateForm() {
     handleDocumentUpload,
     handleDocumentDelete,
     setFormData,
+    control,
     steps,
     showConfirmDialog,
     setShowConfirmDialog,

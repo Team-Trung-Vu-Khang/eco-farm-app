@@ -91,8 +91,8 @@ export function EnterpriseContactsStep() {
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label className="text-sm font-semibold">
-                Số điện thoại <span className="text-red-500">*</span>
+              <Label className="text-sm font-semibold" required>
+                Số điện thoại
               </Label>
               <Input
                 value={newContact.phone}

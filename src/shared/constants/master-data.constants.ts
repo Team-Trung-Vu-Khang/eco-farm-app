@@ -6,6 +6,7 @@ export const MASTER_DATA_PATHS = {
   businessLines: `${MASTER_DATA_BASE_PATH}/business-lines`,
   certificateIssuers: `${MASTER_DATA_BASE_PATH}/certificate-issuers`,
   certificateStandards: `${MASTER_DATA_BASE_PATH}/certificate-standards`,
+  organizationTypes: `${MASTER_DATA_BASE_PATH}/organization-types`,
   geoProvinces: `${MASTER_DATA_BASE_PATH}/geo/provinces`,
   geoWards: `${MASTER_DATA_BASE_PATH}/geo/wards`,
   equipmentToolGroups: `${MASTER_DATA_BASE_PATH}/equipment-tool-groups`,
@@ -36,6 +37,7 @@ export const MASTER_DATA_CATALOGS = [
   "positions",
   "certificate-issuers",
   "certificate-standards",
+  "organization-types",
   "vsic-industries",
 ] as const;
 

@@ -1,11 +1,18 @@
 import { useToast, type Step } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-
 import QrScanner from "qr-scanner";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type SetStateAction } from "react";
 import { useLocation, useRoute } from "wouter";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import { vietQrBankData } from "@/constants/banks";
-import useEnterpriseStore from "@/stores/useEnterpriseStore";
+import {
+  useOrganizationById,
+  useUpdateOrganization,
+} from "@/features/organization";
+import { useMasterData } from "@/features/master-data";
+import { useUploadStorageFile } from "@/features/storage/hooks/useUploadStorageFile";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 import { parseVietQR } from "@/utils/commons";
 import readXlsxFile from "read-excel-file";
 import { EnterpriseBankAccountsStep } from "../components/steps/EnterpriseBankAccountsStep";
@@ -15,89 +22,163 @@ import { EnterpriseBranchesStep } from "../components/steps/EnterpriseBranchesSt
 import { EnterpriseConfirmationStep } from "../components/steps/EnterpriseConfirmationStep";
 import { EnterpriseDocumentsStep } from "../components/steps/EnterpriseDocumentsStep";
 import type { BankAccount, Branch } from "../data/constants";
+import {
+  defaultEnterpriseFormValues,
+  enterpriseFormSchema,
+  type EnterpriseFormInput,
+  type EnterpriseFormValues,
+} from "../data/enterprise-form.schema";
 import type { EnterpriseFormData } from "../types";
 
 export function useEnterpriseEditForm() {
   const [, params] = useRoute("/enterprise/:id/edit");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-
-  const getEnterpriseById = useEnterpriseStore(
-    (state) => state.getEnterpriseById,
-  );
-  const updateEnterprise = useEnterpriseStore(
-    (state) => state.updateEnterprise,
-  );
+  const workspaceId = useSelectedWorkspaceId();
 
   const enterpriseId = params?.id ? Number(params.id) : null;
-  const enterpriseData = enterpriseId
-    ? getEnterpriseById(enterpriseId)
-    : undefined;
+  const enterpriseQuery = useOrganizationById(
+    enterpriseId ?? "missing",
+    workspaceId ?? "missing",
+    {
+      enabled: workspaceId !== null && enterpriseId !== null,
+    },
+  );
 
-  const [formData, setFormData] = useState<EnterpriseFormData>({
-    type: "enterprise",
-    code: "",
-    name: "",
-    brandName: "",
-    taxCode: "",
-    taxAddress: "",
-    taxAuthority: "",
-    issueDate: "",
-    classification: [],
-    foundedDate: "",
-    representative: "",
-    website: "",
-    province: "",
-    district: "",
-    ward: "",
-    latitude: undefined,
-    longitude: undefined,
-    address: "",
-    image: "",
-    description: "",
-    phone: "",
-    email: "",
-    contacts: [],
-    branches: [],
-    bankAccounts: [],
-    documents: [],
+  const updateOrganization = useUpdateOrganization({
+    onSuccess: () => {
+      toast({
+        title: "Cập nhật thành công",
+        description: "Đã cập nhật thông tin doanh nghiệp",
+      });
+      setLocation("/enterprise");
+    },
+    onError: (error) => {
+      toast({
+        title: "Lỗi",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
-  useEffect(() => {
-    if (enterpriseData) {
-      setFormData({
-        type: enterpriseData.type,
-        code: enterpriseData.code,
-        name: enterpriseData.name,
-        brandName: enterpriseData.brandName || "",
-        taxCode: enterpriseData.taxCode,
-        taxAddress: enterpriseData.taxAddress || "",
-        taxAuthority: enterpriseData.taxAuthority || "",
-        issueDate: enterpriseData.issueDate || "",
-        classification: enterpriseData.classification,
-        foundedDate: enterpriseData.foundedDate || "",
-        representative: enterpriseData.representative || "",
-        website: enterpriseData.website || "",
-        province: enterpriseData.province || "",
-        district: enterpriseData.district || "",
-        ward: enterpriseData.ward || "",
-        latitude: enterpriseData.latitude,
-        longitude: enterpriseData.longitude,
-        address: enterpriseData.address,
-        image: enterpriseData.image || "",
-        description: enterpriseData.description || "",
-        phone: enterpriseData.phone || "",
-        email: enterpriseData.email || "",
-        contacts: enterpriseData.contacts || [],
-        branches: enterpriseData.branches || [],
-        bankAccounts: enterpriseData.bankAccounts || [],
-        documents: enterpriseData.documents || [],
+  const uploadLogo = useUploadStorageFile({
+    onError: (error) => {
+      toast({
+        title: "Không thể tải logo",
+        description: error.message,
+        variant: "destructive",
       });
-    } else if (enterpriseId) {
-      // Handle not found if needed, or redirect
-      // setLocation("/enterprise");
-    }
-  }, [enterpriseData, enterpriseId]);
+    },
+  });
+
+  const businessLinesQuery = useMasterData("business-lines", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
+
+  const businessLineRecords = useMemo(
+    () =>
+      businessLinesQuery.items as {
+        id: number | string;
+        code: string;
+        name: string;
+      }[],
+    [businessLinesQuery.items],
+  );
+  const logoUploadSeqRef = useRef(0);
+
+  const form = useForm<EnterpriseFormInput, unknown, EnterpriseFormValues>({
+    defaultValues: defaultEnterpriseFormValues,
+    resolver: zodResolver(enterpriseFormSchema),
+    mode: "onSubmit",
+  });
+
+  const { watch, getValues, setValue, reset, handleSubmit, control } = form;
+  const formData = watch() as EnterpriseFormData;
+  const setFormData = (updater: SetStateAction<EnterpriseFormData>) => {
+    const nextValue =
+      typeof updater === "function"
+        ? updater(getValues() as EnterpriseFormData)
+        : updater;
+
+    Object.entries(nextValue).forEach(([key, value]) => {
+      setValue(key as keyof EnterpriseFormInput, value as never, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    });
+  };
+
+  useEffect(() => {
+    const enterpriseData = enterpriseQuery.item;
+    if (!enterpriseData) return;
+
+    reset({
+      ...defaultEnterpriseFormValues,
+      type: enterpriseData.type as EnterpriseFormValues["type"],
+      organizationTypeId: enterpriseData.organizationType?.id ?? "",
+      code: enterpriseData.code,
+      name: enterpriseData.name,
+      brandName: enterpriseData.brandName || "",
+      taxCode: enterpriseData.taxCode,
+      taxAddress: enterpriseData.taxAddress || "",
+      taxAuthority: enterpriseData.taxAuthority || "",
+      issueDate: enterpriseData.issueDate || "",
+      classification:
+        enterpriseData.businessLines?.map((line) => line.code || line.name) ??
+        [],
+      foundedDate: enterpriseData.foundedDate || "",
+      representative: enterpriseData.representative || "",
+      website: enterpriseData.website || "",
+      province: enterpriseData.province || "",
+      ward: enterpriseData.ward || "",
+      latitude: enterpriseData.latitude,
+      longitude: enterpriseData.longitude,
+      address: enterpriseData.address,
+      image: enterpriseData.imageUrl || "",
+      description: enterpriseData.description || "",
+      phone: "",
+      email: "",
+      contacts: enterpriseData.contacts.map((contact) => ({
+        name: contact.name || contact.fullName || "",
+        phone: contact.phone || "",
+        email: contact.email || "",
+      })),
+      branches: enterpriseData.branches.map((branch) => ({
+        name: branch.name || "",
+        taxCode: branch.taxCode || "",
+        phone: branch.contacts?.[0]?.phone || "",
+        taxAddress: branch.taxAddress || "",
+        email: branch.contacts?.[0]?.email || "",
+        address: branch.address || "",
+        note: branch.metadataJson?.note ? String(branch.metadataJson.note) : "",
+      })),
+      bankAccounts: enterpriseData.bankAccounts.map((account) => ({
+        bankName: account.bank?.name || account.bankName || "",
+        accountHolder: account.accountHolder || "",
+        accountNumber: account.accountNumber || "",
+        branch: account.branch || "",
+        note: account.note || "",
+        bin: account.bin || account.bank?.bin || "",
+        logo: account.logoUrl || account.bank?.logoUrl || "",
+      })),
+      documents: enterpriseData.documents.map((doc) => ({
+        name: doc.name || "",
+        type: doc.mimeType || doc.documentType || "",
+        size: doc.sizeBytes ? `${(doc.sizeBytes / (1024 * 1024)).toFixed(2)} MB` : "",
+        url: doc.fileUrl || "",
+        fileName: doc.fileName || "",
+        fileUrl: doc.fileUrl || "",
+        mimeType: doc.mimeType || "",
+        sizeBytes: doc.sizeBytes,
+        content: doc.content,
+      })),
+    });
+  }, [enterpriseQuery.item, reset]);
 
   const [newBranch, setNewBranch] = useState<Branch>({
     name: "",
@@ -155,26 +236,47 @@ export function useEnterpriseEditForm() {
     }
   };
 
-  const processLogoImage = (file: File) => {
-    if (file && file.type.startsWith("image/")) {
-      const url = URL.createObjectURL(file);
-      setFormData((prev) => ({ ...prev, image: url }));
+  const processLogoImage = async (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+
+    const previewUrl = URL.createObjectURL(file);
+    setFormData((prev) => ({ ...prev, image: previewUrl }));
+
+    const requestSeq = ++logoUploadSeqRef.current;
+
+    try {
+      const uploaded = await uploadLogo.uploadStorageFile({
+        file,
+        folder: "organizations",
+      });
+
+      if (logoUploadSeqRef.current !== requestSeq) return;
+
+      setFormData((prev) => ({ ...prev, image: uploaded.fileUrl }));
+      URL.revokeObjectURL(previewUrl);
       toast({
         title: "Thành công",
         description: "Đã tải lên logo mới",
       });
+    } catch {
+      // Error toast is handled by the mutation callback.
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) processLogoImage(file);
+    if (file) {
+      await processLogoImage(file);
+      e.target.value = "";
+    }
   };
 
-  const handleLogoDrop = (e: React.DragEvent) => {
+  const handleLogoDrop = async (e: React.DragEvent) => {
     handleDrag("logo", e);
     const file = e.dataTransfer.files?.[0];
-    if (file) processLogoImage(file);
+    if (file) {
+      await processLogoImage(file);
+    }
   };
 
   const processExcelFile = async (file: File) => {
@@ -221,7 +323,7 @@ export function useEnterpriseEditForm() {
       if (newAccounts.length > 0) {
         setFormData((prev) => ({
           ...prev,
-          bankAccounts: [...newAccounts, ...prev.bankAccounts],
+          bankAccounts: [...newAccounts, ...(prev.bankAccounts ?? [])],
         }));
         toast({
           title: "Nhập Excel thành công",
@@ -279,7 +381,7 @@ export function useEnterpriseEditForm() {
       if (importedBranches.length > 0) {
         setFormData((prev) => ({
           ...prev,
-          branches: [...prev.branches, ...importedBranches],
+          branches: [...(prev.branches ?? []), ...importedBranches],
         }));
         toast({
           title: "Thành công",
@@ -411,7 +513,7 @@ export function useEnterpriseEditForm() {
   const handleDocumentDelete = (index: number) => {
     setFormData((prev) => ({
       ...prev,
-      documents: prev.documents.filter((_, i) => i !== index),
+      documents: (prev.documents ?? []).filter((_, i) => i !== index),
     }));
   };
 
@@ -419,7 +521,7 @@ export function useEnterpriseEditForm() {
     if (newBranch.name.trim()) {
       setFormData({
         ...formData,
-        branches: [...formData.branches, newBranch],
+        branches: [...(formData.branches ?? []), newBranch],
       });
       setNewBranch({
         name: "",
@@ -442,7 +544,7 @@ export function useEnterpriseEditForm() {
   const removeBranch = (index: number) => {
     setFormData({
       ...formData,
-      branches: formData.branches.filter((_, i) => i !== index),
+      branches: (formData.branches ?? []).filter((_, i) => i !== index),
     });
   };
 
@@ -450,7 +552,7 @@ export function useEnterpriseEditForm() {
     if (newBankAccount.bankName && newBankAccount.accountNumber) {
       setFormData((prev) => ({
         ...prev,
-        bankAccounts: [newBankAccount, ...prev.bankAccounts],
+        bankAccounts: [newBankAccount, ...(prev.bankAccounts ?? [])],
       }));
       setNewBankAccount({
         bankName: "",
@@ -478,7 +580,7 @@ export function useEnterpriseEditForm() {
   const removeBankAccount = (index: number) => {
     setFormData({
       ...formData,
-      bankAccounts: formData.bankAccounts.filter((_, i) => i !== index),
+      bankAccounts: (formData.bankAccounts ?? []).filter((_, i) => i !== index),
     });
   };
 
@@ -486,7 +588,7 @@ export function useEnterpriseEditForm() {
     if (newContact.name.trim() && newContact.phone.trim()) {
       setFormData((prev) => ({
         ...prev,
-        contacts: [...prev.contacts, newContact],
+        contacts: [...(prev.contacts ?? []), newContact],
       }));
       setNewContact({
         name: "",
@@ -505,7 +607,7 @@ export function useEnterpriseEditForm() {
   const removeContact = (index: number) => {
     setFormData({
       ...formData,
-      contacts: formData.contacts.filter((_, i) => i !== index),
+      contacts: (formData.contacts ?? []).filter((_, i) => i !== index),
     });
   };
 
@@ -515,59 +617,142 @@ export function useEnterpriseEditForm() {
     setShowConfirmDialog(true);
   };
 
-  const submitForm = () => {
-    if (!enterpriseId) return;
+  const submitForm = handleSubmit(async (values: EnterpriseFormValues) => {
+    if (workspaceId === null) {
+      toast({
+        title: "Thiếu workspace",
+        description: "Vui lòng chọn workspace trước khi cập nhật doanh nghiệp.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    const updatedEnterprise: any = {
-      id: enterpriseId,
-      code: formData.code,
-      name: formData.name,
-      image: formData.image,
-      type: formData.type,
-      classification: formData.classification as any,
-      taxCode: formData.taxCode,
-      address: formData.address, // Mapping only address as per current store structure, ideally should store components too if needed
-      phone: formData.phone,
-      email: formData.email,
-      status: enterpriseData?.status || "active",
-      createdAt: enterpriseData?.createdAt || new Date().toISOString(),
+    if (enterpriseId === null) {
+      toast({
+        title: "Thiếu dữ liệu",
+        description: "Không tìm thấy doanh nghiệp để cập nhật.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      // Extended fields
-      brandName: formData.brandName,
-      representative: formData.representative,
-      foundedDate: formData.foundedDate,
-      website: formData.website,
-      province: formData.province,
-      district: formData.district,
-      ward: formData.ward,
-      latitude: formData.latitude,
-      longitude: formData.longitude,
-      taxAddress: formData.taxAddress,
-      taxAuthority: formData.taxAuthority,
-      issueDate: formData.issueDate,
-      description: formData.description,
-      contacts: formData.contacts,
-      branches: formData.branches,
-      bankAccounts: formData.bankAccounts,
-      documents: formData.documents,
+    const businessLines = values.classification.map((classification: string) => {
+      const record = businessLineRecords.find(
+        (item) => item.code === classification || item.name === classification,
+      );
+
+      return (
+        record || {
+          id: classification,
+          code: classification,
+          name: classification,
+        }
+      );
+    });
+
+    const payload = {
+      type: values.type,
+      organizationTypeId: values.organizationTypeId,
+      code: values.code.trim(),
+      name: values.name.trim(),
+      brandName: values.brandName.trim(),
+      taxCode: values.taxCode.trim(),
+      taxAuthority: values.taxAuthority.trim(),
+      taxAddress: values.taxAddress.trim(),
+      issueDate: values.issueDate || undefined,
+      businessLines,
+      representative: values.representative.trim(),
+      foundedDate: values.foundedDate || undefined,
+      website: values.website.trim(),
+      province: values.province.trim(),
+      ward: values.ward.trim(),
+      address: values.address.trim(),
+      latitude: values.latitude ?? 0,
+      longitude: values.longitude ?? 0,
+      imageUrl: values.image.trim(),
+      description: values.description.trim(),
+      status:
+        enterpriseQuery.item?.status === "active" ||
+        enterpriseQuery.item?.status === "inactive" ||
+        enterpriseQuery.item?.status === "archived"
+          ? enterpriseQuery.item.status
+          : "active",
+      contacts: values.contacts.map((contact, index) => ({
+        contactId: index + 1,
+        name: contact.name,
+        position: "",
+        phone: contact.phone,
+        email: contact.email,
+        isPrimary: index === 0,
+      })),
+      branches: values.branches.map((branch, index) => ({
+        id: index + 1,
+        code: branch.name.slice(0, 10).toUpperCase(),
+        name: branch.name,
+        taxCode: branch.taxCode,
+        taxAddress: branch.taxAddress,
+        website: "",
+        address: branch.address,
+        city: "",
+        ward: "",
+        imageUrl: "",
+        latitude: 0,
+        longitude: 0,
+        status: "active" as const,
+        contacts: branch.phone || branch.email
+          ? [
+              {
+                contactId: index + 1,
+                name: branch.name,
+                position: "",
+                phone: branch.phone,
+                email: branch.email,
+                isPrimary: true,
+              },
+            ]
+          : [],
+        bankAccounts: [],
+        metadataJson: null,
+      })),
+      bankAccounts: values.bankAccounts.map((account, index) => ({
+        id: index + 1,
+        ownerType: values.type,
+        bankCode: account.bin || account.bankName,
+        bankName: account.bankName,
+        bin: account.bin || "",
+        accountNumber: account.accountNumber,
+        accountHolder: account.accountHolder,
+        branch: account.branch,
+        note: account.note,
+        logoUrl: account.logo || "",
+        status: "active" as const,
+        isPrimary: index === 0,
+        metadataJson: null,
+      })),
+      documents: values.documents.map((doc, index) => ({
+        id: index + 1,
+        documentType: doc.type,
+        name: doc.name,
+        fileUrl: doc.fileUrl || doc.url || "",
+        fileName: doc.fileName || doc.name,
+        mimeType: doc.mimeType || doc.type,
+        sizeBytes: doc.sizeBytes,
+        content: doc.content,
+      })),
+      metadataJson: enterpriseQuery.item?.metadataJson ?? null,
     };
 
-    // Exclude ID from the update object as it is passed separately
-    const { id, ...updateData } = updatedEnterprise;
-    updateEnterprise(enterpriseId, updateData);
-    setShowConfirmDialog(false);
-    toast({
-      title: "Cập nhật thành công",
-      description: `Đã cập nhật thông tin ${
-        formData.type === "enterprise"
-          ? "doanh nghiệp"
-          : formData.type === "cooperative"
-            ? "hợp tác xã"
-            : "nông hộ"
-      } "${formData.name}"`,
-    });
-    setLocation("/enterprise");
-  };
+    try {
+      await updateOrganization.updateOrganization({
+        id: enterpriseId,
+        payload,
+        workspaceId,
+      });
+      setShowConfirmDialog(false);
+    } catch {
+      // Error toast is handled by the mutation callback.
+    }
+  });
 
   const steps: Step[] = useMemo(() => {
     const nextSteps: Step[] = [
@@ -576,7 +761,10 @@ export function useEnterpriseEditForm() {
         title: "Thông tin cơ bản",
         description: "Tên, thương hiệu, mã, thuế",
         content: <EnterpriseBasicInfoStep />,
-        isValid: formData.name.length > 0 && formData.code.length > 0,
+        isValid:
+          formData.name.length > 0 &&
+          formData.code.length > 0 &&
+          formData.organizationTypeId !== "",
       },
       {
         id: "contacts",
@@ -642,6 +830,7 @@ export function useEnterpriseEditForm() {
     formData.code,
     formData.contacts.length,
     formData.name,
+    formData.organizationTypeId,
     formData.type,
   ]);
 
@@ -682,6 +871,7 @@ export function useEnterpriseEditForm() {
     handleDocumentUpload,
     handleDocumentDelete,
     setFormData,
+    control,
     steps,
     showConfirmDialog,
     setShowConfirmDialog,

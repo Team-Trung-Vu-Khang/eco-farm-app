@@ -1,12 +1,10 @@
 import {
-  Badge,
+  useGeoProvinces,
+  useGeoWards,
+  useMasterData,
+} from "@/features/master-data";
+import {
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Combobox,
   Input,
   Label,
   MultiSelect,
@@ -15,44 +13,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Separator,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
   Textarea,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Scanner } from "@yudiel/react-qr-scanner";
-import {
-  Building2,
-  Calendar,
-  Camera,
-  Check,
-  CreditCard,
-  Download,
-  FileText,
-  Globe,
-  Image,
-  Info,
-  Mail,
-  MapPin,
-  Phone,
-  Plus,
-  QrCode,
-  Scan,
-  Search,
-  Trash2,
-  Upload,
-  User,
-  Users,
-} from "lucide-react";
-import { PROVINCES } from "@/constants/province";
-import { vietQrBankData } from "@/constants/banks";
-import useContactStore from "@/stores/useContactStore";
-import { useEnterpriseFormContext } from "../../context/EnterpriseFormContext";
+import { Image, MapPin, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { ContactSelectorDialog } from "../ContactSelectorDialog";
+import { Controller } from "react-hook-form";
+import { useEnterpriseFormContext } from "../../context/EnterpriseFormContext";
 
 const classificationOptions = [
   { value: "production", label: "Sản xuất" },
@@ -61,14 +28,6 @@ const classificationOptions = [
   { value: "service", label: "Dịch vụ" },
   { value: "other", label: "Khác" },
 ];
-
-const bankOptions = vietQrBankData.map((bank) => ({
-  id: bank.id,
-  bin: bank.bin,
-  label: bank.name,
-  image: bank.logo,
-  value: bank.bin,
-}));
 
 export function EnterpriseBasicInfoStep() {
   return <EnterpriseBasicInfoStepContent showContactSelector />;
@@ -83,20 +42,29 @@ function EnterpriseBasicInfoStepContent({
 }: EnterpriseBasicInfoStepContentProps) {
   const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
   const { toast } = useToast();
+  const organizationTypesQuery = useMasterData("organization-types", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
+  const provincesQuery = useGeoProvinces({
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
   const {
     formData,
     setFormData,
+    control,
     isDragging,
     handleDrag,
     handleLogoDrop,
     handleImageUpload,
   } = useEnterpriseFormContext();
-  const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
-  const contactStore = useContactStore((state) => state.contacts);
-  const selectedContact = contactStore.find(
-    (contact) =>
-      contact.phone === formData.phone && contact.email === formData.email,
-  );
   const [addressQuery, setAddressQuery] = useState(formData.address || "");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<
@@ -105,6 +73,28 @@ function EnterpriseBasicInfoStepContent({
   const [isFocused, setIsFocused] = useState(false);
   const skipNextSearchRef = useRef(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const wardsQuery = useGeoWards({
+    params: {
+      provinceCode: formData.province,
+      page: 0,
+      size: 100,
+    },
+    enabled: Boolean(formData.province),
+  });
+
+  const provinceOptions = provincesQuery.items.map((province) => ({
+    value: province.code,
+    label: province.fullName || province.name,
+  }));
+
+  const wardOptions = wardsQuery.items.map((ward) => ({
+    value: ward.code,
+    label: ward.fullName || ward.name,
+  }));
+
+  useEffect(() => {
+    setAddressQuery(formData.address || "");
+  }, [formData.address]);
 
   useEffect(() => {
     const timer = window.setTimeout(async () => {
@@ -255,23 +245,61 @@ function EnterpriseBasicInfoStepContent({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="code">Mã doanh nghiệp *</Label>
-          <Input
-            id="code"
-            value={formData.code}
-            onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-            placeholder="VD: DN001, DN002..."
-            data-testid="input-code"
+          <Label htmlFor="code" required>
+            Mã doanh nghiệp
+          </Label>
+          <Controller
+            control={control}
+            name="code"
+            render={({ field, fieldState }) => (
+              <>
+                <Input
+                  id="code"
+                  value={field.value}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                  placeholder="VD: DN001, DN002..."
+                  data-testid="input-code"
+                  aria-invalid={!!fieldState.error}
+                />
+                {fieldState.error ? (
+                  <p className="text-xs text-red-600">
+                    {fieldState.error.message}
+                  </p>
+                ) : null}
+              </>
+            )}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="name">Tên doanh nghiệp *</Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="VD: Công ty TNHH ABC..."
-            data-testid="input-name"
+          <Label htmlFor="name" required>
+            Tên doanh nghiệp
+          </Label>
+          <Controller
+            control={control}
+            name="name"
+            render={({ field, fieldState }) => (
+              <>
+                <Input
+                  id="name"
+                  value={field.value}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                  placeholder="VD: Công ty TNHH ABC..."
+                  data-testid="input-name"
+                  aria-invalid={!!fieldState.error}
+                />
+                {fieldState.error ? (
+                  <p className="text-xs text-red-600">
+                    {fieldState.error.message}
+                  </p>
+                ) : null}
+              </>
+            )}
           />
         </div>
       </div>
@@ -279,24 +307,38 @@ function EnterpriseBasicInfoStepContent({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="brandName">Tên thương hiệu</Label>
-          <Input
-            id="brandName"
-            value={formData.brandName}
-            onChange={(e) =>
-              setFormData({ ...formData, brandName: e.target.value })
-            }
-            placeholder="VD: EcoFarm..."
+          <Controller
+            control={control}
+            name="brandName"
+            render={({ field }) => (
+              <Input
+                id="brandName"
+                value={field.value}
+                onChange={(e) => field.onChange(e.target.value)}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+                placeholder="VD: EcoFarm..."
+              />
+            )}
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="taxCode">Mã số thuế</Label>
-          <Input
-            id="taxCode"
-            value={formData.taxCode}
-            onChange={(e) =>
-              setFormData({ ...formData, taxCode: e.target.value })
-            }
-            placeholder="Nhập mã số thuế"
+          <Controller
+            control={control}
+            name="taxCode"
+            render={({ field }) => (
+              <Input
+                id="taxCode"
+                value={field.value}
+                onChange={(e) => field.onChange(e.target.value)}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+                placeholder="Nhập mã số thuế"
+              />
+            )}
           />
         </div>
       </div>
@@ -304,24 +346,38 @@ function EnterpriseBasicInfoStepContent({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="taxAuthority">Cơ quan thuế</Label>
-          <Input
-            id="taxAuthority"
-            value={formData.taxAuthority}
-            onChange={(e) =>
-              setFormData({ ...formData, taxAuthority: e.target.value })
-            }
-            placeholder="Cục thuế / Chi cục thuế..."
+          <Controller
+            control={control}
+            name="taxAuthority"
+            render={({ field }) => (
+              <Input
+                id="taxAuthority"
+                value={field.value}
+                onChange={(e) => field.onChange(e.target.value)}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+                placeholder="Cục thuế / Chi cục thuế..."
+              />
+            )}
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="issueDate">Ngày cấp</Label>
-          <Input
-            id="issueDate"
-            type="date"
-            value={formData.issueDate}
-            onChange={(e) =>
-              setFormData({ ...formData, issueDate: e.target.value })
-            }
+          <Controller
+            control={control}
+            name="issueDate"
+            render={({ field }) => (
+              <Input
+                id="issueDate"
+                type="date"
+                value={field.value}
+                onChange={(e) => field.onChange(e.target.value)}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+              />
+            )}
           />
         </div>
       </div>
@@ -329,60 +385,140 @@ function EnterpriseBasicInfoStepContent({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="taxAddress">Địa chỉ thuế</Label>
-          <Input
-            id="taxAddress"
-            value={formData.taxAddress}
-            onChange={(e) =>
-              setFormData({ ...formData, taxAddress: e.target.value })
-            }
-            placeholder="Địa chỉ đăng ký thuế"
+          <Controller
+            control={control}
+            name="taxAddress"
+            render={({ field }) => (
+              <Input
+                id="taxAddress"
+                value={field.value}
+                onChange={(e) => field.onChange(e.target.value)}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+                placeholder="Địa chỉ đăng ký thuế"
+              />
+            )}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="classification">Phân loại</Label>
-          <MultiSelect
-            options={classificationOptions}
-            placeholder="Chọn phân loại..."
-            value={formData.classification}
-            onChange={(v) => setFormData({ ...formData, classification: v })}
+          <Label htmlFor="organizationTypeId" required>
+            Loại hình tổ chức
+          </Label>
+          <Controller
+            control={control}
+            name="organizationTypeId"
+            render={({ field, fieldState }) => (
+              <>
+                <Select
+                  value={field.value === "" ? "" : String(field.value)}
+                  onValueChange={(val) => field.onChange(val)}
+                >
+                  <SelectTrigger aria-invalid={!!fieldState.error}>
+                    <SelectValue placeholder="Chọn loại hình tổ chức" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {organizationTypesQuery.items.map((item) => (
+                      <SelectItem key={item.id} value={String(item.id)}>
+                        {item.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {fieldState.error ? (
+                  <p className="text-xs text-red-600">
+                    {fieldState.error.message}
+                  </p>
+                ) : null}
+              </>
+            )}
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="representative">Người đại diện pháp luật *</Label>
-          <Input
-            id="representative"
-            value={formData.representative}
-            onChange={(e) =>
-              setFormData({ ...formData, representative: e.target.value })
-            }
-            placeholder="Họ và tên"
+          <Label htmlFor="classification">Phân loại</Label>
+          <Controller
+            control={control}
+            name="classification"
+            render={({ field }) => (
+              <MultiSelect
+                options={classificationOptions}
+                placeholder="Chọn phân loại..."
+                value={field.value ?? []}
+                onChange={field.onChange}
+              />
+            )}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="representative" required>
+            Người đại diện pháp luật
+          </Label>
+          <Controller
+            control={control}
+            name="representative"
+            render={({ field, fieldState }) => (
+              <>
+                <Input
+                  id="representative"
+                  value={field.value}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                  placeholder="Họ và tên"
+                  aria-invalid={!!fieldState.error}
+                />
+                {fieldState.error ? (
+                  <p className="text-xs text-red-600">
+                    {fieldState.error.message}
+                  </p>
+                ) : null}
+              </>
+            )}
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="foundedDate">Ngày thành lập</Label>
-          <Input
-            id="foundedDate"
-            type="date"
-            value={formData.foundedDate}
-            onChange={(e) =>
-              setFormData({ ...formData, foundedDate: e.target.value })
-            }
+          <Controller
+            control={control}
+            name="foundedDate"
+            render={({ field }) => (
+              <Input
+                id="foundedDate"
+                type="date"
+                value={field.value}
+                onChange={(e) => field.onChange(e.target.value)}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+              />
+            )}
           />
         </div>
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="website">Website</Label>
-        <Input
-          id="website"
-          value={formData.website}
-          onChange={(e) =>
-            setFormData({ ...formData, website: e.target.value })
-          }
-          placeholder="https://..."
+        <Controller
+          control={control}
+          name="website"
+          render={({ field }) => (
+            <Input
+              id="website"
+              value={field.value}
+              onChange={(e) => field.onChange(e.target.value)}
+              onBlur={field.onBlur}
+              ref={field.ref}
+              name={field.name}
+              placeholder="https://..."
+            />
+          )}
         />
       </div>
 
@@ -393,80 +529,116 @@ function EnterpriseBasicInfoStepContent({
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="province">Tỉnh / Thành phố *</Label>
-            <Select
-              value={formData.province}
-              onValueChange={(val) =>
-                setFormData({
-                  ...formData,
-                  province: val,
-                  district: "",
-                  ward: "",
-                })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn Tỉnh / Thành Phố" />
-              </SelectTrigger>
-              <SelectContent>
-                {PROVINCES.map((province) => (
-                  <SelectItem key={province.code} value={province.code}>
-                    {province.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="province" required>
+              Tỉnh / Thành phố
+            </Label>
+            <Controller
+              control={control}
+              name="province"
+              render={({ field, fieldState }) => (
+                <>
+                  <Select
+                    value={field.value}
+                    onValueChange={(val) => {
+                      field.onChange(val);
+                      setFormData((prev) => ({
+                        ...prev,
+                        province: val,
+                        ward: "",
+                      }));
+                    }}
+                  >
+                    <SelectTrigger aria-invalid={!!fieldState.error}>
+                      <SelectValue placeholder="Chọn Tỉnh / Thành Phố" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-80 overflow-y-auto">
+                      {provinceOptions.map((province) => (
+                        <SelectItem key={province.value} value={province.value}>
+                          {province.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {fieldState.error ? (
+                    <p className="text-xs text-red-600">
+                      {fieldState.error.message}
+                    </p>
+                  ) : null}
+                </>
+              )}
+            />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="district">Quận / Huyện *</Label>
-            <Select
-              value={formData.district}
-              onValueChange={(val) =>
-                setFormData({ ...formData, district: val, ward: "" })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn Quận / Huyện" />
-              </SelectTrigger>
-              <SelectContent>
-                {PROVINCES.find(
-                  (p) => p.code === formData.province,
-                )?.districts.map((district) => (
-                  <SelectItem key={district.code} value={district.code}>
-                    {district.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="ward" required>
+              Phường / Xã
+            </Label>
+            <Controller
+              control={control}
+              name="ward"
+              render={({ field, fieldState }) => (
+                <>
+                  <Select
+                    value={field.value}
+                    onValueChange={(val) => field.onChange(val)}
+                    disabled={!formData.province || wardsQuery.loading}
+                  >
+                    <SelectTrigger aria-invalid={!!fieldState.error}>
+                      <SelectValue
+                        placeholder={
+                          formData.province
+                            ? wardsQuery.loading
+                              ? "Đang tải..."
+                              : "Chọn Phường / Xã"
+                            : "Chọn Tỉnh / Thành Phố trước"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-80 overflow-y-auto">
+                      {wardOptions.map((ward) => (
+                        <SelectItem key={ward.value} value={ward.value}>
+                          {ward.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {fieldState.error ? (
+                    <p className="text-xs text-red-600">
+                      {fieldState.error.message}
+                    </p>
+                  ) : null}
+                </>
+              )}
+            />
           </div>
         </div>
-        <div className="space-y-2 mt-4">
-          <Label htmlFor="ward">Phường / Xã</Label>
-          <Input
-            id="ward"
-            value={formData.ward}
-            onChange={(e) => setFormData({ ...formData, ward: e.target.value })}
-            placeholder="VD: Phường Bến Nghé / Xã Tân Phú"
-          />
-        </div>
+
         <div className="space-y-2 mt-4" ref={searchContainerRef}>
           <Label htmlFor="address">Địa chỉ chi tiết</Label>
-          <Input
-            id="address"
-            value={addressQuery}
-            onFocus={() => {
-              setIsFocused(true);
-              if (suggestions.length > 0) setShowSuggestions(true);
-            }}
-            onChange={(e) => {
-              setAddressQuery(e.target.value);
-              setFormData({ ...formData, address: e.target.value });
-              if (!e.target.value) {
-                setShowSuggestions(false);
-                setSuggestions([]);
-              }
-            }}
-            placeholder="Số nhà, đường, ấp..."
+          <Controller
+            control={control}
+            name="address"
+            render={({ field }) => (
+              <Input
+                id="address"
+                value={addressQuery}
+                onFocus={() => {
+                  setIsFocused(true);
+                  if (suggestions.length > 0) setShowSuggestions(true);
+                }}
+                onChange={(e) => {
+                  setAddressQuery(e.target.value);
+                  field.onChange(e.target.value);
+                  if (!e.target.value) {
+                    setShowSuggestions(false);
+                    setSuggestions([]);
+                  }
+                }}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+                placeholder="Số nhà, đường, ấp..."
+              />
+            )}
           />
           {showSuggestions && suggestions.length > 0 && (
             <div className="z-[99999] mt-1 max-h-56 overflow-y-auto rounded-md border bg-white shadow">
@@ -497,14 +669,21 @@ function EnterpriseBasicInfoStepContent({
 
       <div className="space-y-2">
         <Label htmlFor="description">Mô tả doanh nghiệp</Label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) =>
-            setFormData({ ...formData, description: e.target.value })
-          }
-          placeholder="Giới thiệu về doanh nghiệp"
-          rows={3}
+        <Controller
+          control={control}
+          name="description"
+          render={({ field }) => (
+            <Textarea
+              id="description"
+              value={field.value}
+              onChange={(e) => field.onChange(e.target.value)}
+              onBlur={field.onBlur}
+              ref={field.ref}
+              name={field.name}
+              placeholder="Giới thiệu về doanh nghiệp"
+              rows={3}
+            />
+          )}
         />
       </div>
     </div>

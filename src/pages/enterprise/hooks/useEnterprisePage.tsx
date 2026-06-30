@@ -5,21 +5,29 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import useEnterpriseStore from "../../../stores/useEnterpriseStore";
-import type { Enterprise } from "../data/constants";
 
-const formatContactTooltip = (enterprise: Enterprise) => {
-  const contacts = enterprise.contacts?.length
-    ? enterprise.contacts
-    : enterprise.phone || enterprise.email
-      ? [
-          {
-            name: enterprise.representative || enterprise.name,
-            phone: enterprise.phone,
-            email: enterprise.email,
-          },
-        ]
-      : [];
+import {
+  useDeleteOrganization,
+  useOrganizations,
+  type OrganizationRecord,
+} from "@/features/organization";
+import { useMasterData } from "@/features/master-data";
+import { useSelectedWorkspaceId } from "@/features/workspace";
+
+type EnterpriseRow = OrganizationRecord & {
+  businessLine: string;
+  businessLineText: string;
+  primaryPhone: string;
+  primaryEmail: string;
+  image: string;
+};
+
+const DEFAULT_PAGE_SIZE = 10;
+
+type OrganizationStatusFilter = OrganizationRecord["status"] | "all";
+
+const formatContactTooltip = (enterprise: OrganizationRecord) => {
+  const contacts = enterprise.contacts?.length ? enterprise.contacts : [];
 
   return contacts
     .map((contact, index) => {
@@ -34,22 +42,92 @@ const formatContactTooltip = (enterprise: Enterprise) => {
     .join("\n");
 };
 
+const toEnterpriseRow = (
+  enterprise: OrganizationRecord,
+  selectedBusinessLine: string,
+): EnterpriseRow => {
+  const primaryContact =
+    enterprise.contacts?.find((contact) => contact.isPrimary) ??
+    enterprise.contacts?.[0] ??
+    null;
+
+  const firstBusinessLine =
+    enterprise.businessLines?.find((line) => line.code || line.name) ?? null;
+  const businessLineValue =
+    selectedBusinessLine !== "all"
+      ? selectedBusinessLine
+      : firstBusinessLine?.code || firstBusinessLine?.name || "-";
+
+  return {
+    ...enterprise,
+    businessLine: businessLineValue,
+    businessLineText:
+      enterprise.businessLines
+        ?.map((line) => line.code || line.name)
+        .filter(Boolean)
+        .join(", ") || "-",
+    primaryPhone: primaryContact?.phone || "-",
+    primaryEmail: primaryContact?.email || "-",
+    image: enterprise.imageUrl || "",
+  };
+};
+
 export function useEnterprisePage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const workspaceId = useSelectedWorkspaceId();
 
-  const enterprises = useEnterpriseStore((state) => state.enterprises);
-  const filterEnterprises = useMemo(() => {
-    return enterprises.filter((enterprise) => enterprise.type === "enterprise");
-  }, [enterprises]);
-  const deleteEnterprise = useEnterpriseStore(
-    (state) => state.deleteEnterprise,
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<OrganizationStatusFilter>("all");
+  const [businessLine, setBusinessLine] = useState<string>("all");
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [currentIndex, setCurrentIndex] = useState(1);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<EnterpriseRow | null>(null);
+
+  const organizationsQuery = useOrganizations(
+    {
+      type: "enterprise",
+      keyword: search.trim() || undefined,
+      status: status === "all" ? undefined : status,
+      businessLine: businessLine === "all" ? undefined : businessLine,
+      page: Math.max(currentIndex - 1, 0),
+      size: pageSize,
+    },
+    workspaceId ?? "missing",
+    {
+      enabled: workspaceId !== null,
+    },
   );
 
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<Enterprise | null>(null);
+  const businessLinesQuery = useMasterData("business-lines", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
 
-  const columns: Column<Enterprise>[] = [
+  const deleteOrganization = useDeleteOrganization();
+
+  const enterprises = useMemo(
+    () =>
+      (organizationsQuery.items ?? []).map((enterprise) =>
+        toEnterpriseRow(enterprise, businessLine),
+      ),
+    [organizationsQuery.items, businessLine],
+  );
+
+  const businessLineOptions = useMemo(
+    () =>
+      businessLinesQuery.items.map((line) => ({
+        value: String(line.code || line.id),
+        label: line.name || line.code || String(line.id),
+      })),
+    [businessLinesQuery.items],
+  );
+
+  const columns: Column<EnterpriseRow>[] = [
     {
       key: "code",
       label: "Mã",
@@ -70,153 +148,170 @@ export function useEnterprisePage() {
           <img
             src={value as string}
             alt="enterprise"
-            className="w-10 h-10 object-cover rounded-md border"
+            className="h-10 w-10 rounded-md border object-cover"
           />
         ) : null,
     },
     { key: "name", label: "Tên đơn vị" },
-  {
-    key: "classification",
-    label: "Phân loại",
-    render: (value) => {
-      const labels: Record<string, string> = {
-          production: "Sản xuất",
-          processing: "Chế biến",
-          trading: "Thương mại",
-          service: "Dịch vụ",
-          other: "Khác",
-      };
-      const items = value as string[];
-      return (
-        <div className="flex flex-wrap gap-1.5">
-          {items.map((item: string) => (
-            <Badge
-              key={item}
-              variant="secondary"
-              className="rounded-full bg-primary/10 px-2.5 py-1 text-primary"
-            >
-              {labels[item] || item}
-            </Badge>
-          ))}
+    {
+      key: "businessLineText",
+      label: "Ngành nghề",
+      render: (value) => (
+        <div className="max-w-[240px] truncate" title={String(value || "-")}>
+          {String(value || "-")}
         </div>
-      );
+      ),
     },
-  },
     {
-      key: "phone",
+      key: "primaryPhone",
       label: "Điện thoại",
-      render: (_value, row) => {
-        const contacts = row.contacts?.length
-          ? row.contacts
-          : row.phone || row.email
-            ? [
-                {
-                  name: row.representative || row.name,
-                  phone: row.phone,
-                  email: row.email,
-                },
-              ]
-            : [];
-
-        const primaryContact = contacts[0];
-        const extraCount = Math.max(0, contacts.length - 1);
-
-        return (
-          <div className="max-w-[240px] space-y-1" title={formatContactTooltip(row)}>
-            <div className="font-medium truncate">{primaryContact?.phone || "-"}</div>
-            {extraCount > 0 && (
-              <div className="text-xs text-muted-foreground">
-                +{extraCount} liên hệ khác
-              </div>
-            )}
-          </div>
-        );
-      },
+      render: (_value, row) => (
+        <div
+          className="max-w-[240px] space-y-1"
+          title={formatContactTooltip(row)}
+        >
+          <div className="truncate font-medium">{row.primaryPhone || "-"}</div>
+          {(row.contacts?.length ?? 0) > 1 && (
+            <div className="text-xs text-muted-foreground">
+              +{(row.contacts?.length ?? 0) - 1} liên hệ khác
+            </div>
+          )}
+        </div>
+      ),
     },
     {
-      key: "email",
+      key: "primaryEmail",
       label: "Email",
-      render: (_value, row) => {
-        const contacts = row.contacts?.length
-          ? row.contacts
-          : row.phone || row.email
-            ? [
-                {
-                  name: row.representative || row.name,
-                  phone: row.phone,
-                  email: row.email,
-                },
-              ]
-            : [];
-
-        const primaryContact = contacts[0];
-        const extraCount = Math.max(0, contacts.length - 1);
-
-        return (
-          <div className="max-w-[240px] space-y-1" title={formatContactTooltip(row)}>
-            <div className="font-medium truncate">{primaryContact?.email || "-"}</div>
-            {extraCount > 0 && (
-              <div className="text-xs text-muted-foreground">
-                +{extraCount} liên hệ khác
-              </div>
-            )}
-          </div>
-        );
-      },
+      render: (_value, row) => (
+        <div
+          className="max-w-[240px] space-y-1"
+          title={formatContactTooltip(row)}
+        >
+          <div className="truncate font-medium">{row.primaryEmail || "-"}</div>
+          {(row.contacts?.length ?? 0) > 1 && (
+            <div className="text-xs text-muted-foreground">
+              +{(row.contacts?.length ?? 0) - 1} liên hệ khác
+            </div>
+          )}
+        </div>
+      ),
     },
     { key: "address", label: "Địa chỉ" },
-  {
-    key: "status",
-    label: "Trạng thái",
-    render: (value) => (
-      <Badge
-        variant={value === "active" ? "default" : "outline"}
-        className="rounded-full px-2.5 py-1"
-      >
-        {value === "active" ? "Hoạt động" : "Không hoạt động"}
-      </Badge>
-    ),
-  },
+    {
+      key: "status",
+      label: "Trạng thái",
+      render: (value) => (
+        <Badge
+          variant={value === "active" ? "default" : "outline"}
+          className="rounded-full px-2.5 py-1"
+        >
+          {value === "active" ? "Hoạt động" : "Không hoạt động"}
+        </Badge>
+      ),
+    },
   ];
 
   const filters = [
     {
-      key: "classification",
-      label: "Phân loại",
+      key: "status",
+      label: "Trạng thái",
       options: [
-        { label: "Sản xuất", value: "production" },
-        { label: "Chế biến", value: "processing" },
-        { label: "Thương mại", value: "trading" },
-        { label: "Dịch vụ", value: "service" },
-        { label: "Khác", value: "other" },
+        { label: "Hoạt động", value: "active" },
+        { label: "Không hoạt động", value: "inactive" },
+        { label: "Đã lưu trữ", value: "archived" },
       ],
+    },
+    {
+      key: "businessLine",
+      label: "Ngành nghề",
+      options: [...businessLineOptions],
     },
   ];
 
-  const handleDelete = (item: Enterprise) => {
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setCurrentIndex(1);
+  };
+
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "status") {
+      setStatus(value as OrganizationStatusFilter);
+      setCurrentIndex(1);
+    }
+
+    if (key === "businessLine") {
+      setBusinessLine(value);
+      setCurrentIndex(1);
+    }
+  };
+
+  const handleDelete = (item: EnterpriseRow) => {
     setDeleteItem(item);
     setDeleteOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (deleteItem) {
-      deleteEnterprise(deleteItem.id);
+  const handleConfirmDelete = async () => {
+    if (!deleteItem) {
+      setDeleteOpen(false);
+      return;
+    }
+
+    if (workspaceId === null) {
+      toast({
+        title: "Thiếu workspace",
+        description: "Vui lòng chọn workspace trước khi xóa doanh nghiệp.",
+        variant: "destructive",
+      });
+      setDeleteOpen(false);
+      return;
+    }
+
+    try {
+      await deleteOrganization.deleteOrganization({
+        id: deleteItem.id,
+        workspaceId,
+      });
       toast({
         title: "Thành công",
-        description: "Đã xóa đơn vị khỏi hệ thống",
+        description: "Đã xóa doanh nghiệp khỏi hệ thống",
+      });
+      setDeleteItem(null);
+      setDeleteOpen(false);
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description:
+          error instanceof Error ? error.message : "Không thể xóa doanh nghiệp",
+        variant: "destructive",
       });
     }
-    setDeleteOpen(false);
   };
 
   return {
-    filterEnterprises,
+    filterEnterprises: enterprises,
     columns,
     filters,
+    search,
+    pageSize,
+    currentIndex,
     deleteOpen,
     setDeleteOpen,
+    handleSearch,
+    handleFilterChange,
+    setPageSize: (value: number) => {
+      setPageSize(value);
+      setCurrentIndex(1);
+    },
+    setCurrentIndex,
     handleDelete,
     handleConfirmDelete,
     setLocation,
+    loading: organizationsQuery.loading,
+    error:
+      workspaceId === null
+        ? "Vui lòng chọn workspace"
+        : organizationsQuery.error,
+    totalPages: organizationsQuery.response?.totalPages ?? 0,
+    totalElements: organizationsQuery.response?.totalElements ?? 0,
   };
 }

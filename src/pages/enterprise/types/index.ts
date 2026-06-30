@@ -5,10 +5,16 @@ export interface EnterpriseDocument {
   type: string;
   size: string;
   url?: string;
+  fileName?: string;
+  fileUrl?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  content?: string;
 }
 
 export interface EnterpriseFormData {
   type: "enterprise" | "farm" | "cooperative";
+  organizationTypeId: number | string | "";
   code: string;
   name: string;
   brandName: string;
@@ -23,7 +29,6 @@ export interface EnterpriseFormData {
   phone: string;
   email: string;
   province: string;
-  district: string;
   ward: string;
   latitude?: number;
   longitude?: number;
