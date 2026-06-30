@@ -6,12 +6,18 @@ import {
   TabsList,
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Users, BookUser } from "lucide-react";
-import { useContact } from "./hooks/useContact";
+import { BookUser, Users } from "lucide-react";
+import { GroupFormDialog } from "./components/GroupFormDialog";
 import { ContactTab } from "./components/tabs/ContactTab";
 import { GroupTab } from "./components/tabs/GroupTab";
-import { GroupFormDialog } from "./components/GroupFormDialog";
+import { useContact } from "./hooks/useContact";
 import type { CategoryType } from "./types/types";
+
+const GROUP_STATUS_OPTIONS = [
+  { value: "active", label: "Hoạt động" },
+  { value: "inactive", label: "Ngừng hoạt động" },
+  { value: "archived", label: "Đã lưu trữ" },
+];
 
 /**
  * Contact management page.
@@ -23,13 +29,19 @@ export default function ContactPage() {
     setActiveTab,
     contacts,
     groups,
+    groupsLoading,
+    groupsResponse,
+    pageSize,
+    currentIndex,
+    setCurrentIndex,
+    setPageSize,
+    handleSearch,
+    handleFilterChange,
     deleteOpen,
     setDeleteOpen,
     groupFormOpen,
     setGroupFormOpen,
     editGroup,
-    groupFormData,
-    setGroupFormData,
     handleAddGroup,
     handleEditGroup,
     handleSubmitGroup,
@@ -70,9 +82,25 @@ export default function ContactPage() {
         <TabsContent value="groups">
           <GroupTab
             groups={groups}
+            loading={groupsLoading}
+            pageSize={pageSize}
+            currentIndex={currentIndex}
+            totalPages={groupsResponse?.totalPages}
+            totalElements={groupsResponse?.totalElements}
+            filters={[
+              {
+                key: "status",
+                label: "Trạng thái",
+                options: GROUP_STATUS_OPTIONS,
+              },
+            ]}
             onAdd={handleAddGroup}
             onEdit={handleEditGroup}
             onDelete={handleDelete}
+            onSearch={handleSearch}
+            onIndexChange={setCurrentIndex}
+            onPageSize={setPageSize}
+            onFilterChange={handleFilterChange}
           />
         </TabsContent>
       </Tabs>
@@ -81,8 +109,6 @@ export default function ContactPage() {
         open={groupFormOpen}
         onOpenChange={setGroupFormOpen}
         editItem={editGroup}
-        formData={groupFormData}
-        setFormData={setGroupFormData}
         onSubmit={handleSubmitGroup}
       />
 

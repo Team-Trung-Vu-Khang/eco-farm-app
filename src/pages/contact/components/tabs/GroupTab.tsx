@@ -9,12 +9,41 @@ import type { ContactGroup } from "../../types/types";
 
 interface GroupTabProps {
   groups: ContactGroup[];
+  loading?: boolean;
+  pageSize: number;
+  currentIndex: number;
+  totalPages?: number;
+  totalElements?: number;
+  filters: Array<{
+    key: string;
+    label: string;
+    options: Array<{ label: string; value: string }>;
+  }>;
   onAdd: () => void;
   onEdit: (item: ContactGroup) => void;
   onDelete: (item: ContactGroup) => void;
+  onSearch: (value: string) => void;
+  onIndexChange: (value: number) => void;
+  onPageSize: (value: number) => void;
+  onFilterChange: (key: string, value: string) => void;
 }
 
-export function GroupTab({ groups, onAdd, onEdit, onDelete }: GroupTabProps) {
+export function GroupTab({
+  groups,
+  loading,
+  pageSize,
+  currentIndex,
+  totalPages,
+  totalElements,
+  filters,
+  onAdd,
+  onEdit,
+  onDelete,
+  onSearch,
+  onIndexChange,
+  onPageSize,
+  onFilterChange,
+}: GroupTabProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -40,9 +69,20 @@ export function GroupTab({ groups, onAdd, onEdit, onDelete }: GroupTabProps) {
       <DataTable
         columns={groupColumns}
         data={groups}
+        searchable
         onEdit={onEdit}
         onDelete={onDelete}
         searchPlaceholder="Tìm kiếm nhóm danh bạ..."
+        filters={filters}
+        loading={loading}
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalPages={totalPages}
+        totalElements={totalElements}
+        onSearch={onSearch}
+        onIndexChange={onIndexChange}
+        onPageSize={onPageSize}
+        onFilterChange={onFilterChange}
       />
     </div>
   );

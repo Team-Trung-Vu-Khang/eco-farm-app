@@ -1,4 +1,9 @@
-import type { Contact, ContactGroup } from "@/stores/useContactStore";
+import type { Contact } from "@/stores/useContactStore";
+import type {
+  ContactGroupCreateRequest,
+  ContactGroupRecord,
+} from "@/features/contact-group";
+import type { ContactGroupFormValues } from "../data/contact-group-form.schema";
 
 export type CategoryType = "contacts" | "groups";
 
@@ -14,9 +19,7 @@ export interface ContactFormData {
   status: "active" | "inactive";
 }
 
-export type ContactGroupFormData = Omit<
-  ContactGroup,
-  "id" | "createdAt" | "contactCount"
->;
+export type ContactGroup = ContactGroupRecord;
+export type ContactGroupFormData = ContactGroupFormValues;
 
-export type { Contact, ContactGroup };
+export type { Contact };
