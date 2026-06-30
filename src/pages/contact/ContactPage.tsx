@@ -29,14 +29,22 @@ export default function ContactPage() {
     setActiveTab,
     contacts,
     groups,
+    contactsLoading,
+    contactsResponse,
     groupsLoading,
     groupsResponse,
-    pageSize,
-    currentIndex,
-    setCurrentIndex,
-    setPageSize,
-    handleSearch,
-    handleFilterChange,
+    contactPageSize,
+    contactCurrentIndex,
+    setContactCurrentIndex,
+    setContactPageSize,
+    handleContactSearch,
+    handleContactFilterChange,
+    groupPageSize,
+    groupCurrentIndex,
+    setGroupCurrentIndex,
+    setGroupPageSize,
+    handleGroupSearch,
+    handleGroupFilterChange,
     deleteOpen,
     setDeleteOpen,
     groupFormOpen,
@@ -75,7 +83,16 @@ export default function ContactPage() {
           <ContactTab
             contacts={contacts}
             groups={groups}
+            loading={contactsLoading}
+            pageSize={contactPageSize}
+            currentIndex={contactCurrentIndex}
+            totalPages={contactsResponse?.totalPages}
+            totalElements={contactsResponse?.totalElements}
             onDelete={handleDelete}
+            onSearch={handleContactSearch}
+            onIndexChange={setContactCurrentIndex}
+            onPageSize={setContactPageSize}
+            onFilterChange={handleContactFilterChange}
           />
         </TabsContent>
 
@@ -83,8 +100,8 @@ export default function ContactPage() {
           <GroupTab
             groups={groups}
             loading={groupsLoading}
-            pageSize={pageSize}
-            currentIndex={currentIndex}
+            pageSize={groupPageSize}
+            currentIndex={groupCurrentIndex}
             totalPages={groupsResponse?.totalPages}
             totalElements={groupsResponse?.totalElements}
             filters={[
@@ -97,10 +114,10 @@ export default function ContactPage() {
             onAdd={handleAddGroup}
             onEdit={handleEditGroup}
             onDelete={handleDelete}
-            onSearch={handleSearch}
-            onIndexChange={setCurrentIndex}
-            onPageSize={setPageSize}
-            onFilterChange={handleFilterChange}
+            onSearch={handleGroupSearch}
+            onIndexChange={setGroupCurrentIndex}
+            onPageSize={setGroupPageSize}
+            onFilterChange={handleGroupFilterChange}
           />
         </TabsContent>
       </Tabs>

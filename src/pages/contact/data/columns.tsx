@@ -5,13 +5,13 @@ export const groupColumns: Column<ContactGroup>[] = [
   {
     key: "code",
     label: "Mã nhóm",
-    render: (value) =>
-      value ? (
+    render: (_value, row) =>
+      row.code ? (
         <Badge
           variant="outline"
           className="rounded-full bg-slate-50 px-2.5 py-1 font-mono text-[10px] text-slate-700"
         >
-          {value}
+          {row.code}
         </Badge>
       ) : (
         <span className="text-muted-foreground text-sm">Chưa có</span>
@@ -20,13 +20,13 @@ export const groupColumns: Column<ContactGroup>[] = [
   {
     key: "name",
     label: "Tên nhóm",
-    render: (value) =>
-      value ? (
+    render: (_value, row) =>
+      row.name ? (
         <Badge
           variant="secondary"
           className="rounded-full bg-primary/10 px-2.5 py-1 text-primary"
         >
-          {value}
+          {row.name}
         </Badge>
       ) : (
         <span className="text-muted-foreground text-sm">Chưa có</span>
@@ -35,9 +35,11 @@ export const groupColumns: Column<ContactGroup>[] = [
   {
     key: "description",
     label: "Mô tả",
-    render: (value) =>
-      value ? (
-        <span className="max-w-[28rem] text-sm text-slate-600">{value}</span>
+    render: (_value, row) =>
+      row.description ? (
+        <span className="max-w-[28rem] text-sm text-slate-600">
+          {row.description}
+        </span>
       ) : (
         <span className="text-muted-foreground text-sm">Chưa có mô tả</span>
       ),
@@ -45,17 +47,15 @@ export const groupColumns: Column<ContactGroup>[] = [
   {
     key: "contactCount",
     label: "Số liên hệ",
-    render: (value) => (
+    render: (_value, row) => (
       <Badge variant="secondary" className="rounded-full px-2.5 py-1">
-        {value} người
+        {row.contactCount} người
       </Badge>
     ),
   },
 ];
 
-export function getContactColumns(
-  groups: ContactGroup[],
-): Column<Contact>[] {
+export function getContactColumns(): Column<Contact>[] {
   return [
     { key: "fullName", label: "Họ và tên" },
     { key: "phone", label: "Số điện thoại" },
@@ -63,10 +63,10 @@ export function getContactColumns(
     {
       key: "department",
       label: "Phòng ban",
-      render: (value) =>
-        value ? (
+      render: (_value, row) =>
+        row.department?.name ? (
           <Badge variant="outline" className="rounded-full px-2.5 py-1">
-            {value}
+            {row.department.name}
           </Badge>
         ) : (
           <span className="text-muted-foreground text-sm">Chưa có</span>
@@ -75,10 +75,10 @@ export function getContactColumns(
     {
       key: "position",
       label: "Chức vụ",
-      render: (value) =>
-        value ? (
+      render: (_value, row) =>
+        row.position ? (
           <Badge variant="secondary" className="rounded-full px-2.5 py-1">
-            {value}
+            {row.position}
           </Badge>
         ) : (
           <span className="text-muted-foreground text-sm">Chưa có</span>
@@ -87,29 +87,28 @@ export function getContactColumns(
     {
       key: "entityName",
       label: "Đơn vị",
-      render: (value) =>
-        value ? (
+      render: (_value, row) =>
+        row.entityName ? (
           <Badge
             variant="secondary"
             className="rounded-full bg-primary/10 px-2.5 py-1 text-primary"
           >
-            {value}
+            {row.entityName}
           </Badge>
         ) : (
           <span className="text-muted-foreground text-sm">Chưa liên kết</span>
         ),
     },
     {
-      key: "groupId",
+      key: "group",
       label: "Nhóm danh bạ",
-      render: (value) => {
-        const group = groups.find((g) => g.id === value);
-        return group ? (
+      render: (_value, row) => {
+        return row.group?.name ? (
           <Badge
             variant="secondary"
             className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700"
           >
-            {group.name}
+            {row.group.name}
           </Badge>
         ) : (
           <span className="text-muted-foreground text-sm">Chưa phân nhóm</span>
@@ -119,12 +118,16 @@ export function getContactColumns(
     {
       key: "status",
       label: "Trạng thái",
-      render: (value) => (
+      render: (_value, row) => (
         <Badge
-          variant={value === "active" ? "default" : "outline"}
+          variant={row.status === "active" ? "default" : "outline"}
           className="rounded-full px-2.5 py-1"
         >
-          {value === "active" ? "Đang làm việc" : "Đã nghỉ việc"}
+          {row.status === "active"
+            ? "Đang làm việc"
+            : row.status === "inactive"
+              ? "Đã nghỉ việc"
+              : "Đã lưu trữ"}
         </Badge>
       ),
     },
@@ -139,25 +142,18 @@ export function getContactFilters(groups: ContactGroup[]) {
       options: [
         { label: "Đang làm việc", value: "active" },
         { label: "Đã nghỉ việc", value: "inactive" },
-      ],
-    },
-    {
-      key: "department",
-      label: "Phòng ban",
-      options: [
-        { label: "Kinh doanh", value: "Kinh doanh" },
-        { label: "Kế toán", value: "Kế toán" },
-        { label: "Kỹ thuật", value: "Kỹ thuật" },
-        { label: "Hành chính", value: "Hành chính" },
+        { label: "Đã lưu trữ", value: "archived" },
       ],
     },
     {
       key: "groupId",
       label: "Nhóm danh bạ",
-      options: groups.map((group) => ({
-        label: group.name,
-        value: group.id.toString(),
-      })),
+      options: [
+        ...groups.map((group) => ({
+          label: group.name,
+          value: group.id.toString(),
+        })),
+      ],
     },
   ];
 }

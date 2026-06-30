@@ -7,10 +7,32 @@ import type { Contact, ContactGroup } from "../../types/types";
 interface ContactTabProps {
   contacts: Contact[];
   groups: ContactGroup[];
+  loading?: boolean;
+  pageSize: number;
+  currentIndex: number;
+  totalPages?: number;
+  totalElements?: number;
   onDelete: (item: Contact) => void;
+  onSearch: (value: string) => void;
+  onIndexChange: (value: number) => void;
+  onPageSize: (value: number) => void;
+  onFilterChange: (key: string, value: string) => void;
 }
 
-export function ContactTab({ contacts, groups, onDelete }: ContactTabProps) {
+export function ContactTab({
+  contacts,
+  groups,
+  loading,
+  pageSize,
+  currentIndex,
+  totalPages,
+  totalElements,
+  onDelete,
+  onSearch,
+  onIndexChange,
+  onPageSize,
+  onFilterChange,
+}: ContactTabProps) {
   const [, setLocation] = useLocation();
 
   return (
@@ -30,13 +52,23 @@ export function ContactTab({ contacts, groups, onDelete }: ContactTabProps) {
         </Link>
       </div>
       <DataTable
-        columns={getContactColumns(groups)}
+        columns={getContactColumns()}
         data={contacts}
+        searchable
         onView={(item) => setLocation(`/contact/${item.id}/edit`)}
         onEdit={(item) => setLocation(`/contact/${item.id}/edit`)}
         onDelete={onDelete}
         searchPlaceholder="Tìm kiếm liên hệ..."
         filters={getContactFilters(groups)}
+        loading={loading}
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalPages={totalPages}
+        totalElements={totalElements}
+        onSearch={onSearch}
+        onIndexChange={onIndexChange}
+        onPageSize={onPageSize}
+        onFilterChange={onFilterChange}
         selectable={false}
       />
     </div>
