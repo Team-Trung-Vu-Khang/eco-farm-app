@@ -16,12 +16,41 @@ import { DeleteBranchDialog } from "./components/DeleteBranchDialog";
 export default function BranchDetailPage() {
   const {
     branch,
+    loading,
+    error,
     showDeleteDialog,
     setShowDeleteDialog,
     handleDelete,
     handleBack,
     handleEdit,
   } = useBranchDetail();
+
+  if (loading && !branch) {
+    return (
+      <AdminLayout isDev={true}>
+        <div className="flex h-96 items-center justify-center rounded-3xl border bg-card">
+          <p className="text-sm text-muted-foreground">
+            Đang tải thông tin chi nhánh...
+          </p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminLayout isDev={true}>
+        <div className="flex h-96 flex-col items-center justify-center rounded-3xl border bg-card text-center">
+          <h2 className="text-2xl font-bold">Không thể tải chi nhánh</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{error}</p>
+          <Button className="mt-6" onClick={handleBack}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Quay lại danh sách
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   // Show not found state if branch doesn't exist
   if (!branch) {

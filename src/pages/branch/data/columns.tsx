@@ -1,7 +1,13 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { Branch } from "../../../stores/useBranchStore";
+import type { BranchRecord } from "@/features/branch";
 
-export const branchColumns: Column<Branch>[] = [
+export type BranchTableRow = BranchRecord & {
+  enterpriseName: string;
+  phone: string;
+  email: string;
+};
+
+export const branchColumns: Column<BranchTableRow>[] = [
   {
     key: "code",
     label: "Mã",
