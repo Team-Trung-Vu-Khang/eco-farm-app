@@ -89,6 +89,7 @@ function mapBranchContactToContactInfo(
 
   return {
     id: String(contact.id ?? fallbackId),
+    contactId: String(contact.id ?? fallbackId),
     name,
     phone,
     email,
@@ -104,6 +105,7 @@ function mapBranchContactToContactPerson(
 
   return {
     id: String(contact.id),
+    contactId: String(contact.id),
     name,
     position: contact.position || "",
     phone: contact.phone || "",
@@ -186,18 +188,11 @@ function getInitialBranchFormData(
     };
   }
 
-  const primaryContact =
-    branch.contacts?.find((contact) => contact.isPrimary) ??
-    branch.contacts?.[0];
-  const contactInfos: ContactInfo[] = [];
-  const primaryContactInfo = mapBranchContactToContactInfo(primaryContact, "1");
-  if (primaryContactInfo) {
-    contactInfos.push(primaryContactInfo);
-  }
-
-  const contacts = (branch.contacts || [])
-    .map(mapBranchContactToContactPerson)
-    .filter((item): item is ContactPerson => Boolean(item));
+  const contactInfos: ContactInfo[] = (branch.contacts || [])
+    .map((contact, index) =>
+      mapBranchContactToContactInfo(contact, String(index + 1)),
+    )
+    .filter((item): item is ContactInfo => Boolean(item));
 
   const bankAccounts = (branch.bankAccounts || [])
     .map(mapBranchBankToBankAccount)
@@ -220,7 +215,7 @@ function getInitialBranchFormData(
     longitude: branch.longitude ?? DEFAULT_LONGITUDE,
     status: branch.status === "inactive" ? "inactive" : "active",
     contactInfos,
-    contacts,
+    contacts: [],
     bankAccounts,
   };
 }
@@ -229,32 +224,17 @@ function mapFormDataToBranchPayload(
   formData: BranchFormData,
   branchId?: number,
 ): BranchCreateRequest | BranchUpdateRequest {
-  const primaryContactPerson =
-    formData.contacts.find((contact) => contact.isPrimary) ||
-    formData.contacts[0];
-
-  const contactInfosAsContacts: BranchContactRequest[] =
-    formData.contactInfos.map((contact) => ({
-      name: contact.name || primaryContactPerson?.name || "Liên hệ",
-      position: primaryContactPerson?.position || "",
-      phone: contact.phone || "",
-      email: contact.email || "",
-      isPrimary: contact.isPrimary,
-    }));
-
-  const personnelContacts: BranchContactRequest[] = formData.contacts.map(
-    (contact) => ({
-      contactId: toNumber(contact.id) ?? contact.id,
-      name: contact.name || "",
-      position: contact.position || "",
-      phone: contact.phone || "",
-      email: contact.email || "",
-      isPrimary: contact.isPrimary,
-    }),
-  );
-
   const combinedContacts: BranchContactRequest[] = ensurePrimaryContact(
-    dedupeContacts([...contactInfosAsContacts, ...personnelContacts]),
+    dedupeContacts(
+      formData.contactInfos.map((contact) => ({
+        contactId: contact.contactId || undefined,
+        name: contact.name || "Liên hệ",
+        position: "",
+        phone: contact.phone || "",
+        email: contact.email || "",
+        isPrimary: contact.isPrimary,
+      })),
+    ),
   );
 
   const bankAccounts: BranchBankRequest[] = ensurePrimaryContact(

@@ -6,16 +6,10 @@ import {
   Badge,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Users, User, Phone, Mail } from "lucide-react";
+import type { BranchDetailView } from "../hooks/useBranchDetail";
 
 interface PersonnelCardProps {
-  contacts?: Array<{
-    id: string;
-    name: string;
-    isPrimary?: boolean;
-    position: string;
-    phone: string;
-    email: string;
-  }>;
+  contacts?: BranchDetailView["contacts"];
 }
 
 export function PersonnelCard({ contacts }: PersonnelCardProps) {

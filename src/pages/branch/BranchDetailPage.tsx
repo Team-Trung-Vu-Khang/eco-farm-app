@@ -1,13 +1,13 @@
 import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft } from "lucide-react";
-import { useBranchDetail } from "./hooks/useBranchDetail";
-import { BranchDetailHeader } from "./components/BranchDetailHeader";
+import { BankAccountCard } from "./components/BankAccountCard";
 import { BasicInfoCard } from "./components/BasicInfoCard";
+import { BranchDetailHeader } from "./components/BranchDetailHeader";
+import { DeleteBranchDialog } from "./components/DeleteBranchDialog";
 import { LocationMapCard } from "./components/LocationMapCard";
 import { PersonnelCard } from "./components/PersonnelCard";
 import { SidebarContactCard } from "./components/SidebarContactCard";
-import { BankAccountCard } from "./components/BankAccountCard";
-import { DeleteBranchDialog } from "./components/DeleteBranchDialog";
+import { useBranchDetail } from "./hooks/useBranchDetail";
 
 /**
  * Branch detail page component.
@@ -99,7 +99,7 @@ export default function BranchDetailPage() {
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
         onConfirm={handleDelete}
-        branchName={branch.name}
+        branchName={branch.name || ""}
       />
     </AdminLayout>
   );

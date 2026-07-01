@@ -71,31 +71,33 @@ export function ConfirmStep({ formData }: ConfirmStepProps) {
 
         <div className="space-y-4">
           <h3 className="font-semibold text-lg flex items-center gap-2 border-b pb-2">
-            <Users className="w-5 h-5 text-primary" /> Người liên hệ (
-            {formData.contacts.length})
+            <Users className="w-5 h-5 text-primary" /> Thông tin liên hệ (
+            {formData.contactInfos.length})
           </h3>
-          {formData.contacts.length > 0 ? (
+          {formData.contactInfos.length > 0 ? (
             <div className="grid gap-3">
-              {formData.contacts.map((contact) => (
+              {formData.contactInfos.map((contact, index) => (
                 <div
                   key={contact.id}
                   className="bg-card p-3 rounded border text-sm"
                 >
                   <div className="font-medium flex justify-between">
-                    <span>{contact.name || "Chưa nhập tên"}</span>
+                    <span>
+                      {contact.name || `Liên hệ ${index + 1}`}
+                    </span>
                     {contact.isPrimary && (
                       <Badge className="text-[10px] h-5 px-1">Chính</Badge>
                     )}
                   </div>
                   <div className="text-muted-foreground text-xs mt-1">
-                    {contact.position} • {contact.phone} • {contact.email}
+                    {contact.phone || "-"} • {contact.email || "-"}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground italic">
-              Chưa có người liên hệ
+              Chưa có thông tin liên hệ
             </p>
           )}
         </div>

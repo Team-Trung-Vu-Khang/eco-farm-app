@@ -42,6 +42,15 @@ export function BasicInfoStep({
     enterprises.find((item) => item.id.toString() === formData.enterpriseId) ||
     (enterprises.length === 1 ? enterprises[0] : undefined);
 
+  useEffect(() => {
+    if (!selectedEnterprise?.website) return;
+    if (formData.website) return;
+
+    updateFormData({
+      website: selectedEnterprise.website,
+    });
+  }, [formData.website, selectedEnterprise?.id, selectedEnterprise?.website, updateFormData]);
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="space-y-2">
@@ -96,6 +105,16 @@ export function BasicInfoStep({
             value={formData.name}
             onChange={(e) => updateFormData({ name: e.target.value })}
             placeholder="VD: Chi nhánh Miền Nam"
+          />
+        </div>
+
+        <div className="space-y-2 col-span-2">
+          <Label htmlFor="website">Website</Label>
+          <Input
+            id="website"
+            value={formData.website}
+            onChange={(e) => updateFormData({ website: e.target.value })}
+            placeholder="VD: https://example.com"
           />
         </div>
 

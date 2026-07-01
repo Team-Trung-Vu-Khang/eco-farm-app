@@ -1,5 +1,5 @@
-import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { BranchRecord } from "@/features/branch";
+import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 export type BranchTableRow = BranchRecord & {
   enterpriseName: string;
@@ -38,7 +38,7 @@ export const branchColumns: Column<BranchTableRow>[] = [
   },
   { key: "phone", label: "Điện thoại" },
   { key: "email", label: "Email" },
-  { key: "address", label: "Địa chỉ" },
+  { key: "address", label: "Địa chỉ", width: "200px" },
   {
     key: "status",
     label: "Trạng thái",

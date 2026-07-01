@@ -6,16 +6,10 @@ import {
   Badge,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CreditCard, Landmark, MapPin } from "lucide-react";
+import type { BranchDetailView } from "../hooks/useBranchDetail";
 
 interface BankAccountCardProps {
-  bankAccounts?: Array<{
-    id: string;
-    bankName: string;
-    isPrimary?: boolean;
-    accountNumber: string;
-    accountHolder: string;
-    branch: string;
-  }>;
+  bankAccounts?: BranchDetailView["bankAccounts"];
 }
 
 export function BankAccountCard({ bankAccounts }: BankAccountCardProps) {

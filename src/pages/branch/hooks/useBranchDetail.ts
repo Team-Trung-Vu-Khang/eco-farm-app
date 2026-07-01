@@ -1,6 +1,6 @@
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useMemo, useState } from "react";
 import { useLocation, useRoute } from "wouter";
-import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   useBranchById,
   useDeleteBranch,
@@ -8,7 +8,7 @@ import {
 } from "@/features/branch";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 
-type BranchDetailView = BranchRecord & {
+export type BranchDetailView = BranchRecord & {
   enterpriseName: string;
   phone: string;
   email: string;

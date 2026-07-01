@@ -19,7 +19,6 @@ import { BasicInfoStep } from "./components/steps/BasicInfoStep";
 import { ConfirmStep } from "./components/steps/ConfirmStep";
 import { ContactInfoStep } from "./components/steps/ContactInfoStep";
 import { LocationStep } from "./components/steps/LocationStep";
-import { PersonnelStep } from "./components/steps/PersonnelStep";
 import { useBranchForm } from "./hooks/useBranchForm";
 
 export default function BranchFormPage() {
@@ -67,14 +66,6 @@ export default function BranchFormPage() {
       description: "Địa chỉ, bản đồ",
       content: (
         <LocationStep formData={formData} updateFormData={updateFormData} />
-      ),
-    },
-    {
-      id: "contacts",
-      title: "Người liên hệ",
-      description: "Quản lý người liên hệ",
-      content: (
-        <PersonnelStep formData={formData} updateFormData={updateFormData} />
       ),
     },
     {

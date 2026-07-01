@@ -29,6 +29,7 @@ export function ContactInfoStep({
     number | string | null
   >(null);
   const [draftContact, setDraftContact] = useState({
+    contactId: "",
     name: "",
     phone: "",
     email: "",
@@ -46,6 +47,7 @@ export function ContactInfoStep({
   const handleSelectContact = (contact: ContactRecord) => {
     setSelectedContactId(contact.id);
     setDraftContact({
+      contactId: String(contact.id),
       name: contact.fullName,
       phone: contact.phone,
       email: contact.email || "",
@@ -60,6 +62,7 @@ export function ContactInfoStep({
       ...formData.contactInfos,
       {
         id: Date.now().toString(),
+        contactId: draftContact.contactId || undefined,
         name: draftContact.name,
         phone: draftContact.phone,
         email: draftContact.email,
@@ -68,7 +71,7 @@ export function ContactInfoStep({
     ];
 
     updateFormData({ contactInfos: nextContactInfos });
-    setDraftContact({ name: "", phone: "", email: "" });
+    setDraftContact({ contactId: "", name: "", phone: "", email: "" });
     setSelectedContactId(null);
   };
 
@@ -128,7 +131,7 @@ export function ContactInfoStep({
                   type="button"
                   variant="ghost"
                   onClick={() => {
-                    setDraftContact({ name: "", phone: "", email: "" });
+                    setDraftContact({ contactId: "", name: "", phone: "", email: "" });
                     setSelectedContactId(null);
                   }}
                   className="h-11 px-3 text-muted-foreground"
@@ -272,7 +275,7 @@ export function ContactInfoStep({
                         size="icon"
                         type="button"
                         onClick={() => handleRemoveContactInfo(contactInfo.id)}
-                        className="h-8 w-8 text-destructive opacity-0 transition-opacity group-hover:opacity-100"
+                        className="h-8 w-8 text-destructive"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>

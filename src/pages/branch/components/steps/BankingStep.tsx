@@ -1,4 +1,7 @@
-import { useMemo, useState } from "react";
+import { vietQrBankData } from "@/constants/banks";
+import useBankStore, {
+  type BankAccount as StoredBankAccount,
+} from "@/stores/useBankStore";
 import {
   Badge,
   Button,
@@ -17,9 +20,16 @@ import {
   Label,
   ScrollArea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Banknote, Check, CreditCard, Plus, Search, Trash2 } from "lucide-react";
-import { vietQrBankData } from "@/constants/banks";
-import useBankStore, { type BankAccount as StoredBankAccount } from "@/stores/useBankStore";
+import {
+  Banknote,
+  Check,
+  CreditCard,
+  PencilLine,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
+import { useMemo, useState } from "react";
 import type { BranchBankAccount, BranchFormData } from "../../types/types";
 
 interface BankingStepProps {
@@ -116,7 +126,8 @@ function BranchBankSelectorDialog({
             {filteredBanks.map((bank) => {
               const displayName = `${bank.bankName} - ${bank.accountNumber}`;
               const isSelected =
-                tempSelectedName === displayName || tempSelectedName === bank.bankName;
+                tempSelectedName === displayName ||
+                tempSelectedName === bank.bankName;
 
               return (
                 <button
@@ -132,7 +143,10 @@ function BranchBankSelectorDialog({
                 >
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-slate-100 bg-white p-2 shadow-sm">
                     <img
-                      src={bank.logo || `https://placehold.co/56x56?text=${bank.bankName?.[0] || "B"}`}
+                      src={
+                        bank.logo ||
+                        `https://placehold.co/56x56?text=${bank.bankName?.[0] || "B"}`
+                      }
                       alt={bank.bankName}
                       className="h-full w-full object-contain"
                       onError={(event) => {
@@ -165,10 +179,16 @@ function BranchBankSelectorDialog({
                     </div>
 
                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                      <Badge
+                        variant="secondary"
+                        className="bg-slate-100 text-slate-700"
+                      >
                         STK: {bank.accountNumber}
                       </Badge>
-                      <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                      <Badge
+                        variant="secondary"
+                        className="bg-slate-100 text-slate-700"
+                      >
                         {bank.branch || "Không có chi nhánh"}
                       </Badge>
                     </div>
@@ -194,7 +214,10 @@ function BranchBankSelectorDialog({
             onClick={() => {
               const bank = bankAccounts.find((item) => {
                 const displayName = `${item.bankName} - ${item.accountNumber}`;
-                return displayName === tempSelectedName || item.bankName === tempSelectedName;
+                return (
+                  displayName === tempSelectedName ||
+                  item.bankName === tempSelectedName
+                );
               });
               if (bank) onSelect(bank);
               onOpenChange(false);
@@ -213,6 +236,7 @@ function BranchBankSelectorDialog({
 export function BankingStep({ formData, updateFormData }: BankingStepProps) {
   const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
   const bankAccounts = useBankStore((state) => state.bankAccounts);
+  const [editingBankId, setEditingBankId] = useState<string | null>(null);
   const [draftBank, setDraftBank] = useState({
     bankName: "",
     bin: "",
@@ -224,7 +248,10 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
   });
   const [bankSearchQuery, setBankSearchQuery] = useState("");
 
-  const selectedBanks = useMemo(() => formData.bankAccounts, [formData.bankAccounts]);
+  const selectedBanks = useMemo(
+    () => formData.bankAccounts,
+    [formData.bankAccounts],
+  );
 
   const selectedBankLabel = useMemo(() => {
     if (!draftBank.bankName) return "Chọn ngân hàng...";
@@ -254,27 +281,21 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
     }));
   };
 
-  const handleAddNewBankAccount = () => {
-    if (!draftBank.bankName || !draftBank.accountNumber || !draftBank.accountHolder) {
-      return;
-    }
+  const handleEditBankAccount = (account: BranchBankAccount) => {
+    setEditingBankId(account.id);
+    setDraftBank({
+      bankName: account.bankName,
+      bin: account.bin || "",
+      logo: account.logo || "",
+      accountNumber: account.accountNumber,
+      accountHolder: account.accountHolder,
+      branch: account.branch,
+      note: account.note || "",
+    });
+  };
 
-    const nextAccounts: BranchBankAccount[] = [
-      ...formData.bankAccounts,
-      {
-        id: Date.now().toString(),
-        bankName: draftBank.bankName,
-        accountNumber: draftBank.accountNumber,
-        accountHolder: draftBank.accountHolder,
-        branch: draftBank.branch,
-        note: draftBank.note,
-        bin: draftBank.bin,
-        logo: draftBank.logo,
-        isPrimary: formData.bankAccounts.length === 0,
-      },
-    ];
-
-    updateFormData({ bankAccounts: nextAccounts });
+  const clearDraftBank = () => {
+    setEditingBankId(null);
     setDraftBank({
       bankName: "",
       bin: "",
@@ -286,10 +307,54 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
     });
   };
 
+  const handleAddNewBankAccount = () => {
+    if (
+      !draftBank.bankName ||
+      !draftBank.accountNumber ||
+      !draftBank.accountHolder
+    ) {
+      return;
+    }
+
+    const nextAccount: BranchBankAccount = {
+      id: editingBankId || Date.now().toString(),
+      bankName: draftBank.bankName,
+      accountNumber: draftBank.accountNumber,
+      accountHolder: draftBank.accountHolder,
+      branch: draftBank.branch,
+      note: draftBank.note,
+      bin: draftBank.bin,
+      logo: draftBank.logo,
+      isPrimary:
+        editingBankId
+          ? formData.bankAccounts.find((item) => item.id === editingBankId)
+              ?.isPrimary || false
+          : formData.bankAccounts.length === 0,
+    };
+
+    const nextAccounts: BranchBankAccount[] = editingBankId
+      ? formData.bankAccounts.map((item) =>
+          item.id === editingBankId ? nextAccount : item,
+        )
+      : [
+          ...formData.bankAccounts,
+          nextAccount,
+        ];
+
+    updateFormData({ bankAccounts: nextAccounts });
+    clearDraftBank();
+  };
+
   const handleRemoveBankAccount = (id: string) => {
     const nextAccounts = formData.bankAccounts.filter((item) => item.id !== id);
-    if (nextAccounts.length > 0 && !nextAccounts.some((item) => item.isPrimary)) {
+    if (
+      nextAccounts.length > 0 &&
+      !nextAccounts.some((item) => item.isPrimary)
+    ) {
       nextAccounts[0] = { ...nextAccounts[0], isPrimary: true };
+    }
+    if (editingBankId === id) {
+      clearDraftBank();
     }
     updateFormData({ bankAccounts: nextAccounts });
   };
@@ -353,15 +418,7 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
                     type="button"
                     variant="ghost"
                     onClick={() =>
-                      setDraftBank({
-                        bankName: "",
-                        bin: "",
-                        logo: "",
-                        accountNumber: "",
-                        accountHolder: "",
-                        branch: "",
-                        note: "",
-                      })
+                      clearDraftBank()
                     }
                     className="h-11 px-3 text-muted-foreground"
                   >
@@ -381,7 +438,10 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
               <Input
                 value={draftBank.accountNumber}
                 onChange={(event) =>
-                  setDraftBank((prev) => ({ ...prev, accountNumber: event.target.value }))
+                  setDraftBank((prev) => ({
+                    ...prev,
+                    accountNumber: event.target.value,
+                  }))
                 }
                 placeholder="Nhập số tài khoản"
                 className="bg-muted/30 focus-visible:ring-primary"
@@ -408,7 +468,10 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
               <Input
                 value={draftBank.branch}
                 onChange={(event) =>
-                  setDraftBank((prev) => ({ ...prev, branch: event.target.value }))
+                  setDraftBank((prev) => ({
+                    ...prev,
+                    branch: event.target.value,
+                  }))
                 }
                 placeholder="VD: CN Hoàn Kiếm"
                 className="bg-muted/30 focus-visible:ring-primary"
@@ -419,7 +482,10 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
               <Input
                 value={draftBank.note}
                 onChange={(event) =>
-                  setDraftBank((prev) => ({ ...prev, note: event.target.value }))
+                  setDraftBank((prev) => ({
+                    ...prev,
+                    note: event.target.value,
+                  }))
                 }
                 placeholder="Ghi chú thêm (không bắt buộc)"
                 className="bg-muted/30 focus-visible:ring-primary"
@@ -432,7 +498,7 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
             className="h-12 w-full bg-primary font-bold text-white hover:bg-primary/90"
           >
             <Plus className="mr-2 h-5 w-5" />
-            Thêm vào danh sách
+            {editingBankId ? "Cập nhật vào danh sách" : "Thêm vào danh sách"}
           </Button>
         </CardContent>
       </Card>
@@ -448,7 +514,10 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
         <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
           <h4 className="flex items-center gap-3 text-xl font-bold">
             Danh sách đã thêm
-            <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">
+            <Badge
+              variant="secondary"
+              className="rounded-full px-3 py-1 text-sm"
+            >
               {selectedBanks.length}
             </Badge>
           </h4>
@@ -491,7 +560,8 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
             {filteredAccounts.map((account) => {
               const bankInfo = vietQrBankData.find(
                 (bank) =>
-                  bank.shortName === account.bankName || bank.name === account.bankName,
+                  bank.shortName === account.bankName ||
+                  bank.name === account.bankName,
               );
 
               return (
@@ -502,7 +572,11 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
                   <CardContent className="flex items-center gap-4 p-4">
                     <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-white p-2 shadow-sm transition-transform group-hover:scale-105">
                       <img
-                        src={account.logo || bankInfo?.logo || `https://placehold.co/56x56?text=${account.bankName?.[0] || "B"}`}
+                        src={
+                          account.logo ||
+                          bankInfo?.logo ||
+                          `https://placehold.co/56x56?text=${account.bankName?.[0] || "B"}`
+                        }
                         alt={account.bankName}
                         className="h-full w-full object-contain"
                         onError={(event) => {
@@ -516,14 +590,24 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
                         <span className="truncate text-base font-bold">
                           {account.bankName}
                         </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive opacity-0 transition-opacity group-hover:opacity-100 hover:bg-destructive/10"
-                          onClick={() => handleRemoveBankAccount(account.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground"
+                            onClick={() => handleEditBankAccount(account)}
+                          >
+                            <PencilLine className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive"
+                            onClick={() => handleRemoveBankAccount(account.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                       <p className="font-mono text-lg font-bold tracking-wider text-primary">
                         {account.accountNumber}
@@ -533,7 +617,9 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
                           {account.accountHolder}
                         </span>
                         {account.branch && (
-                          <span className="ml-2 truncate italic">CN: {account.branch}</span>
+                          <span className="ml-2 truncate italic">
+                            CN: {account.branch}
+                          </span>
                         )}
                       </div>
                       <div className="mt-2 flex items-center justify-between gap-2">
@@ -547,13 +633,20 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
                             variant="ghost"
                             size="sm"
                             type="button"
-                            onClick={() => handleSetPrimaryBankAccount(account.id)}
+                            onClick={() =>
+                              handleSetPrimaryBankAccount(account.id)
+                            }
                             className="ml-auto h-7 px-2 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
                           >
                             Đặt làm chính
                           </Button>
                         )}
                       </div>
+                      {editingBankId === account.id && (
+                        <Badge variant="secondary" className="mt-2">
+                          Đang chỉnh sửa
+                        </Badge>
+                      )}
                       {account.isPrimary && (
                         <Badge className="mt-2" variant="default">
                           Tài khoản chính
