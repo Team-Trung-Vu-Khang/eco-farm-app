@@ -6,24 +6,30 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { MapPin } from "lucide-react";
 import { MFMap, MFMarker } from "react-map4d-map";
+import type { BranchDetailView } from "../hooks/useBranchDetail";
 
 interface LocationMapCardProps {
-  branch: {
-    address: string;
-    ward?: string;
-    district?: string;
-    city?: string;
-    latitude?: string;
-    longitude?: string;
-    name: string;
-    enterpriseName: string;
-  };
+  branch: Pick<
+    BranchDetailView,
+    | "address"
+    | "ward"
+    | "district"
+    | "city"
+    | "latitude"
+    | "longitude"
+    | "name"
+    | "enterpriseName"
+  >;
 }
 
 export function LocationMapCard({ branch }: LocationMapCardProps) {
   const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
-  const latitude = branch.latitude ? parseFloat(branch.latitude) : 10.7769;
-  const longitude = branch.longitude ? parseFloat(branch.longitude) : 106.7009;
+  const latitude = Number.isFinite(branch.latitude)
+    ? branch.latitude
+    : 10.7769;
+  const longitude = Number.isFinite(branch.longitude)
+    ? branch.longitude
+    : 106.7009;
 
   return (
     <Card>

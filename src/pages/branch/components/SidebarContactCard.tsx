@@ -5,12 +5,10 @@ import {
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Phone, Mail } from "lucide-react";
+import type { BranchDetailView } from "../hooks/useBranchDetail";
 
 interface SidebarContactCardProps {
-  branch: {
-    phone?: string;
-    email?: string;
-  };
+  branch: Pick<BranchDetailView, "phone" | "email">;
 }
 
 export function SidebarContactCard({ branch }: SidebarContactCardProps) {

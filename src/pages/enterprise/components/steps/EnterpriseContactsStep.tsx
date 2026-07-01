@@ -8,20 +8,15 @@ import {
   Input,
   Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useState } from "react";
 import { Mail, Phone, Plus, Trash2, User, Users } from "lucide-react";
-import { ContactSelectorDialog } from "../ContactSelectorDialog";
+import { useState } from "react";
 import { useEnterpriseFormContext } from "../../context/EnterpriseFormContext";
+import { ContactSelectorDialog } from "../ContactSelectorDialog";
 
 export function EnterpriseContactsStep() {
   const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
-  const {
-    formData,
-    newContact,
-    setNewContact,
-    addContact,
-    removeContact,
-  } = useEnterpriseFormContext();
+  const { formData, newContact, setNewContact, addContact, removeContact } =
+    useEnterpriseFormContext();
 
   const selectedContactLabel =
     newContact.name || newContact.phone || newContact.email
@@ -62,7 +57,9 @@ export function EnterpriseContactsStep() {
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={() => setNewContact({ name: "", phone: "", email: "" })}
+                  onClick={() =>
+                    setNewContact({ name: "", phone: "", email: "", id: "" })
+                  }
                   className="h-11 px-3 text-muted-foreground"
                 >
                   Xóa
@@ -124,9 +121,10 @@ export function EnterpriseContactsStep() {
       <ContactSelectorDialog
         open={isContactDialogOpen}
         onOpenChange={setIsContactDialogOpen}
-        selectedId={null}
+        selectedId={newContact.id ?? null}
         onSelect={(contact) =>
           setNewContact({
+            id: contact.id,
             name: contact.fullName || contact.name || "",
             phone: contact.phone || "",
             email: contact.email || "",
@@ -154,7 +152,8 @@ export function EnterpriseContactsStep() {
               Chưa có liên hệ nào
             </h5>
             <p className="mt-2 text-sm text-muted-foreground/70">
-              Các liên hệ bạn thêm sẽ hiển thị tại đây để kiểm tra trước khi lưu.
+              Các liên hệ bạn thêm sẽ hiển thị tại đây để kiểm tra trước khi
+              lưu.
             </p>
           </div>
         ) : (
@@ -167,7 +166,7 @@ export function EnterpriseContactsStep() {
                 <div className="absolute left-0 top-0 h-full w-1 bg-primary" />
                 <div className="p-4">
                   <div className="mb-3 flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
                         <User className="h-4 w-4 text-primary" />
                       </div>
@@ -180,7 +179,7 @@ export function EnterpriseContactsStep() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-destructive opacity-0 transition-opacity group-hover:opacity-100"
+                      className="h-8 w-8 text-destructive"
                       onClick={() => removeContact(index)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />

@@ -1,23 +1,30 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast, type Step } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import QrScanner from "qr-scanner";
-import { useEffect, useMemo, useRef, useState, type SetStateAction } from "react";
-import readXlsxFile from "read-excel-file";
-import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type SetStateAction,
+} from "react";
 import { useForm } from "react-hook-form";
+import readXlsxFile from "read-excel-file";
 import { useLocation } from "wouter";
 
 import { vietQrBankData } from "@/constants/banks";
-import { useCreateOrganization } from "@/features/organization";
 import { useMasterData } from "@/features/master-data";
+import { useCreateOrganization } from "@/features/organization";
 import { useUploadStorageFile } from "@/features/storage/hooks/useUploadStorageFile";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import { EnterpriseBankAccountsStep } from "../components/steps/EnterpriseBankAccountsStep";
 import { EnterpriseBasicInfoStep } from "../components/steps/EnterpriseBasicInfoStep";
-import { EnterpriseContactsStep } from "../components/steps/EnterpriseContactsStep";
 import { EnterpriseBranchesStep } from "../components/steps/EnterpriseBranchesStep";
 import { EnterpriseConfirmationStep } from "../components/steps/EnterpriseConfirmationStep";
+import { EnterpriseContactsStep } from "../components/steps/EnterpriseContactsStep";
 import { EnterpriseDocumentsStep } from "../components/steps/EnterpriseDocumentsStep";
 
+import { parseVietQR } from "@/utils/commons";
 import type { BankAccount, Branch, Contact } from "../data/constants";
 import {
   defaultEnterpriseFormValues,
@@ -26,7 +33,6 @@ import {
   type EnterpriseFormValues,
 } from "../data/enterprise-form.schema";
 import type { EnterpriseFormData } from "../types";
-import { parseVietQR } from "@/utils/commons";
 
 type BusinessLineRecord = {
   id: number | string;
@@ -52,7 +58,9 @@ const CLASSIFICATION_LABELS: Record<string, string> = {
 
 const normalizeBytes = (size?: string) => {
   if (!size) return undefined;
-  const numeric = Number.parseFloat(size.replace(/[^0-9.,]/g, "").replace(",", "."));
+  const numeric = Number.parseFloat(
+    size.replace(/[^0-9.,]/g, "").replace(",", "."),
+  );
   if (!Number.isFinite(numeric)) return undefined;
   const unit = size.toLowerCase();
   if (unit.includes("kb")) return Math.round(numeric * 1024);
@@ -101,11 +109,22 @@ export function useEnterpriseCreateForm() {
     },
   });
 
+  const uploadDocument = useUploadStorageFile({
+    onError: (error) => {
+      toast({
+        title: "Không thể tải tài liệu",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const businessLineRecords = useMemo(
     () => businessLinesQuery.items as BusinessLineRecord[],
     [businessLinesQuery.items],
   );
   const logoUploadSeqRef = useRef(0);
+  const documentUploadSeqRef = useRef(0);
 
   const form = useForm<EnterpriseFormInput, unknown, EnterpriseFormValues>({
     defaultValues: defaultEnterpriseFormValues,
@@ -138,6 +157,7 @@ export function useEnterpriseCreateForm() {
     bin: "",
   });
   const [newContact, setNewContact] = useState<Contact>({
+    id: "",
     name: "",
     phone: "",
     email: "",
@@ -449,40 +469,87 @@ export function useEnterpriseCreateForm() {
     }));
   };
 
-  const processDocuments = (files: FileList) => {
+  const processDocuments = async (files: FileList) => {
     const file = files[0];
     if (!file) return;
-    const fileUrl = URL.createObjectURL(file);
-
-    const newDoc = {
-      name: file.name,
-      type: file.type,
-      size: (file.size / (1024 * 1024)).toFixed(1) + " MB",
-      url: fileUrl,
-      fileName: file.name,
-      fileUrl,
-      mimeType: file.type,
-      sizeBytes: file.size,
-    };
+    const previewUrl = URL.createObjectURL(file);
+    const previousDocuments = getValues(
+      "documents",
+    ) as EnterpriseFormData["documents"];
+    const requestSeq = ++documentUploadSeqRef.current;
 
     setFormData((prev) => ({
       ...prev,
-      documents: [newDoc],
+      documents: [
+        {
+          name: file.name,
+          type: file.type,
+          size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
+          url: previewUrl,
+          fileName: file.name,
+          fileUrl: previewUrl,
+          mimeType: file.type,
+          sizeBytes: file.size,
+        },
+      ],
     }));
 
-    toast({
-      title: "Đã tải lên",
-      description: "Đã tải lên tài liệu.",
-    });
+    try {
+      const uploaded = await uploadDocument.uploadStorageFile({
+        file,
+        folder: "organizations-documents",
+      });
+
+      if (documentUploadSeqRef.current !== requestSeq) {
+        URL.revokeObjectURL(previewUrl);
+        return;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        documents: [
+          {
+            name: uploaded.fileName || file.name,
+            type: uploaded.mimeType || file.type,
+            size: `${(uploaded.sizeBytes / (1024 * 1024)).toFixed(2)} MB`,
+            url: uploaded.fileUrl,
+            fileName: uploaded.fileName || file.name,
+            fileUrl: uploaded.fileUrl,
+            mimeType: uploaded.mimeType || file.type,
+            sizeBytes: uploaded.sizeBytes,
+          },
+        ],
+      }));
+      toast({
+        title: "Đã tải lên",
+        description: "Tài liệu đã được tải lên thành công.",
+      });
+    } catch {
+      if (documentUploadSeqRef.current === requestSeq) {
+        setFormData((prev) => ({
+          ...prev,
+          documents: previousDocuments,
+        }));
+      }
+    } finally {
+      URL.revokeObjectURL(previewUrl);
+    }
   };
 
-  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) processDocuments(e.target.files);
+  const handleDocumentUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (e.target.files) {
+      await processDocuments(e.target.files);
+      e.target.value = "";
+    }
   };
 
-  const handleDocumentDrop = (e: React.DragEvent) => {
+  const handleDocumentDrop = async (e: React.DragEvent) => {
     handleDrag("documents", e);
-    if (e.dataTransfer.files) processDocuments(e.dataTransfer.files);
+    if (e.dataTransfer.files) {
+      await processDocuments(e.dataTransfer.files);
+    }
   };
 
   const addBankAccount = () => {
@@ -523,6 +590,7 @@ export function useEnterpriseCreateForm() {
         contacts: [...(prev.contacts ?? []), newContact],
       }));
       setNewContact({
+        id: "",
         name: "",
         phone: "",
         email: "",
@@ -592,23 +660,23 @@ export function useEnterpriseCreateForm() {
 
     const businessLines: BusinessLineRecord[] = values.classification.map(
       (classification: string) => {
-      const mappedCode =
-        CLASSIFICATION_TO_BUSINESS_LINE[classification] || classification;
-      const mappedName =
-        CLASSIFICATION_LABELS[classification] || classification;
-      const record = businessLineRecords.find(
-        (item) =>
-          item.code === mappedCode ||
-          item.name.toLowerCase() === mappedName.toLowerCase(),
-      );
+        const mappedCode =
+          CLASSIFICATION_TO_BUSINESS_LINE[classification] || classification;
+        const mappedName =
+          CLASSIFICATION_LABELS[classification] || classification;
+        const record = businessLineRecords.find(
+          (item) =>
+            item.code === mappedCode ||
+            item.name.toLowerCase() === mappedName.toLowerCase(),
+        );
 
-      return (
-        record || {
-          id: mappedCode,
-          code: mappedCode,
-          name: mappedName,
-        }
-      );
+        return (
+          record || {
+            id: mappedCode,
+            code: mappedCode,
+            name: mappedName,
+          }
+        );
       },
     );
 
@@ -635,7 +703,7 @@ export function useEnterpriseCreateForm() {
       description: values.description.trim(),
       status: "active" as const,
       contacts: values.contacts.map((contact, index) => ({
-        contactId: index + 1,
+        contactId: contact.id,
         name: contact.name,
         position: "",
         phone: contact.phone,
@@ -656,18 +724,19 @@ export function useEnterpriseCreateForm() {
         latitude: 0,
         longitude: 0,
         status: "active" as const,
-        contacts: branch.phone || branch.email
-          ? [
-              {
-                contactId: index + 1,
-                name: branch.name,
-                position: "",
-                phone: branch.phone,
-                email: branch.email,
-                isPrimary: true,
-              },
-            ]
-          : [],
+        contacts:
+          branch.phone || branch.email
+            ? [
+                {
+                  contactId: index + 1,
+                  name: branch.name,
+                  position: "",
+                  phone: branch.phone,
+                  email: branch.email,
+                  isPrimary: true,
+                },
+              ]
+            : [],
         bankAccounts: [],
         metadataJson: null,
       })),
@@ -695,8 +764,7 @@ export function useEnterpriseCreateForm() {
           metadataJson: null,
         };
       }),
-      documents: values.documents.map((doc, index) => ({
-        id: index + 1,
+      documents: values.documents.map((doc) => ({
         documentType: doc.type,
         name: doc.name,
         fileUrl: doc.fileUrl || doc.url || "",

@@ -31,7 +31,9 @@ export const FarmerContactStep = ({
   const contactStore = useContactStore((state) => state.contacts);
   const selectedContact = contactStore.find(
     (contact) =>
-      contact.fullName === newContact.name && contact.phone === newContact.phone,
+      contact.id === newContact.id ||
+      (contact.fullName === newContact.name &&
+        contact.phone === newContact.phone),
   );
 
   const selectedContactLabel = useMemo(() => {
@@ -59,7 +61,9 @@ export const FarmerContactStep = ({
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={() => setNewContact({ name: "", phone: "", email: "" })}
+                  onClick={() =>
+                    setNewContact({ id: "", name: "", phone: "", email: "" })
+                  }
                   className="h-11 px-3 text-muted-foreground"
                 >
                   Xóa
@@ -121,9 +125,14 @@ export const FarmerContactStep = ({
       <ContactSelectorDialog
         open={isContactDialogOpen}
         onOpenChange={setIsContactDialogOpen}
-        selectedId={selectedContact?.id || null}
+        selectedId={
+          typeof newContact.id === "number"
+            ? newContact.id
+            : selectedContact?.id || null
+        }
         onSelect={(contact) =>
           setNewContact({
+            id: contact.id,
             name: contact.fullName,
             phone: contact.phone,
             email: contact.email,

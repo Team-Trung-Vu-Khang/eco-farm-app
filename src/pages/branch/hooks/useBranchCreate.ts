@@ -33,6 +33,7 @@ export function useBranchCreate() {
   const [contactInfos, setContactInfos] = useState<ContactInfo[]>([]);
   const [newContactInfo, setNewContactInfo] = useState<ContactInfo>({
     id: "",
+    contactId: "",
     phone: "",
     email: "",
     isPrimary: false,
@@ -61,6 +62,7 @@ export function useBranchCreate() {
       {
         ...newContactInfo,
         id: Date.now().toString(),
+        contactId: newContactInfo.contactId || undefined,
         isPrimary: contactInfos.length === 0 || newContactInfo.isPrimary,
       },
     ].map((contact, index, list) => ({
@@ -77,6 +79,7 @@ export function useBranchCreate() {
     syncPrimaryContact(nextContacts);
     setNewContactInfo({
       id: "",
+      contactId: "",
       phone: "",
       email: "",
       isPrimary: false,
@@ -153,7 +156,7 @@ export function useBranchCreate() {
       latitude: formData.latitude || "10.7769",
       longitude: formData.longitude || "106.7009",
       contacts: contactInfos.map((contact, index) => ({
-        id: contact.id || String(index + 1),
+        id: contact.contactId || contact.id || String(index + 1),
         name: `Liên hệ ${index + 1}`,
         position: "Liên hệ",
         phone: contact.phone,

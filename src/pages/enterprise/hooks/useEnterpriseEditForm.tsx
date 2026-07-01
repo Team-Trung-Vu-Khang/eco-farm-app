@@ -21,7 +21,7 @@ import { EnterpriseContactsStep } from "../components/steps/EnterpriseContactsSt
 import { EnterpriseBranchesStep } from "../components/steps/EnterpriseBranchesStep";
 import { EnterpriseConfirmationStep } from "../components/steps/EnterpriseConfirmationStep";
 import { EnterpriseDocumentsStep } from "../components/steps/EnterpriseDocumentsStep";
-import type { BankAccount, Branch } from "../data/constants";
+import type { BankAccount, Branch, Contact } from "../data/constants";
 import {
   defaultEnterpriseFormValues,
   enterpriseFormSchema,
@@ -72,6 +72,16 @@ export function useEnterpriseEditForm() {
     },
   });
 
+  const uploadDocument = useUploadStorageFile({
+    onError: (error) => {
+      toast({
+        title: "Không thể tải tài liệu",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const businessLinesQuery = useMasterData("business-lines", {
     params: {
       status: "active",
@@ -90,6 +100,7 @@ export function useEnterpriseEditForm() {
     [businessLinesQuery.items],
   );
   const logoUploadSeqRef = useRef(0);
+  const documentUploadSeqRef = useRef(0);
 
   const form = useForm<EnterpriseFormInput, unknown, EnterpriseFormValues>({
     defaultValues: defaultEnterpriseFormValues,
@@ -144,6 +155,7 @@ export function useEnterpriseEditForm() {
       phone: "",
       email: "",
       contacts: enterpriseData.contacts.map((contact) => ({
+        id: contact.id,
         name: contact.name || contact.fullName || "",
         phone: contact.phone || "",
         email: contact.email || "",
@@ -158,15 +170,16 @@ export function useEnterpriseEditForm() {
         note: branch.metadataJson?.note ? String(branch.metadataJson.note) : "",
       })),
       bankAccounts: enterpriseData.bankAccounts.map((account) => ({
-        bankName: account.bank?.name || account.bankName || "",
+        bankName: account.bank?.name || "",
         accountHolder: account.accountHolder || "",
         accountNumber: account.accountNumber || "",
         branch: account.branch || "",
         note: account.note || "",
-        bin: account.bin || account.bank?.bin || "",
-        logo: account.logoUrl || account.bank?.logoUrl || "",
+        bin: account.bank?.bin || "",
+        logo: account.bank?.logoUrl || "",
       })),
       documents: enterpriseData.documents.map((doc) => ({
+        id: doc.id,
         name: doc.name || "",
         type: doc.mimeType || doc.documentType || "",
         size: doc.sizeBytes ? `${(doc.sizeBytes / (1024 * 1024)).toFixed(2)} MB` : "",
@@ -190,7 +203,8 @@ export function useEnterpriseEditForm() {
     note: "",
   });
 
-  const [newContact, setNewContact] = useState({
+  const [newContact, setNewContact] = useState<Contact>({
+    id: "",
     name: "",
     phone: "",
     email: "",
@@ -480,34 +494,85 @@ export function useEnterpriseEditForm() {
     }
   };
 
-  const processDocuments = (files: FileList) => {
+  const processDocuments = async (files: FileList) => {
     const file = files[0];
     if (!file) return;
-
-    const newDoc = {
-      name: file.name,
-      type: file.type,
-      size: (file.size / (1024 * 1024)).toFixed(2) + "MB",
-    };
+    const previewUrl = URL.createObjectURL(file);
+    const previousDocuments = getValues("documents") as EnterpriseFormData["documents"];
+    const requestSeq = ++documentUploadSeqRef.current;
 
     setFormData((prev) => ({
       ...prev,
-      documents: [newDoc],
+      documents: [
+        {
+          name: file.name,
+          type: file.type,
+          size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
+          url: previewUrl,
+          fileName: file.name,
+          fileUrl: previewUrl,
+          mimeType: file.type,
+          sizeBytes: file.size,
+        },
+      ],
     }));
 
-    toast({
-      title: "Thành công",
-      description: "Đã tải lên tài liệu.",
-    });
+    try {
+      const uploaded = await uploadDocument.uploadStorageFile({
+        file,
+        folder: "organizations-documents",
+      });
+
+      if (documentUploadSeqRef.current !== requestSeq) {
+        URL.revokeObjectURL(previewUrl);
+        return;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        documents: [
+          {
+            name: uploaded.fileName || file.name,
+            type: uploaded.mimeType || file.type,
+            size: `${(uploaded.sizeBytes / (1024 * 1024)).toFixed(2)} MB`,
+            url: uploaded.fileUrl,
+            fileName: uploaded.fileName || file.name,
+            fileUrl: uploaded.fileUrl,
+            mimeType: uploaded.mimeType || file.type,
+            sizeBytes: uploaded.sizeBytes,
+          },
+        ],
+      }));
+      toast({
+        title: "Thành công",
+        description: "Đã tải lên tài liệu.",
+      });
+    } catch {
+      if (documentUploadSeqRef.current === requestSeq) {
+        setFormData((prev) => ({
+          ...prev,
+          documents: previousDocuments,
+        }));
+      }
+    } finally {
+      URL.revokeObjectURL(previewUrl);
+    }
   };
 
-  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) processDocuments(e.target.files);
+  const handleDocumentUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (e.target.files) {
+      await processDocuments(e.target.files);
+      e.target.value = "";
+    }
   };
 
-  const handleDocumentDrop = (e: React.DragEvent) => {
+  const handleDocumentDrop = async (e: React.DragEvent) => {
     handleDrag("documents", e);
-    if (e.dataTransfer.files) processDocuments(e.dataTransfer.files);
+    if (e.dataTransfer.files) {
+      await processDocuments(e.dataTransfer.files);
+    }
   };
 
   const handleDocumentDelete = (index: number) => {
@@ -591,6 +656,7 @@ export function useEnterpriseEditForm() {
         contacts: [...(prev.contacts ?? []), newContact],
       }));
       setNewContact({
+        id: "",
         name: "",
         phone: "",
         email: "",
@@ -678,7 +744,7 @@ export function useEnterpriseEditForm() {
           ? enterpriseQuery.item.status
           : "active",
       contacts: values.contacts.map((contact, index) => ({
-        contactId: index + 1,
+        contactId: contact.id,
         name: contact.name,
         position: "",
         phone: contact.phone,
@@ -730,7 +796,7 @@ export function useEnterpriseEditForm() {
         metadataJson: null,
       })),
       documents: values.documents.map((doc, index) => ({
-        id: index + 1,
+        id: doc.id ?? index + 1,
         documentType: doc.type,
         name: doc.name,
         fileUrl: doc.fileUrl || doc.url || "",

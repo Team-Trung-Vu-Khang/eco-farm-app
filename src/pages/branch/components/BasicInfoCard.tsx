@@ -5,15 +5,13 @@ import {
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Building2 } from "lucide-react";
+import type { BranchDetailView } from "../hooks/useBranchDetail";
 
 interface BasicInfoCardProps {
-  branch: {
-    imageUrl?: string;
-    name: string;
-    code: string;
-    phone?: string;
-    address: string;
-  };
+  branch: Pick<
+    BranchDetailView,
+    "imageUrl" | "name" | "code" | "website" | "address"
+  >;
 }
 
 export function BasicInfoCard({ branch }: BasicInfoCardProps) {
@@ -45,9 +43,11 @@ export function BasicInfoCard({ branch }: BasicInfoCardProps) {
           </div>
           <div>
             <label className="text-sm font-medium text-muted-foreground">
-              Điện thoại
+              Website
             </label>
-            <p className="text-base font-medium mt-1">{branch.phone || "-"}</p>
+            <p className="text-base font-medium mt-1 break-all">
+              {branch.website || "-"}
+            </p>
           </div>
           <div className="md:col-span-2">
             <label className="text-sm font-medium text-muted-foreground">

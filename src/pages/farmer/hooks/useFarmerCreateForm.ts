@@ -1,58 +1,296 @@
-import { useState, useEffect } from "react";
-import { useLocation, useRoute } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import useEnterpriseStore from "../../../stores/useEnterpriseStore";
-import type { FarmerFormData, BankAccount, Contact } from "../types";
-import { vietQrBankData } from "../../../constants/banks";
-import { parseVietQR } from "../../../utils/commons";
-import readXlsxFile from "read-excel-file";
 import QrScanner from "qr-scanner";
+import readXlsxFile from "read-excel-file";
+import { useEffect, useMemo, useRef, useState, type SetStateAction } from "react";
+import { useLocation, useRoute } from "wouter";
+
+import { vietQrBankData } from "@/constants/banks";
+import { useMasterData } from "@/features/master-data";
+import {
+  useCreateOrganization,
+  useOrganizationById,
+  useUpdateOrganization,
+} from "@/features/organization";
+import { useSelectedWorkspaceId } from "@/features/workspace";
+import { useUploadStorageFile } from "@/features/storage/hooks/useUploadStorageFile";
+import { parseVietQR } from "@/utils/commons";
+import type {
+  OrganizationBusinessLineRecord,
+  OrganizationCreateRequest,
+  OrganizationRecord,
+} from "@/features/organization";
+import type { BankAccount, Contact, FarmerFormData } from "../types";
+
+type BusinessLineRecord = {
+  id: number | string;
+  code: string;
+  name: string;
+};
+
+type QrScanResult = Array<{ rawValue: string }>;
+
+const CLASSIFICATION_TO_BUSINESS_LINE: Record<string, string> = {
+  production: "SX",
+  processing: "CB",
+  trading: "TM",
+  service: "DV",
+  other: "KHAC",
+};
+
+const CLASSIFICATION_LABELS: Record<string, string> = {
+  production: "Sản xuất",
+  processing: "Chế biến",
+  trading: "Thương mại",
+  service: "Dịch vụ",
+  other: "Khác",
+};
+
+const normalizeBytes = (size?: string) => {
+  if (!size) return undefined;
+  const numeric = Number.parseFloat(size.replace(/[^0-9.,]/g, "").replace(",", "."));
+  if (!Number.isFinite(numeric)) return undefined;
+  const unit = size.toLowerCase();
+  if (unit.includes("kb")) return Math.round(numeric * 1024);
+  if (unit.includes("mb")) return Math.round(numeric * 1024 * 1024);
+  if (unit.includes("gb")) return Math.round(numeric * 1024 * 1024 * 1024);
+  return Math.round(numeric);
+};
+
+const defaultFarmerFormValues: FarmerFormData = {
+  type: "farm",
+  code: "",
+  name: "",
+  brandName: "",
+  taxCode: "",
+  taxAddress: "",
+  taxAuthority: "",
+  issueDate: "",
+  classification: [],
+  foundedDate: "",
+  representative: "",
+  website: "",
+  phone: "",
+  email: "",
+  province: "",
+  district: "",
+  ward: "",
+  latitude: undefined,
+  longitude: undefined,
+  address: "",
+  image: "",
+  description: "",
+  contacts: [],
+  branches: [],
+  bankAccounts: [],
+  documents: [],
+};
+
+const mapOrganizationToFarmerFormData = (
+  data: OrganizationRecord,
+): FarmerFormData => ({
+  type: (data.type as FarmerFormData["type"]) || "farm",
+  code: data.code || "",
+  name: data.name || "",
+  brandName: data.brandName || "",
+  taxCode: data.taxCode || "",
+  taxAddress: data.taxAddress || "",
+  taxAuthority: data.taxAuthority || "",
+  issueDate: data.issueDate || "",
+  classification:
+    data.businessLines?.map((line) => line.code || line.name).filter(Boolean) ?? [],
+  foundedDate: data.foundedDate || "",
+  representative: data.representative || "",
+  website: data.website || "",
+  phone: "",
+  email: "",
+  province: data.province || "",
+  district: data.district || "",
+  ward: data.ward || "",
+  latitude: data.latitude,
+  longitude: data.longitude,
+  address: data.address || "",
+  image: data.imageUrl || "",
+  description: data.description || "",
+  contacts:
+    data.contacts?.map((contact) => ({
+      id: contact.id,
+      name: contact.name || contact.fullName || "",
+      phone: contact.phone || "",
+      email: contact.email || "",
+    })) ?? [],
+  branches:
+    data.branches?.map((branch) => ({
+      name: branch.name || "",
+      taxCode: branch.taxCode || "",
+      phone: branch.contacts?.[0]?.phone || "",
+      taxAddress: branch.taxAddress || "",
+      email: branch.contacts?.[0]?.email || "",
+      address: branch.address || "",
+      note: branch.metadataJson?.note ? String(branch.metadataJson.note) : "",
+    })) ?? [],
+  bankAccounts:
+    data.bankAccounts?.map((account) => ({
+      bankName: account.bank?.name || "",
+      accountHolder: account.accountHolder || "",
+      accountNumber: account.accountNumber || "",
+      branch: account.branch || "",
+      note: account.note || "",
+      bin: account.bank?.bin || "",
+      logo: account.bank?.logoUrl || "",
+    })) ?? [],
+  documents:
+    data.documents?.map((doc) => ({
+      name: doc.name || "",
+      type: doc.mimeType || doc.documentType || "",
+      size: doc.sizeBytes
+        ? `${(doc.sizeBytes / (1024 * 1024)).toFixed(2)} MB`
+        : "",
+      url: doc.fileUrl || "",
+      fileName: doc.fileName || "",
+      fileUrl: doc.fileUrl || "",
+      mimeType: doc.mimeType || "",
+      sizeBytes: doc.sizeBytes,
+      content: doc.content,
+    })) ?? [],
+});
+
+const mapClassificationToBusinessLines = (
+  classifications: string[],
+  businessLineRecords: BusinessLineRecord[],
+): OrganizationBusinessLineRecord[] =>
+  classifications.map((classification: string) => {
+    const mappedCode =
+      CLASSIFICATION_TO_BUSINESS_LINE[classification] || classification;
+    const mappedName = CLASSIFICATION_LABELS[classification] || classification;
+    const record = businessLineRecords.find(
+      (item) =>
+        item.code === mappedCode ||
+        item.name.toLowerCase() === mappedName.toLowerCase(),
+    );
+
+    return (
+      record || {
+        id: mappedCode,
+        code: mappedCode,
+        name: mappedName,
+      }
+    );
+  });
 
 export function useFarmerCreateForm() {
   const [, setLocation] = useLocation();
-  const [match, params] = useRoute("/farmer/:id/edit");
-  const isEdit = match && !!params?.id;
+  const [, params] = useRoute("/farmer/:id/edit");
   const { toast } = useToast();
+  const workspaceId = useSelectedWorkspaceId();
 
-  const addEnterprise = useEnterpriseStore((state) => state.addEnterprise);
-  const updateEnterprise = useEnterpriseStore((state) => state.updateEnterprise);
-  const getEnterpriseById = useEnterpriseStore((state) => state.getEnterpriseById);
+  const farmerId = params?.id ? Number(params.id) : null;
+  const isEdit = farmerId !== null && Number.isFinite(farmerId);
 
-  const [formData, setFormData] = useState<FarmerFormData>({
-    type: "farm",
-    code: "",
-    name: "",
-    brandName: "",
-    taxCode: "",
-    taxAddress: "",
-    taxAuthority: "",
-    issueDate: "",
-    classification: [],
-    foundedDate: "",
-    representative: "",
-    website: "",
-    phone: "",
-    email: "",
-    province: "",
-    district: "",
-    ward: "",
-    latitude: undefined,
-    longitude: undefined,
-    address: "",
-    image: "",
-    description: "",
-    contacts: [],
-    branches: [],
-    bankAccounts: [],
-    documents: [],
+  const organizationQuery = useOrganizationById(
+    farmerId ?? "missing",
+    workspaceId ?? "missing",
+    {
+      enabled: workspaceId !== null && isEdit,
+    },
+  );
+
+  const createOrganization = useCreateOrganization({
+    onSuccess: () => {
+      toast({
+        title: "Thành công",
+        description: "Đã tạo nông hộ mới",
+      });
+      setLocation("/farmer");
+    },
+    onError: (error) => {
+      toast({
+        title: "Lỗi",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
+  const updateOrganization = useUpdateOrganization({
+    onSuccess: () => {
+      toast({
+        title: "Thành công",
+        description: "Đã cập nhật thông tin nông hộ",
+      });
+      setLocation("/farmer");
+    },
+    onError: (error) => {
+      toast({
+        title: "Lỗi",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const uploadLogo = useUploadStorageFile({
+    onError: (error) => {
+      toast({
+        title: "Không thể tải logo",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const uploadDocument = useUploadStorageFile({
+    onError: (error) => {
+      toast({
+        title: "Không thể tải tài liệu",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const businessLinesQuery = useMasterData("business-lines", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
+
+  const organizationTypesQuery = useMasterData("organization-types", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
+
+  const businessLineRecords = useMemo(
+    () => businessLinesQuery.items as BusinessLineRecord[],
+    [businessLinesQuery.items],
+  );
+
+  const farmOrganizationType = useMemo(
+    () =>
+      organizationTypesQuery.items.find(
+        (item) =>
+          item.code?.toLowerCase() === "farm" ||
+          item.name?.toLowerCase().includes("farm"),
+      ) ?? null,
+    [organizationTypesQuery.items],
+  );
+
+  const logoUploadSeqRef = useRef(0);
+  const documentUploadSeqRef = useRef(0);
+
+  const [formData, setFormData] = useState<FarmerFormData>(
+    defaultFarmerFormValues,
+  );
   const [newContact, setNewContact] = useState<Contact>({
+    id: "",
     name: "",
     phone: "",
     email: "",
   });
-
   const [newBankAccount, setNewBankAccount] = useState<BankAccount>({
     bankName: "",
     accountHolder: "",
@@ -62,7 +300,6 @@ export function useFarmerCreateForm() {
     bin: "",
     logo: "",
   });
-
   const [bankInputMethod, setBankInputMethod] = useState<
     "manual" | "excel" | "qr-image" | "qr-scan"
   >("manual");
@@ -73,23 +310,15 @@ export function useFarmerCreateForm() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   useEffect(() => {
-    if (isEdit && params?.id) {
-      const item = getEnterpriseById(Number(params.id));
-      if (item) {
-        setFormData({
-          ...item,
-          brandName: item.brandName || "",
-          type: item.type as "enterprise" | "farm" | "cooperative",
-          classification: item.classification || [],
-          district: item.district || "",
-          contacts: (item.contacts as any) || [],
-          branches: (item.branches as any) || [],
-          bankAccounts: (item.bankAccounts as any) || [],
-          documents: (item.documents as any) || [],
-        } as FarmerFormData);
-      }
-    }
-  }, [isEdit, params?.id, getEnterpriseById]);
+    if (!isEdit) return;
+
+    const organizationData = organizationQuery.item;
+    if (!organizationData) return;
+
+    queueMicrotask(() => {
+      setFormData(mapOrganizationToFarmerFormData(organizationData));
+    });
+  }, [isEdit, organizationQuery.item]);
 
   useEffect(() => {
     if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
@@ -102,8 +331,17 @@ export function useFarmerCreateForm() {
     }
   }, []);
 
-  const updateField = (field: keyof FarmerFormData, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const updateField = (
+    field: keyof FarmerFormData,
+    value: SetStateAction<FarmerFormData[keyof FarmerFormData]>,
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]:
+        typeof value === "function"
+          ? value(prev[field] as FarmerFormData[keyof FarmerFormData])
+          : value,
+    }));
   };
 
   const handleDrag = (id: string, e: React.DragEvent) => {
@@ -174,7 +412,7 @@ export function useFarmerCreateForm() {
           variant: "destructive",
         });
       }
-    } catch (err) {
+    } catch {
       toast({
         title: "Lỗi",
         description: "Không thể đọc file Excel. Vui lòng kiểm tra định dạng.",
@@ -213,7 +451,7 @@ export function useFarmerCreateForm() {
             "Đã đọc được QR nhưng không tìm thấy thông tin tài khoản ngân hàng standard.",
         });
       }
-    } catch (err) {
+    } catch {
       toast({
         title: "Lỗi",
         description: "Không tìm thấy mã QR trong ảnh này.",
@@ -222,7 +460,7 @@ export function useFarmerCreateForm() {
     }
   };
 
-  const handleLiveScan = (result: any) => {
+  const handleLiveScan = (result: QrScanResult) => {
     if (!result || result.length === 0) return;
     const text = result[0].rawValue;
     const parsed = parseVietQR(text);
@@ -248,27 +486,108 @@ export function useFarmerCreateForm() {
     }
   };
 
-  const processLogoImage = (file: File) => {
-    const url = URL.createObjectURL(file);
-    setFormData((prev) => ({ ...prev, image: url }));
+  const processLogoImage = async (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+
+    const previewUrl = URL.createObjectURL(file);
+    setFormData((prev) => ({ ...prev, image: previewUrl }));
+
+    const requestSeq = ++logoUploadSeqRef.current;
+
+    try {
+      const uploaded = await uploadLogo.uploadStorageFile({
+        file,
+        folder: "organizations",
+      });
+
+      if (logoUploadSeqRef.current !== requestSeq) {
+        URL.revokeObjectURL(previewUrl);
+        return;
+      }
+
+      setFormData((prev) => ({ ...prev, image: uploaded.fileUrl }));
+      toast({
+        title: "Thành công",
+        description: "Đã tải lên logo doanh nghiệp",
+      });
+    } catch {
+      // Error toast is handled by the mutation callback.
+    } finally {
+      URL.revokeObjectURL(previewUrl);
+    }
   };
 
-  const processDocuments = (files: FileList) => {
-    const newDocs = Array.from(files).map((file) => ({
-      name: file.name,
-      type: file.type,
-      size: (file.size / (1024 * 1024)).toFixed(1) + " MB",
+  const handleDocumentDelete = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      documents: prev.documents.filter((_, i) => i !== index),
     }));
+  };
+
+  const processDocuments = async (files: FileList) => {
+    const file = files[0];
+    if (!file) return;
+
+    const previewUrl = URL.createObjectURL(file);
+    const previousDocuments = formData.documents;
+    const requestSeq = ++documentUploadSeqRef.current;
 
     setFormData((prev) => ({
       ...prev,
-      documents: [...prev.documents, ...newDocs],
+      documents: [
+        {
+          name: file.name,
+          type: file.type,
+          size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
+          url: previewUrl,
+          fileName: file.name,
+          fileUrl: previewUrl,
+          mimeType: file.type,
+          sizeBytes: file.size,
+        },
+      ],
     }));
 
-    toast({
-      title: "Đã tải lên",
-      description: `Đã thêm ${newDocs.length} tài liệu.`,
-    });
+    try {
+      const uploaded = await uploadDocument.uploadStorageFile({
+        file,
+        folder: "organizations-documents",
+      });
+
+      if (documentUploadSeqRef.current !== requestSeq) {
+        URL.revokeObjectURL(previewUrl);
+        return;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        documents: [
+          {
+            name: uploaded.fileName || file.name,
+            type: uploaded.mimeType || file.type,
+            size: `${(uploaded.sizeBytes / (1024 * 1024)).toFixed(2)} MB`,
+            url: uploaded.fileUrl,
+            fileName: uploaded.fileName || file.name,
+            fileUrl: uploaded.fileUrl,
+            mimeType: uploaded.mimeType || file.type,
+            sizeBytes: uploaded.sizeBytes,
+          },
+        ],
+      }));
+      toast({
+        title: "Đã tải lên",
+        description: "Tài liệu đã được tải lên thành công.",
+      });
+    } catch {
+      if (documentUploadSeqRef.current === requestSeq) {
+        setFormData((prev) => ({
+          ...prev,
+          documents: previousDocuments,
+        }));
+      }
+    } finally {
+      URL.revokeObjectURL(previewUrl);
+    }
   };
 
   const addBankAccount = () => {
@@ -289,6 +608,11 @@ export function useFarmerCreateForm() {
         note: "",
         bin: "",
         logo: "",
+      });
+      setBankInputMethod("manual");
+      toast({
+        title: "Thành công",
+        description: "Đã thêm tài khoản ngân hàng",
       });
     } else {
       toast({
@@ -313,7 +637,7 @@ export function useFarmerCreateForm() {
         ...prev,
         contacts: [...prev.contacts, newContact],
       }));
-      setNewContact({ name: "", phone: "", email: "" });
+      setNewContact({ id: "", name: "", phone: "", email: "" });
     } else {
       toast({
         title: "Lỗi",
@@ -330,28 +654,147 @@ export function useFarmerCreateForm() {
     }));
   };
 
-  const submitForm = () => {
-    if (isEdit && params?.id) {
-       updateEnterprise(Number(params.id), {
-        ...formData,
-        status: "active" as const,
-      } as any);
+  const submitForm = async () => {
+    if (workspaceId === null) {
       toast({
-        title: "Thành công",
-        description: `Đã cập nhật nông hộ "${formData.name}"`,
+        title: "Thiếu workspace",
+        description: "Vui lòng chọn workspace trước khi lưu nông hộ.",
+        variant: "destructive",
       });
-    } else {
-      addEnterprise({
-        ...formData,
-        status: "active" as const,
-      } as any);
-      toast({
-        title: "Thành công",
-        description: `Đã tạo nông hộ "${formData.name}"`,
-      });
+      return;
     }
-    setShowConfirmDialog(false);
-    setLocation("/farmer");
+
+    const organizationTypeId =
+      organizationQuery.item?.organizationType?.id ?? farmOrganizationType?.id;
+
+    if (organizationTypeId === undefined || organizationTypeId === null) {
+      toast({
+        title: "Thiếu loại hình tổ chức",
+        description: "Không tìm thấy loại hình tổ chức cho nông hộ.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const businessLines = mapClassificationToBusinessLines(
+      formData.classification,
+      businessLineRecords,
+    );
+
+    const payload: OrganizationCreateRequest = {
+      type: formData.type,
+      organizationTypeId,
+      code: formData.code.trim(),
+      name: formData.name.trim(),
+      brandName: formData.brandName?.trim(),
+      taxCode: formData.taxCode.trim(),
+      taxAuthority: formData.taxAuthority?.trim(),
+      taxAddress: formData.taxAddress?.trim(),
+      issueDate: formData.issueDate?.trim(),
+      businessLines,
+      representative: formData.representative?.trim(),
+      foundedDate: formData.foundedDate?.trim(),
+      website: formData.website?.trim(),
+      province: formData.province?.trim(),
+      district: formData.district?.trim(),
+      ward: formData.ward?.trim(),
+      address: formData.address.trim(),
+      latitude: formData.latitude,
+      longitude: formData.longitude,
+      imageUrl: formData.image || "",
+      description: formData.description || "",
+      status: "active",
+      contacts: formData.contacts.map((contact, index) => ({
+        contactId: contact.id,
+        name: contact.name,
+        position: "",
+        phone: contact.phone,
+        email: contact.email,
+        isPrimary: index === 0,
+      })),
+      branches: formData.branches.map((branch, index) => ({
+        id: index + 1,
+        code: branch.taxCode || branch.name || undefined,
+        name: branch.name,
+        taxCode: branch.taxCode || "",
+        taxAddress: branch.taxAddress || "",
+        address: branch.address || "",
+        city: "",
+        district: "",
+        ward: "",
+        imageUrl: "",
+        latitude: 0,
+        longitude: 0,
+        status: "active" as const,
+        contacts: branch.phone || branch.email
+          ? [
+              {
+                contactId: index + 1,
+                name: branch.name,
+                position: "",
+                phone: branch.phone,
+                email: branch.email,
+                isPrimary: true,
+              },
+            ]
+          : [],
+        bankAccounts: [],
+        metadataJson: null,
+      })),
+      bankAccounts: formData.bankAccounts.map((account, index) => {
+        const bankInfo = vietQrBankData.find(
+          (bank) =>
+            bank.bin === account.bin ||
+            bank.name.toLowerCase() === account.bankName.toLowerCase() ||
+            bank.shortName.toLowerCase() === account.bankName.toLowerCase(),
+        );
+
+        return {
+          id: index + 1,
+          ownerType: formData.type,
+          bankCode: bankInfo?.bin || account.bin || account.bankName,
+          bankName: account.bankName,
+          bin: account.bin || bankInfo?.bin || "",
+          accountNumber: account.accountNumber,
+          accountHolder: account.accountHolder,
+          branch: account.branch,
+          note: account.note,
+          logoUrl: account.logo || bankInfo?.logo || "",
+          status: "active" as const,
+          isPrimary: index === 0,
+          metadataJson: null,
+        };
+      }),
+      documents: formData.documents.map((doc, index) => ({
+        id: index + 1,
+        documentType: doc.type,
+        name: doc.name,
+        fileUrl: doc.fileUrl || doc.url || "",
+        fileName: doc.fileName || doc.name,
+        mimeType: doc.mimeType || doc.type,
+        sizeBytes: doc.sizeBytes ?? normalizeBytes(doc.size),
+        content: doc.content,
+      })),
+      metadataJson: organizationQuery.item?.metadataJson ?? null,
+    };
+
+    try {
+      if (isEdit && farmerId !== null) {
+        await updateOrganization.updateOrganization({
+          id: farmerId,
+          payload,
+          workspaceId,
+        });
+      } else {
+        await createOrganization.createOrganization({
+          payload,
+          workspaceId,
+        });
+      }
+      setShowConfirmDialog(false);
+    } catch {
+      // Error toast is handled by the mutation callbacks.
+    }
   };
 
   return {
@@ -375,6 +818,7 @@ export function useFarmerCreateForm() {
     handleLiveScan,
     processLogoImage,
     processDocuments,
+    handleDocumentDelete,
     newContact,
     setNewContact,
     addContact,

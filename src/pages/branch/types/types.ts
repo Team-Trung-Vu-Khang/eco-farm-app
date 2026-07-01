@@ -1,5 +1,6 @@
 export interface ContactPerson {
   id: string;
+  contactId?: string;
   name: string;
   position: string;
   phone: string;
@@ -9,6 +10,7 @@ export interface ContactPerson {
 
 export interface ContactInfo {
   id: string;
+  contactId?: string;
   name?: string;
   phone: string;
   email: string;

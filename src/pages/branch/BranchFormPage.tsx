@@ -1,9 +1,5 @@
 import {
   AdminLayout,
-  Card,
-  CardContent,
-  StepperForm,
-  type Step,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -12,19 +8,21 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Button,
+  Card,
+  CardContent,
+  StepperForm,
+  type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useBranchForm } from "./hooks/useBranchForm";
+import { ArrowLeft } from "lucide-react";
+
+import { BankingStep } from "./components/steps/BankingStep";
 import { BasicInfoStep } from "./components/steps/BasicInfoStep";
+import { ConfirmStep } from "./components/steps/ConfirmStep";
 import { ContactInfoStep } from "./components/steps/ContactInfoStep";
 import { LocationStep } from "./components/steps/LocationStep";
-import { PersonnelStep } from "./components/steps/PersonnelStep";
-import { BankingStep } from "./components/steps/BankingStep";
-import { ConfirmStep } from "./components/steps/ConfirmStep";
+import { useBranchForm } from "./hooks/useBranchForm";
 
-/**
- * Branch form page component.
- * Uses a stepper to guide users through creating or editing a branch.
- */
 export default function BranchFormPage() {
   const {
     formData,
@@ -73,14 +71,6 @@ export default function BranchFormPage() {
       ),
     },
     {
-      id: "contacts",
-      title: "Người liên hệ",
-      description: "Quản lý liên hệ",
-      content: (
-        <PersonnelStep formData={formData} updateFormData={updateFormData} />
-      ),
-    },
-    {
       id: "banking",
       title: "Ngân hàng",
       description: "Tài khoản thanh toán",
@@ -99,8 +89,14 @@ export default function BranchFormPage() {
   return (
     <AdminLayout
       isDev={true}
-      title={isEdit ? "Chỉnh sửa chi nhánh" : "Thêm chi nhánh mới"}
-      description="Điền thông tin theo từng bước để tạo mới"
+      title={isEdit ? "Chỉnh sửa Chi nhánh" : "Tạo mới Chi nhánh"}
+      description="Điền thông tin theo từng bước để tạo hoặc cập nhật chi nhánh"
+      actions={[
+        <Button variant="outline" onClick={handleCancel} className="gap-2">
+          <ArrowLeft className="h-4 w-4" />
+          Quay lại
+        </Button>,
+      ]}
     >
       <Card>
         <CardContent className="p-6">
@@ -117,18 +113,20 @@ export default function BranchFormPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {isEdit ? "Xác nhận cập nhật" : "Xác nhận tạo mới"}
+              {isEdit
+                ? "Xác nhận cập nhật chi nhánh"
+                : "Xác nhận tạo chi nhánh"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Bạn có chắc chắn muốn {isEdit ? "cập nhật" : "tạo mới"} chi nhánh
-              "{formData.name}" không?
-              <br />
-              Thông tin đã nhập sẽ được lưu vào hệ thống.
+              Bạn có chắc chắn muốn {isEdit ? "cập nhật" : "tạo"} chi nhánh này
+              không?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={submitForm}>Xác nhận</AlertDialogAction>
+            <AlertDialogAction onClick={submitForm}>
+              {isEdit ? "Cập nhật" : "Tạo mới"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

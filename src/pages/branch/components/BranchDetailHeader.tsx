@@ -10,13 +10,10 @@ import {
   Edit,
   Trash2,
 } from "lucide-react";
+import type { BranchDetailView } from "../hooks/useBranchDetail";
 
 interface BranchDetailHeaderProps {
-  branch: {
-    name: string;
-    status: string;
-    enterpriseName: string;
-  };
+  branch: Pick<BranchDetailView, "name" | "status" | "enterpriseName">;
   onBack: () => void;
   onEdit: () => void;
   onDelete: () => void;

@@ -1,7 +1,13 @@
+import type { BranchRecord } from "@/features/branch";
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { Branch } from "../../../stores/useBranchStore";
 
-export const branchColumns: Column<Branch>[] = [
+export type BranchTableRow = BranchRecord & {
+  enterpriseName: string;
+  phone: string;
+  email: string;
+};
+
+export const branchColumns: Column<BranchTableRow>[] = [
   {
     key: "code",
     label: "Mã",
@@ -32,7 +38,7 @@ export const branchColumns: Column<Branch>[] = [
   },
   { key: "phone", label: "Điện thoại" },
   { key: "email", label: "Email" },
-  { key: "address", label: "Địa chỉ" },
+  { key: "address", label: "Địa chỉ", width: "200px" },
   {
     key: "status",
     label: "Trạng thái",

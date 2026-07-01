@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import type { ContactRecord } from "@/features/contact";
 import {
   Badge,
   Button,
@@ -11,9 +11,9 @@ import {
   Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Mail, Phone, Plus, Trash2, User, Users } from "lucide-react";
-import { ContactSelectorDialog } from "@/pages/farmer/components/ContactSelectorDialog";
+import { useMemo, useState } from "react";
 import type { BranchFormData, ContactInfo } from "../../types/types";
-import type { Contact as StoredContact } from "@/stores/useContactStore";
+import { ContactSelectorDialog } from "../ContactSelectorDialog";
 
 interface ContactInfoStepProps {
   formData: BranchFormData;
@@ -25,8 +25,11 @@ export function ContactInfoStep({
   updateFormData,
 }: ContactInfoStepProps) {
   const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
-  const [selectedContactId, setSelectedContactId] = useState<number | null>(null);
+  const [selectedContactId, setSelectedContactId] = useState<
+    number | string | null
+  >(null);
   const [draftContact, setDraftContact] = useState({
+    contactId: "",
     name: "",
     phone: "",
     email: "",
@@ -41,22 +44,25 @@ export function ContactInfoStep({
     [formData.contactInfos],
   );
 
-  const handleSelectContact = (contact: StoredContact) => {
+  const handleSelectContact = (contact: ContactRecord) => {
     setSelectedContactId(contact.id);
     setDraftContact({
+      contactId: String(contact.id),
       name: contact.fullName,
       phone: contact.phone,
-      email: contact.email,
+      email: contact.email || "",
     });
   };
 
   const handleAddNewContactInfo = () => {
-    if (!draftContact.name && !draftContact.phone && !draftContact.email) return;
+    if (!draftContact.name && !draftContact.phone && !draftContact.email)
+      return;
 
     const nextContactInfos: ContactInfo[] = [
       ...formData.contactInfos,
       {
         id: Date.now().toString(),
+        contactId: draftContact.contactId || undefined,
         name: draftContact.name,
         phone: draftContact.phone,
         email: draftContact.email,
@@ -65,13 +71,18 @@ export function ContactInfoStep({
     ];
 
     updateFormData({ contactInfos: nextContactInfos });
-    setDraftContact({ name: "", phone: "", email: "" });
+    setDraftContact({ contactId: "", name: "", phone: "", email: "" });
     setSelectedContactId(null);
   };
 
   const handleRemoveContactInfo = (id: string) => {
-    const nextContactInfos = formData.contactInfos.filter((contact) => contact.id !== id);
-    if (nextContactInfos.length > 0 && !nextContactInfos.some((contact) => contact.isPrimary)) {
+    const nextContactInfos = formData.contactInfos.filter(
+      (contact) => contact.id !== id,
+    );
+    if (
+      nextContactInfos.length > 0 &&
+      !nextContactInfos.some((contact) => contact.isPrimary)
+    ) {
       nextContactInfos[0] = { ...nextContactInfos[0], isPrimary: true };
     }
     updateFormData({ contactInfos: nextContactInfos });
@@ -113,12 +124,14 @@ export function ContactInfoStep({
                 <span className="truncate">{selectedContactLabel}</span>
                 <User className="h-4 w-4 shrink-0 text-muted-foreground" />
               </Button>
-              {(draftContact.name || draftContact.phone || draftContact.email) && (
+              {(draftContact.name ||
+                draftContact.phone ||
+                draftContact.email) && (
                 <Button
                   type="button"
                   variant="ghost"
                   onClick={() => {
-                    setDraftContact({ name: "", phone: "", email: "" });
+                    setDraftContact({ contactId: "", name: "", phone: "", email: "" });
                     setSelectedContactId(null);
                   }}
                   className="h-11 px-3 text-muted-foreground"
@@ -128,7 +141,7 @@ export function ContactInfoStep({
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Có thể chọn liên hệ từ store Thông tin liên hệ.
+              Có thể chọn liên hệ từ danh sách đã lưu.
             </p>
           </div>
 
@@ -137,7 +150,10 @@ export function ContactInfoStep({
             <Input
               value={draftContact.name}
               onChange={(event) =>
-                setDraftContact((prev) => ({ ...prev, name: event.target.value }))
+                setDraftContact((prev) => ({
+                  ...prev,
+                  name: event.target.value,
+                }))
               }
               placeholder="VD: Nguyễn Văn A"
             />
@@ -151,7 +167,10 @@ export function ContactInfoStep({
               <Input
                 value={draftContact.phone}
                 onChange={(event) =>
-                  setDraftContact((prev) => ({ ...prev, phone: event.target.value }))
+                  setDraftContact((prev) => ({
+                    ...prev,
+                    phone: event.target.value,
+                  }))
                 }
                 placeholder="09xx xxx xxx"
               />
@@ -162,14 +181,20 @@ export function ContactInfoStep({
                 type="email"
                 value={draftContact.email}
                 onChange={(event) =>
-                  setDraftContact((prev) => ({ ...prev, email: event.target.value }))
+                  setDraftContact((prev) => ({
+                    ...prev,
+                    email: event.target.value,
+                  }))
                 }
                 placeholder="email@example.com"
               />
             </div>
           </div>
 
-          <Button onClick={handleAddNewContactInfo} className="w-full bg-primary hover:bg-primary/90">
+          <Button
+            onClick={handleAddNewContactInfo}
+            className="w-full bg-primary hover:bg-primary/90"
+          >
             <Plus className="mr-2 h-4 w-4" />
             Thêm vào danh sách
           </Button>
@@ -203,7 +228,8 @@ export function ContactInfoStep({
               Chưa có liên hệ nào
             </h5>
             <p className="mt-2 text-sm text-muted-foreground/70">
-              Các liên hệ bạn thêm sẽ hiển thị tại đây để kiểm tra trước khi lưu.
+              Các liên hệ bạn thêm sẽ hiển thị tại đây để kiểm tra trước khi
+              lưu.
             </p>
           </div>
         ) : (
@@ -236,7 +262,9 @@ export function ContactInfoStep({
                           variant="ghost"
                           size="sm"
                           type="button"
-                          onClick={() => handleSetPrimaryContactInfo(contactInfo.id)}
+                          onClick={() =>
+                            handleSetPrimaryContactInfo(contactInfo.id)
+                          }
                           className="h-8 px-2 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
                         >
                           Đặt làm chính
@@ -247,7 +275,7 @@ export function ContactInfoStep({
                         size="icon"
                         type="button"
                         onClick={() => handleRemoveContactInfo(contactInfo.id)}
-                        className="h-8 w-8 text-destructive opacity-0 transition-opacity group-hover:opacity-100"
+                        className="h-8 w-8 text-destructive"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -256,7 +284,9 @@ export function ContactInfoStep({
                   <div className="ml-10 space-y-1.5 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <Phone className="h-3.5 w-3.5" />
-                      <span>{contactInfo.phone || "Chưa nhập số điện thoại"}</span>
+                      <span>
+                        {contactInfo.phone || "Chưa nhập số điện thoại"}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Mail className="h-3.5 w-3.5" />

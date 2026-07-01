@@ -13,6 +13,15 @@ import { useBankTable } from "./hooks/useBankTable";
 export default function BankPage() {
   const {
     bankAccounts,
+    loading,
+    error,
+    response,
+    pageSize,
+    currentIndex,
+    handleSearch,
+    handleFilterChange,
+    handlePageSize,
+    handleIndexChange,
     deleteOpen,
     setDeleteOpen,
     handleDelete,
@@ -35,14 +44,30 @@ export default function BankPage() {
         </Link>
       }
     >
+      {error ? (
+        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          ⚠️ {error}
+        </div>
+      ) : null}
+
       <DataTable
         columns={bankColumns}
         data={bankAccounts}
+        searchable
+        searchPlaceholder="Tìm kiếm tài khoản..."
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm tài khoản..."
         filters={[...bankFilters]}
+        loading={loading}
+        currentIndex={currentIndex}
+        pageSize={pageSize}
+        totalPages={response?.totalPages}
+        totalElements={response?.totalElements}
+        onSearch={handleSearch}
+        onFilterChange={handleFilterChange}
+        onPageSize={handlePageSize}
+        onIndexChange={handleIndexChange}
         selectable={false}
       />
 

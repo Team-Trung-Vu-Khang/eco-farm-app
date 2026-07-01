@@ -271,6 +271,7 @@ export function PersonnelStep({
   const handleSelectPersonnel = (selectedItems: Personnel[]) => {
     const nextContacts: ContactPerson[] = selectedItems.map((person, index) => ({
       id: person.id.toString(),
+      contactId: person.id.toString(),
       name: person.fullName,
       position: person.position,
       phone: person.phone,
@@ -390,7 +391,7 @@ export function PersonnelStep({
                           variant="ghost"
                           size="sm"
                           onClick={() => handleSetPrimaryContact(contact.id)}
-                          className="h-7 px-2 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                          className="h-7 px-2 text-muted-foreground"
                         >
                           Đặt làm chính
                         </Button>
@@ -399,7 +400,7 @@ export function PersonnelStep({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-destructive opacity-0 transition-opacity group-hover:opacity-100"
+                        className="h-7 w-7 text-destructive"
                         onClick={() => handleRemoveContact(contact.id)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />

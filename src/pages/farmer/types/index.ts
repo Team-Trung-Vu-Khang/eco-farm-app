@@ -1,4 +1,5 @@
 export interface Contact {
+  id?: number | string;
   name: string;
   phone: string;
   email: string;
@@ -29,6 +30,11 @@ export interface Document {
   type: string;
   size: string;
   url?: string;
+  fileName?: string;
+  fileUrl?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  content?: string;
 }
 
 export interface FarmerFormData {

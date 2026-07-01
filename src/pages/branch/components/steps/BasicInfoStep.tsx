@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { FileText } from "lucide-react";
+import { useEffect } from "react";
 import type { Enterprise } from "@/pages/enterprise/data/constants";
 import type { BranchFormData } from "../../types/types";
 import { BranchEnterpriseSelector } from "./BranchEnterpriseSelector";
@@ -25,25 +26,61 @@ export function BasicInfoStep({
   enterprises,
   isEdit,
 }: BasicInfoStepProps) {
+  useEffect(() => {
+    if (formData.enterpriseId || enterprises.length !== 1) return;
+
+    const [enterprise] = enterprises;
+    if (!enterprise) return;
+
+    updateFormData({
+      enterpriseId: enterprise.id.toString(),
+      enterpriseName: enterprise.name,
+    });
+  }, [enterprises, formData.enterpriseId, updateFormData]);
+
+  const selectedEnterprise =
+    enterprises.find((item) => item.id.toString() === formData.enterpriseId) ||
+    (enterprises.length === 1 ? enterprises[0] : undefined);
+
+  useEffect(() => {
+    if (!selectedEnterprise?.website) return;
+    if (formData.website) return;
+
+    updateFormData({
+      website: selectedEnterprise.website,
+    });
+  }, [formData.website, selectedEnterprise?.id, selectedEnterprise?.website, updateFormData]);
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="space-y-2">
         <Label htmlFor="enterprise">
           Đơn vị sở hữu <span className="text-red-500">*</span>
         </Label>
-        <BranchEnterpriseSelector
-          enterprises={enterprises}
-          selectedId={formData.enterpriseId}
-          onSelect={(value) => {
-            const enterprise = enterprises.find(
-              (item) => item.id.toString() === value,
-            );
-            updateFormData({
-              enterpriseId: value,
-              enterpriseName: enterprise?.name || "",
-            });
-          }}
-        />
+        {enterprises.length === 1 ? (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="text-sm font-semibold text-slate-900">
+              {selectedEnterprise?.name}
+            </div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              {selectedEnterprise?.code}
+            </div>
+          </div>
+        ) : (
+          <BranchEnterpriseSelector
+            enterprises={enterprises}
+            selectedId={formData.enterpriseId}
+            onSelect={(value) => {
+              const enterprise = enterprises.find(
+                (item) => item.id.toString() === value,
+              );
+              updateFormData({
+                enterpriseId: value,
+                enterpriseName: enterprise?.name || "",
+              });
+            }}
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -68,6 +105,16 @@ export function BasicInfoStep({
             value={formData.name}
             onChange={(e) => updateFormData({ name: e.target.value })}
             placeholder="VD: Chi nhánh Miền Nam"
+          />
+        </div>
+
+        <div className="space-y-2 col-span-2">
+          <Label htmlFor="website">Website</Label>
+          <Input
+            id="website"
+            value={formData.website}
+            onChange={(e) => updateFormData({ website: e.target.value })}
+            placeholder="VD: https://example.com"
           />
         </div>
 
