@@ -7,18 +7,28 @@ import {
 import { Plus } from "lucide-react";
 import { Link } from "wouter";
 import { useFarmerPage } from "./hooks/useFarmerPage";
-import { farmerColumns } from "./data/columns";
-import { farmerFilters } from "./data/constants";
 
 export default function FarmerPage() {
   const {
     farmerData,
+    columns,
+    filters,
+    pageSize,
+    currentIndex,
+    setCurrentIndex,
+    totalPages,
+    totalElements,
+    loading,
+    error,
     deleteOpen,
     setDeleteOpen,
     handleDelete,
     handleConfirmDelete,
     handleView,
     handleEdit,
+    handleSearch,
+    handleFilterChange,
+    setPageSize,
   } = useFarmerPage();
 
   return (
@@ -35,14 +45,30 @@ export default function FarmerPage() {
         </Link>
       }
     >
+      {error ? (
+        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          ⚠️ {error}
+        </div>
+      ) : null}
+
       <DataTable
-        columns={farmerColumns}
+        columns={columns}
         data={farmerData}
+        searchable
+        searchPlaceholder="Tìm kiếm nông hộ..."
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm nông hộ..."
-        filters={farmerFilters}
+        filters={filters}
+        loading={loading}
+        currentIndex={currentIndex}
+        pageSize={pageSize}
+        totalPages={totalPages}
+        totalElements={totalElements}
+        onSearch={handleSearch}
+        onFilterChange={handleFilterChange}
+        onPageSize={setPageSize}
+        onIndexChange={setCurrentIndex}
         selectable={false}
       />
 

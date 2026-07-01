@@ -127,7 +127,7 @@ export default function FarmerEditPage() {
           <StepperForm
             steps={steps}
             completeLabel={isEdit ? "Cập nhật" : "Tạo mới"}
-            onComplete={submitForm}
+            onComplete={() => setShowConfirmDialog(true)}
             onCancel={navigateBack}
           />
         </CardContent>

@@ -29,6 +29,11 @@ export interface Document {
   type: string;
   size: string;
   url?: string;
+  fileName?: string;
+  fileUrl?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  content?: string;
 }
 
 export interface FarmerFormData {
