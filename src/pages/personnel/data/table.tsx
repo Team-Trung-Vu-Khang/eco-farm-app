@@ -1,31 +1,55 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { Personnel } from "../../../stores/usePersonnelStore";
+import type { FarmPersonnelResponse } from "@/features/master-data";
 
-export const personnelColumns: Column<Personnel>[] = [
+export const personnelColumns: Column<FarmPersonnelResponse>[] = [
   {
     key: "fullName",
     label: "Họ và tên",
-    render: (value, item) => (
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200">
-          <img
-            src={item.avatar}
-            alt={value}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src =
-                "https://via.placeholder.com/150";
-            }}
-          />
+    render: (value, item) => {
+      const initials = value
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase();
+
+      return (
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 min-w-[2rem] rounded-full overflow-hidden bg-gray-200">
+            <img
+              alt={value}
+              src={
+                item.avatarUrl ||
+                item.metadataJson?.avatarUrl ||
+                `https://placehold.co/400?text=${encodeURIComponent(initials)}`
+              }
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src =
+                  `https://placehold.co/400?text=${encodeURIComponent(initials)}`;
+              }}
+            />
+          </div>
+          <span>{value}</span>
         </div>
-        <span>{value}</span>
-      </div>
-    ),
+      );
+    },
   },
   { key: "phone", label: "Điện thoại" },
-  { key: "position", label: "Chức vụ" },
-  { key: "department", label: "Phòng ban" },
-  { key: "team", label: "Đội nhóm" },
+  {
+    key: "positionName",
+    label: "Chức vụ",
+    render: (value, item) => value || item.position?.name || "-",
+  },
+  {
+    key: "departmentName",
+    label: "Phòng ban",
+    render: (value, item) => value || item.department?.name || "-",
+  },
+  {
+    key: "teamName",
+    label: "Đội nhóm",
+    render: (value, item) => value || item.team?.name || "-",
+  },
   {
     key: "status",
     label: "Trạng thái",

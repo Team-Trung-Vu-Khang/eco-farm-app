@@ -19,7 +19,7 @@ import type {
   PageResponse,
 } from "../types/foundation.type";
 
-const BASE = "/api/foundation";
+const BASE = "/api/admin/foundation";
 
 // ─── Catalog API ──────────────────────────────────────────────────────────────
 // Phục vụ 5 catalog types: crop-groups, farming-methods, soil-types,

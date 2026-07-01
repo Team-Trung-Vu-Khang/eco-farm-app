@@ -64,10 +64,7 @@ export function DepartmentFormDialog({
   editItem,
   onSubmit,
 }: DepartmentFormDialogProps) {
-  const defaultValues = useMemo(
-    () => buildDefaultValues(editItem),
-    [editItem],
-  );
+  const defaultValues = useMemo(() => buildDefaultValues(editItem), [editItem]);
 
   const {
     control,
@@ -181,9 +178,7 @@ export function DepartmentFormDialog({
             )}
           />
           {errors.description ? (
-            <p className="text-xs text-red-600">
-              {errors.description.message}
-            </p>
+            <p className="text-xs text-red-600">{errors.description.message}</p>
           ) : null}
         </div>
 

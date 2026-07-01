@@ -144,7 +144,9 @@ export function useDepartment() {
         });
       } catch (error) {
         const message =
-          error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+          error instanceof Error
+            ? error.message
+            : "Đã xảy ra lỗi không xác định";
 
         toast({
           title: "Không thể xóa",

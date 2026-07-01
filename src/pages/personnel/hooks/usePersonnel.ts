@@ -1,46 +1,110 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import usePersonnelStore, { type Personnel } from "../../../stores/usePersonnelStore";
+import {
+  useFarmPersonnel,
+  useFarmPersonnelMutations,
+  type FarmPersonnelResponse,
+} from "@/features/master-data";
+import { useSelectedWorkspaceId } from "@/features/workspace";
+
+const DEFAULT_PAGE_SIZE = 10;
 
 export function usePersonnel() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const workspaceId = useSelectedWorkspaceId();
 
-  const personnel = usePersonnelStore((state) => state.personnel);
-  const deletePersonnel = usePersonnelStore((state) => state.deletePersonnel);
-  const bulkAddPersonnel = usePersonnelStore((state) => state.bulkAddPersonnel);
+  const [search, setSearch] = useState("");
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [currentIndex, setCurrentIndex] = useState(1);
+
+  const personnelQuery = useFarmPersonnel({
+    params: {
+      keyword: search.trim() || undefined,
+      page: Math.max(currentIndex - 1, 0),
+      size: pageSize,
+    },
+    workspaceId: typeof workspaceId === "number" ? workspaceId : undefined,
+  });
+
+  const { createPersonnel, deletePersonnel } = useFarmPersonnelMutations(
+    typeof workspaceId === "number" ? workspaceId : undefined,
+  );
 
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<Personnel | null>(null);
+  const [deleteItem, setDeleteItem] = useState<FarmPersonnelResponse | null>(
+    null,
+  );
   const [importOpen, setImportOpen] = useState(false);
 
-  const handleDelete = (item: Personnel) => {
+  const handleDelete = (item: FarmPersonnelResponse) => {
     setDeleteItem(item);
     setDeleteOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (deleteItem) {
-      deletePersonnel(deleteItem.id);
-      toast({
-        title: "Thành công",
-        description: "Đã xóa nhân sự khỏi hệ thống",
-      });
+      try {
+        await deletePersonnel.mutateAsync(deleteItem.id);
+        toast({
+          title: "Thành công",
+          description: "Đã xóa nhân sự",
+        });
+      } catch (error) {
+        toast({
+          title: "Không thể xóa",
+          description: error instanceof Error ? error.message : "Đã xảy ra lỗi",
+          variant: "destructive",
+        });
+      }
     }
     setDeleteOpen(false);
+    setDeleteItem(null);
   };
 
-  const handleImportData = (newData: any[]) => {
-    bulkAddPersonnel(newData);
+  const handleImportData = async (newData: any[]) => {
     toast({
-      title: "Thành công",
-      description: `Đã nhập ${newData.length} nhân sự mới`,
+      title: "Đang xử lý...",
+      description: `Hệ thống đang tiến hành nhập ${newData.length} nhân sự.`,
     });
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const item of newData) {
+      if (!item.payload) continue;
+      try {
+        await createPersonnel.mutateAsync(item.payload);
+        successCount++;
+      } catch (error) {
+        console.error("Lỗi khi import dòng", item, error);
+        errorCount++;
+      }
+    }
+
+    toast({
+      title: "Nhập dữ liệu hoàn tất",
+      description: `Thành công: ${successCount}, Thất bại: ${errorCount}`,
+    });
+
+    personnelQuery.refetch();
+  };
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setCurrentIndex(1);
   };
 
   return {
-    personnel,
+    personnel: personnelQuery.items,
+    loading: personnelQuery.loading,
+    response: personnelQuery.response,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
+    handleSearch,
     deleteOpen,
     setDeleteOpen,
     importOpen,
@@ -49,5 +113,6 @@ export function usePersonnel() {
     handleConfirmDelete,
     handleImportData,
     setLocation,
+    isDeleting: deletePersonnel.isPending,
   };
 }

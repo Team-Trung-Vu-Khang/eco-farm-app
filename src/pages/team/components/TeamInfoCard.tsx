@@ -30,11 +30,19 @@ export function TeamInfoCard({ team }: TeamInfoCardProps) {
           </div>
           <div>
             <Label className="text-muted-foreground">Trưởng nhóm</Label>
-            <div className="font-medium text-primary">{team.leader}</div>
+            <div className="font-medium text-primary">
+              {typeof team.leader === "object" && team.leader !== null
+                ? (team.leader as any).name || (team.leader as any).fullName
+                : team.leader}
+            </div>
           </div>
           <div>
             <Label className="text-muted-foreground">Phòng ban</Label>
-            <div className="font-medium">{team.department}</div>
+            <div className="font-medium">
+              {typeof team.department === "object" && team.department !== null
+                ? (team.department as any).name
+                : team.department}
+            </div>
           </div>
           <div>
             <Label className="text-muted-foreground">Trạng thái</Label>

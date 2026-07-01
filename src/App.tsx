@@ -200,12 +200,21 @@ const ContactCreatePage = lazy(
 );
 const ContactEditPage = lazy(() => import("./pages/contact/ContactEditPage"));
 const DepartmentPage = lazy(() => import("./pages/department/DepartmentPage"));
+const OwnerDepartmentPage = lazy(
+  () => import("./pages/owner-department/DepartmentPage"),
+);
 const GroupPositionPage = lazy(
   () => import("./pages/group-position/GroupPositionPage"),
 );
 const PositionPage = lazy(() => import("./pages/position/PositionPage"));
+const OwnerPositionPage = lazy(
+  () => import("./pages/owner-position/OwnerPositionPage"),
+);
 const PositionDetailPage = lazy(
   () => import("./pages/position/PositionDetailPage"),
+);
+const OwnerPositionDetailPage = lazy(
+  () => import("./pages/owner-position/OwnerPositionDetailPage"),
 );
 const PersonnelPage = lazy(() => import("./pages/personnel/PersonnelPage"));
 const PersonnelCreatePage = lazy(
@@ -216,6 +225,7 @@ const PersonnelEditPage = lazy(
 );
 const TeamPage = lazy(() => import("./pages/team/TeamPage"));
 const TeamCreatePage = lazy(() => import("./pages/team/TeamCreatePage"));
+const TeamEditPage = lazy(() => import("./pages/team/TeamEditPage"));
 const TeamDetailPage = lazy(() => import("./pages/team/TeamDetailPage"));
 const VarietyPage = lazy(() => import("./pages/variety/VarietyPage"));
 const CreateVarietyPage = lazy(
@@ -427,14 +437,21 @@ function Router() {
       <Route path="/contact/create" component={ContactCreatePage} />
       <Route path="/contact/:id/edit" component={ContactEditPage} />
       <Route path="/department" component={DepartmentPage} />
+      <Route path="/owner-department" component={OwnerDepartmentPage} />
       <Route path="/group-position" component={GroupPositionPage} />
       <Route path="/position" component={PositionPage} />
+      <Route path="/owner-position" component={OwnerPositionPage} />
       <Route path="/position/:id/detail" component={PositionDetailPage} />
+      <Route
+        path="/owner-position/:id/detail"
+        component={OwnerPositionDetailPage}
+      />
       <Route path="/personnel" component={PersonnelPage} />
       <Route path="/personnel/create" component={PersonnelCreatePage} />
       <Route path="/personnel/:id/edit" component={PersonnelEditPage} />
       <Route path="/team" component={TeamPage} />
       <Route path="/team/create" component={TeamCreatePage} />
+      <Route path="/team/:id/edit" component={TeamEditPage} />
       <Route path="/team/:id" component={TeamDetailPage} />
       {/* Old routes kept for safety, though removed from sidebar */}
       <Route path="/geo-zone" component={GeoZonePage} />

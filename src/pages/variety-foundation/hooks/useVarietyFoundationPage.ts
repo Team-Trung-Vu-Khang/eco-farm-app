@@ -60,7 +60,7 @@ export function useVarietyFoundationPage() {
           : "",
       status: item.status as "active" | "inactive",
       updatedAt: new Date().toISOString(), // Or from item if available
-      illustration: metadata.illustrationUrl || null,
+      illustration: (item as any).imageUrl || metadata.illustrationUrl || null,
       scientificName: metadata.scientificName || "",
       documents: docs
         .filter((d) => d.type === "pdf")

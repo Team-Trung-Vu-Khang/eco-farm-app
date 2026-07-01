@@ -18,6 +18,14 @@ import {
   Download,
 } from "lucide-react";
 import readXlsxFile from "read-excel-file";
+import { useSelectedWorkspaceId } from "@/features/workspace";
+import {
+  useMasterData,
+  useFarmDepartmentOptions,
+  useFarmPositionOptions,
+  useFarmTeams,
+} from "@/features/master-data";
+import { personnelFormSchema } from "@/pages/personnel/data/personnel-form.schema";
 
 interface ImportPersonnelDialogProps {
   open: boolean;
@@ -45,6 +53,8 @@ interface TempPersonnel {
   status: "active";
   isValid: boolean;
   errors?: string[];
+  errorMessages?: string[];
+  payload?: any;
 }
 
 export function ImportPersonnelDialog({
@@ -58,11 +68,37 @@ export function ImportPersonnelDialog({
   const [importData, setImportData] = useState<TempPersonnel[]>([]);
   const [isParsing, setIsParsing] = useState(false);
 
+  const workspaceId = useSelectedWorkspaceId();
+  const parsedWorkspaceId =
+    typeof workspaceId === "number" ? workspaceId : undefined;
+
+  const { items: banks } = useMasterData("banks", {
+    params: { status: "active", size: 500 },
+  });
+  const { items: masterDepartments } = useMasterData("departments", {
+    params: { status: "active", size: 100 },
+  });
+  const { items: masterPositions } = useMasterData("positions", {
+    params: { status: "active", size: 100 },
+  });
+  const { items: farmDepartments } = useFarmDepartmentOptions({
+    workspaceId: parsedWorkspaceId,
+    params: { size: 100 },
+  });
+  const { items: farmPositions } = useFarmPositionOptions({
+    workspaceId: parsedWorkspaceId,
+    params: { size: 100 },
+  });
+  const { items: farmTeams } = useFarmTeams({
+    workspaceId: parsedWorkspaceId,
+    params: { size: 100 },
+  });
+
   const columns: Column<TempPersonnel>[] = [
     {
       key: "fullName",
       label: "Họ và tên",
-      render: (value, item) => (
+      render: (value: any, item) => (
         <div className="flex flex-col">
           <span
             className={item.errors?.includes("fullName") ? "text-red-500" : ""}
@@ -89,14 +125,24 @@ export function ImportPersonnelDialog({
     {
       key: "isValid",
       label: "Trạng thái",
-      render: (value) => (
-        <div className="flex items-center gap-1">
+      render: (value: any, item) => (
+        <div className="flex flex-col gap-1 min-w-[150px]">
           {value ? (
-            <CheckCircle2 className="w-4 h-4 text-green-500" />
+            <div className="flex items-center gap-1 text-green-500">
+              <CheckCircle2 className="w-4 h-4" />
+              <span className="text-xs">Hợp lệ</span>
+            </div>
           ) : (
-            <div className="flex items-center gap-1 text-red-500">
-              <AlertCircle className="w-4 h-4" />
-              <span className="text-xs">Lỗi</span>
+            <div className="flex flex-col gap-1 text-red-500">
+              <div className="flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                <span className="text-xs font-semibold">Lỗi dữ liệu:</span>
+              </div>
+              <ul className="text-[11px] list-disc pl-4 leading-tight">
+                {item.errorMessages?.map((msg, i) => (
+                  <li key={i}>{msg}</li>
+                ))}
+              </ul>
             </div>
           )}
         </div>
@@ -166,9 +212,142 @@ export function ImportPersonnelDialog({
             rowData.accountHolder = val;
         });
 
-        const errors: string[] = [];
-        if (!rowData.fullName) errors.push("fullName");
-        if (!rowData.phone) errors.push("phone");
+        let departmentId = "";
+        let departmentType: any = undefined;
+        if (rowData.department) {
+          const nameLower = rowData.department.toLowerCase();
+          const fDept = farmDepartments.find(
+            (d) => d.name.toLowerCase() === nameLower,
+          );
+          if (fDept) {
+            departmentId = fDept.id.toString();
+            departmentType = "OWNER";
+          } else {
+            const mDept = masterDepartments.find(
+              (d) => d.name.toLowerCase() === nameLower,
+            );
+            if (mDept) {
+              departmentId = mDept.id.toString();
+              departmentType = "MASTER";
+            }
+          }
+        }
+
+        let positionId = "";
+        let positionType: any = undefined;
+        if (rowData.position) {
+          const nameLower = rowData.position.toLowerCase();
+          const fPos = farmPositions.find(
+            (p) => p.name.toLowerCase() === nameLower,
+          );
+          if (fPos) {
+            positionId = fPos.id.toString();
+            positionType = "OWNER";
+          } else {
+            const mPos = masterPositions.find(
+              (p) => p.name.toLowerCase() === nameLower,
+            );
+            if (mPos) {
+              positionId = mPos.id.toString();
+              positionType = "MASTER";
+            }
+          }
+        }
+
+        let teamId = "";
+        if (rowData.team) {
+          const nameLower = rowData.team.toLowerCase();
+          const fTeam = farmTeams.find(
+            (t) => t.name.toLowerCase() === nameLower,
+          );
+          if (fTeam) {
+            teamId = fTeam.id.toString();
+          }
+        }
+
+        let selectedBankCode = "";
+        const selectedBank = banks.find(
+          (b) =>
+            b.code?.toLowerCase() === rowData.bankName?.toLowerCase() ||
+            (b.shortName as string)?.toLowerCase() ===
+              rowData.bankName?.toLowerCase() ||
+            b.name?.toLowerCase() === rowData.bankName?.toLowerCase(),
+        );
+        if (selectedBank) {
+          selectedBankCode = selectedBank.code;
+        } else if (rowData.bankName) {
+          selectedBankCode = rowData.bankName;
+        }
+
+        const payloadForValidation = {
+          fullName: rowData.fullName || "",
+          phone: rowData.phone || "",
+          email: rowData.email || "",
+          province: rowData.province || "",
+          ward: rowData.ward || "",
+          address: rowData.address || "",
+          personalTaxCode: rowData.taxCode || "",
+          taxAddress: rowData.taxAddress || "",
+          departmentType,
+          department: departmentId,
+          positionType,
+          position: positionId,
+          team: teamId,
+          status: "active" as const,
+          bankName: selectedBankCode,
+          bankBranch: rowData.bankBranch || "",
+          accountNumber: rowData.accountNumber?.toString() || "",
+          accountHolder: rowData.accountHolder || "",
+        };
+
+        const validation = personnelFormSchema.safeParse(payloadForValidation);
+        let errors: string[] = [];
+        let errorMessages: string[] = [];
+        if (!validation.success) {
+          errors = validation.error.issues.map((e) => String(e.path[0] || ""));
+          errorMessages = validation.error.issues.map((e) => e.message);
+        }
+
+        let bankAccountPayload: any[] = [];
+        if (
+          selectedBankCode ||
+          rowData.accountNumber ||
+          rowData.accountHolder ||
+          rowData.bankBranch
+        ) {
+          bankAccountPayload = [
+            {
+              bankCode: selectedBank?.code || rowData.bankName,
+              bankName: selectedBank?.name || rowData.bankName,
+              bin:
+                (selectedBank?.attributes as any)?.bin ||
+                selectedBank?.code ||
+                rowData.bankName,
+              logoUrl: (selectedBank as any)?.logoUrl,
+              accountNumber: rowData.accountNumber?.toString(),
+              accountHolder: rowData.accountHolder,
+              branch: rowData.bankBranch,
+            },
+          ];
+        }
+
+        const apiPayload = {
+          fullName: rowData.fullName || "",
+          phone: rowData.phone || "",
+          email: rowData.email || undefined,
+          province: rowData.province || undefined,
+          ward: rowData.ward || undefined,
+          address: rowData.address || undefined,
+          personalTaxCode: rowData.taxCode || undefined,
+          taxAddress: rowData.taxAddress || undefined,
+          departmentType,
+          departmentId: departmentId ? Number(departmentId) : undefined,
+          positionType,
+          positionId: positionId ? Number(positionId) : undefined,
+          teamId: teamId ? Number(teamId) : undefined,
+          status: "active",
+          bankAccounts: bankAccountPayload,
+        };
 
         return {
           id: `temp-${index}`,
@@ -185,11 +364,13 @@ export function ImportPersonnelDialog({
           taxAddress: rowData.taxAddress || "",
           bankName: rowData.bankName || "",
           bankBranch: rowData.bankBranch || "",
-          accountNumber: rowData.accountNumber || "",
+          accountNumber: rowData.accountNumber?.toString() || "",
           accountHolder: rowData.accountHolder || "",
-          status: "active",
+          status: "active" as const,
           isValid: errors.length === 0,
           errors,
+          errorMessages,
+          payload: apiPayload,
         };
       });
 
@@ -266,13 +447,20 @@ export function ImportPersonnelDialog({
     }
   };
 
+  const handleOpenChange = (isOpen: boolean) => {
+    onOpenChange(isOpen);
+    if (!isOpen) {
+      setImportData([]);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const handleDismiss = () => {
-    onOpenChange(false);
-    setImportData([]);
+    handleOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

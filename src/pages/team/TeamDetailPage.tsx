@@ -4,7 +4,7 @@ import {
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ArrowLeft, Edit, Trash2, Users } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Users, Loader2 } from "lucide-react";
 import { TeamInfoCard } from "./components/TeamInfoCard";
 import { teamMemberColumns } from "./data/columns";
 import { useTeamDetailPage } from "./hooks/useTeamDetailPage";
@@ -12,13 +12,30 @@ import { useTeamDetailPage } from "./hooks/useTeamDetailPage";
 export default function TeamDetailPage() {
   const {
     team,
+    isTeamLoading,
     members,
+    isMembersLoading,
     deleteOpen,
     setDeleteOpen,
     handleDeleteTeam,
     goBack,
     goToMember,
+    isDeleting,
+    goToUpdate,
   } = useTeamDetailPage();
+
+  if (isTeamLoading) {
+    return (
+      <AdminLayout isDev={true} title="Chi tiết đội nhóm">
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">
+            Đang tải thông tin đội nhóm...
+          </p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   if (!team) {
     return (
@@ -48,11 +65,12 @@ export default function TeamDetailPage() {
             variant="outline"
             className="text-destructive hover:bg-destructive/10"
             onClick={() => setDeleteOpen(true)}
+            disabled={isDeleting}
           >
             <Trash2 className="w-4 h-4 mr-2" />
             Xóa đội
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={goToUpdate}>
             <Edit className="w-4 h-4 mr-2" />
             Chỉnh sửa
           </Button>
@@ -60,7 +78,7 @@ export default function TeamDetailPage() {
       }
     >
       <div className="space-y-6">
-        <TeamInfoCard team={team} />
+        <TeamInfoCard team={team as any} />
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -71,10 +89,11 @@ export default function TeamDetailPage() {
           </div>
 
           <DataTable
-            columns={teamMemberColumns}
+            columns={teamMemberColumns as any}
             data={members}
             onView={(item) => goToMember(item.id)}
             selectable={false}
+            loading={isMembersLoading}
           />
         </div>
       </div>
@@ -84,6 +103,7 @@ export default function TeamDetailPage() {
         onOpenChange={setDeleteOpen}
         onConfirm={handleDeleteTeam}
         description="Bạn có chắc chắn muốn xóa đội nhóm này? Hành động này không thể hoàn tác."
+        loading={isDeleting}
       />
     </AdminLayout>
   );

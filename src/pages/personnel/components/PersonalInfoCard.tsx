@@ -3,75 +3,97 @@ import {
   CardHeader,
   CardTitle,
   CardContent,
-  Label,
   Input,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { PersonnelFormData } from "../types";
+import { useFormContext } from "react-hook-form";
+import type { PersonnelFormValues } from "../data/personnel-form.schema";
 
-interface PersonalInfoCardProps {
-  formData: PersonnelFormData;
-  onChange: <K extends keyof PersonnelFormData>(
-    field: K,
-    value: PersonnelFormData[K],
-  ) => void;
-}
+export function PersonalInfoCard() {
+  const { control } = useFormContext<PersonnelFormValues>();
 
-export function PersonalInfoCard({ formData, onChange }: PersonalInfoCardProps) {
   return (
     <Card>
       <CardHeader>
         <CardTitle>Thông tin cá nhân</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="fullName">Họ và tên *</Label>
-          <Input
-            id="fullName"
-            placeholder="Nhập họ và tên"
-            value={formData.fullName}
-            onChange={(e) => onChange("fullName", e.target.value)}
+        <FormField
+          control={control}
+          name="fullName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel required>Họ và tên</FormLabel>
+              <FormControl>
+                <Input placeholder="Nhập họ và tên" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel required>Số điện thoại</FormLabel>
+                <FormControl>
+                  <Input placeholder="0901234567" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="email@example.com"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="phone">Số điện thoại *</Label>
-            <Input
-              id="phone"
-              placeholder="0901234567"
-              value={formData.phone}
-              onChange={(e) => onChange("phone", e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="email@example.com"
-              value={formData.email}
-              onChange={(e) => onChange("email", e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="taxCode">Mã số thuế cá nhân</Label>
-            <Input
-              id="taxCode"
-              placeholder="MST cá nhân"
-              value={formData.taxCode}
-              onChange={(e) => onChange("taxCode", e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="taxAddress">Địa chỉ thuế</Label>
-            <Input
-              id="taxAddress"
-              placeholder="Địa chỉ đăng ký thuế"
-              value={formData.taxAddress}
-              onChange={(e) => onChange("taxAddress", e.target.value)}
-            />
-          </div>
+          <FormField
+            control={control}
+            name="personalTaxCode"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Mã số thuế cá nhân</FormLabel>
+                <FormControl>
+                  <Input placeholder="MST cá nhân" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="taxAddress"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Địa chỉ thuế</FormLabel>
+                <FormControl>
+                  <Input placeholder="Địa chỉ đăng ký thuế" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
       </CardContent>
     </Card>

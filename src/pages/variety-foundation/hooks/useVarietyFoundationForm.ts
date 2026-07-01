@@ -135,6 +135,7 @@ export function useVarietyFoundationForm() {
         status: "active" as const,
         metadataJson,
         documents,
+        imageUrl: illustrationUrl,
       };
 
       createCropVariety.mutate(payload as any, {

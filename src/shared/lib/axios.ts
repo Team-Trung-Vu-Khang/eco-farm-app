@@ -3,6 +3,7 @@ import { authEnv } from "../config/auth.env";
 import { authStorage } from "@/features/auth/api/auth.api";
 import { AUTH_PATHS } from "../constants/auth.constants";
 import { apiEnv } from "../config/api.env";
+import { getSelectedWorkspaceIdFromStorage } from "@/features/workspace";
 
 export const apiClient = axios.create({
   baseURL: apiEnv.apiBaseUrl,
@@ -32,9 +33,16 @@ const processQueue = (error: any, token: string | null = null) => {
 apiClient.interceptors.request.use(
   (config) => {
     const token = authStorage.getToken();
+    const workspaceId = getSelectedWorkspaceIdFromStorage();
+
     if (token && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    if (workspaceId && !config.headers["X-Workspace-Id"]) {
+      config.headers["X-Workspace-Id"] = workspaceId;
+    }
+
     return config;
   },
   (error) => Promise.reject(error),
@@ -64,6 +72,12 @@ apiClient.interceptors.response.use(
             const token = await new Promise<string>((resolve, reject) => {
               failedQueue.push({ resolve, reject });
             });
+
+            if (!originalRequest.headers["X-Workspace-Id"]) {
+              const workspaceId = getSelectedWorkspaceIdFromStorage();
+              originalRequest.headers["X-Workspace-Id"] = workspaceId;
+            }
+
             originalRequest.headers.Authorization = `Bearer ${token}`;
             return apiClient(originalRequest);
           } catch (err) {
@@ -91,6 +105,11 @@ apiClient.interceptors.response.use(
 
           authStorage.setToken(newToken);
           processQueue(null, newToken);
+
+          if (!originalRequest.headers["X-Workspace-Id"]) {
+            const workspaceId = getSelectedWorkspaceIdFromStorage();
+            originalRequest.headers["X-Workspace-Id"] = workspaceId;
+          }
 
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return apiClient(originalRequest);

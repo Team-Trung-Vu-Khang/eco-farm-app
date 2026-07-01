@@ -4,8 +4,20 @@ import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 export const teamColumns: Column<Team>[] = [
   { key: "code", label: "Mã đội" },
   { key: "name", label: "Tên đội nhóm" },
-  { key: "leader", label: "Trưởng nhóm" },
-  { key: "department", label: "Phòng ban" },
+  {
+    key: "leader",
+    label: "Trưởng nhóm",
+    render(value: any) {
+      return <span>{value?.name}</span>;
+    },
+  },
+  {
+    key: "department",
+    label: "Phòng ban",
+    render(value: any) {
+      return <span>{value?.name}</span>;
+    },
+  },
   { key: "memberCount", label: "Số lượng thành viên" },
   {
     key: "status",

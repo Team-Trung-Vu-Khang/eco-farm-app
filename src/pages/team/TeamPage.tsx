@@ -16,6 +16,14 @@ import { useTeamPage } from "./hooks/useTeamPage";
 export default function TeamPage() {
   const {
     teams,
+    loading,
+    response,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
+    goToEdit,
+    handleSearch,
     deleteOpen,
     setDeleteOpen,
     importOpen,
@@ -25,6 +33,7 @@ export default function TeamPage() {
     handleImportData,
     goToCreate,
     goToDetail,
+    isDeleting,
   } = useTeamPage();
 
   return (
@@ -55,13 +64,21 @@ export default function TeamPage() {
       }
     >
       <DataTable
-        columns={teamColumns}
+        columns={teamColumns as any}
         data={teams}
         onView={(item) => goToDetail(item.id)}
-        onEdit={(item) => goToDetail(item.id)}
+        onEdit={(item) => goToEdit(item.id)}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm đội nhóm..."
         selectable={false}
+        loading={loading}
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalElements={response?.totalElements}
+        totalPages={response?.totalPages}
+        onSearch={handleSearch}
+        onPageSize={setPageSize}
+        onIndexChange={setCurrentIndex}
       />
 
       <DeleteDialog
@@ -69,6 +86,7 @@ export default function TeamPage() {
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa đội nhóm này? Các nhân sự thuộc đội nhóm sẽ cần được phân bổ lại."
+        loading={isDeleting}
       />
 
       <ImportTeamDialog

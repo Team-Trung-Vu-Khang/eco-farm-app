@@ -16,6 +16,13 @@ import { personnelColumns, personnelFilters } from "./data/table";
 export default function PersonnelPage() {
   const {
     personnel,
+    loading,
+    response,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
+    handleSearch,
     deleteOpen,
     setDeleteOpen,
     importOpen,
@@ -24,6 +31,7 @@ export default function PersonnelPage() {
     handleConfirmDelete,
     handleImportData,
     setLocation,
+    isDeleting,
   } = usePersonnel();
 
   return (
@@ -58,7 +66,7 @@ export default function PersonnelPage() {
       }
     >
       <DataTable
-        columns={personnelColumns}
+        columns={personnelColumns as any}
         data={personnel}
         onView={(item) => setLocation(`/personnel/${item.id}/edit`)}
         onEdit={(item) => setLocation(`/personnel/${item.id}/edit`)}
@@ -66,6 +74,14 @@ export default function PersonnelPage() {
         searchPlaceholder="Tìm kiếm nhân sự..."
         filters={personnelFilters}
         selectable={false}
+        loading={loading}
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalElements={response?.totalElements}
+        totalPages={response?.totalPages}
+        onSearch={handleSearch}
+        onPageSize={setPageSize}
+        onIndexChange={setCurrentIndex}
       />
 
       <DeleteDialog
@@ -73,6 +89,7 @@ export default function PersonnelPage() {
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa nhân sự này? Hoạt động này không thể hoàn tác."
+        loading={isDeleting}
       />
       <ImportPersonnelDialog
         open={importOpen}

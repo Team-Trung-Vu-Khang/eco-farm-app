@@ -99,7 +99,7 @@ export function useVarietyFoundationEditForm() {
             ? `${existingData.avgYieldFrom || 0}-${existingData.avgYieldTo || 0}`
             : "",
         description: existingData.description || "",
-        illustration: metadata.illustrationUrl || null,
+        illustration: (existingData as any).imageUrl || metadata.illustrationUrl || null,
         contentType,
         pdfFile: pdfDoc?.fileUrl
           ? new File([], pdfDoc.fileName || pdfDoc.name || "document.pdf", {
@@ -217,6 +217,7 @@ export function useVarietyFoundationEditForm() {
         status: "active" as const,
         metadataJson,
         documents,
+        imageUrl: illustrationUrl,
       };
 
       updateCropVariety.mutate(

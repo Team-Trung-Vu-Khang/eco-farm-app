@@ -4,8 +4,9 @@ import {
   AdminLayout,
   Button,
   DeleteDialog,
+  Form,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Save, Trash2, X } from "lucide-react";
+import { Save, Trash2, X, Loader2 } from "lucide-react";
 import { usePersonnelForm } from "./hooks/usePersonnelForm";
 import { PersonnelFormTabs } from "./components/PersonnelFormTabs";
 
@@ -14,15 +15,28 @@ export default function PersonnelEditPage() {
   const id = params?.id ? Number(params.id) : 0;
 
   const {
-    formData,
-    onChange,
+    methods,
     handleSubmit,
     handleDelete,
     setLocation,
     personnel,
+    isPersonnelLoading,
+    isSubmitting,
+    isDeleting,
   } = usePersonnelForm(id);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  if (isPersonnelLoading) {
+    return (
+      <AdminLayout isDev={true} title="Cập nhật nhân sự">
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">Đang tải thông tin nhân sự...</p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   if (!personnel) {
     return (
@@ -50,23 +64,34 @@ export default function PersonnelEditPage() {
             variant="outline"
             className="text-destructive hover:bg-destructive/10"
             onClick={() => setDeleteOpen(true)}
+            disabled={isDeleting || isSubmitting}
           >
             <Trash2 className="w-4 h-4 mr-2" />
             Xóa
           </Button>
-          <Button variant="outline" onClick={() => setLocation("/personnel")}>
+          <Button
+            variant="outline"
+            onClick={() => setLocation("/personnel")}
+            disabled={isSubmitting || isDeleting}
+          >
             <X className="w-4 h-4 mr-2" />
             Hủy bỏ
           </Button>
-          <Button onClick={handleSubmit}>
-            <Save className="w-4 h-4 mr-2" />
+          <Button onClick={handleSubmit} disabled={isSubmitting || isDeleting}>
+            {isSubmitting ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4 mr-2" />
+            )}
             Lưu lại
           </Button>
         </div>
       }
     >
       <div className="max-w-4xl mx-auto space-y-6">
-        <PersonnelFormTabs formData={formData} onChange={onChange} showStatus />
+        <Form {...methods}>
+          <PersonnelFormTabs showStatus />
+        </Form>
       </div>
 
       <DeleteDialog
@@ -76,7 +101,8 @@ export default function PersonnelEditPage() {
           handleDelete();
           setDeleteOpen(false);
         }}
-        description={`Bạn có chắc chắn muốn xóa nhân sự ${formData.fullName}?`}
+        description={`Bạn có chắc chắn muốn xóa nhân sự ${personnel.fullName}?`}
+        loading={isDeleting}
       />
     </AdminLayout>
   );

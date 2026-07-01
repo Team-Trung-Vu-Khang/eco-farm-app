@@ -2,7 +2,9 @@ import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Sprout } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { VarietyFoundationDetailContent } from "./components/VarietyFoundationDetailContent";
-import useVarietyFoundationStore from "../../stores/useVarietyFoundationStore";
+import type { VarietyFoundation } from "./types";
+import { formatDaysToDuration } from "../growth-cycle/utils/duration";
+import { useCropVarietyById } from "@/features/foundation";
 
 interface VarietyFoundationDetailPageProps {
   id?: string;
@@ -15,8 +17,56 @@ export default function VarietyFoundationDetailPage({
   const id = propId ?? params?.id;
   const isStandalone = !!params?.id;
 
-  const { getVarietyFoundationById } = useVarietyFoundationStore();
-  const varietyFoundation = getVarietyFoundationById(id || "");
+  const { data: apiData, isLoading } = useCropVarietyById(Number(id), {
+    enabled: !!id,
+  });
+
+  let varietyFoundation: VarietyFoundation | undefined = undefined;
+
+  if (apiData) {
+    const metadata = (apiData.metadataJson || {}) as Record<string, unknown>;
+    const docs = apiData.documents || [];
+    const pdfDoc = docs.find((d) => d.type === "pdf");
+    const editorDoc = docs.find((d) => d.type === "editor");
+
+    let contentType: "pdf" | "editor" = "editor";
+    if (pdfDoc) contentType = "pdf";
+
+    varietyFoundation = {
+      id: String(apiData.id),
+      varietyFoundationCode: apiData.code || "",
+      varietyFoundationName: apiData.name || "",
+      crop: String(apiData.cropName || apiData.cropId || ""),
+      description: apiData.description || "",
+      origin: apiData.origin || "",
+      growthDuration: formatDaysToDuration(apiData.growthDurationDays),
+      averageYield:
+        apiData.avgYieldFrom || apiData.avgYieldTo
+          ? `${apiData.avgYieldFrom || 0}-${apiData.avgYieldTo || 0}`
+          : "",
+      status: apiData.status as "active" | "inactive",
+      updatedAt: apiData.updatedAt || new Date().toISOString(),
+      illustration:
+        (apiData as any).imageUrl || metadata.illustrationUrl || null,
+      scientificName: (metadata.scientificName as string) || "",
+      documents: docs
+        .filter((d) => d.type === "pdf")
+        .map((d) => ({ name: d.name || "Tài liệu PDF", url: d.fileUrl || "" })),
+      contentType,
+      editorContent: editorDoc?.content || "",
+      pdfFile: null,
+    };
+  }
+
+  if (isLoading) {
+    return (
+      <AdminLayout isDev={true} title="Chi tiết giống cây (nền tảng)">
+        <div className="flex justify-center items-center py-20">
+          Đang tải...
+        </div>
+      </AdminLayout>
+    );
+  }
 
   if (!varietyFoundation) {
     const errorContent = (
@@ -49,7 +99,10 @@ export default function VarietyFoundationDetailPage({
   }
 
   const content = (
-    <VarietyFoundationDetailContent varietyFoundation={varietyFoundation} isStandalone={isStandalone} />
+    <VarietyFoundationDetailContent
+      varietyFoundation={varietyFoundation}
+      isStandalone={isStandalone}
+    />
   );
 
   return isStandalone ? (

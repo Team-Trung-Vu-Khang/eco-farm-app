@@ -4,31 +4,37 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
-  Label,
   Input,
   Combobox,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CreditCard } from "lucide-react";
-import { vietQrBankData } from "@/constants/banks";
-import type { PersonnelFormData } from "../types";
+import { useFormContext } from "react-hook-form";
+import { useMemo } from "react";
+import { useMasterData } from "@/features/master-data";
+import type { PersonnelFormValues } from "../data/personnel-form.schema";
 
-const bankOptions = vietQrBankData.map((bank) => ({
-  id: bank.id,
-  bin: bank.bin,
-  label: bank.name,
-  image: bank.logo,
-  value: bank.bin,
-}));
+export function BankInfoCard() {
+  const { control } = useFormContext<PersonnelFormValues>();
 
-interface BankInfoCardProps {
-  formData: PersonnelFormData;
-  onChange: <K extends keyof PersonnelFormData>(
-    field: K,
-    value: PersonnelFormData[K],
-  ) => void;
-}
+  const { items: banks } = useMasterData("banks", {
+    params: { status: "active", size: 100 },
+  });
 
-export function BankInfoCard({ formData, onChange }: BankInfoCardProps) {
+  const bankOptions = useMemo(() => {
+    return banks.map((bank) => ({
+      id: bank.id,
+      bin: (bank.attributes as any)?.bin || bank.code,
+      label: bank.name,
+      image: bank.logoUrl,
+      value: bank.code,
+    }));
+  }, [banks]);
+
   return (
     <Card>
       <CardHeader>
@@ -36,53 +42,78 @@ export function BankInfoCard({ formData, onChange }: BankInfoCardProps) {
           <CreditCard className="w-5 h-5 text-primary" />
           Thông tin tài khoản ngân hàng
         </CardTitle>
-        <CardDescription>
-          Thông tin tài khoản nhận lương/thưởng
-        </CardDescription>
+        <CardDescription>Thông tin tài khoản nhận lương/thưởng</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="bankName">Ngân hàng</Label>
-            <Combobox
-              options={bankOptions}
-              value={formData.bankName}
-              onChange={(val) => onChange("bankName", val)}
-              placeholder="Chọn ngân hàng..."
-              searchPlaceholder="Tìm tên ngân hàng..."
-              className="w-full"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="bankBranch">Chi nhánh ngân hàng</Label>
-            <Input
-              id="bankBranch"
-              placeholder="VD: CN Hoàn Kiếm"
-              value={formData.bankBranch}
-              onChange={(e) => onChange("bankBranch", e.target.value)}
-            />
-          </div>
+          <FormField
+            control={control}
+            name="bankName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Ngân hàng</FormLabel>
+                <FormControl>
+                  <Combobox
+                    options={bankOptions}
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    placeholder="Chọn ngân hàng..."
+                    searchPlaceholder="Tìm tên ngân hàng..."
+                    className="w-full"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="bankBranch"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Chi nhánh ngân hàng</FormLabel>
+                <FormControl>
+                  <Input placeholder="VD: CN Hoàn Kiếm" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="accountNumber">Số tài khoản</Label>
-            <Input
-              id="accountNumber"
-              placeholder="Nhập số tài khoản"
-              value={formData.accountNumber}
-              onChange={(e) => onChange("accountNumber", e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="accountHolder">Chủ tài khoản</Label>
-            <Input
-              id="accountHolder"
-              placeholder="TÊN CHỦ TÀI KHOẢN"
-              className="uppercase"
-              value={formData.accountHolder}
-              onChange={(e) => onChange("accountHolder", e.target.value.toUpperCase())}
-            />
-          </div>
+          <FormField
+            control={control}
+            name="accountNumber"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Số tài khoản</FormLabel>
+                <FormControl>
+                  <Input placeholder="Nhập số tài khoản" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="accountHolder"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Chủ tài khoản</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="TÊN CHỦ TÀI KHOẢN"
+                    className="uppercase"
+                    {...field}
+                    onChange={(e) =>
+                      field.onChange(e.target.value.toUpperCase())
+                    }
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
       </CardContent>
     </Card>

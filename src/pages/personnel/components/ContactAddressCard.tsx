@@ -3,26 +3,36 @@ import {
   CardHeader,
   CardTitle,
   CardContent,
-  Label,
   Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Combobox,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { PROVINCES } from "@/constants/province";
-import type { PersonnelFormData } from "../types";
+import { useFormContext } from "react-hook-form";
+import type { PersonnelFormValues } from "../data/personnel-form.schema";
+import { useAddressOptions } from "@/features/master-data";
+import { useMemo } from "react";
 
-interface ContactAddressCardProps {
-  formData: PersonnelFormData;
-  onChange: <K extends keyof PersonnelFormData>(
-    field: K,
-    value: PersonnelFormData[K],
-  ) => void;
-}
+export function ContactAddressCard() {
+  const { control, watch } = useFormContext<PersonnelFormValues>();
+  const province = watch("province");
 
-export function ContactAddressCard({ formData, onChange }: ContactAddressCardProps) {
+  const { provinces, wards, isLoadingProvinces, isLoadingWards } =
+    useAddressOptions(province);
+
+  const provinceOptions = useMemo(
+    () => provinces.map((p) => ({ value: p.code, label: p.name })),
+    [provinces],
+  );
+
+  const wardOptions = useMemo(
+    () => wards.map((w) => ({ value: w.code, label: w.name })),
+    [wards],
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -30,54 +40,65 @@ export function ContactAddressCard({ formData, onChange }: ContactAddressCardPro
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="province">Tỉnh / Thành phố</Label>
-            <Select
-              value={formData.province}
-              onValueChange={(val) => onChange("province", val)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn Tỉnh/Thành" />
-              </SelectTrigger>
-              <SelectContent>
-                {PROVINCES.map((province) => (
-                  <SelectItem key={province.code} value={province.code}>
-                    {province.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="district">Phường / Xã</Label>
-            <Select
-              value={formData.district}
-              onValueChange={(val) => onChange("district", val)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn Phường / Xã" />
-              </SelectTrigger>
-              <SelectContent>
-                {PROVINCES.find((p) => p.code === formData.province)?.districts.map(
-                  (district) => (
-                    <SelectItem key={district.code} value={district.code}>
-                      {district.name}
-                    </SelectItem>
-                  )
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="address">Địa chỉ chi tiết</Label>
-          <Input
-            id="address"
-            placeholder="Số nhà, tên đường, phường/xã..."
-            value={formData.address}
-            onChange={(e) => onChange("address", e.target.value)}
+          <FormField
+            control={control}
+            name="province"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tỉnh / Thành phố</FormLabel>
+                <FormControl>
+                  <Combobox
+                    options={provinceOptions}
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    disabled={isLoadingProvinces}
+                    placeholder="Chọn Tỉnh/Thành"
+                    searchPlaceholder="Tìm Tỉnh/Thành..."
+                    className="w-full"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="ward"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phường / Xã</FormLabel>
+                <FormControl>
+                  <Combobox
+                    options={wardOptions}
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    disabled={isLoadingWards || !province}
+                    placeholder="Chọn Phường/Xã"
+                    searchPlaceholder="Tìm Phường/Xã..."
+                    className="w-full"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
+        <FormField
+          control={control}
+          name="address"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Địa chỉ chi tiết</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Số nhà, tên đường, phường/xã..."
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </CardContent>
     </Card>
   );
