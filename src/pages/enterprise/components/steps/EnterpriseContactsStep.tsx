@@ -58,7 +58,7 @@ export function EnterpriseContactsStep() {
                   type="button"
                   variant="ghost"
                   onClick={() =>
-                    setNewContact({ name: "", phone: "", email: "" })
+                    setNewContact({ name: "", phone: "", email: "", id: "" })
                   }
                   className="h-11 px-3 text-muted-foreground"
                 >
@@ -121,9 +121,10 @@ export function EnterpriseContactsStep() {
       <ContactSelectorDialog
         open={isContactDialogOpen}
         onOpenChange={setIsContactDialogOpen}
-        selectedId={null}
+        selectedId={newContact.id ?? null}
         onSelect={(contact) =>
           setNewContact({
+            id: contact.id,
             name: contact.fullName || contact.name || "",
             phone: contact.phone || "",
             email: contact.email || "",

@@ -1,6 +1,7 @@
 import type { BankAccount, Branch, Contact } from "../data/constants";
 
 export interface EnterpriseDocument {
+  id?: number | string;
   name: string;
   type: string;
   size: string;

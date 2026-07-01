@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const enterpriseContactSchema = z.object({
+  id: z.union([z.number(), z.string()]).optional(),
   name: z.string().default(""),
   phone: z.string().default(""),
   email: z.string().default(""),
@@ -27,6 +28,7 @@ const enterpriseBankAccountSchema = z.object({
 });
 
 const enterpriseDocumentSchema = z.object({
+  id: z.union([z.number(), z.string()]).optional(),
   name: z.string().default(""),
   type: z.string().default(""),
   size: z.string().default(""),

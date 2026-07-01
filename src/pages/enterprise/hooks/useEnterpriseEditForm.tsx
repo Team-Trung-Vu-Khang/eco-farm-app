@@ -21,7 +21,7 @@ import { EnterpriseContactsStep } from "../components/steps/EnterpriseContactsSt
 import { EnterpriseBranchesStep } from "../components/steps/EnterpriseBranchesStep";
 import { EnterpriseConfirmationStep } from "../components/steps/EnterpriseConfirmationStep";
 import { EnterpriseDocumentsStep } from "../components/steps/EnterpriseDocumentsStep";
-import type { BankAccount, Branch } from "../data/constants";
+import type { BankAccount, Branch, Contact } from "../data/constants";
 import {
   defaultEnterpriseFormValues,
   enterpriseFormSchema,
@@ -155,6 +155,7 @@ export function useEnterpriseEditForm() {
       phone: "",
       email: "",
       contacts: enterpriseData.contacts.map((contact) => ({
+        id: contact.id,
         name: contact.name || contact.fullName || "",
         phone: contact.phone || "",
         email: contact.email || "",
@@ -169,15 +170,16 @@ export function useEnterpriseEditForm() {
         note: branch.metadataJson?.note ? String(branch.metadataJson.note) : "",
       })),
       bankAccounts: enterpriseData.bankAccounts.map((account) => ({
-        bankName: account.bank?.name || account.bankName || "",
+        bankName: account.bank?.name || "",
         accountHolder: account.accountHolder || "",
         accountNumber: account.accountNumber || "",
         branch: account.branch || "",
         note: account.note || "",
-        bin: account.bin || account.bank?.bin || "",
-        logo: account.logoUrl || account.bank?.logoUrl || "",
+        bin: account.bank?.bin || "",
+        logo: account.bank?.logoUrl || "",
       })),
       documents: enterpriseData.documents.map((doc) => ({
+        id: doc.id,
         name: doc.name || "",
         type: doc.mimeType || doc.documentType || "",
         size: doc.sizeBytes ? `${(doc.sizeBytes / (1024 * 1024)).toFixed(2)} MB` : "",
@@ -201,7 +203,8 @@ export function useEnterpriseEditForm() {
     note: "",
   });
 
-  const [newContact, setNewContact] = useState({
+  const [newContact, setNewContact] = useState<Contact>({
+    id: "",
     name: "",
     phone: "",
     email: "",
@@ -653,6 +656,7 @@ export function useEnterpriseEditForm() {
         contacts: [...(prev.contacts ?? []), newContact],
       }));
       setNewContact({
+        id: "",
         name: "",
         phone: "",
         email: "",
@@ -740,7 +744,7 @@ export function useEnterpriseEditForm() {
           ? enterpriseQuery.item.status
           : "active",
       contacts: values.contacts.map((contact, index) => ({
-        contactId: index + 1,
+        contactId: contact.id,
         name: contact.name,
         position: "",
         phone: contact.phone,
@@ -792,7 +796,7 @@ export function useEnterpriseEditForm() {
         metadataJson: null,
       })),
       documents: values.documents.map((doc, index) => ({
-        id: index + 1,
+        id: doc.id ?? index + 1,
         documentType: doc.type,
         name: doc.name,
         fileUrl: doc.fileUrl || doc.url || "",

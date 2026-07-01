@@ -1,23 +1,30 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast, type Step } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import QrScanner from "qr-scanner";
-import { useEffect, useMemo, useRef, useState, type SetStateAction } from "react";
-import readXlsxFile from "read-excel-file";
-import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type SetStateAction,
+} from "react";
 import { useForm } from "react-hook-form";
+import readXlsxFile from "read-excel-file";
 import { useLocation } from "wouter";
 
 import { vietQrBankData } from "@/constants/banks";
-import { useCreateOrganization } from "@/features/organization";
 import { useMasterData } from "@/features/master-data";
+import { useCreateOrganization } from "@/features/organization";
 import { useUploadStorageFile } from "@/features/storage/hooks/useUploadStorageFile";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import { EnterpriseBankAccountsStep } from "../components/steps/EnterpriseBankAccountsStep";
 import { EnterpriseBasicInfoStep } from "../components/steps/EnterpriseBasicInfoStep";
-import { EnterpriseContactsStep } from "../components/steps/EnterpriseContactsStep";
 import { EnterpriseBranchesStep } from "../components/steps/EnterpriseBranchesStep";
 import { EnterpriseConfirmationStep } from "../components/steps/EnterpriseConfirmationStep";
+import { EnterpriseContactsStep } from "../components/steps/EnterpriseContactsStep";
 import { EnterpriseDocumentsStep } from "../components/steps/EnterpriseDocumentsStep";
 
+import { parseVietQR } from "@/utils/commons";
 import type { BankAccount, Branch, Contact } from "../data/constants";
 import {
   defaultEnterpriseFormValues,
@@ -26,7 +33,6 @@ import {
   type EnterpriseFormValues,
 } from "../data/enterprise-form.schema";
 import type { EnterpriseFormData } from "../types";
-import { parseVietQR } from "@/utils/commons";
 
 type BusinessLineRecord = {
   id: number | string;
@@ -52,7 +58,9 @@ const CLASSIFICATION_LABELS: Record<string, string> = {
 
 const normalizeBytes = (size?: string) => {
   if (!size) return undefined;
-  const numeric = Number.parseFloat(size.replace(/[^0-9.,]/g, "").replace(",", "."));
+  const numeric = Number.parseFloat(
+    size.replace(/[^0-9.,]/g, "").replace(",", "."),
+  );
   if (!Number.isFinite(numeric)) return undefined;
   const unit = size.toLowerCase();
   if (unit.includes("kb")) return Math.round(numeric * 1024);
@@ -149,6 +157,7 @@ export function useEnterpriseCreateForm() {
     bin: "",
   });
   const [newContact, setNewContact] = useState<Contact>({
+    id: "",
     name: "",
     phone: "",
     email: "",
@@ -464,7 +473,9 @@ export function useEnterpriseCreateForm() {
     const file = files[0];
     if (!file) return;
     const previewUrl = URL.createObjectURL(file);
-    const previousDocuments = getValues("documents") as EnterpriseFormData["documents"];
+    const previousDocuments = getValues(
+      "documents",
+    ) as EnterpriseFormData["documents"];
     const requestSeq = ++documentUploadSeqRef.current;
 
     setFormData((prev) => ({
@@ -579,6 +590,7 @@ export function useEnterpriseCreateForm() {
         contacts: [...(prev.contacts ?? []), newContact],
       }));
       setNewContact({
+        id: "",
         name: "",
         phone: "",
         email: "",
@@ -648,23 +660,23 @@ export function useEnterpriseCreateForm() {
 
     const businessLines: BusinessLineRecord[] = values.classification.map(
       (classification: string) => {
-      const mappedCode =
-        CLASSIFICATION_TO_BUSINESS_LINE[classification] || classification;
-      const mappedName =
-        CLASSIFICATION_LABELS[classification] || classification;
-      const record = businessLineRecords.find(
-        (item) =>
-          item.code === mappedCode ||
-          item.name.toLowerCase() === mappedName.toLowerCase(),
-      );
+        const mappedCode =
+          CLASSIFICATION_TO_BUSINESS_LINE[classification] || classification;
+        const mappedName =
+          CLASSIFICATION_LABELS[classification] || classification;
+        const record = businessLineRecords.find(
+          (item) =>
+            item.code === mappedCode ||
+            item.name.toLowerCase() === mappedName.toLowerCase(),
+        );
 
-      return (
-        record || {
-          id: mappedCode,
-          code: mappedCode,
-          name: mappedName,
-        }
-      );
+        return (
+          record || {
+            id: mappedCode,
+            code: mappedCode,
+            name: mappedName,
+          }
+        );
       },
     );
 
@@ -691,7 +703,7 @@ export function useEnterpriseCreateForm() {
       description: values.description.trim(),
       status: "active" as const,
       contacts: values.contacts.map((contact, index) => ({
-        contactId: index + 1,
+        contactId: contact.id,
         name: contact.name,
         position: "",
         phone: contact.phone,
@@ -712,18 +724,19 @@ export function useEnterpriseCreateForm() {
         latitude: 0,
         longitude: 0,
         status: "active" as const,
-        contacts: branch.phone || branch.email
-          ? [
-              {
-                contactId: index + 1,
-                name: branch.name,
-                position: "",
-                phone: branch.phone,
-                email: branch.email,
-                isPrimary: true,
-              },
-            ]
-          : [],
+        contacts:
+          branch.phone || branch.email
+            ? [
+                {
+                  contactId: index + 1,
+                  name: branch.name,
+                  position: "",
+                  phone: branch.phone,
+                  email: branch.email,
+                  isPrimary: true,
+                },
+              ]
+            : [],
         bankAccounts: [],
         metadataJson: null,
       })),
@@ -751,8 +764,7 @@ export function useEnterpriseCreateForm() {
           metadataJson: null,
         };
       }),
-      documents: values.documents.map((doc, index) => ({
-        id: index + 1,
+      documents: values.documents.map((doc) => ({
         documentType: doc.type,
         name: doc.name,
         fileUrl: doc.fileUrl || doc.url || "",
