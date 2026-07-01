@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
-import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { Enterprise } from "@/pages/enterprise/data/constants";
+import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { vietQrBankData } from "../../../constants/banks";
 
 const formatContactTooltip = (cooperative: Enterprise) => {
@@ -175,8 +175,13 @@ export const COOPERATIVE_COLUMNS: Column<Enterprise>[] = [
       const extraCount = Math.max(0, contacts.length - 1);
 
       return (
-        <div className="max-w-[240px] space-y-1" title={formatContactTooltip(row)}>
-          <div className="font-medium truncate">{primaryContact?.phone || "-"}</div>
+        <div
+          className="max-w-[240px] space-y-1"
+          title={formatContactTooltip(row)}
+        >
+          <div className="font-medium truncate">
+            {primaryContact?.phone || "-"}
+          </div>
           {extraCount > 0 && (
             <div className="text-xs text-muted-foreground">
               +{extraCount} liên hệ khác
@@ -206,8 +211,13 @@ export const COOPERATIVE_COLUMNS: Column<Enterprise>[] = [
       const extraCount = Math.max(0, contacts.length - 1);
 
       return (
-        <div className="max-w-[240px] space-y-1" title={formatContactTooltip(row)}>
-          <div className="font-medium truncate">{primaryContact?.email || "-"}</div>
+        <div
+          className="max-w-[240px] space-y-1"
+          title={formatContactTooltip(row)}
+        >
+          <div className="font-medium truncate">
+            {primaryContact?.email || "-"}
+          </div>
           {extraCount > 0 && (
             <div className="text-xs text-muted-foreground">
               +{extraCount} liên hệ khác
@@ -229,20 +239,6 @@ export const COOPERATIVE_COLUMNS: Column<Enterprise>[] = [
         {value === "active" ? "Hoạt động" : "Không hoạt động"}
       </Badge>
     ),
-  },
-];
-
-export const COOPERATIVE_FILTERS = [
-  {
-    key: "classification",
-    label: "Phân loại",
-    options: [
-      { label: "Sản xuất", value: "production" },
-      { label: "Chế biến", value: "processing" },
-      { label: "Thương mại", value: "trading" },
-      { label: "Dịch vụ", value: "service" },
-      { label: "Khác", value: "other" },
-    ],
   },
 ];
 

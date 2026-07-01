@@ -10,7 +10,25 @@ import { CooperativeTable } from "./components/CooperativeTable";
 
 export default function CooperativePage() {
   const [, setLocation] = useLocation();
-  const { data, deleteOpen, setDeleteOpen, handleDelete, handleConfirmDelete } =
+  const {
+    data,
+    columns,
+    filters,
+    pageSize,
+    currentIndex,
+    setCurrentIndex,
+    setPageSize,
+    deleteOpen,
+    setDeleteOpen,
+    handleDelete,
+    handleConfirmDelete,
+    handleSearch,
+    handleFilterChange,
+    totalPages,
+    totalElements,
+    loading,
+    error,
+  } =
     useCooperative();
 
   const headerActions = (
@@ -29,8 +47,26 @@ export default function CooperativePage() {
       description="Quản lý thông tin các hợp tác xã trong hệ thống"
       actions={headerActions}
     >
+      {error ? (
+        <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          {error}
+        </div>
+      ) : null}
+
       <CooperativeTable
+        columns={columns}
         data={data}
+        filters={filters}
+        loading={loading}
+        searchPlaceholder="Tìm kiếm hợp tác xã..."
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalPages={totalPages}
+        totalElements={totalElements}
+        onSearch={handleSearch}
+        onFilterChange={handleFilterChange}
+        onPageSize={setPageSize}
+        onIndexChange={setCurrentIndex}
         onView={(item) => setLocation(`/cooperative/${item.id}`)}
         onEdit={(item) => setLocation(`/cooperative/${item.id}/edit`)}
         onDelete={handleDelete}
