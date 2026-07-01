@@ -113,6 +113,7 @@ const mapOrganizationToFarmerFormData = (
   description: data.description || "",
   contacts:
     data.contacts?.map((contact) => ({
+      id: contact.id,
       name: contact.name || contact.fullName || "",
       phone: contact.phone || "",
       email: contact.email || "",
@@ -129,13 +130,13 @@ const mapOrganizationToFarmerFormData = (
     })) ?? [],
   bankAccounts:
     data.bankAccounts?.map((account) => ({
-      bankName: account.bank?.name || account.bankName || "",
+      bankName: account.bank?.name || "",
       accountHolder: account.accountHolder || "",
       accountNumber: account.accountNumber || "",
       branch: account.branch || "",
       note: account.note || "",
-      bin: account.bin || account.bank?.bin || "",
-      logo: account.logoUrl || account.bank?.logoUrl || "",
+      bin: account.bank?.bin || "",
+      logo: account.bank?.logoUrl || "",
     })) ?? [],
   documents:
     data.documents?.map((doc) => ({
@@ -273,7 +274,6 @@ export function useFarmerCreateForm() {
       organizationTypesQuery.items.find(
         (item) =>
           item.code?.toLowerCase() === "farm" ||
-          item.type?.toLowerCase() === "farm" ||
           item.name?.toLowerCase().includes("farm"),
       ) ?? null,
     [organizationTypesQuery.items],
@@ -286,6 +286,7 @@ export function useFarmerCreateForm() {
     defaultFarmerFormValues,
   );
   const [newContact, setNewContact] = useState<Contact>({
+    id: "",
     name: "",
     phone: "",
     email: "",
@@ -636,7 +637,7 @@ export function useFarmerCreateForm() {
         ...prev,
         contacts: [...prev.contacts, newContact],
       }));
-      setNewContact({ name: "", phone: "", email: "" });
+      setNewContact({ id: "", name: "", phone: "", email: "" });
     } else {
       toast({
         title: "Lỗi",
@@ -704,7 +705,7 @@ export function useFarmerCreateForm() {
       description: formData.description || "",
       status: "active",
       contacts: formData.contacts.map((contact, index) => ({
-        contactId: index + 1,
+        contactId: contact.id,
         name: contact.name,
         position: "",
         phone: contact.phone,
