@@ -72,6 +72,16 @@ export function useEnterpriseEditForm() {
     },
   });
 
+  const uploadDocument = useUploadStorageFile({
+    onError: (error) => {
+      toast({
+        title: "Không thể tải tài liệu",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const businessLinesQuery = useMasterData("business-lines", {
     params: {
       status: "active",
@@ -90,6 +100,7 @@ export function useEnterpriseEditForm() {
     [businessLinesQuery.items],
   );
   const logoUploadSeqRef = useRef(0);
+  const documentUploadSeqRef = useRef(0);
 
   const form = useForm<EnterpriseFormInput, unknown, EnterpriseFormValues>({
     defaultValues: defaultEnterpriseFormValues,
@@ -480,34 +491,85 @@ export function useEnterpriseEditForm() {
     }
   };
 
-  const processDocuments = (files: FileList) => {
+  const processDocuments = async (files: FileList) => {
     const file = files[0];
     if (!file) return;
-
-    const newDoc = {
-      name: file.name,
-      type: file.type,
-      size: (file.size / (1024 * 1024)).toFixed(2) + "MB",
-    };
+    const previewUrl = URL.createObjectURL(file);
+    const previousDocuments = getValues("documents") as EnterpriseFormData["documents"];
+    const requestSeq = ++documentUploadSeqRef.current;
 
     setFormData((prev) => ({
       ...prev,
-      documents: [newDoc],
+      documents: [
+        {
+          name: file.name,
+          type: file.type,
+          size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
+          url: previewUrl,
+          fileName: file.name,
+          fileUrl: previewUrl,
+          mimeType: file.type,
+          sizeBytes: file.size,
+        },
+      ],
     }));
 
-    toast({
-      title: "Thành công",
-      description: "Đã tải lên tài liệu.",
-    });
+    try {
+      const uploaded = await uploadDocument.uploadStorageFile({
+        file,
+        folder: "organizations-documents",
+      });
+
+      if (documentUploadSeqRef.current !== requestSeq) {
+        URL.revokeObjectURL(previewUrl);
+        return;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        documents: [
+          {
+            name: uploaded.fileName || file.name,
+            type: uploaded.mimeType || file.type,
+            size: `${(uploaded.sizeBytes / (1024 * 1024)).toFixed(2)} MB`,
+            url: uploaded.fileUrl,
+            fileName: uploaded.fileName || file.name,
+            fileUrl: uploaded.fileUrl,
+            mimeType: uploaded.mimeType || file.type,
+            sizeBytes: uploaded.sizeBytes,
+          },
+        ],
+      }));
+      toast({
+        title: "Thành công",
+        description: "Đã tải lên tài liệu.",
+      });
+    } catch {
+      if (documentUploadSeqRef.current === requestSeq) {
+        setFormData((prev) => ({
+          ...prev,
+          documents: previousDocuments,
+        }));
+      }
+    } finally {
+      URL.revokeObjectURL(previewUrl);
+    }
   };
 
-  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) processDocuments(e.target.files);
+  const handleDocumentUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (e.target.files) {
+      await processDocuments(e.target.files);
+      e.target.value = "";
+    }
   };
 
-  const handleDocumentDrop = (e: React.DragEvent) => {
+  const handleDocumentDrop = async (e: React.DragEvent) => {
     handleDrag("documents", e);
-    if (e.dataTransfer.files) processDocuments(e.dataTransfer.files);
+    if (e.dataTransfer.files) {
+      await processDocuments(e.dataTransfer.files);
+    }
   };
 
   const handleDocumentDelete = (index: number) => {
