@@ -8,11 +8,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Button,
   Card,
   CardContent,
   StepperForm,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { ArrowLeft } from "lucide-react";
 
 import { BankingStep } from "./components/steps/BankingStep";
 import { BasicInfoStep } from "./components/steps/BasicInfoStep";
@@ -89,6 +91,12 @@ export default function BranchFormPage() {
       isDev={true}
       title={isEdit ? "Chỉnh sửa Chi nhánh" : "Tạo mới Chi nhánh"}
       description="Điền thông tin theo từng bước để tạo hoặc cập nhật chi nhánh"
+      actions={[
+        <Button variant="outline" onClick={handleCancel} className="gap-2">
+          <ArrowLeft className="h-4 w-4" />
+          Quay lại
+        </Button>,
+      ]}
     >
       <Card>
         <CardContent className="p-6">
