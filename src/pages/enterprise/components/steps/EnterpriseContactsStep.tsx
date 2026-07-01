@@ -8,9 +8,8 @@ import {
   Input,
   Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Mail, Phone, Plus, Trash2, User, Users } from "lucide-react";
-import useContactStore from "@/stores/useContactStore";
 import { ContactSelectorDialog } from "../ContactSelectorDialog";
 import { useEnterpriseFormContext } from "../../context/EnterpriseFormContext";
 
@@ -24,18 +23,15 @@ export function EnterpriseContactsStep() {
     removeContact,
   } = useEnterpriseFormContext();
 
-  const contactStore = useContactStore((state) => state.contacts);
-  const selectedContact = contactStore.find(
-    (contact) =>
-      contact.fullName === newContact.name &&
-      contact.phone === newContact.phone &&
-      contact.email === newContact.email,
-  );
-
-  const selectedContactLabel = useMemo(() => {
-    if (!selectedContact) return "Chọn liên hệ...";
-    return `${selectedContact.fullName} - ${selectedContact.phone}`;
-  }, [selectedContact]);
+  const selectedContactLabel =
+    newContact.name || newContact.phone || newContact.email
+      ? [
+          newContact.name || "Chưa có tên",
+          newContact.phone ? `- ${newContact.phone}` : null,
+        ]
+          .filter(Boolean)
+          .join(" ")
+      : "Chọn liên hệ...";
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -74,7 +70,7 @@ export function EnterpriseContactsStep() {
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Có thể chọn liên hệ từ store Thông tin liên hệ.
+              Có thể chọn liên hệ từ danh sách liên hệ đã lưu trong hệ thống.
             </p>
           </div>
 
@@ -128,12 +124,12 @@ export function EnterpriseContactsStep() {
       <ContactSelectorDialog
         open={isContactDialogOpen}
         onOpenChange={setIsContactDialogOpen}
-        selectedId={selectedContact?.id || null}
+        selectedId={null}
         onSelect={(contact) =>
           setNewContact({
-            name: contact.fullName,
-            phone: contact.phone,
-            email: contact.email,
+            name: contact.fullName || contact.name || "",
+            phone: contact.phone || "",
+            email: contact.email || "",
           })
         }
       />
