@@ -1,8 +1,8 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { BankAccount } from "../../../stores/useBankStore";
 import BankLogo from "../components/BankLogo";
+import type { BankTableRow } from "../hooks/useBankTable";
 
-export const bankColumns: Column<BankAccount>[] = [
+export const bankColumns: Column<BankTableRow>[] = [
   {
     key: "bankName",
     label: "Ngân hàng",

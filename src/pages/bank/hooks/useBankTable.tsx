@@ -1,25 +1,92 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import type { BankAccount } from "../../../stores/useBankStore";
-import useBankStore from "../../../stores/useBankStore";
+import {
+  useBankAccounts,
+  useDeleteBankAccount,
+  type BankAccountRecord,
+} from "@/features/bank";
 import { bankColumns } from "../data/columns";
 import { bankFilters } from "../data/constants";
 
+export interface BankTableRow {
+  id: number | string;
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  branch: string;
+  note: string;
+  status: "active" | "inactive" | "archived" | (string & {});
+  logo?: string;
+}
+
 export function useBankTable() {
   const [, setLocation] = useLocation();
-  const bankAccounts = useBankStore((state) => state.bankAccounts);
-  const deleteBankAccount = useBankStore((state) => state.deleteBankAccount);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<BankAccount | null>(null);
+  const [deleteItem, setDeleteItem] = useState<BankTableRow | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [bankNameFilter, setBankNameFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [pageSize, setPageSize] = useState(10);
+  const [currentIndex, setCurrentIndex] = useState(1);
 
-  const handleDelete = (item: BankAccount) => {
+  const bankAccountsQuery = useBankAccounts({
+    params: {
+      keyword: [searchTerm.trim(), bankNameFilter].filter(Boolean).join(" ") || undefined,
+      status: statusFilter === "all" ? undefined : statusFilter,
+      page: Math.max(currentIndex - 1, 0),
+      size: pageSize,
+    },
+  });
+
+  const deleteBankAccountMutation = useDeleteBankAccount();
+
+  const bankAccounts: BankTableRow[] = bankAccountsQuery.items.map(
+    (account: BankAccountRecord) => ({
+      id: account.id,
+      bankName: account.bank?.shortName || account.bank?.name || "",
+      accountNumber: account.accountNumber || "",
+      accountHolder: account.accountHolder || "",
+      branch: account.branch || "",
+      note: account.note || "",
+      status: account.status || "active",
+      logo: account.bank?.logoUrl || "",
+    }),
+  );
+
+  const handleDelete = (item: BankTableRow) => {
     setDeleteItem(item);
     setDeleteOpen(true);
   };
 
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    setCurrentIndex(1);
+  };
+
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "status") {
+      setStatusFilter(value);
+      setCurrentIndex(1);
+    }
+
+    if (key === "bankName") {
+      setBankNameFilter(value);
+      setCurrentIndex(1);
+    }
+  };
+
+  const handlePageSize = (value: number) => {
+    setPageSize(value);
+    setCurrentIndex(1);
+  };
+
+  const handleIndexChange = (value: number) => {
+    setCurrentIndex(value);
+  };
+
   const handleConfirmDelete = async () => {
     if (deleteItem) {
-      deleteBankAccount(deleteItem.id);
+      await deleteBankAccountMutation.deleteBankAccount(deleteItem.id);
       setDeleteOpen(false);
       setDeleteItem(null);
       return;
@@ -31,12 +98,24 @@ export function useBankTable() {
 
   return {
     bankAccounts,
+    loading: bankAccountsQuery.loading,
+    error: bankAccountsQuery.error,
+    response: bankAccountsQuery.response,
+    searchTerm,
+    bankNameFilter,
+    statusFilter,
+    pageSize,
+    currentIndex,
+    handleSearch,
+    handleFilterChange,
+    handlePageSize,
+    handleIndexChange,
     deleteOpen,
     setDeleteOpen,
     handleDelete,
     handleConfirmDelete,
-    handleEdit: (item: BankAccount) => setLocation(`/bank/${item.id}/edit`),
-    handleView: (item: BankAccount) => setLocation(`/bank/${item.id}/edit`),
+    handleEdit: (item: BankTableRow) => setLocation(`/bank/${item.id}/edit`),
+    handleView: (item: BankTableRow) => setLocation(`/bank/${item.id}/edit`),
     columns: bankColumns,
     filters: [...bankFilters],
   };
