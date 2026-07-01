@@ -8,6 +8,7 @@ import type {
 } from "../types/organization.type";
 
 const ORGANIZATION_PATH = "/api/farm/organizations" as const;
+const ORGANIZATION_SEARCH_PATH = `${ORGANIZATION_PATH}/search` as const;
 
 const withWorkspaceHeader = (workspaceId: number | string) => ({
   headers: {
@@ -33,6 +34,22 @@ export const organizationApi = {
     const response = await apiClient.get<
       OrganizationPageResponse<OrganizationRecord>
     >(ORGANIZATION_PATH, {
+      params,
+      ...withWorkspaceHeader(workspaceId),
+    });
+
+    return response.data;
+  },
+
+  async search(
+    params: OrganizationQueryParams = {},
+    workspaceId: number | string,
+  ): Promise<OrganizationPageResponse<OrganizationRecord>> {
+    assertWorkspaceId(workspaceId);
+
+    const response = await apiClient.get<
+      OrganizationPageResponse<OrganizationRecord>
+    >(ORGANIZATION_SEARCH_PATH, {
       params,
       ...withWorkspaceHeader(workspaceId),
     });

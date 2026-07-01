@@ -1,6 +1,7 @@
 export * from "./api/organization.api";
 export * from "./hooks/useOrganizationById";
 export * from "./hooks/useOrganizations";
+export * from "./hooks/useOrganizationSearch";
 export * from "./hooks/useCreateOrganization";
 export * from "./hooks/useDeleteOrganization";
 export * from "./hooks/useUpdateOrganization";
