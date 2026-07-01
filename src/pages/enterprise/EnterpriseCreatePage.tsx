@@ -8,12 +8,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Button,
   Card,
   CardContent,
   StepperForm,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useEnterpriseCreateForm } from "./hooks/useEnterpriseCreateForm";
+import { ArrowLeft } from "lucide-react";
 import { EnterpriseFormContext } from "./context/EnterpriseFormContext";
+import { useEnterpriseCreateForm } from "./hooks/useEnterpriseCreateForm";
 
 export default function EnterpriseCreatePage() {
   const formState = useEnterpriseCreateForm();
@@ -33,6 +35,16 @@ export default function EnterpriseCreatePage() {
         isDev={true}
         title="Tạo mới Doanh nghiệp"
         description="Điền thông tin theo từng bước để tạo mới doanh nghiệp"
+        actions={[
+          <Button
+            variant="outline"
+            onClick={() => setLocation("/enterprise")}
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Quay lại
+          </Button>,
+        ]}
       >
         <Card>
           <CardContent className="p-6">
