@@ -149,6 +149,7 @@ export function useEnterpriseCreateForm() {
   };
 
   const [newBankAccount, setNewBankAccount] = useState<BankAccount>({
+    bankId: "",
     bankName: "",
     accountHolder: "",
     accountNumber: "",
@@ -233,6 +234,7 @@ export function useEnterpriseCreateForm() {
 
           if (bankInfo) {
             newAccounts.push({
+              bankId: bankInfo.id,
               bin: bankInfo.bin,
               bankName: bankInfo.name,
               accountNumber,
@@ -355,8 +357,17 @@ export function useEnterpriseCreateForm() {
       const parsed = parseVietQR(result);
 
       if (parsed) {
+        const bankInfo = vietQrBankData.find(
+          (bank) =>
+            bank.bin === parsed.bin ||
+            bank.shortName.toLowerCase() ===
+              (parsed.bankName || "").toLowerCase() ||
+            bank.name.toLowerCase() === (parsed.bankName || "").toLowerCase(),
+        );
+
         setNewBankAccount((prev) => ({
           ...prev,
+          bankId: bankInfo?.id ?? prev.bankId,
           bin: parsed.bin || prev.bin,
           bankName: parsed.bankName || prev.bankName,
           accountNumber: parsed.accountNumber || prev.accountNumber,
@@ -390,8 +401,17 @@ export function useEnterpriseCreateForm() {
     const parsed = parseVietQR(text);
 
     if (parsed) {
+      const bankInfo = vietQrBankData.find(
+        (bank) =>
+          bank.bin === parsed.bin ||
+          bank.shortName.toLowerCase() ===
+            (parsed.bankName || "").toLowerCase() ||
+          bank.name.toLowerCase() === (parsed.bankName || "").toLowerCase(),
+      );
+
       setNewBankAccount((prev) => ({
         ...prev,
+        bankId: bankInfo?.id ?? prev.bankId,
         bin: parsed.bin || prev.bin,
         note: parsed.note || prev.note,
         bankName: parsed.bankName || prev.bankName,
@@ -559,6 +579,7 @@ export function useEnterpriseCreateForm() {
         bankAccounts: [newBankAccount, ...(prev.bankAccounts ?? [])],
       }));
       setNewBankAccount({
+        bankId: "",
         bankName: "",
         accountHolder: "",
         accountNumber: "",
@@ -648,122 +669,146 @@ export function useEnterpriseCreateForm() {
     setShowConfirmDialog(true);
   };
 
-  const submitForm = handleSubmit(async (values: EnterpriseFormValues) => {
-    if (workspaceId === null) {
-      toast({
-        title: "Thiếu workspace",
-        description: "Vui lòng chọn workspace trước khi tạo doanh nghiệp.",
-        variant: "destructive",
-      });
-      return;
+  const findFirstFormError = (
+    node: unknown,
+    path: string[] = [],
+  ): { path: string; message: string } | null => {
+    if (!node || typeof node !== "object") return null;
+
+    const current = node as { message?: unknown; [key: string]: unknown };
+    if (typeof current.message === "string" && current.message.trim()) {
+      return {
+        path: path.join("."),
+        message: current.message,
+      };
     }
 
-    const businessLines: BusinessLineRecord[] = values.classification.map(
-      (classification: string) => {
-        const mappedCode =
-          CLASSIFICATION_TO_BUSINESS_LINE[classification] || classification;
-        const mappedName =
-          CLASSIFICATION_LABELS[classification] || classification;
-        const record = businessLineRecords.find(
-          (item) =>
-            item.code === mappedCode ||
-            item.name.toLowerCase() === mappedName.toLowerCase(),
-        );
+    for (const [key, value] of Object.entries(current)) {
+      if (key === "message" || key === "type" || key === "ref") continue;
+      const found = findFirstFormError(value, [...path, key]);
+      if (found) return found;
+    }
 
-        return (
-          record || {
-            id: mappedCode,
-            code: mappedCode,
-            name: mappedName,
-          }
-        );
-      },
-    );
+    return null;
+  };
 
-    const payload = {
-      type: values.type,
-      organizationTypeId: values.organizationTypeId,
-      code: values.code.trim(),
-      name: values.name.trim(),
-      brandName: values.brandName.trim(),
-      taxCode: values.taxCode.trim(),
-      taxAuthority: values.taxAuthority.trim(),
-      taxAddress: values.taxAddress.trim(),
-      issueDate: values.issueDate || undefined,
-      businessLines,
-      representative: values.representative.trim(),
-      foundedDate: values.foundedDate || undefined,
-      website: values.website.trim(),
-      province: values.province.trim(),
-      ward: values.ward.trim(),
-      address: values.address.trim(),
-      latitude: values.latitude ?? 0,
-      longitude: values.longitude ?? 0,
-      imageUrl: values.image.trim(),
-      description: values.description.trim(),
-      status: "active" as const,
-      contacts: values.contacts.map((contact, index) => ({
-        contactId: contact.id,
-        name: contact.name,
-        position: "",
-        phone: contact.phone,
-        email: contact.email,
-        isPrimary: index === 0,
-      })),
-      branches: values.branches.map((branch, index) => ({
-        id: index + 1,
-        code: branch.name.slice(0, 10).toUpperCase(),
-        name: branch.name,
-        taxCode: branch.taxCode,
-        taxAddress: branch.taxAddress,
-        website: "",
-        address: branch.address,
-        city: "",
-        ward: "",
-        imageUrl: "",
-        latitude: 0,
-        longitude: 0,
+  const submitForm = handleSubmit(
+    async (values: EnterpriseFormValues) => {
+      if (workspaceId === null) {
+        toast({
+          title: "Thiếu workspace",
+          description: "Vui lòng chọn workspace trước khi tạo doanh nghiệp.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const businessLines: BusinessLineRecord[] = values.classification.map(
+        (classification: string) => {
+          const mappedCode =
+            CLASSIFICATION_TO_BUSINESS_LINE[classification] || classification;
+          const mappedName =
+            CLASSIFICATION_LABELS[classification] || classification;
+          const record = businessLineRecords.find(
+            (item) =>
+              item.code === mappedCode ||
+              item.name.toLowerCase() === mappedName.toLowerCase(),
+          );
+
+          return (
+            record || {
+              id: mappedCode,
+              code: mappedCode,
+              name: mappedName,
+            }
+          );
+        },
+      );
+
+      const payload = {
+        type: values.type,
+        organizationTypeId: values.organizationTypeId,
+        code: values.code.trim(),
+        name: values.name.trim(),
+        brandName: values.brandName.trim(),
+        taxCode: values.taxCode.trim(),
+        taxAuthority: values.taxAuthority.trim(),
+        taxAddress: values.taxAddress.trim(),
+        issueDate: values.issueDate || undefined,
+        businessLines,
+        representative: values.representative.trim(),
+        foundedDate: values.foundedDate || undefined,
+        website: values.website.trim(),
+        province: values.province.trim(),
+        ward: values.ward.trim(),
+        address: values.address.trim(),
+        latitude: values.latitude ?? 0,
+        longitude: values.longitude ?? 0,
+        imageUrl: values.image.trim(),
+        description: values.description.trim(),
         status: "active" as const,
-        contacts:
-          branch.phone || branch.email
-            ? [
-                {
-                  contactId: index + 1,
-                  name: branch.name,
-                  position: "",
-                  phone: branch.phone,
-                  email: branch.email,
-                  isPrimary: true,
-                },
-              ]
-            : [],
-        bankAccounts: [],
-        metadataJson: null,
-      })),
-      bankAccounts: values.bankAccounts.map((account, index) => {
-        const bankInfo = vietQrBankData.find(
-          (bank) =>
-            bank.bin === account.bin ||
-            bank.name.toLowerCase() === account.bankName.toLowerCase() ||
-            bank.shortName.toLowerCase() === account.bankName.toLowerCase(),
-        );
+        contacts: values.contacts.map((contact, index) => ({
+          contactId: contact.id,
+          name: contact.name,
+          position: "",
+          phone: contact.phone,
+          email: contact.email,
+          isPrimary: index === 0,
+        })),
+        branches: values.branches.map((branch) => ({
+          code: branch.name.slice(0, 10).toUpperCase(),
+          name: branch.name,
+          taxCode: branch.taxCode,
+          taxAddress: branch.taxAddress,
+          website: "",
+          address: branch.address,
+          city: "",
+          ward: "",
+          imageUrl: "",
+          latitude: 0,
+          longitude: 0,
+          status: "active" as const,
+          contacts:
+            branch.phone || branch.email
+              ? [
+                  {
+                    name: branch.name,
+                    position: "",
+                    phone: branch.phone,
+                    email: branch.email,
+                    isPrimary: true,
+                  },
+                ]
+              : [],
+          bankAccounts: [],
+          metadataJson: null,
+        })),
+        bankAccounts: values.bankAccounts.map((account, index) => {
+          const bankInfo = vietQrBankData.find(
+            (bank) =>
+              bank.bin === account.bin ||
+              bank.name.toLowerCase() === account.bankName.toLowerCase() ||
+              bank.shortName.toLowerCase() === account.bankName.toLowerCase(),
+          );
 
         return {
-          id: index + 1,
           ownerType: values.type,
+          bankId: account.bankId
+            ? Number(account.bankId)
+            : bankInfo?.id ?? undefined,
           bankCode: bankInfo?.bin || account.bin || account.bankName,
-          bankName: account.bankName,
-          bin: account.bin || bankInfo?.bin || "",
-          accountNumber: account.accountNumber,
-          accountHolder: account.accountHolder,
-          branch: account.branch,
-          note: account.note,
-          logoUrl: account.logo || bankInfo?.logo || "",
-          status: "active" as const,
-          isPrimary: index === 0,
-          metadataJson: null,
-        };
-      }),
+            bankName: account.bankName,
+            bin: account.bin || bankInfo?.bin || "",
+            accountNumber: account.accountNumber,
+            accountHolder: account.accountHolder,
+            branch: account.branch,
+            note: account.note,
+            logoUrl: account.logo || bankInfo?.logo || "",
+            status: "active" as const,
+            isPrimary: index === 0,
+            metadataJson: null,
+          };
+        }),
       documents: values.documents.map((doc) => ({
         documentType: doc.type,
         name: doc.name,
@@ -771,21 +816,32 @@ export function useEnterpriseCreateForm() {
         fileName: doc.fileName || doc.name,
         mimeType: doc.mimeType || doc.type,
         sizeBytes: doc.sizeBytes ?? normalizeBytes(doc.size),
-        content: doc.content,
+        content: doc.content ?? undefined,
       })),
-      metadataJson: null,
-    };
+        metadataJson: null,
+      };
 
-    try {
-      await createOrganization.createOrganization({
-        payload,
-        workspaceId,
+      try {
+        await createOrganization.createOrganization({
+          payload,
+          workspaceId,
+        });
+        setShowConfirmDialog(false);
+      } catch {
+        // Error toast is handled by the mutation callback.
+      }
+    },
+    (errors) => {
+      const firstError = findFirstFormError(errors);
+      toast({
+        title: "Dữ liệu chưa hợp lệ",
+        description: firstError
+          ? `${firstError.path || "form"}: ${firstError.message}`
+          : "Vui lòng kiểm tra lại các trường bắt buộc.",
+        variant: "destructive",
       });
-      setShowConfirmDialog(false);
-    } catch {
-      // Error toast is handled by the mutation callback.
-    }
-  });
+    },
+  );
 
   const steps: Step[] = useMemo(() => {
     const nextSteps: Step[] = [

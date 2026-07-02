@@ -22,6 +22,7 @@ export default function EnterpriseEditPage() {
     showConfirmDialog,
     setShowConfirmDialog,
     submitForm,
+    isSubmitting,
     formData,
     setLocation,
     handleComplete,
@@ -52,7 +53,7 @@ export default function EnterpriseEditPage() {
         </Card>
         <AlertDialog
           open={showConfirmDialog}
-          onOpenChange={setShowConfirmDialog}
+          onOpenChange={(open) => !isSubmitting && setShowConfirmDialog(open)}
         >
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -70,8 +71,15 @@ export default function EnterpriseEditPage() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Hủy</AlertDialogCancel>
-              <AlertDialogAction onClick={submitForm}>
+              <AlertDialogCancel disabled={isSubmitting}>Hủy</AlertDialogCancel>
+              <AlertDialogAction
+                loading={isSubmitting}
+                disabled={isSubmitting}
+                onClick={(e) => {
+                  e.preventDefault();
+                  submitForm();
+                }}
+              >
                 Xác nhận
               </AlertDialogAction>
             </AlertDialogFooter>

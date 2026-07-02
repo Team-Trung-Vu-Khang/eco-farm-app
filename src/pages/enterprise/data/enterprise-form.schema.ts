@@ -18,6 +18,7 @@ const enterpriseBranchSchema = z.object({
 });
 
 const enterpriseBankAccountSchema = z.object({
+  bankId: z.union([z.number(), z.string()]).optional(),
   bankName: z.string().default(""),
   accountHolder: z.string().default(""),
   accountNumber: z.string().default(""),
@@ -37,7 +38,7 @@ const enterpriseDocumentSchema = z.object({
   fileUrl: z.string().optional(),
   mimeType: z.string().optional(),
   sizeBytes: z.number().optional(),
-  content: z.string().optional(),
+  content: z.string().nullish(),
 });
 
 export const enterpriseFormSchema = z.object({

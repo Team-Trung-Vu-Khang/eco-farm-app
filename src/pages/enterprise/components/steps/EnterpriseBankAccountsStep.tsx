@@ -35,6 +35,7 @@ export function EnterpriseBankAccountsStep() {
 
   const handleSelectBank = (bank: (typeof bankMasterData)[number]) => {
     setNewBankAccount({
+      bankId: bank.id,
       bankName: bank.shortName || bank.name || "",
       accountNumber: newBankAccount.accountNumber,
       accountHolder: newBankAccount.accountHolder,
@@ -58,10 +59,11 @@ export function EnterpriseBankAccountsStep() {
         }
         onPickBank={() => setIsBankDialogOpen(true)}
         onClearBank={() =>
-          setNewBankAccount({
-            bankName: "",
-            accountHolder: "",
-            accountNumber: "",
+        setNewBankAccount({
+          bankId: "",
+          bankName: "",
+          accountHolder: "",
+          accountNumber: "",
             branch: "",
             note: "",
             bin: "",

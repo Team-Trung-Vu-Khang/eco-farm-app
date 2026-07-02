@@ -84,6 +84,7 @@ export interface OrganizationBankRequest {
   id?: number | string;
   ownerType?: string;
   ownerId?: number | string;
+  bankId?: number | string;
   bankCode: string;
   bankName: string;
   bin?: string;

@@ -10,7 +10,7 @@ export interface EnterpriseDocument {
   fileUrl?: string;
   mimeType?: string;
   sizeBytes?: number;
-  content?: string;
+  content?: string | null;
 }
 
 export interface EnterpriseFormData {
