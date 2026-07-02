@@ -8,9 +8,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Button,
   Card,
   CardContent,
-  Button,
   StepperForm,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
@@ -133,6 +133,7 @@ export default function EnterpriseCertificateFormPage() {
     error,
     showConfirmDialog,
     setShowConfirmDialog,
+    showLoadingDialog,
     handleComplete,
     submitForm,
     handleCancel,
@@ -189,7 +190,9 @@ export default function EnterpriseCertificateFormPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={submitForm}>Xác nhận</AlertDialogAction>
+            <AlertDialogAction onClick={submitForm} loading={showLoadingDialog}>
+              Xác nhận
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

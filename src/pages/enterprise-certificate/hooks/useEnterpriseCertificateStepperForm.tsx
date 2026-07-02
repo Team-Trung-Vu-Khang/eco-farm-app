@@ -1,15 +1,24 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
-import { useLocation, useRoute } from "wouter";
-import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { branchApi } from "@/features/branch";
 import { farmCertificateApi } from "@/features/farm-certificate";
 import { useMasterData } from "@/features/master-data";
 import { organizationApi } from "@/features/organization";
 import { useSelectedWorkspaceId } from "@/features/workspace";
-import type { Area, Enterprise } from "../../../stores/useEnterpriseCertificateStore";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { useLocation, useRoute } from "wouter";
+import type {
+  Area,
+  Enterprise,
+} from "../../../stores/useEnterpriseCertificateStore";
+import {
+  defaultEnterpriseCertificateFormValues,
+  enterpriseCertificateFormSchema,
+  type EnterpriseCertificateFormInput,
+  type EnterpriseCertificateFormValues,
+} from "../data/enterprise-certificate-form.schema";
 import {
   buildFarmCertificatePayload,
   mapBranchRecordToArea,
@@ -18,12 +27,6 @@ import {
   mapOrganizationRecordToEnterprise,
   mapStandardRecordToOption,
 } from "../utils";
-import {
-  defaultEnterpriseCertificateFormValues,
-  enterpriseCertificateFormSchema,
-  type EnterpriseCertificateFormInput,
-  type EnterpriseCertificateFormValues,
-} from "../data/enterprise-certificate-form.schema";
 
 export function useEnterpriseCertificateStepperForm() {
   const { toast } = useToast();
@@ -36,6 +39,7 @@ export function useEnterpriseCertificateStepperForm() {
   const isEdit = Boolean(editId);
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showLoadingDialog, setShowLoadingDialog] = useState(false);
 
   const standardsQuery = useMasterData("certificate-standards", {
     params: {
@@ -191,6 +195,7 @@ export function useEnterpriseCertificateStepperForm() {
   };
 
   const submitForm = handleSubmit(async (values) => {
+    setShowLoadingDialog(true);
     try {
       if (isEdit && editId !== null) {
         await updateMutation.mutateAsync({
@@ -220,6 +225,8 @@ export function useEnterpriseCertificateStepperForm() {
         description: message,
         variant: "destructive",
       });
+    } finally {
+      setShowLoadingDialog(false);
     }
   });
 
@@ -232,13 +239,16 @@ export function useEnterpriseCertificateStepperForm() {
 
   return {
     isEdit,
-    editItem: detailQuery.data ? mapFarmCertificateRecordToView(detailQuery.data) : null,
+    editItem: detailQuery.data
+      ? mapFarmCertificateRecordToView(detailQuery.data)
+      : null,
     methods,
     standards,
     enterprises,
     areas,
     showConfirmDialog,
     setShowConfirmDialog,
+    showLoadingDialog,
     loading:
       standardsQuery.loading ||
       organizationsQuery.isLoading ||
