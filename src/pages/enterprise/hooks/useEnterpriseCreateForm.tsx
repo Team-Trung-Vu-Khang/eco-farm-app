@@ -909,6 +909,7 @@ export function useEnterpriseCreateForm() {
     showConfirmDialog,
     setShowConfirmDialog,
     submitForm,
+    isSubmitting: createOrganization.isPending,
     formData,
     setLocation,
     handleComplete,
