@@ -1,210 +1,259 @@
-import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useRef, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 import { useLocation, useRoute } from "wouter";
-import useEnterpriseCertificateStore, {
-  type EnterpriseCertificate,
-} from "../../../stores/useEnterpriseCertificateStore";
-
-const createInitialFormData = (): Omit<
-  EnterpriseCertificate,
-  "id" | "createdAt" | "status"
-> => ({
-  code: "",
-  name: "",
-  standardType: "",
-  organization: "",
-  issuedDate: "",
-  expiryDate: "",
-  entityType: "enterprise",
-  entityId: "",
-  entityName: "",
-  content: "",
-  contentType: "editor",
-  fileUrl: "",
-  attachments: [],
-});
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { branchApi } from "@/features/branch";
+import { farmCertificateApi } from "@/features/farm-certificate";
+import { useMasterData } from "@/features/master-data";
+import { organizationApi } from "@/features/organization";
+import { useSelectedWorkspaceId } from "@/features/workspace";
+import type { Area, Enterprise } from "../../../stores/useEnterpriseCertificateStore";
+import {
+  buildFarmCertificatePayload,
+  mapBranchRecordToArea,
+  mapFarmCertificateRecordToFormData,
+  mapFarmCertificateRecordToView,
+  mapOrganizationRecordToEnterprise,
+  mapStandardRecordToOption,
+} from "../utils";
+import {
+  defaultEnterpriseCertificateFormValues,
+  enterpriseCertificateFormSchema,
+  type EnterpriseCertificateFormInput,
+  type EnterpriseCertificateFormValues,
+} from "../data/enterprise-certificate-form.schema";
 
 export function useEnterpriseCertificateStepperForm() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const workspaceId = useSelectedWorkspaceId();
   const [, setLocation] = useLocation();
   const [, editParams] = useRoute("/enterprise-certificate/:id/edit");
 
-  const certificates = useEnterpriseCertificateStore(
-    (state) => state.certificates,
-  );
-  const standards = useEnterpriseCertificateStore((state) => state.standards);
-  const enterprises = useEnterpriseCertificateStore(
-    (state) => state.enterprises,
-  );
-  const areas = useEnterpriseCertificateStore((state) => state.areas);
-  const addCertificate = useEnterpriseCertificateStore(
-    (state) => state.addCertificate,
-  );
-  const updateCertificate = useEnterpriseCertificateStore(
-    (state) => state.updateCertificate,
-  );
-  const calculateStatus = useEnterpriseCertificateStore(
-    (state) => state.calculateStatus,
-  );
-  const getCertificateById = useEnterpriseCertificateStore(
-    (state) => state.getCertificateById,
-  );
-
   const editId = editParams?.id ? Number(editParams.id) : null;
-  const editItem = editId ? getCertificateById(editId) : null;
-  const isEdit = Boolean(editItem);
+  const isEdit = Boolean(editId);
 
-  const [formData, setFormData] = useState(() =>
-    editItem
-      ? {
-          code: editItem.code,
-          name: editItem.name,
-          standardType: editItem.standardType,
-          organization: editItem.organization,
-          issuedDate: editItem.issuedDate,
-          expiryDate: editItem.expiryDate,
-          entityType: editItem.entityType,
-          entityId: editItem.entityId,
-          entityName: editItem.entityName,
-          content: editItem.content,
-          contentType: editItem.contentType,
-          fileUrl: editItem.fileUrl || "",
-          attachments: editItem.attachments,
-        }
-      : createInitialFormData(),
-  );
-  const [availableOrganizations, setAvailableOrganizations] = useState<string[]>(
-    editItem
-      ? standards.find((standard) => standard.code === editItem.standardType)
-          ?.organizations || []
-      : [],
-  );
-  const [selectedEnterpriseId, setSelectedEnterpriseId] = useState(() => {
-    if (!editItem) return "";
-    if (editItem.entityType === "area") {
-      return (
-        areas.find((area) => area.code === editItem.entityId)?.enterpriseId || ""
-      );
-    }
-    return (
-      enterprises.find((enterprise) => enterprise.code === editItem.entityId)
-        ?.id || ""
-    );
-  });
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const editorContentRef = useRef<string>(editItem?.content || "");
 
-  const handleStandardTypeChange = (value: string) => {
-    const selectedStandard = standards.find((standard) => standard.code === value);
-    const organizations = selectedStandard?.organizations || [];
+  const standardsQuery = useMasterData("certificate-standards", {
+    params: {
+      page: 0,
+      size: 100,
+    },
+    enabled: true,
+  });
 
-    setAvailableOrganizations(organizations);
-    setFormData((prev) => ({
-      ...prev,
-      standardType: value,
-      organization: organizations.length === 1 ? organizations[0] : "",
-    }));
-  };
+  const organizationsQuery = useQuery({
+    queryKey: ["enterprise-certificate", "organizations", workspaceId] as const,
+    queryFn: async () => {
+      if (workspaceId === null || workspaceId === undefined) {
+        throw new Error("Missing workspace id");
+      }
 
-  const handleEnterpriseSelect = (enterpriseId: string) => {
-    const selectedEnterprise = enterprises.find(
-      (enterprise) => enterprise.id === enterpriseId,
-    );
+      return organizationApi.list(
+        {
+          page: 0,
+          size: 100,
+        },
+        workspaceId,
+      );
+    },
+    enabled: workspaceId !== null && workspaceId !== undefined,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
-    if (!selectedEnterprise) return;
+  const areasQuery = useQuery({
+    queryKey: ["enterprise-certificate", "branches", workspaceId] as const,
+    queryFn: async () => {
+      if (workspaceId === null || workspaceId === undefined) {
+        throw new Error("Missing workspace id");
+      }
 
-    setSelectedEnterpriseId(enterpriseId);
-    if (formData.entityType === "enterprise") {
-      setFormData((prev) => ({
-        ...prev,
-        entityId: selectedEnterprise.code,
-        entityName: selectedEnterprise.name,
-      }));
-      return;
-    }
+      return branchApi.list(
+        {
+          page: 0,
+          size: 100,
+        },
+        workspaceId,
+      );
+    },
+    enabled: workspaceId !== null && workspaceId !== undefined,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
-    setFormData((prev) => ({
-      ...prev,
-      entityId: "",
-      entityName: "",
-    }));
-  };
+  const detailQuery = useQuery({
+    queryKey: ["enterprise-certificate", "detail", editId] as const,
+    queryFn: () => {
+      if (editId === null) {
+        throw new Error("Missing certificate id");
+      }
 
-  const handleAreaSelect = (areaId: string) => {
-    const selectedArea = areas.find((area) => area.id === areaId);
-    if (!selectedArea) return;
+      return farmCertificateApi.getById(editId);
+    },
+    enabled: isEdit,
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
-    setFormData((prev) => ({
-      ...prev,
-      entityId: selectedArea.code,
-      entityName: selectedArea.name,
-    }));
-  };
+  const standardRecords = useMemo(
+    () => standardsQuery.items,
+    [standardsQuery.items],
+  );
+
+  const standards = useMemo(
+    () => standardRecords.map(mapStandardRecordToOption),
+    [standardRecords],
+  );
+
+  const enterprises = useMemo<Enterprise[]>(
+    () =>
+      organizationsQuery.data?.content.map(mapOrganizationRecordToEnterprise) ??
+      [],
+    [organizationsQuery.data?.content],
+  );
+
+  const areas = useMemo<Area[]>(
+    () => areasQuery.data?.content.map(mapBranchRecordToArea) ?? [],
+    [areasQuery.data?.content],
+  );
+
+  const methods = useForm<
+    EnterpriseCertificateFormInput,
+    unknown,
+    EnterpriseCertificateFormValues
+  >({
+    defaultValues: defaultEnterpriseCertificateFormValues,
+    resolver: zodResolver(enterpriseCertificateFormSchema),
+    mode: "onChange",
+  });
+
+  const { reset, handleSubmit } = methods;
+
+  useEffect(() => {
+    if (!isEdit || !detailQuery.data) return;
+
+    const mapped = mapFarmCertificateRecordToFormData(detailQuery.data);
+    reset({
+      ...defaultEnterpriseCertificateFormValues,
+      ...mapped,
+      attachments: mapped.attachments ?? [],
+    });
+  }, [detailQuery.data, isEdit, reset]);
+
+  const createMutation = useMutation({
+    mutationFn: (values: EnterpriseCertificateFormValues) =>
+      farmCertificateApi.create(
+        buildFarmCertificatePayload(values, {
+          standards: standardRecords,
+          enterprises,
+          areas,
+        }),
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["enterprise-certificate", "certificates"],
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({
+      id,
+      values,
+    }: {
+      id: number | string;
+      values: EnterpriseCertificateFormValues;
+    }) =>
+      farmCertificateApi.update(
+        id,
+        buildFarmCertificatePayload(values, {
+          standards: standardRecords,
+          enterprises,
+          areas,
+        }),
+      ),
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: ["enterprise-certificate", "certificates"],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["enterprise-certificate", "detail", variables.id],
+      });
+    },
+  });
 
   const handleComplete = () => {
     setShowConfirmDialog(true);
   };
 
-  const submitForm = () => {
-    const status = calculateStatus(formData.expiryDate);
-    const finalContent =
-      formData.contentType === "editor" ? editorContentRef.current : formData.content;
+  const submitForm = handleSubmit(async (values) => {
+    try {
+      if (isEdit && editId !== null) {
+        await updateMutation.mutateAsync({
+          id: editId,
+          values,
+        });
+        toast({
+          title: "Thành công",
+          description: "Đã cập nhật chứng nhận",
+        });
+      } else {
+        await createMutation.mutateAsync(values);
+        toast({
+          title: "Thành công",
+          description: "Đã thêm chứng nhận mới",
+        });
+      }
 
-    const submissionData = {
-      ...formData,
-      content: finalContent,
-      status,
-    };
+      setShowConfirmDialog(false);
+      setLocation("/enterprise-certificate");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
 
-    if (isEdit && editItem) {
-      updateCertificate(editItem.id, submissionData);
       toast({
-        title: "Thành công",
-        description: "Đã cập nhật chứng nhận",
-      });
-    } else {
-      const newId =
-        certificates.length > 0
-          ? Math.max(...certificates.map((certificate) => certificate.id)) + 1
-          : 1;
-
-      addCertificate({
-        id: newId,
-        ...submissionData,
-        createdAt: new Date().toISOString().split("T")[0],
-      });
-      toast({
-        title: "Thành công",
-        description: "Đã thêm chứng nhận mới",
+        title: isEdit ? "Không thể cập nhật" : "Không thể thêm",
+        description: message,
+        variant: "destructive",
       });
     }
-
-    setShowConfirmDialog(false);
-    setLocation("/enterprise-certificate");
-  };
+  });
 
   const handleCancel = () => {
     setLocation("/enterprise-certificate");
   };
 
+  const resolveErrorMessage = (...messages: Array<string | null | undefined>) =>
+    messages.find((message) => Boolean(message)) ?? null;
+
   return {
     isEdit,
-    editItem,
-    formData,
-    setFormData,
+    editItem: detailQuery.data ? mapFarmCertificateRecordToView(detailQuery.data) : null,
+    methods,
     standards,
     enterprises,
     areas,
-    availableOrganizations,
-    selectedEnterpriseId,
     showConfirmDialog,
     setShowConfirmDialog,
-    editorContentRef,
-    handleStandardTypeChange,
-    handleEnterpriseSelect,
-    handleAreaSelect,
+    loading:
+      standardsQuery.loading ||
+      organizationsQuery.isLoading ||
+      areasQuery.isLoading ||
+      detailQuery.isLoading,
+    error: resolveErrorMessage(
+      standardsQuery.error,
+      organizationsQuery.error?.message,
+      areasQuery.error?.message,
+      detailQuery.error?.message,
+    ),
     handleComplete,
     submitForm,
     handleCancel,
+    handleSubmit,
+    watch: methods.watch,
   };
 }

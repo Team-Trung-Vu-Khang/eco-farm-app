@@ -1,223 +1,217 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useRef, useState } from "react";
-import useEnterpriseCertificateStore, {
-  type EnterpriseCertificate,
+import { branchApi } from "@/features/branch";
+import { farmCertificateApi } from "@/features/farm-certificate";
+import { useMasterData } from "@/features/master-data";
+import { organizationApi } from "@/features/organization";
+import { useSelectedWorkspaceId } from "@/features/workspace";
+import type {
+  EnterpriseCertificate,
+  Standard,
 } from "../../../stores/useEnterpriseCertificateStore";
+import {
+  mapBranchRecordToArea,
+  mapFarmCertificateRecordToView,
+  mapOrganizationRecordToEnterprise,
+  mapStandardRecordToOption,
+} from "../utils";
 
 export function useEnterpriseCertificateForm() {
   const { toast } = useToast();
-  const editorContentRef = useRef<string>("");
+  const queryClient = useQueryClient();
+  const workspaceId = useSelectedWorkspaceId();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [standardTypeFilter, setStandardTypeFilter] = useState("all");
+  const [targetTypeFilter, setTargetTypeFilter] = useState("all");
 
-  // Zustand store
-  const certificates = useEnterpriseCertificateStore((state) => state.certificates);
-  const standards = useEnterpriseCertificateStore((state) => state.standards);
-  const enterprises = useEnterpriseCertificateStore((state) => state.enterprises);
-  const areas = useEnterpriseCertificateStore((state) => state.areas);
-  const addCertificate = useEnterpriseCertificateStore((state) => state.addCertificate);
-  const updateCertificate = useEnterpriseCertificateStore((state) => state.updateCertificate);
-  const deleteCertificate = useEnterpriseCertificateStore((state) => state.deleteCertificate);
-  const calculateStatus = useEnterpriseCertificateStore((state) => state.calculateStatus);
-
-  // Form states
-  const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [editItem, setEditItem] = useState<EnterpriseCertificate | null>(null);
-  const [deleteItem, setDeleteItem] = useState<EnterpriseCertificate | null>(null);
-  const [availableOrganizations, setAvailableOrganizations] = useState<string[]>([]);
-  const [selectedEnterpriseId, setSelectedEnterpriseId] = useState<string>("");
+  const [deleteItem, setDeleteItem] = useState<EnterpriseCertificate | null>(
+    null,
+  );
 
-  const [formData, setFormData] = useState<Omit<EnterpriseCertificate, "id" | "createdAt" | "status">>({
-    code: "",
-    name: "",
-    standardType: "",
-    organization: "",
-    issuedDate: "",
-    expiryDate: "",
-    entityType: "enterprise",
-    entityId: "",
-    entityName: "",
-    content: "",
-    contentType: "editor",
-    fileUrl: "",
-    attachments: [],
+  const standardsQuery = useMasterData("certificate-standards", {
+    params: {
+      page: 0,
+      size: 100,
+    },
+    enabled: true,
   });
 
-  // Filter states
-  const [filters, setFilters] = useState({
-    status: "all",
-    standardType: "all",
-    entityType: "all",
-  });
-
-  const filteredData = certificates.filter((item) => {
-    if (filters.status !== "all" && item.status !== filters.status) return false;
-    if (filters.standardType !== "all" && item.standardType !== filters.standardType) return false;
-    if (filters.entityType !== "all" && item.entityType !== filters.entityType) return false;
-    return true;
-  });
-
-  const handleStandardTypeChange = (value: string) => {
-    const selectedStandard = standards.find((s) => s.code === value);
-    const orgs = selectedStandard?.organizations || [];
-    setAvailableOrganizations(orgs);
-    setFormData((prev) => ({
-      ...prev,
-      standardType: value,
-      organization: orgs.length === 1 ? orgs[0] : "",
-    }));
-  };
-
-  const handleEnterpriseSelect = (enterpriseId: string) => {
-    const selectedEnterprise = enterprises.find((e) => e.id === enterpriseId);
-    if (selectedEnterprise) {
-      setSelectedEnterpriseId(enterpriseId);
-      if (formData.entityType === "enterprise") {
-        setFormData((prev) => ({
-          ...prev,
-          entityId: selectedEnterprise.code,
-          entityName: selectedEnterprise.name,
-        }));
-      } else {
-        setFormData((prev) => ({
-          ...prev,
-          entityId: "",
-          entityName: "",
-        }));
+  const organizationsQuery = useQuery({
+    queryKey: ["enterprise-certificate", "organizations", workspaceId] as const,
+    queryFn: async () => {
+      if (workspaceId === null || workspaceId === undefined) {
+        throw new Error("Missing workspace id");
       }
-    }
-  };
 
-  const handleAreaSelect = (areaId: string) => {
-    const selectedArea = areas.find((a) => a.id === areaId);
-    if (selectedArea) {
-      setFormData((prev) => ({
-        ...prev,
-        entityId: selectedArea.code,
-        entityName: selectedArea.name,
-      }));
-    }
-  };
+      return organizationApi.list(
+        {
+          page: 0,
+          size: 100,
+        },
+        workspaceId,
+      );
+    },
+    enabled: workspaceId !== null && workspaceId !== undefined,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
-  const handleAdd = () => {
-    setEditItem(null);
-    setFormData({
-      code: "",
-      name: "",
-      standardType: "",
-      organization: "",
-      issuedDate: "",
-      expiryDate: "",
-      entityType: "enterprise",
-      entityId: "",
-      entityName: "",
-      content: "",
-      contentType: "editor",
-      fileUrl: "",
-      attachments: [],
-    });
-    setAvailableOrganizations([]);
-    setSelectedEnterpriseId("");
-    editorContentRef.current = "";
-    setFormOpen(true);
-  };
+  const branchesQuery = useQuery({
+    queryKey: ["enterprise-certificate", "branches", workspaceId] as const,
+    queryFn: async () => {
+      if (workspaceId === null || workspaceId === undefined) {
+        throw new Error("Missing workspace id");
+      }
 
-  const handleEdit = (item: EnterpriseCertificate) => {
-    setEditItem(item);
-    const selectedStandard = standards.find((s) => s.code === item.standardType);
-    setAvailableOrganizations(selectedStandard?.organizations || []);
-    
-    // Find enterprise ID if it's an area or find enterprise code
-    if (item.entityType === "area") {
-        const area = areas.find(a => a.code === item.entityId);
-        if (area) setSelectedEnterpriseId(area.enterpriseId);
-    } else {
-        const ent = enterprises.find(e => e.code === item.entityId);
-        if (ent) setSelectedEnterpriseId(ent.id);
-    }
+      return branchApi.list(
+        {
+          page: 0,
+          size: 100,
+        },
+        workspaceId,
+      );
+    },
+    enabled: workspaceId !== null && workspaceId !== undefined,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
-    setFormData({
-      code: item.code,
-      name: item.name,
-      standardType: item.standardType,
-      organization: item.organization,
-      issuedDate: item.issuedDate,
-      expiryDate: item.expiryDate,
-      entityType: item.entityType,
-      entityId: item.entityId,
-      entityName: item.entityName,
-      content: item.content,
-      contentType: item.contentType,
-      fileUrl: item.fileUrl || "",
-      attachments: item.attachments,
-    });
-    editorContentRef.current = item.content;
-    setFormOpen(true);
-  };
+  const certificatesQuery = useQuery({
+    queryKey: [
+      "enterprise-certificate",
+      "certificates",
+      workspaceId,
+      searchQuery,
+      statusFilter,
+      standardTypeFilter,
+      targetTypeFilter,
+    ] as const,
+    queryFn: () =>
+      farmCertificateApi.list({
+        keyword: searchQuery.trim() || undefined,
+        status: statusFilter === "all" ? undefined : statusFilter,
+        standardType:
+          standardTypeFilter === "all" ? undefined : standardTypeFilter,
+        targetType: targetTypeFilter === "all" ? undefined : targetTypeFilter,
+        page: 0,
+        size: 100,
+      }),
+    enabled: workspaceId !== null && workspaceId !== undefined,
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const standards = useMemo<Standard[]>(
+    () => standardsQuery.items.map(mapStandardRecordToOption),
+    [standardsQuery.items],
+  );
+
+  const enterprises = useMemo(
+    () =>
+      organizationsQuery.data?.content.map(mapOrganizationRecordToEnterprise) ??
+      [],
+    [organizationsQuery.data?.content],
+  );
+
+  const areas = useMemo(
+    () => branchesQuery.data?.content.map(mapBranchRecordToArea) ?? [],
+    [branchesQuery.data?.content],
+  );
+
+  const filteredData = useMemo(
+    () =>
+      certificatesQuery.data?.content.map(mapFarmCertificateRecordToView) ?? [],
+    [certificatesQuery.data?.content],
+  );
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number | string) => farmCertificateApi.delete(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["enterprise-certificate", "certificates"],
+      });
+    },
+  });
 
   const handleDelete = (item: EnterpriseCertificate) => {
     setDeleteItem(item);
     setDeleteOpen(true);
   };
 
-  const handleSubmit = () => {
-    const status = calculateStatus(formData.expiryDate);
-    const finalContent = formData.contentType === "editor" ? editorContentRef.current : formData.content;
-
-    const submissionData = {
-      ...formData,
-      content: finalContent,
-      status,
-    };
-
-    if (editItem) {
-      updateCertificate(editItem.id, submissionData);
-      toast({ title: "Thành công", description: "Đã cập nhật chứng nhận" });
-    } else {
-      const newId = certificates.length > 0 ? Math.max(...certificates.map((c) => c.id)) + 1 : 1;
-      const newItem: EnterpriseCertificate = {
-        id: newId,
-        ...submissionData,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      addCertificate(newItem);
-      toast({ title: "Thành công", description: "Đã thêm chứng nhận mới" });
+  const handleConfirmDelete = async () => {
+    if (!deleteItem) {
+      setDeleteOpen(false);
+      return;
     }
-    setFormOpen(false);
+
+    try {
+      await deleteMutation.mutateAsync(deleteItem.id);
+      toast({
+        title: "Thành công",
+        description: "Đã xóa chứng nhận",
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định";
+
+      toast({
+        title: "Không thể xóa",
+        description: message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setDeleteOpen(false);
+    setDeleteItem(null);
   };
 
-  const handleConfirmDelete = () => {
-    if (deleteItem) {
-      deleteCertificate(deleteItem.id);
-      toast({ title: "Thành công", description: "Đã xóa chứng nhận" });
+  const handleSearch = (value: string) => {
+    setSearchQuery(value);
+  };
+
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "status") {
+      setStatusFilter(value);
     }
-    setDeleteOpen(false);
+
+    if (key === "standardType") {
+      setStandardTypeFilter(value);
+    }
+
+    if (key === "entityType") {
+      setTargetTypeFilter(value);
+    }
   };
 
   return {
-    formData,
-    setFormData,
-    formOpen,
-    setFormOpen,
     deleteOpen,
     setDeleteOpen,
-    editItem,
-    deleteItem,
-    availableOrganizations,
-    selectedEnterpriseId,
-    filters,
-    setFilters,
+    searchQuery,
+    statusFilter,
+    standardTypeFilter,
+    targetTypeFilter,
     filteredData,
     standards,
     enterprises,
     areas,
-    handleAdd,
-    handleEdit,
+    loading:
+      certificatesQuery.isLoading ||
+      standardsQuery.loading ||
+      organizationsQuery.isLoading ||
+      branchesQuery.isLoading,
+    error:
+      certificatesQuery.error?.message ??
+      standardsQuery.error ??
+      organizationsQuery.error?.message ??
+      branchesQuery.error?.message ??
+      null,
+    handleSearch,
+    handleFilterChange,
     handleDelete,
-    handleSubmit,
     handleConfirmDelete,
-    handleStandardTypeChange,
-    handleEnterpriseSelect,
-    handleAreaSelect,
-    editorContentRef,
   };
 }

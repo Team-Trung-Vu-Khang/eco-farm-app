@@ -99,6 +99,11 @@ export const getCertificateColumns = (
           label: "Hết hạn",
           icon: AlertCircle,
         },
+        revoked: {
+          variant: "secondary",
+          label: "Đã thu hồi",
+          icon: AlertCircle,
+        },
       };
       const config = statusConfig[value as keyof typeof statusConfig];
       const Icon = config.icon;

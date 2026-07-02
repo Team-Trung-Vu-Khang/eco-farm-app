@@ -8,7 +8,7 @@ export interface EnterpriseCertificate {
   organization: string; // Tổ chức cấp
   issuedDate: string; // Thời gian cấp
   expiryDate: string; // Thời gian hết hạn
-  status: "valid" | "expired" | "expiring_soon"; // Tự động tính
+  status: "valid" | "expired" | "expiring_soon" | "revoked"; // Tự động tính
   entityType: "enterprise" | "area"; // Doanh nghiệp hoặc Vùng trồng
   entityId: string; // ID của doanh nghiệp hoặc vùng trồng
   entityName: string; // Tên doanh nghiệp hoặc vùng trồng

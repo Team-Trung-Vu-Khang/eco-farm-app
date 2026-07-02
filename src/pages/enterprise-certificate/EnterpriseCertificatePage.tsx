@@ -16,6 +16,9 @@ const EnterpriseCertificatePage = () => {
     setDeleteOpen,
     filteredData,
     standards,
+    loading,
+    handleSearch,
+    handleFilterChange,
     handleDelete,
     handleConfirmDelete,
   } = useEnterpriseCertificateForm();
@@ -41,12 +44,16 @@ const EnterpriseCertificatePage = () => {
       <DataTable
         columns={columns}
         data={filteredData}
+        searchable
+        loading={loading}
         onEdit={(item) =>
           setLocation(`/enterprise-certificate/${item.id}/edit`)
         }
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm chứng nhận..."
         filters={filterConfig}
+        onSearch={handleSearch}
+        onFilterChange={handleFilterChange}
       />
 
       <DeleteDialog
