@@ -26,8 +26,10 @@ import {
   Users,
 } from "lucide-react";
 import { vietQrBankData } from "../../../../constants/banks";
-import { classificationOptions } from "./FarmerBasicInfoStep";
-import type { FarmerFormData } from "../../types";
+import {
+  farmerClassificationOptions,
+  type FarmerFormData,
+} from "../../types";
 
 interface FarmerConfirmationStepProps {
   formData: FarmerFormData;
@@ -93,7 +95,7 @@ export const FarmerConfirmationStep = ({
                     variant="outline"
                     className="capitalize px-3 py-1 text-xs font-semibold bg-primary/5 text-primary border-primary/20"
                   >
-                    {classificationOptions.find((opt) => opt.value === item)
+                    {farmerClassificationOptions.find((opt) => opt.value === item)
                       ?.label ?? item}
                   </Badge>
                 ))}
@@ -135,7 +137,6 @@ export const FarmerConfirmationStep = ({
                     <p className="text-sm font-medium leading-normal">
                       {formData.address}
                       {formData.ward && `, ${formData.ward}`}
-                      {formData.district && `, ${formData.district}`}
                       {formData.province && `, ${formData.province}`}
                     </p>
                   </div>

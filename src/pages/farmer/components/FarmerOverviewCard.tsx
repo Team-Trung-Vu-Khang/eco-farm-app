@@ -114,7 +114,6 @@ export const FarmerOverviewCard = ({ data }: FarmerOverviewCardProps) => {
             <span>
               {data.address}
               {data.ward && `, ${data.ward}`}
-              {data.district && `, ${data.district}`}
               {data.province && `, ${data.province}`}
             </span>
           </div>

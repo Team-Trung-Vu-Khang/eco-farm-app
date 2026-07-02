@@ -65,3 +65,11 @@ export interface FarmerFormData {
   bankAccounts: BankAccount[];
   documents: Document[];
 }
+
+export const farmerClassificationOptions = [
+  { value: "production", label: "Sản xuất" },
+  { value: "processing", label: "Chế biến" },
+  { value: "trading", label: "Thương mại" },
+  { value: "service", label: "Dịch vụ" },
+  { value: "other", label: "Khác" },
+];

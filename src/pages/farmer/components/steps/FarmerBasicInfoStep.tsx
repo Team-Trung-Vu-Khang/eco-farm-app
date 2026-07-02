@@ -12,21 +12,17 @@ import {
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Image, MapPin, Upload } from "lucide-react";
-import { PROVINCES } from "@/constants/province";
+import { useAddressOptions } from "@/features/master-data";
 import type { FarmerFormData } from "../../types";
 import { useEffect, useRef, useState } from "react";
-
-export const classificationOptions = [
-  { value: "production", label: "Sản xuất" },
-  { value: "processing", label: "Chế biến" },
-  { value: "trading", label: "Thương mại" },
-  { value: "service", label: "Dịch vụ" },
-  { value: "other", label: "Khác" },
-];
+import { farmerClassificationOptions } from "../../types";
 
 interface FarmerBasicInfoStepProps {
   formData: FarmerFormData;
-  updateField: (field: keyof FarmerFormData, value: any) => void;
+  updateField: <K extends keyof FarmerFormData>(
+    field: K,
+    value: FarmerFormData[K],
+  ) => void;
   isDragging: boolean;
   handleDrag: (id: string, e: React.DragEvent) => void;
   processLogoImage: (file: File) => void;
@@ -41,6 +37,8 @@ export const FarmerBasicInfoStep = ({
 }: FarmerBasicInfoStepProps) => {
   const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
   const { toast } = useToast();
+  const { provinces, wards, isLoadingProvinces, isLoadingWards } =
+    useAddressOptions(formData.province);
   const [addressQuery, setAddressQuery] = useState(formData.address || "");
   const [isFocused, setIsFocused] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -260,7 +258,7 @@ export const FarmerBasicInfoStep = ({
         <div className="space-y-2">
           <Label htmlFor="classification">Phân loại</Label>
           <MultiSelect
-            options={classificationOptions}
+            options={farmerClassificationOptions}
             placeholder="Chọn phân loại..."
             value={formData.classification}
             onChange={(v) => updateField("classification", v)}
@@ -303,58 +301,63 @@ export const FarmerBasicInfoStep = ({
           <MapPin className="w-5 h-5 text-primary" />
           <h3 className="font-semibold">Địa chỉ nông hộ</h3>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="province">Tỉnh / Thành Phố *</Label>
             <Select
-              value={formData.province}
+              value={formData.province || ""}
               onValueChange={(val) => {
                 updateField("province", val);
                 updateField("district", "");
                 updateField("ward", "");
               }}
+              disabled={isLoadingProvinces}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Chọn Tỉnh / Thành Phố" />
+                <SelectValue
+                  placeholder={
+                    isLoadingProvinces
+                      ? "Đang tải danh sách tỉnh/thành phố..."
+                      : "Chọn Tỉnh / Thành Phố"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
-                {PROVINCES.map((province) => (
+                {provinces.map((province) => (
                   <SelectItem key={province.code} value={province.code}>
-                    {province.name}
+                    {province.fullName || province.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="district">Quận / Huyện *</Label>
+            <Label htmlFor="ward">Phường / Xã *</Label>
             <Select
-              value={formData.district}
-              onValueChange={(val) => updateField("district", val)}
+              value={formData.ward || ""}
+              onValueChange={(val) => updateField("ward", val)}
+              disabled={!formData.province || isLoadingWards}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Chọn Quận / Huyện" />
+                <SelectValue
+                  placeholder={
+                    !formData.province
+                      ? "Chọn Tỉnh / Thành Phố trước"
+                      : isLoadingWards
+                        ? "Đang tải phường/xã..."
+                        : "Chọn Phường / Xã"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
-                {PROVINCES.find((p) => p.code === formData.province)?.districts.map(
-                  (district) => (
-                    <SelectItem key={district.code} value={district.code}>
-                      {district.name}
-                    </SelectItem>
-                  ),
-                )}
+                {wards.map((ward) => (
+                  <SelectItem key={ward.code} value={ward.code}>
+                    {ward.fullName || ward.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
-        </div>
-        <div className="space-y-2 mt-4">
-          <Label htmlFor="ward">Phường / Xã</Label>
-          <Input
-            id="ward"
-            value={formData.ward}
-            onChange={(e) => updateField("ward", e.target.value)}
-            placeholder="VD: Phường Bến Nghé / Xã Tân Phú"
-          />
         </div>
         <div className="space-y-2 mt-4" ref={searchContainerRef}>
           <Label htmlFor="address">Địa chỉ chi tiết</Label>
