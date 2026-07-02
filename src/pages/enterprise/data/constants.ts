@@ -6,6 +6,8 @@ export interface Contact {
 }
 
 export interface Branch {
+  id?: number | string;
+  contactId?: number | string;
   name: string;
   taxCode: string;
   phone: string;
@@ -16,6 +18,7 @@ export interface Branch {
 }
 
 export interface BankAccount {
+  id?: number | string;
   bankId?: number | string;
   bankName: string;
   accountHolder: string;
@@ -32,13 +35,7 @@ export interface Enterprise {
   name: string;
   image?: string;
   type: "enterprise" | "farm" | "cooperative";
-  classification: (
-    | "production"
-    | "processing"
-    | "trading"
-    | "service"
-    | "other"
-  )[];
+  classification: string[];
   taxCode: string;
   address: string;
   phone: string;
@@ -608,7 +605,7 @@ export const initialEnterprises: Enterprise[] = [
     district: "Thành phố Thủ Dầu Một",
     ward: "Phường Phú Lợi",
     latitude: 10.9847,
-    longitude: 106.6670,
+    longitude: 106.667,
     taxAddress: "Phường Phú Lợi, Thành phố Thủ Dầu Một, Tỉnh Bình Dương",
     taxAuthority: "Cục Thuế Tỉnh Bình Dương",
     issueDate: "2019-08-20",
@@ -673,7 +670,8 @@ export const initialEnterprises: Enterprise[] = [
     branches: [],
     bankAccounts: [
       {
-        bankName: "Ngân hàng Nông nghiệp và Phát triển Nông thôn Việt Nam (Agribank)",
+        bankName:
+          "Ngân hàng Nông nghiệp và Phát triển Nông thôn Việt Nam (Agribank)",
         branch: "CN Đắk Lắk",
         accountNumber: "5500123478",
         accountHolder: "HOP TAC XA CHE BIEN NONG SAN TAY NGUYEN",

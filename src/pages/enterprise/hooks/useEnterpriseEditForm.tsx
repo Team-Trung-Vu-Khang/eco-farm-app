@@ -149,7 +149,7 @@ export function useEnterpriseEditForm() {
       ward: enterpriseData.ward || "",
       latitude: enterpriseData.latitude,
       longitude: enterpriseData.longitude,
-      address: enterpriseData.address,
+      address: enterpriseData.address || "",
       image: enterpriseData.imageUrl || "",
       description: enterpriseData.description || "",
       phone: "",
@@ -161,6 +161,8 @@ export function useEnterpriseEditForm() {
         email: contact.email || "",
       })),
       branches: enterpriseData.branches.map((branch) => ({
+        id: branch.id,
+        contactId: branch.contacts?.[0]?.id,
         name: branch.name || "",
         taxCode: branch.taxCode || "",
         phone: branch.contacts?.[0]?.phone || "",
@@ -170,6 +172,7 @@ export function useEnterpriseEditForm() {
         note: branch.metadataJson?.note ? String(branch.metadataJson.note) : "",
       })),
       bankAccounts: enterpriseData.bankAccounts.map((account) => ({
+        id: account.id,
         bankId: account.bank?.id ?? "",
         bankName: account.bank?.name || "",
         accountHolder: account.accountHolder || "",
@@ -588,10 +591,10 @@ export function useEnterpriseEditForm() {
 
   const addBranch = () => {
     if (newBranch.name.trim()) {
-      setFormData({
-        ...formData,
-        branches: [...(formData.branches ?? []), newBranch],
-      });
+      setFormData((prev) => ({
+        ...prev,
+        branches: [...(prev.branches ?? []), newBranch],
+      }));
       setNewBranch({
         name: "",
         taxCode: "",
@@ -611,10 +614,10 @@ export function useEnterpriseEditForm() {
   };
 
   const removeBranch = (index: number) => {
-    setFormData({
-      ...formData,
-      branches: (formData.branches ?? []).filter((_, i) => i !== index),
-    });
+    setFormData((prev) => ({
+      ...prev,
+      branches: (prev.branches ?? []).filter((_, i) => i !== index),
+    }));
   };
 
   const addBankAccount = () => {
@@ -648,10 +651,10 @@ export function useEnterpriseEditForm() {
   };
 
   const removeBankAccount = (index: number) => {
-    setFormData({
-      ...formData,
-      bankAccounts: (formData.bankAccounts ?? []).filter((_, i) => i !== index),
-    });
+    setFormData((prev) => ({
+      ...prev,
+      bankAccounts: (prev.bankAccounts ?? []).filter((_, i) => i !== index),
+    }));
   };
 
   const addContact = () => {
@@ -676,10 +679,10 @@ export function useEnterpriseEditForm() {
   };
 
   const removeContact = (index: number) => {
-    setFormData({
-      ...formData,
-      contacts: (formData.contacts ?? []).filter((_, i) => i !== index),
-    });
+    setFormData((prev) => ({
+      ...prev,
+      contacts: (prev.contacts ?? []).filter((_, i) => i !== index),
+    }));
   };
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -775,15 +778,15 @@ export function useEnterpriseEditForm() {
             ? enterpriseQuery.item.status
             : "active",
         contacts: values.contacts.map((contact, index) => ({
-          contactId: contact.id,
+          contactId: contact.id ?? undefined,
           name: contact.name,
           position: "",
           phone: contact.phone,
           email: contact.email,
           isPrimary: index === 0,
         })),
-        branches: values.branches.map((branch, index) => ({
-          id: index + 1,
+        branches: values.branches.map((branch) => ({
+          id: branch.id ?? undefined,
           code: branch.name.slice(0, 10).toUpperCase(),
           name: branch.name,
           taxCode: branch.taxCode,
@@ -799,7 +802,7 @@ export function useEnterpriseEditForm() {
           contacts: branch.phone || branch.email
             ? [
                 {
-                  contactId: index + 1,
+                  contactId: branch.contactId ?? undefined,
                   name: branch.name,
                   position: "",
                   phone: branch.phone,
@@ -812,7 +815,7 @@ export function useEnterpriseEditForm() {
           metadataJson: null,
         })),
         bankAccounts: values.bankAccounts.map((account, index) => ({
-          id: index + 1,
+          id: account.id ?? undefined,
           ownerType: values.type,
           bankId: account.bankId ? Number(account.bankId) : undefined,
           bankCode: account.bin || account.bankName,
@@ -827,8 +830,8 @@ export function useEnterpriseEditForm() {
           isPrimary: index === 0,
           metadataJson: null,
         })),
-      documents: values.documents.map((doc, index) => ({
-        id: doc.id ?? index + 1,
+      documents: values.documents.map((doc) => ({
+        id: doc.id ?? undefined,
         documentType: doc.type,
         name: doc.name,
         fileUrl: doc.fileUrl || doc.url || "",

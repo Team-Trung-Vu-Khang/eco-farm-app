@@ -308,6 +308,8 @@ export function useFarmerCreateForm() {
   const [confirmBankSearchQuery, setConfirmBankSearchQuery] = useState("");
   const [isDragging, setIsDragging] = useState<Record<string, boolean>>({});
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const isSubmitting =
+    createOrganization.isPending || updateOrganization.isPending;
 
   useEffect(() => {
     if (!isEdit) return;
@@ -800,6 +802,7 @@ export function useFarmerCreateForm() {
   return {
     isEdit,
     formData,
+    isSubmitting,
     setFormData,
     updateField,
     newBankAccount,

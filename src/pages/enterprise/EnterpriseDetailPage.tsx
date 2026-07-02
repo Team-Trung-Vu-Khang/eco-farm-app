@@ -18,12 +18,52 @@ import { EnterpriseDocumentsTab } from "./components/tabs/EnterpriseDocumentsTab
 export default function EnterpriseDetailPage() {
   const {
     data,
+    loading,
+    error,
     setLocation,
     bankSearchQuery,
     setBankSearchQuery,
     branchSearchQuery,
     setBranchSearchQuery,
   } = useEnterpriseDetail();
+
+  if (loading && !data) {
+    return (
+      <AdminLayout
+        isDev={true}
+        title="Chi tiết đơn vị"
+        description="Đang tải thông tin..."
+      >
+        <div className="flex flex-col items-center justify-center gap-4 p-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
+          <div className="text-muted-foreground">
+            Đang tải thông tin doanh nghiệp...
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminLayout
+        isDev={true}
+        title="Chi tiết đơn vị"
+        description="Đang tải thông tin..."
+      >
+        <div className="flex flex-col items-center justify-center gap-4 p-12">
+          <div className="font-medium text-destructive">
+            Không thể tải thông tin doanh nghiệp
+          </div>
+          <div className="text-sm text-muted-foreground">{error}</div>
+          <Button variant="outline" onClick={() => setLocation("/enterprise")}>
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Quay lại danh sách
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   if (!data) {
     return (
@@ -32,7 +72,7 @@ export default function EnterpriseDetailPage() {
         title="Chi tiết đơn vị"
         description="Đang tải thông tin..."
       >
-        <div className="flex flex-col items-center justify-center p-12 gap-4">
+        <div className="flex flex-col items-center justify-center gap-4 p-12">
           <div className="text-muted-foreground">
             Không tìm thấy thông tin doanh nghiệp
           </div>

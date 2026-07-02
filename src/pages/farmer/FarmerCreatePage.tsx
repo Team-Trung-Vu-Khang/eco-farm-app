@@ -8,11 +8,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Button,
   Card,
   CardContent,
   StepperForm,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { ArrowLeft } from "lucide-react";
 import { useFarmerCreateForm } from "./hooks/useFarmerCreateForm";
 import { FarmerBasicInfoStep } from "./components/steps/FarmerBasicInfoStep";
 import { FarmerBankStep } from "./components/steps/FarmerBankStep";
@@ -48,6 +50,7 @@ export default function FarmerCreatePage() {
     submitForm,
     showConfirmDialog,
     setShowConfirmDialog,
+    isSubmitting,
     navigateBack,
   } = useFarmerCreateForm();
 
@@ -124,6 +127,17 @@ export default function FarmerCreatePage() {
       isDev={true}
       title={isEdit ? "Chỉnh sửa Nông hộ" : "Tạo mới Nông hộ"}
       description="Điền thông tin theo từng bước để tạo mới nông hộ"
+      actions={[
+        <Button
+          key="back"
+          variant="outline"
+          onClick={navigateBack}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Quay lại
+        </Button>,
+      ]}
     >
       <Card>
         <CardContent className="p-6">
@@ -136,7 +150,10 @@ export default function FarmerCreatePage() {
         </CardContent>
       </Card>
 
-      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+      <AlertDialog
+        open={showConfirmDialog}
+        onOpenChange={(open) => !isSubmitting && setShowConfirmDialog(open)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
@@ -150,8 +167,17 @@ export default function FarmerCreatePage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={submitForm}>Xác nhận</AlertDialogAction>
+            <AlertDialogCancel disabled={isSubmitting}>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              loading={isSubmitting}
+              disabled={isSubmitting}
+              onClick={(e) => {
+                e.preventDefault();
+                submitForm();
+              }}
+            >
+              Xác nhận
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

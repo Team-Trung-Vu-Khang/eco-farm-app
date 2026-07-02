@@ -12,8 +12,7 @@ import { useForm } from "react-hook-form";
 import readXlsxFile from "read-excel-file";
 import { useLocation } from "wouter";
 
-import { vietQrBankData } from "@/constants/banks";
-import { useMasterData } from "@/features/master-data";
+import { useMasterData, type MasterDataRecord } from "@/features/master-data";
 import { useCreateOrganization } from "@/features/organization";
 import { useUploadStorageFile } from "@/features/storage/hooks/useUploadStorageFile";
 import { useSelectedWorkspaceId } from "@/features/workspace";
@@ -38,6 +37,12 @@ type BusinessLineRecord = {
   id: number | string;
   code: string;
   name: string;
+};
+
+type BankMasterDataRecord = MasterDataRecord<"banks"> & {
+  shortName?: string;
+  logoUrl?: string;
+  bin?: string;
 };
 
 const CLASSIFICATION_TO_BUSINESS_LINE: Record<string, string> = {
@@ -69,12 +74,22 @@ const normalizeBytes = (size?: string) => {
   return Math.round(numeric);
 };
 
+const getBankDisplayName = (bank?: BankMasterDataRecord | null) =>
+  bank?.shortName || bank?.name || "";
+
 export function useEnterpriseCreateForm() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const workspaceId = useSelectedWorkspaceId();
 
   const businessLinesQuery = useMasterData("business-lines", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
+  const banksQuery = useMasterData("banks", {
     params: {
       status: "active",
       page: 0,
@@ -122,6 +137,10 @@ export function useEnterpriseCreateForm() {
   const businessLineRecords = useMemo(
     () => businessLinesQuery.items as BusinessLineRecord[],
     [businessLinesQuery.items],
+  );
+  const bankMasterData = useMemo(
+    () => banksQuery.items as BankMasterDataRecord[],
+    [banksQuery.items],
   );
   const logoUploadSeqRef = useRef(0);
   const documentUploadSeqRef = useRef(0);
@@ -183,6 +202,25 @@ export function useEnterpriseCreateForm() {
   const [bankSearchQuery, setBankSearchQuery] = useState("");
   const [confirmBankSearchQuery, setConfirmBankSearchQuery] = useState("");
 
+  const findBankInfo = (value: string) => {
+    const query = value.toLowerCase().trim();
+    if (!query) return undefined;
+
+    return bankMasterData.find((bank) => {
+      const searchable = [
+        bank.code,
+        bank.bin,
+        bank.name,
+        getBankDisplayName(bank),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return searchable.includes(query);
+    });
+  };
+
   useEffect(() => {
     // Check for camera availability
     if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
@@ -225,18 +263,13 @@ export function useEnterpriseCreateForm() {
         const note = String(row[4] || "").trim();
 
         if (binOrName && accountNumber && accountHolder) {
-          const bankInfo = vietQrBankData.find(
-            (b) =>
-              b.bin === binOrName ||
-              b.shortName.toLowerCase() === binOrName.toLowerCase() ||
-              b.name.toLowerCase() === binOrName.toLowerCase(),
-          );
+          const bankInfo = findBankInfo(binOrName);
 
           if (bankInfo) {
             newAccounts.push({
               bankId: bankInfo.id,
-              bin: bankInfo.bin,
-              bankName: bankInfo.name,
+              bin: bankInfo.bin || "",
+              bankName: getBankDisplayName(bankInfo),
               accountNumber,
               accountHolder,
               branch,
@@ -357,19 +390,13 @@ export function useEnterpriseCreateForm() {
       const parsed = parseVietQR(result);
 
       if (parsed) {
-        const bankInfo = vietQrBankData.find(
-          (bank) =>
-            bank.bin === parsed.bin ||
-            bank.shortName.toLowerCase() ===
-              (parsed.bankName || "").toLowerCase() ||
-            bank.name.toLowerCase() === (parsed.bankName || "").toLowerCase(),
-        );
+        const bankInfo = findBankInfo(parsed.bin || parsed.bankName || "");
 
         setNewBankAccount((prev) => ({
           ...prev,
           bankId: bankInfo?.id ?? prev.bankId,
           bin: parsed.bin || prev.bin,
-          bankName: parsed.bankName || prev.bankName,
+          bankName: parsed.bankName || getBankDisplayName(bankInfo) || prev.bankName,
           accountNumber: parsed.accountNumber || prev.accountNumber,
           accountHolder: parsed.accountHolder || prev.accountHolder,
           note: parsed.note || prev.note,
@@ -401,20 +428,14 @@ export function useEnterpriseCreateForm() {
     const parsed = parseVietQR(text);
 
     if (parsed) {
-      const bankInfo = vietQrBankData.find(
-        (bank) =>
-          bank.bin === parsed.bin ||
-          bank.shortName.toLowerCase() ===
-            (parsed.bankName || "").toLowerCase() ||
-          bank.name.toLowerCase() === (parsed.bankName || "").toLowerCase(),
-      );
+      const bankInfo = findBankInfo(parsed.bin || parsed.bankName || "");
 
       setNewBankAccount((prev) => ({
         ...prev,
         bankId: bankInfo?.id ?? prev.bankId,
         bin: parsed.bin || prev.bin,
         note: parsed.note || prev.note,
-        bankName: parsed.bankName || prev.bankName,
+        bankName: parsed.bankName || getBankDisplayName(bankInfo) || prev.bankName,
         accountNumber: parsed.accountNumber || prev.accountNumber,
         accountHolder: parsed.accountHolder || prev.accountHolder,
       }));
@@ -598,10 +619,10 @@ export function useEnterpriseCreateForm() {
   };
 
   const removeBankAccount = (index: number) => {
-    setFormData({
-      ...formData,
-      bankAccounts: (formData.bankAccounts ?? []).filter((_, i) => i !== index),
-    });
+    setFormData((prev) => ({
+      ...prev,
+      bankAccounts: (prev.bankAccounts ?? []).filter((_, i) => i !== index),
+    }));
   };
 
   const addContact = () => {
@@ -626,18 +647,18 @@ export function useEnterpriseCreateForm() {
   };
 
   const removeContact = (index: number) => {
-    setFormData({
-      ...formData,
-      contacts: (formData.contacts ?? []).filter((_, i) => i !== index),
-    });
+    setFormData((prev) => ({
+      ...prev,
+      contacts: (prev.contacts ?? []).filter((_, i) => i !== index),
+    }));
   };
 
   const addBranch = () => {
     if (newBranch.name.trim()) {
-      setFormData({
-        ...formData,
-        branches: [...(formData.branches ?? []), newBranch],
-      });
+      setFormData((prev) => ({
+        ...prev,
+        branches: [...(prev.branches ?? []), newBranch],
+      }));
       setNewBranch({
         name: "",
         taxCode: "",
@@ -657,10 +678,10 @@ export function useEnterpriseCreateForm() {
   };
 
   const removeBranch = (index: number) => {
-    setFormData({
-      ...formData,
-      branches: (formData.branches ?? []).filter((_, i) => i !== index),
-    });
+    setFormData((prev) => ({
+      ...prev,
+      branches: (prev.branches ?? []).filter((_, i) => i !== index),
+    }));
   };
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -748,7 +769,7 @@ export function useEnterpriseCreateForm() {
         description: values.description.trim(),
         status: "active" as const,
         contacts: values.contacts.map((contact, index) => ({
-          contactId: contact.id,
+          contactId: contact.id || undefined,
           name: contact.name,
           position: "",
           phone: contact.phone,
@@ -756,6 +777,7 @@ export function useEnterpriseCreateForm() {
           isPrimary: index === 0,
         })),
         branches: values.branches.map((branch) => ({
+          id: branch.id ?? undefined,
           code: branch.name.slice(0, 10).toUpperCase(),
           name: branch.name,
           taxCode: branch.taxCode,
@@ -772,6 +794,7 @@ export function useEnterpriseCreateForm() {
             branch.phone || branch.email
               ? [
                   {
+                    contactId: branch.contactId ?? undefined,
                     name: branch.name,
                     position: "",
                     phone: branch.phone,
@@ -784,40 +807,37 @@ export function useEnterpriseCreateForm() {
           metadataJson: null,
         })),
         bankAccounts: values.bankAccounts.map((account, index) => {
-          const bankInfo = vietQrBankData.find(
-            (bank) =>
-              bank.bin === account.bin ||
-              bank.name.toLowerCase() === account.bankName.toLowerCase() ||
-              bank.shortName.toLowerCase() === account.bankName.toLowerCase(),
-          );
+          const bankInfo = account.bankId
+            ? bankMasterData.find((bank) => bank.id === Number(account.bankId))
+            : findBankInfo(account.bin || account.bankName || "");
 
-        return {
-          ownerType: values.type,
-          bankId: account.bankId
-            ? Number(account.bankId)
-            : bankInfo?.id ?? undefined,
-          bankCode: bankInfo?.bin || account.bin || account.bankName,
-            bankName: account.bankName,
+          return {
+            ownerType: values.type,
+            bankId: account.bankId
+              ? Number(account.bankId)
+              : bankInfo?.id ?? undefined,
+            bankCode: bankInfo?.code || account.bin || account.bankName,
+            bankName: getBankDisplayName(bankInfo) || account.bankName,
             bin: account.bin || bankInfo?.bin || "",
             accountNumber: account.accountNumber,
             accountHolder: account.accountHolder,
             branch: account.branch,
             note: account.note,
-            logoUrl: account.logo || bankInfo?.logo || "",
+            logoUrl: account.logo || bankInfo?.logoUrl || "",
             status: "active" as const,
             isPrimary: index === 0,
             metadataJson: null,
           };
         }),
-      documents: values.documents.map((doc) => ({
-        documentType: doc.type,
-        name: doc.name,
-        fileUrl: doc.fileUrl || doc.url || "",
-        fileName: doc.fileName || doc.name,
-        mimeType: doc.mimeType || doc.type,
-        sizeBytes: doc.sizeBytes ?? normalizeBytes(doc.size),
-        content: doc.content ?? undefined,
-      })),
+        documents: values.documents.map((doc) => ({
+          documentType: doc.type,
+          name: doc.name,
+          fileUrl: doc.fileUrl || doc.url || "",
+          fileName: doc.fileName || doc.name,
+          mimeType: doc.mimeType || doc.type,
+          sizeBytes: doc.sizeBytes ?? normalizeBytes(doc.size),
+          content: doc.content ?? undefined,
+        })),
         metadataJson: null,
       };
 

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const nullableText = z.string().nullish().transform((value) => value ?? "");
+
 const enterpriseContactSchema = z.object({
   id: z.union([z.number(), z.string()]).optional(),
   name: z.string().default(""),
@@ -8,6 +10,8 @@ const enterpriseContactSchema = z.object({
 });
 
 const enterpriseBranchSchema = z.object({
+  id: z.union([z.number(), z.string()]).optional(),
+  contactId: z.union([z.number(), z.string()]).optional(),
   name: z.string().default(""),
   taxCode: z.string().default(""),
   phone: z.string().default(""),
@@ -49,24 +53,24 @@ export const enterpriseFormSchema = z.object({
   ]),
   code: z.string().trim().min(1, "Vui lòng nhập mã doanh nghiệp."),
   name: z.string().trim().min(1, "Vui lòng nhập tên doanh nghiệp."),
-  brandName: z.string().default(""),
-  taxCode: z.string().default(""),
-  taxAddress: z.string().default(""),
-  taxAuthority: z.string().default(""),
-  issueDate: z.string().default(""),
+  brandName: nullableText.default(""),
+  taxCode: nullableText.default(""),
+  taxAddress: nullableText.default(""),
+  taxAuthority: nullableText.default(""),
+  issueDate: nullableText.default(""),
   classification: z.array(z.string()).default([]),
-  foundedDate: z.string().default(""),
-  representative: z.string().default(""),
-  website: z.string().default(""),
-  phone: z.string().default(""),
-  email: z.string().default(""),
-  province: z.string().default(""),
-  ward: z.string().default(""),
+  foundedDate: nullableText.default(""),
+  representative: nullableText.default(""),
+  website: nullableText.default(""),
+  phone: nullableText.default(""),
+  email: nullableText.default(""),
+  province: nullableText.default(""),
+  ward: nullableText.default(""),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
-  address: z.string().default(""),
-  image: z.string().default(""),
-  description: z.string().default(""),
+  address: nullableText.default(""),
+  image: nullableText.default(""),
+  description: nullableText.default(""),
   contacts: z.array(enterpriseContactSchema).default([]),
   branches: z.array(enterpriseBranchSchema).default([]),
   bankAccounts: z.array(enterpriseBankAccountSchema).default([]),

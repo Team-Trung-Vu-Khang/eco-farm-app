@@ -9,13 +9,16 @@ import {
 } from "@/features/organization";
 import { useMasterData } from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
-import type { Enterprise } from "../../enterprise/data/constants";
+import type { FarmerFormData } from "../types";
 
-type FarmerRow = Enterprise & {
-  businessLine: string;
-  businessLineText: string;
+type FarmerRow = FarmerFormData & {
+  id: number;
+  status: OrganizationRecord["status"];
+  createdAt: string;
   primaryPhone: string;
   primaryEmail: string;
+  businessLine: string;
+  businessLineText: string;
   image: string;
 };
 
@@ -23,7 +26,7 @@ const DEFAULT_PAGE_SIZE = 10;
 
 type OrganizationStatusFilter = OrganizationRecord["status"] | "all";
 
-const formatContactTooltip = (farmer: OrganizationRecord) => {
+const formatContactTooltip = (farmer: FarmerRow) => {
   const contacts = farmer.contacts?.length ? farmer.contacts : [];
 
   return contacts
@@ -53,22 +56,33 @@ const toFarmerRow = (
     selectedBusinessLine !== "all"
       ? selectedBusinessLine
       : firstBusinessLine?.code || firstBusinessLine?.name || "-";
+  const classification =
+    farmer.businessLines
+      ?.map((line) => line.code || line.name)
+      .filter((item): item is string => Boolean(item)) ?? [];
 
   return {
     id: Number(farmer.id),
     code: farmer.code,
     name: farmer.name,
     image: farmer.imageUrl || "",
-    type: (farmer.type as Enterprise["type"]) || "farm",
-    classification:
-      farmer.businessLines
-        ?.map((line) => line.code || line.name)
-        .filter(Boolean) ?? [],
+    type:
+      farmer.type === "enterprise" ||
+      farmer.type === "cooperative" ||
+      farmer.type === "farm"
+        ? farmer.type
+        : "farm",
+    classification,
     taxCode: farmer.taxCode,
     address: farmer.address,
     phone: primaryContact?.phone || "",
     email: primaryContact?.email || "",
-    status: farmer.status === "inactive" ? "inactive" : "active",
+    status:
+      farmer.status === "inactive" ||
+      farmer.status === "archived" ||
+      farmer.status === "active"
+        ? farmer.status
+        : "active",
     createdAt: farmer.createdAt,
     brandName: farmer.brandName,
     representative: farmer.representative,
@@ -101,13 +115,13 @@ const toFarmerRow = (
       })) ?? [],
     bankAccounts:
       farmer.bankAccounts?.map((account) => ({
-        bankName: account.bank?.name || account.bankName || "",
+        bankName: account.bank?.name || "",
         accountHolder: account.accountHolder || "",
         accountNumber: account.accountNumber || "",
         branch: account.branch || "",
         note: account.note || "",
-        bin: account.bin || account.bank?.bin || "",
-        logo: account.logoUrl || account.bank?.logoUrl || "",
+        bin: account.bank?.bin || "",
+        logo: account.bank?.logoUrl || "",
       })) ?? [],
     documents:
       farmer.documents?.map((doc) => ({

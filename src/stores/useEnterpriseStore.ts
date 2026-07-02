@@ -16,7 +16,7 @@ interface EnterpriseState {
   addEnterprise: (enterprise: Omit<Enterprise, "id" | "createdAt">) => void;
   updateEnterprise: (id: number, enterprise: Partial<Enterprise>) => void;
   deleteEnterprise: (id: number) => void;
-  getEnterpriseById: (id: number) => Enterprise | undefined;
+  getEnterpriseById: (id: number | null | undefined) => Enterprise | undefined;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   reset: () => void;
@@ -76,6 +76,8 @@ const useEnterpriseStore = create<EnterpriseState>()(
           ),
 
         getEnterpriseById: (id) => {
+          if (id === null || id === undefined) return undefined;
+
           return get().enterprises.find((enterprise) => enterprise.id === id);
         },
 
