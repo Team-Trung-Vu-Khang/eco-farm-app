@@ -8,10 +8,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Button,
   Card,
   CardContent,
   StepperForm,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { ArrowLeft } from "lucide-react";
 import { useEnterpriseEditForm } from "./hooks/useEnterpriseEditForm";
 import { EnterpriseFormContext } from "./context/EnterpriseFormContext";
 
@@ -40,6 +42,16 @@ export default function EnterpriseEditPage() {
               : "Nông hộ"
         }`}
         description="Cập nhật thông tin chi tiết"
+        actions={[
+          <Button
+            variant="outline"
+            onClick={() => setLocation("/enterprise")}
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Quay lại
+          </Button>,
+        ]}
       >
         <Card>
           <CardContent className="p-6">
