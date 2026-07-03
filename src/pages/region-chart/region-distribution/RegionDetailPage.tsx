@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   AdminLayout,
   Button,
@@ -6,24 +7,44 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { MFMap, MFPolygon } from "react-map4d-map";
 import { ChevronLeft, Edit } from "lucide-react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { MapContainer, Polygon, TileLayer, useMap } from "react-leaflet";
+
 import { LAND_TYPES } from "../constants";
 import { RegionChartStatusBadge } from "../components/RegionChartStatusBadge";
 import { useRegionDetailPage } from "../hooks/useRegionDetailPage";
 
-const RegionDetailPage = () => {
-  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
-  const closePath = (points: { lat: number; lng: number }[]) => {
-    if (!points || points.length < 3) return [];
-    const path = points.map((p) => ({ lat: p.lat, lng: p.lng }));
-    const first = path[0];
-    const last = path[path.length - 1];
-    if (first.lat !== last.lat || first.lng !== last.lng) {
-      path.push({ ...first });
+const closePath = (points: { lat: number; lng: number }[]) => {
+  if (!points || points.length < 3) return [];
+  const path = points.map((p) => [p.lat, p.lng] as [number, number]);
+  const [firstLat, firstLng] = path[0];
+  const [lastLat, lastLng] = path[path.length - 1];
+  if (firstLat !== lastLat || firstLng !== lastLng) {
+    path.push([firstLat, firstLng]);
+  }
+  return path;
+};
+
+const getBoundsFromPolygons = (polygons: [number, number][][]) => {
+  const points = polygons.flat();
+  return points.length > 0 ? L.latLngBounds(points) : null;
+};
+
+const FitBounds = ({ bounds }: { bounds: L.LatLngBounds | null }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (bounds && bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [24, 24] });
     }
-    return path;
-  };
+  }, [bounds, map]);
+
+  return null;
+};
+
+const RegionDetailPage = () => {
   const {
     setLocation,
     region,
@@ -34,6 +55,15 @@ const RegionDetailPage = () => {
     landTypeName,
     terrainName,
   } = useRegionDetailPage();
+
+  const regionPath = region?.coordinates ? closePath(region.coordinates) : [];
+  const subAreaPaths =
+    region?.subAreas?.flatMap((sub) =>
+      sub.coordinates && sub.coordinates.length >= 3 ? [closePath(sub.coordinates)] : [],
+    ) ?? [];
+  const bounds = getBoundsFromPolygons(
+    [regionPath, ...subAreaPaths].filter((path) => path.length > 0),
+  );
 
   if (!region) {
     return (
@@ -72,7 +102,6 @@ const RegionDetailPage = () => {
       }
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-6">
-        {/* Left Col: Info */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -150,7 +179,6 @@ const RegionDetailPage = () => {
           </Card>
         </div>
 
-        {/* Right Col: Map */}
         <div className="lg:col-span-2">
           <Card className="flex h-full min-h-[500px] flex-col">
             <CardHeader>
@@ -158,20 +186,25 @@ const RegionDetailPage = () => {
             </CardHeader>
             <CardContent className="relative flex-1 overflow-hidden rounded-b-lg p-0">
               <div className="h-[600px] w-full">
-                <MFMap
-                  center={{ lat: center[0], lng: center[1] }}
+                <MapContainer
+                  center={center}
                   zoom={14}
-                  accessKey={MAP4D_ACCESS_KEY}
-                  options={{ mapType: "raster" }}
-                  version="2.5"
+                  className="h-full w-full"
+                  zoomControl={false}
+                  scrollWheelZoom
                 >
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                  {bounds && <FitBounds bounds={bounds} />}
+
                   {region.coordinates && region.coordinates.length > 0 && (
-                    <MFPolygon
-                      paths={[closePath(region.coordinates)]}
-                      strokeColor="#2563eb"
-                      strokeWidth={2}
-                      fillColor="#2563eb"
-                      fillOpacity={0}
+                    <Polygon
+                      positions={regionPath}
+                      pathOptions={{
+                        color: "#2563eb",
+                        weight: 2,
+                        fillColor: "#2563eb",
+                        fillOpacity: 0,
+                      }}
                     />
                   )}
 
@@ -181,17 +214,19 @@ const RegionDetailPage = () => {
                     }
 
                     return (
-                      <MFPolygon
+                      <Polygon
                         key={sub.id}
-                        paths={[closePath(sub.coordinates)]}
-                        strokeColor="#16a34a"
-                        strokeWidth={2}
-                        fillColor="#16a34a"
-                        fillOpacity={0.08}
+                        positions={closePath(sub.coordinates)}
+                        pathOptions={{
+                          color: "#16a34a",
+                          weight: 2,
+                          fillColor: "#16a34a",
+                          fillOpacity: 0.08,
+                        }}
                       />
                     );
                   })}
-                </MFMap>
+                </MapContainer>
               </div>
             </CardContent>
           </Card>
