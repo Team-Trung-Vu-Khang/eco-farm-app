@@ -313,7 +313,7 @@ function EnterpriseBasicInfoStepContent({
             render={({ field }) => (
               <Input
                 id="brandName"
-                value={field.value}
+                value={field.value || ""}
                 onChange={(e) => field.onChange(e.target.value)}
                 onBlur={field.onBlur}
                 ref={field.ref}
@@ -331,7 +331,7 @@ function EnterpriseBasicInfoStepContent({
             render={({ field }) => (
               <Input
                 id="taxCode"
-                value={field.value}
+                value={field.value || ""}
                 onChange={(e) => field.onChange(e.target.value)}
                 onBlur={field.onBlur}
                 ref={field.ref}
@@ -352,7 +352,7 @@ function EnterpriseBasicInfoStepContent({
             render={({ field }) => (
               <Input
                 id="taxAuthority"
-                value={field.value}
+                value={field.value || ""}
                 onChange={(e) => field.onChange(e.target.value)}
                 onBlur={field.onBlur}
                 ref={field.ref}
@@ -371,7 +371,7 @@ function EnterpriseBasicInfoStepContent({
               <Input
                 id="issueDate"
                 type="date"
-                value={field.value}
+                value={field.value || ""}
                 onChange={(e) => field.onChange(e.target.value)}
                 onBlur={field.onBlur}
                 ref={field.ref}
@@ -391,7 +391,7 @@ function EnterpriseBasicInfoStepContent({
             render={({ field }) => (
               <Input
                 id="taxAddress"
-                value={field.value}
+                value={field.value || ""}
                 onChange={(e) => field.onChange(e.target.value)}
                 onBlur={field.onBlur}
                 ref={field.ref}
@@ -466,7 +466,7 @@ function EnterpriseBasicInfoStepContent({
               <>
                 <Input
                   id="representative"
-                  value={field.value}
+                  value={field.value || ""}
                   onChange={(e) => field.onChange(e.target.value)}
                   onBlur={field.onBlur}
                   ref={field.ref}
@@ -492,7 +492,7 @@ function EnterpriseBasicInfoStepContent({
               <Input
                 id="foundedDate"
                 type="date"
-                value={field.value}
+                value={field.value || ""}
                 onChange={(e) => field.onChange(e.target.value)}
                 onBlur={field.onBlur}
                 ref={field.ref}
@@ -511,7 +511,7 @@ function EnterpriseBasicInfoStepContent({
           render={({ field }) => (
             <Input
               id="website"
-              value={field.value}
+              value={field.value || ""}
               onChange={(e) => field.onChange(e.target.value)}
               onBlur={field.onBlur}
               ref={field.ref}
@@ -538,7 +538,7 @@ function EnterpriseBasicInfoStepContent({
               render={({ field, fieldState }) => (
                 <>
                   <Select
-                    value={field.value}
+                    value={field.value || ""}
                     onValueChange={(val) => {
                       field.onChange(val);
                       setFormData((prev) => ({
@@ -578,7 +578,7 @@ function EnterpriseBasicInfoStepContent({
               render={({ field, fieldState }) => (
                 <>
                   <Select
-                    value={field.value}
+                    value={field.value || ""}
                     onValueChange={(val) => field.onChange(val)}
                     disabled={!formData.province || wardsQuery.loading}
                   >
@@ -675,7 +675,7 @@ function EnterpriseBasicInfoStepContent({
           render={({ field }) => (
             <Textarea
               id="description"
-              value={field.value}
+              value={field.value || ""}
               onChange={(e) => field.onChange(e.target.value)}
               onBlur={field.onBlur}
               ref={field.ref}
