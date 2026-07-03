@@ -1,4 +1,4 @@
-export const MASTER_DATA_BASE_PATH = "/api/master-data" as const;
+export const MASTER_DATA_BASE_PATH = "/api/admin/master-data" as const;
 
 export const MASTER_DATA_PATHS = {
   base: MASTER_DATA_BASE_PATH,
