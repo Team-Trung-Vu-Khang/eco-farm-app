@@ -28,6 +28,8 @@ type MapLike = {
   setCenter?: (center: { lat: number; lng: number }) => void;
   setZoom?: (zoom: number) => void;
   getZoom?: () => number;
+  whenReady?: (cb: () => void) => void;
+  _loaded?: boolean;
 };
 
 type RegionLookup = Pick<Region, "id" | "name" | "coordinates" | "subAreas">;
@@ -546,6 +548,7 @@ export function useEnterpriseSearch() {
 
   const focusMapToPolygons = (polygons: PolygonData[]) => {
     if (!mapRef.current || !polygons.length) return;
+    if (!mapRef.current._loaded) return;
     const allPoints = polygons.flatMap(
       (polygon) => polygon.coordinates as [number, number][],
     );
@@ -613,6 +616,7 @@ export function useEnterpriseSearch() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
+    if (!map._loaded) return;
 
     if (typeof map.setZoom === "function") {
       map.setZoom(MAP_DEFAULT_ZOOM);

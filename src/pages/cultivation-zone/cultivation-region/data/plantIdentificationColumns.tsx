@@ -53,10 +53,11 @@ export const getPlantIdentificationColumns = (
     key: "code",
     label: "Mã định danh",
     render: (value: string, row: Plant) => (
-      <Link href={`/plant-identification/${row.id}`}>
-        <a className="font-mono font-bold text-primary hover:underline cursor-pointer">
-          {value ?? row.id}
-        </a>
+      <Link
+        href={`/plant-identification/${row.id}`}
+        className="font-mono font-bold text-primary hover:underline cursor-pointer"
+      >
+        {value ?? row.id}
       </Link>
     ),
   },
