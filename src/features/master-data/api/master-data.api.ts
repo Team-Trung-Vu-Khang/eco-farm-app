@@ -29,6 +29,9 @@ import type {
   FertilizerGroupCreateRequest,
   FertilizerGroupRecord,
   FertilizerGroupUpdateRequest,
+  IrrigationSystemCreateRequest,
+  IrrigationSystemRecord,
+  IrrigationSystemUpdateRequest,
   MaterialGroupCreateRequest,
   MaterialGroupRecord,
   MaterialGroupUpdateRequest,
@@ -169,6 +172,42 @@ export const masterDataApi = {
         { params },
       )
       .then((response) => response.data),
+
+  listIrrigationSystems: (params?: MasterDataQueryParams) =>
+    apiClient
+      .get<MasterDataPageResponse<IrrigationSystemRecord>>(
+        MASTER_DATA_PATHS.irrigationSystems,
+        { params },
+      )
+      .then((response) => response.data),
+
+  getIrrigationSystemById: (id: number | string) =>
+    apiClient
+      .get<IrrigationSystemRecord>(
+        `${MASTER_DATA_PATHS.irrigationSystems}/${id}`,
+      )
+      .then((response) => response.data),
+
+  createIrrigationSystem: (payload: IrrigationSystemCreateRequest) =>
+    apiClient
+      .post<IrrigationSystemRecord>(MASTER_DATA_PATHS.irrigationSystems, payload)
+      .then((response) => response.data),
+
+  updateIrrigationSystem: (
+    id: number | string,
+    payload: IrrigationSystemUpdateRequest,
+  ) =>
+    apiClient
+      .put<IrrigationSystemRecord>(
+        `${MASTER_DATA_PATHS.irrigationSystems}/${id}`,
+        payload,
+      )
+      .then((response) => response.data),
+
+  deleteIrrigationSystem: (id: number | string): Promise<void> =>
+    apiClient
+      .delete(`${MASTER_DATA_PATHS.irrigationSystems}/${id}`)
+      .then(() => undefined),
 
   getEquipmentToolGroupById: (id: number | string) =>
     apiClient

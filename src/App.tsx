@@ -77,6 +77,9 @@ const IoTMapViewPage = lazy(
 const IoTDeviceGroupPage = lazy(
   () => import("./pages/iot-device-group/IoTDeviceGroupPage"),
 );
+const IrrigationSystemPage = lazy(
+  () => import("./pages/irrigation-system/IrrigationSystemPage"),
+);
 
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 import {
@@ -717,6 +720,7 @@ function Router() {
       {/* IoT Device Management Routes */}
       <Route path="/iot-device" component={IoTDevicePage} />
       <Route path="/iot-device-group" component={IoTDeviceGroupPage} />
+      <Route path="/irrigation-systems" component={IrrigationSystemPage} />
       <Route path="/iot-device/create" component={IoTDeviceCreatePage} />
       <Route path="/iot-device/:id/edit" component={IoTDeviceCreatePage} />
       <Route path="/iot-device/:id" component={IoTDeviceDetailPage} />

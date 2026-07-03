@@ -60,6 +60,7 @@ export interface MasterDataAttributesMap {
   departments: Record<string, unknown>;
   "equipment-tool-groups": Record<string, unknown>;
   "fertilizer-groups": Record<string, unknown>;
+  "irrigation-systems": Record<string, unknown>;
   "iot-device-groups": Record<string, unknown>;
   "material-groups": Record<string, unknown>;
   "pesticide-groups": Record<string, unknown>;
@@ -98,6 +99,7 @@ export interface MasterDataRequestExtraFieldsMap {
   };
   "equipment-tool-groups": Record<string, never>;
   "fertilizer-groups": Record<string, never>;
+  "irrigation-systems": Record<string, never>;
   "material-groups": Record<string, never>;
   "pesticide-groups": Record<string, never>;
   "pesticide-origins": Record<string, never>;
@@ -138,6 +140,7 @@ export interface MasterDataRecordExtraFieldsMap {
   };
   "equipment-tool-groups": Record<string, never>;
   "fertilizer-groups": Record<string, never>;
+  "irrigation-systems": Record<string, never>;
   "material-groups": Record<string, never>;
   "pesticide-groups": Record<string, never>;
   "pesticide-origins": Record<string, never>;
@@ -325,6 +328,7 @@ export type EquipmentToolGroupRecord =
   MasterDataRecord<"equipment-tool-groups">;
 export type IoTDeviceGroupRecord = MasterDataRecord<"iot-device-groups">;
 export type FertilizerGroupRecord = MasterDataRecord<"fertilizer-groups">;
+export type IrrigationSystemRecord = MasterDataRecord<"irrigation-systems">;
 export type MaterialGroupRecord = MasterDataRecord<"material-groups">;
 export type MaterialGroupPageResponse =
   MasterDataPageResponse<MaterialGroupRecord>;
@@ -341,6 +345,10 @@ export type FertilizerGroupCreateRequest =
   MasterDataCreateRequest<"fertilizer-groups">;
 export type FertilizerGroupUpdateRequest =
   MasterDataUpdateRequest<"fertilizer-groups">;
+export type IrrigationSystemCreateRequest =
+  MasterDataCreateRequest<"irrigation-systems">;
+export type IrrigationSystemUpdateRequest =
+  MasterDataUpdateRequest<"irrigation-systems">;
 export type MaterialGroupCreateRequest =
   MasterDataCreateRequest<"material-groups">;
 export type MaterialGroupUpdateRequest =
