@@ -4,7 +4,7 @@ import {
   DataTable,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Download, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useMemo } from "react";
 import { useLocation } from "wouter";
 import useIoTDeviceStore from "../../stores/useIoTDeviceStore";
@@ -41,10 +41,6 @@ export default function IoTDevicePage() {
       description="Giám sát trạng thái và dữ liệu từ hệ thống cảm biến, bộ điều khiển"
       actions={
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="w-4 h-4 mr-2" />
-            Xuất Excel
-          </Button>
           <Button onClick={handleAdd}>
             <Plus className="w-4 h-4 mr-2" />
             Đăng ký thiết bị
