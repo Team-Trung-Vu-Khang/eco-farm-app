@@ -7,6 +7,7 @@ export interface AuthMeResponse {
   name: string;
   phoneNumber: string;
   provider: string;
+  role?: string[];
   sessionId: string;
   mustChangePassword: boolean;
 }

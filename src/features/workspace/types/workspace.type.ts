@@ -13,6 +13,12 @@ export interface WorkspaceBusinessLine {
   name: string;
 }
 
+export interface WorkspaceCrop {
+  id: number | string;
+  code: string;
+  name: string;
+}
+
 export interface WorkspaceMetadata {
   [key: string]: unknown;
 }
@@ -28,6 +34,9 @@ export interface WorkspaceRecord {
   taxAddress: string;
   issueDate: string;
   businessLines: WorkspaceBusinessLine[];
+  totalAcreage: number;
+  mainCrop: WorkspaceCrop | null;
+  displayOrder: number;
   representative: string;
   foundedDate: string;
   website: string;
@@ -55,6 +64,9 @@ export interface WorkspaceCreateRequest {
   taxAddress: string;
   issueDate: string;
   businessLines: WorkspaceBusinessLine[];
+  totalAcreage?: number;
+  mainCropId?: number | string | null;
+  displayOrder?: number;
   representative: string;
   foundedDate: string;
   website: string;

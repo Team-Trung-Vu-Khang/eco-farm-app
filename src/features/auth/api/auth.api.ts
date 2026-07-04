@@ -47,6 +47,9 @@ export const authApi = {
   getCallbackToken() {
     return new URLSearchParams(window.location.search).get("token");
   },
+  async getMe(token = authStorage.getToken()) {
+    return this.getCurrentUser(token);
+  },
   async getCurrentUser(token = authStorage.getToken()) {
     if (!token) {
       throw new Error("Missing auth token");
