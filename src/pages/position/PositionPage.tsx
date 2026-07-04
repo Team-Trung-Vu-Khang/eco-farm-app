@@ -1,16 +1,15 @@
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Plus } from "lucide-react";
 import { PositionFormDialog } from "./components/PositionFormDialog";
 import { positionColumns } from "./data/columns";
 import { usePositionPage } from "./hooks/usePositionPage";
 
 const POSITION_FILTER_STATUS_OPTIONS = [
-  { value: "all", label: "Tất cả trạng thái" },
   { value: "active", label: "Hoạt động" },
   { value: "inactive", label: "Ngừng hoạt động" },
   { value: "archived", label: "Đã lưu trữ" },
@@ -40,6 +39,7 @@ const PositionPage = () => {
     handleSubmit,
     handleConfirmDelete,
     handleView,
+    formLoading,
   } = usePositionPage();
 
   return (
@@ -92,6 +92,7 @@ const PositionPage = () => {
         editItem={editItem}
         groupOptions={groupOptions}
         onSubmit={handleSubmit}
+        loading={formLoading}
       />
 
       <DeleteDialog

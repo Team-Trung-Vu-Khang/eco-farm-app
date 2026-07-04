@@ -255,5 +255,6 @@ export function usePositionPage() {
     handleDelete,
     handleSubmit,
     handleConfirmDelete,
+    formLoading: createPosition.isPending || updatePosition.isPending,
   };
 }
