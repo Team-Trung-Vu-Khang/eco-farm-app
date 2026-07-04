@@ -1,7 +1,19 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Button, Card, cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Layers } from "lucide-react";
-import { MFMap, MFMarker, MFPolygon } from "react-map4d-map";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import {
+  MapContainer,
+  Marker,
+  Polygon,
+  TileLayer,
+  useMap,
+} from "react-leaflet";
+
+import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
+import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
+import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 interface EnterpriseMapSectionProps {
   mapRef: React.MutableRefObject<any>;
@@ -29,6 +41,86 @@ interface EnterpriseMapSectionProps {
   isDetailOpen: boolean;
 }
 
+type LeafletMapLike = L.Map & {
+  setCenter?: (center: { lat: number; lng: number }) => void;
+};
+
+const defaultLeafletIcon = L.icon({
+  iconUrl: defaultMarkerIconUrl,
+  iconRetinaUrl: defaultMarkerIcon2xUrl,
+  shadowUrl: defaultMarkerShadowUrl,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const makeImageIcon = (image: string, size: number) =>
+  L.icon({
+    iconUrl: image,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size],
+    popupAnchor: [0, -size],
+    className: "rounded-full border border-white shadow-lg",
+  });
+
+const toClosedPath = (coords: [number, number][]) => {
+  if (!coords || coords.length < 3) return [];
+  const path = coords.map(([lat, lng]) => [lat, lng] as [number, number]);
+  const [firstLat, firstLng] = path[0];
+  const [lastLat, lastLng] = path[path.length - 1];
+  if (firstLat !== lastLat || firstLng !== lastLng) {
+    path.push([firstLat, firstLng]);
+  }
+  return path;
+};
+
+const MapSynchronizer = ({
+  mapRef,
+  center,
+}: {
+  mapRef: React.MutableRefObject<any>;
+  center: { lat: number; lng: number };
+}) => {
+  const map = useMap();
+
+  useEffect(() => {
+    const leafletMap = map as LeafletMapLike;
+
+    const registerMap = () => {
+      if (!leafletMap.setCenter) {
+        leafletMap.setCenter = ({ lat, lng }) => {
+          leafletMap.setView([lat, lng], leafletMap.getZoom());
+        };
+      }
+
+      if (!mapRef.current || mapRef.current !== leafletMap) {
+        mapRef.current = leafletMap;
+      }
+    };
+
+    if ((leafletMap as L.Map & { _loaded?: boolean })._loaded) {
+      registerMap();
+    } else {
+      leafletMap.whenReady(registerMap);
+    }
+
+    return () => {
+      if (mapRef.current === leafletMap) {
+        mapRef.current = null;
+      }
+    };
+  }, [map, mapRef]);
+
+  useEffect(() => {
+    map.setView([center.lat, center.lng], map.getZoom(), {
+      animate: true,
+    });
+  }, [center, map]);
+
+  return null;
+};
+
 const MapControls = ({ mapRef }: { mapRef: React.MutableRefObject<any> }) => {
   return (
     <div
@@ -41,7 +133,7 @@ const MapControls = ({ mapRef }: { mapRef: React.MutableRefObject<any> }) => {
         size="icon"
         className="w-10 h-10 rounded-md bg-white shadow-xl border border-slate-200 hover:bg-slate-50 transition-all group"
         onClick={() => {
-          const map = mapRef.current;
+          const map = mapRef.current as LeafletMapLike | null;
           if (!map) return;
           const zoom = typeof map.getZoom === "function" ? map.getZoom() : 13;
           if (typeof map.setZoom === "function") map.setZoom(zoom + 1);
@@ -56,7 +148,7 @@ const MapControls = ({ mapRef }: { mapRef: React.MutableRefObject<any> }) => {
         size="icon"
         className="w-10 h-10 rounded-md bg-white shadow-xl border border-slate-200 hover:bg-slate-50 transition-all group"
         onClick={() => {
-          const map = mapRef.current;
+          const map = mapRef.current as LeafletMapLike | null;
           if (!map) return;
           const zoom = typeof map.getZoom === "function" ? map.getZoom() : 13;
           if (typeof map.setZoom === "function") map.setZoom(zoom - 1);
@@ -77,88 +169,89 @@ export const EnterpriseMapSection: React.FC<EnterpriseMapSectionProps> = ({
   visiblePolygons,
   enterpriseMarkers,
   regionLogoMarkers,
-  selectedEnterpriseId,
   isDetailOpen,
 }) => {
-  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
-  const toClosedPath = (coords: [number, number][]) => {
-    if (!coords || coords.length < 3) return [];
-    const path = coords.map(([lat, lng]) => ({ lat, lng }));
-    const first = path[0];
-    const last = path[path.length - 1];
-    const isClosed = first.lat === last.lat && first.lng === last.lng;
-    if (!isClosed) path.push({ ...first });
-    return path;
-  };
-
   return (
     <div className="flex-1 flex flex-col relative bg-slate-100">
       <div className="flex-1 relative">
-        <MFMap
+        <MapContainer
           key={mapRenderKey}
-          center={mapCurrentCenter}
+          center={[mapCurrentCenter.lat, mapCurrentCenter.lng]}
           zoom={9}
-          accessKey={MAP4D_ACCESS_KEY}
-          options={{ mapType: "raster", controlOptions: {} }}
-          version="2.5"
-          onMapReady={(map) => {
-            if (map) mapRef.current = map;
-          }}
+          className="h-full w-full"
+          zoomControl={false}
+          scrollWheelZoom
         >
-          {visiblePolygons.map(
-            (poly) =>
-              toClosedPath(poly.coordinates).length > 0 && (
-                <MFPolygon
-                  key={poly.id}
-                  paths={[toClosedPath(poly.coordinates)]}
-                  strokeColor={poly.color}
-                  strokeWidth={2}
-                  fillColor={poly.color}
-                  fillOpacity={0.2}
-                  clickable
-                  onClick={() => {
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <MapSynchronizer mapRef={mapRef} center={mapCurrentCenter} />
+
+          {visiblePolygons.map((poly) => {
+            const path = toClosedPath(poly.coordinates);
+            if (path.length === 0) return null;
+
+            return (
+              <Polygon
+                key={poly.id}
+                positions={path}
+                pathOptions={{
+                  color: poly.color,
+                  weight: 2,
+                  fillColor: poly.color,
+                  fillOpacity: 0.2,
+                }}
+                eventHandlers={{
+                  click: () => {
                     const url = `/${poly.type}-distribution/detail/${poly.rawId}`;
                     window.open(url, "_blank");
-                  }}
-                />
-              ),
-          )}
+                  },
+                }}
+              />
+            );
+          })}
+
           {enterpriseMarkers.map((marker) => (
-            <MFMarker
+            <Marker
               key={`enterprise-marker-${marker.id}`}
-              position={{ lat: marker.lat, lng: marker.lng }}
+              position={[marker.lat, marker.lng]}
               icon={
                 marker.image
-                  ? {
-                      url: marker.image,
-                      width: 34,
-                      height: 34,
-                    }
-                  : undefined
+                  ? makeImageIcon(marker.image, 34)
+                  : defaultLeafletIcon
               }
               title={`${marker.code} - ${marker.name}`}
-              label={""}
             />
           ))}
+
           {regionLogoMarkers.map((marker) => (
-            <MFMarker
+            <Marker
               key={`enterprise-region-logo-${marker.id}`}
-              position={{ lat: marker.lat, lng: marker.lng }}
+              position={[marker.lat, marker.lng]}
               icon={
                 marker.image
-                  ? {
-                      url: marker.image,
-                      width: 30,
-                      height: 30,
-                    }
-                  : undefined
+                  ? makeImageIcon(marker.image, 30)
+                  : defaultLeafletIcon
               }
               title={marker.name}
-              label={""}
             />
           ))}
+
           <MapControls mapRef={mapRef} />
-        </MFMap>
+        </MapContainer>
+
+        <style>{`
+          .leaflet-container {
+            height: 100%;
+            width: 100%;
+            font-family: inherit;
+            background: #e2e8f0;
+          }
+          .leaflet-pane,
+          .leaflet-tile,
+          .leaflet-marker-icon,
+          .leaflet-marker-shadow {
+            image-rendering: auto;
+          }
+        `}</style>
 
         {!isDetailOpen && (
           <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 w-max max-w-[90%]">

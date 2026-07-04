@@ -16,7 +16,7 @@ export function useAreaDetailPage() {
       lng: p.longitude,
     })) || [];
 
-  const navigateToDetail = (id: string) => {
+  const navigateToDetail = (id: number) => {
     setLocation(`/plot-distribution/detail/${id}`);
   };
 

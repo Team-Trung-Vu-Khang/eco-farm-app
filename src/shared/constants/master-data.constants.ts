@@ -1,4 +1,4 @@
-export const MASTER_DATA_BASE_PATH = "/api/master-data" as const;
+export const MASTER_DATA_BASE_PATH = "/api/admin/master-data" as const;
 
 export const MASTER_DATA_PATHS = {
   base: MASTER_DATA_BASE_PATH,
@@ -11,6 +11,7 @@ export const MASTER_DATA_PATHS = {
   geoWards: `${MASTER_DATA_BASE_PATH}/geo/wards`,
   equipmentToolGroups: `${MASTER_DATA_BASE_PATH}/equipment-tool-groups`,
   fertilizerGroups: `${MASTER_DATA_BASE_PATH}/fertilizer-groups`,
+  irrigationSystems: `${MASTER_DATA_BASE_PATH}/irrigation-systems`,
   materialGroups: `${MASTER_DATA_BASE_PATH}/material-groups`,
   pesticideGroups: `${MASTER_DATA_BASE_PATH}/pesticide-groups`,
   pesticideOrigins: `${MASTER_DATA_BASE_PATH}/pesticide-origins`,
@@ -26,6 +27,7 @@ export const MASTER_DATA_CATALOGS = [
   "departments",
   "equipment-tool-groups",
   "fertilizer-groups",
+  "irrigation-systems",
   "iot-device-groups",
   "material-groups",
   "pesticide-groups",

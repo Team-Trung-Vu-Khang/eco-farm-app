@@ -138,7 +138,8 @@ const PlotDetailPage = () => {
                   color: "blue",
                   dashArray: "5, 5",
                   opacity: 0.5,
-                  weight: 1,
+                  fillColor: "#2563eb",
+                  fillOpacity: 0.1,
                 }}
               >
                 <Tooltip direction="top">{area.name}</Tooltip>

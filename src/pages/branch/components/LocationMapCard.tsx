@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -5,7 +6,14 @@ import {
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { MapPin } from "lucide-react";
-import { MFMap, MFMarker } from "react-map4d-map";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
+
+import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
+import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
+import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
+
 import type { BranchDetailView } from "../hooks/useBranchDetail";
 
 interface LocationMapCardProps {
@@ -22,14 +30,34 @@ interface LocationMapCardProps {
   >;
 }
 
+const defaultLeafletIcon = L.icon({
+  iconUrl: defaultMarkerIconUrl,
+  iconRetinaUrl: defaultMarkerIcon2xUrl,
+  shadowUrl: defaultMarkerShadowUrl,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const MapCenterSync = ({ center }: { center: [number, number] }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setView(center, map.getZoom(), { animate: true });
+  }, [center, map]);
+
+  return null;
+};
+
 export function LocationMapCard({ branch }: LocationMapCardProps) {
-  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
-  const latitude = Number.isFinite(branch.latitude)
-    ? branch.latitude
+  const latitude = Number.isFinite(Number(branch.latitude))
+    ? Number(branch.latitude)
     : 10.7769;
-  const longitude = Number.isFinite(branch.longitude)
-    ? branch.longitude
+  const longitude = Number.isFinite(Number(branch.longitude))
+    ? Number(branch.longitude)
     : 106.7009;
+  const center: [number, number] = [latitude, longitude];
 
   return (
     <Card>
@@ -53,21 +81,32 @@ export function LocationMapCard({ branch }: LocationMapCardProps) {
         </div>
 
         <div className="h-64 w-full rounded-lg overflow-hidden border z-0 relative">
-          <MFMap
-            center={{ lat: latitude, lng: longitude }}
+          <MapContainer
+            center={center}
             zoom={15}
-            accessKey={MAP4D_ACCESS_KEY}
-            options={{ mapType: "raster" }}
-            version="2.5"
+            className="h-full w-full"
+            zoomControl={false}
+            scrollWheelZoom
           >
-            <MFMarker
-              position={{ lat: latitude, lng: longitude }}
-              label={""}
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+            <MapCenterSync center={center} />
+            <Marker
+              position={center}
+              icon={defaultLeafletIcon}
               title={`${branch.enterpriseName} - ${branch.name}`}
             />
-          </MFMap>
+          </MapContainer>
         </div>
       </CardContent>
+
+      <style>{`
+        .leaflet-container {
+          height: 100%;
+          width: 100%;
+          font-family: inherit;
+          background: #e2e8f0;
+        }
+      `}</style>
     </Card>
   );
 }
