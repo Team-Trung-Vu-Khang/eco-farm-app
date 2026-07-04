@@ -13,7 +13,8 @@ import {
   StepperForm,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useLocation } from "wouter";
+import { ChevronLeft } from "lucide-react";
+import { Link, useLocation } from "wouter";
 import { useCooperativeForm } from "./hooks/useCooperativeForm";
 import { BasicInfoStep } from "./components/steps/BasicInfoStep";
 import { ContactInfoStep } from "./components/steps/ContactInfoStep";
@@ -180,6 +181,17 @@ export default function CooperativeCreatePage() {
       isDev={true}
       title="Tạo mới Hợp tác xã"
       description="Điền thông tin theo từng bước để tạo mới hợp tác xã"
+      actions={
+        <Link href="/cooperative">
+          <button
+            type="button"
+            className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Quay lại
+          </button>
+        </Link>
+      }
     >
       <Card>
         <CardContent className="p-6">

@@ -13,8 +13,11 @@ import {
   StepperForm,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { ChevronLeft } from "lucide-react";
 import { useMemo } from "react";
-import { useLocation, useRoute } from "wouter";
+import { Link, useLocation, useRoute } from "wouter";
+import { useOrganizationById } from "@/features/organization";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 import { useCooperativeForm } from "./hooks/useCooperativeForm";
 import { BasicInfoStep } from "./components/steps/BasicInfoStep";
 import { ContactInfoStep } from "./components/steps/ContactInfoStep";
@@ -22,50 +25,26 @@ import { BankInfoStep } from "./components/steps/BankInfoStep";
 import { DocumentsStep } from "./components/steps/DocumentsStep";
 import { ConfirmStep } from "./components/steps/ConfirmStep";
 import { BranchesStep } from "./components/steps/BranchesStep";
-import type { CooperativeFormData } from "./types/types";
-import useEnterpriseStore from "@/stores/useEnterpriseStore";
+import { toCooperativeFormData } from "./utils/cooperative.mapper";
 
 export default function CooperativeEditPage() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/cooperative/:id/edit");
-  const getEnterpriseById = useEnterpriseStore(
-    (state) => state.getEnterpriseById,
-  );
+  const workspaceId = useSelectedWorkspaceId();
   const enterpriseId = params?.id ? Number(params.id) : null;
-  const cooperativeData = enterpriseId
-    ? getEnterpriseById(enterpriseId)
-    : undefined;
+  const cooperativeQuery = useOrganizationById(
+    enterpriseId ?? "",
+    workspaceId ?? "missing",
+    {
+      enabled: workspaceId !== null && enterpriseId !== null,
+    },
+  );
 
-  const initialData: Partial<CooperativeFormData> | null = useMemo(() => {
-    if (!cooperativeData) return null;
-
-    return {
-      id: cooperativeData.id,
-      type: "cooperative",
-      code: cooperativeData.code,
-      name: cooperativeData.name,
-      brandName: cooperativeData.brandName || "",
-      taxCode: cooperativeData.taxCode || "",
-      taxAddress: cooperativeData.taxAddress || "",
-      taxAuthority: cooperativeData.taxAuthority || "",
-      issueDate: cooperativeData.issueDate || "",
-      classification: cooperativeData.classification || [],
-      foundedDate: cooperativeData.foundedDate || "",
-      representative: cooperativeData.representative || "",
-      website: cooperativeData.website || "",
-      phone: cooperativeData.phone || "",
-      email: cooperativeData.email || "",
-      province: cooperativeData.province || "",
-      district: cooperativeData.district || cooperativeData.ward || "",
-      address: cooperativeData.address || "",
-      image: cooperativeData.image || "",
-      description: cooperativeData.description || "",
-      contacts: cooperativeData.contacts || [],
-      branches: cooperativeData.branches || [],
-      bankAccounts: cooperativeData.bankAccounts || [],
-      documents: cooperativeData.documents || [],
-    };
-  }, [cooperativeData]);
+  const initialData = useMemo(
+    () =>
+      cooperativeQuery.item ? toCooperativeFormData(cooperativeQuery.item) : null,
+    [cooperativeQuery.item],
+  );
 
   const {
     formData,
@@ -110,6 +89,45 @@ export default function CooperativeEditPage() {
     handleComplete,
     submitForm,
   } = useCooperativeForm(initialData || {});
+
+  if (cooperativeQuery.loading) {
+    return (
+      <AdminLayout
+        isDev={true}
+        title="Cập nhật Hợp tác xã"
+        description="Đang tải thông tin..."
+      >
+        <div className="flex items-center justify-center p-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (cooperativeQuery.error) {
+    return (
+      <AdminLayout
+        isDev={true}
+        title="Cập nhật Hợp tác xã"
+        description="Không thể tải dữ liệu hợp tác xã"
+        actions={
+          <Link href="/cooperative">
+            <button
+              type="button"
+              className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Quay lại
+            </button>
+          </Link>
+        }
+      >
+        <div className="flex items-center justify-center p-12 text-muted-foreground">
+          {cooperativeQuery.error}
+        </div>
+      </AdminLayout>
+    );
+  }
 
   const steps: Step[] = [
     {
@@ -224,6 +242,17 @@ export default function CooperativeEditPage() {
         isDev={true}
         title="Cập nhật Hợp tác xã"
         description="Không tìm thấy dữ liệu hợp tác xã"
+        actions={
+          <Link href="/cooperative">
+            <button
+              type="button"
+              className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Quay lại
+            </button>
+          </Link>
+        }
       >
         <div className="flex items-center justify-center p-12 text-muted-foreground">
           Không tìm thấy hợp tác xã cần chỉnh sửa
@@ -237,6 +266,17 @@ export default function CooperativeEditPage() {
       isDev={true}
       title={`Cập nhật Hợp tác xã`}
       description="Cập nhật thông tin chi tiết"
+      actions={
+        <Link href="/cooperative">
+          <button
+            type="button"
+            className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Quay lại
+          </button>
+        </Link>
+      }
     >
       <Card>
         <CardContent className="p-6">

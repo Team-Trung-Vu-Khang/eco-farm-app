@@ -73,6 +73,7 @@ export interface CooperativeFormData {
   branches: Branch[];
   bankAccounts: BankAccount[];
   documents: {
+    id?: number | string;
     name: string;
     type: string;
     size: string;

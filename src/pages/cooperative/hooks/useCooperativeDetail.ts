@@ -1,17 +1,29 @@
 import { useState } from "react";
 import { useRoute } from "wouter";
-import useEnterpriseStore from "@/stores/useEnterpriseStore";
+import { useOrganizationById } from "@/features/organization";
+import { useSelectedWorkspaceId } from "@/features/workspace";
+import { toCooperativeRow } from "../utils/cooperative.mapper";
 
 export function useCooperativeDetail() {
   const [, params] = useRoute("/cooperative/:id");
-  const getEnterpriseById = useEnterpriseStore((state) => state.getEnterpriseById);
+  const workspaceId = useSelectedWorkspaceId();
   const [bankSearchQuery, setBankSearchQuery] = useState("");
   const [branchSearchQuery, setBranchSearchQuery] = useState("");
 
-  const data = params?.id ? getEnterpriseById(Number(params.id)) : undefined;
+  const cooperativeQuery = useOrganizationById(
+    params?.id ?? "",
+    workspaceId ?? "missing",
+    {
+      enabled: workspaceId !== null && Boolean(params?.id),
+    },
+  );
 
   return {
-    data,
+    data: cooperativeQuery.item
+      ? toCooperativeRow(cooperativeQuery.item)
+      : undefined,
+    loading: cooperativeQuery.loading,
+    error: cooperativeQuery.error,
     bankSearchQuery,
     setBankSearchQuery,
     branchSearchQuery,

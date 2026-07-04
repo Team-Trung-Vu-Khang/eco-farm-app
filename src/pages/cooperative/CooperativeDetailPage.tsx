@@ -19,13 +19,15 @@ export default function CooperativeDetailPage() {
   const [, setLocation] = useLocation();
   const {
     data,
+    loading,
+    error,
     bankSearchQuery,
     setBankSearchQuery,
     branchSearchQuery,
     setBranchSearchQuery,
   } = useCooperativeDetail();
 
-  if (!data) {
+  if (loading) {
     return (
       <AdminLayout
         isDev={true}
@@ -34,6 +36,46 @@ export default function CooperativeDetailPage() {
       >
         <div className="flex items-center justify-center p-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminLayout
+        isDev={true}
+        title="Chi tiết đơn vị"
+        description="Không thể tải thông tin hợp tác xã"
+        actions={
+          <Button variant="outline" onClick={() => setLocation("/cooperative")}>
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Quay lại
+          </Button>
+        }
+      >
+        <div className="flex items-center justify-center p-12 text-muted-foreground">
+          {error}
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (!data) {
+    return (
+      <AdminLayout
+        isDev={true}
+        title="Chi tiết đơn vị"
+        description="Không tìm thấy hợp tác xã"
+        actions={
+          <Button variant="outline" onClick={() => setLocation("/cooperative")}>
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Quay lại
+          </Button>
+        }
+      >
+        <div className="flex items-center justify-center p-12 text-muted-foreground">
+          Không tìm thấy hợp tác xã
         </div>
       </AdminLayout>
     );

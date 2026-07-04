@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useMasterData } from "@/features/master-data";
+import { useMasterData, type MasterDataRecord } from "@/features/master-data";
 import { useCreateOrganization, useUpdateOrganization } from "@/features/organization";
 import { useUploadStorageFile } from "@/features/storage/hooks/useUploadStorageFile";
 import { useSelectedWorkspaceId } from "@/features/workspace";
@@ -15,7 +15,8 @@ import readXlsxFile from "read-excel-file";
 import QrScanner from "qr-scanner";
 import { vietQrBankData } from "@/constants/banks";
 import { parseVietQR } from "@/utils/commons";
-import type { OrganizationBusinessLineRecord, OrganizationCreateRequest } from "@/features/organization";
+import type { OrganizationCreateRequest } from "@/features/organization";
+import { mapClassificationToBusinessLines } from "../utils/cooperative.mapper";
 
 type BankMasterDataRecord = {
   id: number | string;
@@ -58,31 +59,11 @@ const normalizeDocumentSize = (size?: string) => {
   return Math.round(numeric);
 };
 
-const mapClassificationToBusinessLines = (
-  classifications: string[],
-  businessLineRecords: OrganizationBusinessLineRecord[],
-): OrganizationBusinessLineRecord[] =>
-  classifications.map((classification) => {
-    const mappedName = classification;
-    const record = businessLineRecords.find(
-      (item) =>
-        item.code === classification ||
-        item.name.toLowerCase() === mappedName.toLowerCase(),
-    );
-
-    return (
-      record || {
-        id: classification,
-        code: classification,
-        name: mappedName,
-      }
-    );
-  });
-
 export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const workspaceId = useSelectedWorkspaceId();
+  const isEditing = initialData?.id !== undefined && initialData?.id !== null;
 
   const organizationTypesQuery = useMasterData("organization-types", {
     params: {
@@ -112,7 +93,7 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
     [banksQuery.items],
   );
   const businessLineRecords = useMemo(
-    () => businessLinesQuery.items as OrganizationBusinessLineRecord[],
+    () => businessLinesQuery.items as MasterDataRecord<"business-lines">[],
     [businessLinesQuery.items],
   );
 
@@ -171,6 +152,15 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
     onError: (error) => {
       toast({
         title: "Không thể tải tài liệu",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  const uploadLogo = useUploadStorageFile({
+    onError: (error) => {
+      toast({
+        title: "Không thể tải logo",
         description: error.message,
         variant: "destructive",
       });
@@ -248,6 +238,7 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
   const [confirmBankSearchQuery, setConfirmBankSearchQuery] = useState("");
   const [isDragging, setIsDragging] = useState<Record<string, boolean>>({});
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const logoUploadSeqRef = useRef(0);
   const documentUploadSeqRef = useRef(0);
 
   useEffect(() => {
@@ -487,21 +478,51 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
     }
   };
 
-  const processLogoImage = (file: File) => {
-    const url = URL.createObjectURL(file);
-    setFormData((prev) => ({ ...prev, image: url }));
+  const processLogoImage = async (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+
+    const previewUrl = URL.createObjectURL(file);
+    const requestSeq = ++logoUploadSeqRef.current;
+    setFormData((prev) => ({ ...prev, image: previewUrl }));
+
+    try {
+      const uploaded = await uploadLogo.uploadStorageFile({
+        file,
+        folder: "organizations",
+      });
+
+      if (logoUploadSeqRef.current !== requestSeq) {
+        URL.revokeObjectURL(previewUrl);
+        return;
+      }
+
+      setFormData((prev) => ({ ...prev, image: uploaded.fileUrl }));
+      toast({
+        title: "Đã tải lên",
+        description: "Logo đã được tải lên thành công.",
+      });
+    } catch {
+      if (logoUploadSeqRef.current === requestSeq) {
+        setFormData((prev) => ({ ...prev, image: "" }));
+      }
+    } finally {
+      URL.revokeObjectURL(previewUrl);
+    }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) processLogoImage(file);
+    if (file) {
+      await processLogoImage(file);
+      e.target.value = "";
+    }
   };
 
-  const handleLogoDrop = (e: React.DragEvent) => {
+  const handleLogoDrop = async (e: React.DragEvent) => {
     handleDrag("logo", e);
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith("image/")) {
-      processLogoImage(file);
+      await processLogoImage(file);
     }
   };
 
@@ -710,6 +731,21 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
       return;
     }
 
+    const mapDocumentsToRequest = (
+      documents: CooperativeFormData["documents"],
+      includeIds: boolean,
+    ) =>
+      documents.map((doc) => ({
+        ...(includeIds && doc.id ? { id: doc.id } : {}),
+        documentType: doc.type,
+        name: doc.name,
+        fileUrl: doc.fileUrl || doc.url || "",
+        fileName: doc.fileName || doc.name,
+        mimeType: doc.mimeType || doc.type,
+        sizeBytes: doc.sizeBytes ?? normalizeDocumentSize(doc.size),
+        content: undefined,
+      }));
+
     const payload: OrganizationCreateRequest = {
       code: formData.code,
       name: formData.name,
@@ -796,16 +832,7 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
           metadataJson: null,
         };
       }),
-      documents: formData.documents.map((doc, index) => ({
-        id: index + 1,
-        documentType: doc.type,
-        name: doc.name,
-        fileUrl: doc.fileUrl || doc.url || "",
-        fileName: doc.fileName || doc.name,
-        mimeType: doc.mimeType || doc.type,
-        sizeBytes: doc.sizeBytes ?? normalizeDocumentSize(doc.size),
-        content: undefined,
-      })),
+      documents: mapDocumentsToRequest(formData.documents, isEditing),
       metadataJson: null,
     };
 

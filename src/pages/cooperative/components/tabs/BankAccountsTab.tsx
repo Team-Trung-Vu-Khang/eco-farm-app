@@ -5,10 +5,17 @@ import {
   Badge,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Search, CreditCard } from "lucide-react";
-import type { BankAccount } from "../../types/types";
+
+type BankAccountItem = {
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  branch?: string;
+  note?: string;
+};
 
 interface BankAccountsTabProps {
-  bankAccounts: BankAccount[];
+  bankAccounts: BankAccountItem[];
   searchQuery: string;
   setSearchQuery: (q: string) => void;
 }
@@ -19,7 +26,7 @@ export function BankAccountsTab({
   setSearchQuery,
 }: BankAccountsTabProps) {
   const filteredAccounts = bankAccounts?.filter(
-    (acc: BankAccount) =>
+    (acc) =>
       acc.bankName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       acc.accountNumber.includes(searchQuery) ||
       acc.accountHolder.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -37,7 +44,7 @@ export function BankAccountsTab({
         />
       </div>
       <div className="grid md:grid-cols-2 gap-4">
-        {filteredAccounts?.map((account: BankAccount, i: number) => (
+        {filteredAccounts?.map((account, i: number) => (
           <Card key={i} className="hover:border-primary/50 transition-colors">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">

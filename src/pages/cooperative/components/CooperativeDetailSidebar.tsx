@@ -18,7 +18,7 @@ import {
   Globe,
 } from "lucide-react";
 import { useLocation } from "wouter";
-import type { CooperativeRow } from "../hooks/useCooperative";
+import type { CooperativeRow } from "../utils/cooperative.mapper";
 
 interface CooperativeDetailSidebarProps {
   data: CooperativeRow;
@@ -54,7 +54,7 @@ export function CooperativeDetailSidebar({ data }: CooperativeDetailSidebarProps
               />
             ) : (
               <span className="text-2xl font-bold text-primary">
-                {data.brandName.charAt(0)}
+                {data.brandName?.charAt(0) || data.name.charAt(0)}
               </span>
             )}
           </div>
@@ -113,7 +113,10 @@ export function CooperativeDetailSidebar({ data }: CooperativeDetailSidebarProps
             <div className="flex items-center gap-3">
               <Calendar className="w-4 h-4 text-muted-foreground" />
               <span>
-                Thành lập: {new Date(data.foundedDate).toLocaleDateString("vi-VN")}
+                Thành lập:{" "}
+                {data.foundedDate
+                  ? new Date(data.foundedDate).toLocaleDateString("vi-VN")
+                  : "Chưa cập nhật"}
               </span>
             </div>
           </div>

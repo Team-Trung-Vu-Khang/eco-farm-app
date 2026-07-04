@@ -9,118 +9,12 @@ import {
   type OrganizationRecord,
 } from "@/features/organization";
 import { useSelectedWorkspaceId } from "@/features/workspace";
-import type { Enterprise } from "@/pages/enterprise/data/constants";
 import { COOPERATIVE_COLUMNS } from "../data/constants";
-
-export type CooperativeRow = Omit<Enterprise, "classification"> & {
-  classification: Enterprise["classification"];
-  businessLine: string;
-  businessLineText: string;
-  primaryPhone: string;
-  primaryEmail: string;
-  image: string;
-};
+import { toCooperativeRow, type CooperativeRow } from "../utils/cooperative.mapper";
 
 const DEFAULT_PAGE_SIZE = 10;
 
 type OrganizationStatusFilter = OrganizationRecord["status"] | "all";
-
-const toCooperativeRow = (
-  cooperative: OrganizationRecord,
-  selectedBusinessLine: string,
-): CooperativeRow => {
-  const primaryContact =
-    cooperative.contacts?.find((contact) => contact.isPrimary) ??
-    cooperative.contacts?.[0] ??
-    null;
-
-  const firstBusinessLine =
-    cooperative.businessLines?.find((line) => line.code || line.name) ?? null;
-  const businessLineValue =
-    selectedBusinessLine !== "all"
-      ? selectedBusinessLine
-      : firstBusinessLine?.code || firstBusinessLine?.name || "-";
-
-  return {
-    id: Number(cooperative.id),
-    code: cooperative.code,
-    name: cooperative.name,
-    image: cooperative.imageUrl || "",
-    type: "cooperative",
-    classification:
-      (cooperative.businessLines
-        ?.map((line) => line.code || line.name)
-        .filter(Boolean) as Enterprise["classification"]) ?? [],
-    taxCode: cooperative.taxCode,
-    address: cooperative.address,
-    phone: primaryContact?.phone || "",
-    email: primaryContact?.email || "",
-    status: cooperative.status === "inactive" ? "inactive" : "active",
-    createdAt: cooperative.createdAt,
-    brandName: cooperative.brandName,
-    representative: cooperative.representative,
-    foundedDate: cooperative.foundedDate,
-    website: cooperative.website,
-    province: cooperative.province,
-    district: cooperative.district || cooperative.ward || "",
-    ward: cooperative.ward,
-    latitude: cooperative.latitude,
-    longitude: cooperative.longitude,
-    taxAddress: cooperative.taxAddress,
-    taxAuthority: cooperative.taxAuthority,
-    issueDate: cooperative.issueDate,
-    description: cooperative.description,
-    contacts:
-      cooperative.contacts?.map((contact) => ({
-        id: contact.id,
-        name: contact.name || contact.fullName || "",
-        phone: contact.phone || "",
-        email: contact.email || "",
-      })) ?? [],
-    branches:
-      cooperative.branches?.map((branch) => ({
-        name: branch.name || "",
-        taxCode: branch.taxCode || "",
-        phone: branch.contacts?.[0]?.phone || "",
-        taxAddress: branch.taxAddress || "",
-        email: branch.contacts?.[0]?.email || "",
-        address: branch.address || "",
-        note: branch.metadataJson?.note ? String(branch.metadataJson.note) : "",
-      })) ?? [],
-    bankAccounts:
-      cooperative.bankAccounts?.map((account) => ({
-        bankName: account.bank?.name || "",
-        accountHolder: account.accountHolder || "",
-        accountNumber: account.accountNumber || "",
-        branch: account.branch || "",
-        note: account.note || "",
-        bin: account.bank?.bin || "",
-        logo: account.bank?.logoUrl || "",
-      })) ?? [],
-    documents:
-      cooperative.documents?.map((doc) => ({
-        name: doc.name || "",
-        type: doc.mimeType || doc.documentType || "",
-        size: doc.sizeBytes
-          ? `${(doc.sizeBytes / (1024 * 1024)).toFixed(2)} MB`
-          : "",
-        url: doc.fileUrl || "",
-        fileName: doc.fileName || "",
-        fileUrl: doc.fileUrl || "",
-        mimeType: doc.mimeType || "",
-        sizeBytes: doc.sizeBytes,
-        content: doc.content,
-      })) ?? [],
-    businessLine: businessLineValue,
-    businessLineText:
-      cooperative.businessLines
-        ?.map((line) => line.code || line.name)
-        .filter(Boolean)
-        .join(", ") || "-",
-    primaryPhone: primaryContact?.phone || "-",
-    primaryEmail: primaryContact?.email || "-",
-  };
-};
 
 export function useCooperative() {
   const { toast } = useToast();
