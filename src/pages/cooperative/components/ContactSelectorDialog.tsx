@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   Badge,
   Button,
@@ -12,15 +12,13 @@ import {
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Check, Search, X } from "lucide-react";
-import useContactStore, {
-  type Contact as StoredContact,
-} from "@/stores/useContactStore";
+import { useContacts, type ContactRecord } from "@/features/contact";
 
 interface ContactSelectorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedId?: number | null;
-  onSelect: (contact: StoredContact) => void;
+  selectedId?: number | string | null;
+  onSelect: (contact: ContactRecord) => void;
 }
 
 export function ContactSelectorDialog({
@@ -30,30 +28,22 @@ export function ContactSelectorDialog({
   onSelect,
 }: ContactSelectorDialogProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [tempSelectedId, setTempSelectedId] = useState<number | null>(selectedId);
-  const contacts = useContactStore((state) => state.contacts);
+  const [tempSelectedId, setTempSelectedId] = useState<number | string | null>(
+    selectedId,
+  );
+  const contactsQuery = useContacts({
+    params: {
+      keyword: searchTerm.trim() || undefined,
+      page: 0,
+      size: 100,
+    },
+    enabled: open,
+  });
 
-  const filteredContacts = useMemo(() => {
-    const query = searchTerm.toLowerCase().trim();
-    if (!query) return contacts;
-
-    return contacts.filter((contact) => {
-      const searchableText = [
-        contact.fullName,
-        contact.phone,
-        contact.email,
-        contact.position,
-        contact.department,
-        contact.entityName,
-        contact.note,
-      ]
-        .join(" ")
-        .toLowerCase();
-      return searchableText.includes(query);
-    });
-  }, [contacts, searchTerm]);
-
-  const selectedContact = contacts.find((contact) => contact.id === tempSelectedId);
+  const filteredContacts = contactsQuery.items;
+  const selectedContact = filteredContacts.find(
+    (contact) => contact.id === tempSelectedId,
+  );
 
   return (
     <Dialog
@@ -75,7 +65,7 @@ export function ContactSelectorDialog({
             Chọn liên hệ
           </DialogTitle>
           <p className="mt-1 text-sm text-muted-foreground">
-            Chọn nhanh một liên hệ từ store để điền vào form hợp tác xã.
+            Chọn nhanh một liên hệ từ danh sách đã lưu để điền vào form hợp tác xã.
           </p>
         </DialogHeader>
 
@@ -90,7 +80,11 @@ export function ContactSelectorDialog({
             />
           </div>
           <div className="mt-3 flex items-center justify-between gap-3 text-xs text-muted-foreground">
-            <span>{filteredContacts.length} kết quả</span>
+            <span>
+              {contactsQuery.loading
+                ? "Đang tải..."
+                : `${filteredContacts.length} kết quả`}
+            </span>
             {selectedContact && (
               <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-primary">
                 <Check className="h-3 w-3" />
@@ -132,9 +126,9 @@ export function ContactSelectorDialog({
                           {contact.fullName}
                         </h3>
                         <p className="mt-1 line-clamp-2 text-xs text-slate-500">
-                          {contact.position}
-                          {contact.position && contact.department ? " • " : ""}
-                          {contact.department}
+                          {contact.position || ""}
+                          {contact.position && contact.department?.name ? " • " : ""}
+                          {contact.department?.name || ""}
                         </p>
                       </div>
                       <div
@@ -168,10 +162,16 @@ export function ContactSelectorDialog({
               );
             })}
 
-            {filteredContacts.length === 0 && (
+            {!contactsQuery.loading && filteredContacts.length === 0 && (
               <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-sm text-muted-foreground">
                 <X className="mb-2 h-5 w-5 text-slate-400" />
                 Không tìm thấy liên hệ phù hợp
+              </div>
+            )}
+            {contactsQuery.loading && (
+              <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-sm text-muted-foreground">
+                <Search className="mb-2 h-5 w-5 animate-pulse text-slate-400" />
+                Đang tải danh sách liên hệ
               </div>
             )}
           </div>
@@ -183,7 +183,9 @@ export function ContactSelectorDialog({
           </Button>
           <Button
             onClick={() => {
-              const contact = contacts.find((item) => item.id === tempSelectedId);
+              const contact = filteredContacts.find(
+                (item) => item.id === tempSelectedId,
+              );
               if (contact) onSelect(contact);
               onOpenChange(false);
             }}

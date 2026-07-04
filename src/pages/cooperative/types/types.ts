@@ -1,6 +1,8 @@
 export type CooperativeClassification = "production" | "processing" | "trading" | "service" | "other";
 
 export interface Branch {
+  id?: number | string;
+  contactId?: number | string;
   name: string;
   taxCode: string;
   phone: string;
@@ -11,15 +13,19 @@ export interface Branch {
 }
 
 export interface BankAccount {
+  id?: number | string;
+  bankId?: number | string;
   bankName: string;
   accountHolder: string;
   accountNumber: string;
   branch: string;
   note: string;
   bin: string;
+  logo?: string;
 }
 
 export interface Contact {
+  id?: number | string;
   name: string;
   phone: string;
   email: string;
@@ -58,7 +64,6 @@ export interface CooperativeFormData {
   email: string;
   province: string;
   district: string;
-  ward: string;
   latitude?: number;
   longitude?: number;
   address: string;
@@ -67,5 +72,14 @@ export interface CooperativeFormData {
   contacts: Contact[];
   branches: Branch[];
   bankAccounts: BankAccount[];
-  documents: { name: string; type: string; size: string }[];
+  documents: {
+    name: string;
+    type: string;
+    size: string;
+    url?: string;
+    fileName?: string;
+    fileUrl?: string;
+    mimeType?: string;
+    sizeBytes?: number;
+  }[];
 }

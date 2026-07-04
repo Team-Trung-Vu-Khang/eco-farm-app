@@ -18,9 +18,10 @@ import {
   Globe,
 } from "lucide-react";
 import { useLocation } from "wouter";
+import type { CooperativeRow } from "../hooks/useCooperative";
 
 interface CooperativeDetailSidebarProps {
-  data: any;
+  data: CooperativeRow;
 }
 
 export function CooperativeDetailSidebar({ data }: CooperativeDetailSidebarProps) {
@@ -122,8 +123,8 @@ export function CooperativeDetailSidebar({ data }: CooperativeDetailSidebarProps
               <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
               <span>
                 {data.address}
-                {data.ward ? `, ${data.ward}` : ""}
                 {data.district ? `, ${data.district}` : ""}
+                {!data.district && data.ward ? `, ${data.ward}` : ""}
                 {data.province ? `, ${data.province}` : ""}
               </span>
             </div>

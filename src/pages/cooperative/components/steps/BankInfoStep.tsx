@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { vietQrBankData } from "@/constants/banks";
+import { useMasterData } from "@/features/master-data";
 import {
   Badge,
   Button,
@@ -17,12 +18,25 @@ import {
   Label,
   ScrollArea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Banknote, Check, CreditCard, Plus, Search, Trash2 } from "lucide-react";
-import { vietQrBankData } from "@/constants/banks";
-import useBankStore, {
-  type BankAccount as StoredBankAccount,
-} from "@/stores/useBankStore";
+import {
+  Banknote,
+  Check,
+  CreditCard,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
+import { useMemo, useState } from "react";
 import type { BankAccount } from "../../types/types";
+
+type BankMasterDataRecord = {
+  id: number | string;
+  code: string;
+  name: string;
+  shortName?: string;
+  bin?: string;
+  logoUrl?: string;
+};
 
 type BankInputMethod = "manual" | "excel" | "qr-image" | "qr-scan";
 
@@ -49,30 +63,37 @@ interface BankInfoStepProps {
 function CooperativeBankSelectorDialog({
   open,
   onOpenChange,
-  selectedBankName,
+  selectedBankId,
   onSelect,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedBankName: string;
-  onSelect: (bank: StoredBankAccount) => void;
+  selectedBankId?: number | string | null;
+  onSelect: (bank: BankMasterDataRecord) => void;
 }) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [tempSelectedName, setTempSelectedName] = useState(selectedBankName);
-  const bankAccounts = useBankStore((state) => state.bankAccounts);
+  const [tempSelectedId, setTempSelectedId] = useState<number | string | null>(
+    selectedBankId ?? null,
+  );
+  const banksQuery = useMasterData("banks", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
+  const bankAccounts = useMemo(
+    () => banksQuery.items as BankMasterDataRecord[],
+    [banksQuery.items],
+  );
 
   const filteredBanks = useMemo(() => {
     const query = searchTerm.toLowerCase().trim();
     if (!query) return bankAccounts;
 
     return bankAccounts.filter((bank) => {
-      const searchable = [
-        bank.bankName,
-        bank.accountNumber,
-        bank.accountHolder,
-        bank.branch,
-        bank.note,
-      ]
+      const searchable = [bank.code, bank.bin, bank.shortName, bank.name]
+        .filter(Boolean)
         .join(" ")
         .toLowerCase();
       return searchable.includes(query);
@@ -80,9 +101,7 @@ function CooperativeBankSelectorDialog({
   }, [bankAccounts, searchTerm]);
 
   const selectedBank = bankAccounts.find(
-    (bank) =>
-      `${bank.bankName} - ${bank.accountNumber}` === tempSelectedName ||
-      bank.bankName === tempSelectedName,
+    (bank) => String(bank.id) === String(tempSelectedId),
   );
 
   return (
@@ -90,7 +109,7 @@ function CooperativeBankSelectorDialog({
       open={open}
       onOpenChange={(nextOpen) => {
         if (nextOpen) {
-          setTempSelectedName(selectedBankName);
+          setTempSelectedId(selectedBankId ?? null);
           setSearchTerm("");
         }
         onOpenChange(nextOpen);
@@ -105,8 +124,8 @@ function CooperativeBankSelectorDialog({
             Chọn tài khoản ngân hàng
           </DialogTitle>
           <DialogDescription className="mt-1 text-sm text-muted-foreground">
-            Chọn nhanh một tài khoản có sẵn để tự điền ngân hàng, số tài khoản,
-            chủ tài khoản, chi nhánh và ghi chú.
+            Chọn nhanh một ngân hàng từ danh sách master data để tự điền thông
+            tin ngân hàng.
           </DialogDescription>
         </DialogHeader>
 
@@ -125,7 +144,7 @@ function CooperativeBankSelectorDialog({
             {selectedBank && (
               <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-primary">
                 <Check className="h-3 w-3" />
-                Đang chọn: {selectedBank.bankName}
+                Đang chọn: {selectedBank.shortName || selectedBank.name}
               </span>
             )}
           </div>
@@ -134,18 +153,17 @@ function CooperativeBankSelectorDialog({
         <ScrollArea className="min-h-0 flex-1">
           <div className="grid gap-3 p-6 sm:grid-cols-2">
             {filteredBanks.map((bank) => {
-              const displayName = `${bank.bankName} - ${bank.accountNumber}`;
-              const isSelected =
-                tempSelectedName === displayName || tempSelectedName === bank.bankName;
+              const isSelected = String(tempSelectedId) === String(bank.id);
               const bankInfo = vietQrBankData.find(
-                (item) => item.shortName === bank.bankName || item.name === bank.bankName,
+                (item) =>
+                  item.shortName === bank.shortName || item.name === bank.name,
               );
 
               return (
                 <button
                   key={bank.id}
                   type="button"
-                  onClick={() => setTempSelectedName(displayName)}
+                  onClick={() => setTempSelectedId(bank.id)}
                   className={[
                     "group flex items-start gap-4 rounded-2xl border bg-white p-4 text-left transition-all hover:border-primary/30 hover:shadow-md",
                     isSelected
@@ -156,11 +174,11 @@ function CooperativeBankSelectorDialog({
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-slate-100 bg-white p-2 shadow-sm">
                     <img
                       src={
-                        bank.logo ||
+                        bank.logoUrl ||
                         bankInfo?.logo ||
-                        `https://placehold.co/56x56?text=${bank.bankName?.[0] || "B"}`
+                        `https://placehold.co/56x56?text=${bank.shortName?.[0] || bank.name?.[0] || "B"}`
                       }
-                      alt={bank.bankName}
+                      alt={bank.shortName || bank.name}
                       className="h-full w-full object-contain"
                       onError={(event) => {
                         (event.target as HTMLImageElement).src =
@@ -173,10 +191,10 @@ function CooperativeBankSelectorDialog({
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <h3 className="truncate text-sm font-bold text-slate-900">
-                          {bank.bankName}
+                          {bank.shortName || bank.name}
                         </h3>
                         <p className="mt-1 line-clamp-2 text-xs text-slate-500">
-                          {bank.accountHolder}
+                          {bank.code}
                         </p>
                       </div>
                       <div
@@ -192,11 +210,17 @@ function CooperativeBankSelectorDialog({
                     </div>
 
                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <Badge variant="secondary" className="bg-slate-100 text-slate-700">
-                        STK: {bank.accountNumber}
+                      <Badge
+                        variant="secondary"
+                        className="bg-slate-100 text-slate-700"
+                      >
+                        Mã: {bank.code}
                       </Badge>
-                      <Badge variant="secondary" className="bg-slate-100 text-slate-700">
-                        {bank.branch || "Không có chi nhánh"}
+                      <Badge
+                        variant="secondary"
+                        className="bg-slate-100 text-slate-700"
+                      >
+                        BIN: {bank.bin || "-"}
                       </Badge>
                     </div>
                   </div>
@@ -219,14 +243,13 @@ function CooperativeBankSelectorDialog({
           </Button>
           <Button
             onClick={() => {
-              const bank = bankAccounts.find((item) => {
-                const displayName = `${item.bankName} - ${item.accountNumber}`;
-                return displayName === tempSelectedName || item.bankName === tempSelectedName;
-              });
+              const bank = bankAccounts.find(
+                (item) => String(item.id) === String(tempSelectedId),
+              );
               if (bank) onSelect(bank);
               onOpenChange(false);
             }}
-            disabled={!tempSelectedName}
+            disabled={!tempSelectedId}
             className="bg-primary hover:bg-primary/90"
           >
             Xác nhận
@@ -257,6 +280,17 @@ export function BankInfoStep({
   removeBankAccount,
 }: BankInfoStepProps) {
   const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
+  const banksQuery = useMasterData("banks", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
+  const bankMasterData = useMemo(
+    () => banksQuery.items as BankMasterDataRecord[],
+    [banksQuery.items],
+  );
   const selectedBanks = useMemo(() => bankAccounts, [bankAccounts]);
 
   const selectedBankLabel = useMemo(() => {
@@ -273,18 +307,16 @@ export function BankInfoStep({
       : newBankAccount.bankName;
   }, [newBankAccount.accountNumber, newBankAccount.bankName, selectedBanks]);
 
-  const handleSelectBank = (bank: StoredBankAccount) => {
-    const bankInfo = vietQrBankData.find(
-      (item) => item.shortName === bank.bankName || item.name === bank.bankName,
-    );
-
+  const handleSelectBank = (bank: BankMasterDataRecord) => {
     setNewBankAccount({
-      bankName: bank.bankName,
-      accountNumber: bank.accountNumber,
-      accountHolder: bank.accountHolder,
-      branch: bank.branch,
-      note: bank.note,
-      bin: bankInfo?.bin || bank.bin || "",
+      bankId: bank.id,
+      bankName: bank.shortName || bank.name,
+      accountNumber: newBankAccount.accountNumber,
+      accountHolder: newBankAccount.accountHolder,
+      branch: newBankAccount.branch,
+      note: newBankAccount.note,
+      bin: bank.bin || "",
+      logo: bank.logoUrl || "",
     });
   };
 
@@ -446,7 +478,7 @@ export function BankInfoStep({
       <CooperativeBankSelectorDialog
         open={isBankDialogOpen}
         onOpenChange={setIsBankDialogOpen}
-        selectedBankName={selectedBankLabel}
+        selectedBankId={newBankAccount.bankId ?? null}
         onSelect={handleSelectBank}
       />
 
@@ -454,7 +486,10 @@ export function BankInfoStep({
         <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
           <h4 className="flex items-center gap-3 text-xl font-bold">
             Danh sách đã thêm
-            <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">
+            <Badge
+              variant="secondary"
+              className="rounded-full px-3 py-1 text-sm"
+            >
               {selectedBanks.length}
             </Badge>
           </h4>
@@ -497,7 +532,11 @@ export function BankInfoStep({
             {filteredAccounts.map(({ account, index }) => {
               const bankInfo = vietQrBankData.find(
                 (bank) =>
-                  bank.shortName === account.bankName || bank.name === account.bankName,
+                  bank.shortName === account.bankName ||
+                  bank.name === account.bankName,
+              );
+              const selectedBankMeta = bankMasterData.find(
+                (bank) => String(bank.id) === String(account.bankId),
               );
 
               return (
@@ -509,6 +548,8 @@ export function BankInfoStep({
                     <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-white p-2 shadow-sm transition-transform group-hover:scale-105">
                       <img
                         src={
+                          account.logo ||
+                          selectedBankMeta?.logoUrl ||
                           bankInfo?.logo ||
                           `https://placehold.co/56x56?text=${account.bankName?.[0] || "B"}`
                         }
@@ -528,7 +569,7 @@ export function BankInfoStep({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-destructive opacity-0 transition-opacity group-hover:opacity-100 hover:bg-destructive/10"
+                          className="h-8 w-8 text-destructive"
                           onClick={() => removeBankAccount(index)}
                         >
                           <Trash2 className="h-4 w-4" />

@@ -62,7 +62,7 @@ const toCooperativeRow = (
     foundedDate: cooperative.foundedDate,
     website: cooperative.website,
     province: cooperative.province,
-    district: cooperative.district,
+    district: cooperative.district || cooperative.ward || "",
     ward: cooperative.ward,
     latitude: cooperative.latitude,
     longitude: cooperative.longitude,

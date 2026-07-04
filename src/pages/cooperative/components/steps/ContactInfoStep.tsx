@@ -1,3 +1,4 @@
+import type { ContactRecord } from "@/features/contact";
 import {
   Badge,
   Button,
@@ -6,11 +7,10 @@ import {
   Input,
   Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useMemo, useState } from "react";
 import { Mail, Phone, Plus, Trash2, User, Users } from "lucide-react";
-import useContactStore from "@/stores/useContactStore";
-import { ContactSelectorDialog } from "../ContactSelectorDialog";
+import { useMemo, useState } from "react";
 import type { Contact, CooperativeFormData } from "../../types/types";
+import { ContactSelectorDialog } from "../ContactSelectorDialog";
 
 interface ContactInfoStepProps {
   formData: CooperativeFormData;
@@ -28,18 +28,24 @@ export function ContactInfoStep({
   removeContact,
 }: ContactInfoStepProps) {
   const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
-  const contactStore = useContactStore((state) => state.contacts);
-  const selectedContact = contactStore.find(
-    (contact) =>
-      contact.fullName === newContact.name &&
-      contact.phone === newContact.phone &&
-      contact.email === newContact.email,
-  );
+  const [selectedContactId, setSelectedContactId] = useState<
+    number | string | null
+  >(newContact.id ?? null);
 
   const selectedContactLabel = useMemo(() => {
-    if (!selectedContact) return "Chọn liên hệ...";
-    return `${selectedContact.fullName} - ${selectedContact.phone}`;
-  }, [selectedContact]);
+    if (!newContact.name) return "Chọn liên hệ...";
+    return `${newContact.name}${newContact.phone ? ` - ${newContact.phone}` : ""}`;
+  }, [newContact.name, newContact.phone]);
+
+  const handleSelectContact = (contact: ContactRecord) => {
+    setSelectedContactId(contact.id);
+    setNewContact({
+      id: contact.id,
+      name: contact.fullName,
+      phone: contact.phone,
+      email: contact.email || "",
+    });
+  };
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
@@ -61,7 +67,10 @@ export function ContactInfoStep({
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={() => setNewContact({ name: "", phone: "", email: "" })}
+                  onClick={() => {
+                    setNewContact({ name: "", phone: "", email: "" });
+                    setSelectedContactId(null);
+                  }}
                   className="h-11 px-3 text-muted-foreground"
                 >
                   Xóa
@@ -69,7 +78,7 @@ export function ContactInfoStep({
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Có thể chọn liên hệ từ store Thông tin liên hệ.
+              Có thể chọn liên hệ từ danh sách đã lưu.
             </p>
           </div>
 
@@ -123,14 +132,8 @@ export function ContactInfoStep({
       <ContactSelectorDialog
         open={isContactDialogOpen}
         onOpenChange={setIsContactDialogOpen}
-        selectedId={selectedContact?.id || null}
-        onSelect={(contact) =>
-          setNewContact({
-            name: contact.fullName,
-            phone: contact.phone,
-            email: contact.email,
-          })
-        }
+        selectedId={selectedContactId}
+        onSelect={handleSelectContact}
       />
 
       <div className="space-y-4">
@@ -153,7 +156,8 @@ export function ContactInfoStep({
               Chưa có liên hệ nào
             </h5>
             <p className="mt-2 text-sm text-muted-foreground/70">
-              Các liên hệ bạn thêm sẽ hiển thị tại đây để kiểm tra trước khi lưu.
+              Các liên hệ bạn thêm sẽ hiển thị tại đây để kiểm tra trước khi
+              lưu.
             </p>
           </div>
         ) : (
@@ -179,7 +183,7 @@ export function ContactInfoStep({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-destructive opacity-0 transition-opacity group-hover:opacity-100"
+                      className="h-8 w-8 text-destructive"
                       onClick={() => removeContact(index)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />

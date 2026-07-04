@@ -162,7 +162,6 @@ export function ConfirmStep({
                     </p>
                     <p className="text-sm font-medium leading-normal">
                       {formData.address}
-                      {formData.ward && `, ${formData.ward}`}
                       {formData.district && `, ${formData.district}`}
                       {formData.province && `, ${formData.province}`}
                     </p>

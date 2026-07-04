@@ -1,7 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import useEnterpriseStore from "@/stores/useEnterpriseStore";
+import { useMasterData } from "@/features/master-data";
+import { useCreateOrganization, useUpdateOrganization } from "@/features/organization";
+import { useUploadStorageFile } from "@/features/storage/hooks/useUploadStorageFile";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 import type {
   Contact,
   BankAccount,
@@ -12,12 +15,167 @@ import readXlsxFile from "read-excel-file";
 import QrScanner from "qr-scanner";
 import { vietQrBankData } from "@/constants/banks";
 import { parseVietQR } from "@/utils/commons";
+import type { OrganizationBusinessLineRecord, OrganizationCreateRequest } from "@/features/organization";
+
+type BankMasterDataRecord = {
+  id: number | string;
+  code: string;
+  name: string;
+  shortName?: string;
+  bin?: string;
+  logoUrl?: string;
+};
+
+const getBankDisplayName = (bank?: BankMasterDataRecord | null) =>
+  bank?.shortName || bank?.name || "";
+
+const findBankInfo = (
+  banks: BankMasterDataRecord[],
+  value: string,
+) => {
+  const query = value.toLowerCase().trim();
+  if (!query) return undefined;
+
+  return banks.find((bank) => {
+    const searchable = [bank.code, bank.bin, bank.shortName, bank.name]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return searchable.includes(query);
+  });
+};
+
+const normalizeDocumentSize = (size?: string) => {
+  if (!size) return undefined;
+  const numeric = Number.parseFloat(
+    size.replace(/[^0-9.,]/g, "").replace(",", "."),
+  );
+  if (!Number.isFinite(numeric)) return undefined;
+  const lower = size.toLowerCase();
+  if (lower.includes("kb")) return Math.round(numeric * 1024);
+  if (lower.includes("mb")) return Math.round(numeric * 1024 * 1024);
+  if (lower.includes("gb")) return Math.round(numeric * 1024 * 1024 * 1024);
+  return Math.round(numeric);
+};
+
+const mapClassificationToBusinessLines = (
+  classifications: string[],
+  businessLineRecords: OrganizationBusinessLineRecord[],
+): OrganizationBusinessLineRecord[] =>
+  classifications.map((classification) => {
+    const mappedName = classification;
+    const record = businessLineRecords.find(
+      (item) =>
+        item.code === classification ||
+        item.name.toLowerCase() === mappedName.toLowerCase(),
+    );
+
+    return (
+      record || {
+        id: classification,
+        code: classification,
+        name: mappedName,
+      }
+    );
+  });
 
 export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const addEnterprise = useEnterpriseStore((state) => state.addEnterprise);
-  const updateEnterprise = useEnterpriseStore((state) => state.updateEnterprise);
+  const workspaceId = useSelectedWorkspaceId();
+
+  const organizationTypesQuery = useMasterData("organization-types", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
+  const banksQuery = useMasterData("banks", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
+  const businessLinesQuery = useMasterData("business-lines", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
+
+  const organizationTypes = organizationTypesQuery.items;
+  const bankMasterData = useMemo(
+    () => banksQuery.items as BankMasterDataRecord[],
+    [banksQuery.items],
+  );
+  const businessLineRecords = useMemo(
+    () => businessLinesQuery.items as OrganizationBusinessLineRecord[],
+    [businessLinesQuery.items],
+  );
+
+  const cooperativeOrganizationType = useMemo(() => {
+    return (
+      organizationTypes.find((item) => {
+        const searchable = [item.code, item.name, item.type]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return (
+          searchable.includes("cooperative") ||
+          searchable.includes("hợp tác xã") ||
+          searchable.includes("htx")
+        );
+      }) ?? organizationTypes[0] ?? null
+    );
+  }, [organizationTypes]);
+
+  const createOrganization = useCreateOrganization({
+    onSuccess: () => {
+      toast({
+        title: "Thành công",
+        description: "Đã tạo hợp tác xã mới",
+      });
+      setLocation("/cooperative");
+    },
+    onError: (error) => {
+      toast({
+        title: "Lỗi",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateOrganization = useUpdateOrganization({
+    onSuccess: () => {
+      toast({
+        title: "Thành công",
+        description: "Đã cập nhật thông tin hợp tác xã",
+      });
+      setLocation("/cooperative");
+    },
+    onError: (error) => {
+      toast({
+        title: "Lỗi",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const uploadDocument = useUploadStorageFile({
+    onError: (error) => {
+      toast({
+        title: "Không thể tải tài liệu",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const [formData, setFormData] = useState<CooperativeFormData>({
     type: "cooperative",
@@ -36,7 +194,6 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
     email: "",
     province: "",
     district: "",
-    ward: "",
     address: "",
     image: "",
     description: "",
@@ -49,7 +206,9 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
 
   useEffect(() => {
     if (initialData) {
-      setFormData((prev) => ({ ...prev, ...initialData }));
+      queueMicrotask(() => {
+        setFormData((prev) => ({ ...prev, ...initialData }));
+      });
     }
   }, [initialData]);
 
@@ -89,6 +248,7 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
   const [confirmBankSearchQuery, setConfirmBankSearchQuery] = useState("");
   const [isDragging, setIsDragging] = useState<Record<string, boolean>>({});
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const documentUploadSeqRef = useRef(0);
 
   useEffect(() => {
     if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
@@ -168,7 +328,7 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
           variant: "destructive",
         });
       }
-    } catch (err) {
+    } catch {
       toast({
         title: "Lỗi",
         description: "Không thể đọc file Excel. Vui lòng kiểm tra định dạng.",
@@ -233,7 +393,7 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Lỗi",
         description: "Không thể đọc file Excel. Vui lòng kiểm tra định dạng.",
@@ -281,7 +441,7 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
             "Đã đọc được QR nhưng không tìm thấy thông tin tài khoản ngân hàng standard.",
         });
       }
-    } catch (err) {
+    } catch {
       toast({
         title: "Lỗi",
         description: "Không tìm thấy mã QR trong ảnh này.",
@@ -290,7 +450,7 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
     }
   };
 
-  const handleLiveScan = (result: any) => {
+  const handleLiveScan = (result: Array<{ rawValue: string }> | null) => {
     if (!result || result.length === 0) return;
     const text = result[0].rawValue;
     const parsed = parseVietQR(text);
@@ -352,31 +512,87 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
     }));
   };
 
-  const processDocuments = (files: FileList) => {
-    const newDocs = Array.from(files).map((file) => ({
-      name: file.name,
-      type: file.type,
-      size: (file.size / (1024 * 1024)).toFixed(1) + " MB",
-    }));
+  const processDocuments = async (files: FileList) => {
+    const file = files[0];
+    if (!file) return;
+
+    const previewUrl = URL.createObjectURL(file);
+    const requestSeq = ++documentUploadSeqRef.current;
+    const previousDocuments = formData.documents;
 
     setFormData((prev) => ({
       ...prev,
-      documents: [...prev.documents, ...newDocs],
+      documents: [
+        ...prev.documents,
+        {
+          name: file.name,
+          type: file.type,
+          size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+          url: previewUrl,
+          fileName: file.name,
+          fileUrl: previewUrl,
+          mimeType: file.type,
+          sizeBytes: file.size,
+        },
+      ],
     }));
 
-    toast({
-      title: "Đã tải lên",
-      description: `Đã thêm ${newDocs.length} tài liệu.`,
-    });
+    try {
+      const uploaded = await uploadDocument.uploadStorageFile({
+        file,
+        folder: "organizations-documents",
+      });
+
+      if (documentUploadSeqRef.current !== requestSeq) {
+        URL.revokeObjectURL(previewUrl);
+        return;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        documents: [
+          ...prev.documents.filter((doc) => doc.fileUrl !== previewUrl),
+          {
+            name: uploaded.fileName || file.name,
+            type: uploaded.mimeType || file.type,
+            size: `${(uploaded.sizeBytes / (1024 * 1024)).toFixed(2)} MB`,
+            url: uploaded.fileUrl,
+            fileName: uploaded.fileName || file.name,
+            fileUrl: uploaded.fileUrl,
+            mimeType: uploaded.mimeType || file.type,
+            sizeBytes: uploaded.sizeBytes,
+          },
+        ],
+      }));
+
+      toast({
+        title: "Đã tải lên",
+        description: "Tài liệu đã được tải lên thành công.",
+      });
+    } catch {
+      if (documentUploadSeqRef.current === requestSeq) {
+        setFormData((prev) => ({
+          ...prev,
+          documents: previousDocuments,
+        }));
+      }
+    } finally {
+      URL.revokeObjectURL(previewUrl);
+    }
   };
 
-  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) processDocuments(e.target.files);
+  const handleDocumentUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (e.target.files) {
+      await processDocuments(e.target.files);
+      e.target.value = "";
+    }
   };
 
-  const handleDocumentDrop = (e: React.DragEvent) => {
+  const handleDocumentDrop = async (e: React.DragEvent) => {
     handleDrag("documents", e);
-    if (e.dataTransfer.files) processDocuments(e.dataTransfer.files);
+    if (e.dataTransfer.files) await processDocuments(e.dataTransfer.files);
   };
 
   const addContact = () => {
@@ -476,23 +692,36 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
   };
 
   const submitForm = () => {
-    const payload = {
+    if (workspaceId === null) {
+      toast({
+        title: "Thiếu workspace",
+        description: "Vui lòng chọn workspace trước khi lưu hợp tác xã.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!cooperativeOrganizationType) {
+      toast({
+        title: "Thiếu loại hình tổ chức",
+        description: "Không tìm thấy loại hình tổ chức cho hợp tác xã.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const payload: OrganizationCreateRequest = {
       code: formData.code,
       name: formData.name,
       brandName: formData.brandName,
-      image: formData.image,
       type: "cooperative" as const,
-      classification: formData.classification as (
-        | "production"
-        | "processing"
-        | "trading"
-        | "service"
-        | "other"
-      )[],
+      organizationTypeId: cooperativeOrganizationType.id,
+      businessLines: mapClassificationToBusinessLines(
+        formData.classification,
+        businessLineRecords,
+      ),
       taxCode: formData.taxCode,
       address: formData.address,
-      phone: formData.phone,
-      email: formData.email,
       status: "active" as const,
       taxAddress: formData.taxAddress,
       taxAuthority: formData.taxAuthority,
@@ -502,30 +731,102 @@ export function useCooperativeForm(initialData?: Partial<CooperativeFormData>) {
       website: formData.website,
       province: formData.province,
       district: formData.district,
-      ward: formData.ward,
       latitude: formData.latitude,
       longitude: formData.longitude,
       description: formData.description,
-      contacts: formData.contacts,
-      branches: formData.branches,
-      bankAccounts: formData.bankAccounts,
-      documents: formData.documents,
+      imageUrl: formData.image,
+      contacts: formData.contacts.map((contact, index) => ({
+        contactId: contact.id,
+        name: contact.name,
+        position: "",
+        phone: contact.phone,
+        email: contact.email,
+        isPrimary: index === 0,
+      })),
+      branches: formData.branches.map((branch) => ({
+        id: branch.id,
+        code: branch.taxCode || branch.name || undefined,
+        name: branch.name,
+        taxCode: branch.taxCode || "",
+        taxAddress: branch.taxAddress || "",
+        address: branch.address || "",
+        city: "",
+        ward: "",
+        imageUrl: "",
+        latitude: 0,
+        longitude: 0,
+        status: "active" as const,
+        contacts: branch.phone || branch.email
+          ? [
+              {
+                name: branch.name,
+                position: "",
+                phone: branch.phone,
+                email: branch.email,
+                isPrimary: true,
+              },
+            ]
+          : [],
+        bankAccounts: [],
+        metadataJson: branch.note ? { note: branch.note } : null,
+      })),
+      bankAccounts: formData.bankAccounts.map((account, index) => {
+        const bankInfo =
+          (account.bankId
+            ? bankMasterData.find(
+                (bank) => String(bank.id) === String(account.bankId),
+              )
+            : undefined) ||
+          findBankInfo(bankMasterData, account.bin || account.bankName);
+
+        return {
+          ...(initialData?.id && account.id ? { id: account.id } : {}),
+          ownerType: formData.type,
+          bankId: bankInfo?.id,
+          bankCode: bankInfo?.code || account.bin || account.bankName,
+          bankName: getBankDisplayName(bankInfo) || account.bankName,
+          bin: account.bin || bankInfo?.bin || "",
+          accountNumber: account.accountNumber,
+          accountHolder: account.accountHolder,
+          branch: account.branch,
+          note: account.note,
+          logoUrl: account.logo || bankInfo?.logoUrl || "",
+          status: "active" as const,
+          isPrimary: index === 0,
+          metadataJson: null,
+        };
+      }),
+      documents: formData.documents.map((doc, index) => ({
+        id: index + 1,
+        documentType: doc.type,
+        name: doc.name,
+        fileUrl: doc.fileUrl || doc.url || "",
+        fileName: doc.fileName || doc.name,
+        mimeType: doc.mimeType || doc.type,
+        sizeBytes: doc.sizeBytes ?? normalizeDocumentSize(doc.size),
+        content: undefined,
+      })),
+      metadataJson: null,
     };
 
-    if (initialData?.id) {
-      updateEnterprise(Number(initialData.id), payload);
-    } else {
-      addEnterprise(payload);
-    }
+    const mutation = initialData?.id
+      ? updateOrganization.updateOrganization({
+          id: Number(initialData.id),
+          payload,
+          workspaceId,
+        })
+      : createOrganization.createOrganization({
+          payload,
+          workspaceId,
+        });
 
-    setShowConfirmDialog(false);
-    toast({
-      title: "Thành công",
-      description: initialData?.id
-        ? `Đã cập nhật hợp tác xã "${formData.name}"`
-        : `Đã tạo hợp tác xã "${formData.name}"`,
-    });
-    setLocation("/cooperative");
+    mutation
+      .then(() => {
+        setShowConfirmDialog(false);
+      })
+      .catch(() => {
+        // Error toast handled by mutation callbacks.
+      });
   };
 
   return {

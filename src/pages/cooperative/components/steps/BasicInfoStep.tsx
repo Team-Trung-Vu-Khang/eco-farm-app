@@ -1,6 +1,8 @@
+import { useGeoProvinces, useGeoWards } from "@/features/master-data";
 import {
-  Label,
+  Button,
   Input,
+  Label,
   MultiSelect,
   Select,
   SelectContent,
@@ -8,14 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
-  Button,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Image, MapPin, Upload } from "lucide-react";
-import { PROVINCES } from "@/constants/province";
-import type { CooperativeFormData } from "../../types/types";
-import { CLASSIFICATION_OPTIONS } from "../../data/constants";
 import { useEffect, useRef, useState } from "react";
+import { CLASSIFICATION_OPTIONS } from "../../data/constants";
+import type { CooperativeFormData } from "../../types/types";
 
 interface BasicInfoStepProps {
   formData: CooperativeFormData;
@@ -36,6 +36,22 @@ export function BasicInfoStep({
 }: BasicInfoStepProps) {
   const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
   const { toast } = useToast();
+  const provincesQuery = useGeoProvinces({
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
+  const wardsQuery = useGeoWards({
+    params: {
+      provinceCode: formData.province || "",
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+    enabled: Boolean(formData.province),
+  });
   const [addressQuery, setAddressQuery] = useState(formData.address || "");
   const [isFocused, setIsFocused] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -51,14 +67,24 @@ export function BasicInfoStep({
         skipNextSearchRef.current = false;
         return;
       }
-      if (!isFocused || !addressQuery || addressQuery.trim().length < 3 || !MAP4D_ACCESS_KEY) {
+      if (
+        !isFocused ||
+        !addressQuery ||
+        addressQuery.trim().length < 3 ||
+        !MAP4D_ACCESS_KEY
+      ) {
         setSuggestions([]);
         setShowSuggestions(false);
         return;
       }
       try {
-        const params = new URLSearchParams({ key: MAP4D_ACCESS_KEY, text: addressQuery.trim() });
-        const res = await fetch(`https://api.map4d.vn/sdk/autosuggest?${params.toString()}`);
+        const params = new URLSearchParams({
+          key: MAP4D_ACCESS_KEY,
+          text: addressQuery.trim(),
+        });
+        const res = await fetch(
+          `https://api.map4d.vn/sdk/autosuggest?${params.toString()}`,
+        );
         if (!res.ok) return;
         const data = (await res.json()) as {
           result?: Array<{
@@ -76,7 +102,9 @@ export function BasicInfoStep({
           }))
           .filter(
             (item) =>
-              item.address && Number.isFinite(item.lat) && Number.isFinite(item.lng),
+              item.address &&
+              Number.isFinite(item.lat) &&
+              Number.isFinite(item.lng),
           );
         setSuggestions(next);
         setShowSuggestions(next.length > 0);
@@ -313,53 +341,43 @@ export function BasicInfoStep({
             <Select
               value={formData.province}
               onValueChange={(val) =>
-                setFormData({ ...formData, province: val, district: "", ward: "" })
+                setFormData({ ...formData, province: val, district: "" })
               }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Chọn Tỉnh / Thành Phố" />
               </SelectTrigger>
-              <SelectContent>
-                {PROVINCES.map((province) => (
+              <SelectContent className="max-h-80 overflow-y-auto">
+                {provincesQuery.items.map((province) => (
                   <SelectItem key={province.code} value={province.code}>
-                    {province.name}
+                    {province.fullName || province.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="district">Quận / Huyện *</Label>
+            <Label htmlFor="district">Quận / Huyện</Label>
             <Select
               value={formData.district}
               onValueChange={(val) =>
-                setFormData({ ...formData, district: val, ward: "" })
+                setFormData({ ...formData, district: val })
               }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Chọn Quận / Huyện" />
               </SelectTrigger>
-              <SelectContent>
-                {PROVINCES.find(
-                  (p) => p.code === formData.province,
-                )?.districts.map((district) => (
+              <SelectContent className="max-h-80 overflow-y-auto">
+                {wardsQuery.items.map((district) => (
                   <SelectItem key={district.code} value={district.code}>
-                    {district.name}
+                    {district.fullName || district.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
         </div>
-        <div className="space-y-2 mt-4">
-          <Label htmlFor="ward">Phường / Xã</Label>
-          <Input
-            id="ward"
-            value={formData.ward}
-            onChange={(e) => setFormData({ ...formData, ward: e.target.value })}
-            placeholder="VD: Phường Bến Nghé / Xã Tân Phú"
-          />
-        </div>
+
         <div className="space-y-2 mt-4" ref={searchContainerRef}>
           <Label htmlFor="address">Địa chỉ chi tiết</Label>
           <Input
@@ -369,16 +387,14 @@ export function BasicInfoStep({
               setIsFocused(true);
               if (suggestions.length > 0) setShowSuggestions(true);
             }}
-            onChange={(e) =>
-              {
-                setAddressQuery(e.target.value);
-                setFormData({ ...formData, address: e.target.value });
-                if (!e.target.value) {
-                  setShowSuggestions(false);
-                  setSuggestions([]);
-                }
+            onChange={(e) => {
+              setAddressQuery(e.target.value);
+              setFormData({ ...formData, address: e.target.value });
+              if (!e.target.value) {
+                setShowSuggestions(false);
+                setSuggestions([]);
               }
-            }
+            }}
             placeholder="Số nhà, đường, ấp..."
           />
           {showSuggestions && suggestions.length > 0 && (
@@ -394,13 +410,16 @@ export function BasicInfoStep({
                   <div className="font-medium text-slate-800 truncate">
                     {item.name || item.address}
                   </div>
-                  <div className="text-xs text-slate-500 truncate">{item.address}</div>
+                  <div className="text-xs text-slate-500 truncate">
+                    {item.address}
+                  </div>
                 </button>
               ))}
             </div>
           )}
           <p className="text-xs text-slate-500">
-            Tọa độ: {formData.latitude?.toFixed(6) ?? "--"}, {formData.longitude?.toFixed(6) ?? "--"}
+            Tọa độ: {formData.latitude?.toFixed(6) ?? "--"},{" "}
+            {formData.longitude?.toFixed(6) ?? "--"}
           </p>
         </div>
       </div>
