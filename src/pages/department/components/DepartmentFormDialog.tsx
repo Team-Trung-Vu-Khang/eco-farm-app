@@ -23,7 +23,7 @@ interface DepartmentFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editItem: DepartmentItem | null;
-  onSubmit: (data: DepartmentFormValues) => void;
+  onSubmit: (data: DepartmentFormValues) => Promise<void> | void;
 }
 
 function buildDefaultValues(
@@ -71,7 +71,7 @@ export function DepartmentFormDialog({
     handleSubmit: handleRHFSubmit,
     clearErrors,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<DepartmentFormValues>({
     defaultValues,
     resolver: zodResolver(departmentFormSchema),
@@ -84,8 +84,8 @@ export function DepartmentFormDialog({
     }
   }, [clearErrors, defaultValues, open, reset]);
 
-  const submitForm: SubmitHandler<DepartmentFormValues> = (values) => {
-    onSubmit({
+  const submitForm: SubmitHandler<DepartmentFormValues> = async (values) => {
+    await onSubmit({
       ...values,
       status: editItem ? values.status : "active",
     });
@@ -97,6 +97,7 @@ export function DepartmentFormDialog({
       onOpenChange={onOpenChange}
       title={editItem ? "Chỉnh sửa phòng ban" : "Thêm phòng ban mới"}
       onSubmit={handleRHFSubmit(submitForm)}
+      loading={isSubmitting}
     >
       <div className="space-y-4">
         <div className="space-y-2">
@@ -116,9 +117,11 @@ export function DepartmentFormDialog({
                   clearErrors("code");
                   field.onChange(e.target.value.toUpperCase());
                 }}
+                clearable={!editItem}
                 onBlur={field.onBlur}
                 ref={field.ref}
                 name={field.name}
+                disabled={!!editItem}
               />
             )}
           />
