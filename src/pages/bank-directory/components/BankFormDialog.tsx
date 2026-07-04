@@ -26,7 +26,7 @@ interface BankFormDialogProps {
   isUploadingLogo: boolean;
   onLogoUpload: (e: ChangeEvent<HTMLInputElement>) => Promise<void> | void;
   onRemoveLogo: () => void;
-  onSubmit: (data: Bank) => void;
+  onSubmit: (data: Bank) => Promise<void> | void;
 }
 
 export default function BankFormDialog({
@@ -63,7 +63,7 @@ export default function BankFormDialog({
     clearErrors,
     reset,
     setValue,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<BankFormValues>({
     defaultValues,
     resolver: zodResolver(bankFormSchema),
@@ -82,7 +82,7 @@ export default function BankFormDialog({
     }
   }, [logoPreview, open, setValue]);
 
-  const submitForm: SubmitHandler<BankFormValues> = (values) => {
+  const submitForm: SubmitHandler<BankFormValues> = async (values) => {
     const normalizedValues = {
       ...values,
       id: values.id,
@@ -109,7 +109,7 @@ export default function BankFormDialog({
       displayOrder: normalizedValues.displayOrder,
     };
 
-    onSubmit(submittedBank);
+    await onSubmit(submittedBank);
   };
 
   return (
@@ -118,6 +118,7 @@ export default function BankFormDialog({
       onOpenChange={onOpenChange}
       title={editItem ? "Chỉnh sửa ngân hàng" : "Thêm ngân hàng mới"}
       onSubmit={handleRHFSubmit(submitForm)}
+      loading={isSubmitting}
       size="xl"
     >
       <div className="space-y-4 max-h-[70dvh] overflow-y-scroll overflow-x-clip px-1">

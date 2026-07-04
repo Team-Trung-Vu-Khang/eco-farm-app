@@ -8,12 +8,15 @@ import { useUploadStorageFile } from "../../../features/storage/hooks/useUploadS
 import type {
   BankDirectoryCreateRequest,
   BankDirectoryItem,
+  BankDirectoryStatus,
   BankDirectoryUpdateRequest,
 } from "../../../features/bank-directory/types/bank-directory.type";
 import { emptyBankFormData } from "../data/constants";
 import type { Bank } from "../types/types";
 
 const DEFAULT_STATUS: BankDirectoryCreateRequest["status"] = "active";
+const ALL_STATUS = "all" as const;
+const ALL_BOOL = "all" as const;
 
 const normalizeText = (value?: string) => value?.trim() ?? "";
 
@@ -93,12 +96,25 @@ export function useBankDirectory() {
   const [logoPreview, setLogoPreview] = useState<string>("");
   const [formData, setFormData] = useState<Bank>(emptyBankFormData);
   const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<BankDirectoryStatus | typeof ALL_STATUS>(
+    ALL_STATUS,
+  );
+  const [transferSupported, setTransferSupported] = useState<
+    boolean | typeof ALL_BOOL
+  >(ALL_BOOL);
+  const [lookupSupported, setLookupSupported] = useState<
+    boolean | typeof ALL_BOOL
+  >(ALL_BOOL);
   const [pageSize, setPageSize] = useState(10);
   const [currentIndex, setCurrentIndex] = useState(1);
 
   const bankQuery = useBankDirectoryQuery({
     initialQuery: {
       keyword: search.trim() || undefined,
+      status: status === ALL_STATUS ? undefined : status,
+      transferSupported:
+        transferSupported === ALL_BOOL ? undefined : transferSupported,
+      lookupSupported: lookupSupported === ALL_BOOL ? undefined : lookupSupported,
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
     },
@@ -296,12 +312,38 @@ export function useBankDirectory() {
     }
   };
 
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "status") {
+      setStatus((value === ALL_STATUS ? ALL_STATUS : value) as
+        | BankDirectoryStatus
+        | typeof ALL_STATUS);
+      setCurrentIndex(1);
+      return;
+    }
+
+    if (key === "transferSupported") {
+      setTransferSupported(
+        value === ALL_BOOL ? ALL_BOOL : value === "true",
+      );
+      setCurrentIndex(1);
+      return;
+    }
+
+    if (key === "lookupSupported") {
+      setLookupSupported(value === ALL_BOOL ? ALL_BOOL : value === "true");
+      setCurrentIndex(1);
+    }
+  };
+
   return {
     data,
     loading,
     error,
     response,
     search,
+    status,
+    transferSupported,
+    lookupSupported,
     pageSize,
     currentIndex,
     formData,
@@ -319,6 +361,7 @@ export function useBankDirectory() {
     handleRemoveLogo,
     handleSubmit,
     handleConfirmDelete,
+    handleFilterChange,
     setSearch: (value: string) => {
       setSearch(value);
       setCurrentIndex(1);
