@@ -51,6 +51,7 @@ interface GenericPageProps {
   columns?: Column<GenericItem>[];
   fieldConfig?: GenericPageFieldConfig;
   isLoading?: boolean;
+  formDialogLoading?: boolean;
   onSubmit?: (
     data: Partial<GenericItem>,
     editId: number | null,
@@ -76,6 +77,7 @@ export function GenericPage({
   withRichTextEditor = false,
   fieldConfig = {},
   isLoading = false,
+  formDialogLoading = false,
   onSubmit,
   onDelete,
   searchable,
@@ -282,6 +284,7 @@ export function GenericPage({
         onOpenChange={setFormOpen}
         title={editItem ? `Chỉnh sửa ${entityName}` : `Thêm ${entityName} mới`}
         onSubmit={handleSubmit}
+        loading={formDialogLoading}
       >
         <div className="w-full space-y-4">
           {!fieldConfig.code?.hidden && (
