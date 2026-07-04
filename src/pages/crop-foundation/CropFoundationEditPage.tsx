@@ -3,7 +3,6 @@ import {
   Button,
   Card,
   CardContent,
-  Form,
   StepperForm,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
@@ -126,15 +125,13 @@ export default function CropFoundationEditPage() {
       ]}
     >
       <FormProvider {...methods}>
-        <Form {...methods}>
-          <CropFoundationEditFormContent
-            fileInputRef={fileInputRef}
-            handleComplete={handleComplete}
-            handleCancel={handleCancel}
-            isLoadingCrop={isLoadingCrop}
-            isSubmitting={isSubmitting}
-          />
-        </Form>
+        <CropFoundationEditFormContent
+          fileInputRef={fileInputRef}
+          handleComplete={handleComplete}
+          handleCancel={handleCancel}
+          isLoadingCrop={isLoadingCrop}
+          isSubmitting={isSubmitting}
+        />
       </FormProvider>
     </AdminLayout>
   );

@@ -12,7 +12,6 @@ import {
   Button,
   Card,
   CardContent,
-  Form,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -86,16 +85,14 @@ export default function CreateGrowthCyclePage() {
       <Card>
         <CardContent className="p-6">
           <FormProvider {...form}>
-            <Form {...form}>
-              <GrowthCycleSteps
-                schema={growthCycleFormSchema}
-                varieties={varieties}
-                crops={crops}
-                onComplete={() => setConfirmOpen(true)}
-                onCancel={() => setLocation("/growth-cycle")}
-                isSubmitting={isSubmitting}
-              />
-            </Form>
+            <GrowthCycleSteps
+              schema={growthCycleFormSchema}
+              varieties={varieties}
+              crops={crops}
+              onComplete={() => setConfirmOpen(true)}
+              onCancel={() => setLocation("/growth-cycle")}
+              isSubmitting={isSubmitting}
+            />
           </FormProvider>
         </CardContent>
       </Card>
