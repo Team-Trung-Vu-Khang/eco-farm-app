@@ -1,4 +1,6 @@
+import type { Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { EnterpriseType } from "../types";
+import type { MasterDataRecord } from "@/features/master-data/types/master-data.type";
 
 export const INITIAL_ORGANIZATION_DATA: EnterpriseType[] = [
   {
@@ -173,7 +175,35 @@ export const INITIAL_BUSINESS_DATA: EnterpriseType[] = [
   },
 ];
 
-export const ENTERPRISE_COLUMNS = [
+export const ENTERPRISE_COLUMNS: Column<EnterpriseType>[] = [
+  { key: "code", label: "Mã" },
+  { key: "name", label: "Tên" },
+  { key: "description", label: "Mô tả" },
+];
+
+type BusinessLineRow = MasterDataRecord<"business-lines">;
+
+const ORGANIZATION_TYPE_LABELS: Record<string, string> = {
+  enterprise: "Doanh nghiệp",
+  farm_household: "Nông hộ",
+  cooperative: "Hợp tác xã",
+};
+
+type OrganizationTypeRow = MasterDataRecord<"organization-types">;
+
+export const ORGANIZATION_COLUMNS: Column<OrganizationTypeRow>[] = [
+  { key: "code", label: "Mã" },
+  { key: "name", label: "Tên" },
+  {
+    key: "type",
+    label: "Nhóm đơn vị",
+    render: (_value: unknown, row: OrganizationTypeRow) =>
+      ORGANIZATION_TYPE_LABELS[row.type ?? "enterprise"],
+  },
+  { key: "description", label: "Mô tả" },
+];
+
+export const BUSINESS_COLUMNS: Column<BusinessLineRow>[] = [
   { key: "code", label: "Mã" },
   { key: "name", label: "Tên" },
   { key: "description", label: "Mô tả" },

@@ -80,6 +80,9 @@ export interface MasterDataAttributesMap {
 }
 
 export interface MasterDataRequestExtraFieldsMap {
+  "organization-types": {
+    type?: "enterprise" | "farm_household" | "cooperative";
+  };
   positions: {
     positionGroupId?: number | null;
     responsibilityDescription?: string | null;
@@ -120,6 +123,9 @@ export interface MasterDataRequestExtraFieldsMap {
 }
 
 export interface MasterDataRecordExtraFieldsMap {
+  "organization-types": {
+    type?: "enterprise" | "farm_household" | "cooperative";
+  };
   positions: {
     positionGroupId?: number | null;
     positionGroup?: PositionGroup | null;
