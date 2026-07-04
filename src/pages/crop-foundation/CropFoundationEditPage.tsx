@@ -1,18 +1,19 @@
 import {
   AdminLayout,
+  Button,
   Card,
   CardContent,
-  StepperForm,
   Form,
+  StepperForm,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
-import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useRef } from "react";
+import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import {
-  cropFoundationSchema,
   basicInfoSchema,
+  cropFoundationSchema,
   technicalSpecsSchema,
   type CropFoundationFormValues,
 } from "./schemas/cropFoundationSchema";
@@ -22,6 +23,8 @@ import { ConfirmationStep } from "./components/steps/ConfirmationStep";
 import { DocumentationStep } from "./components/steps/DocumentationStep";
 import { TechnicalSpecsStep } from "./components/steps/TechnicalSpecsStep";
 import { useCropFoundationEditForm } from "./hooks/useCropFoundationEditForm";
+
+import { ChevronLeft } from "lucide-react";
 
 function CropFoundationEditFormContent({
   fileInputRef,
@@ -115,6 +118,12 @@ export default function CropFoundationEditPage() {
       isDev={true}
       title={`Cập nhật thông tin: ${cropName || "Đang tải..."}`}
       description="Chỉnh sửa thông tin kỹ thuật và tài liệu của cây trồng"
+      actions={[
+        <Button variant="outline" onClick={handleCancel}>
+          <ChevronLeft className="w-4 h-4 mr-2" />
+          Quay lại
+        </Button>,
+      ]}
     >
       <FormProvider {...methods}>
         <Form {...methods}>
