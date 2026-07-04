@@ -1,5 +1,6 @@
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useEffect, useState } from "react";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useCatalog, useCatalogMutations } from "../../../features/foundation";
 import type { CatalogRecordResponse } from "../../../features/foundation";
 
@@ -23,9 +24,24 @@ const getBiological = (item: CatalogRecordResponse): string =>
 
 export function useGroupCropPage() {
   const { toast } = useToast();
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
+  const [pageSize, setPageSize] = useState(10);
+  const [currentIndex, setCurrentIndex] = useState(1);
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setCurrentIndex(1);
+  };
 
   // ─── API hooks ─────────────────────────────────────────────────────────────
-  const { items, loading, error } = useCatalog("crop-groups");
+  const { items, response, loading, error } = useCatalog("crop-groups", {
+    params: {
+      keyword: debouncedSearch.trim() || undefined,
+      page: Math.max(currentIndex - 1, 0),
+      size: pageSize,
+    },
+  });
   const { createCatalog, updateCatalog, deleteCatalog } =
     useCatalogMutations("crop-groups");
 
@@ -80,9 +96,7 @@ export function useGroupCropPage() {
       name: data.name || undefined,
       description: data.description || undefined,
       status: "active" as const,
-      attributes: data.biological
-        ? { biological: data.biological }
-        : undefined,
+      attributes: data.biological ? { biological: data.biological } : undefined,
     };
 
     if (editItem) {
@@ -145,6 +159,12 @@ export function useGroupCropPage() {
 
   return {
     groupCrops: items,
+    response,
+    handleSearch,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
     loading,
     formOpen,
     setFormOpen,

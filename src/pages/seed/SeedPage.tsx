@@ -19,6 +19,15 @@ export default function SeedPage() {
     seeds,
     setDeleteOpen,
     tableFilters,
+    loading,
+    pageCount,
+    totalElements,
+    page,
+    size,
+    handleSearch,
+    handlePageChange,
+    handlePageSizeChange,
+    handleFilterChange,
   } = useSeedPage();
 
   return (
@@ -52,6 +61,15 @@ export default function SeedPage() {
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm giống cây..."
         filters={tableFilters}
+        loading={loading}
+        totalPages={pageCount}
+        totalElements={totalElements}
+        currentIndex={page}
+        pageSize={size}
+        onSearch={handleSearch}
+        onIndexChange={handlePageChange}
+        onPageSize={handlePageSizeChange}
+        onFilterChange={handleFilterChange}
       />
 
       <DeleteDialog

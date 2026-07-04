@@ -1,17 +1,17 @@
-import { type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import type { FarmSeedResponse } from "@/features/farm";
+import type { Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Sprout } from "lucide-react";
 import { Link } from "wouter";
-import type { Variety } from "../types/types";
 
-export const seedColumns: Column<Variety>[] = [
+export const seedColumns: Column<FarmSeedResponse>[] = [
   {
-    key: "illustration",
+    key: "imageUrl",
     label: "Hình ảnh",
-    render: (value: string | File | null) => (
+    render: (value: unknown) => (
       <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border bg-muted shadow-sm">
         {value ? (
           <img
-            src={value instanceof File ? URL.createObjectURL(value) : value}
+            src={typeof value === "string" ? value : ""}
             className="h-full w-full object-cover"
           />
         ) : (
@@ -21,12 +21,12 @@ export const seedColumns: Column<Variety>[] = [
     ),
   },
   {
-    key: "varietyCode",
+    key: "cropVariety",
     label: "Mã giống",
-    render: (value: string, item: Variety) => (
+    render: (_, item) => (
       <Link href={`/seed/${item.id}`}>
         <span className="cursor-pointer text-green-600 transition-colors hover:text-green-700 hover:underline">
-          {value}
+          {item.cropVariety?.code || ""}
         </span>
       </Link>
     ),
@@ -34,36 +34,42 @@ export const seedColumns: Column<Variety>[] = [
   {
     key: "varietyName",
     label: "Tên giống",
-    render: (value: string) => (
-      <span className="text-sm font-bold text-foreground">{value}</span>
+    render: (_, item) => (
+      <span className="text-sm font-bold text-foreground">
+        {item.cropVariety?.name || ""}
+      </span>
     ),
   },
   {
     key: "supplier",
     label: "Nhà cung cấp",
-    render: (value: string) => (
-      <span className="text-xs font-medium text-muted-foreground">{value}</span>
+    render: (_, item) => (
+      <span className="text-xs font-medium text-muted-foreground">
+        {item.supplier?.name || ""}
+      </span>
     ),
   },
   {
     key: "origin",
     label: "Xuất xứ",
-    render: (value: string) => (
-      <span className="text-xs font-medium text-muted-foreground">{value}</span>
+    render: (value: unknown) => (
+      <span className="text-xs font-medium text-muted-foreground">
+        {value as string}
+      </span>
     ),
   },
   {
     key: "germinationRate",
     label: "Tỷ lệ nảy mầm",
-    render: (value: number) => (
-      <span className="font-semibold text-green-700">{value}%</span>
+    render: (value: unknown) => (
+      <span className="font-semibold text-green-700">{value as number}%</span>
     ),
   },
   {
-    key: "uniformity",
-    label: "Độ đồng đều",
-    render: (value: number) => (
-      <span className="font-semibold text-green-700">{value}%</span>
+    key: "purityRate",
+    label: "Độ sạch",
+    render: (value: unknown) => (
+      <span className="font-semibold text-green-700">{value as number}%</span>
     ),
   },
 ];

@@ -1,4 +1,7 @@
-import { apiClient } from "../../../shared/lib/axios";
+import {
+  FOUNDATION_BASE_PATH,
+  FOUNDATION_ENDPOINTS,
+} from "@/shared/constants/foundation.constants";
 import type {
   CatalogType,
   CatalogRecordRequest,
@@ -18,8 +21,7 @@ import type {
   FarmingMethodCropQueryParams,
   PageResponse,
 } from "../types/foundation.type";
-
-const BASE = "/api/admin/foundation";
+import { apiClient } from "@/shared/lib/axios";
 
 // ─── Catalog API ──────────────────────────────────────────────────────────────
 // Phục vụ 5 catalog types: crop-groups, farming-methods, soil-types,
@@ -30,26 +32,29 @@ export const catalogApi = {
     apiClient
       .get<
         PageResponse<CatalogRecordResponse>
-      >(`${BASE}/${catalog}`, { params })
+      >(`${FOUNDATION_BASE_PATH}/${catalog}`, { params })
       .then((r) => r.data),
 
   getById: (catalog: CatalogType, id: number) =>
     apiClient
-      .get<CatalogRecordResponse>(`${BASE}/${catalog}/${id}`)
+      .get<CatalogRecordResponse>(`${FOUNDATION_BASE_PATH}/${catalog}/${id}`)
       .then((r) => r.data),
 
   create: (catalog: CatalogType, data: CatalogRecordRequest) =>
     apiClient
-      .post<CatalogRecordResponse>(`${BASE}/${catalog}`, data)
+      .post<CatalogRecordResponse>(`${FOUNDATION_BASE_PATH}/${catalog}`, data)
       .then((r) => r.data),
 
   update: (catalog: CatalogType, id: number, data: CatalogRecordRequest) =>
     apiClient
-      .put<CatalogRecordResponse>(`${BASE}/${catalog}/${id}`, data)
+      .put<CatalogRecordResponse>(
+        `${FOUNDATION_BASE_PATH}/${catalog}/${id}`,
+        data,
+      )
       .then((r) => r.data),
 
   delete: (catalog: CatalogType, id: number) =>
-    apiClient.delete(`${BASE}/${catalog}/${id}`),
+    apiClient.delete(`${FOUNDATION_BASE_PATH}/${catalog}/${id}`),
 };
 
 // ─── Crop API ─────────────────────────────────────────────────────────────────
@@ -57,25 +62,28 @@ export const catalogApi = {
 export const cropApi = {
   list: (params?: CropQueryParams) =>
     apiClient
-      .get<PageResponse<FoundationCropResponse>>(`${BASE}/crops`, { params })
+      .get<
+        PageResponse<FoundationCropResponse>
+      >(FOUNDATION_ENDPOINTS.crops, { params })
       .then((r) => r.data),
 
   getById: (id: number) =>
     apiClient
-      .get<FoundationCropResponse>(`${BASE}/crops/${id}`)
+      .get<FoundationCropResponse>(`${FOUNDATION_ENDPOINTS.crops}/${id}`)
       .then((r) => r.data),
 
   create: (data: FoundationCropRequest) =>
     apiClient
-      .post<FoundationCropResponse>(`${BASE}/crops`, data)
+      .post<FoundationCropResponse>(FOUNDATION_ENDPOINTS.crops, data)
       .then((r) => r.data),
 
   update: (id: number, data: FoundationCropRequest) =>
     apiClient
-      .put<FoundationCropResponse>(`${BASE}/crops/${id}`, data)
+      .put<FoundationCropResponse>(`${FOUNDATION_ENDPOINTS.crops}/${id}`, data)
       .then((r) => r.data),
 
-  delete: (id: number) => apiClient.delete(`${BASE}/crops/${id}`),
+  delete: (id: number) =>
+    apiClient.delete(`${FOUNDATION_ENDPOINTS.crops}/${id}`),
 };
 
 // ─── Crop Variety API ─────────────────────────────────────────────────────────
@@ -84,7 +92,7 @@ export const cropVarietyApi = {
   list: (params?: CropVarietyQueryParams) =>
     apiClient
       .get<PageResponse<FoundationCropVarietyResponse>>(
-        `${BASE}/crop-varieties`,
+        FOUNDATION_ENDPOINTS.cropVarieties,
         {
           params,
         },
@@ -93,20 +101,29 @@ export const cropVarietyApi = {
 
   getById: (id: number) =>
     apiClient
-      .get<FoundationCropVarietyResponse>(`${BASE}/crop-varieties/${id}`)
+      .get<FoundationCropVarietyResponse>(
+        `${FOUNDATION_ENDPOINTS.cropVarieties}/${id}`,
+      )
       .then((r) => r.data),
 
   create: (data: FoundationCropVarietyRequest) =>
     apiClient
-      .post<FoundationCropVarietyResponse>(`${BASE}/crop-varieties`, data)
+      .post<FoundationCropVarietyResponse>(
+        FOUNDATION_ENDPOINTS.cropVarieties,
+        data,
+      )
       .then((r) => r.data),
 
   update: (id: number, data: FoundationCropVarietyRequest) =>
     apiClient
-      .put<FoundationCropVarietyResponse>(`${BASE}/crop-varieties/${id}`, data)
+      .put<FoundationCropVarietyResponse>(
+        `${FOUNDATION_ENDPOINTS.cropVarieties}/${id}`,
+        data,
+      )
       .then((r) => r.data),
 
-  delete: (id: number) => apiClient.delete(`${BASE}/crop-varieties/${id}`),
+  delete: (id: number) =>
+    apiClient.delete(`${FOUNDATION_ENDPOINTS.cropVarieties}/${id}`),
 };
 
 // ─── Growth Cycle Template API ────────────────────────────────────────────────
@@ -116,20 +133,20 @@ export const growthCycleTemplateApi = {
     apiClient
       .get<
         PageResponse<FoundationGrowthCycleTemplateResponse>
-      >(`${BASE}/growth-cycle-templates`, { params })
+      >(FOUNDATION_ENDPOINTS.growthCycleTemplates, { params })
       .then((r) => r.data),
 
   getById: (id: number) =>
     apiClient
       .get<FoundationGrowthCycleTemplateResponse>(
-        `${BASE}/growth-cycle-templates/${id}`,
+        `${FOUNDATION_ENDPOINTS.growthCycleTemplates}/${id}`,
       )
       .then((r) => r.data),
 
   create: (data: FoundationGrowthCycleTemplateRequest) =>
     apiClient
       .post<FoundationGrowthCycleTemplateResponse>(
-        `${BASE}/growth-cycle-templates`,
+        FOUNDATION_ENDPOINTS.growthCycleTemplates,
         data,
       )
       .then((r) => r.data),
@@ -137,13 +154,13 @@ export const growthCycleTemplateApi = {
   update: (id: number, data: FoundationGrowthCycleTemplateRequest) =>
     apiClient
       .put<FoundationGrowthCycleTemplateResponse>(
-        `${BASE}/growth-cycle-templates/${id}`,
+        `${FOUNDATION_ENDPOINTS.growthCycleTemplates}/${id}`,
         data,
       )
       .then((r) => r.data),
 
   delete: (id: number) =>
-    apiClient.delete(`${BASE}/growth-cycle-templates/${id}`),
+    apiClient.delete(`${FOUNDATION_ENDPOINTS.growthCycleTemplates}/${id}`),
 };
 
 // ─── Farming Method Crop API ──────────────────────────────────────────────────
@@ -153,27 +170,32 @@ export const farmingMethodCropApi = {
     apiClient
       .get<
         PageResponse<FarmingMethodCropResponse>
-      >(`${BASE}/farming-method-crops`, { params })
+      >(FOUNDATION_ENDPOINTS.farmingMethodCrops, { params })
       .then((r) => r.data),
 
   getById: (id: number) =>
     apiClient
-      .get<FarmingMethodCropResponse>(`${BASE}/farming-method-crops/${id}`)
+      .get<FarmingMethodCropResponse>(
+        `${FOUNDATION_ENDPOINTS.farmingMethodCrops}/${id}`,
+      )
       .then((r) => r.data),
 
   create: (data: FarmingMethodCropRequest) =>
     apiClient
-      .post<FarmingMethodCropResponse>(`${BASE}/farming-method-crops`, data)
+      .post<FarmingMethodCropResponse>(
+        FOUNDATION_ENDPOINTS.farmingMethodCrops,
+        data,
+      )
       .then((r) => r.data),
 
   update: (id: number, data: FarmingMethodCropRequest) =>
     apiClient
       .put<FarmingMethodCropResponse>(
-        `${BASE}/farming-method-crops/${id}`,
+        `${FOUNDATION_ENDPOINTS.farmingMethodCrops}/${id}`,
         data,
       )
       .then((r) => r.data),
 
   delete: (id: number) =>
-    apiClient.delete(`${BASE}/farming-method-crops/${id}`),
+    apiClient.delete(`${FOUNDATION_ENDPOINTS.farmingMethodCrops}/${id}`),
 };

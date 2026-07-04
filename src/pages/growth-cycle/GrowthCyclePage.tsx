@@ -32,6 +32,12 @@ const GrowthCyclePage = () => {
     handleDelete,
     handleConfirmDelete,
     loading,
+    response,
+    handleSearch,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
   } = useGrowthCyclePage();
 
   useDialogBugWorkaround([deleteOpen, detailOpen]);
@@ -82,45 +88,28 @@ const GrowthCyclePage = () => {
         </TabsList>
 
         <TabsContent value="plant">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
-              <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-green-500 animate-spin" />
-              <span className="text-sm">
-                Đang tải danh sách chu kỳ thực vật...
-              </span>
-            </div>
-          ) : (
-            <DataTable
-              data={plantCycles}
-              selectable={false}
-              columns={growthCycleColumns}
-              onView={handleView}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              searchPlaceholder="Tìm kiếm chu kỳ thực vật..."
-            />
-          )}
+          <DataTable
+            data={plantCycles}
+            selectable={false}
+            columns={growthCycleColumns}
+            onView={handleView}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            searchPlaceholder="Tìm kiếm chu kỳ thực vật..."
+            searchable
+            onSearch={handleSearch}
+            pageSize={pageSize}
+            currentIndex={currentIndex}
+            totalElements={response?.totalElements}
+            totalPages={response?.totalPages}
+            onPageSize={setPageSize}
+            onIndexChange={setCurrentIndex}
+            loading={loading}
+          />
         </TabsContent>
 
         <TabsContent value="animal">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
-              <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-blue-500 animate-spin" />
-              <span className="text-sm">
-                Đang tải danh sách chu kỳ vật nuôi / thủy sản...
-              </span>
-            </div>
-          ) : animalCycles.length > 0 ? (
-            <DataTable
-              data={animalCycles}
-              selectable={false}
-              columns={growthCycleColumns}
-              onView={handleView}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              searchPlaceholder="Tìm kiếm chu kỳ vật nuôi / thủy sản..."
-            />
-          ) : (
+          {!loading && animalCycles.length === 0 ? (
             <div className="rounded-2xl border border-dashed bg-muted/30 p-10 text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-background shadow-sm">
                 <Fish className="h-6 w-6 text-muted-foreground" />
@@ -133,6 +122,25 @@ const GrowthCyclePage = () => {
                 hoặc thủy sản khi bạn thêm dữ liệu mới.
               </p>
             </div>
+          ) : (
+            <DataTable
+              data={animalCycles}
+              selectable={false}
+              columns={growthCycleColumns}
+              onView={handleView}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              searchPlaceholder="Tìm kiếm chu kỳ vật nuôi / thủy sản..."
+              searchable
+              onSearch={handleSearch}
+              pageSize={pageSize}
+              currentIndex={currentIndex}
+              totalElements={response?.totalElements}
+              totalPages={response?.totalPages}
+              onPageSize={setPageSize}
+              onIndexChange={setCurrentIndex}
+              loading={loading}
+            />
           )}
         </TabsContent>
       </Tabs>

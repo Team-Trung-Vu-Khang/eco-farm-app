@@ -274,7 +274,5 @@ export interface FarmingMethodCropResponse {
   crops?: CropAssignmentView[];
 }
 
-export interface FarmingMethodCropQueryParams {
-  keyword?: string;
-  status?: FoundationStatus;
+export interface FarmingMethodCropQueryParams extends BaseQueryParams {
 }

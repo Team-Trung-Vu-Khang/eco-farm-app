@@ -1,38 +1,107 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import useSeedStore from "../../../stores/useSeedStore";
-import type { Variety } from "../types/types";
-import { cropOptions, originOptions, supplierOptions } from "../data/mocks";
+
+import { supplierOptions } from "../data/mocks";
+import type { FoundationStatus } from "@/features/foundation";
+import {
+  useSeedMutations,
+  useSeeds,
+  type FarmSeedResponse,
+} from "@/features/farm";
 
 export function useSeedPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const { seeds, deleteSeed } = useSeedStore();
+
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(20);
+  const [keyword, setKeyword] = useState<string>("");
+  const [supplierOrganizationId, setSupplierOrganizationId] = useState<
+    number | undefined
+  >();
+  const [status, setStatus] = useState<FoundationStatus | undefined>();
+
+  const {
+    items: seeds,
+    loading,
+    response,
+  } = useSeeds({
+    params: {
+      page,
+      size,
+      keyword: keyword || undefined,
+      supplierOrganizationId,
+      status,
+    },
+  });
+
+  const { deleteSeed } = useSeedMutations();
 
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<Variety | null>(null);
+  const [deleteItem, setDeleteItem] = useState<FarmSeedResponse | null>(null);
 
   const tableFilters = [
-    { key: "crop", label: "Loại cây", options: cropOptions },
     { key: "supplier", label: "Nhà cung cấp", options: supplierOptions },
-    { key: "origin", label: "Xuất xứ", options: originOptions },
+    {
+      key: "status",
+      label: "Trạng thái",
+      options: [
+        { label: "Hoạt động", value: "active" },
+        { label: "Ngừng hoạt động", value: "inactive" },
+        { label: "Đã lưu trữ", value: "archived" },
+      ],
+    },
   ];
 
   const handleAdd = () => setLocation("/seed/create");
-  const handleEdit = (item: Variety) => setLocation(`/seed/${item.id}/edit`);
-  const handleView = (item: Variety) => setLocation(`/seed/${item.id}`);
-  const handleDelete = (item: Variety) => {
+  const handleEdit = (item: FarmSeedResponse) =>
+    setLocation(`/seed/${item.id}/edit`);
+  const handleView = (item: FarmSeedResponse) =>
+    setLocation(`/seed/${item.id}`);
+
+  const handleDelete = (item: FarmSeedResponse) => {
     setDeleteItem(item);
     setDeleteOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (deleteItem) {
-      deleteSeed(deleteItem.id);
-      toast({ title: "Thành công", description: "Đã xóa giống cây trồng" });
+      try {
+        await deleteSeed.mutateAsync(deleteItem.id);
+        toast({ title: "Thành công", description: "Đã xóa giống cây trồng" });
+      } catch (error) {
+        toast({
+          title: "Lỗi",
+          description: "Xóa thất bại",
+          variant: "destructive",
+        });
+      }
     }
     setDeleteOpen(false);
+  };
+
+  const handleSearch = (value: string) => {
+    setKeyword(value);
+    setPage(0);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setSize(newSize);
+    setPage(0);
+  };
+
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "supplier") {
+      setSupplierOrganizationId(value ? Number(value) : undefined);
+    } else if (key === "status") {
+      setStatus(value as FoundationStatus);
+    }
+    setPage(0);
   };
 
   return {
@@ -45,5 +114,14 @@ export function useSeedPage() {
     seeds,
     setDeleteOpen,
     tableFilters,
+    loading,
+    pageCount: response?.totalPages ?? 0,
+    totalElements: response?.totalElements ?? 0,
+    page,
+    size,
+    handleSearch,
+    handlePageChange,
+    handlePageSizeChange,
+    handleFilterChange,
   };
 }

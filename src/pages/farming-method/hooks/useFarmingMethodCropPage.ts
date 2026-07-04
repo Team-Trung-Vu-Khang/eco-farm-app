@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useCatalog } from "../../../features/foundation/hooks/useCatalog";
 import { useFarmingMethodCrops } from "../../../features/foundation/hooks/useFarmingMethodCrops";
 import { useFarmingMethodCropMutations } from "../../../features/foundation/hooks/useFarmingMethodCropMutations";
@@ -15,7 +16,27 @@ import type {
 } from "../types/types";
 
 export function useFarmingMethodCropPage() {
-  const { items: farmingMethodCrops, loading } = useFarmingMethodCrops();
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
+  const [pageSize, setPageSize] = useState(10);
+  const [currentIndex, setCurrentIndex] = useState(1);
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setCurrentIndex(1);
+  };
+
+  const {
+    items: farmingMethodCrops,
+    response,
+    loading,
+  } = useFarmingMethodCrops({
+    params: {
+      keyword: debouncedSearch.trim() || undefined,
+      page: Math.max(currentIndex - 1, 0),
+      size: pageSize,
+    },
+  });
   const {
     createFarmingMethodCrop,
     updateFarmingMethodCrop,
@@ -32,9 +53,7 @@ export function useFarmingMethodCropPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [editingLinkIndex, setEditingLinkIndex] = useState<number | null>(null);
-  const [linkDraft, setLinkDraft] = useState<RelatedCropForm>(
-    emptyRelatedCropForm(),
-  );
+  const [linkDraft, setLinkDraft] = useState<RelatedCropForm>();
   const [editingItem, setEditingItem] = useState<FarmingMethodCropRow | null>(
     null,
   );
@@ -155,6 +174,12 @@ export function useFarmingMethodCropPage() {
     loading,
     isPending,
     farmingMethods,
+    response,
+    handleSearch,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
     formOpen,
     setFormOpen,
     deleteOpen,

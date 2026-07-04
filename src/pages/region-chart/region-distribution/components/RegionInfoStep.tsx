@@ -11,40 +11,61 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Combobox,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { EnterpriseSelector } from "@/pages/cultivation-zone/cultivation-region/components";
-import { PROVINCES } from "@/constants/province";
-import type { Region } from "../../constants";
+import { OrganizationSelector } from "@/pages/cultivation-zone/cultivation-region/components";
+import { useFormContext } from "react-hook-form";
+import { useAddressOptions } from "@/features/master-data/hooks/useAddressOptions";
+import { useCatalog } from "@/features/foundation/hooks/useCatalog";
+import { useCrops } from "@/features/foundation/hooks/useCrops";
+import { useEffect, useState, useMemo } from "react";
+import type { RegionFormValues } from "../data/region-form.schema";
 
-type EnterpriseOption = {
-  id: string | number;
-  name: string;
-  province?: string;
-  district?: string;
-  address?: string;
-};
+export const RegionInfoStep = () => {
+  const { items: lands } = useCatalog("soil-types");
+  const { items: terrains } = useCatalog("terrain-features");
+  const { data: cropsData } = useCrops({ params: { size: 100 } });
+  const crops = cropsData?.content || [];
 
-type LookupOption = {
-  id?: string | number;
-  code?: string | number;
-  name: string;
-};
+  const cropOptions = useMemo(() => {
+    return crops.map((crop) => ({
+      value: crop.id.toString(),
+      label: crop.name,
+      image: crop.imageUrl,
+    }));
+  }, [crops]);
 
-interface RegionInfoStepProps {
-  formData: Partial<Region>;
-  setFormData: (data: Partial<Region>) => void;
-  enterprises: EnterpriseOption[];
-  lands: LookupOption[];
-  terrains: LookupOption[];
-}
+  const { control, setValue, watch } = useFormContext<RegionFormValues>();
+  const provinceId = watch("provinceId");
+  const { provinces, wards, isLoadingProvinces, isLoadingWards } =
+    useAddressOptions(provinceId);
 
-export const RegionInfoStep = ({
-  formData,
-  setFormData,
-  enterprises,
-  lands,
-  terrains,
-}: RegionInfoStepProps) => {
+  const [pendingWardName, setPendingWardName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (pendingWardName && wards.length > 0) {
+      const normalize = (input: string) =>
+        input
+          .toLowerCase()
+          .replace(/^(tỉnh|thành phố|tp\.)\s+/i, "")
+          .trim();
+
+      const matchedWard = wards.find(
+        (w) => normalize(w.name) === normalize(pendingWardName),
+      );
+
+      if (matchedWard) {
+        setValue("wardId", matchedWard.code);
+      }
+      setPendingWardName(null);
+    }
+  }, [wards, pendingWardName, setValue]);
+
   return (
     <Card>
       <CardHeader>
@@ -52,211 +73,273 @@ export const RegionInfoStep = ({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>
-              Mã vùng <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              value={formData.code || ""}
-              onChange={(event) =>
-                setFormData({ ...formData, code: event.target.value })
-              }
-              placeholder="VD: REG-001"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>
-              Tên vùng <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              value={formData.name || ""}
-              onChange={(event) =>
-                setFormData({ ...formData, name: event.target.value })
-              }
-              placeholder="Tên vùng trồng"
-            />
-          </div>
+          <FormField
+            control={control}
+            name="code"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Mã vùng <span className="text-red-500">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="VD: REG-001" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Tên vùng <span className="text-red-500">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Tên vùng trồng" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">
-              Đơn vị sở hữu <span className="text-red-500">*</span>
-            </Label>
-            <EnterpriseSelector
-              selectedId={formData.enterpriseId || ""}
-              onSelect={(value) => {
-                const selectedEnterprise = enterprises.find(
-                  (enterprise) => enterprise.id.toString() === value,
-                );
+          <FormField
+            control={control}
+            name="enterpriseId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Đơn vị sở hữu <span className="text-red-500">*</span>
+                </FormLabel>
+                <FormControl>
+                  <OrganizationSelector
+                    selectedId={field.value}
+                    onSelect={(value, selectedEnterprise) => {
+                      if (selectedEnterprise) {
+                        const normalize = (input: string) =>
+                          input
+                            .toLowerCase()
+                            .replace(/^(tỉnh|thành phố|tp\.)\s+/i, "")
+                            .trim();
 
-                if (selectedEnterprise) {
-                  const normalize = (input: string) =>
-                    input
-                      .toLowerCase()
-                      .replace(/^(tỉnh|thành phố|tp\.)\s+/i, "")
-                      .trim();
+                        const matchedProvince = provinces.find(
+                          (item) =>
+                            normalize(item.name) ===
+                            normalize(selectedEnterprise.province || ""),
+                        );
 
-                  const province = PROVINCES.find(
-                    (item) =>
-                      normalize(item.name) ===
-                      normalize(selectedEnterprise.province || ""),
-                  );
-                  const district = province?.districts.find(
-                    (item) =>
-                      normalize(item.name) ===
-                      normalize(selectedEnterprise.district || ""),
-                  );
+                        setValue("enterpriseId", value);
+                        if (selectedEnterprise.address) {
+                          setValue("address", selectedEnterprise.address);
+                        }
 
-                  setFormData({
-                    ...formData,
-                    enterpriseId: value,
-                    provinceId: province?.code || formData.provinceId,
-                    districtId: district?.code || formData.districtId,
-                    address: selectedEnterprise.address || formData.address,
-                  });
-                  return;
-                }
+                        if (matchedProvince) {
+                          setValue("provinceId", matchedProvince.code);
+                          // Schedule ward match after wards load
+                          if (selectedEnterprise.district) {
+                            setPendingWardName(selectedEnterprise.district);
+                          }
+                        }
+                      } else {
+                        setValue("enterpriseId", value);
+                      }
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-                setFormData({ ...formData, enterpriseId: value });
-              }}
-            />
-          </div>
+          <FormField
+            control={control}
+            name="cropId"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Cây trồng chính</FormLabel>
+                <FormControl>
+                  <Combobox
+                    options={cropOptions}
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    placeholder="Chọn cây trồng..."
+                    searchPlaceholder="Tìm kiếm cây trồng..."
+                    className="w-full mt-2"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Diện tích (ha)</Label>
-            <Input
-              type="number"
-              className="h-10 border-slate-300 focus:border-primary focus:ring-primary/20"
-              value={formData.area || ""}
-              onChange={(event) =>
-                setFormData({
-                  ...formData,
-                  area: parseFloat(event.target.value),
-                })
-              }
-              placeholder="Nhập diện tích"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Tỉnh / Thành Phố</Label>
-            <Select
-              value={formData.provinceId}
-              onValueChange={(value) =>
-                setFormData({ ...formData, provinceId: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn Tỉnh / Thành Phố" />
-              </SelectTrigger>
-              <SelectContent>
-                {PROVINCES.map((province) => (
-                  <SelectItem key={province.code} value={province.code}>
-                    {province.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Phường/Xã</Label>
-            <Select
-              value={formData.districtId}
-              onValueChange={(value) =>
-                setFormData({ ...formData, districtId: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn Phường / Xã" />
-              </SelectTrigger>
-              <SelectContent>
-                {PROVINCES.find((province) => province.code === formData.provinceId)?.districts.map(
-                  (district) => (
-                    <SelectItem key={district.code} value={district.code}>
-                      {district.name}
-                    </SelectItem>
-                  ),
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Địa chỉ chi tiết</Label>
-          <Input
-            value={formData.address || ""}
-            onChange={(event) =>
-              setFormData({ ...formData, address: event.target.value })
-            }
-            placeholder="Số nhà, đường, thôn/xóm..."
+          <FormField
+            control={control}
+            name="area"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Diện tích (ha)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    className="h-10 border-slate-300 focus:border-primary focus:ring-primary/20"
+                    clearable={false}
+                    value={field.value ?? ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      field.onChange(val === "" ? undefined : parseFloat(val));
+                    }}
+                    placeholder="Nhập diện tích"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Loại đất</Label>
-            <Select
-              value={formData.landType}
-              onValueChange={(value) =>
-                setFormData({ ...formData, landType: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn loại đất" />
-              </SelectTrigger>
-              <SelectContent>
-                {lands.map((land) => (
-                  <SelectItem
-                    key={land.id || land.code}
-                    value={(land.id || land.code || "").toString()}
-                  >
-                    {land.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <FormField
+            control={control}
+            name="provinceId"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Tỉnh / Thành Phố</FormLabel>
+                <FormControl>
+                  <Combobox
+                    options={provinces.map((p) => ({
+                      value: p.code,
+                      label: p.name,
+                    }))}
+                    value={field.value ?? ""}
+                    onChange={(val) => {
+                      field.onChange(val);
+                      setValue("wardId", ""); // Reset ward when province changes
+                    }}
+                    disabled={isLoadingProvinces}
+                    placeholder="Chọn Tỉnh / Thành Phố"
+                    searchPlaceholder="Tìm kiếm..."
+                    className="w-full mt-2"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          <div className="space-y-2">
-            <Label>Địa hình</Label>
-            <Select
-              value={formData.terrain}
-              onValueChange={(value) =>
-                setFormData({ ...formData, terrain: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn địa hình" />
-              </SelectTrigger>
-              <SelectContent>
-                {terrains.map((terrain) => (
-                  <SelectItem
-                    key={terrain.id || terrain.code}
-                    value={(terrain.id || terrain.code || "").toString()}
-                  >
-                    {terrain.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Ghi chú</Label>
-          <Textarea
-            value={formData.note || ""}
-            onChange={(event) =>
-              setFormData({ ...formData, note: event.target.value })
-            }
-            rows={3}
+          <FormField
+            control={control}
+            name="wardId"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Phường/Xã</FormLabel>
+                <FormControl>
+                  <Combobox
+                    options={wards.map((w) => ({
+                      value: w.code,
+                      label: w.name,
+                    }))}
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    disabled={!provinceId || isLoadingWards}
+                    placeholder="Chọn Phường / Xã"
+                    searchPlaceholder="Tìm kiếm..."
+                    className="w-full mt-2"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
+
+        <FormField
+          control={control}
+          name="address"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Địa chỉ chi tiết</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Số nhà, đường, thôn/xóm..." />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={control}
+            name="landType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Loại đất</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn loại đất" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {lands.map((land) => (
+                      <SelectItem
+                        key={land.id || land.code}
+                        value={(land.id || land.code || "").toString()}
+                      >
+                        {land.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={control}
+            name="terrain"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Địa hình</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn địa hình" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {terrains.map((terrain) => (
+                      <SelectItem
+                        key={terrain.id || terrain.code}
+                        value={(terrain.id || terrain.code || "").toString()}
+                      >
+                        {terrain.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={control}
+          name="note"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Ghi chú</FormLabel>
+              <FormControl>
+                <Textarea {...field} rows={3} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </CardContent>
     </Card>
   );

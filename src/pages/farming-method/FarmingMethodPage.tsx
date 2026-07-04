@@ -1,7 +1,8 @@
 import GenericPage from "../GenericPage";
 import { useCatalog } from "../../features/foundation/hooks/useCatalog";
 import { useCatalogMutations } from "../../features/foundation/hooks/useCatalogMutations";
-import React from "react";
+import React, { useState } from "react";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import {
   convertLexicalToHtml,
   type EditorState,
@@ -30,7 +31,23 @@ const fieldConfig = {
 };
 
 const FarmingMethodPage = () => {
-  const { items, loading } = useCatalog("farming-methods");
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
+  const [pageSize, setPageSize] = useState(10);
+  const [currentIndex, setCurrentIndex] = useState(1);
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setCurrentIndex(1);
+  };
+
+  const { items, response, loading } = useCatalog("farming-methods", {
+    params: {
+      keyword: debouncedSearch.trim() || undefined,
+      page: Math.max(currentIndex - 1, 0),
+      size: pageSize,
+    }
+  });
   const { createCatalog, updateCatalog, deleteCatalog } =
     useCatalogMutations("farming-methods");
 
@@ -88,6 +105,14 @@ const FarmingMethodPage = () => {
       isLoading={loading}
       onSubmit={handleSubmit}
       onDelete={handleDelete}
+      searchable
+      onSearch={handleSearch}
+      pageSize={pageSize}
+      currentIndex={currentIndex}
+      totalElements={response?.totalElements}
+      totalPages={response?.totalPages}
+      onPageSize={setPageSize}
+      onIndexChange={setCurrentIndex}
     />
   );
 };

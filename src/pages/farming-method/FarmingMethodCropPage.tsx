@@ -26,6 +26,12 @@ export default function FarmingMethodCropPage() {
     loading,
     isPending,
     farmingMethods,
+    response,
+    handleSearch,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
     formOpen,
     setFormOpen,
     deleteOpen,
@@ -60,31 +66,34 @@ export default function FarmingMethodCropPage() {
         </Button>
       }
     >
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
-          <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-green-500 animate-spin" />
-          <span className="text-sm">
-            Đang tải danh sách phương thức canh tác...
-          </span>
-        </div>
-      ) : (
-        <DataTable
-          data={data}
-          columns={columns}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          searchPlaceholder="Tìm phương thức, cây trồng hoặc giống..."
-          selectable={false}
-        />
-      )}
+      <DataTable
+        data={data}
+        columns={columns}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        searchPlaceholder="Tìm phương thức, cây trồng hoặc giống..."
+        selectable={false}
+        searchable
+        onSearch={handleSearch}
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalElements={response?.totalElements}
+        totalPages={response?.totalPages}
+        onPageSize={setPageSize}
+        onIndexChange={setCurrentIndex}
+        loading={loading}
+      />
 
       <FormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        title={editingItem ? "Cập nhật phương thức" : "Thêm phương thức mới"}
-        onSubmit={handleSubmit}
         size="xl"
+        open={formOpen}
         loading={isPending}
+        onSubmit={handleSubmit}
+        onOpenChange={(open) => {
+          if (!open && linkDialogOpen) return;
+          setFormOpen(open);
+        }}
+        title={editingItem ? "Cập nhật phương thức" : "Thêm phương thức mới"}
       >
         <div className="space-y-5">
           {/* Row 1: Mã */}
@@ -271,12 +280,14 @@ export default function FarmingMethodCropPage() {
         </div>
       </FormDialog>
 
-      <CropVarietySelectorDialog
-        open={linkDialogOpen}
-        onOpenChange={setLinkDialogOpen}
-        initialValue={linkDraft}
-        onConfirm={handleConfirmLink}
-      />
+      <div onClick={(e) => e.stopPropagation()}>
+        <CropVarietySelectorDialog
+          open={linkDialogOpen}
+          initialValue={linkDraft}
+          onConfirm={handleConfirmLink}
+          onOpenChange={setLinkDialogOpen}
+        />
+      </div>
 
       <DeleteDialog
         open={deleteOpen}

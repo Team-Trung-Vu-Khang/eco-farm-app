@@ -20,7 +20,7 @@ export function CropVarietySelectorDialog({
   onOpenChange,
 }: {
   open: boolean;
-  initialValue: RelatedCropForm;
+  initialValue?: RelatedCropForm;
   onConfirm: (value: RelatedCropForm) => void;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -32,10 +32,10 @@ export function CropVarietySelectorDialog({
   });
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedGroup, setSelectedGroup] = useState(initialValue.cropGroup);
-  const [selectedCropId, setSelectedCropId] = useState(initialValue.cropId);
+  const [selectedGroup, setSelectedGroup] = useState(initialValue?.cropGroup);
+  const [selectedCropId, setSelectedCropId] = useState(initialValue?.cropId);
   const [selectedVarieties, setSelectedVarieties] = useState<number[]>(
-    initialValue.varietyIds || [],
+    initialValue?.varietyIds || [],
   );
 
   const isFetchingData = cropsLoading || varietiesLoading;
@@ -73,9 +73,9 @@ export function CropVarietySelectorDialog({
 
     setTimeout(() => {
       setSearchTerm("");
-      setSelectedGroup(initialValue.cropGroup);
-      setSelectedCropId(initialValue.cropId);
-      setSelectedVarieties(initialValue.varietyIds || []);
+      setSelectedGroup(initialValue?.cropGroup);
+      setSelectedCropId(initialValue?.cropId);
+      setSelectedVarieties(initialValue?.varietyIds || []);
     }, 0);
     return undefined;
   }, [initialValue, open]);

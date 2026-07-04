@@ -11,11 +11,11 @@ import {
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CheckCircle2, MapPin, Plus, Search, X } from "lucide-react";
-import type { Region } from "../../constants";
+import type { FarmRegionResponse } from "@/features/farm/types/farm.type";
 
 interface SelectedRegionCardProps {
   regionId: string;
-  regions: Region[];
+  regions: FarmRegionResponse[];
   onRemove: () => void;
 }
 
@@ -48,8 +48,8 @@ export function SelectedRegionCard({
             {region.name}
           </h4>
           <p className="mt-0.5 truncate text-[11px] italic text-slate-500">
-            {region.address}, {region.ward}, {region.districtId},{" "}
-            {region.provinceId}
+            {region.address}, {region.ward}, {region.district},{" "}
+            {region.province}
           </p>
         </div>
         <Button
@@ -66,7 +66,7 @@ export function SelectedRegionCard({
 }
 
 interface RegionSelectorProps {
-  regions: Region[];
+  regions: FarmRegionResponse[];
   enterpriseId: number | null;
   onSelect: (id: string) => void;
   selectedId?: string;
@@ -86,8 +86,9 @@ export function AreaRegionSelector({
       regions.filter(
         (region) =>
           (!enterpriseId ||
-            String(region.enterpriseId) === String(enterpriseId)) &&
-          region.name.toLowerCase().includes(searchTerm.toLowerCase()),
+            String(region.metadataJson?.enterpriseId) ===
+              String(enterpriseId)) &&
+          (region.name || "").toLowerCase().includes(searchTerm.toLowerCase()),
       ),
     [enterpriseId, regions, searchTerm],
   );

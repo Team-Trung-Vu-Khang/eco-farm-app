@@ -26,6 +26,12 @@ export default function GroupCropPage() {
     handleSubmit,
     handleConfirmDelete,
     isPending,
+    response,
+    handleSearch,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
   } = useGroupCropPage();
 
   useDialogBugWorkaround([formOpen, deleteOpen]);
@@ -45,20 +51,22 @@ export default function GroupCropPage() {
         </Button>
       }
     >
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
-          <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-green-500 animate-spin" />
-          <span className="text-sm">Đang tải danh sách nhóm cây trồng...</span>
-        </div>
-      ) : (
-        <DataTable
+      <DataTable
           data={groupCrops}
           columns={groupCropColumns}
           onEdit={handleEdit}
           onDelete={handleDelete}
           searchPlaceholder="Tìm kiếm mã, tên loại cây..."
+          searchable
+          onSearch={handleSearch}
+          pageSize={pageSize}
+          currentIndex={currentIndex}
+          totalElements={response?.totalElements}
+          totalPages={response?.totalPages}
+          onPageSize={setPageSize}
+          onIndexChange={setCurrentIndex}
+          loading={loading}
         />
-      )}
 
       <GroupCropFormDialog
         open={formOpen}

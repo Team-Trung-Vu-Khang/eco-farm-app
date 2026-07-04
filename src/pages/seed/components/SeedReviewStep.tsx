@@ -1,13 +1,20 @@
 import { CheckCircle2, Sprout } from "lucide-react";
 import type { CreateVarietyForm } from "../types/types";
 
-export function SeedReviewStep({
-  formData,
-  illustrationPreview,
-}: {
-  formData: CreateVarietyForm;
-  illustrationPreview: string;
-}) {
+import { useFormContext, useWatch } from "react-hook-form";
+import type { CreateSeedFormValues } from "../schemas/createSeedSchema";
+
+export function SeedReviewStep({ formData }: { formData: CreateVarietyForm }) {
+  const { control } = useFormContext<CreateSeedFormValues>();
+  const watchedIllustration = useWatch({ control, name: "illustration" });
+  const watchedBaseIllustration = useWatch({
+    control,
+    name: "baseIllustrationUrl",
+  });
+
+  const illustrationPreview = watchedIllustration
+    ? URL.createObjectURL(watchedIllustration as File)
+    : watchedBaseIllustration || "";
   return (
     <div className="mx-auto max-w-2xl space-y-6 py-6">
       <div className="space-y-4 rounded-2xl border border-slate-100 bg-slate-50 p-6">

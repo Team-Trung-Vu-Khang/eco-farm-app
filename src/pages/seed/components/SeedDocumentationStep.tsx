@@ -8,21 +8,24 @@ import {
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CheckCircle2, CloudUpload, FileText, Trash, X } from "lucide-react";
-import type { CreateVarietyForm } from "../types/types";
+import { useFormContext, useWatch } from "react-hook-form";
+import type { CreateSeedFormValues } from "../schemas/createSeedSchema";
 
 interface SeedDocumentationStepProps {
   compactMode?: boolean;
-  formData: CreateVarietyForm;
   pdfInputRef: React.RefObject<HTMLInputElement | null>;
-  setFormData: React.Dispatch<React.SetStateAction<CreateVarietyForm>>;
 }
 
 export function SeedDocumentationStep({
   compactMode = false,
-  formData,
   pdfInputRef,
-  setFormData,
 }: SeedDocumentationStepProps) {
+  const { control, setValue } = useFormContext<CreateSeedFormValues>();
+
+  const watchedContentType = useWatch({ control, name: "contentType" });
+  const watchedPdfFile = useWatch({ control, name: "pdfFile" });
+  const watchedEditorContent = useWatch({ control, name: "editorContent" });
+
   if (compactMode) {
     return (
       <div className="mx-auto max-w-3xl space-y-8 py-4">
@@ -32,12 +35,9 @@ export function SeedDocumentationStep({
           </Label>
           <RadioGroup
             defaultValue="pdf"
-            value={formData.contentType}
+            value={watchedContentType}
             onValueChange={(value: "pdf" | "editor") =>
-              setFormData((currentForm) => ({
-                ...currentForm,
-                contentType: value,
-              }))
+              setValue("contentType", value)
             }
             className="flex gap-6"
           >
@@ -49,15 +49,12 @@ export function SeedDocumentationStep({
                 key={option.value}
                 className={cn(
                   "flex min-w-[200px] cursor-pointer items-center space-x-3 rounded-xl border p-4 transition-all",
-                  formData.contentType === option.value
+                  watchedContentType === option.value
                     ? "border-green-200 bg-green-50 shadow-sm"
                     : "border-slate-200 bg-white hover:border-slate-300",
                 )}
                 onClick={() =>
-                  setFormData((currentForm) => ({
-                    ...currentForm,
-                    contentType: option.value as "pdf" | "editor",
-                  }))
+                  setValue("contentType", option.value as "pdf" | "editor")
                 }
               >
                 <RadioGroupItem
@@ -78,9 +75,11 @@ export function SeedDocumentationStep({
 
         <SeedDocumentationContent
           compactMode
-          formData={formData}
           pdfInputRef={pdfInputRef}
-          setFormData={setFormData}
+          watchedContentType={watchedContentType}
+          watchedPdfFile={watchedPdfFile}
+          watchedEditorContent={watchedEditorContent}
+          setValue={setValue}
         />
       </div>
     );
@@ -99,15 +98,10 @@ export function SeedDocumentationStep({
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div
-          onClick={() =>
-            setFormData((currentForm) => ({
-              ...currentForm,
-              contentType: "pdf",
-            }))
-          }
+          onClick={() => setValue("contentType", "pdf")}
           className={cn(
             "group relative cursor-pointer rounded-2xl border-2 p-6 transition-all hover:shadow-md",
-            formData.contentType === "pdf"
+            watchedContentType === "pdf"
               ? "border-green-500 bg-green-50/10 ring-2 ring-green-500/20"
               : "border-slate-100 bg-white hover:border-green-200",
           )}
@@ -116,7 +110,7 @@ export function SeedDocumentationStep({
             <div
               className={cn(
                 "flex h-12 w-12 items-center justify-center rounded-full transition-colors",
-                formData.contentType === "pdf"
+                watchedContentType === "pdf"
                   ? "bg-green-100 text-green-600"
                   : "bg-slate-100 text-slate-400 group-hover:bg-green-50 group-hover:text-green-500",
               )}
@@ -127,7 +121,7 @@ export function SeedDocumentationStep({
               <h4 className="font-bold text-slate-800">Tải file PDF</h4>
               <p className="text-sm text-slate-500">Dành cho tài liệu có sẵn</p>
             </div>
-            {formData.contentType === "pdf" && (
+            {watchedContentType === "pdf" && (
               <div className="absolute right-6 top-6">
                 <CheckCircle2 className="h-6 w-6 fill-green-100 text-green-600" />
               </div>
@@ -136,15 +130,10 @@ export function SeedDocumentationStep({
         </div>
 
         <div
-          onClick={() =>
-            setFormData((currentForm) => ({
-              ...currentForm,
-              contentType: "editor",
-            }))
-          }
+          onClick={() => setValue("contentType", "editor")}
           className={cn(
             "group relative cursor-pointer rounded-2xl border-2 p-6 transition-all hover:shadow-md",
-            formData.contentType === "editor"
+            watchedContentType === "editor"
               ? "border-green-500 bg-green-50/10 ring-2 ring-green-500/20"
               : "border-slate-100 bg-white hover:border-green-200",
           )}
@@ -153,7 +142,7 @@ export function SeedDocumentationStep({
             <div
               className={cn(
                 "flex h-12 w-12 items-center justify-center rounded-full transition-colors",
-                formData.contentType === "editor"
+                watchedContentType === "editor"
                   ? "bg-green-100 text-green-600"
                   : "bg-slate-100 text-slate-400 group-hover:bg-green-50 group-hover:text-green-500",
               )}
@@ -164,7 +153,7 @@ export function SeedDocumentationStep({
               <h4 className="font-bold text-slate-800">Soạn thảo trực tiếp</h4>
               <p className="text-sm text-slate-500">Nhập nội dung văn bản</p>
             </div>
-            {formData.contentType === "editor" && (
+            {watchedContentType === "editor" && (
               <div className="absolute right-6 top-6">
                 <CheckCircle2 className="h-6 w-6 fill-green-100 text-green-600" />
               </div>
@@ -175,9 +164,11 @@ export function SeedDocumentationStep({
 
       <div className="pt-4">
         <SeedDocumentationContent
-          formData={formData}
           pdfInputRef={pdfInputRef}
-          setFormData={setFormData}
+          watchedContentType={watchedContentType}
+          watchedPdfFile={watchedPdfFile}
+          watchedEditorContent={watchedEditorContent}
+          setValue={setValue}
         />
       </div>
     </div>
@@ -186,16 +177,20 @@ export function SeedDocumentationStep({
 
 function SeedDocumentationContent({
   compactMode = false,
-  formData,
   pdfInputRef,
-  setFormData,
+  watchedContentType,
+  watchedPdfFile,
+  watchedEditorContent,
+  setValue,
 }: {
   compactMode?: boolean;
-  formData: CreateVarietyForm;
   pdfInputRef: React.RefObject<HTMLInputElement | null>;
-  setFormData: React.Dispatch<React.SetStateAction<CreateVarietyForm>>;
+  watchedContentType: string;
+  watchedPdfFile: any;
+  watchedEditorContent: any;
+  setValue: any;
 }) {
-  if (formData.contentType === "pdf") {
+  if (watchedContentType === "pdf") {
     return (
       <div
         onClick={() => pdfInputRef.current?.click()}
@@ -204,7 +199,7 @@ function SeedDocumentationContent({
           compactMode
             ? "rounded-3xl bg-slate-50/30 p-10"
             : "min-h-[280px] rounded-3xl bg-slate-50/50 p-12",
-          formData.pdfFile
+          watchedPdfFile
             ? "border-green-500/30 bg-green-50/10"
             : "border-slate-200 hover:border-green-500/50 hover:bg-green-50/10",
         )}
@@ -215,13 +210,12 @@ function SeedDocumentationContent({
           ref={pdfInputRef}
           className="hidden"
           onChange={(event) =>
-            setFormData((currentForm) => ({
-              ...currentForm,
-              pdfFile: event.target.files?.[0] || null,
-            }))
+            setValue("pdfFile", event.target.files?.[0] || null, {
+              shouldValidate: true,
+            })
           }
         />
-        {formData.pdfFile ? (
+        {watchedPdfFile ? (
           compactMode ? (
             <div className="relative z-10 flex flex-col items-center space-y-4 text-center">
               <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white text-red-500 shadow-xl shadow-green-900/5 ring-1 ring-slate-100">
@@ -229,7 +223,7 @@ function SeedDocumentationContent({
               </div>
               <div className="space-y-1">
                 <p className="max-w-md break-all text-lg font-bold text-slate-800">
-                  {formData.pdfFile.name}
+                  {watchedPdfFile.name}
                 </p>
                 <p className="text-sm font-medium text-slate-500">
                   File PDF sẵn sàng để tải lên
@@ -240,10 +234,7 @@ function SeedDocumentationContent({
                   className="mt-2 text-red-500 hover:bg-red-50 hover:text-red-700"
                   onClick={(event) => {
                     event.stopPropagation();
-                    setFormData((currentForm) => ({
-                      ...currentForm,
-                      pdfFile: null,
-                    }));
+                    setValue("pdfFile", null, { shouldValidate: true });
                   }}
                 >
                   <Trash className="mr-2 h-4 w-4" />
@@ -258,10 +249,10 @@ function SeedDocumentationContent({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold text-slate-800">
-                  {formData.pdfFile.name}
+                  {watchedPdfFile.name}
                 </p>
                 <p className="mt-0.5 text-xs font-medium text-slate-400">
-                  {(formData.pdfFile.size / 1024 / 1024).toFixed(2)} MB
+                  {(watchedPdfFile.size / 1024 / 1024).toFixed(2)} MB
                 </p>
               </div>
               <Button
@@ -270,10 +261,7 @@ function SeedDocumentationContent({
                 className="h-9 w-9 rounded-full text-slate-400 hover:bg-red-50 hover:text-red-500"
                 onClick={(event) => {
                   event.stopPropagation();
-                  setFormData((currentForm) => ({
-                    ...currentForm,
-                    pdfFile: null,
-                  }));
+                  setValue("pdfFile", null, { shouldValidate: true });
                 }}
               >
                 <X className="h-4 w-4" />
@@ -332,13 +320,21 @@ function SeedDocumentationContent({
       <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-xl shadow-slate-100/50">
         <Editor
           maxLength={10000}
-          initialText={formData.editorContent}
+          initialHtml={
+            typeof watchedEditorContent === "string"
+              ? watchedEditorContent
+              : undefined
+          }
+          editorSerializedState={
+            typeof watchedEditorContent !== "string"
+              ? (watchedEditorContent as never)
+              : undefined
+          }
           contentEditableClassname="min-h-[400px] p-6 bg-white focus:outline-none prose prose-slate max-w-none"
           onSerializedChange={(value) =>
-            setFormData((currentForm) => ({
-              ...currentForm,
-              editorContent: value as string,
-            }))
+            setValue("editorContent", value as unknown as string, {
+              shouldValidate: true,
+            })
           }
         />
       </Card>
@@ -359,12 +355,20 @@ function SeedDocumentationContent({
         <Editor
           maxLength={10000}
           contentEditableClassname="h-[400px] p-6 bg-white focus:outline-none prose max-w-none"
-          editorSerializedState={formData.editorContent as never}
+          initialHtml={
+            typeof watchedEditorContent === "string"
+              ? watchedEditorContent
+              : undefined
+          }
+          editorSerializedState={
+            typeof watchedEditorContent !== "string"
+              ? (watchedEditorContent as never)
+              : undefined
+          }
           onSerializedChange={(value) =>
-            setFormData((currentForm) => ({
-              ...currentForm,
-              editorContent: value as string,
-            }))
+            setValue("editorContent", value as unknown as string, {
+              shouldValidate: true,
+            })
           }
         />
       </Card>

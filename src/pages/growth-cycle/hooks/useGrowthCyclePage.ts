@@ -1,5 +1,6 @@
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useState } from "react";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useLocation } from "wouter";
 import {
   useGrowthCycleTemplateMutations,
@@ -10,14 +11,31 @@ import { formatDaysToDuration } from "../utils/duration";
 
 export function useGrowthCyclePage() {
   const { toast } = useToast();
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
+  const [pageSize, setPageSize] = useState(10);
+  const [currentIndex, setCurrentIndex] = useState(1);
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setCurrentIndex(1);
+  };
+
   const [, setLocation] = useLocation();
 
   const {
     items: apiItems,
+    response,
     loading,
     error,
     refetch,
-  } = useGrowthCycleTemplates();
+  } = useGrowthCycleTemplates({
+    params: {
+      keyword: debouncedSearch.trim() || undefined,
+      page: Math.max(currentIndex - 1, 0),
+      size: pageSize,
+    },
+  });
   const { deleteTemplate } = useGrowthCycleTemplateMutations();
 
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -97,6 +115,12 @@ export function useGrowthCyclePage() {
     loading,
     error,
     refetch,
+    response,
+    handleSearch,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
     detailOpen,
     setDetailOpen,
     selectedId,

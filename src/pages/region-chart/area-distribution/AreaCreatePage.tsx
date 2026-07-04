@@ -1,4 +1,3 @@
-import React from "react";
 import {
   AdminLayout,
   Button,
@@ -7,157 +6,89 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import "leaflet/dist/leaflet.css";
 import { ChevronLeft } from "lucide-react";
+import { FormProvider, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
+
 import { AreaInfoStep } from "./components/AreaInfoStep";
 import { AreaMapStep } from "./components/AreaMapStep";
 import { AreaPlotsStep } from "./components/AreaPlotsStep";
 import { AreaReviewStep } from "./components/AreaReviewStep";
-import { useAreaCreatePage } from "./hooks/useAreaCreatePage";
+import { areaFormSchema, type AreaFormValues } from "./data/area-form.schema";
+import { useAreaCreateForm } from "./hooks/useAreaCreateForm";
+
+const customIcon = getMarkerIcon("blue");
+const activeIcon = getMarkerIcon("green");
+const invalidIcon = getMarkerIcon("red");
+
+import { useMemo } from "react";
+import { useRegions } from "@/features/farm/hooks/useRegions";
 
 const AreaCreatePage = () => {
-  const {
-    setLocation,
-    isEditMode,
-    editAreaId,
-    lands,
-    terrains,
-    enterprises,
-    regions,
-    selectEnterpriseId,
-    setSelectEnterpriseId,
-    selectedRegionId,
-    setSelectedRegionId,
-    formData,
-    setFormData,
-    areaPoints,
-    areaMapCenter,
-    plotMapCenter,
-    currentRegion,
-    activePointIndex,
-    setActivePointIndex,
-    areaPointWarnings,
-    areaWarningForDisplay,
-    activePersistentAreaWarning,
-    isDraggingAreaPoint,
-    setIsDraggingAreaPoint,
-    plotPoints,
-    setPlotPoints,
-    editingPlot,
-    setEditingPlot,
-    activePlotPointIndex,
-    setActivePlotPointIndex,
-    plotPointWarnings,
-    plotWarningForDisplay,
-    activePersistentPlotWarning,
-    isDraggingPlotPoint,
-    setIsDraggingPlotPoint,
-    customIcon,
-    activeIcon,
-    invalidIcon,
-    formatLatLng,
-    setAreaPointWithValidation,
-    handlePointDrag,
-    applySuggestedAreaPoint,
-    removePoint,
-    handlePointInputChange,
-    handleAddPoint,
-    setPlotPointWithValidation,
-    handlePlotPointDrag,
-    applySuggestedPlotPoint,
-    handleAddPlotPoint,
-    removePlotPoint,
-    handlePlotPointInputChange,
-    addPlot,
-    savePlot,
-    removePlot,
-    handleSubmit,
-  } = useAreaCreatePage();
+  const { data: regionsData } = useRegions({ params: { size: 100 } });
+
+  const dynamicSchema = useMemo(() => {
+    return areaFormSchema.superRefine((data, ctx) => {
+      const selectedRegion = (regionsData?.content || []).find(
+        (r) => r.id === data.regionId,
+      );
+      if (selectedRegion && data.acreage !== undefined) {
+        const regionAcreage = parseFloat(String(selectedRegion.acreage || 0));
+        if (data.acreage > regionAcreage) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["acreage"],
+            message: `Không được vượt quá diện tích vùng (${regionAcreage} ha)`,
+          });
+        }
+      }
+    });
+  }, [regionsData]);
+
+  const form = useForm<AreaFormValues>({
+    mode: "onChange",
+    resolver: zodResolver(dynamicSchema),
+  });
+
+  const { reset, watch, handleSubmit, formState } = form;
+
+  const { isEditMode, handleComplete, handleCancel, isSubmitting } =
+    useAreaCreateForm(reset);
+
+  const coordinates = watch("coordinates") || [];
 
   const steps: Step[] = [
     {
       id: "info",
       title: "Thông tin chung",
       description: "Chọn vùng và thông tin cơ bản",
-      isValid: !!selectedRegionId && !!formData.code && !!formData.name,
-      content: (
-        <AreaInfoStep
-          selectEnterpriseId={selectEnterpriseId}
-          setSelectEnterpriseId={setSelectEnterpriseId}
-          regions={regions}
-          selectedRegionId={selectedRegionId}
-          setSelectedRegionId={setSelectedRegionId}
-          formData={formData}
-          setFormData={setFormData}
-          lands={lands}
-          terrains={terrains}
-        />
-      ),
+      isValid:
+        !formState.errors.code &&
+        !formState.errors.name &&
+        !formState.errors.regionId &&
+        !formState.errors.acreage &&
+        !!watch("code") &&
+        !!watch("name") &&
+        !!watch("regionId"),
+      content: <AreaInfoStep />,
     },
     {
       id: "map",
       title: "Bản đồ khu vực",
       description: "Xác định vị trí khu vực",
-      content: (
-        <AreaMapStep
-          areaMapCenter={areaMapCenter}
-          selectedRegionId={selectedRegionId}
-          regions={regions}
-          currentRegion={currentRegion}
-          isEditMode={Boolean(isEditMode)}
-          editAreaId={editAreaId}
-          areaPoints={areaPoints}
-          activePointIndex={activePointIndex}
-          areaPointWarnings={areaPointWarnings}
-          customIcon={customIcon}
-          activeIcon={activeIcon}
-          invalidIcon={invalidIcon}
-          setActivePointIndex={setActivePointIndex}
-          setIsDraggingAreaPoint={setIsDraggingAreaPoint}
-          setAreaPointWithValidation={setAreaPointWithValidation}
-          handlePointDrag={handlePointDrag}
-          areaWarningForDisplay={areaWarningForDisplay}
-          activePersistentAreaWarning={activePersistentAreaWarning}
-          isDraggingAreaPoint={isDraggingAreaPoint}
-          formatLatLng={formatLatLng}
-          applySuggestedAreaPoint={applySuggestedAreaPoint}
-          removePoint={removePoint}
-          handlePointInputChange={handlePointInputChange}
-          handleAddPoint={handleAddPoint}
-        />
-      ),
+      isValid: coordinates.length >= 3,
+      content: <AreaMapStep markerIcon={customIcon} />,
     },
     {
       id: "plots",
       title: "Phân chia lô",
       description: "Tạo các lô trong khu vực",
+      isValid: true,
       content: (
         <AreaPlotsStep
-          plotMapCenter={plotMapCenter}
-          areaPoints={areaPoints}
-          formData={{ plots: formData.plots as any }}
-          editingPlot={editingPlot}
-          setEditingPlot={setEditingPlot}
-          plotPoints={plotPoints}
-          setPlotPoints={setPlotPoints}
-          activePlotPointIndex={activePlotPointIndex}
-          plotPointWarnings={plotPointWarnings}
           customIcon={customIcon}
           activeIcon={activeIcon}
           invalidIcon={invalidIcon}
-          setActivePlotPointIndex={setActivePlotPointIndex}
-          setIsDraggingPlotPoint={setIsDraggingPlotPoint}
-          setPlotPointWithValidation={setPlotPointWithValidation}
-          handlePlotPointDrag={handlePlotPointDrag}
-          plotWarningForDisplay={plotWarningForDisplay}
-          activePersistentPlotWarning={activePersistentPlotWarning}
-          isDraggingPlotPoint={isDraggingPlotPoint}
-          formatLatLng={formatLatLng}
-          applySuggestedPlotPoint={applySuggestedPlotPoint}
-          handlePlotPointInputChange={handlePlotPointInputChange}
-          removePlotPoint={removePlotPoint}
-          handleAddPlotPoint={handleAddPlotPoint}
-          savePlot={savePlot}
-          addPlot={addPlot}
-          removePlot={removePlot}
         />
       ),
     },
@@ -165,18 +96,8 @@ const AreaCreatePage = () => {
       id: "review",
       title: "Xác nhận",
       description: "Kiểm tra lại toàn bộ thông tin",
-      content: (
-        <AreaReviewStep
-          enterprises={enterprises}
-          selectEnterpriseId={selectEnterpriseId}
-          regions={regions}
-          selectedRegionId={selectedRegionId}
-          formData={formData}
-          lands={lands}
-          terrains={terrains}
-          areaPoints={areaPoints}
-        />
-      ),
+      isValid: formState.isValid,
+      content: <AreaReviewStep />,
     },
   ];
 
@@ -192,19 +113,23 @@ const AreaCreatePage = () => {
       actions={
         <Button
           variant="outline"
-          onClick={() => setLocation("/area-distribution")}
+          onClick={handleCancel}
+          disabled={isSubmitting}
         >
           <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại
         </Button>
       }
     >
       <div className="max-w-5xl mx-auto pb-10">
-        <StepperForm
-          steps={steps}
-          onComplete={handleSubmit}
-          onCancel={() => setLocation("/area-distribution")}
-          completeLabel={isEditMode ? "Lưu thay đổi" : "Tạo khu vực"}
-        />
+        <FormProvider {...form}>
+          <StepperForm
+            steps={steps}
+            loading={isSubmitting}
+            onCancel={handleCancel}
+            onComplete={handleSubmit(handleComplete)}
+            completeLabel={isEditMode ? "Lưu thay đổi" : "Tạo khu vực"}
+          />
+        </FormProvider>
       </div>
     </AdminLayout>
   );

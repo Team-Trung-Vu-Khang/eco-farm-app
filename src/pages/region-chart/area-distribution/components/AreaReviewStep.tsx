@@ -1,270 +1,167 @@
-import { Badge, Card, CardContent, CardHeader, CardTitle } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { MapContainer, Polygon, TileLayer, Tooltip } from "react-leaflet";
-import { Info, Layers, Map as MapIcon } from "lucide-react";
-import type L from "leaflet";
-import type { Enterprise } from "@/pages/enterprise/data/constants";
-import type { Land } from "@/stores/useLandStore";
-import type { Terrain } from "@/stores/useTerrainStore";
-import { DISTRICTS, PROVINCES, type Plot, type Region, type SubArea } from "../../constants";
-import { getBoundsFromPoints } from "../utils/map";
+import { useFormContext } from "react-hook-form";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { MapPin, Check, Layers, AlertCircle } from "lucide-react";
+import type { AreaFormValues } from "../data/area-form.schema";
+import { useRegions } from "@/features/farm/hooks/useRegions";
+import { useCatalog } from "@/features/foundation/hooks/useCatalog";
+import { useOrganizationById } from "@/features/organization/hooks/useOrganizationById";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 
-interface AreaReviewStepProps {
-  enterprises: Enterprise[];
-  selectEnterpriseId: number | null;
-  regions: Region[];
-  selectedRegionId: number | null;
-  formData: Partial<SubArea>;
-  lands: Land[];
-  terrains: Terrain[];
-  areaPoints: L.LatLng[];
-}
+export function AreaReviewStep() {
+  const { watch } = useFormContext<AreaFormValues>();
+  const formData = watch();
 
-export function AreaReviewStep({
-  enterprises,
-  selectEnterpriseId,
-  regions,
-  selectedRegionId,
-  formData,
-  lands,
-  terrains,
-  areaPoints,
-}: AreaReviewStepProps) {
+  const { data: regionsData } = useRegions({
+    params: { size: 100 },
+  });
+  const regions = regionsData?.content || [];
+
+  const { data: soilTypesData } = useCatalog("soil-types");
+  const soilTypes = soilTypesData?.content || [];
+
+  const { data: terrainFeaturesData } = useCatalog("terrain-features");
+  const terrainFeatures = terrainFeaturesData?.content || [];
+
+  const region = regions.find((r) => r.id === formData.regionId);
+  const soilType = soilTypes.find((s) => s.id.toString() === formData.soilType);
+  const terrainFeature = terrainFeatures.find(
+    (t) => t.id.toString() === formData.terrainFeature,
+  );
+
+  const workspaceId = useSelectedWorkspaceId();
+  const parsedWorkspaceId =
+    typeof workspaceId === "number" ? workspaceId : undefined;
+
+  const { item: selectedOrganization, loading: isLoadingSelected } =
+    useOrganizationById(
+      formData.enterpriseId || "",
+      parsedWorkspaceId ?? "missing",
+      { enabled: parsedWorkspaceId !== undefined && !!formData.enterpriseId },
+    );
+
   return (
-    <div className="space-y-5">
-      <Card className="overflow-hidden border-none shadow-sm">
-        <CardHeader className="border-b border-blue-100 bg-blue-50/70 px-5 py-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/15 text-blue-600">
-              <Info className="h-4 w-4" />
-            </div>
-            <CardTitle className="text-base font-bold text-slate-800">
-              Thông tin chung
-            </CardTitle>
-          </div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Check className="w-5 h-5 text-green-500" />
+            Thông tin chung
+          </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-x-6 gap-y-4 px-5 py-5 md:grid-cols-3">
-          <div className="space-y-0.5">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Đơn vị sở hữu
-            </p>
-            <p className="text-sm font-semibold text-slate-700">
-              {enterprises.find((enterprise) => enterprise.id === selectEnterpriseId)?.name || (
-                <span className="italic text-slate-300">Chưa chọn</span>
-              )}
+        <CardContent className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="text-muted-foreground mb-1">Mã khu vực</p>
+            <p className="font-medium">{formData.code || "—"}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground mb-1">Tên khu vực</p>
+            <p className="font-medium">{formData.name || "—"}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground mb-1">Đơn vị sở hữu</p>
+            <p className="font-medium">
+              {isLoadingSelected
+                ? "Đang tải..."
+                : selectedOrganization?.name || formData.enterpriseId || "—"}
             </p>
           </div>
-
-          <div className="space-y-0.5">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Vùng trồng
-            </p>
-            <p className="text-sm font-semibold text-slate-700">
-              {regions.find((region) => region.id === selectedRegionId)?.name || (
-                <span className="italic text-slate-300">Chưa chọn</span>
-              )}
+          <div>
+            <p className="text-muted-foreground mb-1">Thuộc vùng</p>
+            <p className="font-medium">{region?.name || "—"}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground mb-1">Diện tích</p>
+            <p className="font-medium">
+              {formData.acreage ? `${formData.acreage} ha` : "—"}
             </p>
           </div>
-
-          <div className="space-y-0.5">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Địa chỉ vùng trồng
-            </p>
-            <p className="text-sm text-slate-600">
-              {(() => {
-                const region = regions.find((item) => item.id === selectedRegionId);
-                if (!region) {
-                  return <span className="italic text-slate-300">N/A</span>;
-                }
-                const province =
-                  PROVINCES.find((item) => item.id === region.provinceId)?.name ||
-                  region.provinceId;
-                const district =
-                  DISTRICTS.find((item) => item.id === region.districtId)?.name ||
-                  region.districtId;
-                return `${region.address ? `${region.address}, ` : ""}${district}, ${province}`;
-              })()}
-            </p>
+          <div>
+            <p className="text-muted-foreground mb-1">Loại đất</p>
+            <p className="font-medium">{soilType?.name || "—"}</p>
           </div>
-
-          <div className="space-y-0.5">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Mã khu vực
-            </p>
-            <p className="font-mono text-sm font-semibold text-slate-700">
-              {formData.code || <span className="italic text-slate-300">Chưa nhập</span>}
-            </p>
-          </div>
-
-          <div className="space-y-0.5">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Tên khu vực
-            </p>
-            <p className="text-sm font-semibold text-slate-700">
-              {formData.name || <span className="italic text-slate-300">Chưa nhập</span>}
-            </p>
-          </div>
-
-          <div className="space-y-0.5">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Diện tích
-            </p>
-            <p className="text-sm font-bold text-blue-600">
-              {formData.area ? `${formData.area} ha` : <span className="italic text-slate-300">Chưa nhập</span>}
-            </p>
-          </div>
-
-          <div className="space-y-0.5">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Loại đất
-            </p>
-            <p className="text-sm text-slate-700">
-              {lands.find((land) => land.code === formData.landType)?.name || (
-                <span className="italic text-slate-300">Chưa chọn</span>
-              )}
-            </p>
-          </div>
-
-          <div className="space-y-0.5">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Địa hình
-            </p>
-            <p className="text-sm text-slate-700">
-              {terrains.find((terrain) => terrain.code === formData.terrain)?.name || (
-                <span className="italic text-slate-300">Chưa chọn</span>
-              )}
-            </p>
+          <div>
+            <p className="text-muted-foreground mb-1">Địa hình</p>
+            <p className="font-medium">{terrainFeature?.name || "—"}</p>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden border-none shadow-sm">
-        <CardHeader className="border-b border-emerald-100 bg-emerald-50/70 px-5 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600">
-                <MapIcon className="h-4 w-4" />
-              </div>
-              <CardTitle className="text-base font-bold text-slate-800">
-                Bản đồ khu vực
-              </CardTitle>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-blue-500" />
+            Bản đồ khu vực
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4 text-sm">
+            <div className="p-3 bg-blue-50 rounded-lg text-blue-700">
+              <span className="font-semibold text-lg">
+                {formData.coordinates?.length || 0}
+              </span>{" "}
+              điểm
             </div>
-            {areaPoints.length >= 3 && (
-              <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-600">
-                {areaPoints.length} điểm ranh giới
-              </span>
+            {formData.coordinates && formData.coordinates.length < 3 ? (
+              <p className="text-red-500 flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                Khu vực cần ít nhất 3 điểm
+              </p>
+            ) : (
+              <p className="text-muted-foreground">
+                Đã xác định tọa độ khu vực
+              </p>
             )}
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {areaPoints.length >= 3 ? (
-            <div className="relative h-[300px] w-full overflow-hidden">
-              <MapContainer
-                bounds={getBoundsFromPoints(areaPoints).pad(0.15)}
-                style={{ height: "100%", width: "100%" }}
-                zoomControl={false}
-                dragging={false}
-                scrollWheelZoom={false}
-                doubleClickZoom={false}
-                touchZoom={false}
-                keyboard={false}
-                attributionControl={false}
-              >
-                <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-                <Polygon
-                  positions={areaPoints.map((point) => [point.lat, point.lng] as [number, number])}
-                  pathOptions={{
-                    color: "#10b981",
-                    fillColor: "#10b981",
-                    fillOpacity: 0.15,
-                    weight: 2.5,
-                    dashArray: "6 4",
-                  }}
-                />
-                {formData.plots
-                  ?.filter((plot) => plot.coordinates && plot.coordinates.length >= 3)
-                  .map((plot: Plot, index) => (
-                    <Polygon
-                      key={plot.id || index}
-                      positions={plot.coordinates.map((coord) => [coord.lat, coord.lng] as [number, number])}
-                      pathOptions={{
-                        color: "#f59e0b",
-                        fillColor: "#f59e0b",
-                        fillOpacity: 0.25,
-                        weight: 2,
-                      }}
-                    >
-                      <Tooltip permanent direction="center" className="text-[10px] font-bold">
-                        {plot.name || `Lô ${index + 1}`}
-                      </Tooltip>
-                    </Polygon>
-                  ))}
-              </MapContainer>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center bg-slate-50 py-10 text-center">
-              <MapIcon className="mb-2 h-10 w-10 text-slate-200" />
-              <p className="text-sm font-semibold text-amber-600">Chưa xác định ranh giới</p>
-              <p className="mt-0.5 text-xs text-slate-400">
-                Quay lại bước 2 để vẽ khu vực trên bản đồ
-              </p>
-            </div>
-          )}
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden border-none shadow-sm">
-        <CardHeader className="border-b border-amber-100 bg-amber-50/70 px-5 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/15 text-amber-600">
-                <Layers className="h-4 w-4" />
-              </div>
-              <CardTitle className="text-base font-bold text-slate-800">
-                Cấu hình lô
-              </CardTitle>
-            </div>
-            <Badge
-              variant="secondary"
-              className="border-none bg-amber-100 font-bold text-amber-700"
-            >
-              {formData.plots?.length || 0} lô
-            </Badge>
-          </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Layers className="w-5 h-5 text-purple-500" />
+            Danh sách Lô ({formData.plots?.length || 0})
+          </CardTitle>
         </CardHeader>
-        <CardContent className="px-5 py-5">
+        <CardContent>
           {formData.plots && formData.plots.length > 0 ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {formData.plots.map((plot, index) => (
                 <div
-                  key={plot.id || index}
-                  className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3 transition-all hover:bg-white hover:shadow-sm"
+                  key={index}
+                  className="flex justify-between items-center p-3 border rounded-lg bg-slate-50"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-100 text-[11px] font-extrabold text-amber-700">
-                      {index + 1}
-                    </div>
-                    <div className="flex flex-col">
-                      {plot.code && (
-                        <span className="mb-0.5 text-[10px] font-bold uppercase tracking-tight text-slate-400">
-                          {plot.code}
-                        </span>
-                      )}
-                      <span className="text-sm font-semibold text-slate-700">
-                        {plot.name || `Lô ${index + 1}`}
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-sm text-slate-800">
+                        {plot.name}
+                      </p>
+                      <span className="text-[10px] font-mono text-slate-400">
+                        ({plot.code})
                       </span>
                     </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Diện tích: {plot.acreage ? `${plot.acreage} ha` : "—"}
+                      {plot.elevation !== undefined &&
+                        ` | Độ cao: ${plot.elevation}m`}
+                      {plot.contourInterval !== undefined &&
+                        ` | Bình độ: ${plot.contourInterval}`}
+                    </p>
                   </div>
-                  <span className="rounded-lg border border-slate-100 bg-white px-2 py-0.5 text-xs font-bold text-slate-400">
-                    {plot.area ?? 0} ha
-                  </span>
+                  <div className="text-xs font-mono text-slate-500">
+                    {plot.coordinates?.length || 0} điểm
+                  </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-100 py-8 text-center text-slate-400">
-              <Layers className="mb-2 h-8 w-8 text-slate-200" />
-              <p className="text-sm italic">Chưa có lô nào được cấu hình</p>
-            </div>
+            <p className="text-sm text-muted-foreground">
+              Chưa có lô nào được tạo.
+            </p>
           )}
         </CardContent>
       </Card>

@@ -1,5 +1,6 @@
 import type { Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { Plot, Region, SubArea } from "../constants";
+import type { FarmAreaResponse } from "@/features/farm/types/farm.type";
 import { RegionChartStatusBadge } from "../components/RegionChartStatusBadge";
 import { Hash, MapPinned, Mountain, Ruler, Trees } from "lucide-react";
 
@@ -33,9 +34,8 @@ export function createRegionDistributionColumns(
 }
 
 export function createAreaDistributionColumns(
-  regions: Region[],
-  onOpenDetail: (id: string) => void,
-): Column<SubArea>[] {
+  onOpenDetail: (id: number) => void,
+): Column<FarmAreaResponse>[] {
   return [
     {
       key: "code",
@@ -45,17 +45,17 @@ export function createAreaDistributionColumns(
           className="cursor-pointer font-medium text-primary hover:underline"
           onClick={() => onOpenDetail(row.id)}
         >
-          {value}
+          {value as string}
         </span>
       ),
     },
     { key: "name", label: "Tên khu vực" },
     {
-      key: "regionId",
+      key: "region",
       label: "Thuộc vùng",
-      render: (value) => regions.find((region) => region.id === value)?.name || value,
+      render: (_, row) => row.region?.name || "-",
     },
-    { key: "area", label: "Diện tích (ha)" },
+    { key: "acreage", label: "Diện tích (ha)" },
     {
       key: "status",
       label: "Trạng thái",
@@ -104,7 +104,7 @@ export function createPlotDistributionRichColumns(
       render: (value, row) => (
         <button
           type="button"
-          className="flex items-center gap-1.5 rounded-md border bg-muted/40 px-2 py-1 font-mono text-xs font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+          className="flex items-center gap-1.5 rounded-md border bg-muted/40 px-2 py-1 font-mono text-xs font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary cursor-pointer"
           onClick={() => onOpenDetail(row.id)}
         >
           <Hash className="h-3 w-3 opacity-60" />

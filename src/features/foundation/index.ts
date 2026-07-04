@@ -29,3 +29,6 @@ export { useCropMutations } from "./hooks/useCropMutations";
 export { useCropVarietyMutations } from "./hooks/useCropVarietyMutations";
 export { useGrowthCycleTemplateMutations } from "./hooks/useGrowthCycleTemplateMutations";
 export { useFarmingMethodCropMutations } from "./hooks/useFarmingMethodCropMutations";
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+export * from "@/shared/constants/foundation.constants";

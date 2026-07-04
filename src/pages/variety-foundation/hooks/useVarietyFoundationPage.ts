@@ -1,5 +1,6 @@
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useEffect, useState } from "react";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useLocation } from "wouter";
 import {
   useCropVarieties,
@@ -26,8 +27,24 @@ function formatDaysToDuration(days: number | undefined): string {
 
 export function useVarietyFoundationPage() {
   const { toast } = useToast();
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
+  const [pageSize, setPageSize] = useState(10);
+  const [currentIndex, setCurrentIndex] = useState(1);
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setCurrentIndex(1);
+  };
+
   const [, setLocation] = useLocation();
-  const { items, loading, error } = useCropVarieties();
+  const { items, response, loading, error } = useCropVarieties({
+    params: {
+      keyword: debouncedSearch.trim() || undefined,
+      page: Math.max(currentIndex - 1, 0),
+      size: pageSize,
+    }
+  });
   const { deleteCropVariety } = useCropVarietyMutations();
 
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -125,6 +142,12 @@ export function useVarietyFoundationPage() {
 
   return {
     varieties,
+    response,
+    handleSearch,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
     loading,
     deleteOpen,
     setDeleteOpen,

@@ -17,6 +17,13 @@ const AreaDistributionPage = () => {
     handleEdit,
     handleDelete,
     confirmDelete,
+    isLoading,
+    response,
+    handleSearch,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
   } = useAreaDistributionPage();
 
   return (
@@ -32,8 +39,18 @@ const AreaDistributionPage = () => {
       }
     >
       <DataTable
-        columns={columns}
         data={areas}
+        columns={columns}
+        loading={isLoading}
+        searchable
+        searchPlaceholder="Tìm kiếm khu vực..."
+        onSearch={handleSearch}
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalElements={response?.totalElements}
+        totalPages={response?.totalPages}
+        onPageSize={setPageSize}
+        onIndexChange={setCurrentIndex}
         onEdit={(item) => handleEdit(item.id)}
         onDelete={(item) => handleDelete(item.id)}
       />

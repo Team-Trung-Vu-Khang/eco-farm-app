@@ -13,7 +13,22 @@ import { RegionChartMapCard } from "../components/RegionChartMapCard";
 import { usePlotDetailPage } from "../hooks/usePlotDetailPage";
 
 const PlotDetailPage = () => {
-  const { setLocation, plot, area, region, center } = usePlotDetailPage();
+  const { setLocation, plot, area, region, center, isLoading } =
+    usePlotDetailPage();
+
+  if (isLoading) {
+    return (
+      <AdminLayout
+        isDev={true}
+        title="Chi tiết lô"
+        description="Đang tải dữ liệu..."
+      >
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Đang tải dữ liệu...</p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   if (!plot) {
     return (
@@ -121,9 +136,9 @@ const PlotDetailPage = () => {
                 positions={area.coordinates.map((c: any) => [c.lat, c.lng])}
                 pathOptions={{
                   color: "blue",
-                  fill: false,
                   dashArray: "5, 5",
                   opacity: 0.5,
+                  weight: 1,
                 }}
               >
                 <Tooltip direction="top">{area.name}</Tooltip>

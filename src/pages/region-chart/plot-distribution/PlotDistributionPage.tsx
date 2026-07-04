@@ -18,6 +18,13 @@ const PlotDistributionPage = () => {
     handleEdit,
     handleDelete,
     confirmDelete,
+    isLoading,
+    response,
+    handleSearch,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
   } = usePlotDistributionPage();
 
   return (
@@ -38,9 +45,18 @@ const PlotDistributionPage = () => {
       <DataTable
         columns={columns}
         data={plots}
+        loading={isLoading}
+        searchable
+        searchPlaceholder="Tìm kiếm mã lô, tên lô..."
+        onSearch={handleSearch}
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalElements={response?.totalElements}
+        totalPages={response?.totalPages}
+        onPageSize={setPageSize}
+        onIndexChange={setCurrentIndex}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm mã lô, tên lô, vùng trồng..."
       />
 
       <DeleteDialog

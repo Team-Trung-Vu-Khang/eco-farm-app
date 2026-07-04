@@ -4,12 +4,34 @@ import { useLocation } from "wouter";
 
 import type { FoundationCropResponse } from "../../../features/foundation";
 import { useCropMutations, useCrops } from "../../../features/foundation";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 export function useCropFoundationPage() {
   const { toast } = useToast();
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
+  const [pageSize, setPageSize] = useState(10);
+  const [currentIndex, setCurrentIndex] = useState(1);
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setCurrentIndex(1);
+  };
+
   const [, setLocation] = useLocation();
 
-  const { items: cropFoundations, loading, error } = useCrops();
+  const {
+    items: cropFoundations,
+    response,
+    loading,
+    error,
+  } = useCrops({
+    params: {
+      keyword: debouncedSearch.trim() || undefined,
+      page: Math.max(currentIndex - 1, 0),
+      size: pageSize,
+    },
+  });
   const { deleteCrop } = useCropMutations();
 
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -63,6 +85,12 @@ export function useCropFoundationPage() {
 
   return {
     cropFoundations,
+    response,
+    handleSearch,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
     loading,
     deleteOpen,
     setDeleteOpen,

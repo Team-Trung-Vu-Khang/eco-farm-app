@@ -77,6 +77,12 @@ const VarietyFoundationPage = () => {
     handleConfirmDelete,
     handleView,
     handleEdit,
+    response,
+    handleSearch,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
   } = useVarietyFoundationPage();
 
   useDialogBugWorkaround([deleteOpen]);
@@ -96,12 +102,6 @@ const VarietyFoundationPage = () => {
         </div>
       }
     >
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
-          <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-green-500 animate-spin" />
-          <span className="text-sm">Đang tải danh sách giống cây trồng...</span>
-        </div>
-      ) : (
         <DataTable
           columns={varietyFoundationColumns}
           data={varieties}
@@ -110,9 +110,17 @@ const VarietyFoundationPage = () => {
           onEdit={handleEdit}
           onDelete={handleDelete}
           searchPlaceholder="Tìm kiếm giống cây (nền tảng)..."
+          searchable
+          onSearch={handleSearch}
+          pageSize={pageSize}
+          currentIndex={currentIndex}
+          totalElements={response?.totalElements}
+          totalPages={response?.totalPages}
+          onPageSize={setPageSize}
+          onIndexChange={setCurrentIndex}
           filters={varietyFoundationFilters}
+          loading={loading}
         />
-      )}
 
       <VarietyFoundationDetailModal
         open={detailOpen}

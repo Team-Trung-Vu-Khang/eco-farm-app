@@ -9,6 +9,7 @@ import {
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import type { DepartmentFormValues } from "../data/department-form.schema";
 import { type DepartmentItem } from "../types/types";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 const DEFAULT_PAGE_SIZE = 10;
 const ALL_STATUS = "all" as const;
@@ -51,6 +52,7 @@ export function useDepartment() {
   const workspaceId = useSelectedWorkspaceId();
   
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
   const [status, setStatus] = useState<DepartmentStatusFilter>(ALL_STATUS);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [currentIndex, setCurrentIndex] = useState(1);
@@ -65,7 +67,7 @@ export function useDepartment() {
   const departmentQuery = useFarmDepartments({
     workspaceId: parsedWorkspaceId,
     params: {
-      keyword: search.trim() || undefined,
+      keyword: debouncedSearch.trim() || undefined,
       status: status === ALL_STATUS ? undefined : (status as any),
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,

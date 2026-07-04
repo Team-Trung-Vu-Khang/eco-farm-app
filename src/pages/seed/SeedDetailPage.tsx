@@ -23,59 +23,65 @@ import {
   User,
 } from "lucide-react";
 import { Link, useParams } from "wouter";
-import useSeedStore from "../../stores/useSeedStore";
-import type { Variety } from "./types/types";
-
-// Utility functions to generate random data for missing fields
-const generateRepresentative = (): string => {
-  const firstNames = [
-    "Nguyễn Văn",
-    "Trần Thị",
-    "Lê Minh",
-    "Phạm Hồng",
-    "Hoàng Thị",
-    "Võ Văn",
-    "Đặng Minh",
-    "Bùi Thị",
-  ];
-  const lastNames = [
-    "An",
-    "Bình",
-    "Châu",
-    "Dũng",
-    "Hà",
-    "Khoa",
-    "Linh",
-    "Mai",
-    "Nam",
-    "Phương",
-  ];
-  const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-  const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-  return `${firstName} ${lastName}`;
-};
-
-const generatePhone = (): string => {
-  const prefixes = ["090", "091", "093", "094", "097", "098", "099"];
-  const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-  const number = Math.floor(Math.random() * 10000000)
-    .toString()
-    .padStart(7, "0");
-  return `${prefix}${number}`;
-};
-
-const generateYield = (): string => {
-  const min = Math.floor(Math.random() * 10) + 15; // 15-25
-  const max = min + Math.floor(Math.random() * 10) + 5; // +5-15
-  return `${min}-${max} tấn/ha`;
-};
+import { useSeedById } from "@/features/farm";
+import { useSelectedWorkspaceId } from "@/features/workspace";
+import { useOrganizationById } from "@/features/organization/hooks/useOrganizationById";
+import { useMemo } from "react";
 
 export default function SeedDetailPage() {
   const { id } = useParams();
-  const { getSeedById } = useSeedStore();
-  const baseSeed = getSeedById(id || "");
+  const workspaceId = useSelectedWorkspaceId();
+  const { data: seed, isLoading } = useSeedById(Number(id));
 
-  if (!baseSeed) {
+  const { item: organization } = useOrganizationById(
+    seed?.supplier?.id ?? "",
+    typeof workspaceId === "number" ? workspaceId : "",
+    { enabled: !!seed?.supplier?.id && typeof workspaceId === "number" },
+  );
+
+  // Fallbacks for data missing from API
+  const yieldDisplay = useMemo(() => {
+    if (seed?.avgYieldFrom && seed?.avgYieldTo) {
+      if (seed?.avgYieldFrom === seed?.avgYieldTo) {
+        return `${seed?.avgYieldFrom} tấn/ha`;
+      }
+      return `${seed?.avgYieldFrom} - ${seed?.avgYieldTo} tấn/ha`;
+    }
+    return "N/A";
+  }, [seed?.avgYieldFrom, seed?.avgYieldTo]);
+
+  const description = (seed?.metadataJson?.description as string) || "";
+
+  const editorDoc = useMemo(() => {
+    return seed?.documents?.find((doc) => doc.documentType === "editor");
+  }, [seed?.documents]);
+
+  const fileDocs = useMemo(() => {
+    return (
+      seed?.documents?.filter((doc) => doc.documentType !== "editor") || []
+    );
+  }, [seed?.documents]);
+
+  if (isLoading) {
+    return (
+      <AdminLayout
+        isDev={true}
+        title="Chi tiết hạt giống"
+        description="Đang tải thông tin..."
+      >
+        <div className="flex flex-col items-center justify-center py-20 bg-slate-50/50 rounded-md border-2 border-dashed border-slate-200">
+          <div className="w-20 h-20 bg-slate-100 rounded-md flex items-center justify-center mb-6 animate-pulse">
+            <Sprout className="w-10 h-10 text-slate-300" />
+          </div>
+          <p className="text-slate-500 font-bold text-lg animate-pulse">
+            Đang tải dữ liệu...
+          </p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (!seed) {
     return (
       <AdminLayout
         isDev={true}
@@ -99,19 +105,11 @@ export default function SeedDetailPage() {
     );
   }
 
-  // Enrich seed data with random values for missing fields
-  const seed: Variety = {
-    ...baseSeed,
-    representative: baseSeed.representative || generateRepresentative(),
-    phone: baseSeed.phone || generatePhone(),
-    yield: baseSeed.yield || generateYield(),
-  };
-
   return (
     <AdminLayout
       isDev={true}
       title="Chi tiết hạt giống"
-      description={`Thông tin chi tiết về ${seed.varietyName}`}
+      description={`Thông tin chi tiết về ${seed.cropVariety?.name || "Hạt giống"}`}
       actions={
         <div className="flex items-center gap-3">
           <Link href="/seed">
@@ -147,26 +145,22 @@ export default function SeedDetailPage() {
               <div className="absolute inset-0 bg-green-900/10 rounded-md transform translate-x-4 translate-y-4 blur-xl" />
               <div className="relative w-full md:w-72 h-72 bg-white rounded-md p-2 shadow-2xl shadow-green-900/10 transform transition-transform duration-700 hover:rotate-y-12 hover:rotate-x-12">
                 <div className="w-full h-full rounded-md overflow-hidden relative">
-                  {seed.illustration ? (
+                  {seed.imageUrl ? (
                     <img
-                      src={
-                        seed.illustration instanceof File
-                          ? URL.createObjectURL(seed.illustration)
-                          : seed.illustration
-                      }
+                      src={seed.imageUrl}
                       className="w-64 h-full object-cover transform transition-transform duration-700 group-hover:scale-110"
-                      alt={seed.varietyName}
+                      alt={seed.cropVariety?.name}
                     />
                   ) : (
                     <div className="w-full h-full bg-slate-50 flex items-center justify-center">
-                      <Sprout className="w-20 h-20 text-slate-200" />
+                      <Sprout className="w-64 h-full text-slate-200" />
                     </div>
                   )}
                   {/* Badge Overlay */}
                   <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-md shadow-lg border border-white/50 flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-md bg-green-500 animate-pulse" />
                     <span className="text-xs font-bold text-green-700 uppercase tracking-wider">
-                      Active
+                      {seed.status || "Active"}
                     </span>
                   </div>
                 </div>
@@ -178,15 +172,15 @@ export default function SeedDetailPage() {
               <div>
                 <div className="flex items-center gap-3 mb-3">
                   <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-none px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider">
-                    {seed.varietyCode}
+                    {seed.cropVariety?.code || "N/A"}
                   </Badge>
                   <span className="text-sm font-medium text-slate-400 flex items-center gap-1">
                     <Leaf className="w-3.5 h-3.5" />
-                    {seed.crop}
+                    {seed.crop?.name || "N/A"}
                   </span>
                 </div>
                 <h1 className="text-4xl md:text-5xl font-black text-slate-800 tracking-tight leading-tight mb-4">
-                  {seed.varietyName}
+                  {seed.cropVariety?.name || "Hạt giống"}
                 </h1>
                 <p className="text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">
                   Thông tin năng suất, khả năng nảy mầm và nguồn gốc chi tiết
@@ -202,7 +196,7 @@ export default function SeedDetailPage() {
                   </p>
                   <div className="flex items-center gap-2 font-bold text-slate-700">
                     <MapPin className="w-4 h-4 text-blue-500" />
-                    {seed.origin}
+                    {seed.origin || "N/A"}
                   </div>
                 </div>
                 <div className="bg-white/60 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm hover:shadow-md transition-all">
@@ -211,7 +205,7 @@ export default function SeedDetailPage() {
                   </p>
                   <div className="flex items-center gap-2 font-bold text-green-700">
                     <Sprout className="w-4 h-4 text-green-500" />
-                    {seed.germinationRate}%
+                    {seed.germinationRate ? `${seed.germinationRate}%` : "N/A"}
                   </div>
                 </div>
                 <div className="bg-white/60 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm hover:shadow-md transition-all">
@@ -220,7 +214,7 @@ export default function SeedDetailPage() {
                   </p>
                   <div className="flex items-center gap-2 font-bold text-blue-700">
                     <CheckCircle2 className="w-4 h-4 text-blue-500" />
-                    {seed.uniformity}%
+                    {seed.purityRate ? `${seed.purityRate}%` : "N/A"}
                   </div>
                 </div>
               </div>
@@ -261,7 +255,9 @@ export default function SeedDetailPage() {
                             Khả năng nảy mầm
                           </h4>
                           <span className="text-3xl font-black text-green-600 leading-none">
-                            {seed.germinationRate}%
+                            {seed.germinationRate
+                              ? `${seed.germinationRate}%`
+                              : "N/A"}
                           </span>
                         </div>
                         <p className="text-slate-500 text-sm">
@@ -272,7 +268,7 @@ export default function SeedDetailPage() {
                     </div>
                   </div>
 
-                  {/* Milestone 2: Uniformity */}
+                  {/* Milestone 2: Purity */}
                   <div className="relative flex gap-6 group/item">
                     <div className="relative z-10 shrink-0">
                       <div className="w-10 h-10 rounded-full bg-blue-100 border-[3px] border-white shadow-lg flex items-center justify-center group-hover/item:scale-110 group-hover/item:bg-blue-500 group-hover/item:text-white transition-all duration-300 text-blue-600">
@@ -282,16 +278,16 @@ export default function SeedDetailPage() {
                     <div className="flex-1 bg-slate-50 hover:bg-blue-50/30 p-5 rounded-2xl border border-slate-100 hover:border-blue-100 transition-all cursor-default">
                       <div className="flex justify-between items-start mb-3">
                         <h4 className="font-bold text-slate-800 text-lg">
-                          Độ đồng đều
+                          Độ sạch
                         </h4>
                         <span className="text-3xl font-black text-blue-600 leading-none">
-                          {seed.uniformity}%
+                          {seed.purityRate ? `${seed.purityRate}%` : "N/A"}
                         </span>
                       </div>
                       <div className="w-full bg-slate-200 rounded-md h-2 mb-3">
                         <div
                           className="bg-blue-500 h-2 rounded-md transition-all duration-1000"
-                          style={{ width: `${seed.uniformity}%` }}
+                          style={{ width: `${seed.purityRate || 0}%` }}
                         />
                       </div>
                       <p className="text-slate-500 text-sm">
@@ -312,7 +308,7 @@ export default function SeedDetailPage() {
                         Tiềm năng năng suất
                       </h4>
                       <p className="text-2xl font-black text-amber-600 mb-2">
-                        {seed.yield || "25-30 tấn/ha"}
+                        {yieldDisplay}
                       </p>
                       <p className="text-amber-800/70 text-sm font-medium">
                         Dự kiến trong điều kiện canh tác tiêu chuẩn.
@@ -330,23 +326,74 @@ export default function SeedDetailPage() {
                   <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
                     <Info className="w-5 h-5" />
                   </div>
-                  Mô tả chi tiết
+                  {/* Mô tả chi tiết */}
+                  Tài liệu đính kèm
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-8 pb-8">
                 <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 text-slate-600 leading-relaxed prose prose-slate max-w-none prose-p:my-2 prose-headings:text-slate-800">
-                  {seed.description ? (
+                  {description && (
                     <div
-                      dangerouslySetInnerHTML={{ __html: seed.description }}
+                      className={
+                        editorDoc?.content
+                          ? "mb-6 border-b border-slate-200 pb-6"
+                          : ""
+                      }
+                      dangerouslySetInnerHTML={{ __html: description }}
+                    />
+                  )}
+
+                  {editorDoc?.content ? (
+                    <div
+                      dangerouslySetInnerHTML={{ __html: editorDoc.content }}
                     />
                   ) : (
-                    <div className="text-center py-6">
-                      <p className="text-slate-400 italic">
-                        Chưa có mô tả chi tiết
-                      </p>
-                    </div>
+                    !description && (
+                      <div className="text-center py-6">
+                        <p className="text-slate-400 italic">
+                          Chưa có mô tả chi tiết
+                        </p>
+                      </div>
+                    )
                   )}
                 </div>
+
+                {fileDocs.length > 0 && (
+                  <div className="mt-8 pt-8 border-t border-slate-100">
+                    <h4 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-red-500" />
+                      Tài liệu đính kèm ({fileDocs.length})
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {fileDocs.map((doc, idx) => (
+                        <div
+                          key={idx}
+                          className="group relative bg-slate-50 p-4 rounded-md border border-slate-100 hover:bg-white hover:border-red-100 hover:shadow-lg hover:shadow-red-500/5 transition-all cursor-pointer flex items-center gap-4"
+                        >
+                          <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-red-500 shrink-0">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-slate-700 text-sm truncate group-hover:text-red-900 transition-colors">
+                              {doc.fileName || doc.name || "Tài liệu không tên"}
+                            </h4>
+                            <p className="text-xs font-medium text-slate-400 mt-1 uppercase">
+                              {doc.documentType || "Tài liệu"}
+                            </p>
+                          </div>
+                          <a
+                            href={doc.fileUrl || "#"}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-8 h-8 rounded-md flex items-center justify-center text-slate-300 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
+                          >
+                            <Download className="w-4 h-4" />
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -366,15 +413,26 @@ export default function SeedDetailPage() {
                   </h3>
                   <div className="text-center">
                     <div className="w-20 h-20 mx-auto bg-white/10 rounded-md flex items-center justify-center backdrop-blur-md mb-4 ring-1 ring-white/20 shadow-lg">
-                      <span className="text-3xl font-black text-green-400">
-                        {seed.supplier.charAt(0)}
-                      </span>
+                      {organization?.imageUrl ? (
+                        <img
+                          src={organization.imageUrl}
+                          alt={organization.name || seed.supplier?.name}
+                          className="w-full h-full object-cover rounded-md"
+                        />
+                      ) : (
+                        <span className="text-3xl font-black text-green-400">
+                          {organization?.name?.charAt(0) ||
+                            seed.supplier?.name?.charAt(0) ||
+                            "S"}
+                        </span>
+                      )}
                     </div>
                     <h2 className="text-xl font-bold leading-tight mb-2">
-                      {seed.supplier}
+                      {organization?.name || seed.supplier?.name || "N/A"}
                     </h2>
                     <Badge className="bg-white/10 hover:bg-white/20 text-green-300 border-none">
-                      Verified Partner
+                      {organization?.organizationType?.name ||
+                        "Verified Partner"}
                     </Badge>
                   </div>
                 </div>
@@ -389,7 +447,7 @@ export default function SeedDetailPage() {
                         Đại diện
                       </p>
                       <p className="font-semibold text-slate-100">
-                        {seed.representative || "N/A"}
+                        {organization?.representative || "Chưa cập nhật"}
                       </p>
                     </div>
                   </div>
@@ -402,10 +460,25 @@ export default function SeedDetailPage() {
                         Hotline
                       </p>
                       <p className="font-semibold text-slate-100">
-                        {seed.phone || "N/A"}
+                        {organization?.contacts?.[0]?.phone || "Chưa cập nhật"}
                       </p>
                     </div>
                   </div>
+                  {organization?.address && (
+                    <div className="flex items-center gap-4 bg-white/5 p-3 rounded-2xl border border-white/5">
+                      <div className="w-10 h-10 rounded-md bg-white/10 flex items-center justify-center text-slate-300">
+                        <MapPin className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">
+                          Địa chỉ
+                        </p>
+                        <p className="font-semibold text-slate-100 text-sm line-clamp-2">
+                          {organization.address}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <Button className="w-full bg-green-500 hover:bg-green-400 text-white font-bold h-12 rounded-2xl shadow-lg shadow-green-900/30 border-none">
@@ -413,57 +486,6 @@ export default function SeedDetailPage() {
                 </Button>
               </div>
             </div>
-
-            {/* Documents Grid - Gallery Style */}
-            <Card className="border-none shadow-xl shadow-slate-200/40 ring-1 ring-slate-200/50 bg-white rounded-md overflow-hidden">
-              <CardHeader className="bg-white px-6 pt-6 pb-2">
-                <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-800">
-                  <FileText className="w-5 h-5 text-red-500" />
-                  Hồ sơ tài liệu
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                {seed.documents && seed.documents.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-4">
-                    {seed.documents.map((doc, idx) => (
-                      <div
-                        key={idx}
-                        className="group relative bg-slate-50 p-4 rounded-md border border-slate-100 hover:bg-white hover:border-red-100 hover:shadow-lg hover:shadow-red-500/5 transition-all cursor-pointer"
-                      >
-                        <div className="flex items-start justify-between mb-8">
-                          <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform duration-300 ring-1 ring-slate-100 group-hover:ring-red-50">
-                            <FileText className="w-6 h-6" />
-                          </div>
-                          <a
-                            href={doc.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="w-10 h-10 rounded-md flex items-center justify-center text-slate-300 hover:text-red-600 hover:bg-red-50 transition-colors"
-                          >
-                            <Download className="w-5 h-5" />
-                          </a>
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-red-500 uppercase tracking-wider mb-1 opacity-70 group-hover:opacity-100 transition-opacity">
-                            PDF Doc
-                          </p>
-                          <h4 className="font-bold text-slate-700 leading-snug group-hover:text-red-900 transition-colors line-clamp-2">
-                            {doc.name}
-                          </h4>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-10 text-center border-2 border-dashed border-slate-100 rounded-md bg-slate-50/50">
-                    <FileText className="w-8 h-8 text-slate-300 mb-2" />
-                    <p className="text-sm font-medium text-slate-400">
-                      Chưa có tài liệu
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>

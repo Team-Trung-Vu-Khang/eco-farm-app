@@ -21,6 +21,10 @@ export const docsSchema = z.object({
   editorContent: z.any().optional(),
 });
 
-export const varietyFoundationSchema = classificationSchema.merge(characteristicsSchema).merge(docsSchema);
+export const varietyFoundationSchema = classificationSchema
+  .merge(characteristicsSchema)
+  .merge(docsSchema);
 
-export type VarietyFoundationFormValues = z.infer<typeof varietyFoundationSchema>;
+export type VarietyFoundationFormValues = z.infer<
+  typeof varietyFoundationSchema
+>;

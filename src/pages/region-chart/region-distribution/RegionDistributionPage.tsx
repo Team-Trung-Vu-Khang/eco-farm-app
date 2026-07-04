@@ -17,6 +17,13 @@ const RegionDistributionPage = () => {
     handleEdit,
     handleDelete,
     confirmDelete,
+    isLoading,
+    response,
+    handleSearch,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
   } = useRegionDistributionPage();
 
   return (
@@ -34,6 +41,16 @@ const RegionDistributionPage = () => {
       <DataTable
         columns={columns}
         data={regions}
+        loading={isLoading}
+        searchable
+        searchPlaceholder="Tìm kiếm vùng trồng..."
+        onSearch={handleSearch}
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalElements={response?.totalElements}
+        totalPages={response?.totalPages}
+        onPageSize={setPageSize}
+        onIndexChange={setCurrentIndex}
         onEdit={(item) => handleEdit(item.id)}
         onDelete={(item) => handleDelete(item.id)}
       />

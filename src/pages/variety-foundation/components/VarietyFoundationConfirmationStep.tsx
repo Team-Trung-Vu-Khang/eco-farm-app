@@ -1,9 +1,10 @@
+import { Archive, CheckCircle2, FileText } from "lucide-react";
 import {
-  Archive,
-  CheckCircle2,
-  FileText,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useFormContext } from "react-hook-form";
 import type { VarietyFoundationFormValues } from "../schemas/varietyFoundationSchema";
 
@@ -103,13 +104,17 @@ export function VarietyFoundationConfirmationStep({
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   Thời gian sinh trưởng
                 </p>
-                <p className="text-slate-700">{formData.growthDuration || "---"}</p>
+                <p className="text-slate-700">
+                  {formData.growthDuration || "---"}
+                </p>
               </div>
               <div className="space-y-1">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   Năng suất bình quân
                 </p>
-                <p className="text-slate-700">{formData.averageYield || "---"}</p>
+                <p className="text-slate-700">
+                  {formData.averageYield || "---"}
+                </p>
               </div>
             </div>
 
@@ -137,7 +142,9 @@ export function VarietyFoundationConfirmationStep({
                 Hình thức
               </p>
               <p className="font-medium text-slate-800">
-                {formData.contentType === "pdf" ? "Tệp PDF" : "Soạn thảo nội dung"}
+                {formData.contentType === "pdf"
+                  ? "Tệp PDF"
+                  : "Soạn thảo nội dung"}
               </p>
             </div>
             <div className="space-y-1">

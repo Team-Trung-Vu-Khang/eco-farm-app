@@ -1,12 +1,15 @@
 import { Card, CardContent, Label } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Hash, Info, Sprout } from "lucide-react";
-import type { CreateVarietyForm } from "../types/types";
+import { useFormContext, useWatch } from "react-hook-form";
+import type { CreateSeedFormValues } from "../schemas/createSeedSchema";
 
-export function SeedIdentityStep({
-  formData,
-}: {
-  formData: CreateVarietyForm;
-}) {
+export function SeedIdentityStep() {
+  const { control } = useFormContext<CreateSeedFormValues>();
+
+  const varietyCode = useWatch({ control, name: "varietyCode" });
+  const varietyName = useWatch({ control, name: "varietyName" });
+  const cropName = useWatch({ control, name: "cropName" });
+
   return (
     <div className="mx-auto max-w-5xl space-y-8 py-6">
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
@@ -22,7 +25,7 @@ export function SeedIdentityStep({
             </div>
             <div className="space-y-1">
               <div className="font-mono text-2xl font-black tracking-tight text-slate-800">
-                {formData.varietyCode}
+                {varietyCode}
               </div>
               <p className="text-xs font-medium text-slate-500">
                 Mã định danh duy nhất trên hệ thống
@@ -47,7 +50,7 @@ export function SeedIdentityStep({
                   Tên giống
                 </Label>
                 <div className="text-lg font-bold text-slate-800">
-                  {formData.varietyName}
+                  {varietyName}
                 </div>
               </div>
               <div>
@@ -55,7 +58,7 @@ export function SeedIdentityStep({
                   Loại cây
                 </Label>
                 <div className="text-lg font-bold text-slate-800">
-                  {formData.crop}
+                  {cropName}
                 </div>
               </div>
             </div>

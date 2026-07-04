@@ -13,8 +13,17 @@ import { useAreaDetailPage } from "../hooks/useAreaDetailPage";
 
 const AreaDetailPage = () => {
   const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
-  const { setLocation, area, region, center, landTypeName, terrainName } =
-    useAreaDetailPage();
+  const {
+    setLocation,
+    area,
+    region,
+    landTypeName,
+    terrainName,
+    center,
+    coordinates,
+    isLoading,
+    navigateToDetail,
+  } = useAreaDetailPage();
   const closePath = (points: Array<{ lat: number; lng: number }>) => {
     if (!points || points.length < 3) return [];
     const path = points.map((p) => ({ lat: p.lat, lng: p.lng }));
@@ -25,6 +34,20 @@ const AreaDetailPage = () => {
     }
     return path;
   };
+
+  if (isLoading) {
+    return (
+      <AdminLayout
+        isDev={true}
+        title="Chi tiết khu vực"
+        description="Đang tải..."
+      >
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Đang tải dữ liệu...</p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   if (!area) {
     return (
@@ -83,10 +106,10 @@ const AreaDetailPage = () => {
                 </span>
                 <div className="mt-1">
                   <RegionChartStatusBadge
-                    status={area.status}
+                    subtle
                     activeLabel="Đang hoạt động"
                     inactiveLabel="Ngừng hoạt động"
-                    subtle
+                    status={area.status ?? "inactive"}
                   />
                 </div>
               </div>
@@ -104,7 +127,7 @@ const AreaDetailPage = () => {
                 <span className="text-sm font-medium text-muted-foreground">
                   Diện tích
                 </span>
-                <p className="font-medium mt-1">{area.area} ha</p>
+                <p className="font-medium mt-1">{area.acreage} ha</p>
               </div>
 
               <div>
@@ -133,7 +156,8 @@ const AreaDetailPage = () => {
                   area.plots.map((plot: any) => (
                     <div
                       key={plot.id}
-                      className="border p-3 rounded-lg text-sm bg-muted/20"
+                      onClick={() => navigateToDetail(plot.id)}
+                      className="border p-3 rounded-lg text-sm bg-muted/20 cursor-pointer"
                     >
                       <div className="flex justify-between items-center mb-2">
                         <div className="flex items-center gap-2">
@@ -141,7 +165,7 @@ const AreaDetailPage = () => {
                           <span className="font-semibold">{plot.name}</span>
                         </div>
                         <span className="text-muted-foreground text-xs font-mono">
-                          {plot.area} ha
+                          {plot.acreage || plot.area || 0} ha
                         </span>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
@@ -179,9 +203,9 @@ const AreaDetailPage = () => {
                   options={{ mapType: "raster" }}
                   version="2.5"
                 >
-                  {area.coordinates && area.coordinates.length >= 3 && (
+                  {coordinates && coordinates.length >= 3 && (
                     <MFPolygon
-                      paths={[closePath(area.coordinates)]}
+                      paths={[closePath(coordinates)]}
                       strokeColor="#2563eb"
                       fillColor="#2563eb"
                       fillOpacity={0.1}
@@ -190,14 +214,17 @@ const AreaDetailPage = () => {
                   )}
 
                   {area.plots?.map((plot: any) => {
-                    if (!plot.coordinates || plot.coordinates.length < 3) {
+                    if (
+                      !(plot.boundary || plot.coordinates) ||
+                      (plot.boundary || plot.coordinates).length < 3
+                    ) {
                       return null;
                     }
 
                     return (
                       <MFPolygon
                         key={plot.id}
-                        paths={[closePath(plot.coordinates)]}
+                        paths={[closePath(plot.boundary || plot.coordinates)]}
                         strokeColor="#f59e0b"
                         fillColor="#f59e0b"
                         fillOpacity={0.3}

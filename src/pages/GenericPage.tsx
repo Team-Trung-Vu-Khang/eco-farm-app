@@ -56,6 +56,14 @@ interface GenericPageProps {
     editId: number | null,
   ) => Promise<void> | void;
   onDelete?: (id: number) => Promise<void> | void;
+  searchable?: boolean;
+  onSearch?: (value: string) => void;
+  pageSize?: number;
+  currentIndex?: number;
+  totalElements?: number;
+  totalPages?: number;
+  onPageSize?: (size: number) => void;
+  onIndexChange?: (index: number) => void;
 }
 
 export function GenericPage({
@@ -70,6 +78,14 @@ export function GenericPage({
   isLoading = false,
   onSubmit,
   onDelete,
+  searchable,
+  onSearch,
+  pageSize,
+  currentIndex,
+  totalElements,
+  totalPages,
+  onPageSize,
+  onIndexChange,
 }: GenericPageProps) {
   const { toast } = useToast();
   const [data, setData] = useState<GenericItem[]>(initialData);
@@ -243,22 +259,22 @@ export function GenericPage({
         </Button>
       }
     >
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
-          <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-green-500 animate-spin" />
-          <span className="text-sm">
-            Đang tải danh sách {entityName.toLowerCase()}...
-          </span>
-        </div>
-      ) : (
-        <DataTable
-          columns={_columns}
-          data={data}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          searchPlaceholder={`Tìm kiếm ${entityName}...`}
-        />
-      )}
+      <DataTable
+        loading={isLoading}
+        columns={_columns}
+        data={data}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        searchPlaceholder={`Tìm kiếm ${entityName}...`}
+        searchable={searchable}
+        onSearch={onSearch}
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalElements={totalElements}
+        totalPages={totalPages}
+        onPageSize={onPageSize}
+        onIndexChange={onIndexChange}
+      />
 
       <FormDialog
         size="lg"

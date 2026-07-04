@@ -33,7 +33,22 @@ const RegionDetailPage = () => {
     enterpriseName,
     landTypeName,
     terrainName,
+    isLoading,
+    navigateToDetail,
   } = useRegionDetailPage();
+
+  if (isLoading) {
+    return (
+      <AdminLayout isDev={true} title="Đang tải...">
+        <div className="flex flex-col items-center justify-center p-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          <p className="mt-4 text-muted-foreground">
+            Đang tải thông tin vùng trồng...
+          </p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   if (!region) {
     return (
@@ -121,18 +136,22 @@ const RegionDetailPage = () => {
           <Card>
             <CardHeader>
               <CardTitle>
-                Danh sách tiểu vùng ({region.subAreas?.length || 0})
+                Danh sách khu vực ({region.subAreas?.length || 0})
               </CardTitle>
             </CardHeader>
             <CardContent>
               {!region.subAreas || region.subAreas.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Chưa có tiểu vùng nào.
+                  Chưa có khu vực nào.
                 </p>
               ) : (
                 <div className="space-y-2">
                   {region.subAreas.map((sub) => (
-                    <div key={sub.id} className="border p-3 rounded-md text-sm">
+                    <div
+                      key={sub.id}
+                      onClick={() => navigateToDetail(sub.id)}
+                      className="border p-3 rounded-md text-sm cursor-pointer"
+                    >
                       <div className="flex justify-between mb-1">
                         <span className="font-semibold">{sub.name}</span>
                       </div>

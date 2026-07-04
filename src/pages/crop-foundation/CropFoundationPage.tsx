@@ -22,6 +22,12 @@ export default function CropFoundationPage() {
     handleEdit,
     handleConfirmDelete,
     isPending,
+    response,
+    handleSearch,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
   } = useCropFoundationPage();
 
   useDialogBugWorkaround([deleteOpen]);
@@ -46,13 +52,7 @@ export default function CropFoundationPage() {
         </div>
       }
     >
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
-          <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-green-500 animate-spin" />
-          <span className="text-sm">Đang tải danh sách cây trồng...</span>
-        </div>
-      ) : (
-        <DataTable
+      <DataTable
           columns={COLUMNS}
           data={cropFoundations}
           onDelete={handleDelete}
@@ -61,8 +61,16 @@ export default function CropFoundationPage() {
           searchPlaceholder="Tìm kiếm cây trồng..."
           selectable={false}
           filters={TABLE_FILTERS}
+          searchable
+          onSearch={handleSearch}
+          pageSize={pageSize}
+          currentIndex={currentIndex}
+          totalElements={response?.totalElements}
+          totalPages={response?.totalPages}
+          onPageSize={setPageSize}
+          onIndexChange={setCurrentIndex}
+          loading={loading}
         />
-      )}
 
       <DeleteCropFoundationDialog
         open={deleteOpen}

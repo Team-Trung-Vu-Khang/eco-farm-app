@@ -7,37 +7,45 @@ import {
 import { MapContainer, Polygon, TileLayer, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { Region, SubArea } from "../../constants";
-import { PROVINCES } from "@/constants/province";
+import type { RegionFormValues } from "../data/region-form.schema";
+import { useAddressOptions } from "@/features/master-data/hooks/useAddressOptions";
+import { useCatalog } from "@/features/foundation/hooks/useCatalog";
+import { useCrops } from "@/features/foundation/hooks/useCrops";
+import { useOrganizationById } from "@/features/organization/hooks/useOrganizationById";
+import { useSelectedWorkspaceId } from "@/features/workspace";
+import { useFormContext } from "react-hook-form";
+import { useMemo } from "react";
 import { getBoundsFromPoints } from "../utils";
 
-type EnterpriseOption = {
-  id: string | number;
-  name: string;
-};
+export const RegionReviewStep = () => {
+  const { watch } = useFormContext<RegionFormValues>();
+  const formData = watch();
 
-type LookupOption = {
-  id?: string | number;
-  code?: string | number;
-  name: string;
-};
+  const { items: lands } = useCatalog("soil-types");
+  const { items: terrains } = useCatalog("terrain-features");
+  const { data: cropsData } = useCrops({ params: { size: 100 } });
+  const crops = cropsData?.content || [];
 
-interface RegionReviewStepProps {
-  formData: Partial<Region>;
-  regionPoints: L.LatLng[];
-  enterprises: EnterpriseOption[];
-  lands: LookupOption[];
-  terrains: LookupOption[];
-}
+  const workspaceId = useSelectedWorkspaceId();
+  const parsedWorkspaceId =
+    typeof workspaceId === "number" ? workspaceId : undefined;
 
-export const RegionReviewStep = ({
-  formData,
-  regionPoints,
-  enterprises,
-  lands,
-  terrains,
-}: RegionReviewStepProps) => {
-  const subAreas = (formData.subAreas as SubArea[] | undefined) || [];
+  const { item: selectedOrganization } = useOrganizationById(
+    formData.enterpriseId || "",
+    parsedWorkspaceId ?? "missing",
+    {
+      enabled:
+        parsedWorkspaceId !== undefined && !!formData.enterpriseId,
+    },
+  );
+
+  const subAreas = formData.subAreas || [];
+  const { provinces, wards } = useAddressOptions(formData.provinceId);
+
+  const regionPoints = useMemo(() => {
+    const coordinates = formData.coordinates || [];
+    return coordinates.map((c) => L.latLng(c.lat, c.lng));
+  }, [formData.coordinates]);
 
   return (
     <div className="space-y-5">
@@ -72,10 +80,7 @@ export const RegionReviewStep = ({
                 Đơn vị sở hữu
               </p>
               <p className="text-sm font-semibold text-slate-700">
-                {enterprises.find(
-                  (enterprise) =>
-                    String(enterprise.id) === String(formData.enterpriseId),
-                )?.name || (
+                {selectedOrganization?.name || (
                   <span className="italic text-slate-300">Chưa chọn</span>
                 )}
               </p>
@@ -121,7 +126,7 @@ export const RegionReviewStep = ({
                 Tỉnh / Thành phố
               </p>
               <p className="text-sm text-slate-700">
-                {PROVINCES.find((province) => province.code === formData.provinceId)
+                {provinces.find((province) => province.code === formData.provinceId)
                   ?.name || <span className="italic text-slate-300">Chưa chọn</span>}
               </p>
             </div>
@@ -131,8 +136,7 @@ export const RegionReviewStep = ({
                 Phường / Xã
               </p>
               <p className="text-sm text-slate-700">
-                {PROVINCES.find((province) => province.code === formData.provinceId)
-                  ?.districts.find((district) => district.code === formData.districtId)
+                {wards.find((ward) => ward.code === formData.wardId)
                   ?.name || <span className="italic text-slate-300">Chưa chọn</span>}
               </p>
             </div>
