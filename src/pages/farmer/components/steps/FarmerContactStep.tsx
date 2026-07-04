@@ -6,11 +6,10 @@ import {
   Input,
   Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useMemo, useState } from "react";
 import { Mail, Phone, Plus, Trash2, User, Users } from "lucide-react";
-import useContactStore from "@/stores/useContactStore";
-import { ContactSelectorDialog } from "../ContactSelectorDialog";
+import { useMemo, useState } from "react";
 import type { Contact } from "../../types";
+import { ContactSelectorDialog } from "../ContactSelectorDialog";
 
 interface FarmerContactStepProps {
   contacts: Contact[];
@@ -28,18 +27,11 @@ export const FarmerContactStep = ({
   removeContact,
 }: FarmerContactStepProps) => {
   const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
-  const contactStore = useContactStore((state) => state.contacts);
-  const selectedContact = contactStore.find(
-    (contact) =>
-      contact.id === newContact.id ||
-      (contact.fullName === newContact.name &&
-        contact.phone === newContact.phone),
-  );
 
   const selectedContactLabel = useMemo(() => {
-    if (!selectedContact) return "Chọn liên hệ...";
-    return `${selectedContact.fullName} - ${selectedContact.phone}`;
-  }, [selectedContact]);
+    if (!newContact.name && !newContact.phone) return "Chọn liên hệ...";
+    return [newContact.name, newContact.phone].filter(Boolean).join(" - ");
+  }, [newContact.name, newContact.phone]);
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -126,16 +118,16 @@ export const FarmerContactStep = ({
         open={isContactDialogOpen}
         onOpenChange={setIsContactDialogOpen}
         selectedId={
-          typeof newContact.id === "number"
+          typeof newContact.id === "number" || typeof newContact.id === "string"
             ? newContact.id
-            : selectedContact?.id || null
+            : null
         }
         onSelect={(contact) =>
           setNewContact({
             id: contact.id,
             name: contact.fullName,
             phone: contact.phone,
-            email: contact.email,
+            email: contact.email || "",
           })
         }
       />
@@ -160,7 +152,8 @@ export const FarmerContactStep = ({
               Chưa có liên hệ nào
             </h5>
             <p className="mt-2 text-sm text-muted-foreground/70">
-              Các liên hệ bạn thêm sẽ hiển thị tại đây để kiểm tra trước khi lưu.
+              Các liên hệ bạn thêm sẽ hiển thị tại đây để kiểm tra trước khi
+              lưu.
             </p>
           </div>
         ) : (
@@ -186,7 +179,7 @@ export const FarmerContactStep = ({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-destructive opacity-0 transition-opacity group-hover:opacity-100"
+                      className="h-8 w-8 text-destructive"
                       onClick={() => removeContact(index)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />

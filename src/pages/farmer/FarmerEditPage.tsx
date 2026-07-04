@@ -25,6 +25,8 @@ export default function FarmerEditPage() {
   const {
     isEdit,
     formData,
+    control,
+    errors,
     updateField,
     newBankAccount,
     setNewBankAccount,
@@ -46,6 +48,7 @@ export default function FarmerEditPage() {
     addBankAccount,
     removeBankAccount,
     submitForm,
+    openConfirmDialog,
     showConfirmDialog,
     setShowConfirmDialog,
     isSubmitting,
@@ -60,6 +63,8 @@ export default function FarmerEditPage() {
       content: (
         <FarmerBasicInfoStep
           formData={formData}
+          control={control}
+          errors={errors}
           updateField={updateField}
           isDragging={!!isDragging["logo"]}
           handleDrag={handleDrag}
@@ -141,7 +146,7 @@ export default function FarmerEditPage() {
           <StepperForm
             steps={steps}
             completeLabel={isEdit ? "Cập nhật" : "Tạo mới"}
-            onComplete={() => setShowConfirmDialog(true)}
+            onComplete={openConfirmDialog}
             onCancel={navigateBack}
           />
         </CardContent>

@@ -16,6 +16,8 @@ export interface Branch {
 }
 
 export interface BankAccount {
+  id?: number | string;
+  bankId?: number | string;
   bankName: string;
   accountHolder: string;
   accountNumber: string;

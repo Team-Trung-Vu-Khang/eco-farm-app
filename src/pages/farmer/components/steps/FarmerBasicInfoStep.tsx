@@ -1,3 +1,4 @@
+import { useAddressOptions } from "@/features/master-data";
 import {
   Button,
   Input,
@@ -12,13 +13,23 @@ import {
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Image, MapPin, Upload } from "lucide-react";
-import { useAddressOptions } from "@/features/master-data";
-import type { FarmerFormData } from "../../types";
 import { useEffect, useRef, useState } from "react";
+import { Controller, type Control, type FieldErrors } from "react-hook-form";
+import type { FarmerFormInput } from "../../data/farmer-form.schema";
+import type { FarmerFormData } from "../../types";
 import { farmerClassificationOptions } from "../../types";
+
+const asInputValue = (value: unknown) =>
+  typeof value === "string" || typeof value === "number"
+    ? String(value)
+    : "";
+
+const asMultiValue = (value: unknown) => (Array.isArray(value) ? value : []);
 
 interface FarmerBasicInfoStepProps {
   formData: FarmerFormData;
+  control: Control<FarmerFormInput, unknown>;
+  errors: FieldErrors<FarmerFormInput>;
   updateField: <K extends keyof FarmerFormData>(
     field: K,
     value: FarmerFormData[K],
@@ -30,6 +41,8 @@ interface FarmerBasicInfoStepProps {
 
 export const FarmerBasicInfoStep = ({
   formData,
+  control,
+  errors,
   updateField,
   isDragging,
   handleDrag,
@@ -39,7 +52,6 @@ export const FarmerBasicInfoStep = ({
   const { toast } = useToast();
   const { provinces, wards, isLoadingProvinces, isLoadingWards } =
     useAddressOptions(formData.province);
-  const [addressQuery, setAddressQuery] = useState(formData.address || "");
   const [isFocused, setIsFocused] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<
@@ -54,14 +66,24 @@ export const FarmerBasicInfoStep = ({
         skipNextSearchRef.current = false;
         return;
       }
-      if (!isFocused || !addressQuery || addressQuery.trim().length < 3 || !MAP4D_ACCESS_KEY) {
+      if (
+        !isFocused ||
+        !formData.address ||
+        formData.address.trim().length < 3 ||
+        !MAP4D_ACCESS_KEY
+      ) {
         setSuggestions([]);
         setShowSuggestions(false);
         return;
       }
       try {
-        const params = new URLSearchParams({ key: MAP4D_ACCESS_KEY, text: addressQuery.trim() });
-        const res = await fetch(`https://api.map4d.vn/sdk/autosuggest?${params.toString()}`);
+        const params = new URLSearchParams({
+          key: MAP4D_ACCESS_KEY,
+          text: formData.address.trim(),
+        });
+        const res = await fetch(
+          `https://api.map4d.vn/sdk/autosuggest?${params.toString()}`,
+        );
         if (!res.ok) return;
         const data = (await res.json()) as {
           result?: Array<{
@@ -79,7 +101,9 @@ export const FarmerBasicInfoStep = ({
           }))
           .filter(
             (item) =>
-              item.address && Number.isFinite(item.lat) && Number.isFinite(item.lng),
+              item.address &&
+              Number.isFinite(item.lat) &&
+              Number.isFinite(item.lng),
           );
         setSuggestions(next);
         setShowSuggestions(next.length > 0);
@@ -89,7 +113,7 @@ export const FarmerBasicInfoStep = ({
       }
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [MAP4D_ACCESS_KEY, addressQuery, isFocused]);
+  }, [MAP4D_ACCESS_KEY, formData.address, isFocused]);
 
   useEffect(() => {
     const onClickOutside = (event: MouseEvent) => {
@@ -113,7 +137,6 @@ export const FarmerBasicInfoStep = ({
   }) => {
     const selectedAddress = item.address || item.name;
     skipNextSearchRef.current = true;
-    setAddressQuery(selectedAddress);
     setShowSuggestions(false);
     setIsFocused(false);
     updateField("address", selectedAddress);
@@ -196,39 +219,87 @@ export const FarmerBasicInfoStep = ({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="code">Mã nông hộ *</Label>
-          <Input
-            id="code"
-            value={formData.code}
-            onChange={(e) => updateField("code", e.target.value)}
-            placeholder="VD: DN001, DN002..."
+          <Label htmlFor="code" required>
+            Mã nông hộ
+          </Label>
+          <Controller
+            control={control}
+            name="code"
+            render={({ field }) => (
+              <Input
+                id="code"
+                value={asInputValue(field.value)}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+                aria-invalid={!!errors.code}
+                placeholder="VD: DN001, DN002..."
+              />
+            )}
           />
+          {errors.code?.message ? (
+            <p className="text-xs text-red-600">{errors.code.message}</p>
+          ) : null}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="name">Tên nông hộ *</Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => updateField("name", e.target.value)}
-            placeholder="VD: Công ty TNHH ABC..."
+          <Label htmlFor="name" required>
+            Tên nông hộ
+          </Label>
+          <Controller
+            control={control}
+            name="name"
+            render={({ field }) => (
+              <Input
+                id="name"
+                value={asInputValue(field.value)}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+                aria-invalid={!!errors.name}
+                placeholder="VD: Công ty TNHH ABC..."
+              />
+            )}
           />
+          {errors.name?.message ? (
+            <p className="text-xs text-red-600">{errors.name.message}</p>
+          ) : null}
         </div>
         <div className="space-y-2">
           <Label htmlFor="brandName">Tên thương hiệu</Label>
-          <Input
-            id="brandName"
-            value={formData.brandName}
-            onChange={(e) => updateField("brandName", e.target.value)}
-            placeholder="VD: EcoFarm..."
+          <Controller
+            control={control}
+            name="brandName"
+            render={({ field }) => (
+              <Input
+                id="brandName"
+                value={asInputValue(field.value)}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+                placeholder="VD: EcoFarm..."
+              />
+            )}
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="taxCode">Mã số thuế</Label>
-          <Input
-            id="taxCode"
-            value={formData.taxCode}
-            onChange={(e) => updateField("taxCode", e.target.value)}
-            placeholder="Nhập mã số thuế"
+          <Controller
+            control={control}
+            name="taxCode"
+            render={({ field }) => (
+              <Input
+                id="taxCode"
+                value={asInputValue(field.value)}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+                placeholder="Nhập mã số thuế"
+              />
+            )}
           />
         </div>
       </div>
@@ -236,20 +307,38 @@ export const FarmerBasicInfoStep = ({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="taxAuthority">Cơ quan thuế</Label>
-          <Input
-            id="taxAuthority"
-            value={formData.taxAuthority}
-            onChange={(e) => updateField("taxAuthority", e.target.value)}
-            placeholder="Cục thuế / Chi cục thuế..."
+          <Controller
+            control={control}
+            name="taxAuthority"
+            render={({ field }) => (
+              <Input
+                id="taxAuthority"
+                value={asInputValue(field.value)}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+                placeholder="Cục thuế / Chi cục thuế..."
+              />
+            )}
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="issueDate">Ngày cấp</Label>
-          <Input
-            id="issueDate"
-            type="date"
-            value={formData.issueDate}
-            onChange={(e) => updateField("issueDate", e.target.value)}
+          <Controller
+            control={control}
+            name="issueDate"
+            render={({ field }) => (
+              <Input
+                id="issueDate"
+                type="date"
+                value={asInputValue(field.value)}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+              />
+            )}
           />
         </div>
       </div>
@@ -257,41 +346,82 @@ export const FarmerBasicInfoStep = ({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="classification">Phân loại</Label>
-          <MultiSelect
-            options={farmerClassificationOptions}
-            placeholder="Chọn phân loại..."
-            value={formData.classification}
-            onChange={(v) => updateField("classification", v)}
+          <Controller
+            control={control}
+            name="classification"
+            render={({ field }) => (
+              <MultiSelect
+                options={farmerClassificationOptions}
+                placeholder="Chọn phân loại..."
+                value={asMultiValue(field.value)}
+                onChange={field.onChange}
+              />
+            )}
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="taxAddress">Địa chỉ thuế</Label>
-          <Input
-            id="taxAddress"
-            value={formData.taxAddress}
-            onChange={(e) => updateField("taxAddress", e.target.value)}
-            placeholder="Địa chỉ đăng ký thuế"
+          <Controller
+            control={control}
+            name="taxAddress"
+            render={({ field }) => (
+              <Input
+                id="taxAddress"
+                value={asInputValue(field.value)}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+                placeholder="Địa chỉ đăng ký thuế"
+              />
+            )}
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="representative">Người đại diện pháp luật *</Label>
-          <Input
-            id="representative"
-            value={formData.representative}
-            onChange={(e) => updateField("representative", e.target.value)}
-            placeholder="Họ và tên"
+          <Label htmlFor="representative" required>
+            Người đại diện pháp luật
+          </Label>
+          <Controller
+            control={control}
+            name="representative"
+            render={({ field }) => (
+              <Input
+                id="representative"
+                value={asInputValue(field.value)}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+                aria-invalid={!!errors.representative}
+                placeholder="Họ và tên"
+              />
+            )}
           />
+          {errors.representative?.message ? (
+            <p className="text-xs text-red-600">
+              {errors.representative.message}
+            </p>
+          ) : null}
         </div>
         <div className="space-y-2">
           <Label htmlFor="foundedDate">Ngày thành lập</Label>
-          <Input
-            id="foundedDate"
-            type="date"
-            value={formData.foundedDate}
-            onChange={(e) => updateField("foundedDate", e.target.value)}
+          <Controller
+            control={control}
+            name="foundedDate"
+            render={({ field }) => (
+              <Input
+                id="foundedDate"
+                type="date"
+                value={asInputValue(field.value)}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+              />
+            )}
           />
         </div>
       </div>
@@ -303,73 +433,94 @@ export const FarmerBasicInfoStep = ({
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="province">Tỉnh / Thành Phố *</Label>
-            <Select
-              value={formData.province || ""}
-              onValueChange={(val) => {
-                updateField("province", val);
-                updateField("district", "");
-                updateField("ward", "");
-              }}
-              disabled={isLoadingProvinces}
-            >
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={
-                    isLoadingProvinces
-                      ? "Đang tải danh sách tỉnh/thành phố..."
-                      : "Chọn Tỉnh / Thành Phố"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {provinces.map((province) => (
-                  <SelectItem key={province.code} value={province.code}>
-                    {province.fullName || province.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="province" required>
+              Tỉnh / Thành Phố
+            </Label>
+            <Controller
+              control={control}
+              name="province"
+              render={({ field }) => (
+                <Select
+                  value={asInputValue(field.value)}
+                  onValueChange={(val) => {
+                    field.onChange(val);
+                    updateField("district", "");
+                    updateField("ward", "");
+                  }}
+                  disabled={isLoadingProvinces}
+                >
+                  <SelectTrigger aria-invalid={!!errors.province}>
+                    <SelectValue
+                      placeholder={
+                        isLoadingProvinces
+                          ? "Đang tải danh sách tỉnh/thành phố..."
+                          : "Chọn Tỉnh / Thành Phố"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-80 overflow-y-auto">
+                    {provinces.map((province) => (
+                      <SelectItem key={province.code} value={province.code}>
+                        {province.fullName || province.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.province?.message ? (
+              <p className="text-xs text-red-600">{errors.province.message}</p>
+            ) : null}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="ward">Phường / Xã *</Label>
-            <Select
-              value={formData.ward || ""}
-              onValueChange={(val) => updateField("ward", val)}
-              disabled={!formData.province || isLoadingWards}
-            >
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={
-                    !formData.province
-                      ? "Chọn Tỉnh / Thành Phố trước"
-                      : isLoadingWards
-                        ? "Đang tải phường/xã..."
-                        : "Chọn Phường / Xã"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {wards.map((ward) => (
-                  <SelectItem key={ward.code} value={ward.code}>
-                    {ward.fullName || ward.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="ward" required>
+              Phường / Xã
+            </Label>
+            <Controller
+              control={control}
+              name="ward"
+              render={({ field }) => (
+                <Select
+                  value={asInputValue(field.value)}
+                  onValueChange={field.onChange}
+                  disabled={!formData.province || isLoadingWards}
+                >
+                  <SelectTrigger aria-invalid={!!errors.ward}>
+                    <SelectValue
+                      placeholder={
+                        !formData.province
+                          ? "Chọn Tỉnh / Thành Phố trước"
+                          : isLoadingWards
+                            ? "Đang tải phường/xã..."
+                            : "Chọn Phường / Xã"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-80 overflow-y-auto">
+                    {wards.map((ward) => (
+                      <SelectItem key={ward.code} value={ward.code}>
+                        {ward.fullName || ward.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.ward?.message ? (
+              <p className="text-xs text-red-600">{errors.ward.message}</p>
+            ) : null}
           </div>
         </div>
         <div className="space-y-2 mt-4" ref={searchContainerRef}>
           <Label htmlFor="address">Địa chỉ chi tiết</Label>
           <Input
             id="address"
-            value={addressQuery}
+            value={asInputValue(formData.address)}
             onFocus={() => {
               setIsFocused(true);
               if (suggestions.length > 0) setShowSuggestions(true);
             }}
             onChange={(e) => {
-              setAddressQuery(e.target.value);
               updateField("address", e.target.value);
               if (!e.target.value) {
                 setShowSuggestions(false);
@@ -391,26 +542,37 @@ export const FarmerBasicInfoStep = ({
                   <div className="font-medium text-slate-800 truncate">
                     {item.name || item.address}
                   </div>
-                  <div className="text-xs text-slate-500 truncate">{item.address}</div>
+                  <div className="text-xs text-slate-500 truncate">
+                    {item.address}
+                  </div>
                 </button>
               ))}
             </div>
           )}
           <p className="text-xs text-slate-500">
-            Tọa độ: {formData.latitude?.toFixed(6) ?? "--"}, {formData.longitude?.toFixed(6) ?? "--"}
+            Tọa độ: {formData.latitude?.toFixed(6) ?? "--"},{" "}
+            {formData.longitude?.toFixed(6) ?? "--"}
           </p>
         </div>
-
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="description">Mô tả nông hộ</Label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => updateField("description", e.target.value)}
-          placeholder="Giới thiệu về nông hộ"
-          rows={3}
+        <Controller
+          control={control}
+          name="description"
+          render={({ field }) => (
+            <Textarea
+              id="description"
+              value={asInputValue(field.value)}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              ref={field.ref}
+              name={field.name}
+              placeholder="Giới thiệu về nông hộ"
+              rows={3}
+            />
+          )}
         />
       </div>
     </div>
