@@ -1,4 +1,4 @@
-import type { BranchRecord } from "@/features/branch/types/branch.type";
+import type { FarmRegionResponse } from "@/features/farm/types/farm.type";
 import type { OrganizationRecord } from "@/features/organization/types/organization.type";
 import type {
   CertificateStandardRecord,
@@ -56,11 +56,11 @@ export const mapOrganizationRecordToEnterprise = (
   name: record.name,
 });
 
-export const mapBranchRecordToArea = (record: BranchRecord): Area => ({
+export const mapRegionRecordToArea = (record: FarmRegionResponse): Area => ({
   id: toNumericId(record.id),
   code: record.code ?? String(record.id),
   name: record.name ?? record.code ?? String(record.id),
-  enterpriseId: toNumericId(record.organization?.id ?? record.organizationId),
+  enterpriseId: toNumericId(record.metadataJson?.enterpriseId),
 });
 
 export const mapFarmCertificateRecordToFormData = (

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { branchApi } from "@/features/branch";
+import { useRegions } from "@/features/farm/hooks/useRegions";
 import { farmCertificateApi } from "@/features/farm-certificate";
 import { useMasterData } from "@/features/master-data";
 import { organizationApi } from "@/features/organization";
@@ -11,10 +11,10 @@ import type {
   Standard,
 } from "../../../stores/useEnterpriseCertificateStore";
 import {
-  mapBranchRecordToArea,
   mapFarmCertificateRecordToView,
   mapOrganizationRecordToEnterprise,
   mapStandardRecordToOption,
+  mapRegionRecordToArea,
 } from "../utils";
 
 export function useEnterpriseCertificateForm() {
@@ -59,24 +59,11 @@ export function useEnterpriseCertificateForm() {
     refetchOnWindowFocus: false,
   });
 
-  const branchesQuery = useQuery({
-    queryKey: ["enterprise-certificate", "branches", workspaceId] as const,
-    queryFn: async () => {
-      if (workspaceId === null || workspaceId === undefined) {
-        throw new Error("Missing workspace id");
-      }
-
-      return branchApi.list(
-        {
-          page: 0,
-          size: 100,
-        },
-        workspaceId,
-      );
+  const branchesQuery = useRegions({
+    params: {
+      size: 100,
     },
-    enabled: workspaceId !== null && workspaceId !== undefined,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    enabled: true,
   });
 
   const certificatesQuery = useQuery({
@@ -117,8 +104,8 @@ export function useEnterpriseCertificateForm() {
   );
 
   const areas = useMemo(
-    () => branchesQuery.data?.content.map(mapBranchRecordToArea) ?? [],
-    [branchesQuery.data?.content],
+    () => branchesQuery.items.map(mapRegionRecordToArea),
+    [branchesQuery.items],
   );
 
   const filteredData = useMemo(
@@ -202,12 +189,12 @@ export function useEnterpriseCertificateForm() {
       certificatesQuery.isLoading ||
       standardsQuery.loading ||
       organizationsQuery.isLoading ||
-      branchesQuery.isLoading,
+      branchesQuery.loading,
     error:
       certificatesQuery.error?.message ??
       standardsQuery.error ??
       organizationsQuery.error?.message ??
-      branchesQuery.error?.message ??
+      branchesQuery.error ??
       null,
     handleSearch,
     handleFilterChange,

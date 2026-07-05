@@ -313,7 +313,7 @@ export function CertificateEntitySelection({
   const entityType = useWatch({ control, name: "entityType" });
   const entityId = useWatch({ control, name: "entityId" });
   const entityName = useWatch({ control, name: "entityName" });
-  const [selectedEnterpriseCodeForArea, setSelectedEnterpriseCodeForArea] =
+  const [selectedEnterpriseIdForArea, setSelectedEnterpriseIdForArea] =
     useState("");
 
   const selectedArea = areas.find(
@@ -326,22 +326,22 @@ export function CertificateEntitySelection({
       enterprise.code === selectedArea?.enterpriseId ||
       enterprise.id === entityId ||
       enterprise.code === entityId ||
-      enterprise.code === selectedEnterpriseCodeForArea,
+      enterprise.id === selectedEnterpriseIdForArea ||
+      enterprise.code === selectedEnterpriseIdForArea,
   );
 
   const selectedEnterpriseId =
     entityType === "region"
       ? selectedArea?.enterpriseId ||
-        selectedEnterpriseCodeForArea
-      : selectedEnterprise?.code || "";
+        selectedEnterpriseIdForArea
+      : selectedEnterprise?.id || selectedEnterprise?.code || "";
 
   const selectedAreaList = useMemo(
     () =>
       areas
         .filter(
           (area) =>
-            area.enterpriseId === selectedEnterpriseId ||
-            area.enterpriseId === selectedEnterpriseCodeForArea,
+            area.enterpriseId === selectedEnterpriseId,
         )
         .map((area) => ({
           id: area.id,
@@ -354,13 +354,12 @@ export function CertificateEntitySelection({
     [
       areas,
       selectedEnterprise?.name,
-      selectedEnterpriseCodeForArea,
       selectedEnterpriseId,
     ],
   );
 
   const enterpriseItems = enterprises.map((enterprise) => ({
-    id: enterprise.code,
+    id: enterprise.id,
     code: enterprise.code,
     name: enterprise.name,
     kind: "enterprise" as const,
@@ -390,7 +389,7 @@ export function CertificateEntitySelection({
                   shouldDirty: true,
                   shouldValidate: true,
                 });
-                setSelectedEnterpriseCodeForArea("");
+                setSelectedEnterpriseIdForArea("");
               }}
             >
               <SelectTrigger className="bg-white">
@@ -416,20 +415,19 @@ export function CertificateEntitySelection({
         searchPlaceholder="Tìm theo tên, mã hoặc nội dung mô tả..."
         selectedId={
           entityType === "region"
-            ? selectedEnterpriseCodeForArea
-            : selectedEnterprise?.code ?? entityId
+            ? selectedEnterpriseIdForArea
+            : selectedEnterprise?.id ?? ""
         }
         items={enterpriseItems}
         emptyStateText="Không tìm thấy doanh nghiệp phù hợp"
         onConfirm={(id) => {
           const selected = enterprises.find(
-            (enterprise) =>
-              enterprise.id === id || enterprise.code === id,
+            (enterprise) => enterprise.id === id || enterprise.code === id,
           );
           if (!selected) return;
 
           if (entityType === "region") {
-            setSelectedEnterpriseCodeForArea(selected.code);
+            setSelectedEnterpriseIdForArea(selected.id);
             setValue("entityId", "", {
               shouldDirty: true,
               shouldValidate: true,
@@ -457,7 +455,7 @@ export function CertificateEntitySelection({
           label="Chọn vùng trồng"
           required
           placeholder={
-            selectedEnterprise
+          selectedEnterprise
               ? "Chọn vùng trồng"
               : "Hãy chọn doanh nghiệp trước"
           }

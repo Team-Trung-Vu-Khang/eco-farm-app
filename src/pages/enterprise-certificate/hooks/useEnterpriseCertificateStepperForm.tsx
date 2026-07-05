@@ -1,5 +1,5 @@
-import { branchApi } from "@/features/branch";
 import { farmCertificateApi } from "@/features/farm-certificate";
+import { useRegions } from "@/features/farm/hooks/useRegions";
 import { useMasterData } from "@/features/master-data";
 import { organizationApi } from "@/features/organization";
 import { useSelectedWorkspaceId } from "@/features/workspace";
@@ -21,11 +21,11 @@ import {
 } from "../data/enterprise-certificate-form.schema";
 import {
   buildFarmCertificatePayload,
-  mapBranchRecordToArea,
   mapFarmCertificateRecordToFormData,
   mapFarmCertificateRecordToView,
   mapOrganizationRecordToEnterprise,
   mapStandardRecordToOption,
+  mapRegionRecordToArea,
 } from "../utils";
 
 export function useEnterpriseCertificateStepperForm() {
@@ -69,24 +69,11 @@ export function useEnterpriseCertificateStepperForm() {
     refetchOnWindowFocus: false,
   });
 
-  const areasQuery = useQuery({
-    queryKey: ["enterprise-certificate", "branches", workspaceId] as const,
-    queryFn: async () => {
-      if (workspaceId === null || workspaceId === undefined) {
-        throw new Error("Missing workspace id");
-      }
-
-      return branchApi.list(
-        {
-          page: 0,
-          size: 100,
-        },
-        workspaceId,
-      );
+  const areasQuery = useRegions({
+    params: {
+      size: 100,
     },
-    enabled: workspaceId !== null && workspaceId !== undefined,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    enabled: true,
   });
 
   const detailQuery = useQuery({
@@ -121,8 +108,8 @@ export function useEnterpriseCertificateStepperForm() {
   );
 
   const areas = useMemo<Area[]>(
-    () => areasQuery.data?.content.map(mapBranchRecordToArea) ?? [],
-    [areasQuery.data?.content],
+    () => areasQuery.items.map(mapRegionRecordToArea),
+    [areasQuery.items],
   );
 
   const methods = useForm<
@@ -252,12 +239,12 @@ export function useEnterpriseCertificateStepperForm() {
     loading:
       standardsQuery.loading ||
       organizationsQuery.isLoading ||
-      areasQuery.isLoading ||
+      areasQuery.loading ||
       detailQuery.isLoading,
     error: resolveErrorMessage(
       standardsQuery.error,
       organizationsQuery.error?.message,
-      areasQuery.error?.message,
+      areasQuery.error,
       detailQuery.error?.message,
     ),
     handleComplete,
