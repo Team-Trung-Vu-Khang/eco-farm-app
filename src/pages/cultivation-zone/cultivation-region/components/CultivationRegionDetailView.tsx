@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { useLocation, useParams } from "wouter";
 import { Loader2, Target } from "lucide-react";
+import { useQueries } from "@tanstack/react-query";
 import {
   Button,
   Tabs,
@@ -9,15 +10,15 @@ import {
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useCultivationRegionDetail } from "../useCultivationRegionDetail";
-import useRegionStore from "../../../../stores/useRegionStore";
+import { useRegions } from "@/features/farm/hooks/useRegions";
+import { areaApi, plotApi } from "@/features/farm/api/farm.api";
 
 // Subcomponents
 import { OverviewTab } from "./detail/OverviewTab";
 import { CropsTab } from "./detail/CropsTab";
 import { StaffTab } from "./detail/StaffTab";
 import { CertificatesTab } from "./detail/CertificatesTab";
-import { PlansTab } from "./detail/PlansTab";
-import { StatisticsTab } from "./detail/StatisticsTab";
+import { useAreaById } from "@/features/farm/hooks/useAreas";
 
 export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
   const params = useParams<{ id: string }>();
@@ -29,17 +30,67 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
   };
 
   const { area, details, loading } = useCultivationRegionDetail(resolvedId);
-  const { regions } = useRegionStore();
 
-  // Helper index of region store for geographical coordinates resolution
+  // Fetch regions from API instead of loading from local zustand store
+  const { items: regions, isLoading: isRegionsLoading } = useRegions({
+    params: { page: 0, size: 100 },
+  });
+
+  // Extract unique area IDs selected directly or via selected plots
+  const areaIds = useMemo(() => {
+    if (!details?.selectedEntities) return [];
+    const ids = new Set<number>();
+    for (const e of details.selectedEntities) {
+      if (e.typeCode === "area" && e.id) ids.add(Number(e.id));
+      if (e.typeCode === "plot" && e.areaId) ids.add(Number(e.areaId));
+    }
+    return Array.from(ids);
+  }, [details?.selectedEntities]);
+
+  // Extract unique plot IDs selected directly
+  const plotIds = useMemo(() => {
+    if (!details?.selectedEntities) return [];
+    const ids = new Set<number>();
+    for (const e of details.selectedEntities) {
+      if (e.typeCode === "plot" && e.id) ids.add(Number(e.id));
+    }
+    return Array.from(ids);
+  }, [details?.selectedEntities]);
+
+  // Fetch detailed area coordinates
+  const areaQueries = useQueries({
+    queries: areaIds.map((aid) => ({
+      queryKey: ["farm", "areas", "detail", aid],
+      queryFn: () => areaApi.getById(aid),
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+
+  // Fetch detailed plot coordinates
+  const plotQueries = useQueries({
+    queries: plotIds.map((pid) => ({
+      queryKey: ["farm", "plots", "detail", pid],
+      queryFn: () => plotApi.getById(pid),
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+
+  const isDetailsLoading =
+    areaQueries.some((q) => q.isLoading) ||
+    plotQueries.some((q) => q.isLoading);
+
+  // Helper index of regions for geographical coordinates resolution
   const regionIndex = useMemo(() => {
     const regionById = new Map<string, any>();
     const areaById = new Map<string, { area: any; region: any }>();
     const plotById = new Map<string, { plot: any; area: any; region: any }>();
 
+    // 1. Populate initial regions & nested nodes from list response
     for (const r of regions) {
       regionById.set(String(r.id), r);
-      for (const a of r.subAreas || []) {
+      // Support both API field 'areas' and fallback store key 'subAreas'
+      const childAreas = r.areas || (r as any).subAreas || [];
+      for (const a of childAreas) {
         areaById.set(String(a.id), { area: a, region: r });
         for (const p of a.plots || []) {
           plotById.set(String(p.id), { plot: p, area: a, region: r });
@@ -47,10 +98,44 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
       }
     }
 
-    return { regionById, areaById, plotById };
-  }, [regions]);
+    // 2. Override/update from fetched area details (which contain boundaries!)
+    for (const q of areaQueries) {
+      if (q.data) {
+        const areaData = q.data;
+        const existing = areaById.get(String(areaData.id));
+        if (existing) {
+          existing.area = { ...existing.area, ...areaData };
+        } else {
+          const regionId = areaData.region?.id ?? areaData.regionId;
+          const reg = regionId ? regionById.get(String(regionId)) : null;
+          areaById.set(String(areaData.id), { area: areaData, region: reg });
+        }
+      }
+    }
 
-  if (loading) {
+    // 3. Override/update from fetched plot details (which contain boundaries!)
+    for (const q of plotQueries) {
+      if (q.data) {
+        const plotData = q.data;
+        const existing = plotById.get(String(plotData.id));
+        if (existing) {
+          existing.plot = { ...existing.plot, ...plotData };
+        } else {
+          const areaId = plotData.area?.id ?? plotData.areaId;
+          const areaInfo = areaId ? areaById.get(String(areaId)) : null;
+          plotById.set(String(plotData.id), {
+            plot: plotData,
+            area: areaInfo?.area ?? null,
+            region: areaInfo?.region ?? null,
+          });
+        }
+      }
+    }
+
+    return { regionById, areaById, plotById };
+  }, [regions, areaQueries, plotQueries]);
+
+  if (loading || isRegionsLoading || isDetailsLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-32 gap-4">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />

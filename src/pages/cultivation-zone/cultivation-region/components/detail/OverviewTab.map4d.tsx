@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -30,14 +30,7 @@ import {
   Tag,
   Sprout,
 } from "lucide-react";
-import {
-  MapContainer,
-  TileLayer,
-  Polygon,
-  useMap,
-  Tooltip,
-} from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import { MFMap, MFPolygon } from "react-map4d-map";
 import { DISTRICTS, PROVINCES } from "../../../../region-chart/constants";
 import styles from "../../styles.module.css";
 import type { CultivationRegionDetails } from "../../useCultivationRegionDetail";
@@ -48,61 +41,25 @@ interface OverviewTabProps {
   regionIndex: any;
 }
 
-const getCoordinatePair = (c: any): [number, number] | null => {
-  if (!c) return null;
-  if (Array.isArray(c)) {
-    const first = Number(c[0]);
-    const second = Number(c[1]);
-    if (isNaN(first) || isNaN(second)) return null;
-    if (Math.abs(first) > 90) {
-      return [second, first];
-    }
-    return [first, second];
-  }
-  const lat = Number(c.lat ?? c.latitude ?? c.Latitude);
-  const lng = Number(c.lng ?? c.longitude ?? c.Longitude);
-  if (isNaN(lat) || isNaN(lng)) return null;
-  return [lat, lng];
-};
-const getBoundaryPoints = (item: any): any[] | undefined => {
-  if (!item) return undefined;
-  return item.boundary || item.coordinates;
-};
-const MapController = ({
-  center,
-  zoom,
-}: {
-  center: { lat: number; lng: number };
-  zoom: number;
-}) => {
-  const map = useMap();
-  useEffect(() => {
-    map.setView([center.lat, center.lng], zoom, { animate: true });
-  }, [center, zoom, map]);
-  return null;
-};
-
-const MapBoundsSync = ({ bounds }: { bounds: [number, number][] | null }) => {
-  const map = useMap();
-  useEffect(() => {
-    if (bounds && bounds.length > 0) {
-      map.fitBounds(bounds, { padding: [20, 20] });
-    }
-  }, [bounds, map]);
-  return null;
-};
-
 export const OverviewTab = ({
   area,
   details,
   regionIndex,
 }: OverviewTabProps) => {
   const [isScopeMapExpanded, setIsScopeMapExpanded] = useState(false);
+  const scopeMapRef = useRef<any>(null);
+  const expandedScopeMapRef = useRef<any>(null);
+  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
 
   const [scopeMapView, setScopeMapView] = useState({
     center: { lat: 11.53, lng: 106.88 },
     zoom: 13,
   });
+
+  const getActiveScopeMap = () => {
+    if (isScopeMapExpanded) return expandedScopeMapRef.current;
+    return scopeMapRef.current;
+  };
 
   const formatFullAddress = (reg: any) => {
     if (!reg) return "";
@@ -113,21 +70,13 @@ export const OverviewTab = ({
     return [a, w, d, p].filter(Boolean).join(", ");
   };
 
-  const focusScopeMapToCoordinates = (coordinates?: any[]) => {
-    console.log("start", coordinates);
-
+  const focusScopeMapToCoordinates = (
+    coordinates?: { lat: number; lng: number }[],
+  ) => {
     if (!coordinates?.length) return;
 
-    console.log("enter");
-
-    const parsedCoords = coordinates
-      .map(getCoordinatePair)
-      .filter((p): p is [number, number] => p !== null);
-
-    if (!parsedCoords.length) return;
-
-    const lats = parsedCoords.map((p) => p[0]);
-    const lngs = parsedCoords.map((p) => p[1]);
+    const lats = coordinates.map((c) => c.lat);
+    const lngs = coordinates.map((c) => c.lng);
     const minLat = Math.min(...lats);
     const maxLat = Math.max(...lats);
     const minLng = Math.min(...lngs);
@@ -158,7 +107,10 @@ export const OverviewTab = ({
 
     setScopeMapView({ center: nextCenter, zoom: nextZoom });
 
-    console.log("end");
+    const map = getActiveScopeMap();
+    if (!map) return;
+    if (typeof map.setCenter === "function") map.setCenter(nextCenter);
+    if (typeof map.setZoom === "function") map.setZoom(nextZoom);
   };
 
   const scopeMapData = useMemo(() => {
@@ -202,39 +154,38 @@ export const OverviewTab = ({
       plotsMap.set(key, { plot: p, explicit });
     };
 
-    for (const entity of details.selectedEntities || []) {
-      const id = String(entity.id);
-      if (entity.typeCode === "region") {
-        const reg = regionIndex.regionById.get(id);
-        if (reg) {
-          explicitRegionIds.add(String(reg.id));
-          addRegion(reg, true);
-          const childAreas = reg.areas || reg.subAreas || [];
-          for (const a of childAreas) {
-            addArea(a, false);
-            for (const p of a.plots || []) {
-              addPlot(p, false);
-            }
-          }
-        }
-      } else if (entity.typeCode === "area") {
-        const areaHit = regionIndex.areaById.get(id);
-        if (areaHit) {
-          explicitAreaIds.add(String(areaHit.area.id));
-          addRegion(areaHit.region, false);
-          addArea(areaHit.area, true);
-          for (const p of areaHit.area.plots || []) {
+    const ids = (area.targetIds || []).map(String);
+    for (const id of ids) {
+      const reg = regionIndex.regionById.get(id);
+      if (reg) {
+        explicitRegionIds.add(String(reg.id));
+        addRegion(reg, true);
+        for (const a of reg.subAreas || []) {
+          addArea(a, false);
+          for (const p of a.plots || []) {
             addPlot(p, false);
           }
         }
-      } else if (entity.typeCode === "plot") {
-        const plotHit = regionIndex.plotById.get(id);
-        if (plotHit) {
-          explicitPlotIds.add(String(plotHit.plot.id));
-          addRegion(plotHit.region, false);
-          addArea(plotHit.area, false);
-          addPlot(plotHit.plot, true);
+        continue;
+      }
+
+      const areaHit = regionIndex.areaById.get(id);
+      if (areaHit) {
+        explicitAreaIds.add(String(areaHit.area.id));
+        addRegion(areaHit.region, false);
+        addArea(areaHit.area, true);
+        for (const p of areaHit.area.plots || []) {
+          addPlot(p, false);
         }
+        continue;
+      }
+
+      const plotHit = regionIndex.plotById.get(id);
+      if (plotHit) {
+        explicitPlotIds.add(String(plotHit.plot.id));
+        addRegion(plotHit.region, false);
+        addArea(plotHit.area, false);
+        addPlot(plotHit.plot, true);
       }
     }
 
@@ -242,37 +193,18 @@ export const OverviewTab = ({
     const areasToRender = Array.from(areasMap.values());
     const plotsToRender = Array.from(plotsMap.values());
 
-    const allCoords: [number, number][] = [];
+    const allCoords: { lat: number; lng: number }[] = [];
+    for (const r of regionsToRender)
+      allCoords.push(...(r.region.coordinates || []));
+    for (const a of areasToRender)
+      allCoords.push(...(a.area.coordinates || []));
+    for (const p of plotsToRender)
+      allCoords.push(...(p.plot.coordinates || []));
 
-    for (const r of regionsToRender) {
-      const coords = getBoundaryPoints(r.region);
-      if (coords) {
-        coords.forEach((c: any) => {
-          const pair = getCoordinatePair(c);
-          if (pair) allCoords.push(pair);
-        });
-      }
-    }
-    for (const a of areasToRender) {
-      const coords = getBoundaryPoints(a.area);
-      if (coords) {
-        coords.forEach((c: any) => {
-          const pair = getCoordinatePair(c);
-          if (pair) allCoords.push(pair);
-        });
-      }
-    }
-    for (const p of plotsToRender) {
-      const coords = getBoundaryPoints(p.plot);
-      if (coords) {
-        coords.forEach((c: any) => {
-          const pair = getCoordinatePair(c);
-          if (pair) allCoords.push(pair);
-        });
-      }
-    }
-
-    const bounds = allCoords.length > 0 ? allCoords : null;
+    const bounds =
+      allCoords.length > 0
+        ? allCoords.map((c) => [c.lat, c.lng] as [number, number])
+        : null;
 
     return {
       regions: regionsToRender,
@@ -283,171 +215,82 @@ export const OverviewTab = ({
       explicitAreaIds,
       explicitPlotIds,
     };
-  }, [area, details, regionIndex]);
+  }, [area, regionIndex]);
 
   const ScopeMapPolygons = () => {
     if (!scopeMapData) return null;
 
-    // --- CONFIGURATION FLAG ---
-    // Set to true to ONLY render boundaries matching the exact scope level (region, area, or plot)
-    // Set to false to render the entire hierarchy of region > area > plot
-    const RENDER_BY_SCOPE_ONLY = false;
-
-    const showRegions = !RENDER_BY_SCOPE_ONLY || area.scope === "region";
-    const showAreas = !RENDER_BY_SCOPE_ONLY || area.scope === "area";
-    const showPlots = !RENDER_BY_SCOPE_ONLY || area.scope === "plot";
+    const toClosedPath = (
+      coordinates?: Array<{ lat: number; lng: number }>,
+    ) => {
+      if (!coordinates || coordinates.length < 3) return [];
+      const path = coordinates.map((c) => ({ lat: c.lat, lng: c.lng }));
+      const first = path[0];
+      const last = path[path.length - 1];
+      if (first.lat !== last.lat || first.lng !== last.lng) {
+        path.push({ ...first });
+      }
+      return path;
+    };
 
     return (
       <>
-        {showRegions &&
-          scopeMapData.regions.map(({ region, explicit }) => {
-            const coords = getBoundaryPoints(region);
-            if (!coords) return null;
-            const positions = coords
-              .map(getCoordinatePair)
-              .filter((p): p is [number, number] => p !== null);
-            if (positions.length < 3) return null;
-            return (
-              <Polygon
-                key={`scope-region-${region.id}`}
-                positions={positions}
-                pathOptions={{
-                  color: "#3b82f6",
-                  weight: explicit ? 2.5 : 2,
-                  fillColor: "#3b82f6",
-                  fillOpacity: explicit ? 0.08 : 0,
-                }}
-                eventHandlers={{
-                  click: () => {
-                    focusScopeMapToCoordinates(coords);
-                  },
-                }}
-              >
-                <Tooltip sticky direction="top" opacity={0.95}>
-                  <div
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 12,
-                      lineHeight: "1.4",
-                      color: "#1e293b",
-                    }}
-                  >
-                    {region.name}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: "#64748b",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    Vùng trồng
-                  </div>
-                </Tooltip>
-              </Polygon>
-            );
-          })}
+        {scopeMapData.regions.map(({ region, explicit }) => {
+          const regionPath = toClosedPath(region?.coordinates);
+          if (!regionPath.length) return null;
+          return (
+            <MFPolygon
+              key={`scope-region-${region.id}`}
+              paths={[regionPath]}
+              strokeColor="#3b82f6"
+              strokeWidth={explicit ? 2.5 : 2}
+              fillColor="#3b82f6"
+              fillOpacity={explicit ? 0.08 : 0}
+              clickable
+              onClick={() => {
+                focusScopeMapToCoordinates(region.coordinates);
+              }}
+            />
+          );
+        })}
 
-        {showAreas &&
-          scopeMapData.areas.map(({ area: a, explicit }) => {
-            const coords = getBoundaryPoints(a);
-            if (!coords) return null;
-            const positions = coords
-              .map(getCoordinatePair)
-              .filter((p): p is [number, number] => p !== null);
-            if (positions.length < 3) return null;
-            return (
-              <Polygon
-                key={`scope-area-${a.id}`}
-                positions={positions}
-                pathOptions={{
-                  color: "#10b981",
-                  weight: explicit ? 2.5 : 1.75,
-                  fillColor: "#10b981",
-                  fillOpacity: explicit ? 0.12 : 0.06,
-                }}
-                eventHandlers={{
-                  click: () => {
-                    focusScopeMapToCoordinates(coords);
-                  },
-                }}
-              >
-                <Tooltip sticky direction="top" opacity={0.95}>
-                  <div
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 12,
-                      lineHeight: "1.4",
-                      color: "#1e293b",
-                    }}
-                  >
-                    {a.name}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: "#64748b",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    Khu vực
-                  </div>
-                </Tooltip>
-              </Polygon>
-            );
-          })}
+        {scopeMapData.areas.map(({ area: a, explicit }) => {
+          const areaPath = toClosedPath(a?.coordinates);
+          if (!areaPath.length) return null;
+          return (
+            <MFPolygon
+              key={`scope-area-${a.id}`}
+              paths={[areaPath]}
+              strokeColor="#10b981"
+              strokeWidth={explicit ? 2.5 : 1.75}
+              fillColor="#10b981"
+              fillOpacity={explicit ? 0.12 : 0.06}
+              clickable
+              onClick={() => {
+                focusScopeMapToCoordinates(a.coordinates);
+              }}
+            />
+          );
+        })}
 
-        {showPlots &&
-          scopeMapData.plots.map(({ plot: p, explicit }) => {
-            const coords = getBoundaryPoints(p);
-            if (!coords) return null;
-            const positions = coords
-              .map(getCoordinatePair)
-              .filter((p): p is [number, number] => p !== null);
-            if (positions.length < 3) return null;
-            return (
-              <Polygon
-                key={`scope-plot-${p.id}`}
-                positions={positions}
-                pathOptions={{
-                  color: "#f59e0b",
-                  weight: explicit ? 2.5 : 1.5,
-                  fillColor: "#f59e0b",
-                  fillOpacity: explicit ? 0.18 : 0.08,
-                }}
-                eventHandlers={{
-                  click: () => {
-                    focusScopeMapToCoordinates(coords);
-                  },
-                }}
-              >
-                <Tooltip sticky direction="top" opacity={0.95}>
-                  <div
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 12,
-                      lineHeight: "1.4",
-                      color: "#1e293b",
-                    }}
-                  >
-                    {p.name}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: "#64748b",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    Lô đất
-                  </div>
-                </Tooltip>
-              </Polygon>
-            );
-          })}
+        {scopeMapData.plots.map(({ plot: p, explicit }) => {
+          const plotPath = toClosedPath(p?.coordinates);
+          if (!plotPath.length) return null;
+          return (
+            <MFPolygon
+              key={`scope-plot-${p.id}`}
+              paths={[plotPath]}
+              strokeColor="#f59e0b"
+              strokeWidth={explicit ? 2.5 : 1.5}
+              fillColor="#f59e0b"
+              fillOpacity={explicit ? 0.18 : 0.08}
+              clickable
+              onClick={() => {
+                focusScopeMapToCoordinates(p.coordinates);
+              }}
+            />
+          );
+        })}
       </>
     );
   };
@@ -587,14 +430,9 @@ export const OverviewTab = ({
                   <button
                     type="button"
                     className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
-                    onClick={() => {
-                      focusScopeMapToCoordinates(
-                        getBoundaryPoints(
-                          regionIndex.regionById.get(String(group.region.id)),
-                        ) || getBoundaryPoints(group.region),
-                      );
-                      console.log("callback");
-                    }}
+                    onClick={() =>
+                      focusScopeMapToCoordinates(group.region?.coordinates)
+                    }
                   >
                     <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm">
                       <MapPin className="w-5 h-5" />
@@ -625,11 +463,7 @@ export const OverviewTab = ({
                                 className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
                                 onClick={() =>
                                   focusScopeMapToCoordinates(
-                                    getBoundaryPoints(
-                                      regionIndex.areaById.get(
-                                        String(areaGroup.area.id),
-                                      )?.area,
-                                    ) || getBoundaryPoints(areaGroup.area),
+                                    areaGroup.area?.coordinates,
                                   )
                                 }
                               >
@@ -656,11 +490,7 @@ export const OverviewTab = ({
                                       className="relative flex items-center gap-3 py-1 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
                                       onClick={() =>
                                         focusScopeMapToCoordinates(
-                                          getBoundaryPoints(
-                                            regionIndex.plotById.get(
-                                              String(plot.id),
-                                            )?.plot,
-                                          ) || getBoundaryPoints(plot),
+                                          plot.coordinates,
                                         )
                                       }
                                     >
@@ -700,24 +530,11 @@ export const OverviewTab = ({
                                   key={entity.id}
                                   type="button"
                                   className="relative flex items-center gap-3 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
-                                  onClick={() => {
-                                    const ent =
-                                      entity.typeCode === "region"
-                                        ? regionIndex.regionById.get(
-                                            String(entity.id),
-                                          )
-                                        : entity.typeCode === "area"
-                                          ? regionIndex.areaById.get(
-                                              String(entity.id),
-                                            )?.area
-                                          : regionIndex.plotById.get(
-                                              String(entity.id),
-                                            )?.plot;
+                                  onClick={() =>
                                     focusScopeMapToCoordinates(
-                                      getBoundaryPoints(ent) ||
-                                        getBoundaryPoints(entity),
-                                    );
-                                  }}
+                                      entity.coordinates,
+                                    )
+                                  }
                                 >
                                   <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
                                   <div
@@ -822,20 +639,18 @@ export const OverviewTab = ({
           "rounded-xl z-10 min-h-[65vh] h-full w-full overflow-hidden border border-slate-100 bg-slate-50 relative shadow-sm aspect-video",
         )}
       >
-        <MapContainer
-          center={[scopeMapView.center.lat, scopeMapView.center.lng]}
+        <MFMap
+          center={scopeMapView.center}
           zoom={scopeMapView.zoom}
-          className="h-full w-full"
-          zoomControl={false}
+          accessKey={MAP4D_ACCESS_KEY}
+          options={{ mapType: "raster", controlOptions: {} }}
+          version="2.5"
+          onMapReady={(map) => {
+            if (map) scopeMapRef.current = map;
+          }}
         >
-          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-          <MapController
-            center={scopeMapView.center}
-            zoom={scopeMapView.zoom}
-          />
-          <MapBoundsSync bounds={scopeMapData?.bounds ?? []} />
           <ScopeMapPolygons />
-        </MapContainer>
+        </MFMap>
 
         <button
           type="button"
@@ -855,20 +670,18 @@ export const OverviewTab = ({
           </DialogHeader>
           <div className="flex h-full">
             <div className="flex-1 relative bg-slate-100">
-              <MapContainer
-                center={[scopeMapView.center.lat, scopeMapView.center.lng]}
+              <MFMap
+                center={scopeMapView.center}
                 zoom={scopeMapView.zoom}
-                className="h-full w-full"
-                zoomControl={false}
+                accessKey={MAP4D_ACCESS_KEY}
+                options={{ mapType: "raster", controlOptions: {} }}
+                version="2.5"
+                onMapReady={(map) => {
+                  if (map) expandedScopeMapRef.current = map;
+                }}
               >
-                <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-                <MapController
-                  center={scopeMapView.center}
-                  zoom={scopeMapView.zoom}
-                />
-                <MapBoundsSync bounds={scopeMapData?.bounds} />
                 <ScopeMapPolygons />
-              </MapContainer>
+              </MFMap>
 
               <button
                 type="button"
@@ -901,11 +714,7 @@ export const OverviewTab = ({
                           className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
                           onClick={() =>
                             focusScopeMapToCoordinates(
-                              getBoundaryPoints(
-                                regionIndex.regionById.get(
-                                  String(group.region.id),
-                                ),
-                              ) || getBoundaryPoints(group.region),
+                              group.region?.coordinates,
                             )
                           }
                         >
@@ -939,12 +748,7 @@ export const OverviewTab = ({
                                         className="flex items-center gap-3 mb-4 relative z-10 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
                                         onClick={() =>
                                           focusScopeMapToCoordinates(
-                                            getBoundaryPoints(
-                                              regionIndex.areaById.get(
-                                                String(areaGroup.area.id),
-                                              )?.area,
-                                            ) ||
-                                              getBoundaryPoints(areaGroup.area),
+                                            areaGroup.area?.coordinates,
                                           )
                                         }
                                       >
@@ -973,11 +777,7 @@ export const OverviewTab = ({
                                               className="relative flex items-center gap-3 py-1 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
                                               onClick={() =>
                                                 focusScopeMapToCoordinates(
-                                                  getBoundaryPoints(
-                                                    regionIndex.plotById.get(
-                                                      String(plot.id),
-                                                    )?.plot,
-                                                  ) || getBoundaryPoints(plot),
+                                                  plot.coordinates,
                                                 )
                                               }
                                             >
@@ -1019,24 +819,11 @@ export const OverviewTab = ({
                                             type="button"
                                             key={entity.id}
                                             className="relative flex items-center gap-3 w-full text-left rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
-                                            onClick={() => {
-                                              const ent =
-                                                entity.typeCode === "region"
-                                                  ? regionIndex.regionById.get(
-                                                      String(entity.id),
-                                                    )
-                                                  : entity.typeCode === "area"
-                                                    ? regionIndex.areaById.get(
-                                                        String(entity.id),
-                                                      )?.area
-                                                    : regionIndex.plotById.get(
-                                                        String(entity.id),
-                                                      )?.plot;
+                                            onClick={() =>
                                               focusScopeMapToCoordinates(
-                                                getBoundaryPoints(ent) ||
-                                                  getBoundaryPoints(entity),
-                                              );
-                                            }}
+                                                entity.coordinates,
+                                              )
+                                            }
                                           >
                                             <div className="absolute -left-6.5 w-6 h-px bg-slate-200 top-1/2" />
                                             <div
