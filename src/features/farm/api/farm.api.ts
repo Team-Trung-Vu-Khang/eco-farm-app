@@ -13,6 +13,9 @@ import type {
   FarmPlotRequest,
   FarmPlotResponse,
   PlotQueryParams,
+  FarmCultivationZoneRequest,
+  FarmCultivationZoneResponse,
+  CultivationZoneQueryParams,
 } from "../types/farm.type";
 import type { PageResponse } from "../../foundation/types/foundation.type";
 
@@ -135,4 +138,31 @@ export const plotApi = {
       .then((r) => r.data),
 
   delete: (id: number) => apiClient.delete(`${FARM_ENDPOINTS.plots}/${id}`),
+};
+
+// ─── Cultivation Zone API ──────────────────────────────────────────────────────────────────
+
+export const cultivationZoneApi = {
+  list: (params?: CultivationZoneQueryParams) =>
+    apiClient
+      .get<PageResponse<FarmCultivationZoneResponse>>(FARM_ENDPOINTS.cultivationZones, { params })
+      .then((r) => r.data),
+
+  getById: (id: number) =>
+    apiClient
+      .get<FarmCultivationZoneResponse>(`${FARM_ENDPOINTS.cultivationZones}/${id}`)
+      .then((r) => r.data),
+
+  create: (data: FarmCultivationZoneRequest) =>
+    apiClient
+      .post<FarmCultivationZoneResponse>(FARM_ENDPOINTS.cultivationZones, data)
+      .then((r) => r.data),
+
+  update: (id: number, data: FarmCultivationZoneRequest) =>
+    apiClient
+      .put<FarmCultivationZoneResponse>(`${FARM_ENDPOINTS.cultivationZones}/${id}`, data)
+      .then((r) => r.data),
+
+  delete: (id: number) =>
+    apiClient.delete(`${FARM_ENDPOINTS.cultivationZones}/${id}`),
 };

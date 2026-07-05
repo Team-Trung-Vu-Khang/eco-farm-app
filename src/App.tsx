@@ -260,10 +260,7 @@ const CultivationRegionDetailPage = lazy(
   () =>
     import("./pages/cultivation-zone/cultivation-region/CultivationRegionDetailPage"),
 );
-const CultivationRegionEditPage = lazy(
-  () =>
-    import("./pages/cultivation-zone/cultivation-region/CultivationRegionEditPage"),
-);
+
 const ContractDetailPage = lazy(
   () => import("./pages/contract/ContractDetailPage"),
 );
@@ -524,7 +521,7 @@ function Router() {
       />
       <Route
         path="/cultivation-region/:id/edit"
-        component={CultivationRegionEditPage}
+        component={CultivationRegionCreatePage}
       />
       <Route
         path="/distribution-detail"

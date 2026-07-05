@@ -83,6 +83,8 @@ const VarietyFoundationPage = () => {
     setPageSize,
     currentIndex,
     setCurrentIndex,
+    filters,
+    handleFilterChange,
   } = useVarietyFoundationPage();
 
   useDialogBugWorkaround([deleteOpen]);
@@ -118,7 +120,8 @@ const VarietyFoundationPage = () => {
           totalPages={response?.totalPages}
           onPageSize={setPageSize}
           onIndexChange={setCurrentIndex}
-          filters={varietyFoundationFilters}
+          filters={filters}
+          onFilterChange={handleFilterChange}
           loading={loading}
         />
 

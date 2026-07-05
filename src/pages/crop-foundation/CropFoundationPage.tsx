@@ -28,6 +28,8 @@ export default function CropFoundationPage() {
     setPageSize,
     currentIndex,
     setCurrentIndex,
+    filters,
+    handleFilterChange,
   } = useCropFoundationPage();
 
   useDialogBugWorkaround([deleteOpen]);
@@ -60,7 +62,8 @@ export default function CropFoundationPage() {
           onEdit={handleEdit}
           searchPlaceholder="Tìm kiếm cây trồng..."
           selectable={false}
-          filters={TABLE_FILTERS}
+          filters={filters}
+          onFilterChange={handleFilterChange}
           searchable
           onSearch={handleSearch}
           pageSize={pageSize}

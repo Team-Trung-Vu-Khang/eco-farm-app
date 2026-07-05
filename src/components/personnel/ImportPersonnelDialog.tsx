@@ -73,7 +73,7 @@ export function ImportPersonnelDialog({
     typeof workspaceId === "number" ? workspaceId : undefined;
 
   const { items: banks } = useMasterData("banks", {
-    params: { status: "active", size: 500 },
+    params: { status: "active", size: 100 },
   });
   const { items: masterDepartments } = useMasterData("departments", {
     params: { status: "active", size: 100 },

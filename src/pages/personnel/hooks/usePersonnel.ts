@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
@@ -18,10 +18,33 @@ export function usePersonnel() {
   const [search, setSearch] = useState("");
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [currentIndex, setCurrentIndex] = useState(1);
+  const [status, setStatus] = useState<string>("all");
+
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "status") {
+      setStatus(value);
+      setCurrentIndex(1);
+    }
+  };
+
+  const filters = useMemo(() => {
+    return [
+      {
+        key: "status",
+        label: "Trạng thái",
+        options: [
+          { label: "Hoạt động", value: "active" },
+          { label: "Nghỉ việc", value: "inactive" },
+          { label: "Đã lưu trữ", value: "archived" },
+        ],
+      },
+    ];
+  }, []);
 
   const personnelQuery = useFarmPersonnel({
     params: {
       keyword: search.trim() || undefined,
+      status: status === "all" ? undefined : status,
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
     },
@@ -114,5 +137,7 @@ export function usePersonnel() {
     handleImportData,
     setLocation,
     isDeleting: deletePersonnel.isPending,
+    filters,
+    handleFilterChange,
   };
 }

@@ -77,6 +77,7 @@ export interface SeedQueryParams {
   status?: FoundationStatus;
   page?: number;
   size?: number;
+  farmingMethodId?: number;
 }
 
 export interface CoordinatePoint {
@@ -139,7 +140,11 @@ export interface FarmRegionResponse {
   status?: FoundationStatus;
   displayOrder?: number;
   metadataJson?: Record<string, unknown>;
-  crops?: { cropId?: number; crop?: { id: number; name?: string }; role?: string }[];
+  crops?: {
+    cropId?: number;
+    crop?: { id: number; name?: string };
+    role?: string;
+  }[];
   areas?: FarmAreaResponse[];
   createdAt?: string;
   updatedAt?: string;
@@ -227,6 +232,86 @@ export interface PlotQueryParams {
   areaId?: number;
   keyword?: string;
   status?: FoundationStatus;
+  page?: number;
+  size?: number;
+}
+
+// ─── Cultivation Zone ─────────────────────────────────────────────────────────
+
+export type FarmCultivationZoneScopeType = "REGION" | "AREA" | "PLOT";
+
+export type FarmCultivationZoneStatus = "active" | "inactive" | "archived";
+
+export interface FarmCultivationZoneScopeRequest {
+  scopeType: FarmCultivationZoneScopeType;
+  scopeId: number;
+}
+
+export interface PlotRef {
+  id: number;
+  code?: string;
+  name?: string;
+  area?: AreaRef;
+}
+
+export interface PersonnelRef {
+  id: number;
+  fullName?: string;
+  avatarUrl?: string;
+  position?: CatalogRef;
+}
+
+export interface SeedRef {
+  id: number;
+  code?: string;
+  name?: string;
+}
+
+export interface FarmCultivationZoneScopeResponse {
+  scopeType: FarmCultivationZoneScopeType;
+  region?: RegionRef;
+  area?: AreaRef;
+  plot?: PlotRef;
+}
+
+export interface FarmCultivationZoneRequest {
+  code?: string;
+  name?: string;
+  scopes?: FarmCultivationZoneScopeRequest[];
+  certificateIds?: number[];
+  personnelIds?: number[];
+  farmingMethodId: number;
+  irrigationSystemId: number;
+  seedIds?: number[];
+  notes?: string;
+  status?: FarmCultivationZoneStatus;
+  displayOrder?: number;
+  metadataJson?: Record<string, unknown>;
+}
+
+export interface FarmCultivationZoneResponse {
+  id: number;
+  code?: string;
+  name?: string;
+  scopes?: FarmCultivationZoneScopeResponse[];
+  certificates?: CatalogRef[];
+  personnel?: PersonnelRef[];
+  farmingMethod?: CatalogRef;
+  irrigationSystem?: CatalogRef;
+  seeds?: SeedRef[];
+  notes?: string;
+  status?: FarmCultivationZoneStatus;
+  displayOrder?: number;
+  metadataJson?: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CultivationZoneQueryParams {
+  keyword?: string;
+  status?: FarmCultivationZoneStatus;
+  farmingMethodId?: number;
+  irrigationSystemId?: number;
   page?: number;
   size?: number;
 }

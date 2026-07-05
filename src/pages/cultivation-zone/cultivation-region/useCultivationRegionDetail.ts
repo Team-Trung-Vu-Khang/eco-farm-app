@@ -1,19 +1,33 @@
 import { useMemo } from "react";
-import useCultivationRegionStore, {
-  type CultivationRegion,
-} from "../../../stores/useCultivationRegionStore";
-import useEnterpriseCertificateStore from "../../../stores/useEnterpriseCertificateStore";
-import useEnterpriseStore from "../../../stores/useEnterpriseStore";
+import { useCultivationZoneById } from "@/features/farm/hooks/useCultivationZones";
+import { useSeeds } from "@/features/farm/hooks/useSeeds";
+import useRegionStore from "../../../stores/useRegionStore";
+import usePersonnelStore from "../../../stores/usePersonnelStore";
 import useFarmingMethodStore from "../../../stores/useFarmingMethodStore";
 import useIrrigationSystemStore from "../../../stores/useIrrigationSystemStore";
-import usePersonnelStore from "../../../stores/usePersonnelStore";
-import useRegionStore from "../../../stores/useRegionStore";
-import useSeedStore from "../../../stores/useSeedStore";
 import useVarietyStore from "../../../stores/useVarietyStore";
+import useEnterpriseStore from "../../../stores/useEnterpriseStore";
+import useEnterpriseCertificateStore from "../../../stores/useEnterpriseCertificateStore";
 import type { Region } from "../../region-chart/constants";
+
+export interface PersonnelItem {
+  id: number;
+  fullName: string;
+  avatarUrl: string | null;
+  positionName: string;
+  positionCode: string;
+}
+
+export interface CertificateItem {
+  id: number;
+  code: string;
+  name: string;
+}
 
 export interface CultivationRegionDetails {
   managers: any[];
+  personnel: PersonnelItem[];
+  certificates: CertificateItem[];
   selectedCerts: any[];
   regionStats: {
     total: number;
@@ -55,7 +69,20 @@ export interface CultivationRegionDetails {
 }
 
 export const useCultivationRegionDetail = (id?: string | null) => {
-  const { getAreaById } = useCultivationRegionStore();
+  const numericId = id ? parseInt(String(id), 10) : 0;
+
+  // Real API Queries
+  const { data: areaData, isLoading: isZoneLoading } = useCultivationZoneById(
+    numericId,
+    {
+      enabled: !!numericId,
+    },
+  );
+
+  const { items: allSeeds, loading: isSeedsLoading } = useSeeds({
+    params: { size: 100 },
+  });
+
   const { regions } = useRegionStore();
   const { standards } = useEnterpriseCertificateStore();
   const { personnel } = usePersonnelStore();
@@ -63,98 +90,213 @@ export const useCultivationRegionDetail = (id?: string | null) => {
   const { irrigationSystems } = useIrrigationSystemStore();
   const { varieties } = useVarietyStore();
   const { enterprises } = useEnterpriseStore();
-  const { seeds } = useSeedStore();
 
-  const area: CultivationRegion | null = useMemo(() => {
-    if (!id) return null;
-    return getAreaById(id) ?? null;
-  }, [id, getAreaById]);
+  // Helper index of region store for boundary lookups
+  const regionIndex = useMemo(() => {
+    const regionById = new Map<string, any>();
+    const areaById = new Map<string, { area: any; region: any }>();
+    const plotById = new Map<string, { plot: any; area: any; region: any }>();
+
+    for (const r of regions) {
+      regionById.set(String(r.id), r);
+      for (const a of r.subAreas || []) {
+        areaById.set(String(a.id), { area: a, region: r });
+        for (const p of a.plots || []) {
+          plotById.set(String(p.id), { plot: p, area: a, region: r });
+        }
+      }
+    }
+
+    return { regionById, areaById, plotById };
+  }, [regions]);
+
+  const area = useMemo(() => {
+    if (!areaData) return null;
+
+    // Convert scopes to selections list
+    const selections = (areaData.scopes ?? []).map((s) => {
+      if (s.scopeType === "REGION") {
+        return {
+          id: `scope-region-${s.region?.id}`,
+          type: "region" as const,
+          regionId: String(s.region?.id ?? 0),
+          name: s.region?.name ?? "",
+        };
+      }
+      if (s.scopeType === "AREA") {
+        return {
+          id: `scope-area-${s.area?.id}`,
+          type: "area" as const,
+          regionId: String(s.area?.region?.id ?? 0),
+          areaId: String(s.area?.id ?? 0),
+          name: s.area?.name ?? "",
+          regionName: s.area?.region?.name ?? "",
+        };
+      }
+      return {
+        id: `scope-plot-${s.plot?.id}`,
+        type: "plot" as const,
+        regionId: String(s.plot?.area?.region?.id ?? 0),
+        areaId: String(s.plot?.area?.id ?? 0),
+        plotId: String(s.plot?.id ?? 0),
+        name: s.plot?.name ?? "",
+        regionName: s.plot?.area?.region?.name ?? "",
+        areaName: s.plot?.area?.name ?? "",
+      };
+    });
+
+    const targetIds = (areaData.scopes ?? [])
+      .map((s) => String(s.plot?.id || s.area?.id || s.region?.id || ""))
+      .filter(Boolean);
+
+    return {
+      id: String(areaData.id),
+      name: areaData.name ?? "",
+      scope: (() => {
+        const firstScope = areaData.scopes?.[0]?.scopeType;
+        if (firstScope === "REGION") return "region" as const;
+        if (firstScope === "AREA") return "area" as const;
+        return "plot" as const;
+      })(),
+      targetIds,
+      targetName: (areaData.scopes ?? [])
+        .map((s) => s.plot?.name || s.area?.name || s.region?.name || "")
+        .filter(Boolean)
+        .join(", "),
+      enterpriseId: (areaData.metadataJson?.enterpriseId as string) || "",
+      certificateIds: (areaData.certificates ?? []).map((c) => String(c.id)),
+      managerIds: (areaData.personnel ?? []).map((p) => String(p.id)),
+      note: areaData.notes ?? "",
+      farmingMethodId: String(areaData.farmingMethod?.id ?? ""),
+      irrigationMethodId: String(areaData.irrigationSystem?.id ?? ""),
+      selectedCrops: Array.from(
+        new Set(
+          (areaData.seeds ?? [])
+            .map((seed) => {
+              const fullSeed = allSeeds.find((fs) => fs.id === seed.id);
+              return fullSeed?.cropVariety?.id
+                ? String(fullSeed.cropVariety.id)
+                : "";
+            })
+            .filter(Boolean),
+        ),
+      ),
+      seedSelections: (() => {
+        const selectionsMap: Record<string, string[]> = {};
+        (areaData.seeds ?? []).forEach((seed) => {
+          const fullSeed = allSeeds.find((fs) => fs.id === seed.id);
+          if (fullSeed?.cropVariety?.id) {
+            const cropVarietyId = String(fullSeed.cropVariety.id);
+            if (!selectionsMap[cropVarietyId]) {
+              selectionsMap[cropVarietyId] = [];
+            }
+            selectionsMap[cropVarietyId].push(String(seed.id));
+          }
+        });
+        return selectionsMap;
+      })(),
+      status:
+        areaData.status === "active"
+          ? ("active" as const)
+          : ("inactive" as const),
+      createdAt: areaData.createdAt ?? "",
+      selections,
+    };
+  }, [areaData, allSeeds]);
 
   const details: CultivationRegionDetails | null = useMemo(() => {
-    if (!area) return null;
+    if (!area || !areaData) return null;
 
-    let managers = personnel.filter((m) => (area.managerIds || []).includes(m.id.toString()));
+    // Resolve managers
+    const managers = personnel.filter((m) =>
+      (area.managerIds || []).includes(m.id.toString()),
+    );
 
-    // Resolve multiple certificates
+    // Resolve certificates
     const selectedCerts = standards.filter(
       (c) =>
-        (area.certificateIds || []).includes(c.code) ||
+        (area.certificateIds || []).includes(String(c.id)) ||
         (area as any).certificateId === c.code,
     );
 
-    // Flexible entity resolution
-    const selectedEntities = area.targetIds
-      .map((targetId) => {
-        // Find Region
-        const reg = regions.find((r) => r.id.toString() === targetId);
-        if (reg)
+    // Build selectedEntities directly from API scopes — no store lookup needed
+    const selectedEntities = (areaData.scopes ?? [])
+      .map((scope: any) => {
+        if (scope.scopeType === "REGION" && scope.region) {
           return {
-            ...reg,
+            id: scope.region.id,
+            name: scope.region.name,
+            code: scope.region.code ?? "",
             type: "Vùng trồng",
-            typeCode: "region",
-            regionId: reg.id,
+            typeCode: "region" as const,
+            regionId: scope.region.id,
+            _regionData: scope.region,
           };
-
-        // Find Area
-        for (const r of regions) {
-          const sa = r.subAreas?.find((a: any) => a.id.toString() === targetId);
-          if (sa)
-            return {
-              ...sa,
-              type: "Khu vực",
-              typeCode: "area",
-              regionId: r.id,
-              areaId: sa.id,
-            };
         }
-
-        // Find Plot
-        for (const r of regions) {
-          for (const sa of r.subAreas || []) {
-            const p = sa.plots?.find((p: any) => p.id.toString() === targetId);
-            if (p)
-              return {
-                ...p,
-                type: "Lô đất",
-                typeCode: "plot",
-                regionId: r.id,
-                areaId: sa.id,
-                plotId: p.id,
-              };
-          }
+        if (scope.scopeType === "AREA" && scope.area) {
+          return {
+            id: scope.area.id,
+            name: scope.area.name,
+            code: scope.area.code ?? "",
+            type: "Khu vực",
+            typeCode: "area" as const,
+            regionId: scope.area.region?.id,
+            areaId: scope.area.id,
+            _regionData: scope.area.region,
+            _areaData: scope.area,
+          };
+        }
+        if (scope.scopeType === "PLOT" && scope.plot) {
+          return {
+            id: scope.plot.id,
+            name: scope.plot.name,
+            code: scope.plot.code ?? "",
+            type: "Lô đất",
+            typeCode: "plot" as const,
+            regionId: scope.plot.area?.region?.id,
+            areaId: scope.plot.area?.id,
+            plotId: scope.plot.id,
+            _regionData: scope.plot.area?.region,
+            _areaData: scope.plot.area,
+          };
         }
         return null;
       })
       .filter((e): e is any => e !== null);
 
     const firstEntity = selectedEntities[0];
-    const region = firstEntity
-      ? regions.find((r) => r.id.toString() === firstEntity.regionId) ?? null
-      : null;
+    const region =
+      firstEntity
+        ? (regions.find(
+            (r) => r.id.toString() === String(firstEntity.regionId ?? ""),
+          ) ?? firstEntity._regionData ?? null)
+        : null;
 
     const totalAreaValue = selectedEntities.reduce(
       (sum, e) => sum + (e.area || 0),
       0,
     );
 
+    // Build groupedSelections using API scope data directly
     const groupedSelections = selectedEntities.reduce((acc: any, entity) => {
-      const rId = entity.regionId.toString();
-      const aId = entity.areaId?.toString() || "none";
+      const rId = String(entity.regionId ?? "");
+      if (!rId) return acc;
+
+      const aId = entity.areaId != null ? String(entity.areaId) : "none";
 
       if (!acc[rId]) {
-        acc[rId] = {
-          region: regions.find((r) => r.id.toString() === rId),
-          areas: {},
-        };
+        const regionData =
+          entity._regionData ??
+          regions.find((r) => r.id.toString() === rId) ?? {
+            id: parseInt(rId, 10),
+            name: rId,
+          };
+        acc[rId] = { region: regionData, areas: {} };
       }
 
       if (!acc[rId].areas[aId]) {
-        const reg = acc[rId].region;
         acc[rId].areas[aId] = {
-          area:
-            aId === "none"
-              ? null
-              : reg?.subAreas?.find((sa: any) => sa.id.toString() === aId),
+          area: aId === "none" ? null : (entity._areaData ?? null),
           entities: [],
         };
       }
@@ -163,31 +305,57 @@ export const useCultivationRegionDetail = (id?: string | null) => {
       return acc;
     }, {});
 
-    // Unified Configuration (New Model)
-    const commonConfig = {
-      farmingMethodId: area.farmingMethodId || "",
-      irrigationMethodId: area.irrigationMethodId || "",
-      selectedCrops: area.selectedCrops || [],
-      seedSelections: area.seedSelections || {},
-    };
+    // Resolve unified configuration from backend response first, fallback to mock store if unavailable
+    const farmingMethod =
+      areaData.farmingMethod ||
+      farmingMethods.find((m) => String(m.id) === area.farmingMethodId);
+    const irrigationMethod =
+      areaData.irrigationSystem ||
+      irrigationSystems.find((m) => String(m.id) === area.irrigationMethodId);
 
-    // Technical Config for display
-    const farmingMethod = farmingMethods.find(
-      (m) => m.id === commonConfig.farmingMethodId,
-    );
-    const irrigationMethod = irrigationSystems.find(
-      (m) => m.id === commonConfig.irrigationMethodId,
-    );
-    const commonCrops = varieties
-      .filter((v) => commonConfig.selectedCrops?.includes(v.id))
-      .map((crop) => ({
-        ...crop,
-        selectedSeeds: (commonConfig.seedSelections?.[crop.id] || [])
-          .map((sid: string) => seeds.find((s) => s.id === sid))
-          .filter(Boolean),
-      }));
+    // Group selected seeds by their crop variety to build the technicalConfig crops list
+    const commonCrops = Array.from(
+      new Map(
+        (areaData.seeds ?? [])
+          .map((s) => allSeeds.find((fs) => fs.id === s.id))
+          .filter(
+            (fs): fs is NonNullable<typeof fs> => !!fs && !!fs.cropVariety?.id,
+          )
+          .map((fs) => {
+            const cropVarietyId = String(fs.cropVariety.id);
+            // Get all seeds in this variety
+            const selectedSeedsForVariety = (areaData.seeds ?? [])
+              .map((seed) => allSeeds.find((fsSeed) => fsSeed.id === seed.id))
+              .filter(
+                (fsSeed): fsSeed is NonNullable<typeof fsSeed> =>
+                  !!fsSeed && fsSeed.cropVariety?.id === fs.cropVariety.id,
+              )
+              .map((fsSeed) => ({
+                id: String(fsSeed.id),
+                varietyName:
+                  fsSeed.cropVariety?.name ??
+                  fsSeed.supplier?.name ??
+                  "Hạt giống",
+                origin: fsSeed.origin || "Việt Nam",
+              }));
 
-    // Mock region-level plant statistics
+            return [
+              cropVarietyId,
+              {
+                id: cropVarietyId,
+                varietyName: fs.cropVariety.name ?? "",
+                varietyCode: fs.cropVariety.code ?? "",
+                crop: fs.crop?.name ?? "Khác",
+                illustration: fs.imageUrl || "",
+                seedType: "Hạt giống lai", // Fallback description
+                selectedSeeds: selectedSeedsForVariety,
+              },
+            ];
+          }),
+      ).values(),
+    );
+
+    // Mock region-level stats
     const regionStats = {
       total: 12500,
       healthy: 11800,
@@ -195,13 +363,13 @@ export const useCultivationRegionDetail = (id?: string | null) => {
       diseased: 250,
     };
 
-    // Mock harvest statistics
+    // Mock harvest stats
     const harvestStats = {
       totalVolume: 8540,
       lastVolume: 1250,
-      lastChange: 12.5, // 12.5% increase
+      lastChange: 12.5,
       avgVolume: 1067,
-      avgChange: 5.2, // 5.2% increase
+      avgChange: 5.2,
     };
 
     // Mock harvest batches
@@ -246,39 +414,44 @@ export const useCultivationRegionDetail = (id?: string | null) => {
       },
     ];
 
-    // Legacy Entity Configurations (Compatibility or fallback)
+    // Build entity configurations list
     const entityConfigs = selectedEntities.map((entity) => {
-      // Prioritize area-wide config if available, fallback to legacy per-entity config
-      const config =
-        commonConfig.farmingMethodId || commonConfig.selectedCrops.length > 0
-          ? commonConfig
-          : area.configs?.[entity.id] || area.configs?.[entity.plotId];
-
       return {
         entity,
-        farmingMethod: farmingMethods.find(
-          (m) => m.id === config?.farmingMethodId,
-        ),
-        irrigationMethod: irrigationSystems.find(
-          (m) => m.id === config?.irrigationMethodId,
-        ),
-        crops: varieties
-          .filter((v) => config?.selectedCrops?.includes(v.id))
-          .map((crop) => ({
-            ...crop,
-            selectedSeeds: (config?.seedSelections?.[crop.id] || [])
-              .map((sid: string) => seeds.find((s) => s.id === sid))
-              .filter(Boolean),
-          })),
+        farmingMethod,
+        irrigationMethod,
+        crops: commonCrops,
       };
     });
 
-    let enterprise = enterprises.find(
+    const enterprise = enterprises.find(
       (e) => e.id.toString() === area.enterpriseId,
     );
 
+    // Map personnel directly from API response
+    const apiPersonnel: PersonnelItem[] = (areaData.personnel ?? []).map(
+      (p: any) => ({
+        id: p.id,
+        fullName: p.fullName ?? "",
+        avatarUrl: p.avatarUrl ?? null,
+        positionName: p.position?.name ?? "",
+        positionCode: p.position?.code ?? "",
+      }),
+    );
+
+    // Map certificates directly from API response
+    const apiCertificates: CertificateItem[] = (
+      areaData.certificates ?? []
+    ).map((c: any) => ({
+      id: c.id,
+      code: c.code ?? "",
+      name: c.name ?? "",
+    }));
+
     return {
       managers,
+      personnel: apiPersonnel,
+      certificates: apiCertificates,
       selectedCerts,
       regionStats,
       region,
@@ -297,6 +470,7 @@ export const useCultivationRegionDetail = (id?: string | null) => {
     };
   }, [
     area,
+    areaData,
     regions,
     personnel,
     standards,
@@ -304,8 +478,8 @@ export const useCultivationRegionDetail = (id?: string | null) => {
     irrigationSystems,
     varieties,
     enterprises,
-    seeds,
+    allSeeds,
   ]);
 
-  return { area, details };
+  return { area, details, loading: isZoneLoading || isSeedsLoading };
 };

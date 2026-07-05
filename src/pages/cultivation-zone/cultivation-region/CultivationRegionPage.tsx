@@ -11,12 +11,21 @@ const CultivationRegionPage = () => {
   const {
     areas,
     columns,
+    isLoading,
+    response,
     deleteOpen,
     setDeleteOpen,
     handleAdd,
     handleEdit,
     handleDelete,
     handleConfirmDelete,
+    handleSearch,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
+    filters,
+    handleFilterChange,
   } = useCultivationRegionPage();
 
   return (
@@ -34,8 +43,20 @@ const CultivationRegionPage = () => {
       <DataTable
         columns={columns}
         data={areas}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        loading={isLoading}
+        searchable
+        searchPlaceholder="Tìm kiếm vùng canh tác..."
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onSearch={handleSearch}
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalElements={response?.totalElements}
+        totalPages={response?.totalPages}
+        onPageSize={setPageSize}
+        onIndexChange={setCurrentIndex}
+        onEdit={(item) => handleEdit(item.id)}
+        onDelete={(item) => handleDelete(item.id)}
       />
 
       <DeleteDialog

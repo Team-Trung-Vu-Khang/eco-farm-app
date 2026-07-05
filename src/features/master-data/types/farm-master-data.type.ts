@@ -177,6 +177,10 @@ export interface FarmTeamResponse {
 
 // ─── Farm Personnel ─────────────────────────────────────────────────────────
 
+export interface FarmPersonnelQueryParams extends FarmBaseQueryParams {
+  teamId?: number;
+}
+
 export interface FarmPersonnelRequest {
   fullName?: string;
   phone?: string;

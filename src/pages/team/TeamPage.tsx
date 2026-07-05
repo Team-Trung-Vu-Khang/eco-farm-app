@@ -34,6 +34,8 @@ export default function TeamPage() {
     goToCreate,
     goToDetail,
     isDeleting,
+    filters,
+    handleFilterChange,
   } = useTeamPage();
 
   return (
@@ -70,6 +72,8 @@ export default function TeamPage() {
         onEdit={(item) => goToEdit(item.id)}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm đội nhóm..."
+        filters={filters}
+        onFilterChange={handleFilterChange}
         selectable={false}
         loading={loading}
         pageSize={pageSize}

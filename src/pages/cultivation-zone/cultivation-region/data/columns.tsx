@@ -1,22 +1,32 @@
+import type { Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Badge } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Link } from "wouter";
-import type { CultivationRegion } from "../../../../stores/useCultivationRegionStore";
-import type { Standard } from "../../../../stores/useEnterpriseCertificateStore";
+import type {
+  FarmCultivationZoneResponse,
+  FarmCultivationZoneScopeResponse,
+  CatalogRef,
+} from "../../../../features/farm/types/farm.type";
 
-const SCOPE_LABELS: Record<string, string> = {
-  region: "Vùng trồng",
-  area: "Khu vực",
-  plot: "Lô trồng",
+const SCOPE_TYPE_LABELS: Record<string, string> = {
+  REGION: "Vùng trồng",
+  AREA: "Khu vực",
+  PLOT: "Lô trồng",
 };
 
-export const getCultivationRegionColumns = (standards: Standard[]) => [
+const STATUS_LABELS: Record<string, string> = {
+  active: "Đang canh tác",
+  inactive: "Ngừng canh tác",
+  archived: "Lưu trữ",
+};
+
+export const getCultivationRegionColumns = (): Column<FarmCultivationZoneResponse>[] => [
   {
-    key: "id",
+    key: "code",
     label: "Mã",
-    render: (value: string, row: CultivationRegion) => (
+    render: (_, row) => (
       <Link href={`/cultivation-region/${row.id}`}>
         <span className="font-mono text-xs text-primary hover:underline">
-          {value}
+          {row.code || `#${row.id}`}
         </span>
       </Link>
     ),
@@ -24,47 +34,59 @@ export const getCultivationRegionColumns = (standards: Standard[]) => [
   {
     key: "name",
     label: "Tên vùng canh tác",
-    render: (value: string) => <span className="font-medium">{value}</span>,
+    render: (value) => (
+      <span className="font-medium">{value as string}</span>
+    ),
   },
   {
-    key: "scope",
+    key: "scopes",
     label: "Phạm vi",
-    render: (value: string) => <Badge variant="outline">{SCOPE_LABELS[value]}</Badge>,
+    render: (value) => {
+      const scopes = value as FarmCultivationZoneScopeResponse[] | undefined;
+      if (!scopes || scopes.length === 0)
+        return <span className="text-muted-foreground text-xs">—</span>;
+      return (
+        <div className="flex flex-wrap gap-1">
+          {scopes.map((scope, idx) => (
+            <Badge key={idx} variant="outline">
+              {SCOPE_TYPE_LABELS[scope.scopeType] ?? scope.scopeType}
+            </Badge>
+          ))}
+        </div>
+      );
+    },
   },
   {
-    key: "targetName",
-    label: "Đối tượng áp dụng",
-  },
-  {
-    key: "certificateIds",
+    key: "certificates",
     label: "Chứng nhận",
-    render: (value: string[] | string) => {
-      const ids = Array.isArray(value) ? value : value ? [value] : [];
-      if (ids.length === 0) return null;
-
-      return ids.map((id) => {
-        const certificate = standards.find((item) => item.code === id);
-        if (!certificate) return null;
-
-        return (
-          <Badge
-            key={id}
-            variant="secondary"
-            className="mr-1 bg-blue-50 text-blue-700 hover:bg-blue-100"
-          >
-            {certificate.name}
-          </Badge>
-        );
-      });
+    render: (value) => {
+      const certs = value as CatalogRef[] | undefined;
+      if (!certs || certs.length === 0) return null;
+      return (
+        <div className="flex flex-wrap gap-1">
+          {certs.map((cert) => (
+            <Badge
+              key={cert.id}
+              variant="secondary"
+              className="bg-blue-50 text-blue-700 hover:bg-blue-100"
+            >
+              {cert.name}
+            </Badge>
+          ))}
+        </div>
+      );
     },
   },
   {
     key: "status",
     label: "Trạng thái",
-    render: (value: string) => (
-      <Badge variant={value === "active" ? "default" : "secondary"}>
-        {value === "active" ? "Đang canh tác" : "Ngừng canh tác"}
-      </Badge>
-    ),
+    render: (value) => {
+      const status = value as string;
+      return (
+        <Badge variant={status === "active" ? "default" : "secondary"}>
+          {STATUS_LABELS[status] ?? status}
+        </Badge>
+      );
+    },
   },
 ];

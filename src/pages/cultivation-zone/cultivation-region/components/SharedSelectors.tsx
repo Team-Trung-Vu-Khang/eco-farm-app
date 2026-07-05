@@ -22,6 +22,7 @@ import {
   ChevronDown,
   ChevronRight,
   Layers,
+  Loader2,
   MapPin,
   Plus,
   Search,
@@ -31,11 +32,12 @@ import {
   User,
   X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
-import useDepartmentStore from "@/stores/useDepartmentStore";
-import useEnterpriseCertificateStore from "../../../../stores/useEnterpriseCertificateStore";
-import usePersonnelStore from "../../../../stores/usePersonnelStore";
-import useSeedStore from "../../../../stores/useSeedStore";
+import { useEffect, useMemo, useRef, useState } from "react";
+import useSeedStore from "@/stores/useSeedStore";
+import { useMasterData, useFarmPersonnel } from "@/features/master-data";
+import { useSelectedWorkspaceId } from "@/features/workspace";
+import { useRegionAreas } from "@/features/farm/hooks/useRegions";
+import { useAreaPlots } from "@/features/farm/hooks/useAreas";
 import type { GeographicalSelection } from "./types";
 
 type RegionOption = {
@@ -78,6 +80,15 @@ export const SelectionCard = ({
   const primaryItem =
     items.find((item) => item.type === "area" || item.type === "region") ||
     items[0];
+
+  const regionName =
+    region?.name ||
+    primaryItem?.regionName ||
+    (primaryItem?.type === "region" ? primaryItem?.name : "");
+  const areaName =
+    area?.name ||
+    primaryItem?.areaName ||
+    (primaryItem?.type === "area" ? primaryItem?.name : "");
 
   const getTypeLabel = (type: GeographicalSelection["type"]) => {
     switch (type) {
@@ -126,7 +137,7 @@ export const SelectionCard = ({
               </Button>
             </div>
             <div className="font-bold text-slate-900 text-sm mb-1">
-              {area?.name || region?.name}
+              {areaName || regionName}
             </div>
             <div className="text-[10px] text-muted-foreground truncate uppercase tracking-wider font-medium">
               ID: {areaId || regionId}
@@ -164,7 +175,7 @@ export const SelectionCard = ({
                         Vùng trồng
                       </div>
                       <div className="text-xs font-bold text-slate-700">
-                        {region?.name}
+                        {regionName}
                       </div>
                     </div>
                     {items.some((item) => item.type === "region") && (
@@ -220,7 +231,7 @@ export const SelectionCard = ({
                                   : "text-slate-700",
                               )}
                             >
-                              {area?.name}
+                              {areaName}
                             </div>
                           </div>
                         </div>
@@ -247,7 +258,9 @@ export const SelectionCard = ({
                                       Lô đất
                                     </div>
                                     <div className="text-xs font-bold text-slate-900">
-                                      {plot?.name || plotSelection.plotId}
+                                      {plot?.name ||
+                                        plotSelection.name ||
+                                        plotSelection.plotId}
                                     </div>
                                   </div>
                                   <Button
@@ -282,6 +295,240 @@ interface GeographicalSelectorProps {
   existingSelections: GeographicalSelection[];
 }
 
+interface AreaPlotsListProps {
+  areaId: number;
+  areaName: string;
+  regionId: string;
+  regionName: string;
+  isSelected: (
+    type: GeographicalSelection["type"],
+    regionId: string,
+    areaId?: string,
+    plotId?: string,
+  ) => boolean;
+  onSelect: (
+    type: GeographicalSelection["type"],
+    regionId: string,
+    areaId?: string,
+    plotId?: string,
+    name?: string,
+    regionName?: string,
+    areaName?: string,
+  ) => void;
+}
+
+const AreaPlotsList = ({
+  areaId,
+  areaName,
+  regionId,
+  regionName,
+  isSelected,
+  onSelect,
+}: AreaPlotsListProps) => {
+  const { items: plots, loading } = useAreaPlots(areaId, {
+    params: { size: 100 },
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 py-2 pl-2 text-[10px] text-slate-400">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        Đang tải lô...
+      </div>
+    );
+  }
+
+  if (!plots || plots.length === 0) {
+    return (
+      <p className="py-2 pl-2 text-[10px] italic text-slate-400">Chưa có lô</p>
+    );
+  }
+
+  return (
+    <>
+      {plots.map((plot) => {
+        const plotIdStr = String(plot.id);
+        const areaIdStr = String(areaId);
+        const plotSelected = isSelected("plot", regionId, areaIdStr, plotIdStr);
+
+        return (
+          <div
+            key={plot.id}
+            onClick={() =>
+              onSelect(
+                "plot",
+                regionId,
+                areaIdStr,
+                plotIdStr,
+                plot.name || undefined,
+                regionName,
+                areaName,
+              )
+            }
+            className={cn(
+              "flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer group",
+              plotSelected
+                ? "bg-primary/10 border-primary/40 opacity-60 cursor-not-allowed"
+                : "bg-white border-slate-50 hover:border-primary/20 hover:bg-slate-50",
+            )}
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-2 h-2 rounded-full bg-slate-200 group-hover:bg-primary transition-colors" />
+              <span className="font-medium text-slate-600 text-xs text-primary/80">
+                {plot.name}
+              </span>
+            </div>
+            {plotSelected ? (
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                <span className="text-[9px] text-primary font-bold">
+                  LÔ #{plotIdStr}
+                </span>
+              </div>
+            ) : (
+              <div className="w-3.5 h-3.5 rounded-sm border border-slate-200 group-hover:border-primary transition-colors flex items-center justify-center">
+                <Plus className="w-2.5 h-2.5 text-slate-300 group-hover:text-primary" />
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </>
+  );
+};
+
+interface RegionAreasListProps {
+  regionId: string;
+  regionName: string;
+  expandedAreas: string[];
+  toggleArea: (id: string) => void;
+  isSelected: (
+    type: GeographicalSelection["type"],
+    regionId: string,
+    areaId?: string,
+    plotId?: string,
+  ) => boolean;
+  onSelect: (
+    type: GeographicalSelection["type"],
+    regionId: string,
+    areaId?: string,
+    plotId?: string,
+    name?: string,
+    regionName?: string,
+    areaName?: string,
+  ) => void;
+}
+
+const RegionAreasList = ({
+  regionId,
+  regionName,
+  expandedAreas,
+  toggleArea,
+  isSelected,
+  onSelect,
+}: RegionAreasListProps) => {
+  const { items: areas, loading } = useRegionAreas(parseInt(regionId, 10), {
+    params: { size: 100 },
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 py-3 pl-2 text-xs text-slate-400">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        Đang tải khu vực...
+      </div>
+    );
+  }
+
+  if (!areas || areas.length === 0) {
+    return (
+      <p className="py-2 pl-2 text-xs italic text-slate-400">Chưa có khu vực</p>
+    );
+  }
+
+  return (
+    <>
+      {areas.map((area) => {
+        const areaIdStr = String(area.id);
+        const areaSelected = isSelected("area", regionId, areaIdStr);
+
+        return (
+          <div key={area.id} className="space-y-2">
+            <div className="flex items-center gap-2 group">
+              <button
+                type="button"
+                onClick={() => toggleArea(areaIdStr)}
+                className="p-1 hover:bg-slate-100 rounded transition-colors"
+              >
+                {expandedAreas.includes(areaIdStr) ? (
+                  <ChevronDown className="w-4 h-4 text-slate-400" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                )}
+              </button>
+              <div
+                onClick={() =>
+                  onSelect(
+                    "area",
+                    regionId,
+                    areaIdStr,
+                    undefined,
+                    area.name || undefined,
+                    regionName,
+                  )
+                }
+                className={cn(
+                  "flex-1 flex items-center justify-between p-2.5 rounded-xl border-2 transition-all cursor-pointer",
+                  areaSelected
+                    ? "bg-primary/10 border-primary/40 opacity-60 cursor-not-allowed"
+                    : "bg-white border-slate-100 hover:border-primary/20 hover:bg-slate-50",
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center">
+                    <Layers className="w-4 h-4" />
+                  </div>
+                  <span className="font-bold text-slate-700 text-xs">
+                    {area.name}
+                  </span>
+                </div>
+                {areaSelected ? (
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <Badge
+                      variant="secondary"
+                      className="text-[9px] bg-primary/10 text-primary border-none h-4 py-0"
+                    >
+                      Đã chọn
+                    </Badge>
+                  </div>
+                ) : (
+                  <div className="w-4 h-4 rounded border border-slate-200 group-hover:border-primary transition-colors flex items-center justify-center">
+                    <Plus className="w-3 h-3 text-slate-300 group-hover:text-primary" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {expandedAreas.includes(areaIdStr) && (
+              <div className="ml-5 pl-4 border-l-2 border-slate-50 space-y-1 py-1">
+                <AreaPlotsList
+                  areaId={area.id}
+                  areaName={area.name ?? ""}
+                  regionId={regionId}
+                  regionName={regionName}
+                  isSelected={isSelected}
+                  onSelect={onSelect}
+                />
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </>
+  );
+};
+
 export const GeographicalSelector = ({
   regions,
   onConfirm,
@@ -292,7 +539,9 @@ export const GeographicalSelector = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedRegions, setExpandedRegions] = useState<string[]>([]);
   const [expandedAreas, setExpandedAreas] = useState<string[]>([]);
-  const [tempSelections, setTempSelections] = useState<GeographicalSelection[]>([]);
+  const [tempSelections, setTempSelections] = useState<GeographicalSelection[]>(
+    [],
+  );
 
   const filteredRegions = useMemo(() => {
     return regions.filter(
@@ -306,13 +555,17 @@ export const GeographicalSelector = ({
 
   const toggleRegion = (id: string) => {
     setExpandedRegions((prev) =>
-      prev.includes(id) ? prev.filter((regionId) => regionId !== id) : [...prev, id],
+      prev.includes(id)
+        ? prev.filter((regionId) => regionId !== id)
+        : [...prev, id],
     );
   };
 
   const toggleArea = (id: string) => {
     setExpandedAreas((prev) =>
-      prev.includes(id) ? prev.filter((areaId) => areaId !== id) : [...prev, id],
+      prev.includes(id)
+        ? prev.filter((areaId) => areaId !== id)
+        : [...prev, id],
     );
   };
 
@@ -357,6 +610,9 @@ export const GeographicalSelector = ({
     regionId: string,
     areaId?: string,
     plotId?: string,
+    name?: string,
+    regionName?: string,
+    areaName?: string,
   ) => {
     if (type === "area") {
       const regionSelected = tempSelections.some(
@@ -422,6 +678,9 @@ export const GeographicalSelector = ({
           regionId,
           areaId,
           plotId,
+          name,
+          regionName,
+          areaName,
         },
       ];
     });
@@ -430,6 +689,7 @@ export const GeographicalSelector = ({
   return (
     <>
       <Button
+        type="button"
         onClick={() => {
           setTempSelections(existingSelections);
           setIsOpen(true);
@@ -467,7 +727,7 @@ export const GeographicalSelector = ({
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
               <Input
-                placeholder="Tìm kiếm vùng, khu vực, lô..."
+                placeholder="Tìm kiếm vùng trồng..."
                 className="pl-10 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
@@ -492,7 +752,15 @@ export const GeographicalSelector = ({
                       )}
                     </button>
                     <div
-                      onClick={() => handleSelect("region", region.id.toString())}
+                      onClick={() =>
+                        handleSelect(
+                          "region",
+                          region.id.toString(),
+                          undefined,
+                          undefined,
+                          region.name,
+                        )
+                      }
                       className={cn(
                         "flex-1 flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer",
                         isSelected("region", region.id.toString())
@@ -533,123 +801,14 @@ export const GeographicalSelector = ({
 
                   {expandedRegions.includes(region.id.toString()) && (
                     <div className="ml-6 pl-4 border-l-2 border-slate-100 space-y-2 py-1">
-                      {region.subAreas?.map((area) => (
-                        <div key={area.id} className="space-y-2">
-                          <div className="flex items-center gap-2 group">
-                            <button
-                              type="button"
-                              onClick={() => toggleArea(area.id.toString())}
-                              className="p-1 hover:bg-slate-100 rounded transition-colors"
-                            >
-                              {expandedAreas.includes(area.id.toString()) ? (
-                                <ChevronDown className="w-4 h-4 text-slate-400" />
-                              ) : (
-                                <ChevronRight className="w-4 h-4 text-slate-400" />
-                              )}
-                            </button>
-                            <div
-                              onClick={() =>
-                                handleSelect(
-                                  "area",
-                                  region.id.toString(),
-                                  area.id.toString(),
-                                )
-                              }
-                              className={cn(
-                                "flex-1 flex items-center justify-between p-2.5 rounded-xl border-2 transition-all cursor-pointer",
-                                isSelected(
-                                  "area",
-                                  region.id.toString(),
-                                  area.id.toString(),
-                                )
-                                  ? "bg-primary/10 border-primary/40 opacity-60 cursor-not-allowed"
-                                  : "bg-white border-slate-100 hover:border-primary/20 hover:bg-slate-50",
-                              )}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center">
-                                  <Layers className="w-4 h-4" />
-                                </div>
-                                <span className="font-bold text-slate-700 text-xs">
-                                  {area.name}
-                                </span>
-                              </div>
-                              {isSelected(
-                                "area",
-                                region.id.toString(),
-                                area.id.toString(),
-                              ) ? (
-                                <div className="flex items-center gap-2">
-                                  <CheckCircle2 className="w-4 h-4 text-primary" />
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-[9px] bg-primary/10 text-primary border-none h-4 py-0"
-                                  >
-                                    Đã chọn
-                                  </Badge>
-                                </div>
-                              ) : (
-                                <div className="w-4 h-4 rounded border border-slate-200 group-hover:border-primary transition-colors flex items-center justify-center">
-                                  <Plus className="w-3 h-3 text-slate-300 group-hover:text-primary" />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {expandedAreas.includes(area.id.toString()) && (
-                            <div className="ml-5 pl-4 border-l-2 border-slate-50 space-y-1 py-1">
-                              {area.plots?.map((plot) => (
-                                <div
-                                  key={plot.id}
-                                  onClick={() =>
-                                    handleSelect(
-                                      "plot",
-                                      region.id.toString(),
-                                      area.id.toString(),
-                                      plot.id,
-                                    )
-                                  }
-                                  className={cn(
-                                    "flex items-center justify-between p-2 rounded-lg border-2 transition-all cursor-pointer group",
-                                    isSelected(
-                                      "plot",
-                                      region.id.toString(),
-                                      area.id.toString(),
-                                      plot.id,
-                                    )
-                                      ? "bg-primary/10 border-primary/40 opacity-60 cursor-not-allowed"
-                                      : "bg-white border-slate-50 hover:border-primary/20 hover:bg-slate-50",
-                                  )}
-                                >
-                                  <div className="flex items-center gap-2.5">
-                                    <div className="w-2 h-2 rounded-full bg-slate-200 group-hover:bg-primary transition-colors" />
-                                    <span className="font-medium text-slate-600 text-xs text-primary/80">
-                                      {plot.name}
-                                    </span>
-                                  </div>
-                                  {isSelected(
-                                    "plot",
-                                    region.id.toString(),
-                                    area.id.toString(),
-                                    plot.id,
-                                  ) ? (
-                                    <div className="flex items-center gap-1.5">
-                                      <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-                                      <span className="text-[9px] text-primary font-bold">
-                                        LÔ #{plot.id.split("-").pop()}
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <div className="w-3.5 h-3.5 rounded-sm border border-slate-200 group-hover:border-primary transition-colors flex items-center justify-center">
-                                      <Plus className="w-2.5 h-2.5 text-slate-300 group-hover:text-primary" />
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                      <RegionAreasList
+                        regionId={region.id.toString()}
+                        regionName={region.name}
+                        expandedAreas={expandedAreas}
+                        toggleArea={toggleArea}
+                        isSelected={isSelected}
+                        onSelect={handleSelect}
+                      />
                     </div>
                   )}
                 </div>
@@ -701,23 +860,79 @@ export const ManagerSelector = ({
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [page, setPage] = useState(0);
+  const [loadedPersonnel, setLoadedPersonnel] = useState<any[]>([]);
 
-  const { personnel } = usePersonnelStore();
-  const departmentsFromStore = useDepartmentStore((state) => state.departments);
-  const departments = departmentsFromStore
-    .filter((department) => department.status === "active")
-    .map((department) => department.name);
+  const workspaceId = useSelectedWorkspaceId();
 
+  // 1. Dynamic API search query with page size 100 (maximum limit) for infinite scroll
+  const {
+    items: newItems,
+    response,
+    loading,
+  } = useFarmPersonnel({
+    params: {
+      keyword: searchTerm.trim() || undefined,
+      page,
+      size: 100,
+    },
+    workspaceId: typeof workspaceId === "number" ? workspaceId : undefined,
+    enabled: true,
+  });
+
+  const { items: departmentItems } = useMasterData("departments", {
+    params: { size: 100 },
+  });
+
+  const departments = useMemo(() => {
+    return departmentItems
+      .filter((d) => d.status === "active")
+      .map((d) => d.name);
+  }, [departmentItems]);
+
+  // Reset page and loaded items when search keyword changes
+  useEffect(() => {
+    setPage(0);
+    setLoadedPersonnel([]);
+  }, [searchTerm]);
+
+  // Append new items to loadedPersonnel list when they arrive
+  useEffect(() => {
+    if (newItems && newItems.length > 0) {
+      setLoadedPersonnel((prev) => {
+        const existingIds = new Set(prev.map((item) => item.id));
+        const filtered = newItems.filter((item) => !existingIds.has(item.id));
+        return [...prev, ...filtered];
+      });
+    }
+  }, [newItems]);
+
+  // Client-side department filtering on loaded personnel list
   const filteredManagers = useMemo(() => {
-    return personnel.filter((manager) => {
-      const matchesSearch =
-        manager.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        manager.position.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesDepartment =
-        departmentFilter === "all" || manager.department === departmentFilter;
-      return matchesSearch && matchesDepartment;
+    return loadedPersonnel.filter((manager) => {
+      const managerDept = manager.department?.name || manager.department || "";
+      return departmentFilter === "all" || managerDept === departmentFilter;
     });
-  }, [departmentFilter, personnel, searchTerm]);
+  }, [loadedPersonnel, departmentFilter]);
+
+  // IntersectionObserver for infinite scroll trigger
+  const observerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!observerRef.current || !response || response.last || loading) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    observer.observe(observerRef.current);
+    return () => observer.disconnect();
+  }, [response, loading]);
 
   return (
     <>
@@ -745,10 +960,13 @@ export const ManagerSelector = ({
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {selectedIds.map((id) => {
-                const manager = personnel.find(
+                const manager = loadedPersonnel.find(
                   (person) => person.id.toString() === id,
                 );
                 if (!manager) return null;
+
+                const managerPos =
+                  manager.position?.name || manager.position || "Nhân viên";
 
                 return (
                   <div
@@ -756,10 +974,10 @@ export const ManagerSelector = ({
                     className="flex items-center gap-3 bg-slate-50/50 p-2 rounded-lg border border-slate-100"
                   >
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 overflow-hidden">
-                      {manager.avatar ? (
+                      {manager.avatarUrl ? (
                         <img
-                          src={manager.avatar}
                           alt={manager.fullName}
+                          src={manager.avatarUrl}
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -771,7 +989,7 @@ export const ManagerSelector = ({
                         {manager.fullName}
                       </div>
                       <div className="text-[10px] text-muted-foreground truncate uppercase font-medium">
-                        {manager.position}
+                        {managerPos}
                       </div>
                     </div>
                   </div>
@@ -799,7 +1017,7 @@ export const ManagerSelector = ({
           <div className="space-y-4">
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute z-100 left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Tìm kiếm theo tên, chức vụ..."
                   className="pl-10 bg-slate-50"
@@ -827,48 +1045,69 @@ export const ManagerSelector = ({
 
             <ScrollArea className="h-75 pr-4">
               <div className="space-y-2">
-                {filteredManagers.map((manager) => (
-                  <div
-                    key={manager.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${
-                      selectedIds.includes(manager.id.toString())
-                        ? "bg-primary/5 border border-primary/20 shadow-sm"
-                        : "hover:bg-slate-50 border border-transparent"
-                    }`}
-                    onClick={() => {
-                      const id = manager.id.toString();
-                      if (selectedIds.includes(id)) {
-                        onSelect(selectedIds.filter((selectedId) => selectedId !== id));
-                        return;
-                      }
-                      onSelect([...selectedIds, id]);
-                    }}
-                  >
-                    <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-sm font-bold overflow-hidden text-slate-600">
-                      {manager.avatar ? (
-                        <img
-                          src={manager.avatar}
-                          alt={manager.fullName}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        manager.fullName.charAt(0)
+                {filteredManagers.map((manager) => {
+                  const managerPos =
+                    manager.position?.name || manager.position || "Nhân viên";
+                  const managerDept =
+                    manager.department?.name || manager.department || "-";
+
+                  return (
+                    <div
+                      key={manager.id}
+                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${
+                        selectedIds.includes(manager.id.toString())
+                          ? "bg-primary/5 border border-primary/20 shadow-sm"
+                          : "hover:bg-slate-50 border border-transparent"
+                      }`}
+                      onClick={() => {
+                        const id = manager.id.toString();
+                        if (selectedIds.includes(id)) {
+                          onSelect(
+                            selectedIds.filter(
+                              (selectedId) => selectedId !== id,
+                            ),
+                          );
+                          return;
+                        }
+                        onSelect([...selectedIds, id]);
+                      }}
+                    >
+                      <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-sm font-bold overflow-hidden text-slate-600">
+                        {manager.avatarUrl ? (
+                          <img
+                            alt={manager.fullName}
+                            src={manager.avatarUrl}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          manager.fullName.charAt(0)
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-medium text-sm text-slate-900">
+                          {manager.fullName}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {managerPos} - {managerDept}
+                        </div>
+                      </div>
+                      {selectedIds.includes(manager.id.toString()) && (
+                        <CheckCircle2 className="w-5 h-5 text-primary" />
                       )}
                     </div>
-                    <div className="flex-1">
-                      <div className="font-medium text-sm text-slate-900">
-                        {manager.fullName}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {manager.position} - {manager.department}
-                      </div>
-                    </div>
-                    {selectedIds.includes(manager.id.toString()) && (
-                      <CheckCircle2 className="w-5 h-5 text-primary" />
-                    )}
+                  );
+                })}
+
+                {/* Observer anchor for infinite scroll loading */}
+                <div ref={observerRef} className="h-2 w-full bg-transparent" />
+
+                {loading && (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
                   </div>
-                ))}
-                {filteredManagers.length === 0 && (
+                )}
+
+                {filteredManagers.length === 0 && !loading && (
                   <div className="text-center py-8 text-muted-foreground text-sm">
                     Không tìm thấy quản lý nào
                   </div>
@@ -891,56 +1130,78 @@ export const CertificateSelector = ({
   selectedIds,
   onToggle,
 }: CertificateSelectorProps) => {
-  const { standards } = useEnterpriseCertificateStore();
+  const { items: standards, isLoading } = useMasterData(
+    "certificate-standards",
+    {
+      params: {
+        page: 0,
+        size: 100,
+      },
+    },
+  );
+
+  if (isLoading) {
+    return (
+      <div className="text-xs text-muted-foreground animate-pulse p-4">
+        Đang tải danh sách chứng nhận...
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {standards.map((certificate) => (
-          <div
-            key={certificate.code}
-            className={`cursor-pointer border rounded-xl p-3 relative flex items-start gap-3 transition-all ${
-              selectedIds.includes(certificate.code)
-                ? "border-primary bg-primary/5 ring-1 ring-primary/30 shadow-sm"
-                : "border-slate-200 hover:border-primary/40 hover:bg-slate-50"
-            }`}
-            onClick={() => onToggle(certificate.code)}
-          >
-            <div className="w-12 h-12 bg-white rounded-lg border flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
-              {certificate.imageUrl ? (
-                <img
-                  src={certificate.imageUrl}
-                  alt={certificate.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Award
-                  className={`w-6 h-6 ${
-                    selectedIds.includes(certificate.code)
-                      ? "text-primary"
-                      : "text-slate-400"
-                  }`}
-                />
+        {standards.map((certificate) => {
+          const isSelected = selectedIds.includes(String(certificate.id));
+          const orgNames = certificate.issuers?.map((i) => i.name) ?? [];
+          const imgUrl = certificate.stampUrl;
+
+          return (
+            <div
+              key={certificate.id}
+              className={`cursor-pointer border rounded-xl p-3 relative flex items-start gap-3 transition-all ${
+                isSelected
+                  ? "border-primary bg-primary/5 ring-1 ring-primary/30 shadow-sm"
+                  : "border-slate-200 hover:border-primary/40 hover:bg-slate-50"
+              }`}
+              onClick={() => onToggle(String(certificate.id))}
+            >
+              <div className="w-12 h-12 bg-white rounded-lg border flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
+                {imgUrl ? (
+                  <img
+                    src={imgUrl}
+                    alt={certificate.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Award
+                    className={`w-6 h-6 ${
+                      isSelected ? "text-primary" : "text-slate-400"
+                    }`}
+                  />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-sm truncate pr-4">
+                  {certificate.name}
+                </div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {certificate.code}
+                </div>
+                {orgNames.length > 0 && (
+                  <div className="text-xs text-slate-500 truncate mt-0.5">
+                    {orgNames.join(", ")}
+                  </div>
+                )}
+              </div>
+              {isSelected && (
+                <div className="absolute top-3 right-3 text-primary animate-in fade-in zoom-in">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
               )}
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-sm truncate pr-4">
-                {certificate.name}
-              </div>
-              <div className="text-xs text-muted-foreground truncate">
-                {certificate.code}
-              </div>
-              <div className="text-xs text-slate-500 truncate mt-0.5">
-                {certificate.organizations.join(", ")}
-              </div>
-            </div>
-            {selectedIds.includes(certificate.code) && (
-              <div className="absolute top-3 right-3 text-primary animate-in fade-in zoom-in">
-                <CheckCircle2 className="w-4 h-4" />
-              </div>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -969,7 +1230,7 @@ export const SeedSelectorDialog = ({
     if (!variety) return [];
 
     return seeds.filter(
-      (seed) =>
+      (seed: any) =>
         seed.varietyCode === variety.varietyCode &&
         (seed.varietyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           seed.varietyCode.toLowerCase().includes(searchTerm.toLowerCase())),
@@ -1005,7 +1266,7 @@ export const SeedSelectorDialog = ({
           </div>
           <ScrollArea className="h-72 border rounded-xl bg-slate-50/50">
             <div className="p-2 space-y-2">
-              {filteredSeeds.map((seed) => {
+              {filteredSeeds.map((seed: any) => {
                 const isSelected = tempSelectedIds.includes(seed.id);
 
                 return (

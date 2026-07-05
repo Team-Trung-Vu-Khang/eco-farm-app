@@ -140,7 +140,7 @@ export default function CreateGrowthCyclePage() {
                     <span className="text-muted-foreground">
                       Tổng thời gian:
                     </span>
-                    <span className="font-medium">{totalDays} ngày</span>
+                    <span className="font-medium">{totalDays}</span>
                   </div>
                 </div>
               </div>

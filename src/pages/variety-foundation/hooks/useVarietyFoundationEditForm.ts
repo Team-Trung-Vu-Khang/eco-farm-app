@@ -87,6 +87,11 @@ export function useVarietyFoundationEditForm() {
       let contentType: "pdf" | "editor" = "editor";
       if (pdfDoc) contentType = "pdf";
 
+      const averageYield =
+        existingData.avgYieldFrom && existingData.avgYieldTo
+          ? `${existingData?.avgYieldFrom || 0}-${existingData?.avgYieldTo || 0}`
+          : (existingData.avgYieldFrom || existingData.avgYieldTo || "") + "";
+
       return {
         varietyFoundationCode: existingData.code || "",
         varietyFoundationName: existingData.name || "",
@@ -94,12 +99,10 @@ export function useVarietyFoundationEditForm() {
         crop: String(existingData.cropId),
         origin: existingData.origin || "",
         growthDuration: formatDaysToDuration(existingData.growthDurationDays),
-        averageYield:
-          existingData.avgYieldFrom || existingData.avgYieldTo
-            ? `${existingData.avgYieldFrom || 0}-${existingData.avgYieldTo || 0}`
-            : "",
+        averageYield,
         description: existingData.description || "",
-        illustration: (existingData as any).imageUrl || metadata.illustrationUrl || null,
+        illustration:
+          (existingData as any).imageUrl || metadata.illustrationUrl || null,
         contentType,
         pdfFile: pdfDoc?.fileUrl
           ? new File([], pdfDoc.fileName || pdfDoc.name || "document.pdf", {

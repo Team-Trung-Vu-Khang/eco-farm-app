@@ -9,6 +9,9 @@ export interface GeographicalSelection {
   regionId: string;
   areaId?: string;
   plotId?: string;
+  name?: string;
+  regionName?: string;
+  areaName?: string;
 }
 
 export interface PlantEntry {

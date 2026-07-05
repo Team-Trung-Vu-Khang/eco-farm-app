@@ -1,21 +1,19 @@
-import { useMemo } from "react";
 import { useParams } from "wouter";
-import useCultivationRegionStore from "../../../../stores/useCultivationRegionStore";
+import { useCultivationZoneById } from "@/features/farm/hooks/useCultivationZones";
 
 export const useCultivationRegionDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { getAreaById } = useCultivationRegionStore();
+  const numericId = id ? parseInt(id, 10) : 0;
 
-  const area = useMemo(() => {
-    if (!id) return null;
-    return getAreaById(id) ?? null;
-  }, [getAreaById, id]);
+  const { data: area } = useCultivationZoneById(numericId, {
+    enabled: !!numericId,
+  });
 
   return {
     area,
-    title: area?.name || "Không tìm thấy",
+    title: area?.name || "Đang tải...",
     description: area
-      ? `Mã: ${area.id} • Tạo: ${new Date(area.createdAt).toLocaleDateString("vi-VN")}`
-      : "Vùng canh tác không tồn tại",
+      ? `Mã: ${area.id} • Tạo: ${area.createdAt ? new Date(area.createdAt).toLocaleDateString("vi-VN") : "---"}`
+      : "Vùng canh tác",
   };
 };

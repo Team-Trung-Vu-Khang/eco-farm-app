@@ -13,6 +13,7 @@ import type {
   PositionResponsibilityQueryParams,
   FarmTeamRequest,
   FarmTeamResponse,
+  FarmPersonnelQueryParams,
   FarmPersonnelRequest,
   FarmPersonnelResponse,
 } from "../types/farm-master-data.type";
@@ -194,7 +195,7 @@ export const farmTeamApi = {
 // ─── Farm Personnel API ───────────────────────────────────────────────────────
 
 export const farmPersonnelApi = {
-  list: (params?: FarmBaseQueryParams, workspaceId?: number) =>
+  list: (params?: FarmPersonnelQueryParams, workspaceId?: number) =>
     apiClient
       .get<FarmPageResponse<FarmPersonnelResponse>>(`${BASE}/personnel`, {
         params,

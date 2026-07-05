@@ -1,21 +1,21 @@
-import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { farmPersonnelApi } from "../api/farm-master-data.api";
 import type {
-  FarmBaseQueryParams,
+  FarmPersonnelQueryParams,
   FarmPersonnelResponse,
   FarmPageResponse,
 } from "../types/farm-master-data.type";
 
 export const farmPersonnelKeys = {
   all: () => ["farm-personnel"] as const,
-  list: (params?: FarmBaseQueryParams, workspaceId?: number) =>
+  list: (params?: FarmPersonnelQueryParams, workspaceId?: number) =>
     [...farmPersonnelKeys.all(), "list", params ?? {}, workspaceId] as const,
   detail: (id: number, workspaceId?: number) =>
     [...farmPersonnelKeys.all(), "detail", id, workspaceId] as const,
 };
 
 interface UseFarmPersonnelOptions {
-  params?: FarmBaseQueryParams;
+  params?: FarmPersonnelQueryParams;
   workspaceId?: number;
   enabled?: boolean;
 }
@@ -49,7 +49,7 @@ interface UseFarmPersonnelByIdOptions {
 
 export function useFarmPersonnelById(
   id: number,
-  { workspaceId, enabled = true }: UseFarmPersonnelByIdOptions = {}
+  { workspaceId, enabled = true }: UseFarmPersonnelByIdOptions = {},
 ) {
   return useQuery<FarmPersonnelResponse, Error>({
     queryKey: farmPersonnelKeys.detail(id, workspaceId),

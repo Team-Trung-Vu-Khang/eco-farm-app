@@ -2,17 +2,20 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
-import { supplierOptions } from "../data/mocks";
-import type { FoundationStatus } from "@/features/foundation";
+import { type FoundationStatus, useCatalog } from "@/features/foundation";
 import {
   useSeedMutations,
   useSeeds,
   type FarmSeedResponse,
 } from "@/features/farm";
+import { useOrganizations } from "@/features/organization";
+import { useSelectedWorkspaceId } from "@/features/workspace";
+import { useMemo } from "react";
 
 export function useSeedPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const workspaceId = useSelectedWorkspaceId();
 
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(20);
@@ -20,7 +23,34 @@ export function useSeedPage() {
   const [supplierOrganizationId, setSupplierOrganizationId] = useState<
     number | undefined
   >();
+  const [farmingMethodId, setFarmingMethodId] = useState<number | undefined>();
   const [status, setStatus] = useState<FoundationStatus | undefined>();
+
+  // Fetch real organizations to build supplier filter options
+  const { items: orgList } = useOrganizations(
+    { page: 0, size: 100 },
+    workspaceId ?? "missing",
+    { enabled: workspaceId !== null },
+  );
+
+  const supplierOptions = useMemo(() => {
+    return orgList.map((org) => ({
+      label: org.name,
+      value: String(org.id),
+    }));
+  }, [orgList]);
+
+  // Fetch real farming methods for filtering
+  const { items: farmingMethods } = useCatalog("farming-methods", {
+    params: { status: "active", page: 0, size: 100 },
+  });
+
+  const farmingMethodOptions = useMemo(() => {
+    return farmingMethods.map((m) => ({
+      label: m.name,
+      value: String(m.id),
+    }));
+  }, [farmingMethods]);
 
   const {
     items: seeds,
@@ -28,11 +58,12 @@ export function useSeedPage() {
     response,
   } = useSeeds({
     params: {
-      page,
       size,
       keyword: keyword || undefined,
       supplierOrganizationId,
+      farmingMethodId,
       status,
+      page: Math.max(page - 1, 0),
     },
   });
 
@@ -41,18 +72,25 @@ export function useSeedPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<FarmSeedResponse | null>(null);
 
-  const tableFilters = [
-    { key: "supplier", label: "Nhà cung cấp", options: supplierOptions },
-    {
-      key: "status",
-      label: "Trạng thái",
-      options: [
-        { label: "Hoạt động", value: "active" },
-        { label: "Ngừng hoạt động", value: "inactive" },
-        { label: "Đã lưu trữ", value: "archived" },
-      ],
-    },
-  ];
+  const tableFilters = useMemo(() => {
+    return [
+      { key: "supplier", label: "Nhà cung cấp", options: supplierOptions },
+      {
+        key: "farmingMethod",
+        label: "Phương pháp canh tác",
+        options: farmingMethodOptions,
+      },
+      {
+        key: "status",
+        label: "Trạng thái",
+        options: [
+          { label: "Hoạt động", value: "active" },
+          { label: "Ngừng hoạt động", value: "inactive" },
+          { label: "Đã lưu trữ", value: "archived" },
+        ],
+      },
+    ];
+  }, [supplierOptions, farmingMethodOptions]);
 
   const handleAdd = () => setLocation("/seed/create");
   const handleEdit = (item: FarmSeedResponse) =>
@@ -87,6 +125,8 @@ export function useSeedPage() {
   };
 
   const handlePageChange = (newPage: number) => {
+    console.log("handlePageChange", newPage);
+
     setPage(newPage);
   };
 
@@ -97,9 +137,15 @@ export function useSeedPage() {
 
   const handleFilterChange = (key: string, value: string) => {
     if (key === "supplier") {
-      setSupplierOrganizationId(value ? Number(value) : undefined);
+      setSupplierOrganizationId(
+        value && value !== "all" ? Number(value) : undefined,
+      );
+    } else if (key === "farmingMethod") {
+      setFarmingMethodId(value && value !== "all" ? Number(value) : undefined);
     } else if (key === "status") {
-      setStatus(value as FoundationStatus);
+      setStatus(
+        value && value !== "all" ? (value as FoundationStatus) : undefined,
+      );
     }
     setPage(0);
   };

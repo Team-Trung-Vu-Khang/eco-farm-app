@@ -54,7 +54,9 @@ export const CultivationRegionCreateConfirmationStep = ({
         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-sm relative z-10">
           <CheckCircle2 className="w-10 h-10 text-green-600" />
         </div>
-        <h3 className="text-2xl font-bold text-green-900 z-10 relative">{title}</h3>
+        <h3 className="text-2xl font-bold text-green-900 z-10 relative">
+          {title}
+        </h3>
         <p className="text-green-700/80 mt-2 z-10 relative max-w-lg mx-auto">
           {description}
         </p>

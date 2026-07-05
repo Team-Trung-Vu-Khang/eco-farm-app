@@ -18,10 +18,31 @@ export function useTeamPage() {
   const [search, setSearch] = useState("");
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [currentIndex, setCurrentIndex] = useState(1);
+  const [status, setStatus] = useState<string>("all");
+
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "status") {
+      setStatus(value);
+      setCurrentIndex(1);
+    }
+  };
+
+  const filters = [
+    {
+      key: "status",
+      label: "Trạng thái",
+      options: [
+        { label: "Hoạt động", value: "active" },
+        { label: "Ngừng hoạt động", value: "inactive" },
+        { label: "Đã lưu trữ", value: "archived" },
+      ],
+    },
+  ];
 
   const teamQuery = useFarmTeams({
     params: {
       keyword: search.trim() || undefined,
+      status: status === "all" ? undefined : status,
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
     },
@@ -93,5 +114,7 @@ export function useTeamPage() {
     goToDetail: (id: number) => setLocation(`/team/${id}`),
     goToEdit: (id: number) => setLocation(`/team/${id}/edit`),
     isDeleting: deleteTeam.isPending,
+    filters,
+    handleFilterChange,
   };
 }

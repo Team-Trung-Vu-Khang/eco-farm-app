@@ -38,6 +38,8 @@ const GrowthCyclePage = () => {
     setPageSize,
     currentIndex,
     setCurrentIndex,
+    filters,
+    handleFilterChange,
   } = useGrowthCyclePage();
 
   useDialogBugWorkaround([deleteOpen, detailOpen]);
@@ -104,6 +106,8 @@ const GrowthCyclePage = () => {
             totalPages={response?.totalPages}
             onPageSize={setPageSize}
             onIndexChange={setCurrentIndex}
+            filters={filters}
+            onFilterChange={handleFilterChange}
             loading={loading}
           />
         </TabsContent>
@@ -139,6 +143,8 @@ const GrowthCyclePage = () => {
               totalPages={response?.totalPages}
               onPageSize={setPageSize}
               onIndexChange={setCurrentIndex}
+              filters={filters}
+              onFilterChange={handleFilterChange}
               loading={loading}
             />
           )}

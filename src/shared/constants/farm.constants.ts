@@ -5,4 +5,5 @@ export const FARM_ENDPOINTS = {
   regions: `${FARM_BASE_PATH}/regions`,
   areas: `${FARM_BASE_PATH}/areas`,
   plots: `${FARM_BASE_PATH}/plots`,
+  cultivationZones: `${FARM_BASE_PATH}/cultivation-zones`,
 } as const;

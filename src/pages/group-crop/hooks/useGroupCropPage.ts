@@ -28,16 +28,37 @@ export function useGroupCropPage() {
   const debouncedSearch = useDebounce(search, 500);
   const [pageSize, setPageSize] = useState(10);
   const [currentIndex, setCurrentIndex] = useState(1);
+  const [status, setStatus] = useState<string>("all");
 
   const handleSearch = (value: string) => {
     setSearch(value);
     setCurrentIndex(1);
   };
 
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "status") {
+      setStatus(value);
+      setCurrentIndex(1);
+    }
+  };
+
+  const filters = [
+    {
+      key: "status",
+      label: "Trạng thái",
+      options: [
+        { label: "Hoạt động", value: "active" },
+        { label: "Ngừng hoạt động", value: "inactive" },
+        { label: "Đã lưu trữ", value: "archived" },
+      ],
+    },
+  ];
+
   // ─── API hooks ─────────────────────────────────────────────────────────────
   const { items, response, loading, error } = useCatalog("crop-groups", {
     params: {
       keyword: debouncedSearch.trim() || undefined,
+      status: status === "all" ? undefined : status,
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
     },
@@ -176,6 +197,8 @@ export function useGroupCropPage() {
     handleAdd,
     handleEdit,
     handleDelete,
+    filters,
+    handleFilterChange,
     handleSubmit,
     handleConfirmDelete,
     isPending:

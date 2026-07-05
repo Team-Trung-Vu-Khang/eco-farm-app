@@ -25,13 +25,13 @@ export function GrowthCycleConfirmStep({
 }: GrowthCycleConfirmStepProps) {
   const { watch } = useFormContext<GrowthCycleFormValues>();
   const formData = watch();
-  
+
   const cropName =
     crops.find((crop) => String(crop.id) === formData.cropId)?.name ||
     formData.cropId;
   const varietyName =
-    varieties.find((variety) => String(variety.id) === formData.variety)?.name ||
-    formData.variety;
+    varieties.find((variety) => String(variety.id) === formData.variety)
+      ?.name || formData.variety;
   const isPlant = (formData.cycleType ?? "plant") === "plant";
 
   return (
@@ -89,7 +89,7 @@ export function GrowthCycleConfirmStep({
               Tổng thời gian:
             </span>
             <Badge className="bg-blue-50 text-blue-700 border-blue-100 font-bold">
-              {formData.totalDays} NGÀY
+              {formData.totalDays}
             </Badge>
           </div>
           <div className="flex justify-between items-center py-2 border-b border-muted">

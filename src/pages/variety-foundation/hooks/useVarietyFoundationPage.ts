@@ -5,6 +5,7 @@ import { useLocation } from "wouter";
 import {
   useCropVarieties,
   useCropVarietyMutations,
+  useCrops,
 } from "../../../features/foundation";
 import type { VarietyFoundation } from "../types/types";
 
@@ -31,19 +32,64 @@ export function useVarietyFoundationPage() {
   const debouncedSearch = useDebounce(search, 500);
   const [pageSize, setPageSize] = useState(10);
   const [currentIndex, setCurrentIndex] = useState(1);
+  const [status, setStatus] = useState<string>("all");
+  const [cropId, setCropId] = useState<string>("all");
 
   const handleSearch = (value: string) => {
     setSearch(value);
     setCurrentIndex(1);
   };
 
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "status") {
+      setStatus(value);
+      setCurrentIndex(1);
+    } else if (key === "crop") {
+      setCropId(value);
+      setCurrentIndex(1);
+    }
+  };
+
+  // Fetch real crops to build "Cây trồng" filter options
+  const { items: cropsList } = useCrops({
+    params: {
+      page: 0,
+      size: 100,
+      status: "active",
+    },
+  });
+
+  const filters = [
+    {
+      key: "crop",
+      label: "Cây trồng",
+      options: [
+        ...cropsList.map((c) => ({
+          label: c.name,
+          value: String(c.id),
+        })),
+      ],
+    },
+    {
+      key: "status",
+      label: "Trạng thái",
+      options: [
+        { label: "Hoạt động", value: "active" },
+        { label: "Ngừng hoạt động", value: "inactive" },
+        { label: "Đã lưu trữ", value: "archived" },
+      ],
+    },
+  ];
+
   const [, setLocation] = useLocation();
   const { items, response, loading, error } = useCropVarieties({
     params: {
       keyword: debouncedSearch.trim() || undefined,
+      status: status === "all" ? undefined : status,
+      cropId: cropId === "all" ? undefined : Number(cropId),
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
-    }
+    },
   });
   const { deleteCropVariety } = useCropVarietyMutations();
 
@@ -158,6 +204,8 @@ export function useVarietyFoundationPage() {
     handleDelete,
     handleConfirmDelete,
     handleView,
+    filters,
+    handleFilterChange,
     handleEdit: (item: VarietyFoundation) =>
       setLocation(`/variety-foundation/${item.id}/edit`),
   };

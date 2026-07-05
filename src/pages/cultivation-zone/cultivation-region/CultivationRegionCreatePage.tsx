@@ -1,154 +1,116 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AdminLayout,
   Button,
   Card,
   CardContent,
   StepperForm,
+  type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
-import { useLocation } from "wouter";
-import useRegionStore from "../../../stores/useRegionStore";
-import { CultivationRegionCreateConfigurationStep } from "./components/CultivationRegionCreateConfigurationStep";
-import { CultivationRegionCreateConfirmationStep } from "./components/CultivationRegionCreateConfirmationStep";
-import { CultivationRegionCreateGeneralInfoStep } from "./components/CultivationRegionCreateGeneralInfoStep";
-import { useCultivationRegionCreatePage } from "./hooks/useCultivationRegionCreatePage";
+import { FormProvider, useForm } from "react-hook-form";
+import {
+  cultivationZoneFormSchema,
+  type CultivationZoneFormValues,
+} from "./data/cultivation-zone-form.schema";
+import { useCultivationZoneCreateForm } from "./hooks/useCultivationZoneCreateForm";
+import { ZoneGeneralInfoStep } from "./components/ZoneGeneralInfoStep";
+import { ZoneConfigurationStep } from "./components/ZoneConfigurationStep";
+import { ZoneReviewStep } from "./components/ZoneReviewStep";
 
 const CultivationRegionCreatePage = () => {
-  const [, setLocation] = useLocation();
-  const { regions } = useRegionStore();
-  const {
-    varieties,
-    farmingMethods,
-    irrigationSystems,
-    seeds,
-    selectedRegion,
-    selectedManagers,
-    selectedCerts,
-    seedDialogOpen,
-    setSeedDialogOpen,
-    activeSeedVariety,
-    applyToAllDialogOpen,
-    setApplyToAllDialogOpen,
-    name,
-    setName,
-    note,
-    setNote,
-    selectedEnterpriseId,
-    handleSelectEnterprise,
-    selections,
-    setSelections,
-    selectedCertIds,
-    toggleCertificate,
-    selectedManagerIds,
-    setSelectedManagerIds,
-    cropSearchTerm,
-    setCropSearchTerm,
-    entities,
-    commonConfig,
-    availableCrops,
-    updateCommonConfig,
-    toggleCropSelection,
-    handleSeedSelection,
-    applyConfigToAll,
-    handleComplete,
-    handleCancel,
-  } = useCultivationRegionCreatePage();
+  const form = useForm<CultivationZoneFormValues>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(cultivationZoneFormSchema) as any,
+    mode: "onChange",
+    defaultValues: {
+      name: "",
+      code: "",
+      selections: [],
+      farmingMethodId: 0,
+      irrigationSystemId: 0,
+      seedIds: [],
+      certificateIds: [],
+      personnelIds: [],
+      notes: "",
+      status: "active",
+    },
+  });
 
-  const steps = [
+  const { reset, watch, handleSubmit, formState } = form;
+
+  const { isEditMode, handleComplete, handleCancel, isSubmitting } =
+    useCultivationZoneCreateForm(reset);
+
+  const selections = watch("selections") ?? [];
+  const farmingMethodId = watch("farmingMethodId");
+  const irrigationSystemId = watch("irrigationSystemId");
+
+  const steps: Step[] = [
     {
-      id: "step-1",
+      id: "info",
       title: "Thông tin chung",
-      content: (
-        <CultivationRegionCreateGeneralInfoStep
-          name={name}
-          note={note}
-          selectedEnterpriseId={selectedEnterpriseId}
-          selections={selections}
-          selectedCertIds={selectedCertIds}
-          selectedManagerIds={selectedManagerIds}
-          selectedRegion={selectedRegion}
-          regions={regions}
-          setName={setName}
-          setNote={setNote}
-          onSelectEnterprise={handleSelectEnterprise}
-          onConfirmSelections={setSelections}
-          onToggleCertificate={toggleCertificate}
-          onSelectManagers={setSelectedManagerIds}
-        />
-      ),
+      description: "Tên, phạm vi địa lý, chứng nhận",
+      isValid:
+        !formState.errors.name &&
+        !formState.errors.selections &&
+        !!watch("name") &&
+        selections.length > 0,
+      content: <ZoneGeneralInfoStep />,
     },
     {
-      id: "step-2",
+      id: "config",
       title: "Cấu hình canh tác",
-      content: (
-        <CultivationRegionCreateConfigurationStep
-          entitiesCount={entities.length}
-          commonConfig={commonConfig}
-          availableCrops={availableCrops}
-          cropSearchTerm={cropSearchTerm}
-          farmingMethods={farmingMethods}
-          irrigationSystems={irrigationSystems}
-          seeds={seeds}
-          seedDialogOpen={seedDialogOpen}
-          activeSeedVariety={activeSeedVariety}
-          applyToAllDialogOpen={applyToAllDialogOpen}
-          setSeedDialogOpen={setSeedDialogOpen}
-          setApplyToAllDialogOpen={setApplyToAllDialogOpen}
-          setCropSearchTerm={setCropSearchTerm}
-          onUpdateConfig={updateCommonConfig}
-          onToggleCrop={toggleCropSelection}
-          onSelectSeeds={handleSeedSelection}
-          onApplyToAll={applyConfigToAll}
-        />
-      ),
+      description: "Phương pháp, tưới tiêu, hạt giống",
+      isValid:
+        !formState.errors.farmingMethodId &&
+        !formState.errors.irrigationSystemId &&
+        farmingMethodId > 0 &&
+        irrigationSystemId > 0,
+      content: <ZoneConfigurationStep />,
     },
     {
-      id: "step-3",
-      title: "Xác nhận & Lưu",
-      content: (
-        <CultivationRegionCreateConfirmationStep
-          name={name}
-          note={note}
-          entities={entities}
-          selectedManagers={selectedManagers}
-          selectedCerts={selectedCerts}
-          commonConfig={commonConfig}
-          farmingMethods={farmingMethods}
-          irrigationSystems={irrigationSystems}
-          varieties={varieties}
-          seeds={seeds}
-        />
-      ),
+      id: "review",
+      title: "Xác nhận",
+      description: "Kiểm tra và hoàn tất",
+      isValid: formState.isValid,
+      content: <ZoneReviewStep />,
     },
   ];
 
   return (
     <AdminLayout
       isDev={true}
-      title="Thiết lập vùng canh tác"
-      description="Quy trình khởi tạo và cấu hình tiêu chuẩn cho đơn vị canh tác"
-    >
-      <div className="mb-6">
+      title={isEditMode ? "Cập nhật vùng canh tác" : "Thiết lập vùng canh tác"}
+      description={
+        isEditMode
+          ? "Chỉnh sửa thông tin vùng canh tác"
+          : "Quy trình khởi tạo và cấu hình tiêu chuẩn cho đơn vị canh tác"
+      }
+      actions={
         <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setLocation("/cultivation-region")}
-          className="gap-2 text-muted-foreground hover:text-primary pl-0"
+          variant="outline"
+          onClick={handleCancel}
+          disabled={isSubmitting}
         >
-          <ChevronLeft className="w-4 h-4" />
-          Quay lại danh sách
+          <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại
         </Button>
-      </div>
-
-      <Card className="max-w-6xl mx-auto border-none shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden ring-1 ring-slate-900/5">
+      }
+    >
+      <Card className="max-w-5xl mx-auto border-none shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden ring-1 ring-slate-900/5">
         <CardContent className="p-0">
           <div className="p-6 md:p-8">
-            <StepperForm
-              steps={steps}
-              completeLabel="Khởi tạo Vùng canh tác"
-              onComplete={handleComplete}
-              onCancel={handleCancel}
-            />
+            <FormProvider {...form}>
+              <StepperForm
+                steps={steps}
+                loading={isSubmitting}
+                onCancel={handleCancel}
+                onComplete={handleSubmit(handleComplete)}
+                completeLabel={
+                  isEditMode ? "Lưu thay đổi" : "Khởi tạo vùng canh tác"
+                }
+              />
+            </FormProvider>
           </div>
         </CardContent>
       </Card>

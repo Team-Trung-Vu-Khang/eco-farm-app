@@ -23,6 +23,8 @@ export default function GroupCropPage() {
     handleAdd,
     handleEdit,
     handleDelete,
+    filters,
+    handleFilterChange,
     handleSubmit,
     handleConfirmDelete,
     isPending,
@@ -65,6 +67,8 @@ export default function GroupCropPage() {
           totalPages={response?.totalPages}
           onPageSize={setPageSize}
           onIndexChange={setCurrentIndex}
+          filters={filters}
+          onFilterChange={handleFilterChange}
           loading={loading}
         />
 
