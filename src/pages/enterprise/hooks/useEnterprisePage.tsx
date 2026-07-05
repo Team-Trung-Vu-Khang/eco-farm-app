@@ -6,12 +6,12 @@ import {
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 
+import { useMasterData } from "@/features/master-data";
 import {
   useDeleteOrganization,
   useOrganizations,
   type OrganizationRecord,
 } from "@/features/organization";
-import { useMasterData } from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 
 type EnterpriseRow = OrganizationRecord & {
@@ -63,7 +63,7 @@ const toEnterpriseRow = (
     businessLine: businessLineValue,
     businessLineText:
       enterprise.businessLines
-        ?.map((line) => line.code || line.name)
+        ?.map((line) => line.name)
         .filter(Boolean)
         .join(", ") || "-",
     primaryPhone: primaryContact?.phone || "-",

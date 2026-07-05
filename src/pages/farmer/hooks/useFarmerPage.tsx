@@ -1,13 +1,17 @@
-import { Badge, useToast, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  Badge,
+  useToast,
+  type Column,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 
+import { useMasterData } from "@/features/master-data";
 import {
   useDeleteOrganization,
   useOrganizations,
   type OrganizationRecord,
 } from "@/features/organization";
-import { useMasterData } from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import type { FarmerFormData } from "../types";
 
@@ -139,7 +143,7 @@ const toFarmerRow = (
       })) ?? [],
     businessLineText:
       farmer.businessLines
-        ?.map((line) => line.code || line.name)
+        ?.map((line) => line.name)
         .filter(Boolean)
         .join(", ") || "-",
     primaryPhone: primaryContact?.phone || "-",
@@ -195,7 +199,10 @@ export function useFarmerPage() {
   });
 
   const farmers = useMemo(
-    () => (organizationsQuery.items ?? []).map((farmer) => toFarmerRow(farmer, businessLine)),
+    () =>
+      (organizationsQuery.items ?? []).map((farmer) =>
+        toFarmerRow(farmer, businessLine),
+      ),
     [organizationsQuery.items, businessLine],
   );
 
@@ -247,7 +254,10 @@ export function useFarmerPage() {
       key: "primaryPhone",
       label: "Điện thoại",
       render: (_value, row) => (
-        <div className="max-w-[240px] space-y-1" title={formatContactTooltip(row)}>
+        <div
+          className="max-w-[240px] space-y-1"
+          title={formatContactTooltip(row)}
+        >
           <div className="truncate font-medium">{row.primaryPhone || "-"}</div>
           {(row.contacts?.length ?? 0) > 1 && (
             <div className="text-xs text-muted-foreground">
@@ -261,7 +271,10 @@ export function useFarmerPage() {
       key: "primaryEmail",
       label: "Email",
       render: (_value, row) => (
-        <div className="max-w-[240px] space-y-1" title={formatContactTooltip(row)}>
+        <div
+          className="max-w-[240px] space-y-1"
+          title={formatContactTooltip(row)}
+        >
           <div className="truncate font-medium">{row.primaryEmail || "-"}</div>
           {(row.contacts?.length ?? 0) > 1 && (
             <div className="text-xs text-muted-foreground">

@@ -15,8 +15,14 @@ import { ContactSelectorDialog } from "../ContactSelectorDialog";
 
 export function EnterpriseContactsStep() {
   const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
-  const { formData, newContact, setNewContact, addContact, removeContact } =
-    useEnterpriseFormContext();
+  const {
+    formData,
+    newContact,
+    setNewContact,
+    addContact,
+    removeContact,
+    isSubmitting,
+  } = useEnterpriseFormContext();
 
   const selectedContactLabel =
     newContact.name || newContact.phone || newContact.email
@@ -109,6 +115,7 @@ export function EnterpriseContactsStep() {
           </div>
 
           <Button
+            disabled={isSubmitting}
             onClick={addContact}
             className="h-11 w-full bg-primary font-bold text-white hover:bg-primary/90"
           >

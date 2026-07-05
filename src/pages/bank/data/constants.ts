@@ -2,6 +2,7 @@ import { BANK_LIST, BANK_LOGOS } from "./bank-constants";
 import type { BankFormData } from "../types/types";
 
 export const emptyBankFormData: BankFormData = {
+  bankId: "",
   bankName: "",
   accountNumber: "",
   accountHolder: "",

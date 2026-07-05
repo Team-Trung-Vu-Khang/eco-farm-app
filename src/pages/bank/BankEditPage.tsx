@@ -3,7 +3,7 @@ import {
   Button,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Save, Trash2, X } from "lucide-react";
+import { Loader2, Save, Trash2, X } from "lucide-react";
 import { BankFormCard } from "./components/BankFormCard";
 import { useBankFormPage } from "./hooks/useBankFormPage";
 
@@ -17,8 +17,42 @@ export default function BankEditPage() {
     deleteOpen,
     setDeleteOpen,
     goBack,
+    loading,
+    error,
+    isSubmitting,
+    isDeleting,
+    banks,
     notFound,
   } = useBankFormPage({ mode: "edit" });
+
+  if (loading) {
+    return (
+      <AdminLayout
+        title="Cập nhật tài khoản ngân hàng"
+        description="Đang tải dữ liệu chi tiết..."
+      >
+        <div className="flex h-96 items-center justify-center">
+          <div className="flex items-center gap-3 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            Đang tải dữ liệu chi tiết...
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminLayout
+        title="Cập nhật tài khoản ngân hàng"
+        description="Không thể tải dữ liệu chi tiết"
+      >
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          ⚠️ {error}
+        </div>
+      </AdminLayout>
+    );
+  }
 
   // Show not found if bank account doesn't exist
   if (notFound) {
@@ -50,15 +84,16 @@ export default function BankEditPage() {
             variant="outline"
             className="text-destructive hover:bg-destructive/10"
             onClick={() => setDeleteOpen(true)}
+            disabled={isSubmitting || isDeleting}
           >
             <Trash2 className="w-4 h-4 mr-2" />
             Xóa
           </Button>
-          <Button variant="outline" onClick={goBack}>
+          <Button variant="outline" onClick={goBack} disabled={isSubmitting || isDeleting}>
             <X className="w-4 h-4 mr-2" />
             Hủy bỏ
           </Button>
-          <Button onClick={handleSubmit}>
+          <Button onClick={handleSubmit} disabled={isSubmitting || isDeleting} loading={isSubmitting}>
             <Save className="w-4 h-4 mr-2" />
             Lưu lại
           </Button>
@@ -68,6 +103,7 @@ export default function BankEditPage() {
       <div className="max-w-2xl mx-auto">
         <BankFormCard
           formData={formData}
+          banks={banks}
           showStatusField
           onBankChange={handleBankChange}
           onFieldChange={updateField}
@@ -76,9 +112,10 @@ export default function BankEditPage() {
 
       <DeleteDialog
         open={deleteOpen}
-        onOpenChange={setDeleteOpen}
+        onOpenChange={(open) => !isDeleting && setDeleteOpen(open)}
         onConfirm={handleDelete}
         description={`Bạn có chắc chắn muốn xóa tài khoản ${formData.bankName} - ${formData.accountNumber}?`}
+        loading={isDeleting}
       />
     </AdminLayout>
   );

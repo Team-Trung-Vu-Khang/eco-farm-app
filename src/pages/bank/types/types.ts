@@ -1,6 +1,7 @@
-export type BankAccountStatus = "active" | "inactive";
+import type { BankAccountStatus } from "@/features/bank";
 
 export interface BankFormData {
+  bankId: number | string;
   bankName: string;
   accountNumber: string;
   accountHolder: string;
