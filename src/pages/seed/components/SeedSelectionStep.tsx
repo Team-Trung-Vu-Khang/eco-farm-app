@@ -206,8 +206,6 @@ export function SeedSelectionStep() {
                                 variety.avgYieldTo ?? null,
                               );
 
-                              console.log("variety", variety);
-
                               setValue("illustration", null);
                               if (varietyImageUrl) {
                                 setValue(
