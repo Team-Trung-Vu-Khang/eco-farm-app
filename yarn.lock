@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@Team-Trung-Vu-Khang/eco-shared-ui@^0.0.6-beta.28":
-  version "0.0.6-beta.28"
-  resolved "https://npm.pkg.github.com/download/@Team-Trung-Vu-Khang/eco-shared-ui/0.0.6-beta.28/63ad3849bcd953b2116ada5f1cc4ccef4edfa7f0#63ad3849bcd953b2116ada5f1cc4ccef4edfa7f0"
-  integrity sha512-RLhH3tQ3jV83DV7wZLrLYkbfpCREqPmx7lxPbWSsB7nkFP4wDMf9NHNim6s/B7Y2BBUTRTT3IMaNXbz1LaVf/Q==
+"@Team-Trung-Vu-Khang/eco-shared-ui@^0.0.6-beta.29":
+  version "0.0.6-beta.29"
+  resolved "https://npm.pkg.github.com/download/@Team-Trung-Vu-Khang/eco-shared-ui/0.0.6-beta.29/13bb05a5a64a6b6823890a69ef7d74d2c0b65487#13bb05a5a64a6b6823890a69ef7d74d2c0b65487"
+  integrity sha512-79ufWb0AmYD09A7IG5Mm9Zbj7G3qWZ1jbk0kG6sbVxu+WfDtkATcKdFcGSmqDWFdckbseHHEv+RrFTyNAYTp2g==
   dependencies:
     "@lexical/code" "^0.43.0"
     "@lexical/file" "^0.43.0"

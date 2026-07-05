@@ -1,7 +1,6 @@
-import { Route, Switch } from "wouter";
-import { lazy, Suspense } from "react";
+import { Route, Switch, useLocation } from "wouter";
+import { lazy, Suspense, useEffect } from "react";
 import { AppLoadingState } from "./components/AppLoadingState";
-const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"));
 const TerrainPage = lazy(() => import("./pages/terrain/TerrainPage"));
 
 const EnterprisePage = lazy(() => import("./pages/enterprise/EnterprisePage"));
@@ -397,10 +396,21 @@ const TreatmentReportPage = lazy(
 );
 const ProvincePage = lazy(() => import("./pages/province/ProvincePage"));
 const LandSpecsPage = lazy(() => import("./pages/land-specs/LandSpecsPage"));
+
+function RootRedirect() {
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    setLocation("/workspace", { replace: true });
+  }, [setLocation]);
+
+  return null;
+}
+
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
+      <Route path="/" component={RootRedirect} />
       <Route path="/terrain" component={TerrainPage} />
       <Route path="/land-specs" component={LandSpecsPage} />
       <Route path="/province" component={ProvincePage} />
