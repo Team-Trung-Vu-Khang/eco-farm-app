@@ -14,12 +14,19 @@ import {
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CreditCard } from "lucide-react";
-import { BANK_LIST } from "../data/constants";
 import BankLogo from "./BankLogo";
 import type { BankAccountStatus, BankFormData } from "../types/types";
 
+type BankOption = {
+  id: number | string;
+  shortName?: string;
+  name?: string;
+  logoUrl?: string;
+};
+
 interface BankFormCardProps {
   formData: BankFormData;
+  banks: BankOption[];
   showStatusField?: boolean;
   onBankChange: (value: string) => void;
   onFieldChange: <K extends keyof BankFormData>(
@@ -30,10 +37,13 @@ interface BankFormCardProps {
 
 export function BankFormCard({
   formData,
+  banks,
   showStatusField = false,
   onBankChange,
   onFieldChange,
 }: BankFormCardProps) {
+  const selectedBank = banks.find((bank) => String(bank.id) === String(formData.bankId));
+
   return (
     <Card>
       <CardHeader>
@@ -44,17 +54,17 @@ export function BankFormCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="bankName">Tên ngân hàng *</Label>
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <Select value={formData.bankName} onValueChange={onBankChange}>
+            <Label htmlFor="bankName">Tên ngân hàng *</Label>
+            <div className="flex gap-3">
+              <div className="flex-1">
+              <Select value={String(formData.bankId || "")} onValueChange={onBankChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn ngân hàng" />
                 </SelectTrigger>
                 <SelectContent className="max-h-56">
-                  {BANK_LIST.map((bank) => (
-                    <SelectItem key={bank.value} value={bank.value}>
-                      {bank.label}
+                  {banks.map((bank) => (
+                    <SelectItem key={bank.id} value={String(bank.id)}>
+                      {bank.shortName || bank.name || ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -62,7 +72,7 @@ export function BankFormCard({
             </div>
             {formData.logo && (
               <BankLogo
-                bankName={formData.bankName}
+                bankName={selectedBank?.shortName || selectedBank?.name || formData.bankName}
                 logo={formData.logo}
                 className="rounded-lg"
               />

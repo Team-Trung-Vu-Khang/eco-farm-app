@@ -7,6 +7,7 @@ export const bankAccountStatusSchema = z.enum([
 ]);
 
 export const bankCreateFormSchema = z.object({
+  bankId: z.string().trim().min(1, "Vui lòng chọn ngân hàng"),
   bankName: z.string().trim().min(1, "Vui lòng chọn ngân hàng"),
   accountNumber: z.string().trim().min(1, "Vui lòng nhập số tài khoản"),
   ownerType: z.string().trim().min(1, "Vui lòng chọn đơn vị sở hữu"),
@@ -22,6 +23,7 @@ export type BankCreateFormInput = z.input<typeof bankCreateFormSchema>;
 export type BankCreateFormValues = z.output<typeof bankCreateFormSchema>;
 
 export const defaultBankCreateFormValues: BankCreateFormValues = {
+  bankId: "",
   bankName: "",
   accountNumber: "",
   ownerType: "",

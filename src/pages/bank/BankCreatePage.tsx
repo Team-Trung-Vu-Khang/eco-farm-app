@@ -19,7 +19,12 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Save, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Controller, useForm, type SubmitHandler } from "react-hook-form";
+import {
+  Controller,
+  useForm,
+  useWatch,
+  type SubmitHandler,
+} from "react-hook-form";
 import { useLocation } from "wouter";
 
 import type { BankAccountCreateRequest } from "@/features/bank";
@@ -49,9 +54,12 @@ function mapFormValuesToPayload(
   values: BankCreateFormValues,
   banks: BankMasterDataRecord[],
 ): BankAccountCreateRequest {
-  const selectedBank = banks.find((bank) => bank.code === values.bankName);
+  const selectedBank =
+    banks.find((bank) => String(bank.id) === String(values.bankId)) ||
+    banks.find((bank) => bank.code === values.bankName);
 
   return {
+    bankId: selectedBank?.id || values.bankId,
     bankCode: selectedBank?.code || "",
     bankName: selectedBank?.shortName || selectedBank?.name || "",
     bin: selectedBank?.bin,
@@ -94,20 +102,18 @@ export default function BankCreatePage() {
   const {
     control,
     handleSubmit,
-    watch,
     setValue,
     formState: { errors, isSubmitting },
   } = form;
 
-  const selectedBankCode = watch("bankName");
-  const selectedOwnerId = watch("ownerId");
+  const selectedBankCode = useWatch({ control, name: "bankName" });
+  const selectedBankId = useWatch({ control, name: "bankId" });
+  const selectedOwnerId = useWatch({ control, name: "ownerId" });
   const selectedBank = useMemo(
-    () => banks.find((bank) => bank.code === selectedBankCode),
-    [banks, selectedBankCode],
-  );
-  const selectedOwner = useMemo(
-    () => banksQuery.items.find((item) => String(item.id) === selectedOwnerId),
-    [banksQuery.items, selectedOwnerId],
+    () =>
+      banks.find((bank) => String(bank.id) === String(selectedBankId)) ||
+      banks.find((bank) => bank.code === selectedBankCode),
+    [banks, selectedBankCode, selectedBankId],
   );
 
   const createBankAccount = useCreateBankAccount({
@@ -154,6 +160,20 @@ export default function BankCreatePage() {
     });
   };
 
+  const handleSelectBank = (bankId: string) => {
+    const selected = banks.find((bank) => String(bank.id) === bankId);
+    setValue("bankId", bankId, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+    setValue("bankName", selected?.code || selected?.shortName || selected?.name || "", {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+  };
+
   return (
     <AdminLayout
       title="Thêm mới tài khoản ngân hàng"
@@ -194,10 +214,10 @@ export default function BankCreatePage() {
                     <Controller
                       control={control}
                       name="bankName"
-                      render={({ field }) => (
+                      render={() => (
                         <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
+                          value={selectedBankId}
+                          onValueChange={handleSelectBank}
                         >
                           <SelectTrigger
                             id="bankName"
@@ -207,7 +227,7 @@ export default function BankCreatePage() {
                           </SelectTrigger>
                           <SelectContent className="max-h-56">
                             {banks.map((bank) => (
-                              <SelectItem key={bank.id} value={bank.code}>
+                              <SelectItem key={bank.id} value={String(bank.id)}>
                                 {bank.shortName || bank.name}
                               </SelectItem>
                             ))}

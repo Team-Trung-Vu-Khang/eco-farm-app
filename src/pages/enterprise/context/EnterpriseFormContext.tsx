@@ -1,29 +1,9 @@
-import {
-  createContext,
-  useContext,
-  type Dispatch,
-  type SetStateAction,
-} from "react";
-import type { Control } from "react-hook-form";
+import { createContext, useContext } from "react";
 import type { useEnterpriseCreateForm } from "../hooks/useEnterpriseCreateForm";
-import type {
-  EnterpriseFormInput,
-  EnterpriseFormValues,
-} from "../data/enterprise-form.schema";
-import type { EnterpriseFormData } from "../types";
 
-interface EnterpriseFormContextType {
-  formData: EnterpriseFormData;
-  setFormData: Dispatch<SetStateAction<EnterpriseFormData>>;
-  control: Control<EnterpriseFormInput>;
-  steps: ReturnType<typeof useEnterpriseCreateForm>["steps"];
-  showConfirmDialog: boolean;
-  setShowConfirmDialog: Dispatch<SetStateAction<boolean>>;
-  submitForm: () => void;
-  setLocation: ReturnType<typeof useEnterpriseCreateForm>["setLocation"];
-  handleComplete: ReturnType<typeof useEnterpriseCreateForm>["handleComplete"];
-  [key: string]: any;
-}
+export type EnterpriseFormContextType = ReturnType<
+  typeof useEnterpriseCreateForm
+>;
 
 export const EnterpriseFormContext =
   createContext<EnterpriseFormContextType | null>(null);

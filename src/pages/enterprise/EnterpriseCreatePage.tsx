@@ -53,6 +53,7 @@ export default function EnterpriseCreatePage() {
               onComplete={handleComplete}
               onCancel={() => setLocation("/enterprise")}
               completeLabel="Tạo mới"
+              loading={isSubmitting}
             />
           </CardContent>
         </Card>

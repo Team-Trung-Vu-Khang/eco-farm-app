@@ -59,6 +59,7 @@ export default function EnterpriseEditPage() {
               onComplete={handleComplete}
               onCancel={() => setLocation("/enterprise")}
               completeLabel="Cập nhật"
+              loading={isSubmitting}
             />
           </CardContent>
         </Card>

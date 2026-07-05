@@ -1,4 +1,3 @@
-import type { BankAccount } from "../../data/constants";
 import {
   Button,
   Card,
@@ -10,6 +9,8 @@ import {
   Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus, Search, Trash2 } from "lucide-react";
+import { useEnterpriseFormContext } from "../../context/EnterpriseFormContext";
+import type { BankAccount } from "../../data/constants";
 
 type EnterpriseBankAccountFormCardProps = {
   bankLabel: string;
@@ -28,7 +29,10 @@ export function EnterpriseBankAccountFormCard({
   onClearBank,
   onAdd,
 }: EnterpriseBankAccountFormCardProps) {
-  const hasBankSelected = Boolean(account.bankName || account.bin || account.logo);
+  const { isSubmitting } = useEnterpriseFormContext();
+  const hasBankSelected = Boolean(
+    account.bankName || account.bin || account.logo,
+  );
 
   return (
     <Card className="overflow-hidden border-primary/20 shadow-lg">
@@ -53,6 +57,7 @@ export function EnterpriseBankAccountFormCard({
                 type="button"
                 variant="outline"
                 onClick={onPickBank}
+                disabled={isSubmitting}
                 className="h-11 flex-1 justify-between border-primary/20 bg-muted/20 text-left font-normal hover:border-primary/40 hover:bg-primary/5"
               >
                 <span className="truncate">{bankLabel}</span>
@@ -64,6 +69,7 @@ export function EnterpriseBankAccountFormCard({
                   type="button"
                   variant="ghost"
                   onClick={onClearBank}
+                  disabled={isSubmitting}
                   className="h-11 px-3 text-muted-foreground"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
@@ -82,7 +88,9 @@ export function EnterpriseBankAccountFormCard({
             </Label>
             <Input
               value={account.accountNumber}
-              onChange={(event) => onChange({ accountNumber: event.target.value })}
+              onChange={(event) =>
+                onChange({ accountNumber: event.target.value })
+              }
               placeholder="Nhập số tài khoản"
               className="bg-muted/30 focus-visible:ring-primary"
             />
@@ -124,6 +132,7 @@ export function EnterpriseBankAccountFormCard({
         </div>
 
         <Button
+          disabled={isSubmitting}
           onClick={onAdd}
           className="h-12 w-full bg-primary font-bold text-white hover:bg-primary/90"
         >
