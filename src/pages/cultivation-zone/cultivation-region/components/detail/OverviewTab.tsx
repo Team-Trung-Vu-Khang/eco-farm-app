@@ -114,11 +114,7 @@ export const OverviewTab = ({
   };
 
   const focusScopeMapToCoordinates = (coordinates?: any[]) => {
-    console.log("start", coordinates);
-
     if (!coordinates?.length) return;
-
-    console.log("enter");
 
     const parsedCoords = coordinates
       .map(getCoordinatePair)
@@ -593,7 +589,6 @@ export const OverviewTab = ({
                           regionIndex.regionById.get(String(group.region.id)),
                         ) || getBoundaryPoints(group.region),
                       );
-                      console.log("callback");
                     }}
                   >
                     <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm">
