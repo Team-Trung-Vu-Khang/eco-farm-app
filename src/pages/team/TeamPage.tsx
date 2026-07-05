@@ -3,12 +3,8 @@ import {
   Button,
   DataTable,
   DeleteDialog,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ChevronDown, FileUser, Plus, Upload } from "lucide-react";
+import { Plus } from "lucide-react";
 import { ImportTeamDialog } from "../../components/team/ImportTeamDialog";
 import { teamColumns } from "./data/columns";
 import { useTeamPage } from "./hooks/useTeamPage";
@@ -43,25 +39,29 @@ export default function TeamPage() {
       title="Quản lý đội nhóm"
       description="Danh sách các đội / nhóm làm việc"
       actions={
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Thêm mới
-              <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[200px]">
-            <DropdownMenuItem onClick={goToCreate}>
-              <FileUser className="w-4 h-4 mr-2" />
-              Thêm thủ công
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setImportOpen(true)}>
-              <Upload className="w-4 h-4 mr-2" />
-              Nhập từ Excel
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        // <DropdownMenu>
+        //   <DropdownMenuTrigger asChild>
+        //     <Button>
+        //       <Plus className="w-4 h-4 mr-2" />
+        //       Thêm mới
+        //       <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
+        //     </Button>
+        //   </DropdownMenuTrigger>
+        //   <DropdownMenuContent align="end" className="w-[200px]">
+        //     <DropdownMenuItem onClick={goToCreate}>
+        //       <FileUser className="w-4 h-4 mr-2" />
+        //       Thêm thủ công
+        //     </DropdownMenuItem>
+        //     <DropdownMenuItem onClick={() => setImportOpen(true)}>
+        //       <Upload className="w-4 h-4 mr-2" />
+        //       Nhập từ Excel
+        //     </DropdownMenuItem>
+        //   </DropdownMenuContent>
+        // </DropdownMenu>
+        <Button onClick={goToCreate}>
+          <Plus className="w-4 h-4 mr-2" />
+          Thêm mới
+        </Button>
       }
     >
       <DataTable
