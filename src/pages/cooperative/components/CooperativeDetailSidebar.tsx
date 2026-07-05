@@ -1,21 +1,20 @@
 import {
+  Badge,
   Card,
+  CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardContent,
-  Badge,
   Separator,
-  Button,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  CreditCard,
-  User,
   Calendar,
+  CreditCard,
+  Globe,
+  Mail,
   MapPin,
   Phone,
-  Mail,
-  Globe,
+  User,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import type { CooperativeRow } from "../utils/cooperative.mapper";
@@ -24,7 +23,9 @@ interface CooperativeDetailSidebarProps {
   data: CooperativeRow;
 }
 
-export function CooperativeDetailSidebar({ data }: CooperativeDetailSidebarProps) {
+export function CooperativeDetailSidebar({
+  data,
+}: CooperativeDetailSidebarProps) {
   const [, setLocation] = useLocation();
 
   return (
@@ -107,7 +108,8 @@ export function CooperativeDetailSidebar({ data }: CooperativeDetailSidebarProps
             <div className="flex items-center gap-3">
               <User className="w-4 h-4 text-muted-foreground" />
               <span>
-                Đại diện: <span className="font-medium">{data.representative}</span>
+                Đại diện:{" "}
+                <span className="font-medium">{data.representative}</span>
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -165,20 +167,6 @@ export function CooperativeDetailSidebar({ data }: CooperativeDetailSidebarProps
           </div>
         </CardContent>
       </Card>
-      <div className="flex gap-2">
-        <Button
-          className="flex-1"
-          onClick={() => setLocation(`/cooperative/${data.id}/edit`)}
-        >
-          Chỉnh sửa
-        </Button>
-        <Button
-          variant="outline"
-          className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10"
-        >
-          Xóa
-        </Button>
-      </div>
     </div>
   );
 }
