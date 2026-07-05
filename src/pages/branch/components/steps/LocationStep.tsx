@@ -10,9 +10,16 @@ import {
   SelectValue,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { MapPin } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MFMap, MFMarker } from "react-map4d-map";
+import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
+
+import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
+import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
+import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
+
 import type { BranchFormData } from "../../types/types";
 
 interface AddressSuggestion {
@@ -39,11 +46,6 @@ interface AddressSuggestion {
     ward?: string;
     district?: string;
   };
-}
-
-interface Map4DMapLike {
-  setCenter?: (center: { lat: number; lng: number }) => void;
-  setZoom?: (zoom: number) => void;
 }
 
 interface LatLngLike {
@@ -77,10 +79,69 @@ interface LocationStepProps {
   updateFormData: (updates: Partial<BranchFormData>) => void;
 }
 
+const defaultLeafletIcon = L.icon({
+  iconUrl: defaultMarkerIconUrl,
+  iconRetinaUrl: defaultMarkerIcon2xUrl,
+  shadowUrl: defaultMarkerShadowUrl,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+L.Marker.prototype.options.icon = defaultLeafletIcon;
+
+const DEFAULT_CENTER: [number, number] = [10.7769, 106.7009];
+
+const MapCenterSync = ({ center }: { center: [number, number] }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setView(center, map.getZoom(), { animate: true });
+  }, [center, map]);
+
+  return null;
+};
+
+const MapClickHandler = ({
+  onPickLocation,
+}: {
+  onPickLocation: (lat: number, lon: number) => void;
+}) => {
+  useMapEvents({
+    click(event) {
+      onPickLocation(event.latlng.lat, event.latlng.lng);
+    },
+  });
+
+  return null;
+};
+
+const DraggableLocationMarker = ({
+  position,
+  onPickLocation,
+}: {
+  position: [number, number];
+  onPickLocation: (lat: number, lon: number) => void;
+}) => {
+  return (
+    <Marker
+      position={position}
+      draggable
+      eventHandlers={{
+        dragend: (event) => {
+          const marker = event.target as L.Marker;
+          const next = marker.getLatLng();
+          onPickLocation(next.lat, next.lng);
+        },
+      }}
+    />
+  );
+};
+
 export function LocationStep({ formData, updateFormData }: LocationStepProps) {
   const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
   const { toast } = useToast();
-  const mapRef = useRef<Map4DMapLike | null>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const [searchAddress, setSearchAddress] = useState("");
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -88,15 +149,15 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
     AddressSuggestion[]
   >([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [isMapReady, setIsMapReady] = useState(false);
-  const didInitCurrentLocationRef = useRef(false);
   const skipNextSearchRef = useRef(false);
+
   const safeLatitude = Number.isFinite(formData.latitude)
     ? formData.latitude
-    : 10.7769;
+    : DEFAULT_CENTER[0];
   const safeLongitude = Number.isFinite(formData.longitude)
     ? formData.longitude
-    : 106.7009;
+    : DEFAULT_CENTER[1];
+  const center: [number, number] = [safeLatitude, safeLongitude];
 
   const provincesQuery = useGeoProvinces({
     params: {
@@ -154,44 +215,30 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
     return value as LatLngLike;
   };
 
-  const extractLatLng = useCallback(
-    (source: unknown): { lat: number; lon: number } | null => {
-      const candidates: Array<LatLngLike | undefined> = [
-        toLatLngLike(toLatLngLike(source)?.location),
-        toLatLngLike(toLatLngLike(source)?.latLng),
-        toLatLngLike(toLatLngLike(source)?.geometry?.location),
-        toLatLngLike(source),
-      ];
+  const extractLatLng = useCallback((source: unknown): { lat: number; lon: number } | null => {
+    const candidates: Array<LatLngLike | undefined> = [
+      toLatLngLike(toLatLngLike(source)?.location),
+      toLatLngLike(toLatLngLike(source)?.latLng),
+      toLatLngLike(toLatLngLike(source)?.geometry?.location),
+      toLatLngLike(source),
+    ];
 
-      for (const candidate of candidates) {
-        const latRaw = candidate?.lat ?? candidate?.latitude;
-        const lonRaw =
-          candidate?.lng ??
-          candidate?.lon ??
-          candidate?.longitude ??
-          candidate?.long;
-        const lat = Number(latRaw);
-        const lon = Number(lonRaw);
-        if (Number.isFinite(lat) && Number.isFinite(lon)) {
-          return { lat, lon };
-        }
+    for (const candidate of candidates) {
+      const latRaw = candidate?.lat ?? candidate?.latitude;
+      const lonRaw =
+        candidate?.lng ??
+        candidate?.lon ??
+        candidate?.longitude ??
+        candidate?.long;
+      const lat = Number(latRaw);
+      const lon = Number(lonRaw);
+      if (Number.isFinite(lat) && Number.isFinite(lon)) {
+        return { lat, lon };
       }
-
-      return null;
-    },
-    [],
-  );
-
-  const moveMapTo = (lat: number, lon: number) => {
-    const map = mapRef.current;
-    if (!map) return;
-    if (typeof map.setCenter === "function") {
-      map.setCenter({ lat, lng: lon });
     }
-    if (typeof map.setZoom === "function") {
-      map.setZoom(15);
-    }
-  };
+
+    return null;
+  }, []);
 
   const normalizeMap4dSuggestion = useCallback(
     (
@@ -221,6 +268,16 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
     [extractLatLng],
   );
 
+  const handlePickLocation = useCallback(
+    (lat: number, lon: number) => {
+      updateFormData({
+        latitude: lat,
+        longitude: lon,
+      });
+    },
+    [updateFormData],
+  );
+
   const handleSearchAddress = useCallback(
     async (query: string) => {
       if (!query || query.length < 3) {
@@ -231,11 +288,6 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
       if (!MAP4D_ACCESS_KEY) {
         setAddressSuggestions([]);
         setShowSuggestions(false);
-        toast({
-          title: "Thiếu cấu hình Map4D",
-          description: "Chưa có VITE_MAP4D_ACCESS_KEY trong file .env",
-          variant: "destructive",
-        });
         return;
       }
       try {
@@ -249,22 +301,12 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
         if (!response.ok) {
           setAddressSuggestions([]);
           setShowSuggestions(false);
-          toast({
-            title: "Lỗi tìm kiếm",
-            description: "Map4D Autosuggest không phản hồi.",
-            variant: "destructive",
-          });
           return;
         }
         const data: Map4DAutosuggestResponse = await response.json();
         if (data?.code !== "ok") {
           setAddressSuggestions([]);
           setShowSuggestions(false);
-          toast({
-            title: "Lỗi tìm kiếm",
-            description: data?.message || "Map4D Autosuggest trả về lỗi.",
-            variant: "destructive",
-          });
           return;
         }
 
@@ -275,12 +317,6 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
 
         setAddressSuggestions(suggestions);
         setShowSuggestions(suggestions.length > 0);
-        if (suggestions.length === 0) {
-          toast({
-            title: "Không tìm thấy",
-            description: "Không có gợi ý địa chỉ phù hợp.",
-          });
-        }
       } catch (e) {
         console.error(e);
         setAddressSuggestions([]);
@@ -316,30 +352,38 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
         return;
       }
       if (searchAddress && isInputFocused) handleSearchAddress(searchAddress);
-    }, 500);
-    return () => clearTimeout(timer);
+    }, 400);
+    return () => window.clearTimeout(timer);
   }, [searchAddress, isInputFocused, handleSearchAddress]);
 
   useEffect(() => {
-    if (didInitCurrentLocationRef.current) return;
-    if (!navigator.geolocation) {
-      didInitCurrentLocationRef.current = true;
+    if (skipNextSearchRef.current) {
+      skipNextSearchRef.current = false;
       return;
     }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        updateFormData({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-        });
-        didInitCurrentLocationRef.current = true;
-      },
-      () => {
-        didInitCurrentLocationRef.current = true;
-      },
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
-  }, [updateFormData]);
+
+    const current = [formData.address, formData.ward, formData.district, formData.city]
+      .filter(Boolean)
+      .join(", ");
+    setSearchAddress(current);
+  }, [formData.address, formData.city, formData.district, formData.ward]);
+
+  useEffect(() => {
+    if (navigator.geolocation && !Number.isFinite(formData.latitude)) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          updateFormData({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          });
+        },
+        () => {
+          // Ignore geolocation errors and keep the default map position.
+        },
+        { enableHighAccuracy: true, timeout: 10000 },
+      );
+    }
+  }, [formData.latitude, updateFormData]);
 
   const handleSelectAddress = (suggestion: AddressSuggestion) => {
     const address = suggestion.address || {};
@@ -372,7 +416,6 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
       city: address.city || address.province || address.state || "",
     });
 
-    moveMapTo(suggestion.lat, suggestion.lon);
     skipNextSearchRef.current = true;
     setSearchAddress(selectedAddress);
     setShowSuggestions(false);
@@ -387,11 +430,7 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          moveMapTo(pos.coords.latitude, pos.coords.longitude);
-          updateFormData({
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-          });
+          handlePickLocation(pos.coords.latitude, pos.coords.longitude);
           toast({ title: "Thành công", description: "Đã lấy vị trí hiện tại" });
         },
         () =>
@@ -404,41 +443,20 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
     }
   };
 
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    moveMapTo(safeLatitude, safeLongitude);
-  }, [safeLatitude, safeLongitude]);
-
-  useEffect(() => {
-    if (!MAP4D_ACCESS_KEY || isMapReady) return;
-    const timer = window.setTimeout(() => {
-      if (!isMapReady) {
-        toast({
-          title: "Map4D chưa sẵn sàng",
-          description:
-            "Kiểm tra lại Access Key và restart dev server sau khi sửa .env.",
-          variant: "destructive",
-        });
-      }
-    }, 4000);
-    return () => window.clearTimeout(timer);
-  }, [MAP4D_ACCESS_KEY, isMapReady, toast]);
-
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
       <div className="space-y-4">
-        <div className="flex items-center gap-2 mb-4">
-          <MapPin className="w-5 h-5 text-primary" />
+        <div className="mb-4 flex items-center gap-2">
+          <MapPin className="h-5 w-5 text-primary" />
           <h3 className="font-semibold">Tìm kiếm địa chỉ trên bản đồ</h3>
         </div>
 
         <div className="relative" ref={searchContainerRef}>
           <Input
             value={searchAddress}
-            onChange={(e) => {
-              setSearchAddress(e.target.value);
-              if (!e.target.value) setShowSuggestions(false);
+            onChange={(event) => {
+              setSearchAddress(event.target.value);
+              if (!event.target.value) setShowSuggestions(false);
             }}
             placeholder="Nhập địa chỉ để tìm kiếm..."
             onFocus={() => {
@@ -458,18 +476,18 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
           />
 
           {showSuggestions && addressSuggestions.length > 0 && (
-            <div className="absolute z-[99999] w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+            <div className="absolute z-[99999] mt-1 max-h-60 w-full overflow-y-auto rounded-lg border bg-white shadow-lg">
               {addressSuggestions.map((suggestion, index) => (
                 <div
                   key={index}
-                  className="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0 transition-colors"
-                  onMouseDown={(e) => e.preventDefault()}
+                  className="cursor-pointer border-b px-4 py-3 transition-colors last:border-b-0 hover:bg-gray-100"
+                  onMouseDown={(event) => event.preventDefault()}
                   onClick={() => handleSelectAddress(suggestion)}
                 >
                   <div className="flex items-start gap-2">
-                    <MapPin className="w-4 h-4 text-primary mt-1 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                    <MapPin className="mt-1 h-4 w-4 shrink-0 text-primary" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-gray-900">
                         {suggestion.display_name}
                       </p>
                     </div>
@@ -480,57 +498,22 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
           )}
         </div>
 
-        <div className="h-96 w-full rounded-lg overflow-hidden border">
-          {!MAP4D_ACCESS_KEY ? (
-            <div className="h-full w-full grid place-items-center bg-slate-50 text-sm text-slate-500">
-              Thiếu VITE_MAP4D_ACCESS_KEY trong .env
-            </div>
-          ) : (
-            <MFMap
-              accessKey={MAP4D_ACCESS_KEY}
-              version="2.5"
-              options={{
-                center: { lat: safeLatitude, lng: safeLongitude },
-                zoom: 15,
-                controls: true,
-              }}
-              onMapReady={(map) => {
-                mapRef.current = map;
-                setIsMapReady(true);
-                window.setTimeout(() => {
-                  window.dispatchEvent(new Event("resize"));
-                  if (typeof map?.setCenter === "function") {
-                    map.setCenter({ lat: safeLatitude, lng: safeLongitude });
-                  }
-                  if (typeof map?.setZoom === "function") {
-                    map.setZoom(15);
-                  }
-                }, 150);
-              }}
-              onClickLocation={(event: unknown) => {
-                const point = extractLatLng(event);
-                if (point) {
-                  updateFormData({ latitude: point.lat, longitude: point.lon });
-                }
-              }}
-            >
-              <MFMarker
-                position={{ lat: safeLatitude, lng: safeLongitude }}
-                draggable
-                title="Vị trí chi nhánh"
-                label={""}
-                onDragEnd={(event: unknown) => {
-                  const point = extractLatLng(event);
-                  if (point) {
-                    updateFormData({
-                      latitude: point.lat,
-                      longitude: point.lon,
-                    });
-                  }
-                }}
-              />
-            </MFMap>
-          )}
+        <div className="h-96 w-full overflow-hidden rounded-lg border">
+          <MapContainer
+            center={center}
+            zoom={15}
+            className="h-full w-full"
+            zoomControl
+            scrollWheelZoom
+          >
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+            <MapCenterSync center={center} />
+            <MapClickHandler onPickLocation={handlePickLocation} />
+            <DraggableLocationMarker
+              position={center}
+              onPickLocation={handlePickLocation}
+            />
+          </MapContainer>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -550,19 +533,19 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
           className="w-full"
           type="button"
         >
-          <MapPin className="w-4 h-4 mr-2" /> Lấy vị trí hiện tại
+          <MapPin className="mr-2 h-4 w-4" /> Lấy vị trí hiện tại
         </Button>
       </div>
 
-      <div className="pt-4 border-t">
-        <h3 className="font-semibold mb-4">Địa chỉ chi tiết</h3>
+      <div className="border-t pt-4">
+        <h3 className="mb-4 font-semibold">Địa chỉ chi tiết</h3>
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="address">Địa chỉ</Label>
             <Input
               id="address"
               value={formData.address}
-              onChange={(e) => updateFormData({ address: e.target.value })}
+              onChange={(event) => updateFormData({ address: event.target.value })}
               placeholder="Số nhà, tên đường"
             />
           </div>
@@ -571,12 +554,12 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
               <Label htmlFor="city">Tỉnh / Thành phố</Label>
               <Select
                 value={selectedProvince?.code || ""}
-                onValueChange={(val) => {
+                onValueChange={(value) => {
                   const province = provincesQuery.items.find(
-                    (item) => item.code === val,
+                    (item) => item.code === value,
                   );
                   updateFormData({
-                    city: province?.fullName || province?.name || val,
+                    city: province?.fullName || province?.name || value,
                     ward: "",
                   });
                 }}
@@ -597,11 +580,11 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
               <Label htmlFor="ward">Phường / Xã</Label>
               <Select
                 value={selectedWard?.code || ""}
-                onValueChange={(val) => {
-                  const ward = wardOptions.find((item) => item.code === val);
+                onValueChange={(value) => {
+                  const ward = wardOptions.find((item) => item.code === value);
                   updateFormData({
-                    ward: ward?.name || val,
-                    district: ward?.name || val,
+                    ward: ward?.name || value,
+                    district: ward?.name || value,
                   });
                 }}
               >

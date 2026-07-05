@@ -4,9 +4,10 @@ import type { BranchFormData } from "../../hooks/useBranchForm";
 
 interface ConfirmStepProps {
   formData: BranchFormData;
+  enterpriseName: string;
 }
 
-export function ConfirmStep({ formData }: ConfirmStepProps) {
+export function ConfirmStep({ formData, enterpriseName }: ConfirmStepProps) {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="bg-muted/30 p-6 rounded-lg space-y-6">
@@ -25,7 +26,7 @@ export function ConfirmStep({ formData }: ConfirmStepProps) {
             </div>
             <div className="flex justify-between col-span-2">
               <span className="text-muted-foreground">Đơn vị chủ quản:</span>
-              <span className="font-medium">{formData.enterpriseName}</span>
+              <span className="font-medium">{enterpriseName || "-"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">MST:</span>

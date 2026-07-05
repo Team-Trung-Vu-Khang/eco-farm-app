@@ -15,6 +15,7 @@ import {
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft } from "lucide-react";
+import { FormProvider } from "react-hook-form";
 
 import { BankingStep } from "./components/steps/BankingStep";
 import { BasicInfoStep } from "./components/steps/BasicInfoStep";
@@ -25,6 +26,7 @@ import { useBranchForm } from "./hooks/useBranchForm";
 
 export default function BranchFormPage() {
   const {
+    form,
     formData,
     updateFormData,
     enterprises,
@@ -36,19 +38,16 @@ export default function BranchFormPage() {
     handleCancel,
   } = useBranchForm();
 
+  const selectedEnterprise = enterprises.find(
+    (enterprise) => enterprise.id.toString() === formData.enterpriseId,
+  );
+
   const steps: Step[] = [
     {
       id: "basic",
       title: "Thông tin cơ bản",
       description: "Tên, mã, đơn vị",
-      content: (
-        <BasicInfoStep
-          formData={formData}
-          updateFormData={updateFormData}
-          enterprises={enterprises}
-          isEdit={isEdit}
-        />
-      ),
+      content: <BasicInfoStep enterprises={enterprises} isEdit={isEdit} />,
       isValid:
         formData.name.length > 0 &&
         formData.code.length > 0 &&
@@ -82,7 +81,12 @@ export default function BranchFormPage() {
       id: "confirm",
       title: "Xác nhận",
       description: "Kiểm tra lại thông tin",
-      content: <ConfirmStep formData={formData} />,
+      content: (
+        <ConfirmStep
+          formData={formData}
+          enterpriseName={selectedEnterprise?.name || formData.enterpriseName}
+        />
+      ),
     },
   ];
 
@@ -91,7 +95,12 @@ export default function BranchFormPage() {
       title={isEdit ? "Chỉnh sửa Chi nhánh" : "Tạo mới Chi nhánh"}
       description="Điền thông tin theo từng bước để tạo hoặc cập nhật chi nhánh"
       actions={[
-        <Button variant="outline" onClick={handleCancel} className="gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleCancel}
+          className="gap-2"
+        >
           <ArrowLeft className="h-4 w-4" />
           Quay lại
         </Button>,
@@ -99,12 +108,14 @@ export default function BranchFormPage() {
     >
       <Card>
         <CardContent className="p-6">
-          <StepperForm
-            steps={steps}
-            onComplete={handleComplete}
-            onCancel={handleCancel}
-            completeLabel={isEdit ? "Cập nhật" : "Tạo mới"}
-          />
+          <FormProvider {...form}>
+            <StepperForm
+              steps={steps}
+              onComplete={handleComplete}
+              onCancel={handleCancel}
+              completeLabel={isEdit ? "Cập nhật" : "Tạo mới"}
+            />
+          </FormProvider>
         </CardContent>
       </Card>
 
