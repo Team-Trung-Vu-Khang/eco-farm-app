@@ -1,5 +1,10 @@
 import type { MasterDataStatus } from "@/features/master-data/types/master-data.type";
 
+export type OrganizationUnitType =
+  | "enterprise"
+  | "farm_household"
+  | "cooperative";
+
 export interface EnterpriseType {
   id: number;
   code: string;
@@ -7,6 +12,7 @@ export interface EnterpriseType {
   description: string;
   status: MasterDataStatus;
   createdAt: string;
+  type?: OrganizationUnitType;
 }
 
 export type CategoryType = "organization" | "business";

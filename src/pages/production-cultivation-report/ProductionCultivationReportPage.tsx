@@ -1,10 +1,3 @@
-import { useMemo, useState } from "react";
-import { FileSpreadsheet, FileText } from "lucide-react";
-import {
-  AdminLayout,
-  Button,
-  useToast,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useCultivationRegionStore from "@/stores/useCultivationRegionStore";
 import usePlanStore from "@/stores/usePlanStore";
 import useProductionCultivationReportStore from "@/stores/useProductionCultivationReportStore";
@@ -12,6 +5,13 @@ import useRegionStore from "@/stores/useRegionStore";
 import useSeasonStore from "@/stores/useSeasonStore";
 import useTaskStore from "@/stores/useTaskStore";
 import { useTreatmentStore } from "@/stores/useTreatmentStore";
+import {
+  AdminLayout,
+  Button,
+  useToast,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { FileText } from "lucide-react";
+import { useMemo, useState } from "react";
 import { ReportHistoryPanel } from "./components/ReportHistoryPanel";
 import {
   EmptyReportState,
@@ -250,14 +250,6 @@ export default function ProductionCultivationReportPage() {
       description="Tổng hợp chỉ tiêu điều hành từ kế hoạch, công việc, mùa vụ và vùng canh tác"
       actions={
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={handleExportExcel}
-            disabled={!activeResult}
-          >
-            <FileSpreadsheet className="w-4 h-4 mr-2" />
-            Xuất Excel
-          </Button>
           <Button
             variant="outline"
             onClick={handleExportPdf}

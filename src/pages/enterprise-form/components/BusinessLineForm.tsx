@@ -1,16 +1,16 @@
 import { Input, Label, Textarea } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
-import type { EnterpriseFormInput } from "../data/enterprise-form.schema";
+import type { BusinessLineFormInput } from "../data/business-line.schema";
 
-interface EnterpriseTypeFormProps {
-  register: UseFormRegister<EnterpriseFormInput>;
-  errors: FieldErrors<EnterpriseFormInput>;
+interface BusinessLineFormProps {
+  register: UseFormRegister<BusinessLineFormInput>;
+  errors: FieldErrors<BusinessLineFormInput>;
 }
 
-export const EnterpriseTypeForm = ({
+export const BusinessLineForm = ({
   register,
   errors,
-}: EnterpriseTypeFormProps) => {
+}: BusinessLineFormProps) => {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -20,7 +20,7 @@ export const EnterpriseTypeForm = ({
           </Label>
           <Input
             id="code"
-            placeholder="VD: HTX, SX, CB..."
+            placeholder="VD: SX, CB, TM..."
             {...register("code")}
           />
           {errors.code ? (
@@ -33,7 +33,7 @@ export const EnterpriseTypeForm = ({
           </Label>
           <Input
             id="name"
-            placeholder="VD: Hợp tác xã, Sản xuất..."
+            placeholder="VD: Sản xuất, Chế biến..."
             {...register("name")}
           />
           {errors.name ? (

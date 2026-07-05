@@ -52,6 +52,8 @@ export default function CertificatePage() {
     handleSubmitOrg,
     handleDelete,
     handleConfirmDelete,
+    standardsPending,
+    organizationsPending,
   } = useCertificate();
 
   return (
@@ -131,6 +133,7 @@ export default function CertificatePage() {
         editItem={editStandard}
         organizations={organizations}
         onSubmit={handleSubmitStandard}
+        loading={standardsPending}
       />
 
       <OrganizationFormDialog
@@ -138,6 +141,7 @@ export default function CertificatePage() {
         onOpenChange={setOrgFormOpen}
         editItem={editOrg}
         onSubmit={handleSubmitOrg}
+        loading={organizationsPending}
       />
 
       <DeleteDialog

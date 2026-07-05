@@ -253,6 +253,7 @@ const TaskPage = lazy(() => import("./pages/task/TaskPage"));
 const TaskCreatePage = lazy(() => import("./pages/task/TaskCreatePage"));
 const TaskEditPage = lazy(() => import("./pages/task/TaskEditPage"));
 const SettingsPage = lazy(() => import("./pages/settings/SettingsPage"));
+const WorkspacePage = lazy(() => import("./pages/workspace/WorkspacePage"));
 const RegionDetailPage = lazy(
   () => import("./pages/region-chart/region-distribution/RegionDetailPage"),
 );
@@ -699,6 +700,7 @@ function Router() {
       <Route path="/task" component={TaskPage} />
       <Route path="/task/create" component={TaskCreatePage} />
       <Route path="/task/:id/edit" component={TaskEditPage} />
+      <Route path="/workspace" component={WorkspacePage} />
       <Route path="/settings" component={SettingsPage} />
       <Route path="/treatment" component={TreatmentPage} />
       <Route path="/treatment/create" component={CreateTreatmentPage} />

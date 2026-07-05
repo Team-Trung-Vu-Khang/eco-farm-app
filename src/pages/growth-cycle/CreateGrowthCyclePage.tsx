@@ -12,11 +12,10 @@ import {
   Button,
   Card,
   CardContent,
-  Form,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useForm, FormProvider } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { GrowthCycleSteps } from "./components/GrowthCycleSteps";
 import { useCreateGrowthCycleForm } from "./hooks/useCreateGrowthCycleForm";
 import {
@@ -71,32 +70,29 @@ export default function CreateGrowthCyclePage() {
       isDev={true}
       title="Thêm mới chu kỳ sinh trưởng"
       description="Thiết lập các giai đoạn phát triển cho cây trồng"
-    >
-      <div className="mb-6">
+      actions={[
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           className="-ml-2 text-muted-foreground hover:text-foreground"
           onClick={() => setLocation("/growth-cycle")}
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại
-        </Button>
-      </div>
-
+        </Button>,
+      ]}
+    >
       <Card>
         <CardContent className="p-6">
           <FormProvider {...form}>
-            <Form {...form}>
-              <GrowthCycleSteps
-                schema={growthCycleFormSchema}
-                varieties={varieties}
-                crops={crops}
-                onComplete={() => setConfirmOpen(true)}
-                onCancel={() => setLocation("/growth-cycle")}
-                isSubmitting={isSubmitting}
-              />
-            </Form>
+            <GrowthCycleSteps
+              schema={growthCycleFormSchema}
+              varieties={varieties}
+              crops={crops}
+              onComplete={() => setConfirmOpen(true)}
+              onCancel={() => setLocation("/growth-cycle")}
+              isSubmitting={isSubmitting}
+            />
           </FormProvider>
         </CardContent>
       </Card>

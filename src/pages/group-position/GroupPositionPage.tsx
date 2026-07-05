@@ -7,8 +7,8 @@ import {
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
-import { POSITION_GROUP_STATUS_OPTIONS } from "./data/constants";
 import { PositionGroupForm } from "./components/PositionGroupForm";
+import { POSITION_GROUP_STATUS_OPTIONS } from "./data/constants";
 import { useGroupPositionForm } from "./hooks/useGroupPositionForm";
 import type { PositionGroup } from "./types";
 
@@ -79,6 +79,7 @@ export default function GroupPositionPage() {
     handleDelete,
     handleSubmit,
     handleConfirmDelete,
+    isPending,
   } = useGroupPositionForm();
 
   return (
@@ -89,7 +90,7 @@ export default function GroupPositionPage() {
       actions={
         <Button onClick={handleAdd}>
           <Plus className="w-4 h-4 mr-2" />
-          Thêm nhóm mới
+          Thêm mới
         </Button>
       }
     >
@@ -129,12 +130,14 @@ export default function GroupPositionPage() {
         onOpenChange={setFormOpen}
         editItem={editItem}
         onSubmit={handleSubmit}
+        loading={isPending}
       />
 
       <DeleteDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
+        loading={isPending}
         description="Bạn có chắc chắn muốn xóa nhóm chức vụ này? Hành động này không thể hoàn tác."
       />
     </AdminLayout>

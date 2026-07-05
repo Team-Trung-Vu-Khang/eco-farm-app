@@ -36,6 +36,7 @@ interface StandardFormDialogProps {
   editItem: Certificate | null;
   organizations: CertificationOrganization[];
   onSubmit: (data: StandardFormValues) => Promise<void> | void;
+  loading?: boolean;
 }
 
 function createEmptyDocument(): StandardDocumentFormInput {
@@ -314,6 +315,7 @@ export function StandardFormDialog({
   editItem,
   organizations,
   onSubmit,
+  loading = false,
 }: StandardFormDialogProps) {
   const defaultValues = useMemo(() => buildDefaultValues(editItem), [editItem]);
   const { uploadFile } = useFileUpload();
@@ -334,7 +336,7 @@ export function StandardFormDialog({
     reset,
     setValue,
     watch,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<StandardFormInput, unknown, StandardFormValues>({
     defaultValues,
     resolver: zodResolver(standardFormSchema),
@@ -499,6 +501,7 @@ export function StandardFormDialog({
           editItem ? "Chỉnh sửa loại tiêu chuẩn" : "Thêm loại tiêu chuẩn mới"
         }
         onSubmit={handleFormSubmit}
+        loading={loading || isSubmitting}
         size="xl"
       >
         <div className="max-h-[70vh] overflow-y-auto px-1 flex flex-col gap-6">

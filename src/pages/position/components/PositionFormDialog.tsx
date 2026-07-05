@@ -33,6 +33,7 @@ interface PositionFormDialogProps {
   editItem: PositionItem | null;
   groupOptions: { label: string; value: string }[];
   onSubmit: (data: PositionFormValues) => void;
+  loading?: boolean;
 }
 
 function normalizeStatus(
@@ -85,6 +86,7 @@ export function PositionFormDialog({
   editItem,
   groupOptions,
   onSubmit,
+  loading = false,
 }: PositionFormDialogProps) {
   const { toast } = useToast();
   const positionDetailQuery = useMasterDataById(
@@ -111,7 +113,7 @@ export function PositionFormDialog({
     handleSubmit: handleRHFSubmit,
     clearErrors,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<PositionFormInput, unknown, PositionFormValues>({
     defaultValues: resolvedDefaultValues,
     resolver: zodResolver(positionFormSchema),
@@ -203,6 +205,7 @@ export function PositionFormDialog({
       title={editItem ? "Chỉnh sửa chức vụ" : "Thêm chức vụ mới"}
       onSubmit={handleDialogSubmit}
       size="xl"
+      loading={loading || isSubmitting}
     >
       <div className="space-y-4 max-h-[70dvh] overflow-y-auto px-1">
         <div className="grid grid-cols-2 gap-4">

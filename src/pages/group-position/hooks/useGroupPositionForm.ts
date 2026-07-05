@@ -71,6 +71,10 @@ export function useGroupPositionForm() {
   const createPositionGroup = useCreateMasterData("position-groups");
   const updatePositionGroup = useUpdateMasterData("position-groups");
   const deletePositionGroup = useDeleteMasterData("position-groups");
+  const isPending =
+    createPositionGroup.isPending ||
+    updatePositionGroup.isPending ||
+    deletePositionGroup.isPending;
 
   const handleSearch = (value: string) => {
     setSearch(value);
@@ -168,5 +172,6 @@ export function useGroupPositionForm() {
     handleDelete,
     handleSubmit,
     handleConfirmDelete,
+    isPending,
   };
 }

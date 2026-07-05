@@ -5,9 +5,9 @@ import {
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
-import { useBankDirectory } from "./hooks/useBankDirectory";
 import BankFormDialog from "./components/BankFormDialog";
 import { bankDirectoryColumns } from "./data/columns";
+import { useBankDirectory } from "./hooks/useBankDirectory";
 
 export default function BankDirectoryPage() {
   const {
@@ -18,6 +18,7 @@ export default function BankDirectoryPage() {
     pageSize,
     currentIndex,
     setSearch,
+    handleFilterChange,
     setPageSize,
     setCurrentIndex,
     formData,
@@ -36,6 +37,16 @@ export default function BankDirectoryPage() {
     handleSubmit,
     handleConfirmDelete,
   } = useBankDirectory();
+
+  const bankDirectoryStatusOptions = [
+    { value: "active", label: "Hoạt động" },
+    { value: "inactive", label: "Không hoạt động" },
+    { value: "archived", label: "Đã lưu trữ" },
+  ];
+  const booleanFilterOptions = [
+    { value: "true", label: "Có" },
+    { value: "false", label: "Không" },
+  ];
 
   return (
     <AdminLayout
@@ -59,11 +70,29 @@ export default function BankDirectoryPage() {
           data={data}
           searchable
           searchPlaceholder="Tìm kiếm tên, SWIFT code, BIC..."
+          filters={[
+            {
+              key: "status",
+              label: "Trạng thái",
+              options: bankDirectoryStatusOptions,
+            },
+            {
+              key: "transferSupported",
+              label: "Chuyển khoản",
+              options: booleanFilterOptions,
+            },
+            {
+              key: "lookupSupported",
+              label: "Tra cứu",
+              options: booleanFilterOptions,
+            },
+          ]}
           pageSize={pageSize}
           currentIndex={currentIndex}
           totalElements={response?.totalElements}
           totalPages={response?.totalPages}
           onSearch={setSearch}
+          onFilterChange={handleFilterChange}
           onPageSize={setPageSize}
           onIndexChange={setCurrentIndex}
           onEdit={handleEdit}

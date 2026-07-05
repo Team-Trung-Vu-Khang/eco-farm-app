@@ -20,6 +20,7 @@ interface OrganizationFormDialogProps {
   onOpenChange: (open: boolean) => void;
   editItem: CertificationOrganization | null;
   onSubmit: (data: OrganizationFormValues) => Promise<void> | void;
+  loading?: boolean;
 }
 
 function buildDefaultValues(
@@ -59,6 +60,7 @@ export function OrganizationFormDialog({
   onOpenChange,
   editItem,
   onSubmit,
+  loading = false,
 }: OrganizationFormDialogProps) {
   const defaultValues = useMemo(
     () => buildDefaultValues(editItem),
@@ -69,7 +71,7 @@ export function OrganizationFormDialog({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<OrganizationFormInput, unknown, OrganizationFormValues>({
     defaultValues,
     resolver: zodResolver(organizationFormSchema),
@@ -81,7 +83,7 @@ export function OrganizationFormDialog({
     }
   }, [defaultValues, open, reset]);
 
-  const handleFormSubmit = handleSubmit((values) => onSubmit(values));
+  const handleFormSubmit = handleSubmit(async (values) => onSubmit(values));
 
   return (
     <FormDialog
@@ -89,6 +91,7 @@ export function OrganizationFormDialog({
       onOpenChange={onOpenChange}
       title={editItem ? "Chỉnh sửa tổ chức" : "Thêm tổ chức mới"}
       onSubmit={handleFormSubmit}
+      loading={loading || isSubmitting}
     >
       <div className="space-y-4">
         <input type="hidden" {...register("status")} />

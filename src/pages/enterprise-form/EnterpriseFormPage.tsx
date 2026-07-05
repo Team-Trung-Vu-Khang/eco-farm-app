@@ -10,35 +10,33 @@ import {
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Briefcase, Building2, Plus } from "lucide-react";
-import { EnterpriseTypeForm } from "./components/EnterpriseTypeForm";
-import { ENTERPRISE_COLUMNS } from "./data/constants";
-import { useEnterpriseForm } from "./hooks/useEnterpriseForm";
+import { BusinessLineForm } from "./components/BusinessLineForm";
+import { OrganizationTypeForm } from "./components/OrganizationTypeForm";
+import {
+  BUSINESS_COLUMNS,
+  ORGANIZATION_COLUMNS,
+} from "./data/constants";
+import { useBusinessLinesForm } from "./hooks/useBusinessLinesForm";
+import { useOrganizationTypesForm } from "./hooks/useOrganizationTypesForm";
 import type { CategoryType } from "./types";
+import { useState } from "react";
+
+const BUSINESS_STATUS_OPTIONS = [
+  { value: "active", label: "Hoạt động" },
+  { value: "inactive", label: "Ngừng hoạt động" },
+  { value: "archived", label: "Đã lưu trữ" },
+] as const;
+
+const ORGANIZATION_STATUS_OPTIONS = [
+  { value: "active", label: "Hoạt động" },
+  { value: "inactive", label: "Ngừng hoạt động" },
+  { value: "archived", label: "Đã lưu trữ" },
+] as const;
 
 const EnterpriseFormPage = () => {
-  const {
-    activeTab,
-    setActiveTab,
-    organizationData,
-    businessData,
-    businessLoading,
-    setBusinessSearchQuery,
-    formOpen,
-    setFormOpen,
-    deleteOpen,
-    setDeleteOpen,
-    editItem,
-    register,
-    errors,
-    handleAdd,
-    handleEdit,
-    handleDelete,
-    handleSubmit,
-    handleConfirmDelete,
-    getDialogTitles,
-  } = useEnterpriseForm();
-
-  const titles = getDialogTitles();
+  const [activeTab, setActiveTab] = useState<CategoryType>("organization");
+  const organizationForm = useOrganizationTypesForm();
+  const businessForm = useBusinessLinesForm();
 
   return (
     <AdminLayout
@@ -70,17 +68,34 @@ const EnterpriseFormPage = () => {
                 Phân loại các loại hình tổ chức kinh tế trong nông nghiệp
               </p>
             </div>
-            <Button onClick={handleAdd} data-testid="add-organization-type">
+            <Button onClick={organizationForm.handleAdd} data-testid="add-organization-type">
               <Plus className="w-4 h-4 mr-2" />
               Thêm loại hình
             </Button>
           </div>
           <DataTable
-            columns={ENTERPRISE_COLUMNS}
-            data={organizationData}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
+            columns={ORGANIZATION_COLUMNS}
+            data={organizationForm.data}
+            pageSize={organizationForm.pageSize}
+            currentIndex={organizationForm.currentIndex}
+            totalElements={organizationForm.response?.totalElements}
+            totalPages={organizationForm.response?.totalPages}
+            onEdit={organizationForm.handleEdit}
+            onDelete={organizationForm.handleDelete}
+            searchable
             searchPlaceholder="Tìm kiếm loại hình tổ chức..."
+            onSearch={organizationForm.setSearchQuery}
+            onPageSize={organizationForm.setPageSize}
+            onIndexChange={organizationForm.setCurrentIndex}
+            onFilterChange={organizationForm.handleFilterChange}
+            filters={[
+              {
+                key: "status",
+                label: "Trạng thái",
+                options: [...ORGANIZATION_STATUS_OPTIONS],
+              },
+            ]}
+            loading={organizationForm.loading}
           />
         </TabsContent>
 
@@ -92,41 +107,79 @@ const EnterpriseFormPage = () => {
                 Phân loại các lĩnh vực hoạt động kinh doanh trong nông nghiệp
               </p>
             </div>
-            <Button onClick={handleAdd} data-testid="add-business-field">
+            <Button onClick={businessForm.handleAdd} data-testid="add-business-field">
               <Plus className="w-4 h-4 mr-2" />
               Thêm lĩnh vực
             </Button>
           </div>
           <DataTable
-            columns={ENTERPRISE_COLUMNS}
-            data={businessData}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
+            columns={BUSINESS_COLUMNS}
+            data={businessForm.data}
+            pageSize={businessForm.pageSize}
+            currentIndex={businessForm.currentIndex}
+            totalElements={businessForm.response?.totalElements}
+            totalPages={businessForm.response?.totalPages}
+            onEdit={businessForm.handleEdit}
+            onDelete={businessForm.handleDelete}
             searchable
             searchPlaceholder="Tìm kiếm lĩnh vực hoạt động..."
-            onSearch={setBusinessSearchQuery}
-            loading={businessLoading}
+            onSearch={businessForm.setSearchQuery}
+            onPageSize={businessForm.setPageSize}
+            onIndexChange={businessForm.setCurrentIndex}
+            onFilterChange={businessForm.handleFilterChange}
+            filters={[
+              {
+                key: "status",
+                label: "Trạng thái",
+                options: [...BUSINESS_STATUS_OPTIONS],
+              },
+            ]}
+            loading={businessForm.loading}
           />
         </TabsContent>
       </Tabs>
 
       <FormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        title={editItem ? titles.edit : titles.add}
-        onSubmit={handleSubmit}
+        open={organizationForm.formOpen}
+        onOpenChange={organizationForm.setFormOpen}
+        title={organizationForm.editItem ? "Chỉnh sửa loại hình tổ chức" : "Thêm loại hình tổ chức"}
+        onSubmit={organizationForm.handleSubmit}
+        loading={organizationForm.formLoading}
       >
-        <EnterpriseTypeForm
-          register={register}
-          errors={errors}
+        <OrganizationTypeForm
+          control={organizationForm.control}
+          register={organizationForm.register}
+          errors={organizationForm.errors}
+        />
+      </FormDialog>
+
+      <FormDialog
+        open={businessForm.formOpen}
+        onOpenChange={businessForm.setFormOpen}
+        title={businessForm.editItem ? "Chỉnh sửa lĩnh vực hoạt động" : "Thêm lĩnh vực hoạt động"}
+        onSubmit={businessForm.handleSubmit}
+        loading={businessForm.formLoading}
+      >
+        <BusinessLineForm
+          register={businessForm.register}
+          errors={businessForm.errors}
         />
       </FormDialog>
 
       <DeleteDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        onConfirm={handleConfirmDelete}
-        description={titles.deleteConfirm}
+        open={organizationForm.deleteOpen}
+        onOpenChange={organizationForm.setDeleteOpen}
+        onConfirm={organizationForm.handleConfirmDelete}
+        description="Bạn có chắc chắn muốn xóa loại hình tổ chức này?"
+        loading={organizationForm.deleteLoading}
+      />
+
+      <DeleteDialog
+        open={businessForm.deleteOpen}
+        onOpenChange={businessForm.setDeleteOpen}
+        onConfirm={businessForm.handleConfirmDelete}
+        description="Bạn có chắc chắn muốn xóa lĩnh vực hoạt động này?"
+        loading={businessForm.deleteLoading}
       />
     </AdminLayout>
   );

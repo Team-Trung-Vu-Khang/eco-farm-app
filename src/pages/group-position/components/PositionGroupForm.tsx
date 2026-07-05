@@ -24,7 +24,8 @@ interface PositionGroupFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editItem: PositionGroup | null;
-  onSubmit: (data: PositionGroupFormValues) => void;
+  onSubmit: (data: PositionGroupFormValues) => Promise<void> | void;
+  loading?: boolean;
 }
 
 function normalizeStatus(
@@ -64,6 +65,7 @@ export function PositionGroupForm({
   onOpenChange,
   editItem,
   onSubmit,
+  loading = false,
 }: PositionGroupFormProps) {
   const defaultValues = useMemo(
     () => buildDefaultValues(editItem),
@@ -75,7 +77,7 @@ export function PositionGroupForm({
     handleSubmit: handleRHFSubmit,
     clearErrors,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<PositionGroupFormValues>({
     defaultValues,
     resolver: zodResolver(positionGroupFormSchema),
@@ -88,8 +90,8 @@ export function PositionGroupForm({
     }
   }, [clearErrors, defaultValues, open, reset]);
 
-  const submitForm: SubmitHandler<PositionGroupFormValues> = (values) => {
-    onSubmit({
+  const submitForm: SubmitHandler<PositionGroupFormValues> = async (values) => {
+    await onSubmit({
       ...values,
       status: editItem ? values.status : "active",
     });
@@ -101,6 +103,7 @@ export function PositionGroupForm({
       onOpenChange={onOpenChange}
       title={editItem ? "Chỉnh sửa nhóm chức vụ" : "Thêm nhóm chức vụ mới"}
       onSubmit={handleRHFSubmit(submitForm)}
+      loading={loading || isSubmitting}
     >
       <div className="space-y-4">
         <div className="space-y-2">

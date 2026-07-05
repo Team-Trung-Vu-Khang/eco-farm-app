@@ -50,6 +50,8 @@ const FarmingMethodPage = () => {
   });
   const { createCatalog, updateCatalog, deleteCatalog } =
     useCatalogMutations("farming-methods");
+  const formDialogLoading =
+    createCatalog.isPending || updateCatalog.isPending;
 
   const data = React.useMemo(() => {
     return items.map((item) => ({
@@ -103,6 +105,7 @@ const FarmingMethodPage = () => {
       columns={columns}
       initialData={data}
       isLoading={loading}
+      formDialogLoading={formDialogLoading}
       onSubmit={handleSubmit}
       onDelete={handleDelete}
       searchable

@@ -10,6 +10,7 @@ import {
   Form,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { ChevronLeft } from "lucide-react";
 import { VarietyFoundationClassificationStep } from "./components/VarietyFoundationClassificationStep";
 import { VarietyFoundationCharacteristicsStep } from "./components/VarietyFoundationCharacteristicsStep";
 import { VarietyFoundationDocumentsStep } from "./components/VarietyFoundationDocumentsStep";
@@ -192,6 +193,15 @@ export default function VarietyFoundationEditPage() {
       isDev={true}
       title="Chỉnh sửa giống cây (nền tảng)"
       description="Cập nhật thông tin giống cây (nền tảng), đặc tính nông học và tài liệu kỹ thuật"
+      actions={
+        <Button
+          variant="outline"
+          onClick={() => setLocation("/variety-foundation")}
+        >
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Quay lại
+        </Button>
+      }
     >
       <FormProvider {...methods}>
         <Form {...methods}>

@@ -6,7 +6,13 @@ import {
   TabsList,
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ClipboardList, Edit, FlaskConical, Leaf } from "lucide-react";
+import {
+  ArrowLeft,
+  ClipboardList,
+  Edit,
+  FlaskConical,
+  Leaf,
+} from "lucide-react";
 import { Link } from "wouter";
 import { CropFoundationIdentity } from "./components/tabs/CropFoundationIdentity";
 import { DocumentationTab } from "./components/tabs/DocumentationTab";
@@ -25,7 +31,9 @@ export default function CropFoundationDetailPage() {
       >
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400 bg-white rounded-3xl shadow-sm border border-slate-100">
           <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-green-500 animate-spin" />
-          <span className="text-sm font-medium">Đang tải thông tin cây trồng...</span>
+          <span className="text-sm font-medium">
+            Đang tải thông tin cây trồng...
+          </span>
         </div>
       </AdminLayout>
     );
@@ -54,12 +62,20 @@ export default function CropFoundationDetailPage() {
       title="Chi tiết cây trồng"
       description={`Quản lý và theo dõi thông tin chi tiết về ${cropFoundation.name}`}
       actions={
-        <Link href={`/crop-foundation/${cropFoundation.id}/edit`}>
-          <Button className="bg-green-600 hover:bg-green-700 shadow-lg shadow-green-900/10 active:scale-95 transition-all">
-            <Edit className="w-4 h-4 mr-2" />
-            Chỉnh sửa thông tin
-          </Button>
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/crop-foundation">
+            <Button variant="outline">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Quay lại
+            </Button>
+          </Link>
+          <Link href={`/crop-foundation/${cropFoundation.id}/edit`}>
+            <Button className="bg-green-600 hover:bg-green-700 shadow-lg shadow-green-900/10 active:scale-95 transition-all">
+              <Edit className="w-4 h-4 mr-2" />
+              Chỉnh sửa
+            </Button>
+          </Link>
+        </div>
       }
     >
       <div className="space-y-8 pb-8">
@@ -94,4 +110,3 @@ export default function CropFoundationDetailPage() {
     </AdminLayout>
   );
 }
-

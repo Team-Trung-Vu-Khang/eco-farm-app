@@ -3,12 +3,14 @@ import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AdminLayout,
+  Button,
   Card,
   CardContent,
   StepperForm,
   Form,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { ChevronLeft } from "lucide-react";
 import { VarietyFoundationClassificationStep } from "./components/VarietyFoundationClassificationStep";
 import { VarietyFoundationCharacteristicsStep } from "./components/VarietyFoundationCharacteristicsStep";
 import { VarietyFoundationDocumentsStep } from "./components/VarietyFoundationDocumentsStep";
@@ -131,6 +133,12 @@ export default function CreateVarietyFoundationPage() {
       isDev={true}
       title="Tạo mới giống cây (nền tảng)"
       description="Khởi tạo thông tin định danh, đặc tính và tài liệu kỹ thuật cho giống cây (nền tảng)"
+      actions={
+        <Button variant="outline" onClick={handleCancel}>
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Quay lại
+        </Button>
+      }
     >
       <FormProvider {...methods}>
         <Form {...methods}>
