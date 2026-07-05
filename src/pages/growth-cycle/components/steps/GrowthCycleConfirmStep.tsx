@@ -123,7 +123,7 @@ export function GrowthCycleConfirmStep({
               </div>
               <div className="flex items-center gap-4">
                 <Badge variant="outline" className="text-[10px] font-bold">
-                  {stage.duration} NGÀY
+                  {stage.duration}
                 </Badge>
                 <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transform group-hover:translate-x-1 transition-all" />
               </div>

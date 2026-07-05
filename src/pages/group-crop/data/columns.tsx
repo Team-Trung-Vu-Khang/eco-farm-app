@@ -25,7 +25,7 @@ export const groupCropColumns: Column<CatalogRecordResponse>[] = [
     ),
   },
   {
-    key: "attributes",
+    key: "metadataJson",
     label: "Đặc tính sinh học",
     render: (value: Record<string, unknown>) => (
       <p className="text-sm text-muted-foreground line-clamp-2 max-w-[200px]">
@@ -65,4 +65,3 @@ export const groupCropColumns: Column<CatalogRecordResponse>[] = [
     ),
   },
 ];
-

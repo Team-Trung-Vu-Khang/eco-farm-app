@@ -18,9 +18,11 @@ const emptyFormData: GroupCropFormData = {
   description: "",
 };
 
-// Helper: lấy biological từ attributes trả về của API
+// Helper: lấy biological từ metadataJson hoặc attributes trả về của API
 const getBiological = (item: CatalogRecordResponse): string =>
-  (item.attributes?.biological as string) ?? "";
+  (item.metadataJson?.biological as string) ??
+  (item.attributes?.biological as string) ??
+  "";
 
 export function useGroupCropPage() {
   const { toast } = useToast();
@@ -111,13 +113,15 @@ export function useGroupCropPage() {
   };
 
   const handleSubmit = (data: GroupCropFormData) => {
-    // biological được lưu vào attributes.biological vì API catalog không có field riêng
+    // biological được lưu vào metadataJson.biological vì API catalog không có field riêng
     const payload = {
       code: data.code || undefined,
       name: data.name || undefined,
       description: data.description || undefined,
       status: "active" as const,
-      attributes: data.biological ? { biological: data.biological } : undefined,
+      metadataJson: data.biological
+        ? { biological: data.biological }
+        : undefined,
     };
 
     if (editItem) {

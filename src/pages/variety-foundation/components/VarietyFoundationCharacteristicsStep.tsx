@@ -40,6 +40,7 @@ export function VarietyFoundationCharacteristicsStep({
 
   useEffect(() => {
     if (watchedCrop && watchedCrop !== processedCropRef.current) {
+      const isFirstLoad = processedCropRef.current === "";
       processedCropRef.current = watchedCrop;
 
       const selectedCrop = crops.find((c) => String(c.id) === watchedCrop);
@@ -65,7 +66,12 @@ export function VarietyFoundationCharacteristicsStep({
           ]
             .filter(Boolean)
             .join("\n");
-          setValue("description", desc, { shouldValidate: true });
+          
+          // Only populate default crop specs description if it's currently empty, 
+          // or if the user changed the crop selection (not the initial form loading).
+          if (!watchedDescription || !isFirstLoad) {
+            setValue("description", desc, { shouldValidate: true });
+          }
         }
 
         if (!illustrationPreview && selectedCrop.imageUrl) {
