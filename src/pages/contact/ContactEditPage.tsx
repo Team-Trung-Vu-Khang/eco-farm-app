@@ -1,10 +1,18 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AdminLayout,
   Button,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Save, Trash2, X } from "lucide-react";
+import { Save, X } from "lucide-react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 import { ContactFormCard } from "./components/ContactFormCard";
+import {
+  contactFormSchema,
+  type ContactFormInput,
+  type ContactFormValues,
+} from "./data/contact-form.schema";
 import { useContactEdit } from "./hooks/useContactEdit";
 
 /**
@@ -15,17 +23,45 @@ export default function ContactEditPage() {
   const {
     contact,
     contactId,
-    formData,
-    setFormData,
-    groups,
+    defaultValues,
     enterprises,
+    groups,
     departments,
+    positions,
+    loading,
     deleteOpen,
     setDeleteOpen,
-    handleSubmit,
+    submitContact,
     handleDelete,
     goBack,
   } = useContactEdit();
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ContactFormInput, unknown, ContactFormValues>({
+    defaultValues,
+    resolver: zodResolver(contactFormSchema),
+    mode: "onTouched",
+  });
+
+  useEffect(() => {
+    reset(defaultValues);
+  }, [defaultValues, reset]);
+
+  if (loading) {
+    return (
+      <AdminLayout title="Đang tải liên hệ" description="Vui lòng chờ một lát">
+        <div className="flex min-h-[40vh] items-center justify-center">
+          <div className="text-sm text-muted-foreground">
+            Đang tải dữ liệu liên hệ...
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   if (contactId && !contact) {
     return (
@@ -47,19 +83,11 @@ export default function ContactEditPage() {
       description="Chỉnh sửa thông tin liên hệ"
       actions={
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            className="text-destructive hover:bg-destructive/10"
-            onClick={() => setDeleteOpen(true)}
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Xóa
-          </Button>
           <Button variant="outline" onClick={goBack}>
             <X className="w-4 h-4 mr-2" />
             Hủy bỏ
           </Button>
-          <Button onClick={handleSubmit}>
+          <Button onClick={handleSubmit(submitContact)} disabled={isSubmitting}>
             <Save className="w-4 h-4 mr-2" />
             Lưu lại
           </Button>
@@ -68,11 +96,13 @@ export default function ContactEditPage() {
     >
       <div className="max-w-2xl mx-auto">
         <ContactFormCard
-          formData={formData}
-          setFormData={setFormData}
+          control={control}
+          errors={errors}
           enterprises={enterprises}
           groups={groups}
           departments={departments}
+          positions={positions}
+          showStatus
         />
       </div>
 
@@ -80,7 +110,7 @@ export default function ContactEditPage() {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         onConfirm={handleDelete}
-        description={`Bạn có chắc chắn muốn xóa liên hệ ${formData.fullName}?`}
+        description={`Bạn có chắc chắn muốn xóa liên hệ ${defaultValues.fullName}?`}
       />
     </AdminLayout>
   );

@@ -1,5 +1,5 @@
 export type ContactStatus = "active" | "inactive" | "archived" | (string & {});
-export type ContactDepartmentType = "OWNER" | "DEPARTMENT" | (string & {});
+export type ContactDepartmentType = "OWNER" | "MASTER" | (string & {});
 
 export interface ContactWorkspaceRecord {
   id: number | string;

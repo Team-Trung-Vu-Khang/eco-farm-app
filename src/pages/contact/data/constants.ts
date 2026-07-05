@@ -4,13 +4,13 @@ import type {
 } from "../types/types";
 
 export const emptyContactFormData: ContactFormData = {
+  entityName: "",
+  groupId: "",
+  department: "",
+  position: "",
   fullName: "",
   phone: "",
   email: "",
-  position: "",
-  department: "",
-  entityName: "",
-  groupId: "",
   note: "",
   status: "active",
 };

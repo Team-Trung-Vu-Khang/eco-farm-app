@@ -1,6 +1,10 @@
-import { type Enterprise } from "@/pages/enterprise/data/constants";
-import { type Department } from "@/stores/useDepartmentStore";
-import type { ContactFormData, ContactGroup } from "../types/types";
+import { BranchEnterpriseSelector } from "@/pages/branch/components/steps/BranchEnterpriseSelector";
+import type { Enterprise } from "@/pages/enterprise/data/constants";
+import type { ContactGroupRecord } from "@/features/contact-group";
+import type {
+  FarmDepartmentResponse,
+  PositionOptionResponse,
+} from "@/features/master-data";
 import {
   Card,
   CardContent,
@@ -16,22 +20,30 @@ import {
   SelectValue,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { BranchEnterpriseSelector } from "@/pages/branch/components/steps/BranchEnterpriseSelector";
+import { Controller, type Control, type FieldErrors } from "react-hook-form";
+import type {
+  ContactFormInput,
+  ContactFormValues,
+} from "../data/contact-form.schema";
 
 interface ContactFormProps {
-  formData: ContactFormData;
-  setFormData: (data: ContactFormData) => void;
+  control: Control<ContactFormInput, unknown, ContactFormValues>;
+  errors: FieldErrors<ContactFormInput>;
   enterprises: Enterprise[];
-  groups: ContactGroup[];
-  departments: Department[];
+  groups: ContactGroupRecord[];
+  departments: FarmDepartmentResponse[];
+  positions: PositionOptionResponse[];
+  showStatus?: boolean;
 }
 
 export function ContactFormCard({
-  formData,
-  setFormData,
+  control,
+  errors,
   enterprises,
   groups,
   departments,
+  positions,
+  showStatus = false,
 }: ContactFormProps) {
   return (
     <Card>
@@ -43,142 +55,234 @@ export function ContactFormCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="entityName">Đơn vị sở hữu *</Label>
-          <BranchEnterpriseSelector
-            enterprises={enterprises}
-            selectedId={
-              enterprises
-                .find((enterprise) => enterprise.name === formData.entityName)
-                ?.id.toString() || ""
-            }
-            onSelect={(value) => {
-              const enterprise = enterprises.find(
-                (item) => item.id.toString() === value,
-              );
-              setFormData({
-                ...formData,
-                entityName: enterprise?.name || "",
-              });
-            }}
+          <Label htmlFor="entityName" required>
+            Đơn vị sở hữu
+          </Label>
+          <Controller
+            control={control}
+            name="entityName"
+            render={({ field }) => (
+              <>
+                <BranchEnterpriseSelector
+                  enterprises={enterprises}
+                  selectedId={
+                    enterprises.find(
+                      (enterprise) => enterprise.name === (field.value ?? ""),
+                    )?.id.toString() || ""
+                  }
+                  onSelect={(value) => {
+                    const enterprise = enterprises.find(
+                      (item) => item.id.toString() === value,
+                    );
+                    field.onChange(enterprise?.name || "");
+                  }}
+                />
+                {errors.entityName ? (
+                  <p className="text-xs text-red-600">
+                    {errors.entityName.message}
+                  </p>
+                ) : null}
+              </>
+            )}
           />
         </div>
+
         <div className="space-y-2">
           <Label htmlFor="groupId">Nhóm danh bạ</Label>
-          <Select
-            value={formData.groupId}
-            onValueChange={(val) => setFormData({ ...formData, groupId: val })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Chọn nhóm danh bạ" />
-            </SelectTrigger>
-            <SelectContent>
-              {groups.map((g) => (
-                <SelectItem key={g.id} value={g.id.toString()}>
-                  {g.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Controller
+            control={control}
+            name="groupId"
+            render={({ field }) => (
+              <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                <SelectTrigger id="groupId">
+                  <SelectValue placeholder="Chọn nhóm danh bạ" />
+                </SelectTrigger>
+                <SelectContent>
+                  {groups.map((g) => (
+                    <SelectItem key={g.id} value={g.id.toString()}>
+                      {g.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
         </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="department">Phòng ban</Label>
-            <Select
-              value={formData.department}
-              onValueChange={(val) =>
-                setFormData({ ...formData, department: val })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn phòng ban" />
-              </SelectTrigger>
-              <SelectContent>
-                {departments
-                  .filter((d) => d.status === "active")
-                  .map((d) => (
-                    <SelectItem key={d.id} value={d.name}>
-                      {d.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              control={control}
+              name="department"
+              render={({ field }) => (
+                <Select
+                  value={field.value ?? ""}
+                  onValueChange={field.onChange}
+                >
+                  <SelectTrigger id="department">
+                    <SelectValue placeholder="Chọn phòng ban" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((d) => (
+                      <SelectItem key={d.id} value={d.name}>
+                        {d.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="position">Chức vụ</Label>
-            <Input
-              id="position"
-              value={formData.position}
-              onChange={(e) =>
-                setFormData({ ...formData, position: e.target.value })
-              }
-              placeholder="VD: Trưởng phòng"
+            <Controller
+              control={control}
+              name="position"
+              render={({ field }) => (
+                <Select
+                  value={field.value ?? ""}
+                  onValueChange={field.onChange}
+                >
+                  <SelectTrigger id="position">
+                    <SelectValue placeholder="Chọn chức vụ" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {positions.map((position) => (
+                      <SelectItem key={position.id} value={position.name}>
+                        {position.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             />
           </div>
         </div>
+
+        {showStatus ? (
+          <div className="space-y-2">
+            <Label htmlFor="status" required>
+              Trạng thái
+            </Label>
+            <Controller
+              control={control}
+              name="status"
+              render={({ field }) => (
+                <Select
+                  value={field.value ?? "active"}
+                  onValueChange={field.onChange}
+                >
+                  <SelectTrigger id="status" aria-invalid={!!errors.status}>
+                    <SelectValue placeholder="Chọn trạng thái" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Đang làm việc</SelectItem>
+                    <SelectItem value="inactive">Đã nghỉ việc</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.status ? (
+              <p className="text-xs text-red-600">{errors.status.message}</p>
+            ) : null}
+          </div>
+        ) : null}
+
         <div className="space-y-2">
-          <Label htmlFor="fullName">Họ và tên *</Label>
-          <Input
-            id="fullName"
-            value={formData.fullName}
-            onChange={(e) =>
-              setFormData({ ...formData, fullName: e.target.value })
-            }
-            placeholder="Nhập họ và tên"
+          <Label htmlFor="fullName" required>
+            Họ và tên
+          </Label>
+          <Controller
+            control={control}
+            name="fullName"
+            render={({ field }) => (
+              <Input
+                id="fullName"
+                value={field.value ?? ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+                placeholder="Nhập họ và tên"
+                aria-invalid={!!errors.fullName}
+              />
+            )}
           />
+          {errors.fullName ? (
+            <p className="text-xs text-red-600">{errors.fullName.message}</p>
+          ) : null}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="phone">Số điện thoại *</Label>
-            <Input
-              id="phone"
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
-              }
-              placeholder="0901234567"
+            <Label htmlFor="phone" required>
+              Số điện thoại
+            </Label>
+            <Controller
+              control={control}
+              name="phone"
+              render={({ field }) => (
+                <Input
+                  id="phone"
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                  placeholder="0901234567"
+                  aria-invalid={!!errors.phone}
+                />
+              )}
             />
+            {errors.phone ? (
+              <p className="text-xs text-red-600">{errors.phone.message}</p>
+            ) : null}
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-              placeholder="contact@example.com"
+            <Controller
+              control={control}
+              name="email"
+              render={({ field }) => (
+                <Input
+                  id="email"
+                  type="email"
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                  placeholder="contact@example.com"
+                  aria-invalid={!!errors.email}
+                />
+              )}
             />
+            {errors.email ? (
+              <p className="text-xs text-red-600">{errors.email.message}</p>
+            ) : null}
           </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="status">Trạng thái</Label>
-          <Select
-            value={formData.status}
-            onValueChange={(val: ContactFormData["status"]) =>
-              setFormData({ ...formData, status: val })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Chọn trạng thái" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="active">Đang làm việc</SelectItem>
-              <SelectItem value="inactive">Đã nghỉ việc</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="note">Ghi chú</Label>
-          <Textarea
-            id="note"
-            value={formData.note}
-            onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-            placeholder="Ghi chú thêm..."
-            rows={3}
+          <Controller
+            control={control}
+            name="note"
+            render={({ field }) => (
+              <Textarea
+                id="note"
+                value={field.value ?? ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+                placeholder="Ghi chú thêm..."
+                rows={3}
+              />
+            )}
           />
         </div>
       </CardContent>
