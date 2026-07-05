@@ -37,6 +37,7 @@ export interface FarmDocumentRequest {
 
 export interface FarmBankAccountRequest {
   id?: number;
+  bankId?: number;
   ownerType?: string;
   ownerId?: number;
   bankCode?: string;

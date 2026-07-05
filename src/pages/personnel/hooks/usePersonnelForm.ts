@@ -124,6 +124,7 @@ export function usePersonnelForm(id?: number) {
         bankAccountPayload = [
           {
             id: personnel?.bankAccounts?.[0]?.id,
+            bankId: selectedBank?.id,
             bankCode: selectedBank?.code || values.bankName,
             bankName: selectedBank?.name || values.bankName,
             bin:

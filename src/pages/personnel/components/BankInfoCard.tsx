@@ -35,6 +35,8 @@ export function BankInfoCard() {
     }));
   }, [banks]);
 
+  console.log("bankOptions", bankOptions);
+
   return (
     <Card>
       <CardHeader>
