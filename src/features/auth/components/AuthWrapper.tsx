@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useState } from "react";
-import { authApi } from "../api/auth.api";
 import { AUTH_PATHS } from "../../../shared/constants/auth.constants";
+import { authApi } from "../api/auth.api";
 import { AuthLoadingState } from "./AuthLoadingState";
 
 export function AuthWrapper({ children }: { children: ReactNode }) {
@@ -18,7 +18,7 @@ export function AuthWrapper({ children }: { children: ReactNode }) {
       }
 
       authApi.setToken(tokenFromUrl);
-      window.location.replace("/");
+      window.location.replace("/workspace");
       return;
     }
 
