@@ -8,6 +8,7 @@ import type {
   BranchStatus,
   BranchUpdateRequest,
 } from "@/features/branch";
+import { buildBranchFullAddress } from "../utils/form";
 
 export const BRANCH_FORM_STATUSES = [
   "active",
@@ -26,6 +27,8 @@ const branchContactFormSchema = z.object({
 
 const branchBankFormSchema = z.object({
   id: z.union([z.string(), z.number()]).optional(),
+  bankAccountId: z.union([z.string(), z.number()]).optional(),
+  bankId: z.union([z.string(), z.number()]).optional(),
   ownerType: z.string().trim().default(""),
   ownerId: z.union([z.string(), z.number()]).optional(),
   bankCode: z.string().trim().default(""),
@@ -99,6 +102,42 @@ const isFilledBankAccount = (bankAccount: BranchBankRequest) =>
       bankAccount.logoUrl,
   );
 
+function dedupeContacts(contacts: BranchContactRequest[]) {
+  const seen = new Set<string>();
+
+  return contacts.filter((contact) => {
+    const key = [
+      (contact.name ?? "").trim().toLowerCase(),
+      (contact.phone ?? "").trim(),
+      (contact.email ?? "").trim().toLowerCase(),
+    ].join("|");
+
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}
+
+function ensurePrimaryContact<T extends { isPrimary?: boolean }>(
+  items: T[],
+): Array<T & { isPrimary: boolean }> {
+  if (items.length === 0) {
+    return items as Array<T & { isPrimary: boolean }>;
+  }
+
+  if (items.some((item) => item.isPrimary)) {
+    return items as Array<T & { isPrimary: boolean }>;
+  }
+
+  return items.map((item, index) => ({
+    ...item,
+    isPrimary: index === 0,
+  }));
+}
+
 export function createBranchFormValues(
   branch?: BranchRecord | null,
 ): BranchFormInput {
@@ -118,7 +157,7 @@ export function createBranchFormValues(
     imageUrl: branch.imageUrl ?? "",
     latitude: branch.latitude ?? 0,
     longitude: branch.longitude ?? 0,
-    status: (branch.status as BranchStatus) ?? "active",
+    status: branch.status === "inactive" ? "inactive" : "active",
     contacts: (branch.contacts ?? []).map((contact) => ({
       contactId: contact.id,
       name: contact.name || contact.fullName || "",
@@ -129,10 +168,12 @@ export function createBranchFormValues(
     })),
     bankAccounts: (branch.bankAccounts ?? []).map((bankAccount) => ({
       id: bankAccount.id,
+      bankAccountId: bankAccount.id,
+      bankId: bankAccount.bank?.id,
       ownerType: bankAccount.ownerType ?? "",
       ownerId: bankAccount.ownerId,
-      bankCode: bankAccount.bank?.code ?? bankAccount.bankCode ?? bankAccount.bin ?? "",
-      bankName: bankAccount.bank?.name ?? bankAccount.bankName ?? "",
+      bankCode: bankAccount.bank?.code ?? bankAccount.bankCode ?? "",
+      bankName: bankAccount.bank?.shortName ?? bankAccount.bank?.name ?? bankAccount.bankName ?? "",
       bin: bankAccount.bank?.bin ?? bankAccount.bin ?? "",
       accountNumber: bankAccount.accountNumber ?? "",
       accountHolder: bankAccount.accountHolder ?? "",
@@ -151,35 +192,47 @@ export function buildBranchPayload(
   values: BranchFormValues,
   branchId?: number | string,
 ): BranchCreateRequest | BranchUpdateRequest {
-  const contacts = values.contacts.filter(isFilledContact).map<BranchContactRequest>(
-    (contact) => ({
-      contactId: contact.contactId,
-      name: contact.name.trim(),
-      position: contact.position.trim() || undefined,
-      phone: contact.phone.trim() || undefined,
-      email: contact.email.trim() || undefined,
-      isPrimary: contact.isPrimary,
-    }),
+  const contacts = ensurePrimaryContact(
+    dedupeContacts(values.contacts.filter(isFilledContact)).map<BranchContactRequest>(
+      (contact) => ({
+        contactId: contact.contactId,
+        name: contact.name.trim(),
+        position: contact.position.trim() || undefined,
+        phone: contact.phone.trim() || undefined,
+        email: contact.email.trim() || undefined,
+        isPrimary: contact.isPrimary,
+      }),
+    ),
   );
 
-  const bankAccounts = values.bankAccounts
-    .filter(isFilledBankAccount)
-    .map<BranchBankRequest>((bankAccount) => ({
-      id: bankAccount.id,
-      ownerType: bankAccount.ownerType || undefined,
-      ownerId: bankAccount.ownerId,
-      bankCode: bankAccount.bankCode.trim(),
-      bankName: bankAccount.bankName.trim(),
-      bin: bankAccount.bin.trim() || undefined,
-      accountNumber: bankAccount.accountNumber.trim(),
-      accountHolder: bankAccount.accountHolder.trim(),
-      branch: bankAccount.branch.trim() || undefined,
-      note: bankAccount.note.trim() || undefined,
-      logoUrl: bankAccount.logoUrl.trim() || undefined,
-      status: bankAccount.status,
-      isPrimary: bankAccount.isPrimary,
-      metadataJson: bankAccount.metadataJson,
-    }));
+  const bankAccounts = ensurePrimaryContact(
+    values.bankAccounts
+      .filter(isFilledBankAccount)
+      .map<BranchBankRequest>((bankAccount) => ({
+        id: bankAccount.bankAccountId,
+        bankId: bankAccount.bankId,
+        ownerType: bankAccount.ownerType || undefined,
+        ownerId: bankAccount.ownerId,
+        bankCode: bankAccount.bankCode.trim(),
+        bankName: bankAccount.bankName.trim(),
+        bin: bankAccount.bin.trim() || undefined,
+        accountNumber: bankAccount.accountNumber.trim(),
+        accountHolder: bankAccount.accountHolder.trim(),
+        branch: bankAccount.branch.trim() || undefined,
+        note: bankAccount.note.trim() || undefined,
+        logoUrl: bankAccount.logoUrl.trim() || undefined,
+        status: bankAccount.status,
+        isPrimary: bankAccount.isPrimary,
+        metadataJson: bankAccount.metadataJson,
+      })),
+  );
+
+  const address = buildBranchFullAddress({
+    address: values.address,
+    ward: values.ward,
+    district: values.district,
+    city: values.city,
+  });
 
   const payload: BranchCreateRequest = {
     ...(branchId ? { id: branchId } : {}),
@@ -189,7 +242,7 @@ export function buildBranchPayload(
     taxCode: values.taxCode.trim() || undefined,
     taxAddress: values.taxAddress.trim() || undefined,
     website: values.website.trim() || undefined,
-    address: values.address.trim() || undefined,
+    address: address || values.address.trim() || undefined,
     city: values.city.trim() || undefined,
     district: values.district.trim() || undefined,
     ward: values.ward.trim() || undefined,

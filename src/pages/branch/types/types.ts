@@ -19,6 +19,9 @@ export interface ContactInfo {
 
 export interface BranchBankAccount {
   id: string;
+  bankAccountId?: string | number;
+  bankId?: string | number;
+  bankCode: string;
   bankName: string;
   accountNumber: string;
   accountHolder: string;

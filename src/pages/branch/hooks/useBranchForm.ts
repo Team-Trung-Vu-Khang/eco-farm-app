@@ -1,18 +1,13 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useEffect, useMemo, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { useLocation, useRoute } from "wouter";
-
-import { vietQrBankData } from "@/constants/banks";
 import {
   useBranchById,
   useCreateBranch,
   useUpdateBranch,
-  type BranchBankRecord,
-  type BranchBankRequest,
-  type BranchContactRecord,
-  type BranchContactRequest,
   type BranchCreateRequest,
-  type BranchRecord,
   type BranchUpdateRequest,
 } from "@/features/branch";
 import {
@@ -20,24 +15,20 @@ import {
   type OrganizationRecord,
 } from "@/features/organization";
 import { useSelectedWorkspaceId } from "@/features/workspace";
+import {
+  branchFormSchema,
+  buildBranchPayload,
+  createBranchFormValues,
+  type BranchFormInput,
+  type BranchFormValues,
+} from "../data/branch-form.schema";
 import type { Enterprise } from "@/pages/enterprise/data/constants";
-import { emptyBranchFormData } from "../data/constants";
 import type {
   BranchBankAccount,
   BranchFormData,
   ContactInfo,
   ContactPerson,
 } from "../types/types";
-import { buildBranchFullAddress } from "../utils/form";
-
-const DEFAULT_LATITUDE = 10.7769;
-const DEFAULT_LONGITUDE = 106.7009;
-
-function toNumber(value: string | number | undefined | null) {
-  if (value === undefined || value === null || value === "") return undefined;
-  const next = Number(value);
-  return Number.isFinite(next) ? next : undefined;
-}
 
 function mapOrganizationToEnterprise(
   organization: OrganizationRecord,
@@ -76,20 +67,20 @@ function mapOrganizationToEnterprise(
 }
 
 function mapBranchContactToContactInfo(
-  contact?: BranchContactRecord | null,
+  contact?: BranchFormValues["contacts"][number],
   fallbackId = "1",
 ): ContactInfo | null {
   if (!contact) return null;
 
-  const name = contact.fullName || contact.name || "";
+  const name = contact.name || "";
   const phone = contact.phone || "";
   const email = contact.email || "";
 
   if (!name && !phone && !email) return null;
 
   return {
-    id: String(contact.id ?? fallbackId),
-    contactId: String(contact.id ?? fallbackId),
+    id: String(contact.contactId ?? fallbackId),
+    contactId: contact.contactId ? String(contact.contactId) : undefined,
     name,
     phone,
     email,
@@ -98,14 +89,17 @@ function mapBranchContactToContactInfo(
 }
 
 function mapBranchContactToContactPerson(
-  contact: BranchContactRecord,
+  contact?: BranchFormValues["contacts"][number],
+  fallbackId = "1",
 ): ContactPerson | null {
-  const name = contact.fullName || contact.name || "";
+  if (!contact) return null;
+
+  const name = contact.name || "";
   if (!name && !contact.phone && !contact.email) return null;
 
   return {
-    id: String(contact.id),
-    contactId: String(contact.id),
+    id: String(contact.contactId ?? fallbackId),
+    contactId: contact.contactId ? String(contact.contactId) : undefined,
     name,
     position: contact.position || "",
     phone: contact.phone || "",
@@ -115,178 +109,114 @@ function mapBranchContactToContactPerson(
 }
 
 function mapBranchBankToBankAccount(
-  bankAccount: BranchBankRecord,
+  bankAccount?: BranchFormValues["bankAccounts"][number],
 ): BranchBankAccount | null {
-  const bankName =
-    bankAccount.bank?.shortName ||
-    bankAccount.bank?.name ||
-    (bankAccount as { bankCode?: string }).bankCode ||
-    "";
+  if (!bankAccount) return null;
+
+  const bankName = bankAccount.bankName || bankAccount.bankCode || "";
 
   if (!bankName && !bankAccount.accountNumber && !bankAccount.accountHolder) {
     return null;
   }
 
   return {
-    id: String(bankAccount.id),
+    id: String(bankAccount.id ?? ""),
+    bankAccountId: bankAccount.bankAccountId,
+    bankId: bankAccount.bankId,
+    bankCode: bankAccount.bankCode || "",
     bankName,
     accountNumber: bankAccount.accountNumber || "",
     accountHolder: bankAccount.accountHolder || "",
     branch: bankAccount.branch || "",
     note: bankAccount.note || "",
-    bin: bankAccount.bank?.bin || "",
-    logo: bankAccount.bank?.logoUrl || "",
+    bin: bankAccount.bin || "",
+    logo: bankAccount.logoUrl || "",
     isPrimary: Boolean(bankAccount.isPrimary),
   };
 }
 
-function dedupeContacts(contacts: BranchContactRequest[]) {
-  const seen = new Set<string>();
-  return contacts.filter((contact) => {
-    const key = [
-      (contact.name ?? "").trim().toLowerCase(),
-      (contact.phone ?? "").trim(),
-      (contact.email ?? "").trim().toLowerCase(),
-    ].join("|");
-
-    if (seen.has(key)) {
-      return false;
-    }
-
-    seen.add(key);
-    return true;
-  });
-}
-
-function ensurePrimaryContact<T extends { isPrimary?: boolean }>(
-  items: T[],
-): Array<T & { isPrimary: boolean }> {
-  if (items.length === 0) {
-    return items as Array<T & { isPrimary: boolean }>;
-  }
-
-  if (items.some((item) => item.isPrimary)) {
-    return items as Array<T & { isPrimary: boolean }>;
-  }
-
-  return items.map((item, index) => ({
-    ...item,
-    isPrimary: index === 0,
-  }));
-}
-
-function getInitialBranchFormData(
-  branch?: BranchRecord | null,
-  enterpriseId = "",
-  enterpriseName = "",
+function normalizeBranchFormData(
+  values: BranchFormValues,
+  enterprises: Enterprise[],
 ): BranchFormData {
-  if (!branch) {
-    return {
-      ...emptyBranchFormData,
-      enterpriseId,
-      enterpriseName,
-    };
-  }
+  const selectedEnterprise = enterprises.find(
+    (enterprise) => enterprise.id.toString() === values.organizationId,
+  );
 
-  const contactInfos: ContactInfo[] = (branch.contacts || [])
+  const contactInfos = (values.contacts || [])
     .map((contact, index) =>
       mapBranchContactToContactInfo(contact, String(index + 1)),
     )
     .filter((item): item is ContactInfo => Boolean(item));
 
-  const bankAccounts = (branch.bankAccounts || [])
+  const contacts = (values.contacts || [])
+    .map((contact, index) =>
+      mapBranchContactToContactPerson(contact, String(index + 1)),
+    )
+    .filter((item): item is ContactPerson => Boolean(item));
+
+  const bankAccounts = (values.bankAccounts || [])
     .map(mapBranchBankToBankAccount)
     .filter((item): item is BranchBankAccount => Boolean(item));
 
   return {
-    code: branch.code || "",
-    name: branch.name || "",
-    enterpriseId,
-    enterpriseName: enterpriseName || branch.organization?.name || "",
-    taxCode: branch.taxCode || "",
-    taxAddress: branch.taxAddress || "",
-    website: branch.website || "",
-    address: branch.address || "",
-    city: branch.city || "",
-    district: branch.district || "",
-    ward: branch.ward || "",
-    imageUrl: branch.imageUrl || "",
-    latitude: branch.latitude ?? DEFAULT_LATITUDE,
-    longitude: branch.longitude ?? DEFAULT_LONGITUDE,
-    status: branch.status === "inactive" ? "inactive" : "active",
+    code: values.code,
+    name: values.name,
+    enterpriseId: values.organizationId,
+    enterpriseName: selectedEnterprise?.name || "",
+    taxCode: values.taxCode,
+    taxAddress: values.taxAddress,
+    website: values.website,
+    address: values.address,
+    city: values.city,
+    district: values.district,
+    ward: values.ward,
+    imageUrl: values.imageUrl,
+    latitude: values.latitude,
+    longitude: values.longitude,
+    status: values.status === "active" ? "active" : "inactive",
     contactInfos,
-    contacts: [],
+    contacts,
     bankAccounts,
   };
 }
 
-function mapFormDataToBranchPayload(
-  formData: BranchFormData,
-  branchId?: number,
-): BranchCreateRequest | BranchUpdateRequest {
-  const combinedContacts: BranchContactRequest[] = ensurePrimaryContact(
-    dedupeContacts(
-      formData.contactInfos.map((contact) => ({
-        contactId: contact.contactId || undefined,
-        name: contact.name || "Liên hệ",
-        position: "",
-        phone: contact.phone || "",
-        email: contact.email || "",
-        isPrimary: contact.isPrimary,
-      })),
-    ),
-  );
-
-  const bankAccounts: BranchBankRequest[] = ensurePrimaryContact(
-    formData.bankAccounts.map((bankAccount): BranchBankRequest => {
-      const bankInfo = vietQrBankData.find(
-        (bank) =>
-          bank.shortName === bankAccount.bankName ||
-          bank.name === bankAccount.bankName,
-      );
-
-      return {
-        bankCode: bankInfo?.code || bankAccount.bankName,
-        bankName: bankInfo?.shortName || bankInfo?.name || bankAccount.bankName,
-        bin: bankAccount.bin || bankInfo?.bin || "",
-        accountNumber: bankAccount.accountNumber,
-        accountHolder: bankAccount.accountHolder,
-        branch: bankAccount.branch,
-        note: bankAccount.note,
-        logoUrl: bankAccount.logo || bankInfo?.logo || "",
-        status: "active" as const,
-        isPrimary: bankAccount.isPrimary,
-      };
-    }),
-  );
-
-  const address = buildBranchFullAddress({
-    address: formData.address,
-    ward: formData.ward,
-    district: formData.district,
-    city: formData.city,
+function toBankFormValues(
+  bankAccounts: BranchFormData["bankAccounts"],
+): BranchFormValues["bankAccounts"] {
+  return bankAccounts.map((bankAccount) => {
+    return {
+      id: bankAccount.id,
+      bankAccountId: bankAccount.bankAccountId,
+      bankId: bankAccount.bankId,
+      bankCode: bankAccount.bankCode || bankAccount.bankName,
+      ownerType: "",
+      ownerId: undefined,
+      bankName: bankAccount.bankName,
+      bin: bankAccount.bin || "",
+      accountNumber: bankAccount.accountNumber,
+      accountHolder: bankAccount.accountHolder,
+      branch: bankAccount.branch,
+      note: bankAccount.note || "",
+      logoUrl: bankAccount.logo || "",
+      status: "active",
+      isPrimary: bankAccount.isPrimary,
+      metadataJson: null,
+    };
   });
+}
 
-  return {
-    ...(branchId ? { id: branchId } : {}),
-    organizationId: toNumber(formData.enterpriseId) ?? formData.enterpriseId,
-    code: formData.code,
-    name: formData.name,
-    taxCode: formData.taxCode,
-    taxAddress: formData.taxAddress,
-    website: formData.website,
-    address: address || formData.address,
-    city: formData.city,
-    district: formData.district,
-    ward: formData.ward,
-    imageUrl: formData.imageUrl,
-    latitude: formData.latitude,
-    longitude: formData.longitude,
-    status: formData.status,
-    contacts: combinedContacts,
-    bankAccounts,
-    metadataJson: null,
-  };
+function toContactFormValues(
+  contacts: BranchFormData["contactInfos"],
+): BranchFormValues["contacts"] {
+  return contacts.map((contact) => ({
+    contactId: contact.contactId,
+    name: contact.name || "",
+    position: "",
+    phone: contact.phone,
+    email: contact.email,
+    isPrimary: contact.isPrimary,
+  }));
 }
 
 export type { BranchFormData } from "../types/types";
@@ -363,48 +293,169 @@ export function useBranchForm() {
     [organizationsQuery.items],
   );
 
-  const [formData, setFormData] = useState<BranchFormData>(() =>
-    getInitialBranchFormData(
-      branchQuery.item,
-      branchQuery.item?.organization?.id
-        ? String(branchQuery.item.organization.id)
-        : "",
-      branchQuery.item?.organization?.name || "",
-    ),
+  const defaultValues = useMemo(
+    () => createBranchFormValues(branchQuery.item),
+    [branchQuery.item],
+  );
+
+  const form = useForm<BranchFormInput, unknown, BranchFormValues>({
+    defaultValues,
+    resolver: zodResolver(branchFormSchema),
+    mode: "onChange",
+  });
+
+  const { getValues, setValue, reset, clearErrors, trigger } = form;
+  const formValues = useWatch({ control: form.control });
+  const formData = useMemo(
+    () => normalizeBranchFormData(formValues, enterprises),
+    [enterprises, formValues],
   );
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   useEffect(() => {
-    if (isEdit && branchQuery.item) {
-      const nextEnterpriseId = branchQuery.item.organization?.id
-        ? String(branchQuery.item.organization.id)
-        : branchQuery.item.organizationId
-          ? String(branchQuery.item.organizationId)
-          : "";
+    if (defaultValues) {
+      reset(defaultValues);
+      clearErrors();
+    }
+  }, [clearErrors, defaultValues, reset]);
 
-      // Sync the API payload into the local draft when edit data arrives.
-      // This keeps the existing stepper UI intact while still allowing async loading.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFormData(
-        getInitialBranchFormData(
-          branchQuery.item,
-          nextEnterpriseId,
-          branchQuery.item.organization?.name || "",
-        ),
+  const updateFormData = (updates: Partial<BranchFormData>) => {
+    if (updates.enterpriseId !== undefined) {
+      setValue("organizationId", updates.enterpriseId, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
+
+    if (updates.code !== undefined) {
+      setValue("code", updates.code, { shouldDirty: true, shouldTouch: true });
+    }
+
+    if (updates.name !== undefined) {
+      setValue("name", updates.name, { shouldDirty: true, shouldTouch: true });
+    }
+
+    if (updates.taxCode !== undefined) {
+      setValue("taxCode", updates.taxCode, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
+
+    if (updates.taxAddress !== undefined) {
+      setValue("taxAddress", updates.taxAddress, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
+
+    if (updates.website !== undefined) {
+      setValue("website", updates.website, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
+
+    if (updates.address !== undefined) {
+      setValue("address", updates.address, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
+
+    if (updates.city !== undefined) {
+      setValue("city", updates.city, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
+
+    if (updates.district !== undefined) {
+      setValue("district", updates.district, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
+
+    if (updates.ward !== undefined) {
+      setValue("ward", updates.ward, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
+
+    if (updates.imageUrl !== undefined) {
+      setValue("imageUrl", updates.imageUrl, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
+
+    if (updates.latitude !== undefined) {
+      setValue("latitude", updates.latitude, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
+
+    if (updates.longitude !== undefined) {
+      setValue("longitude", updates.longitude, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
+
+    if (updates.status !== undefined) {
+      setValue("status", updates.status, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
+
+    if (updates.contactInfos !== undefined) {
+      setValue("contacts", toContactFormValues(updates.contactInfos), {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
+
+    if (updates.contacts !== undefined) {
+      setValue(
+        "contacts",
+        updates.contacts.map((contact) => ({
+          contactId: contact.contactId,
+          name: contact.name,
+          position: contact.position,
+          phone: contact.phone,
+          email: contact.email,
+          isPrimary: contact.isPrimary,
+        })),
+        {
+          shouldDirty: true,
+          shouldTouch: true,
+        },
       );
     }
 
-    if (!isEdit) {
-      setFormData(getInitialBranchFormData(undefined));
+    if (updates.bankAccounts !== undefined) {
+      setValue("bankAccounts", toBankFormValues(updates.bankAccounts), {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
     }
-  }, [branchQuery.item, isEdit]);
 
-  const updateFormData = (updates: Partial<BranchFormData>) => {
-    setFormData((prev) => ({ ...prev, ...updates }));
+    if (updates.metadataJson !== undefined) {
+      setValue("metadataJson", updates.metadataJson, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
+    const isValid = await trigger();
+    if (!isValid) return;
     setShowConfirmDialog(true);
   };
 
@@ -422,7 +473,7 @@ export function useBranchForm() {
       return;
     }
 
-    const payload = mapFormDataToBranchPayload(formData, branchId);
+    const payload = buildBranchPayload(getValues() as BranchFormValues, branchId);
 
     try {
       if (isEdit && branchId !== undefined) {
@@ -445,6 +496,7 @@ export function useBranchForm() {
   };
 
   return {
+    form,
     formData,
     updateFormData,
     enterprises,

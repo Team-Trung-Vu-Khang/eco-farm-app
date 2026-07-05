@@ -1,7 +1,4 @@
-import { vietQrBankData } from "@/constants/banks";
-import useBankStore, {
-  type BankAccount as StoredBankAccount,
-} from "@/stores/useBankStore";
+import { useMasterData } from "@/features/master-data";
 import {
   Badge,
   Button,
@@ -37,42 +34,67 @@ interface BankingStepProps {
   updateFormData: (updates: Partial<BranchFormData>) => void;
 }
 
+type BankMasterDataRecord = {
+  id: number | string;
+  code: string;
+  name: string;
+  shortName?: string;
+  bin?: string;
+  logoUrl?: string;
+};
+
+function getBankDisplayName(bank: BankMasterDataRecord) {
+  return bank.shortName || bank.name;
+}
+
+function getBankLookupFields(
+  bankName: string,
+  bankCode?: string,
+  bin?: string,
+) {
+  return [bankName, bankCode, bin].filter(Boolean).join(" ").toLowerCase();
+}
+
+function findBankByName(banks: BankMasterDataRecord[], bankName: string) {
+  return banks.find(
+    (bank) =>
+      bank.shortName === bankName ||
+      bank.name === bankName ||
+      bank.code === bankName,
+  );
+}
+
 function BranchBankSelectorDialog({
   open,
   onOpenChange,
-  selectedBankName,
+  selectedBankId,
+  banks,
   onSelect,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedBankName: string;
-  onSelect: (bank: StoredBankAccount) => void;
+  selectedBankId: string;
+  banks: BankMasterDataRecord[];
+  onSelect: (bank: BankMasterDataRecord) => void;
 }) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [tempSelectedName, setTempSelectedName] = useState(selectedBankName);
-  const bankAccounts = useBankStore((state) => state.bankAccounts);
+  const [tempSelectedId, setTempSelectedId] = useState(selectedBankId);
 
   const filteredBanks = useMemo(() => {
     const query = searchTerm.toLowerCase().trim();
-    if (!query) return bankAccounts;
-    return bankAccounts.filter((bank) => {
-      const searchable = [
-        bank.bankName,
-        bank.accountNumber,
-        bank.accountHolder,
-        bank.branch,
-        bank.note,
-      ]
-        .join(" ")
-        .toLowerCase();
+    if (!query) return banks;
+    return banks.filter((bank) => {
+      const searchable = getBankLookupFields(
+        bank.shortName || bank.name,
+        bank.code,
+        bank.bin,
+      );
       return searchable.includes(query);
     });
-  }, [bankAccounts, searchTerm]);
+  }, [banks, searchTerm]);
 
-  const selectedBank = bankAccounts.find(
-    (bank) =>
-      `${bank.bankName} - ${bank.accountNumber}` === tempSelectedName ||
-      bank.bankName === tempSelectedName,
+  const selectedBank = banks.find(
+    (bank) => String(bank.id) === String(tempSelectedId),
   );
 
   return (
@@ -80,7 +102,7 @@ function BranchBankSelectorDialog({
       open={open}
       onOpenChange={(nextOpen) => {
         if (nextOpen) {
-          setTempSelectedName(selectedBankName);
+          setTempSelectedId(selectedBankId);
           setSearchTerm("");
         }
         onOpenChange(nextOpen);
@@ -92,11 +114,10 @@ function BranchBankSelectorDialog({
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Search className="h-4 w-4" />
             </div>
-            Chọn tài khoản ngân hàng
+            Chọn ngân hàng
           </DialogTitle>
           <DialogDescription className="mt-1 text-sm text-muted-foreground">
-            Chọn nhanh một tài khoản có sẵn để tự điền ngân hàng, số tài khoản,
-            chủ tài khoản, chi nhánh và ghi chú.
+            Chọn nhanh một ngân hàng từ master data để tự điền tên, mã và logo.
           </DialogDescription>
         </DialogHeader>
 
@@ -106,7 +127,7 @@ function BranchBankSelectorDialog({
             <Input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Tìm theo ngân hàng, số tài khoản, chủ tài khoản..."
+              placeholder="Tìm theo tên, mã hoặc BIN..."
               className="h-11 rounded-xl border-slate-200 bg-slate-50 pl-10 transition-all focus:bg-white"
             />
           </div>
@@ -115,7 +136,7 @@ function BranchBankSelectorDialog({
             {selectedBank && (
               <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-primary">
                 <Check className="h-3 w-3" />
-                Đang chọn: {selectedBank.bankName}
+                Đang chọn: {getBankDisplayName(selectedBank)}
               </span>
             )}
           </div>
@@ -124,16 +145,14 @@ function BranchBankSelectorDialog({
         <ScrollArea className="min-h-0 flex-1">
           <div className="grid gap-3 p-6 sm:grid-cols-2">
             {filteredBanks.map((bank) => {
-              const displayName = `${bank.bankName} - ${bank.accountNumber}`;
-              const isSelected =
-                tempSelectedName === displayName ||
-                tempSelectedName === bank.bankName;
+              const displayName = getBankDisplayName(bank);
+              const isSelected = String(tempSelectedId) === String(bank.id);
 
               return (
                 <button
                   key={bank.id}
                   type="button"
-                  onClick={() => setTempSelectedName(displayName)}
+                  onClick={() => setTempSelectedId(String(bank.id))}
                   className={[
                     "group flex items-start gap-4 rounded-2xl border bg-white p-4 text-left transition-all hover:border-primary/30 hover:shadow-md",
                     isSelected
@@ -144,10 +163,10 @@ function BranchBankSelectorDialog({
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-slate-100 bg-white p-2 shadow-sm">
                     <img
                       src={
-                        bank.logo ||
-                        `https://placehold.co/56x56?text=${bank.bankName?.[0] || "B"}`
+                        bank.logoUrl ||
+                        `https://placehold.co/56x56?text=${displayName?.[0] || "B"}`
                       }
-                      alt={bank.bankName}
+                      alt={displayName}
                       className="h-full w-full object-contain"
                       onError={(event) => {
                         (event.target as HTMLImageElement).src =
@@ -160,10 +179,10 @@ function BranchBankSelectorDialog({
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <h3 className="truncate text-sm font-bold text-slate-900">
-                          {bank.bankName}
+                          {displayName}
                         </h3>
                         <p className="mt-1 line-clamp-2 text-xs text-slate-500">
-                          {bank.accountHolder}
+                          {bank.code}
                         </p>
                       </div>
                       <div
@@ -183,13 +202,7 @@ function BranchBankSelectorDialog({
                         variant="secondary"
                         className="bg-slate-100 text-slate-700"
                       >
-                        STK: {bank.accountNumber}
-                      </Badge>
-                      <Badge
-                        variant="secondary"
-                        className="bg-slate-100 text-slate-700"
-                      >
-                        {bank.branch || "Không có chi nhánh"}
+                        BIN: {bank.bin || "-"}
                       </Badge>
                     </div>
                   </div>
@@ -212,17 +225,13 @@ function BranchBankSelectorDialog({
           </Button>
           <Button
             onClick={() => {
-              const bank = bankAccounts.find((item) => {
-                const displayName = `${item.bankName} - ${item.accountNumber}`;
-                return (
-                  displayName === tempSelectedName ||
-                  item.bankName === tempSelectedName
-                );
-              });
+              const bank = banks.find(
+                (item) => String(item.id) === String(tempSelectedId),
+              );
               if (bank) onSelect(bank);
               onOpenChange(false);
             }}
-            disabled={!tempSelectedName}
+            disabled={!tempSelectedId}
             className="bg-primary hover:bg-primary/90"
           >
             Xác nhận
@@ -235,9 +244,21 @@ function BranchBankSelectorDialog({
 
 export function BankingStep({ formData, updateFormData }: BankingStepProps) {
   const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
-  const bankAccounts = useBankStore((state) => state.bankAccounts);
+  const banksQuery = useMasterData("banks", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
+  const bankAccounts = useMemo(
+    () => banksQuery.items as BankMasterDataRecord[],
+    [banksQuery.items],
+  );
   const [editingBankId, setEditingBankId] = useState<string | null>(null);
   const [draftBank, setDraftBank] = useState({
+    bankId: "",
+    bankCode: "",
     bankName: "",
     bin: "",
     logo: "",
@@ -253,37 +274,34 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
     [formData.bankAccounts],
   );
 
-  const selectedBankLabel = useMemo(() => {
-    if (!draftBank.bankName) return "Chọn ngân hàng...";
-    const bank = bankAccounts.find(
-      (item) =>
-        item.bankName === draftBank.bankName &&
-        item.accountNumber === draftBank.accountNumber,
-    );
-    return bank
-      ? `${bank.bankName} - ${bank.accountNumber}`
-      : draftBank.bankName;
-  }, [bankAccounts, draftBank.accountNumber, draftBank.bankName]);
+  const selectedDraftBankId = useMemo(() => {
+    if (draftBank.bankId) return draftBank.bankId;
+    const matched = findBankByName(bankAccounts, draftBank.bankName);
+    return matched ? String(matched.id) : "";
+  }, [bankAccounts, draftBank.bankId, draftBank.bankName]);
 
-  const handleSelectBank = (bank: StoredBankAccount) => {
-    const bankInfo = vietQrBankData.find(
-      (item) => item.shortName === bank.bankName || item.name === bank.bankName,
-    );
+  const selectedBankLabel = useMemo(() => {
+    if (!selectedDraftBankId) return "Chọn ngân hàng...";
+    const bank = bankAccounts.find((item) => String(item.id) === selectedDraftBankId);
+    return bank ? getBankDisplayName(bank) : draftBank.bankName;
+  }, [bankAccounts, draftBank.bankName, selectedDraftBankId]);
+
+  const handleSelectBank = (bank: BankMasterDataRecord) => {
     setDraftBank((prev) => ({
       ...prev,
-      bankName: bank.bankName,
-      bin: bankInfo?.bin || "",
-      logo: bank.logo || bankInfo?.logo || "",
-      accountNumber: bank.accountNumber,
-      accountHolder: bank.accountHolder,
-      branch: bank.branch,
-      note: bank.note,
+      bankId: String(bank.id),
+      bankCode: bank.code,
+      bankName: bank.shortName || bank.name,
+      bin: bank.bin || "",
+      logo: bank.logoUrl || "",
     }));
   };
 
   const handleEditBankAccount = (account: BranchBankAccount) => {
     setEditingBankId(account.id);
     setDraftBank({
+      bankId: String(account.bankId ?? ""),
+      bankCode: account.bankCode,
       bankName: account.bankName,
       bin: account.bin || "",
       logo: account.logo || "",
@@ -297,6 +315,8 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
   const clearDraftBank = () => {
     setEditingBankId(null);
     setDraftBank({
+      bankId: "",
+      bankCode: "",
       bankName: "",
       bin: "",
       logo: "",
@@ -309,6 +329,7 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
 
   const handleAddNewBankAccount = () => {
     if (
+      !draftBank.bankId ||
       !draftBank.bankName ||
       !draftBank.accountNumber ||
       !draftBank.accountHolder
@@ -318,6 +339,12 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
 
     const nextAccount: BranchBankAccount = {
       id: editingBankId || Date.now().toString(),
+      bankAccountId:
+        editingBankId
+          ? formData.bankAccounts.find((item) => item.id === editingBankId)?.bankAccountId
+          : undefined,
+      bankId: draftBank.bankId || undefined,
+      bankCode: draftBank.bankCode,
       bankName: draftBank.bankName,
       accountNumber: draftBank.accountNumber,
       accountHolder: draftBank.accountHolder,
@@ -506,7 +533,8 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
       <BranchBankSelectorDialog
         open={isBankDialogOpen}
         onOpenChange={setIsBankDialogOpen}
-        selectedBankName={selectedBankLabel}
+        selectedBankId={selectedDraftBankId}
+        banks={bankAccounts}
         onSelect={handleSelectBank}
       />
 
@@ -558,11 +586,7 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {filteredAccounts.map((account) => {
-              const bankInfo = vietQrBankData.find(
-                (bank) =>
-                  bank.shortName === account.bankName ||
-                  bank.name === account.bankName,
-              );
+              const bankInfo = findBankByName(bankAccounts, account.bankName);
 
               return (
                 <Card
@@ -570,13 +594,13 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
                   className="group cursor-default border-primary/10 transition-all hover:border-primary/50 hover:shadow-md"
                 >
                   <CardContent className="flex items-center gap-4 p-4">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-white p-2 shadow-sm transition-transform group-hover:scale-105">
-                      <img
-                        src={
-                          account.logo ||
-                          bankInfo?.logo ||
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-white p-2 shadow-sm transition-transform group-hover:scale-105">
+                    <img
+                      src={
+                        account.logo ||
+                          bankInfo?.logoUrl ||
                           `https://placehold.co/56x56?text=${account.bankName?.[0] || "B"}`
-                        }
+                      }
                         alt={account.bankName}
                         className="h-full w-full object-contain"
                         onError={(event) => {

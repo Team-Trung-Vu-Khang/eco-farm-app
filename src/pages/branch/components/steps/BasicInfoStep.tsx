@@ -9,53 +9,60 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { FileText } from "lucide-react";
 import { useEffect } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+
 import type { Enterprise } from "@/pages/enterprise/data/constants";
-import type { BranchFormData } from "../../types/types";
+import type { BranchFormInput } from "../../data/branch-form.schema";
 import { BranchEnterpriseSelector } from "./BranchEnterpriseSelector";
 
 interface BasicInfoStepProps {
-  formData: BranchFormData;
-  updateFormData: (updates: Partial<BranchFormData>) => void;
   enterprises: Enterprise[];
   isEdit: boolean;
 }
 
-export function BasicInfoStep({
-  formData,
-  updateFormData,
-  enterprises,
-  isEdit,
-}: BasicInfoStepProps) {
+export function BasicInfoStep({ enterprises, isEdit }: BasicInfoStepProps) {
+  const {
+    control,
+    clearErrors,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useFormContext<BranchFormInput>();
+
+  const organizationId = watch("organizationId");
+  const website = watch("website");
+
+  const selectedEnterprise =
+    enterprises.find((item) => item.id.toString() === organizationId) ||
+    (enterprises.length === 1 ? enterprises[0] : undefined);
+
   useEffect(() => {
-    if (formData.enterpriseId || enterprises.length !== 1) return;
+    if (organizationId || enterprises.length !== 1) return;
 
     const [enterprise] = enterprises;
     if (!enterprise) return;
 
-    updateFormData({
-      enterpriseId: enterprise.id.toString(),
-      enterpriseName: enterprise.name,
+    setValue("organizationId", enterprise.id.toString(), {
+      shouldDirty: true,
+      shouldTouch: true,
     });
-  }, [enterprises, formData.enterpriseId, updateFormData]);
-
-  const selectedEnterprise =
-    enterprises.find((item) => item.id.toString() === formData.enterpriseId) ||
-    (enterprises.length === 1 ? enterprises[0] : undefined);
+  }, [enterprises, organizationId, setValue]);
 
   useEffect(() => {
     if (!selectedEnterprise?.website) return;
-    if (formData.website) return;
+    if (website) return;
 
-    updateFormData({
-      website: selectedEnterprise.website,
+    setValue("website", selectedEnterprise.website, {
+      shouldDirty: true,
+      shouldTouch: true,
     });
-  }, [formData.website, selectedEnterprise?.id, selectedEnterprise?.website, updateFormData]);
+  }, [selectedEnterprise?.id, selectedEnterprise?.website, setValue, website]);
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="enterprise">
-          Đơn vị sở hữu <span className="text-red-500">*</span>
+        <Label htmlFor="organizationId" required>
+          Đơn vị sở hữu
         </Label>
         {enterprises.length === 1 ? (
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -67,101 +74,198 @@ export function BasicInfoStep({
             </div>
           </div>
         ) : (
-          <BranchEnterpriseSelector
-            enterprises={enterprises}
-            selectedId={formData.enterpriseId}
-            onSelect={(value) => {
-              const enterprise = enterprises.find(
-                (item) => item.id.toString() === value,
-              );
-              updateFormData({
-                enterpriseId: value,
-                enterpriseName: enterprise?.name || "",
-              });
-            }}
+          <Controller
+            control={control}
+            name="organizationId"
+            render={({ field }) => (
+              <div className="space-y-2">
+                <BranchEnterpriseSelector
+                  enterprises={enterprises}
+                  selectedId={field.value}
+                  onSelect={(value) => {
+                    clearErrors("organizationId");
+                    field.onChange(value);
+                  }}
+                />
+                {errors.organizationId ? (
+                  <p className="text-xs text-red-600">
+                    {errors.organizationId.message}
+                  </p>
+                ) : null}
+              </div>
+            )}
           />
         )}
+        {errors.organizationId && enterprises.length === 1 ? (
+          <p className="text-xs text-red-600">
+            {errors.organizationId.message}
+          </p>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="code">
-            Mã chi nhánh <span className="text-red-500">*</span>
+          <Label htmlFor="code" required>
+            Mã chi nhánh
           </Label>
-          <Input
-            id="code"
-            value={formData.code}
-            onChange={(e) => updateFormData({ code: e.target.value })}
-            placeholder="VD: CN001"
+          <Controller
+            control={control}
+            name="code"
+            render={({ field }) => (
+              <Input
+                id="code"
+                value={field.value}
+                onChange={(event) => {
+                  clearErrors("code");
+                  field.onChange(event.target.value);
+                }}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+                placeholder="VD: CN001"
+                aria-invalid={!!errors.code}
+              />
+            )}
           />
+          {errors.code ? (
+            <p className="text-xs text-red-600">{errors.code.message}</p>
+          ) : null}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="name">
-            Tên chi nhánh <span className="text-red-500">*</span>
+          <Label htmlFor="name" required>
+            Tên chi nhánh
           </Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => updateFormData({ name: e.target.value })}
-            placeholder="VD: Chi nhánh Miền Nam"
+          <Controller
+            control={control}
+            name="name"
+            render={({ field }) => (
+              <Input
+                id="name"
+                value={field.value}
+                onChange={(event) => {
+                  clearErrors("name");
+                  field.onChange(event.target.value);
+                }}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+                placeholder="VD: Chi nhánh Miền Nam"
+                aria-invalid={!!errors.name}
+              />
+            )}
           />
+          {errors.name ? (
+            <p className="text-xs text-red-600">{errors.name.message}</p>
+          ) : null}
         </div>
 
-        <div className="space-y-2 col-span-2">
+        <div className="col-span-2 space-y-2">
           <Label htmlFor="website">Website</Label>
-          <Input
-            id="website"
-            value={formData.website}
-            onChange={(e) => updateFormData({ website: e.target.value })}
-            placeholder="VD: https://example.com"
+          <Controller
+            control={control}
+            name="website"
+            render={({ field }) => (
+              <Input
+                id="website"
+                value={field.value}
+                onChange={(event) => {
+                  clearErrors("website");
+                  field.onChange(event.target.value);
+                }}
+                onBlur={field.onBlur}
+                ref={field.ref}
+                name={field.name}
+                placeholder="VD: https://example.com"
+                aria-invalid={!!errors.website}
+              />
+            )}
           />
+          {errors.website ? (
+            <p className="text-xs text-red-600">{errors.website.message}</p>
+          ) : null}
         </div>
 
         {isEdit && (
           <div className="space-y-2">
-            <Label htmlFor="status">Trạng thái</Label>
-            <Select
-              value={formData.status}
-              onValueChange={(value: "active" | "inactive") =>
-                updateFormData({ status: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Hoạt động</SelectItem>
-                <SelectItem value="inactive">Không hoạt động</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="status" required>
+              Trạng thái
+            </Label>
+            <Controller
+              control={control}
+              name="status"
+              render={({ field }) => (
+                <Select
+                  value={field.value}
+                  onValueChange={(value) => {
+                    clearErrors("status");
+                    field.onChange(value);
+                  }}
+                >
+                  <SelectTrigger id="status" aria-invalid={!!errors.status}>
+                    <SelectValue placeholder="Chọn trạng thái" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Hoạt động</SelectItem>
+                    <SelectItem value="inactive">Không hoạt động</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.status ? (
+              <p className="text-xs text-red-600">{errors.status.message}</p>
+            ) : null}
           </div>
         )}
       </div>
 
-      <div className="pt-4 border-t">
-        <div className="flex items-center gap-2 mb-4">
-          <FileText className="w-5 h-5 text-primary" />
+      <div className="border-t pt-4">
+        <div className="mb-4 flex items-center gap-2">
+          <FileText className="h-5 w-5 text-primary" />
           <h3 className="font-semibold">Thông tin thuế</h3>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="taxCode">Mã số thuế chi nhánh</Label>
-            <Input
-              id="taxCode"
-              value={formData.taxCode}
-              onChange={(e) => updateFormData({ taxCode: e.target.value })}
-              placeholder="VD: 0123456789-001"
+            <Controller
+              control={control}
+              name="taxCode"
+              render={({ field }) => (
+                <Input
+                  id="taxCode"
+                  value={field.value}
+                  onChange={(event) => {
+                    clearErrors("taxCode");
+                    field.onChange(event.target.value);
+                  }}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                  placeholder="VD: 0123456789-001"
+                />
+              )}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="taxAddress">Địa chỉ thuế</Label>
-            <Input
-              id="taxAddress"
-              value={formData.taxAddress}
-              onChange={(e) => updateFormData({ taxAddress: e.target.value })}
-              placeholder="Địa chỉ đăng ký thuế"
+            <Controller
+              control={control}
+              name="taxAddress"
+              render={({ field }) => (
+                <Input
+                  id="taxAddress"
+                  value={field.value}
+                  onChange={(event) => {
+                    clearErrors("taxAddress");
+                    field.onChange(event.target.value);
+                  }}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  name={field.name}
+                  placeholder="Địa chỉ đăng ký thuế"
+                />
+              )}
             />
           </div>
         </div>

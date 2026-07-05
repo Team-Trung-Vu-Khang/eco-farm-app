@@ -123,6 +123,7 @@ export interface BranchContactRequest {
 
 export interface BranchBankRequest {
   id?: number | string;
+  bankId?: number | string;
   ownerType?: string;
   ownerId?: number | string;
   bankCode: string;

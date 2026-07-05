@@ -1,5 +1,21 @@
-import { User, MapPin, Calendar, CreditCard, Phone, Mail, Globe } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, Badge, Button, Separator } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  Badge,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Separator,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  Calendar,
+  CreditCard,
+  Globe,
+  Mail,
+  MapPin,
+  Phone,
+  User,
+} from "lucide-react";
 
 export function EnterpriseOverviewCard({
   data,
@@ -149,20 +165,6 @@ export function EnterpriseOverviewCard({
           </div>
         </CardContent>
       </Card>
-      <div className="flex gap-2">
-        <Button
-          className="flex-1"
-          onClick={() => setLocation(`/enterprise/${data.id}/edit`)}
-        >
-          Chỉnh sửa
-        </Button>
-        <Button
-          variant="outline"
-          className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10"
-        >
-          Xóa
-        </Button>
-      </div>
     </div>
   );
 }

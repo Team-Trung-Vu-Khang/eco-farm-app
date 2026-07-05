@@ -178,15 +178,10 @@ export default function FarmerDetailPage() {
       title={data.name}
       description={`Chi tiết thông tin nông hộ`}
       actions={
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setLocation("/farmer")}>
-            <ChevronLeft className="w-4 h-4 mr-2" />
-            Quay lại
-          </Button>
-          <Button onClick={() => setLocation(`/farmer/${data.id}/edit`)}>
-            Chỉnh sửa
-          </Button>
-        </div>
+        <Button variant="outline" onClick={() => setLocation("/farmer")}>
+          <ChevronLeft className="w-4 h-4 mr-2" />
+          Quay lại
+        </Button>
       }
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
