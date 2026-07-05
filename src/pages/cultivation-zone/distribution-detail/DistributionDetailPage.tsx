@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
-import { useLocation, useRoute } from "wouter";
+import treeMarkerIcon from "@/assets/tree.webp";
+import usePlantDistributionStore from "@/stores/usePlantDistributionStore";
 import {
   AdminLayout,
-  Button,
   Badge,
+  Button,
   Card,
   CardContent,
   CardHeader,
@@ -13,29 +13,21 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  ScrollArea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  ChevronLeft,
-  Edit,
   Download,
-  MapPin,
-  Trees,
-  Sprout,
-  Calendar,
-  MoreVertical,
-  Target,
+  Edit,
   Layers,
-  Search,
-  Filter,
-  Droplets,
+  MapPin,
+  Sprout,
   Sun,
+  Target,
+  Trees,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { MFMap, MFMarker } from "react-map4d-map";
-import treeMarkerIcon from "@/assets/tree.webp";
-import { PLANT_DISTRIBUTION_MOCK_DATA } from "./data/constants";
+import { useLocation, useRoute } from "wouter";
 import { MOCK_SEEDS } from "./constants";
-import usePlantDistributionStore from "@/stores/usePlantDistributionStore";
 
 // --- Mock Data ---
 
@@ -177,11 +169,7 @@ const DistributionDetailPage = () => {
 
   if (!detailData) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Không tìm thấy"
-        description="Bản ghi không tồn tại"
-      >
+      <AdminLayout title="Không tìm thấy" description="Bản ghi không tồn tại">
         <div className="text-sm text-muted-foreground">
           Không có dữ liệu phân bổ.
         </div>
@@ -296,7 +284,6 @@ const DistributionDetailPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title={detailData.name}
       description={`Mã: ${detailData.code} • Tạo ngày ${detailData.createdAt}`}
       actions={

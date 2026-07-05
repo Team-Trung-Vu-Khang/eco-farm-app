@@ -1,10 +1,10 @@
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Plus } from "lucide-react";
 import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
 import LandFormDialog from "./components/LandFormDialog";
 import { landColumns } from "./data/land.constants";
@@ -33,7 +33,6 @@ export default function LandPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý đất"
       description="Phân loại và quản lý các loại đất canh tác"
       actions={

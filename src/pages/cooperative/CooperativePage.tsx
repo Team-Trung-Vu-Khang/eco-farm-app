@@ -1,12 +1,12 @@
-import { Link, useLocation } from "wouter";
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useCooperative } from "./hooks/useCooperative";
+import { Plus } from "lucide-react";
+import { Link, useLocation } from "wouter";
 import { CooperativeTable } from "./components/CooperativeTable";
+import { useCooperative } from "./hooks/useCooperative";
 
 export default function CooperativePage() {
   const [, setLocation] = useLocation();
@@ -28,8 +28,7 @@ export default function CooperativePage() {
     totalElements,
     loading,
     error,
-  } =
-    useCooperative();
+  } = useCooperative();
 
   const headerActions = (
     <Link href="/cooperative/create">
@@ -42,7 +41,6 @@ export default function CooperativePage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý hợp tác xã"
       description="Quản lý thông tin các hợp tác xã trong hệ thống"
       actions={headerActions}

@@ -1,4 +1,3 @@
-import { useRoute, useLocation } from "wouter";
 import {
   AdminLayout,
   Button,
@@ -8,15 +7,16 @@ import {
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft, Edit } from "lucide-react";
+import { useLocation, useRoute } from "wouter";
 import useEquipmentStore from "../../stores/useEquipmentStore";
 import { EquipmentDetailHeader } from "./components/detail/EquipmentDetailHeader";
-import {
-  InfoTab,
-  UsageTab,
-  MaintenanceTab,
-  DocsTab,
-} from "./components/detail/EquipmentDetailTabs";
 import { EquipmentDetailSidebar } from "./components/detail/EquipmentDetailSidebar";
+import {
+  DocsTab,
+  InfoTab,
+  MaintenanceTab,
+  UsageTab,
+} from "./components/detail/EquipmentDetailTabs";
 
 const EquipmentDetailPage = () => {
   const [, params] = useRoute("/equipment/:id");
@@ -28,7 +28,7 @@ const EquipmentDetailPage = () => {
 
   if (!item) {
     return (
-      <AdminLayout isDev={true} title="Chi tiết thiết bị">
+      <AdminLayout title="Chi tiết thiết bị">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin thiết bị.
@@ -43,7 +43,6 @@ const EquipmentDetailPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Chi tiết thiết bị"
       description={`Thông tin và lịch sử bảo dưỡng của ${item.name}`}
       actions={

@@ -1,7 +1,7 @@
 import {
   AdminLayout,
-  StepperForm,
   Button,
+  StepperForm,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
 import MaterialSubmitConfirmDialog from "./components/MaterialSubmitConfirmDialog";
@@ -21,7 +21,6 @@ const MaterialCreatePage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title={isEdit ? "Cập nhật vật tư" : "Thêm mới vật tư"}
       description={
         isEdit

@@ -1,4 +1,4 @@
-import { useLocation, useRoute } from "wouter";
+import { useMasterDataById } from "@/features/master-data";
 import {
   AdminLayout,
   Badge,
@@ -17,7 +17,7 @@ import {
   SquareUserRound,
 } from "lucide-react";
 import { useMemo } from "react";
-import { useMasterDataById } from "@/features/master-data";
+import { useLocation, useRoute } from "wouter";
 import type { PositionRecord } from "./types";
 
 function formatDateTime(value: unknown) {
@@ -71,7 +71,7 @@ export default function PositionDetailPage() {
 
   if (positionQuery.isLoading) {
     return (
-      <AdminLayout isDev={true} title="Chi tiết chức vụ">
+      <AdminLayout title="Chi tiết chức vụ">
         <div className="flex items-center justify-center py-20 text-slate-500">
           Đang tải thông tin chức vụ...
         </div>
@@ -81,7 +81,7 @@ export default function PositionDetailPage() {
 
   if (positionQuery.error || !position) {
     return (
-      <AdminLayout isDev={true} title="Chi tiết chức vụ">
+      <AdminLayout title="Chi tiết chức vụ">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="mb-4 text-slate-500">
             Không tìm thấy thông tin chức vụ này.
@@ -97,7 +97,6 @@ export default function PositionDetailPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Chi tiết chức vụ"
       description={`Thông tin chi tiết của ${position.name}`}
       actions={

@@ -7,11 +7,11 @@ import {
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Award, Building2 } from "lucide-react";
-import { useCertificate } from "./hooks/useCertificate";
-import { StandardTab } from "./components/StandardTab";
+import { OrganizationFormDialog } from "./components/OrganizationFormDialog";
 import { OrganizationTab } from "./components/OrganizationTab";
 import { StandardFormDialog } from "./components/StandardFormDialog";
-import { OrganizationFormDialog } from "./components/OrganizationFormDialog";
+import { StandardTab } from "./components/StandardTab";
+import { useCertificate } from "./hooks/useCertificate";
 import type { CategoryType } from "./types/types";
 
 const ORGANIZATION_STATUS_OPTIONS = [
@@ -58,7 +58,6 @@ export default function CertificatePage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Danh mục tiêu chuẩn"
       description="Quản lý loại tiêu chuẩn và tổ chức chứng nhận (Master Data)"
     >

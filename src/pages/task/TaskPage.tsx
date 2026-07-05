@@ -1,10 +1,10 @@
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Plus } from "lucide-react";
 import { TaskCalendarView } from "./components/TaskCalendarView";
 import TaskDetailDialog from "./components/TaskDetailDialog";
 import { TaskStatsGrid } from "./components/TaskStatsGrid";
@@ -41,7 +41,6 @@ export default function TaskPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Phân bổ công việc"
       description="Phân công nhiệm vụ cho nhân viên và đội nhóm"
       actions={

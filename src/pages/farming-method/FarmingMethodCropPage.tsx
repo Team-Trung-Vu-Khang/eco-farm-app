@@ -16,9 +16,9 @@ import {
 import { Plus, X } from "lucide-react";
 import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
 
-import { useFarmingMethodCropPage } from "./hooks/useFarmingMethodCropPage";
-import { columns } from "./data/columns";
 import { CropVarietySelectorDialog } from "./components/CropVarietySelectorDialog";
+import { columns } from "./data/columns";
+import { useFarmingMethodCropPage } from "./hooks/useFarmingMethodCropPage";
 
 export default function FarmingMethodCropPage() {
   const {
@@ -56,7 +56,6 @@ export default function FarmingMethodCropPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Phương thức canh tác theo cây trồng"
       description="Bảng liên kết giữa phương thức canh tác với danh sách cây trồng và giống áp dụng, kèm mô tả ngắn cho từng phương thức."
       actions={

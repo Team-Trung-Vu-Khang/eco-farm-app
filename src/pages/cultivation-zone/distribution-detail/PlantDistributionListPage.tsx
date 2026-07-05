@@ -21,7 +21,6 @@ const PlantDistributionListPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Phân bổ cây trồng"
       description="Quản lý phân bổ và định vị GPS cho cây trồng"
       actions={

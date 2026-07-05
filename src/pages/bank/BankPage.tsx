@@ -1,11 +1,11 @@
-import { Link } from "wouter";
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Plus } from "lucide-react";
+import { Link } from "wouter";
 import { bankColumns } from "./data/columns";
 import { bankFilters } from "./data/constants";
 import { useBankTable } from "./hooks/useBankTable";
@@ -32,7 +32,6 @@ export default function BankPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý tài khoản ngân hàng"
       description="Danh sách tài khoản ngân hàng của đơn vị sở hữu"
       actions={

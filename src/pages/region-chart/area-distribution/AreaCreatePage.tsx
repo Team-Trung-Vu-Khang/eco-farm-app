@@ -1,3 +1,5 @@
+import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AdminLayout,
   Button,
@@ -7,8 +9,6 @@ import {
 import "leaflet/dist/leaflet.css";
 import { ChevronLeft } from "lucide-react";
 import { FormProvider, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
 
 import { AreaInfoStep } from "./components/AreaInfoStep";
 import { AreaMapStep } from "./components/AreaMapStep";
@@ -21,8 +21,8 @@ const customIcon = getMarkerIcon("blue");
 const activeIcon = getMarkerIcon("green");
 const invalidIcon = getMarkerIcon("red");
 
-import { useMemo } from "react";
 import { useRegions } from "@/features/farm/hooks/useRegions";
+import { useMemo } from "react";
 
 const AreaCreatePage = () => {
   const { data: regionsData } = useRegions({ params: { size: 100 } });
@@ -103,7 +103,6 @@ const AreaCreatePage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title={isEditMode ? "Cập nhật khu vực" : "Thêm mới khu vực"}
       description={
         isEditMode

@@ -2,11 +2,11 @@ import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft, Edit, Trash } from "lucide-react";
 import { useLocation } from "wouter";
 
+import { DocAttachments } from "./components/detail/DocAttachments";
+import { DocContent } from "./components/detail/DocContent";
 import { DocMainInfoCard } from "./components/detail/DocMainInfoCard";
 import { DocQuickSummaryCard } from "./components/detail/DocQuickSummaryCard";
 import { DocSpecifications } from "./components/detail/DocSpecifications";
-import { DocContent } from "./components/detail/DocContent";
-import { DocAttachments } from "./components/detail/DocAttachments";
 
 const mockDoc = {
   id: "TL001",
@@ -47,7 +47,6 @@ export default function DocsDetailPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title={`Chi tiết tài liệu: ${doc.id}`}
       description="Xem thông tin chi tiết và nội dung tài liệu kỹ thuật"
       actions={

@@ -1,8 +1,7 @@
-import { useRoute, useLocation } from "wouter";
 import {
   AdminLayout,
-  Button,
   Badge,
+  Button,
   Card,
   CardContent,
   CardHeader,
@@ -14,22 +13,23 @@ import {
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  ChevronLeft,
-  Edit,
-  FileText,
+  AlertTriangle,
   Building2,
-  Package,
-  Tags,
-  Image as ImageIcon,
   CalendarDays,
   CheckCircle2,
-  Info,
+  ChevronLeft,
   Droplets,
-  Leaf,
+  Edit,
+  FileText,
   FlaskConical,
+  Image as ImageIcon,
+  Info,
+  Leaf,
+  Package,
+  Tags,
   Truck,
-  AlertTriangle,
 } from "lucide-react";
+import { useLocation, useRoute } from "wouter";
 import useFertilizerStore from "../../stores/useFertilizerStore";
 import { suppliers } from "./data/constants";
 
@@ -180,7 +180,6 @@ const FertilizerDetailPage = () => {
   if (!item) {
     return (
       <AdminLayout
-        isDev={true}
         title="Chi tiết phân bón"
         description="Đang tải thông tin..."
       >
@@ -201,7 +200,6 @@ const FertilizerDetailPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Chi tiết phân bón"
       description={`Thông tin chi tiết sản phẩm ${item.name}`}
       actions={

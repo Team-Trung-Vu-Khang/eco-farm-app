@@ -1,24 +1,24 @@
-import { useRoute, useLocation } from "wouter";
 import {
   AdminLayout,
-  Button,
   Badge,
+  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  ChevronLeft,
-  Edit,
   Building2,
-  Package,
-  Tags,
-  Image as ImageIcon,
   CalendarDays,
   CheckCircle2,
+  ChevronLeft,
+  Edit,
+  Image as ImageIcon,
   Info,
+  Package,
+  Tags,
 } from "lucide-react";
+import { useLocation, useRoute } from "wouter";
 import useMaterialStore from "../../stores/useMaterialStore";
 import { mockMaterialSuppliers } from "./data/constants";
 
@@ -33,7 +33,7 @@ const MaterialDetailPage = () => {
 
   if (!item) {
     return (
-      <AdminLayout isDev={true} title="Chi tiết vật tư">
+      <AdminLayout title="Chi tiết vật tư">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin vật tư.
@@ -48,7 +48,6 @@ const MaterialDetailPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Chi tiết vật tư"
       description={`Thông tin chi tiết cho ${item.name}`}
       actions={

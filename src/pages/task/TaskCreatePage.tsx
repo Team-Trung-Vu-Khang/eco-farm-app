@@ -1,36 +1,3 @@
-import { useState, useMemo } from "react";
-import { useLocation } from "wouter";
-import {
-  Plus,
-  Calendar as CalendarIcon,
-  Package,
-  X,
-  Bug,
-  Apple,
-  FlaskConical,
-  Wrench,
-  ChevronLeft,
-  CheckCircle2,
-  Info,
-  Layers,
-  ClipboardList,
-  AlertTriangle,
-  FileCheck,
-  Sprout,
-  StickyNote,
-  Search,
-  User,
-  Users,
-  MapPin,
-  RefreshCw,
-  Shield,
-  ClipboardCheck,
-  Clock,
-  Target,
-  Trash2,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
 import {
   AdminLayout,
   Badge,
@@ -39,26 +6,59 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Checkbox,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Input,
   Label,
+  ScrollArea,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Textarea,
   StepperForm,
-  useToast,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  Checkbox,
-  ScrollArea,
+  Textarea,
   cn,
+  useToast,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  AlertTriangle,
+  Apple,
+  Bug,
+  Calendar as CalendarIcon,
+  CheckCircle2,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardCheck,
+  ClipboardList,
+  Clock,
+  FileCheck,
+  FlaskConical,
+  Info,
+  Layers,
+  MapPin,
+  Package,
+  Plus,
+  RefreshCw,
+  Search,
+  Shield,
+  Sprout,
+  StickyNote,
+  Target,
+  Trash2,
+  User,
+  Users,
+  Wrench,
+  X,
+} from "lucide-react";
+import { useMemo, useState } from "react";
+import { useLocation } from "wouter";
 
 const SelectionCard = ({
   regionId,
@@ -288,21 +288,24 @@ const SelectionCard = ({
   );
 };
 
-import useTaskStore from "../../stores/useTaskStore";
-import type { MaterialAllocation, TaskAllocation } from "../plan/types";
-import usePlanStore from "../../stores/usePlanStore";
 import useAmendmentPlanStore from "../../stores/useAmendmentPlanStore";
+import { useAmendmentRegimenStore } from "../../stores/useAmendmentRegimenStore";
 import usePersonnelStore from "../../stores/usePersonnelStore";
+import usePlanStore from "../../stores/usePlanStore";
+import useRegionStore from "../../stores/useRegionStore";
+import useTaskStore from "../../stores/useTaskStore";
 import useTeamStore from "../../stores/useTeamStore";
 import { useTreatmentStore } from "../../stores/useTreatmentStore";
-import { useAmendmentRegimenStore } from "../../stores/useAmendmentRegimenStore";
-import useRegionStore from "../../stores/useRegionStore";
-import { TaskStageAllocation } from "../plan/components/TaskStageAllocation";
-import { getFrequencyText } from "../plan/utils/task";
-import GeographicalSelector from "../plan/components/GeographicalSelector";
 import { EnterpriseSelector } from "../cultivation-zone/cultivation-region/components";
-import type { GeographicalSelection } from "../plan/types";
+import GeographicalSelector from "../plan/components/GeographicalSelector";
 import { RegimenSelector } from "../plan/components/RegimenSelector";
+import { TaskStageAllocation } from "../plan/components/TaskStageAllocation";
+import type {
+  GeographicalSelection,
+  MaterialAllocation,
+  TaskAllocation,
+} from "../plan/types";
+import { getFrequencyText } from "../plan/utils/task";
 
 // Danh mục vật tư mẫu
 
@@ -2705,7 +2708,6 @@ export default function TaskCreatePage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Phân bổ công việc"
       description="Quy trình 3 bước lập lịch và quản lý nguồn lực"
       actions={

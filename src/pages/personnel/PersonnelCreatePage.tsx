@@ -1,14 +1,14 @@
 import { AdminLayout, Button, Form } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Save, X, Loader2 } from "lucide-react";
-import { usePersonnelForm } from "./hooks/usePersonnelForm";
+import { Loader2, Save, X } from "lucide-react";
 import { PersonnelFormTabs } from "./components/PersonnelFormTabs";
+import { usePersonnelForm } from "./hooks/usePersonnelForm";
 
 export default function PersonnelCreatePage() {
-  const { methods, handleSubmit, setLocation, isSubmitting } = usePersonnelForm();
+  const { methods, handleSubmit, setLocation, isSubmitting } =
+    usePersonnelForm();
 
   return (
     <AdminLayout
-      isDev={true}
       title="Thêm mới nhân sự"
       description="Thêm hồ sơ nhân sự mới vào hệ thống"
       actions={

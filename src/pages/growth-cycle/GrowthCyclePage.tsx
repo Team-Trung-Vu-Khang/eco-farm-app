@@ -1,3 +1,4 @@
+import { useDialogBugWorkaround } from "@/shared/hooks/useDialogBugWorkaround";
 import {
   AdminLayout,
   Button,
@@ -10,13 +11,12 @@ import {
   TabsList,
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Link } from "wouter";
 import { Fish, Leaf, PawPrint, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useGrowthCyclePage } from "./hooks/useGrowthCyclePage";
+import { Link } from "wouter";
 import { growthCycleColumns } from "./data/columns";
 import GrowthCycleDetailPage from "./GrowthCycleDetailPage";
-import { useDialogBugWorkaround } from "@/shared/hooks/useDialogBugWorkaround";
+import { useGrowthCyclePage } from "./hooks/useGrowthCyclePage";
 
 const GrowthCyclePage = () => {
   const [activeTab, setActiveTab] = useState<"plant" | "animal">("plant");
@@ -58,7 +58,6 @@ const GrowthCyclePage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý chu kỳ sinh trưởng"
       description="Quản lý riêng chu kỳ thực vật và vật nuôi/thủy sản trong cùng một không gian"
       actions={

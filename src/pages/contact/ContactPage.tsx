@@ -59,7 +59,6 @@ export default function ContactPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý thông tin liên hệ"
       description="Quản lý sổ danh bạ và nhóm danh bạ"
     >

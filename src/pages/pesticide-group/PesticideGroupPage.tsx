@@ -1,5 +1,3 @@
-import { useState } from "react";
-import { Droplet, AlertTriangle, Leaf } from "lucide-react";
 import {
   AdminLayout,
   Tabs,
@@ -7,9 +5,11 @@ import {
   TabsList,
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { AlertTriangle, Droplet, Leaf } from "lucide-react";
+import { useState } from "react";
+import PesticideOriginPage from "./PesticideOriginPage";
 import PesticidePurposePage from "./PesticidePurposePage";
 import PesticideToxicityPage from "./PesticideToxicityPage";
-import PesticideOriginPage from "./PesticideOriginPage";
 import type { PesticideGroupTab } from "./types";
 
 const PesticideGroupPage = () => {
@@ -17,7 +17,6 @@ const PesticideGroupPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Danh mục thuốc BVTV"
       description="Quản lý phân loại thuốc bảo vệ thực vật theo công dụng, độ độc tính và nguồn gốc"
     >

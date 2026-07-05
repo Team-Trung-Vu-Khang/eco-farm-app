@@ -43,12 +43,12 @@ import {
   Layers,
   MapPin,
   Plus,
+  RefreshCw,
   Search,
   Shield,
   Sprout,
   StickyNote,
   Target,
-  RefreshCw,
   Trash2,
   User,
   Users,
@@ -57,18 +57,18 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
 
+import useAmendmentPlanStore from "../../stores/useAmendmentPlanStore";
+import { useAmendmentRegimenStore } from "../../stores/useAmendmentRegimenStore";
 import usePersonnelStore from "../../stores/usePersonnelStore";
 import usePlanStore from "../../stores/usePlanStore";
-import useAmendmentPlanStore from "../../stores/useAmendmentPlanStore";
-import { useTreatmentStore } from "../../stores/useTreatmentStore";
-import { useAmendmentRegimenStore } from "../../stores/useAmendmentRegimenStore";
 import useRegionStore from "../../stores/useRegionStore";
 import useTaskStore from "../../stores/useTaskStore";
 import useTeamStore from "../../stores/useTeamStore";
-import GeographicalSelector from "../plan/components/GeographicalSelector";
+import { useTreatmentStore } from "../../stores/useTreatmentStore";
 import { EnterpriseSelector } from "../cultivation-zone/cultivation-region/components";
-import { TaskStageAllocation } from "../plan/components/TaskStageAllocation";
+import GeographicalSelector from "../plan/components/GeographicalSelector";
 import { RegimenSelector } from "../plan/components/RegimenSelector";
+import { TaskStageAllocation } from "../plan/components/TaskStageAllocation";
 import type {
   GeographicalSelection,
   MaterialAllocation,
@@ -2566,7 +2566,6 @@ export default function TaskEditPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Chỉnh sửa công việc"
       description={`Cập nhật thông tin cho mã: ${task.code}`}
       actions={

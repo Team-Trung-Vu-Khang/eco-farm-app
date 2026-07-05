@@ -4,11 +4,11 @@ import {
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
 import { Plus } from "lucide-react";
-import { useGroupCropPage } from "./hooks/useGroupCropPage";
-import { groupCropColumns } from "./data/columns";
+import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
 import { GroupCropFormDialog } from "./components/GroupCropFormDialog";
+import { groupCropColumns } from "./data/columns";
+import { useGroupCropPage } from "./hooks/useGroupCropPage";
 
 export default function GroupCropPage() {
   const {
@@ -40,7 +40,6 @@ export default function GroupCropPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý nhóm cây trồng"
       description="Danh mục các nhóm cây trồng có trên thị trường"
       actions={
@@ -54,23 +53,23 @@ export default function GroupCropPage() {
       }
     >
       <DataTable
-          data={groupCrops}
-          columns={groupCropColumns}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          searchPlaceholder="Tìm kiếm mã, tên loại cây..."
-          searchable
-          onSearch={handleSearch}
-          pageSize={pageSize}
-          currentIndex={currentIndex}
-          totalElements={response?.totalElements}
-          totalPages={response?.totalPages}
-          onPageSize={setPageSize}
-          onIndexChange={setCurrentIndex}
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          loading={loading}
-        />
+        data={groupCrops}
+        columns={groupCropColumns}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        searchPlaceholder="Tìm kiếm mã, tên loại cây..."
+        searchable
+        onSearch={handleSearch}
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalElements={response?.totalElements}
+        totalPages={response?.totalPages}
+        onPageSize={setPageSize}
+        onIndexChange={setCurrentIndex}
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        loading={loading}
+      />
 
       <GroupCropFormDialog
         open={formOpen}

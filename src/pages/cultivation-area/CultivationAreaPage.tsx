@@ -21,7 +21,6 @@ const CultivationAreaPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Khu vực canh tác"
       description="Quản lý các thiết lập canh tác theo Vùng trồng"
       actions={

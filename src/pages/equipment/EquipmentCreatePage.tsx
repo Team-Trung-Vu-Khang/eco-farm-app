@@ -1,7 +1,5 @@
 import {
   AdminLayout,
-  StepperForm,
-  Button,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -10,13 +8,15 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Button,
+  StepperForm,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
-import { useEquipmentCreateForm } from "./hooks/useEquipmentCreateForm";
 import { EquipmentBasicInfoStep } from "./components/steps/EquipmentBasicInfoStep";
-import { EquipmentTechnicalDocsStep } from "./components/steps/EquipmentTechnicalDocsStep";
-import { EquipmentSuppliersStep } from "./components/steps/EquipmentSuppliersStep";
 import { EquipmentConfirmationStep } from "./components/steps/EquipmentConfirmationStep";
+import { EquipmentSuppliersStep } from "./components/steps/EquipmentSuppliersStep";
+import { EquipmentTechnicalDocsStep } from "./components/steps/EquipmentTechnicalDocsStep";
+import { useEquipmentCreateForm } from "./hooks/useEquipmentCreateForm";
 
 const EquipmentCreatePage = () => {
   const {
@@ -73,7 +73,6 @@ const EquipmentCreatePage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title={isEdit ? "Cập nhật thiết bị" : "Thêm mới thiết bị"}
       description={
         isEdit

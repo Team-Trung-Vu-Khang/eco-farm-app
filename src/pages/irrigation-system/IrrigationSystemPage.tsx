@@ -1,12 +1,12 @@
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { irrigationSystemColumns } from "./data/columns";
+import { Plus } from "lucide-react";
 import { IrrigationSystemFormDialog } from "./components/IrrigationSystemFormDialog";
+import { irrigationSystemColumns } from "./data/columns";
 import { IRRIGATION_SYSTEM_STATUS_OPTIONS } from "./data/constants";
 import { useIrrigationSystemPage } from "./hooks/useIrrigationSystemPage";
 
@@ -37,7 +37,6 @@ export default function IrrigationSystemPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Hệ thống tưới"
       description="Quản lý danh sách hệ thống tưới"
       actions={

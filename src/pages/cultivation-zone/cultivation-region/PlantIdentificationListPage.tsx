@@ -1,4 +1,3 @@
-import { Link } from "wouter";
 import {
   AdminLayout,
   Button,
@@ -6,6 +5,7 @@ import {
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
+import { Link } from "wouter";
 import { usePlantIdentificationListPage } from "./hooks/usePlantIdentificationListPage";
 
 const PlantIdentificationListPage = () => {
@@ -20,7 +20,6 @@ const PlantIdentificationListPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Định danh cây trồng"
       description="Danh sách thông tin định danh và thông số sinh trưởng của cây trồng"
       actions={

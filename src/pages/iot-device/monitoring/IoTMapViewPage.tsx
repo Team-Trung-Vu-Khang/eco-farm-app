@@ -1,70 +1,64 @@
-import { useState, useMemo, useEffect } from "react";
 import {
   AdminLayout,
+  Badge,
+  Button,
   Card,
   CardContent,
   Input,
-  Label,
+  ScrollArea,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  ScrollArea,
   Separator,
   cn,
-  Button,
-  Badge,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  MapContainer,
-  TileLayer,
-  GeoJSON,
-  LayersControl,
-  LayerGroup,
-  Marker,
-  Popup,
-  useMap,
-  useMapEvents,
-} from "react-leaflet";
-import type { GeoJsonObject, Feature } from "geojson";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import {
-  Search,
   Activity,
-  Wifi,
   Battery,
+  ChevronRight,
+  Clock,
   Cpu,
-  Zap,
   Maximize2,
   Minimize2,
-  AlertTriangle,
   RefreshCw,
-  Info,
-  ChevronRight,
-  Signal,
-  Clock,
+  Search,
   Settings as SettingsIcon,
+  Signal,
+  Wifi,
   X,
+  Zap,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  GeoJSON,
+  MapContainer,
+  Marker,
+  Popup,
+  TileLayer,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
 import {
   CartesianGrid,
+  Tooltip as ChartTooltip,
   Line,
   LineChart,
   ResponsiveContainer,
-  Tooltip as ChartTooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import { toast } from "sonner";
 
 // Import existing map data
-import zoneData from "../../../assets/map/zone.json";
 import areaData from "../../../assets/map/area.json";
 import plotData from "../../../assets/map/plot.json";
+import zoneData from "../../../assets/map/zone.json";
 import { MOCK_REGIONS } from "../../region-chart/constants";
-import { mockIoTDevices, generateIoTTelemetry } from "../data/mapMockData";
+import { generateIoTTelemetry, mockIoTDevices } from "../data/mapMockData";
 import type { IoTDevice } from "../types";
 
 // --- Helpers (Cloned from MapViewPage) ---
@@ -242,7 +236,6 @@ const IoTMapViewPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Bản đồ Giám sát IoT"
       description="Theo dõi vị trí và trạng thái thiết bị thời gian thực"
     >

@@ -14,8 +14,8 @@ import {
   StepperForm,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft } from "lucide-react";
-import { useEnterpriseEditForm } from "./hooks/useEnterpriseEditForm";
 import { EnterpriseFormContext } from "./context/EnterpriseFormContext";
+import { useEnterpriseEditForm } from "./hooks/useEnterpriseEditForm";
 
 export default function EnterpriseEditPage() {
   const formState = useEnterpriseEditForm();
@@ -33,7 +33,6 @@ export default function EnterpriseEditPage() {
   return (
     <EnterpriseFormContext.Provider value={formState}>
       <AdminLayout
-        isDev={true}
         title={`Cập nhật ${
           formData.type === "enterprise"
             ? "Doanh nghiệp"

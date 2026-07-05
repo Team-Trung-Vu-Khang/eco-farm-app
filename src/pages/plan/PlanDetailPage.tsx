@@ -1,7 +1,22 @@
-import { useMemo } from "react";
 import {
-  ArrowLeft,
+  AdminLayout,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  cn,
+  DeleteDialog,
+  Separator,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
   Apple,
+  ArrowLeft,
   Bug,
   Calendar,
   CheckCircle2,
@@ -12,26 +27,11 @@ import {
   MapPin,
   Package,
   Sprout,
-  Users,
   Trash2,
+  Users,
   Wrench,
 } from "lucide-react";
-import {
-  AdminLayout,
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  DeleteDialog,
-  Separator,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useMemo } from "react";
 import { usePlanDetailPage } from "./hooks/usePlanDetailPage";
 import { getPlanStatusBadge } from "./utils/status";
 
@@ -103,7 +103,6 @@ export default function PlanDetailPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Chi tiết kế hoạch"
       description={`Xem thông tin chi tiết kế hoạch ${plan.code}`}
     >

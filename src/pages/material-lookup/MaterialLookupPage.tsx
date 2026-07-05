@@ -1,19 +1,19 @@
+import { AdminLayout, cn, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useState, type FC } from "react";
-import { AdminLayout, useToast, cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useMaterialLookup } from "./hooks/useMaterialLookup";
-import { MaterialTable } from "./components/MaterialTable";
-import { FloatingActionBar } from "./components/FloatingActionBar";
 import { AdvancedFilterPanel } from "./components/AdvancedFilterPanel";
-import { PesticideDetailView } from "./components/details/PesticideDetailView";
+import { CategorySidebar } from "./components/CategorySidebar";
+import { DetailPanel } from "./components/DetailPanel";
+import { EquipmentDetailView } from "./components/details/EquipmentDetailView";
 import { FertilizerDetailView } from "./components/details/FertilizerDetailView";
 import { MaterialDetailView } from "./components/details/MaterialDetailView";
-import { EquipmentDetailView } from "./components/details/EquipmentDetailView";
-import { type MaterialItem } from "./types/types";
-import { CategorySidebar } from "./components/CategorySidebar";
-import { CATEGORIES } from "./constants/categories";
+import { PesticideDetailView } from "./components/details/PesticideDetailView";
+import { FloatingActionBar } from "./components/FloatingActionBar";
 import { MaterialSearchBar } from "./components/MaterialSearchBar";
+import { MaterialTable } from "./components/MaterialTable";
 import { ResultsSummary } from "./components/ResultsSummary";
-import { DetailPanel } from "./components/DetailPanel";
+import { CATEGORIES } from "./constants/categories";
+import { useMaterialLookup } from "./hooks/useMaterialLookup";
+import { type MaterialItem } from "./types/types";
 
 const MaterialLookupPage: FC = () => {
   const { toast } = useToast();
@@ -67,7 +67,7 @@ const MaterialLookupPage: FC = () => {
     : null;
 
   return (
-    <AdminLayout isDev={true} title="Hệ thống tra cứu vật tư">
+    <AdminLayout title="Hệ thống tra cứu vật tư">
       <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-slate-50 font-sans">
         <CategorySidebar
           isCollapsed={isSidebarCollapsed}

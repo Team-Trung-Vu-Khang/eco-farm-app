@@ -41,7 +41,6 @@ const DepartmentPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý phòng ban"
       description="Quản lý phòng ban theo đơn vị sở hữu"
       actions={

@@ -1,15 +1,15 @@
 import {
   AdminLayout,
-  StepperForm,
   Button,
+  StepperForm,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
-import { useContractForm } from "./hooks/useContractForm";
 import { BasicInfoStep } from "./components/steps/BasicInfoStep";
-import { ContractContentStep } from "./components/steps/ContractContentStep";
 import { CommodityStep } from "./components/steps/CommodityStep";
-import { PartiesStep } from "./components/steps/PartiesStep";
 import { ConfirmationStep } from "./components/steps/ConfirmationStep";
+import { ContractContentStep } from "./components/steps/ContractContentStep";
+import { PartiesStep } from "./components/steps/PartiesStep";
+import { useContractForm } from "./hooks/useContractForm";
 
 const ContractCreatePage = () => {
   const {
@@ -119,7 +119,6 @@ const ContractCreatePage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Tạo hợp đồng mới"
       description="Tạo hợp đồng mua bán, dịch vụ, thuê, hợp tác"
     >

@@ -1,8 +1,5 @@
-import { ChevronLeft } from "lucide-react";
 import {
   AdminLayout,
-  StepperForm,
-  Button,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -11,11 +8,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Button,
+  StepperForm,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useFertilizerCreateForm } from "./hooks/useFertilizerCreateForm";
+import { ChevronLeft } from "lucide-react";
 import { FertilizerBasicInfoStep } from "./components/steps/FertilizerBasicInfoStep";
-import { FertilizerSuppliersStep } from "./components/steps/FertilizerSuppliersStep";
 import { FertilizerConfirmationStep } from "./components/steps/FertilizerConfirmationStep";
+import { FertilizerSuppliersStep } from "./components/steps/FertilizerSuppliersStep";
+import { useFertilizerCreateForm } from "./hooks/useFertilizerCreateForm";
 
 const FertilizerCreatePage = () => {
   const {
@@ -58,7 +58,6 @@ const FertilizerCreatePage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title={isEdit ? "Cập nhật phân bón" : "Thêm mới phân bón"}
       description={
         isEdit

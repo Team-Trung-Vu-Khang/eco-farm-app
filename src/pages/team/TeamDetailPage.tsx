@@ -4,7 +4,7 @@ import {
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ArrowLeft, Edit, Trash2, Users, Loader2 } from "lucide-react";
+import { ArrowLeft, Edit, Loader2, Trash2, Users } from "lucide-react";
 import { TeamInfoCard } from "./components/TeamInfoCard";
 import { teamMemberColumns } from "./data/columns";
 import { useTeamDetailPage } from "./hooks/useTeamDetailPage";
@@ -26,7 +26,7 @@ export default function TeamDetailPage() {
 
   if (isTeamLoading) {
     return (
-      <AdminLayout isDev={true} title="Chi tiết đội nhóm">
+      <AdminLayout title="Chi tiết đội nhóm">
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
           <p className="text-muted-foreground">
@@ -39,7 +39,7 @@ export default function TeamDetailPage() {
 
   if (!team) {
     return (
-      <AdminLayout isDev={true} title="Chi tiết đội nhóm">
+      <AdminLayout title="Chi tiết đội nhóm">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin đội nhóm.
@@ -52,7 +52,6 @@ export default function TeamDetailPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Chi tiết đội nhóm"
       description={`Thông tin và danh sách thành viên của ${team.name}`}
       actions={

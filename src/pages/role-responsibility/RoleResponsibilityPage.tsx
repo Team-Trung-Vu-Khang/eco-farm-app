@@ -3,7 +3,7 @@ import {
   Button,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ClipboardList, ShieldCheck, UserCog } from "lucide-react";
+import { UserCog } from "lucide-react";
 import { RoleLibrarySection } from "./components/RoleLibrarySection";
 import { useRoleResponsibilityPage } from "./hooks/useRoleResponsibilityPage";
 
@@ -23,7 +23,6 @@ export default function RoleResponsibilityPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý vai trò và trách nhiệm"
       description="Quản trị vai trò theo chức năng nông nghiệp, gắn trách nhiệm, người dùng phụ trách và kiểm tra điều kiện nghiệp vụ phục vụ audit."
       actions={

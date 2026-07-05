@@ -1,9 +1,12 @@
+import { EnterpriseSelector } from "@/pages/cultivation-zone/cultivation-region/components/EnterpriseSelector";
 import {
   AdminLayout,
   AutoCompleteSelect,
+  Badge,
   Button,
   Card,
   CardContent,
+  Editor,
   Input,
   Label,
   MultiSelect,
@@ -13,52 +16,45 @@ import {
   SelectTrigger,
   SelectValue,
   StepperForm,
-  Textarea,
-  Editor,
-  Badge,
-  type Step,
   type SerializedEditorState,
+  type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  ArrowLeft,
+  FileText,
+  FileUp,
+  Image as ImageIcon,
+  Plus,
+  Trash2,
+  Video,
+  X,
+} from "lucide-react";
+import { useMemo, useState } from "react";
+import { useParams } from "wouter";
 import {
   MATERIAL_OPTIONS,
   MATERIAL_TYPES,
   MATERIAL_UNITS,
 } from "../plan/data/mocks";
 import {
-  ArrowLeft,
-  FileText,
-  Plus,
-  Trash2,
-  Video,
-  FileUp,
-  Image as ImageIcon,
-  X,
-} from "lucide-react";
-import { useMemo, useEffect, useState } from "react";
-import { useParams } from "wouter";
+  StageMetric,
+  SummaryField,
+  TagInput,
+  WizardCard,
+} from "./components/TreatmentWizardLayouts";
 import {
   budgetRangeOptions,
   crops,
   cropTypes,
   diseases,
+  inspectionParameterOptions,
   responsibleUnitOptions,
   severityConfig,
-  treatmentIntensityOptions,
+  treatmentMaterialCategoryOptions,
   treatmentMethodOptions,
   treatmentPriorityOptions,
-  varieties,
-  treatmentMaterialCategoryOptions,
-  inspectionParameterOptions,
 } from "./data/treatment.data";
 import { useCreateTreatmentPage } from "./hooks/useCreateTreatmentPage";
-import { initialEditorValue } from "@/pages/docs/mocks";
-import {
-  WizardCard,
-  StageMetric,
-  SummaryField,
-  TagInput,
-} from "./components/TreatmentWizardLayouts";
-import { EnterpriseSelector } from "@/pages/cultivation-zone/cultivation-region/components/EnterpriseSelector";
 import type { TreatmentAttachment } from "./types/treatment.types";
 
 export default function CreateTreatmentPage() {
@@ -1694,7 +1690,6 @@ export default function CreateTreatmentPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title={isEdit ? `Cập nhật phác đồ: ${formData.code}` : "Tạo phác đồ mới"}
       description={
         isEdit

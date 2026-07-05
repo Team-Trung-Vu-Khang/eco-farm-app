@@ -1,4 +1,3 @@
-import { Plus, ChevronDown, Upload, FileUser } from "lucide-react";
 import {
   AdminLayout,
   Button,
@@ -9,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { ChevronDown, FileUser, Plus, Upload } from "lucide-react";
 import { ImportTeamDialog } from "../../components/team/ImportTeamDialog";
 import { teamColumns } from "./data/columns";
 import { useTeamPage } from "./hooks/useTeamPage";
@@ -40,7 +40,6 @@ export default function TeamPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý đội nhóm"
       description="Danh sách các đội / nhóm làm việc"
       actions={

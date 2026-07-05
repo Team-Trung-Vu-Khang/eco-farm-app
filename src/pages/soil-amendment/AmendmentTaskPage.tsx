@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   AdminLayout,
   Button,
@@ -7,6 +6,7 @@ import {
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { LayoutGrid, List, Plus } from "lucide-react";
+import { useState } from "react";
 import useAmendmentTaskStore, {
   type AmendmentTask,
 } from "../../stores/useAmendmentTaskStore";
@@ -165,7 +165,6 @@ export default function AmendmentTaskPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Công việc cải tạo đất"
       description="Quản lý và theo dõi các công việc cải tạo đất theo kế hoạch"
       actions={

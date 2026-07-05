@@ -1,12 +1,12 @@
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useEquipmentPage } from "./hooks/useEquipmentPage";
+import { Plus } from "lucide-react";
 import { getEquipmentColumns } from "./data/columns";
+import { useEquipmentPage } from "./hooks/useEquipmentPage";
 
 export default function EquipmentPage() {
   const {
@@ -25,7 +25,6 @@ export default function EquipmentPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý thiết bị"
       description="Quản lý danh mục máy móc, công cụ và lịch bảo dưỡng"
       actions={

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   AdminLayout,
   Badge,
@@ -43,6 +42,7 @@ import {
   Wrench,
   X,
 } from "lucide-react";
+import { useState } from "react";
 import { EnterpriseSelector } from "../cultivation-zone/cultivation-region/components";
 import GeographicalSelector from "./components/GeographicalSelector";
 import { RegimenSelector } from "./components/RegimenSelector";
@@ -1542,7 +1542,7 @@ export default function PlanCreatePage() {
   ];
 
   return (
-    <AdminLayout isDev={true} title={pageTitle} description={pageDescription}>
+    <AdminLayout title={pageTitle} description={pageDescription}>
       <div className="max-w-5xl mx-auto">
         <StepperForm
           steps={steps}

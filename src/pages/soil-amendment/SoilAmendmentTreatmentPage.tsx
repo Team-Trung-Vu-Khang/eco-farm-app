@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   AdminLayout,
   Button,
@@ -7,6 +6,7 @@ import {
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft, Plus, Sprout } from "lucide-react";
+import { useState } from "react";
 import { SoilTreatmentPlanDetail } from "./components/SoilTreatmentPlanDetail";
 import { SoilTreatmentPlanFormDialog } from "./components/SoilTreatmentPlanFormDialog";
 import { SoilTreatmentSidebar } from "./components/SoilTreatmentSidebar";
@@ -67,7 +67,6 @@ export default function SoilAmendmentTreatmentPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Cải tạo đất"
       description="Hệ thống quản lý phác đồ cải tạo đất với luồng tra cứu, handbook và dữ liệu kỹ thuật theo hiện trạng đất."
       actions={

@@ -33,7 +33,6 @@ const AmendmentMethodPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Phương pháp cải tạo đất"
       description="Quản lý thư viện các biện pháp kỹ thuật xử lý đất"
       actions={

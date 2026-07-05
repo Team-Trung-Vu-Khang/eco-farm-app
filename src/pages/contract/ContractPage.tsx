@@ -1,7 +1,7 @@
 import { AdminLayout, DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useContract } from "./hooks/useContract";
 import { ContractStats } from "./components/ContractStats";
 import { ContractTable } from "./components/ContractTable";
+import { useContract } from "./hooks/useContract";
 
 const ContractPage = () => {
   const {
@@ -18,7 +18,6 @@ const ContractPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý hợp đồng"
       description="Quản lý hợp đồng theo đơn vị sở hữu"
     >

@@ -1,32 +1,5 @@
-import React from "react";
-import {
-  ArrowLeft,
-  Settings,
-  Activity,
-  LineChart as ChartIcon,
-  Map as MapIcon,
-  History,
-  Battery,
-  Wifi,
-  Zap,
-  RefreshCw,
-  Power,
-  AlertTriangle,
-} from "lucide-react";
 import {
   AdminLayout,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  Badge,
-  useToast,
-  cn,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -35,23 +8,49 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  cn,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useLocation, useParams } from "wouter";
 import {
-  LineChart,
+  Activity,
+  AlertTriangle,
+  ArrowLeft,
+  Battery,
+  LineChart as ChartIcon,
+  History,
+  Map as MapIcon,
+  Power,
+  RefreshCw,
+  Settings,
+  Wifi,
+  Zap,
+} from "lucide-react";
+import React from "react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  AreaChart,
-  Area,
 } from "recharts";
-import { mockDeviceMetrics } from "./data/mockData";
-import { DeviceInteractiveMap } from "./components/map/DeviceInteractiveMap";
-import { ConnectionConfigModal } from "./components/ConnectionConfigModal";
+import { useLocation, useParams } from "wouter";
 import useIoTDeviceStore from "../../stores/useIoTDeviceStore";
+import { ConnectionConfigModal } from "./components/ConnectionConfigModal";
+import { DeviceInteractiveMap } from "./components/map/DeviceInteractiveMap";
+import { mockDeviceMetrics } from "./data/mockData";
 import type { DeviceConnectionConfig } from "./types";
 
 export default function IoTDeviceDetailPage() {
@@ -104,7 +103,6 @@ export default function IoTDeviceDetailPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title={device.name}
       description={`Chi tiết thiết bị ${device.type} - ${device.imei}`}
       actions={

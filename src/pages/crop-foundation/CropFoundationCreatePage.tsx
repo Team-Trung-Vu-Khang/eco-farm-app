@@ -137,7 +137,6 @@ export default function CropFoundationCreatePage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Thêm mới cây trồng"
       description="Khởi tạo cây trồng mới với đầy đủ thông tin sinh trưởng và tài liệu"
       actions={[

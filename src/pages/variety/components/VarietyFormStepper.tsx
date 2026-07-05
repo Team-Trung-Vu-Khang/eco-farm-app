@@ -1,4 +1,3 @@
-import { ChevronLeft } from "lucide-react";
 import {
   AdminLayout,
   Button,
@@ -7,11 +6,12 @@ import {
   StepperForm,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { ChevronLeft } from "lucide-react";
+import type { useVarietyFormPage } from "../hooks/useVarietyFormPage";
 import { VarietyCharacteristicsStep } from "./VarietyCharacteristicsStep";
 import { VarietyClassificationStep } from "./VarietyClassificationStep";
 import { VarietyConfirmationStep } from "./VarietyConfirmationStep";
 import { VarietyDocumentsStep } from "./VarietyDocumentsStep";
-import type { useVarietyFormPage } from "../hooks/useVarietyFormPage";
 
 interface VarietyFormStepperProps {
   title: string;
@@ -97,7 +97,7 @@ export function VarietyFormStepper({
   ];
 
   return (
-    <AdminLayout isDev={true} title={title} description={description}>
+    <AdminLayout title={title} description={description}>
       <div className="mb-4">
         <Button
           variant="ghost"

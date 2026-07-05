@@ -1,3 +1,4 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AdminLayout,
   Button,
@@ -7,7 +8,6 @@ import {
 import "leaflet/dist/leaflet.css";
 import { ChevronLeft } from "lucide-react";
 import { FormProvider, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useRoute } from "wouter";
 
 import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
@@ -82,7 +82,6 @@ const PlotCreatePage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title={isEditMode ? "Cập nhật lô đất" : "Thêm mới lô đất"}
       description={
         isEditMode

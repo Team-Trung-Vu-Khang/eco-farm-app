@@ -88,7 +88,6 @@ export default function BranchFormPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title={isEdit ? "Chỉnh sửa Chi nhánh" : "Tạo mới Chi nhánh"}
       description="Điền thông tin theo từng bước để tạo hoặc cập nhật chi nhánh"
       actions={[

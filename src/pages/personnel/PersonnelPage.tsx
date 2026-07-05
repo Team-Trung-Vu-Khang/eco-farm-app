@@ -8,10 +8,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Plus, ChevronDown, Upload, FileUser } from "lucide-react";
+import { ChevronDown, FileUser, Plus, Upload } from "lucide-react";
 import { ImportPersonnelDialog } from "../../components/personnel/ImportPersonnelDialog";
-import { usePersonnel } from "./hooks/usePersonnel";
 import { personnelColumns } from "./data/table";
+import { usePersonnel } from "./hooks/usePersonnel";
 
 export default function PersonnelPage() {
   const {
@@ -38,7 +38,6 @@ export default function PersonnelPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý nhân sự"
       description="Danh sách nhân sự của đơn vị"
       actions={

@@ -1,3 +1,4 @@
+import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
 import {
   AdminLayout,
   Badge,
@@ -18,6 +19,8 @@ import {
   Textarea,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import {
   Award,
   Building2,
@@ -34,8 +37,6 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import {
   MapContainer,
   Marker,
@@ -44,7 +45,9 @@ import {
   TileLayer,
   Tooltip,
 } from "react-leaflet";
-import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
+import useEnterpriseCertificateStore from "../../stores/useEnterpriseCertificateStore";
+import usePersonnelStore from "../../stores/usePersonnelStore";
+import useVarietyStore from "../../stores/useVarietyStore";
 import { EnterpriseSelector } from "../cultivation-zone/cultivation-region/components";
 import { MapController } from "../region-chart/components/DraggableRectangle";
 import { CertificateSelector } from "./components/CertificateSelector";
@@ -52,9 +55,6 @@ import { ManagerSelector } from "./components/ManagerSelector";
 import { SeedSelectorDialog } from "./components/SeedSelectorDialog";
 import { SubAreaSelectorDialog } from "./components/SubAreaSelectorDialog";
 import { useCultivationAreaForm } from "./hooks/useCultivationAreaForm";
-import useEnterpriseCertificateStore from "../../stores/useEnterpriseCertificateStore";
-import usePersonnelStore from "../../stores/usePersonnelStore";
-import useVarietyStore from "../../stores/useVarietyStore";
 
 const customIcon = getMarkerIcon("blue");
 const activeIcon = getMarkerIcon("green");
@@ -952,7 +952,6 @@ const CultivationAreaCreatePage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title={
         isEdit ? "Chỉnh sửa khu vực canh tác" : "Thiết lập khu vực canh tác"
       }

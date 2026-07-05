@@ -1,23 +1,13 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-  type ChangeEvent,
-  type FormEvent,
-  type ReactNode,
-} from "react";
-import {
-  Activity,
-  AlertTriangle,
-  CalendarClock,
-  CheckCircle2,
-  ClipboardCheck,
-  FileImage,
-  Plus,
-  RefreshCw,
-  Stethoscope,
-  Trash2,
-} from "lucide-react";
+import { units as materialUnits } from "@/pages/material/data/constants";
+import type { Material } from "@/pages/material/types/types";
+import type { Treatment } from "@/pages/treatment/types/treatment.types";
+import useMaterialStore from "@/stores/useMaterialStore";
+import type { Plan } from "@/stores/usePlanStore";
+import usePlanStore from "@/stores/usePlanStore";
+import type { Task } from "@/stores/useTaskStore";
+import useTaskStore from "@/stores/useTaskStore";
+import useTreatmentReportStore from "@/stores/useTreatmentReportStore";
+import { useTreatmentStore } from "@/stores/useTreatmentStore";
 import {
   AdminLayout,
   Badge,
@@ -38,16 +28,26 @@ import {
   Textarea,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import usePlanStore from "@/stores/usePlanStore";
-import useTaskStore from "@/stores/useTaskStore";
-import { useTreatmentStore } from "@/stores/useTreatmentStore";
-import useTreatmentReportStore from "@/stores/useTreatmentReportStore";
-import useMaterialStore from "@/stores/useMaterialStore";
-import { units as materialUnits } from "@/pages/material/data/constants";
-import type { Plan } from "@/stores/usePlanStore";
-import type { Task } from "@/stores/useTaskStore";
-import type { Treatment } from "@/pages/treatment/types/treatment.types";
-import type { Material } from "@/pages/material/types/types";
+import {
+  Activity,
+  AlertTriangle,
+  CalendarClock,
+  CheckCircle2,
+  ClipboardCheck,
+  FileImage,
+  Plus,
+  RefreshCw,
+  Stethoscope,
+  Trash2,
+} from "lucide-react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import type {
   TreatmentReportEntry,
   TreatmentReportEvidence,
@@ -472,7 +472,6 @@ export default function TreatmentReportPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Theo dõi thực hiện phác đồ điều trị"
       description="Cập nhật hiện trường, vật tư sử dụng và trạng thái tái đánh giá cho từng đợt điều trị"
       actions={

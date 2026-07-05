@@ -1,5 +1,3 @@
-import { useEffect, useMemo, useState } from "react";
-import { useLocation, useRoute } from "wouter";
 import {
   AdminLayout,
   Button,
@@ -7,9 +5,11 @@ import {
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useRoute } from "wouter";
 import { useRoleFormSteps } from "./components/RoleFormSteps";
-import { FORM_VAI_TRO_RONG } from "./mocks";
 import { useRoleResponsibilityData } from "./hooks/useRoleResponsibilityData";
+import { FORM_VAI_TRO_RONG } from "./mocks";
 import type { FormVaiTroState } from "./types";
 
 export default function RoleResponsibilityFormPage() {
@@ -106,7 +106,6 @@ export default function RoleResponsibilityFormPage() {
   if (isEdit && !editingRole) {
     return (
       <AdminLayout
-        isDev={true}
         title="Không tìm thấy vai trò"
         description="Vai trò bạn muốn chỉnh sửa không còn tồn tại trong hệ thống."
       >
@@ -123,7 +122,6 @@ export default function RoleResponsibilityFormPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title={
         isEdit
           ? "Cập nhật vai trò và trách nhiệm"

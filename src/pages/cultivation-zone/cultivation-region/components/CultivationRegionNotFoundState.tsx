@@ -8,7 +8,6 @@ type Props = {
 export const CultivationRegionNotFoundState = ({ onBack }: Props) => {
   return (
     <AdminLayout
-      isDev={true}
       title="Không tìm thấy"
       description="Vùng canh tác không tồn tại"
     >

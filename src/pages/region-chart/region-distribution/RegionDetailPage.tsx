@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import {
   AdminLayout,
   Button,
@@ -7,9 +6,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ChevronLeft, Edit } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { ChevronLeft, Edit } from "lucide-react";
+import { useEffect } from "react";
 import {
   MapContainer,
   Polygon,
@@ -18,8 +18,8 @@ import {
   useMap,
 } from "react-leaflet";
 
-import { LAND_TYPES } from "../constants";
 import { RegionChartStatusBadge } from "../components/RegionChartStatusBadge";
+import { LAND_TYPES } from "../constants";
 import { useRegionDetailPage } from "../hooks/useRegionDetailPage";
 
 const closePath = (points: { lat: number; lng: number }[]) => {
@@ -77,7 +77,7 @@ const RegionDetailPage = () => {
 
   if (isLoading) {
     return (
-      <AdminLayout isDev={true} title="Đang tải...">
+      <AdminLayout title="Đang tải...">
         <div className="flex flex-col items-center justify-center p-12">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
           <p className="mt-4 text-muted-foreground">
@@ -90,7 +90,7 @@ const RegionDetailPage = () => {
 
   if (!region) {
     return (
-      <AdminLayout isDev={true} title="Không tìm thấy">
+      <AdminLayout title="Không tìm thấy">
         <div className="flex flex-col items-center justify-center p-8">
           <p className="text-xl mb-4">Vùng trồng không tồn tại</p>
           <Button onClick={() => setLocation("/region-distribution")}>
@@ -103,7 +103,6 @@ const RegionDetailPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title={`Chi tiết: ${region.name}`}
       description={`Mã vùng: ${region.code}`}
       actions={

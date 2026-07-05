@@ -1,14 +1,14 @@
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Plus } from "lucide-react";
+import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
 import { TerrainFormDialog } from "./components/TerrainFormDialog";
 import { terrainColumns } from "./data/columns";
 import { useTerrainPage } from "./hooks/useTerrainPage";
-import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
 
 export default function TerrainPage() {
   const {
@@ -33,7 +33,6 @@ export default function TerrainPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý địa hình"
       description="Phân loại và quản lý các loại địa hình trong hệ thống"
       actions={

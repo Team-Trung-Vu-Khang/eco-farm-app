@@ -1,10 +1,10 @@
 import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ChevronLeft, Edit, Download, Trash2 } from "lucide-react";
-import { useContractDetail } from "./hooks/useContractDetail";
-import { ContractDetailHeader } from "./components/ContractDetailHeader";
-import { ContractDetailContent } from "./components/ContractDetailContent";
+import { ChevronLeft, Download, Edit, Trash2 } from "lucide-react";
 import { ContractDetailCommodities } from "./components/ContractDetailCommodities";
+import { ContractDetailContent } from "./components/ContractDetailContent";
+import { ContractDetailHeader } from "./components/ContractDetailHeader";
 import { ContractDetailParties } from "./components/ContractDetailParties";
+import { useContractDetail } from "./hooks/useContractDetail";
 
 const ContractDetailPage = () => {
   const { contract, handleBack, handleEdit, handleDelete, handleDownload } =
@@ -14,7 +14,6 @@ const ContractDetailPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Chi tiết hợp đồng"
       description="Xem thông tin chi tiết hợp đồng"
     >

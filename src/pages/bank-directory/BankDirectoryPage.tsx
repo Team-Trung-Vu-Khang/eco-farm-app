@@ -50,7 +50,6 @@ export default function BankDirectoryPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Danh mục ngân hàng"
       description="Tra cứu thông tin thanh toán quốc tế: SWIFT/BIC code, địa chỉ và mã routing ngân hàng"
       actions={

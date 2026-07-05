@@ -1,23 +1,23 @@
-import { useCallback, useMemo, useState } from "react";
-import { useLocation, useRoute } from "wouter";
+import useRegionStore from "@/stores/useRegionStore";
+import useSeasonStore from "@/stores/useSeasonStore";
 import {
   AdminLayout,
   StepperForm,
   useToast,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useCallback, useMemo, useState } from "react";
+import { useLocation, useRoute } from "wouter";
 import useAmendmentPlanStore, {
   type AllocationItem,
 } from "../../stores/useAmendmentPlanStore";
 import usePersonnelStore from "../../stores/usePersonnelStore";
 import useRegimenStore from "../../stores/useRegimenStore";
-import useSeasonStore from "@/stores/useSeasonStore";
-import useRegionStore from "@/stores/useRegionStore";
-import { PersonnelSelectDialog } from "./components/PersonnelSelectDialog";
 import { AmendmentPlanConfirmationStep } from "./components/AmendmentPlanConfirmationStep";
 import { AmendmentPlanGeneralStep } from "./components/AmendmentPlanGeneralStep";
 import { AmendmentPlanProcessStep } from "./components/AmendmentPlanProcessStep";
 import { AmendmentPlanScopeStep } from "./components/AmendmentPlanScopeStep";
+import { PersonnelSelectDialog } from "./components/PersonnelSelectDialog";
 import type { GeographicalSelection } from "./types";
 import {
   AMENDMENT_PROCESSES,
@@ -309,7 +309,6 @@ export default function AmendmentPlanCreatePage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title={isEdit ? "Cập nhật kế hoạch cải tạo" : "Lập kế hoạch cải tạo mới"}
       description="Xây dựng phương án xử lý đất, phân bổ nguồn lực và giám sát thực hiện"
     >

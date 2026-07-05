@@ -1,13 +1,13 @@
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useFertilizerGroupPage } from "./hooks/useFertilizerGroupPage";
-import { fertilizerGroupColumns } from "./data/columns.tsx";
+import { Plus } from "lucide-react";
 import { FertilizerGroupFormDialog } from "./components/FertilizerGroupFormDialog";
+import { fertilizerGroupColumns } from "./data/columns.tsx";
+import { useFertilizerGroupPage } from "./hooks/useFertilizerGroupPage";
 
 const FERTILIZER_GROUP_STATUS_OPTIONS = [
   { value: "active", label: "Hoạt động" },
@@ -41,7 +41,6 @@ const FertilizerGroupPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Danh mục phân bón"
       description="Quản lý danh sách các nhóm phân bón (Master Data)"
       actions={

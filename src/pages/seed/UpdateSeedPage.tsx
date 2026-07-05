@@ -1,5 +1,5 @@
-import { useSeedById } from "@/features/farm/hooks/useSeeds";
 import { useSeedMutations } from "@/features/farm/hooks/useSeedMutations";
+import { useSeedById } from "@/features/farm/hooks/useSeeds";
 import { useFileUpload } from "@/features/storage";
 import { safeConvertLexicalToHtml } from "@/utils/commons";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -260,11 +260,7 @@ export default function UpdateSeedPage() {
 
   if (isLoading) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Cập nhật hạt giống"
-        description="Đang tải dữ liệu..."
-      >
+      <AdminLayout title="Cập nhật hạt giống" description="Đang tải dữ liệu...">
         <div className="flex h-[400px] items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-green-600"></div>
         </div>
@@ -274,7 +270,6 @@ export default function UpdateSeedPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Cập nhật hạt giống"
       description="Chỉnh sửa thông tin hạt giống trong hệ thống"
     >

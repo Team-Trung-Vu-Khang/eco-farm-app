@@ -8,7 +8,7 @@ import { Link } from "wouter";
 
 import { useDialogBugWorkaround } from "@/shared/hooks/useDialogBugWorkaround";
 import { DeleteCropFoundationDialog } from "./components/DeleteCropFoundationDialog";
-import { COLUMNS, TABLE_FILTERS } from "./data/tableConfig";
+import { COLUMNS } from "./data/tableConfig";
 import { useCropFoundationPage } from "./hooks/useCropFoundationPage";
 
 export default function CropFoundationPage() {
@@ -36,7 +36,6 @@ export default function CropFoundationPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý cây trồng"
       description="Danh mục các loại cây trồng có trên thị trường"
       actions={

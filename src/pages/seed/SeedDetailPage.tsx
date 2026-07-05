@@ -1,3 +1,6 @@
+import { useSeedById } from "@/features/farm";
+import { useOrganizationById } from "@/features/organization/hooks/useOrganizationById";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 import {
   AdminLayout,
   Badge,
@@ -22,11 +25,8 @@ import {
   Sprout,
   User,
 } from "lucide-react";
-import { Link, useParams } from "wouter";
-import { useSeedById } from "@/features/farm";
-import { useSelectedWorkspaceId } from "@/features/workspace";
-import { useOrganizationById } from "@/features/organization/hooks/useOrganizationById";
 import { useMemo } from "react";
+import { Link, useParams } from "wouter";
 
 export default function SeedDetailPage() {
   const { id } = useParams();
@@ -65,7 +65,6 @@ export default function SeedDetailPage() {
   if (isLoading) {
     return (
       <AdminLayout
-        isDev={true}
         title="Chi tiết hạt giống"
         description="Đang tải thông tin..."
       >
@@ -84,7 +83,6 @@ export default function SeedDetailPage() {
   if (!seed) {
     return (
       <AdminLayout
-        isDev={true}
         title="Chi tiết hạt giống"
         description="Thông tin chi tiết về hạt giống"
       >
@@ -107,7 +105,6 @@ export default function SeedDetailPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Chi tiết hạt giống"
       description={`Thông tin chi tiết về ${seed.cropVariety?.name || "Hạt giống"}`}
       actions={

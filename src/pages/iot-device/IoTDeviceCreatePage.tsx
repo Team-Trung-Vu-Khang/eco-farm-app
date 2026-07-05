@@ -1,14 +1,3 @@
-import React, { useState, useMemo, useEffect } from "react";
-import {
-  ArrowLeft,
-  Upload,
-  CheckCircle2,
-  FileText,
-  Cpu,
-  Trash2,
-  AlertCircle,
-} from "lucide-react";
-import readXlsxFile from "read-excel-file";
 import {
   AdminLayout,
   Button,
@@ -23,14 +12,25 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Separator,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-  useToast,
-  Separator,
   cn,
+  useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  Cpu,
+  FileText,
+  Trash2,
+  Upload,
+} from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import readXlsxFile from "read-excel-file";
 import { useLocation, useParams } from "wouter";
 import useIoTDeviceStore from "../../stores/useIoTDeviceStore";
 import type { IoTDevice } from "./types";
@@ -277,7 +277,6 @@ export default function IoTDeviceCreatePage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title={isEdit ? "Cập nhật thiết bị" : "Đăng ký thiết bị"}
       description={
         isEdit

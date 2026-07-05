@@ -156,7 +156,6 @@ export default function BankCreatePage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Thêm mới tài khoản ngân hàng"
       description="Thêm tài khoản ngân hàng mới vào hệ thống"
       actions={

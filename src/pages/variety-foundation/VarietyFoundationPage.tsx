@@ -1,18 +1,17 @@
+import { useDialogBugWorkaround } from "@/shared/hooks/useDialogBugWorkaround";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Link } from "wouter";
 import { X } from "lucide-react";
 import { createPortal } from "react-dom";
+import { Link } from "wouter";
 import { VarietyFoundationDetailContent } from "./components/VarietyFoundationDetailContent";
 import { varietyFoundationColumns } from "./data/columns";
-import { varietyFoundationFilters } from "./data/constants";
 import { useVarietyFoundationPage } from "./hooks/useVarietyFoundationPage";
 import type { VarietyFoundation } from "./types/types";
-import { useDialogBugWorkaround } from "@/shared/hooks/useDialogBugWorkaround";
 
 function VarietyFoundationDetailModal({
   open,
@@ -91,7 +90,6 @@ const VarietyFoundationPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý giống cây (nền tảng)"
       description="Xem và quản lý danh sách các loại giống cây trồng (nền tảng)"
       actions={
@@ -104,26 +102,26 @@ const VarietyFoundationPage = () => {
         </div>
       }
     >
-        <DataTable
-          columns={varietyFoundationColumns}
-          data={varieties}
-          selectable={false}
-          onView={handleView}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          searchPlaceholder="Tìm kiếm giống cây (nền tảng)..."
-          searchable
-          onSearch={handleSearch}
-          pageSize={pageSize}
-          currentIndex={currentIndex}
-          totalElements={response?.totalElements}
-          totalPages={response?.totalPages}
-          onPageSize={setPageSize}
-          onIndexChange={setCurrentIndex}
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          loading={loading}
-        />
+      <DataTable
+        columns={varietyFoundationColumns}
+        data={varieties}
+        selectable={false}
+        onView={handleView}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        searchPlaceholder="Tìm kiếm giống cây (nền tảng)..."
+        searchable
+        onSearch={handleSearch}
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalElements={response?.totalElements}
+        totalPages={response?.totalPages}
+        onPageSize={setPageSize}
+        onIndexChange={setCurrentIndex}
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        loading={loading}
+      />
 
       <VarietyFoundationDetailModal
         open={detailOpen}

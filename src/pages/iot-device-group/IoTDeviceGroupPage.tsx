@@ -1,10 +1,10 @@
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Plus } from "lucide-react";
 import { IoTDeviceGroupFormDialog } from "./components/IoTDeviceGroupFormDialog";
 import { iotDeviceGroupColumns } from "./data/columns.tsx";
 import { useIoTDeviceGroupPage } from "./hooks/useIoTDeviceGroupPage";
@@ -41,7 +41,6 @@ export default function IoTDeviceGroupPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Nhóm thiết bị IoT"
       description="Quản lý danh sách các nhóm thiết bị IoT"
       actions={

@@ -25,7 +25,6 @@ export default function CropFoundationDetailPage() {
   if (loading) {
     return (
       <AdminLayout
-        isDev={true}
         title="Chi tiết cây trồng"
         description="Đang tải thông tin chi tiết về cây trồng"
       >
@@ -42,7 +41,6 @@ export default function CropFoundationDetailPage() {
   if (!cropFoundation) {
     return (
       <AdminLayout
-        isDev={true}
         title="Chi tiết cây trồng"
         description="Thông tin chi tiết về cây trồng"
       >
@@ -58,7 +56,6 @@ export default function CropFoundationDetailPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Chi tiết cây trồng"
       description={`Quản lý và theo dõi thông tin chi tiết về ${cropFoundation.name}`}
       actions={

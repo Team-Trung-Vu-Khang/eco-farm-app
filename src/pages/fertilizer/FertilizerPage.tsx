@@ -1,12 +1,12 @@
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useFertilizerPage } from "./hooks/useFertilizerPage";
+import { Plus } from "lucide-react";
 import { getFertilizerColumns } from "./data/columns";
+import { useFertilizerPage } from "./hooks/useFertilizerPage";
 
 export default function FertilizerPage() {
   const {
@@ -27,7 +27,6 @@ export default function FertilizerPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý chất bón"
       description="Quản lý danh mục phân bón, chất cải tạo đất"
       actions={

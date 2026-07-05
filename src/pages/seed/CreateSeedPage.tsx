@@ -234,7 +234,6 @@ export default function CreateSeedPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Tạo mới hạt giống"
       description="Thêm mới hạt giống vào danh mục hệ thống"
     >

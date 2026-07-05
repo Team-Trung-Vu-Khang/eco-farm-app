@@ -1,7 +1,7 @@
 import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Save, X } from "lucide-react";
-import { useContactCreate } from "./hooks/useContactCreate";
 import { ContactFormCard } from "./components/ContactFormCard";
+import { useContactCreate } from "./hooks/useContactCreate";
 
 /**
  * Contact create page.
@@ -20,7 +20,6 @@ export default function ContactCreatePage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Thêm mới liên hệ"
       description="Thêm thông tin liên hệ mới vào hệ thống"
       actions={

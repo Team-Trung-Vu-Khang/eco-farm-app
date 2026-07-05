@@ -1,7 +1,7 @@
 import {
   AdminLayout,
-  StepperForm,
   Button,
+  StepperForm,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
 import PesticideSubmitConfirmDialog from "./components/PesticideSubmitConfirmDialog";
@@ -21,7 +21,6 @@ const PesticideCreatePage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title={isEdit ? "Cập nhật thuốc BVTV" : "Thêm thuốc bảo vệ thực vật"}
       description={
         isEdit

@@ -18,15 +18,15 @@ import {
   Stethoscope,
 } from "lucide-react";
 import { Link } from "wouter";
-import { useCropDetail } from "./hooks/useCropDetail";
 import { CropIdentity } from "./components/tabs/CropIdentity";
-import { SeedInfoTab } from "./components/tabs/SeedInfoTab";
 import { CropStatusTab } from "./components/tabs/CropStatusTab";
-import { TechnicalSpecsTab } from "./components/tabs/TechnicalSpecsTab";
-import { FarmingHistoryTab } from "./components/tabs/FarmingHistoryTab";
 import { DiseaseHistoryTab } from "./components/tabs/DiseaseHistoryTab";
+import { FarmingHistoryTab } from "./components/tabs/FarmingHistoryTab";
 import { HarvestHistoryTab } from "./components/tabs/HarvestHistoryTab";
 import { IoTInfoTab } from "./components/tabs/IoTInfoTab";
+import { SeedInfoTab } from "./components/tabs/SeedInfoTab";
+import { TechnicalSpecsTab } from "./components/tabs/TechnicalSpecsTab";
+import { useCropDetail } from "./hooks/useCropDetail";
 
 export default function CropDetailPage() {
   const { crop } = useCropDetail();
@@ -34,7 +34,6 @@ export default function CropDetailPage() {
   if (!crop) {
     return (
       <AdminLayout
-        isDev={true}
         title="Chi tiết cây trồng"
         description="Thông tin chi tiết về cây trồng"
       >
@@ -50,7 +49,6 @@ export default function CropDetailPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Chi tiết cây trồng"
       description={`Quản lý và theo dõi thông tin chi tiết về ${crop.name}`}
       actions={

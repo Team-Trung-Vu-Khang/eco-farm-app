@@ -1,11 +1,11 @@
-import React, { useState } from "react";
-import { useLocation } from "wouter";
 import {
   AdminLayout,
   Button,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
+import { useState } from "react";
+import { useLocation } from "wouter";
 import useDocumentCategoryStore from "../../stores/useDocumentCategoryStore";
 import { DocumentCategoryTable } from "./components/DocumentCategoryTable";
 
@@ -32,7 +32,6 @@ const DocumentCategoryListPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Danh mục hồ sơ tài liệu"
       description="Quản lý các loại giấy tờ, hồ sơ cần thiết cho các đối tượng trong hệ thống"
       actions={

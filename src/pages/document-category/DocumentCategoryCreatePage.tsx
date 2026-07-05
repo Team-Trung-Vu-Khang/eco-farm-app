@@ -1,11 +1,11 @@
-import React, { useState } from "react";
-import { useLocation } from "wouter";
 import {
   AdminLayout,
   Button,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Save, X } from "lucide-react";
+import { useState } from "react";
+import { useLocation } from "wouter";
 import useDocumentCategoryStore from "../../stores/useDocumentCategoryStore";
 import { DocumentCategoryForm } from "./components/DocumentCategoryForm";
 import { type DocumentCategory } from "./data/constants";
@@ -58,7 +58,6 @@ const DocumentCategoryCreatePage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Tạo danh mục hồ sơ"
       description="Thiết lập các yêu cầu tệp tin cho các đơn vị trong hệ thống"
       actions={

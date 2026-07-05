@@ -7,11 +7,11 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Filter, Layers, Search } from "lucide-react";
 
-import { useEnterpriseSearch } from "./hooks/useEnterpriseSearch";
 import { AdvancedFilterPanel } from "./components/AdvancedFilterPanel";
+import { EnterpriseDetailPanel } from "./components/EnterpriseDetailPanel";
 import { EnterpriseListSidebar } from "./components/EnterpriseListSidebar";
 import { EnterpriseMapSection } from "./components/EnterpriseMapSection";
-import { EnterpriseDetailPanel } from "./components/EnterpriseDetailPanel";
+import { useEnterpriseSearch } from "./hooks/useEnterpriseSearch";
 
 const SearchUnitPage = () => {
   const {
@@ -44,7 +44,6 @@ const SearchUnitPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Tìm kiếm đơn vị"
       description="Tìm kiếm và quản lý thông tin các đơn vị trong hệ thống"
     >

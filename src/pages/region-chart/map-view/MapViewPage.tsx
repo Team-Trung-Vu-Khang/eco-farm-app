@@ -1,58 +1,58 @@
-import { useState, useMemo, useEffect } from "react";
 import {
   AdminLayout,
+  Button,
   Card,
   CardContent,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Input,
   Label,
+  ScrollArea,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  ScrollArea,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  MapContainer,
-  TileLayer,
-  GeoJSON,
-  LayersControl,
-  LayerGroup,
-  Marker,
-  useMap,
-  useMapEvents,
-} from "react-leaflet";
-import type { GeoJsonObject, Feature } from "geojson";
+import type { Feature, GeoJsonObject } from "geojson";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import {
-  Search,
+  Activity,
   AlertTriangle,
-  Sprout,
+  Droplets,
+  FlaskConical,
+  Info,
   Maximize2,
   Minimize2,
-  FlaskConical,
-  Droplets,
-  Thermometer,
-  Info,
   Save,
-  Activity,
+  Search,
+  Sprout,
+  Thermometer,
 } from "lucide-react";
-import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useEffect, useMemo, useState } from "react";
+import {
+  GeoJSON,
+  LayerGroup,
+  LayersControl,
+  MapContainer,
+  Marker,
+  TileLayer,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
 
-import { MOCK_REGIONS, MOCK_AREAS } from "../constants";
+import { MOCK_AREAS, MOCK_REGIONS } from "../constants";
 
 // Import GeoJSON data directly
-import zoneData from "../../../assets/map/zone.json";
 import areaData from "../../../assets/map/area.json";
-import plotData from "../../../assets/map/plot.json";
 import plantData from "../../../assets/map/plant.json";
+import plotData from "../../../assets/map/plot.json";
+import zoneData from "../../../assets/map/zone.json";
 
 // --- Helpers ---
 
@@ -1568,7 +1568,6 @@ const MapViewPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Bản đồ số nông nghiệp"
       description="Quản lý trực quan vùng trồng và cây trồng"
     >

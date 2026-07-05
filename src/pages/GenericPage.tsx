@@ -1,5 +1,3 @@
-import React, { useState } from "react";
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Badge,
@@ -15,6 +13,8 @@ import {
   type Column,
   type EditorState,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Plus } from "lucide-react";
+import React, { useState } from "react";
 import { useDialogBugWorkaround } from "../shared/hooks/useDialogBugWorkaround";
 
 interface GenericItem {
@@ -251,7 +251,6 @@ export function GenericPage({
 
   return (
     <AdminLayout
-      isDev={true}
       title={title}
       description={description}
       actions={

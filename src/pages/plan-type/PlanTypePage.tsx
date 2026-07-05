@@ -1,13 +1,13 @@
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Plus } from "lucide-react";
 import { PlanTypeFormDialog } from "./components/PlanTypeFormDialog";
-import { PLAN_TYPE_STATUS_OPTIONS } from "./data/constants";
 import { planTypeColumns } from "./data/columns";
+import { PLAN_TYPE_STATUS_OPTIONS } from "./data/constants";
 import { usePlanTypePage } from "./hooks/usePlanTypePage";
 
 const PlanTypePage = () => {
@@ -40,7 +40,6 @@ const PlanTypePage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Loại Kế Hoạch"
       description="Quản lý các loại hình kế hoạch sản xuất, kinh doanh trong nông trại"
       actions={

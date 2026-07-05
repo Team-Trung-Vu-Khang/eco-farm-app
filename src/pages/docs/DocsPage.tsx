@@ -4,11 +4,11 @@ import {
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Link } from "wouter";
 import { Plus } from "lucide-react";
+import { Link } from "wouter";
 
-import { useDocs } from "./hooks/useDocs";
 import { DOCS_COLUMNS } from "./constants/docsConstants";
+import { useDocs } from "./hooks/useDocs";
 
 export default function DocsPage() {
   const {
@@ -22,7 +22,6 @@ export default function DocsPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý tài liệu kỹ thuật"
       description="Xem và quản lý danh sách các tài liệu quy trình canh tác"
       actions={

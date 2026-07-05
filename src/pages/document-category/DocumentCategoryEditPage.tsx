@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { useLocation, useParams } from "wouter";
 import {
   AdminLayout,
   Button,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Save, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useLocation, useParams } from "wouter";
 import useDocumentCategoryStore from "../../stores/useDocumentCategoryStore";
 import { DocumentCategoryForm } from "./components/DocumentCategoryForm";
 import { type DocumentCategory } from "./data/constants";
@@ -83,7 +83,6 @@ const DocumentCategoryEditPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Cập nhật danh mục hồ sơ"
       description={`Chỉnh sửa cấu hình cho tài liệu: ${formData.name}`}
       actions={

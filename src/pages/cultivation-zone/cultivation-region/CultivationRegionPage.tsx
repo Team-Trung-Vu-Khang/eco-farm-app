@@ -30,7 +30,6 @@ const CultivationRegionPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Vùng canh tác"
       description="Quản lý các thiết lập canh tác cho Vùng, Khu vực hoặc Lô"
       actions={

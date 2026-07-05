@@ -1,8 +1,7 @@
-import { useRoute, useLocation } from "wouter";
 import {
   AdminLayout,
-  Button,
   Badge,
+  Button,
   Card,
   CardContent,
   CardHeader,
@@ -10,19 +9,20 @@ import {
   Separator,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
+  Building2,
+  CalendarDays,
+  CheckCircle2,
   ChevronLeft,
   Edit,
   FileText,
-  Building2,
-  Package,
-  Tags,
-  Image as ImageIcon,
-  CalendarDays,
-  CheckCircle2,
-  ShieldCheck,
   FlaskConical,
+  Image as ImageIcon,
   Info,
+  Package,
+  ShieldCheck,
+  Tags,
 } from "lucide-react";
+import { useLocation, useRoute } from "wouter";
 import usePesticideStore from "../../stores/usePesticideStore";
 
 const PesticideDetailPage = () => {
@@ -36,7 +36,7 @@ const PesticideDetailPage = () => {
 
   if (!item) {
     return (
-      <AdminLayout isDev={true} title="Chi tiết thuốc BVTV">
+      <AdminLayout title="Chi tiết thuốc BVTV">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin thuốc BVTV.
@@ -51,7 +51,6 @@ const PesticideDetailPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Chi tiết thuốc BVTV"
       description={`Thông tin chi tiết cho sản phẩm ${item.name}`}
       actions={

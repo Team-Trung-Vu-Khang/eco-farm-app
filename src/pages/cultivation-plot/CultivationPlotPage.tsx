@@ -21,7 +21,6 @@ const CultivationPlotPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Lô canh tác"
       description="Quản lý các thiết lập canh tác theo Khu vực (Lô)"
       actions={

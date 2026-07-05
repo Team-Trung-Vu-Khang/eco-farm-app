@@ -1,10 +1,10 @@
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Plus } from "lucide-react";
 import { materialColumns } from "./data/columns";
 import { useMaterialPage } from "./hooks/useMaterialPage";
 
@@ -23,7 +23,6 @@ export default function MaterialPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý vật liệu"
       description="Quản lý danh mục vật tư, thiết bị, dụng cụ"
       actions={

@@ -1,10 +1,10 @@
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Plus } from "lucide-react";
 import { usePlotDistributionPage } from "../hooks/usePlotDistributionPage";
 
 const PlotDistributionPage = () => {
@@ -29,7 +29,6 @@ const PlotDistributionPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Phân bố lô"
       description="Quản lý danh sách và bản đồ phân bố các lô trồng"
       actions={

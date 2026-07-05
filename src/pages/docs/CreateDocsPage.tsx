@@ -5,11 +5,11 @@ import {
   StepperForm,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useCreateDocsForm } from "./hooks/useCreateDocsForm";
-import { BasicInfoStep } from "./components/steps/BasicInfoStep";
-import { SpecificationsStep } from "./components/steps/SpecificationsStep";
-import { ContentStep } from "./components/steps/ContentStep";
 import { AttachmentsStep } from "./components/steps/AttachmentsStep";
+import { BasicInfoStep } from "./components/steps/BasicInfoStep";
+import { ContentStep } from "./components/steps/ContentStep";
+import { SpecificationsStep } from "./components/steps/SpecificationsStep";
+import { useCreateDocsForm } from "./hooks/useCreateDocsForm";
 
 export default function CreateDocsPage() {
   const {
@@ -70,7 +70,6 @@ export default function CreateDocsPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Tạo mới tài liệu kỹ thuât"
       description="Thêm tài liệu kỹ thuật vào danh mục hệ thống"
     >

@@ -10,16 +10,13 @@ import {
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Briefcase, Building2, Plus } from "lucide-react";
+import { useState } from "react";
 import { BusinessLineForm } from "./components/BusinessLineForm";
 import { OrganizationTypeForm } from "./components/OrganizationTypeForm";
-import {
-  BUSINESS_COLUMNS,
-  ORGANIZATION_COLUMNS,
-} from "./data/constants";
+import { BUSINESS_COLUMNS, ORGANIZATION_COLUMNS } from "./data/constants";
 import { useBusinessLinesForm } from "./hooks/useBusinessLinesForm";
 import { useOrganizationTypesForm } from "./hooks/useOrganizationTypesForm";
 import type { CategoryType } from "./types";
-import { useState } from "react";
 
 const BUSINESS_STATUS_OPTIONS = [
   { value: "active", label: "Hoạt động" },
@@ -40,7 +37,6 @@ const EnterpriseFormPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Danh mục tổ chức"
       description="Quản lý loại hình tổ chức và lĩnh vực hoạt động"
     >
@@ -68,7 +64,10 @@ const EnterpriseFormPage = () => {
                 Phân loại các loại hình tổ chức kinh tế trong nông nghiệp
               </p>
             </div>
-            <Button onClick={organizationForm.handleAdd} data-testid="add-organization-type">
+            <Button
+              onClick={organizationForm.handleAdd}
+              data-testid="add-organization-type"
+            >
               <Plus className="w-4 h-4 mr-2" />
               Thêm loại hình
             </Button>
@@ -107,7 +106,10 @@ const EnterpriseFormPage = () => {
                 Phân loại các lĩnh vực hoạt động kinh doanh trong nông nghiệp
               </p>
             </div>
-            <Button onClick={businessForm.handleAdd} data-testid="add-business-field">
+            <Button
+              onClick={businessForm.handleAdd}
+              data-testid="add-business-field"
+            >
               <Plus className="w-4 h-4 mr-2" />
               Thêm lĩnh vực
             </Button>
@@ -142,7 +144,11 @@ const EnterpriseFormPage = () => {
       <FormDialog
         open={organizationForm.formOpen}
         onOpenChange={organizationForm.setFormOpen}
-        title={organizationForm.editItem ? "Chỉnh sửa loại hình tổ chức" : "Thêm loại hình tổ chức"}
+        title={
+          organizationForm.editItem
+            ? "Chỉnh sửa loại hình tổ chức"
+            : "Thêm loại hình tổ chức"
+        }
         onSubmit={organizationForm.handleSubmit}
         loading={organizationForm.formLoading}
       >
@@ -156,7 +162,11 @@ const EnterpriseFormPage = () => {
       <FormDialog
         open={businessForm.formOpen}
         onOpenChange={businessForm.setFormOpen}
-        title={businessForm.editItem ? "Chỉnh sửa lĩnh vực hoạt động" : "Thêm lĩnh vực hoạt động"}
+        title={
+          businessForm.editItem
+            ? "Chỉnh sửa lĩnh vực hoạt động"
+            : "Thêm lĩnh vực hoạt động"
+        }
         onSubmit={businessForm.handleSubmit}
         loading={businessForm.formLoading}
       >

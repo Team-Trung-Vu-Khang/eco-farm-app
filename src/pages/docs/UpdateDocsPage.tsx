@@ -620,7 +620,6 @@ export default function UpdateDocsPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Cập nhật tài liệu kỹ thuât"
       description="Cập nhật tài liệu kỹ thuật"
     >

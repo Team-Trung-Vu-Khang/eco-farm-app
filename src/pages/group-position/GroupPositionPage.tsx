@@ -84,7 +84,6 @@ export default function GroupPositionPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Nhóm chức vụ – chức danh"
       description="Quản lý các nhóm phân loại chức vụ và chức danh trong hệ thống"
       actions={

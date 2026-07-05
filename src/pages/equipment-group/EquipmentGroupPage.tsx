@@ -1,10 +1,10 @@
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Plus } from "lucide-react";
 import { EquipmentGroupFormDialog } from "./components/EquipmentGroupFormDialog";
 import { equipmentGroupColumns } from "./data/columns.tsx";
 import { useEquipmentGroupForm } from "./hooks/useEquipmentGroupForm";
@@ -41,7 +41,6 @@ const EquipmentGroupPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Danh mục máy móc"
       description="Quản lý danh sách các nhóm máy móc, dụng cụ (Master Data)"
       actions={

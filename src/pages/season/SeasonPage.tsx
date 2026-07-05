@@ -8,7 +8,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Plus, Trees, PawPrint } from "lucide-react";
+import { PawPrint, Plus, Trees } from "lucide-react";
 import { useMemo, useState } from "react";
 import { seasonColumns } from "./data/columns";
 import { useSeasonPage } from "./hooks/useSeasonPage";
@@ -63,7 +63,6 @@ export default function SeasonPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý mùa vụ"
       description="Quản lý riêng vụ mùa và vụ nuôi trong cùng một không gian"
       actions={
@@ -77,7 +76,10 @@ export default function SeasonPage() {
       }
     >
       <div className="space-y-6">
-        <Tabs value={tab} onValueChange={(value) => setTab(value as "plant" | "animal")}>
+        <Tabs
+          value={tab}
+          onValueChange={(value) => setTab(value as "plant" | "animal")}
+        >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="plant" className="gap-2">
               <Trees className="h-4 w-4" />

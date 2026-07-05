@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import {
   AdminLayout,
   Button,
@@ -7,9 +6,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ChevronLeft, Edit, MapPin } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { ChevronLeft, Edit, MapPin } from "lucide-react";
+import { useEffect } from "react";
 import {
   MapContainer,
   Polygon,
@@ -18,9 +18,9 @@ import {
   useMap,
 } from "react-leaflet";
 
+import type { FarmPlotResponse } from "@/features/farm";
 import { RegionChartStatusBadge } from "../components/RegionChartStatusBadge";
 import { useAreaDetailPage } from "../hooks/useAreaDetailPage";
-import type { FarmPlotResponse } from "@/features/farm";
 
 const closePath = (
   points: Array<{
@@ -88,11 +88,7 @@ const AreaDetailPage = () => {
 
   if (isLoading) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Chi tiết khu vực"
-        description="Đang tải..."
-      >
+      <AdminLayout title="Chi tiết khu vực" description="Đang tải...">
         <div className="flex items-center justify-center h-64">
           <p className="text-muted-foreground">Đang tải dữ liệu...</p>
         </div>
@@ -103,7 +99,6 @@ const AreaDetailPage = () => {
   if (!area) {
     return (
       <AdminLayout
-        isDev={true}
         title="Chi tiết khu vực"
         description="Không tìm thấy thông tin khu vực"
         actions={
@@ -124,7 +119,6 @@ const AreaDetailPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       description={`Mã khu vực: ${area.id}`}
       title={`Chi tiết khu vực: ${area.name}`}
       actions={

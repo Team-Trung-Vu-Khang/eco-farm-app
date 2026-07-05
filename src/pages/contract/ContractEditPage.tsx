@@ -1,17 +1,17 @@
-import { useEffect } from "react";
-import { useRoute, useLocation } from "wouter";
 import {
   AdminLayout,
-  StepperForm,
   Button,
+  StepperForm,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
-import { useContractForm } from "./hooks/useContractForm";
+import { useEffect } from "react";
+import { useLocation, useRoute } from "wouter";
 import { BasicInfoStep } from "./components/steps/BasicInfoStep";
-import { ContractContentStep } from "./components/steps/ContractContentStep";
 import { CommodityStep } from "./components/steps/CommodityStep";
-import { PartiesStep } from "./components/steps/PartiesStep";
 import { ConfirmationStep } from "./components/steps/ConfirmationStep";
+import { ContractContentStep } from "./components/steps/ContractContentStep";
+import { PartiesStep } from "./components/steps/PartiesStep";
+import { useContractForm } from "./hooks/useContractForm";
 
 const ContractEditPage = () => {
   const [, params] = useRoute("/contract/:id/edit");
@@ -159,7 +159,6 @@ const ContractEditPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Chỉnh sửa hợp đồng"
       description="Cập nhật thông tin hợp đồng"
     >

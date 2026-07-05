@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   AdminLayout,
   Badge,
@@ -9,21 +8,21 @@ import {
   CardTitle,
   Input,
   Label,
+  ScrollArea,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  StepperForm,
-  Textarea,
   Separator,
+  StepperForm,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
+  Textarea,
   cn,
   type Step,
-  ScrollArea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Apple,
@@ -42,10 +41,11 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { StageAllocation } from "./components/StageAllocation";
+import { useState } from "react";
 import { EnterpriseSelector } from "../cultivation-zone/cultivation-region/components";
 import GeographicalSelector from "./components/GeographicalSelector";
 import { RegimenSelector } from "./components/RegimenSelector";
+import { StageAllocation } from "./components/StageAllocation";
 import { StageItem } from "./components/StageItem";
 import { usePlanForm } from "./hooks/usePlanForm";
 
@@ -1428,7 +1428,7 @@ export default function PlanEditPage() {
   if (!plan) return null;
 
   return (
-    <AdminLayout isDev={true} title={pageTitle} description={pageDescription}>
+    <AdminLayout title={pageTitle} description={pageDescription}>
       <div className="max-w-5xl mx-auto">
         <StepperForm
           steps={steps}

@@ -1,10 +1,10 @@
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Plus } from "lucide-react";
 import { MaterialGroupFormDialog } from "./components/MaterialGroupFormDialog";
 import { materialGroupColumns } from "./data/columns";
 import { useMaterialGroupPage } from "./hooks/useMaterialGroupPage";
@@ -41,7 +41,6 @@ const MaterialGroupPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Danh mục vật tư"
       description="Quản lý danh sách các nhóm vật tư (Master Data)"
       actions={

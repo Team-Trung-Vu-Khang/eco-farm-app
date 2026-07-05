@@ -1,10 +1,10 @@
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Plus } from "lucide-react";
 import { useUnitPage } from "./hooks/useUnitPage";
 
 export default function UnitPage() {
@@ -22,7 +22,6 @@ export default function UnitPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý đơn vị"
       description="Quản lý danh sách đơn vị tính và quy tắc quy đổi về đơn vị chuẩn (kg, lít...)"
       actions={

@@ -1,5 +1,3 @@
-import React, { useEffect, useState } from "react";
-import { useLocation, useParams } from "wouter";
 import {
   AdminLayout,
   Badge,
@@ -11,19 +9,21 @@ import {
   Separator,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  Edit,
   ArrowLeft,
-  FileText,
+  Calendar,
   CheckCircle2,
   Clock,
+  Edit,
+  FileText,
   Layers,
-  Calendar,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useLocation, useParams } from "wouter";
 import useDocumentCategoryStore from "../../stores/useDocumentCategoryStore";
 import {
   type DocumentCategory,
-  ENTITY_TYPE_LABELS,
   ENTITY_TYPE_COLORS,
+  ENTITY_TYPE_LABELS,
 } from "./data/constants";
 
 const DocumentCategoryDetailPage = () => {
@@ -47,7 +47,6 @@ const DocumentCategoryDetailPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Chi tiết danh mục hồ sơ"
       description={`Thông tin thiết lập cho loại tài liệu: ${category.name}`}
       actions={

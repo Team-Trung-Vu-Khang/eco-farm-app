@@ -1,27 +1,27 @@
-import React, { useRef } from "react";
-import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AdminLayout,
   Button,
   Card,
   CardContent,
-  StepperForm,
   Form,
+  StepperForm,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
-import { VarietyFoundationClassificationStep } from "./components/VarietyFoundationClassificationStep";
+import React, { useRef } from "react";
+import { FormProvider, useForm, useFormContext } from "react-hook-form";
+import { initialEditorValue } from "../docs/mocks";
 import { VarietyFoundationCharacteristicsStep } from "./components/VarietyFoundationCharacteristicsStep";
-import { VarietyFoundationDocumentsStep } from "./components/VarietyFoundationDocumentsStep";
+import { VarietyFoundationClassificationStep } from "./components/VarietyFoundationClassificationStep";
 import { VarietyFoundationConfirmationStep } from "./components/VarietyFoundationConfirmationStep";
+import { VarietyFoundationDocumentsStep } from "./components/VarietyFoundationDocumentsStep";
 import { useVarietyFoundationForm } from "./hooks/useVarietyFoundationForm";
 import {
-  varietyFoundationSchema,
   classificationSchema,
+  varietyFoundationSchema,
   type VarietyFoundationFormValues,
 } from "./schemas/varietyFoundationSchema";
-import { initialEditorValue } from "../docs/mocks";
 
 function VarietyFoundationCreateFormContent({
   fileInputRef,
@@ -130,7 +130,6 @@ export default function CreateVarietyFoundationPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Tạo mới giống cây (nền tảng)"
       description="Khởi tạo thông tin định danh, đặc tính và tài liệu kỹ thuật cho giống cây (nền tảng)"
       actions={

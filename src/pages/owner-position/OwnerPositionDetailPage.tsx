@@ -1,4 +1,5 @@
-import { useLocation, useRoute } from "wouter";
+import { useFarmPositionById } from "@/features/master-data";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 import {
   AdminLayout,
   Badge,
@@ -17,8 +18,7 @@ import {
   SquareUserRound,
 } from "lucide-react";
 import { useMemo } from "react";
-import { useFarmPositionById } from "@/features/master-data";
-import { useSelectedWorkspaceId } from "@/features/workspace";
+import { useLocation, useRoute } from "wouter";
 import type { PositionRecord } from "./types";
 
 function formatDateTime(value: unknown) {
@@ -65,9 +65,12 @@ export default function OwnerPositionDetailPage() {
   const [, setLocation] = useLocation();
   const id = params?.id ?? "";
   const workspaceId = useSelectedWorkspaceId();
-  const parsedWorkspaceId = typeof workspaceId === "number" ? workspaceId : undefined;
+  const parsedWorkspaceId =
+    typeof workspaceId === "number" ? workspaceId : undefined;
 
-  const positionQuery = useFarmPositionById(Number(id), { workspaceId: parsedWorkspaceId });
+  const positionQuery = useFarmPositionById(Number(id), {
+    workspaceId: parsedWorkspaceId,
+  });
   const position = positionQuery.data as PositionRecord | undefined;
 
   const documents = useMemo(() => {
@@ -79,7 +82,7 @@ export default function OwnerPositionDetailPage() {
 
   if (positionQuery.isLoading) {
     return (
-      <AdminLayout isDev={true} title="Chi tiết chức vụ">
+      <AdminLayout title="Chi tiết chức vụ">
         <div className="flex items-center justify-center py-20 text-slate-500">
           Đang tải thông tin chức vụ...
         </div>
@@ -89,12 +92,15 @@ export default function OwnerPositionDetailPage() {
 
   if (positionQuery.error || !position) {
     return (
-      <AdminLayout isDev={true} title="Chi tiết chức vụ">
+      <AdminLayout title="Chi tiết chức vụ">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="mb-4 text-slate-500">
             Không tìm thấy thông tin chức vụ này.
           </p>
-          <Button variant="outline" onClick={() => setLocation("/owner-position")}>
+          <Button
+            variant="outline"
+            onClick={() => setLocation("/owner-position")}
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Quay lại danh sách
           </Button>
@@ -105,7 +111,6 @@ export default function OwnerPositionDetailPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Chi tiết chức vụ"
       description={`Thông tin chi tiết của ${position.name}`}
       actions={

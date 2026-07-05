@@ -1,15 +1,14 @@
 import { AdminLayout } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { OverviewStats } from "./components/OverviewStats";
-import { YieldChart } from "./components/YieldChart";
 import { CropAreaChart } from "./components/CropAreaChart";
+import { DashboardAlerts } from "./components/DashboardAlerts";
+import { OverviewStats } from "./components/OverviewStats";
 import { RecentActivities } from "./components/RecentActivities";
 import { UpcomingTasks } from "./components/UpcomingTasks";
-import { DashboardAlerts } from "./components/DashboardAlerts";
+import { YieldChart } from "./components/YieldChart";
 
 export default function Dashboard() {
   return (
     <AdminLayout
-      isDev={true}
       title="Dashboard"
       description="Tổng quan hệ thống quản lý nông trại"
     >

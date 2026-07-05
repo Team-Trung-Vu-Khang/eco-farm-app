@@ -1,10 +1,10 @@
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Plus } from "lucide-react";
 import { pesticideColumns } from "./data/columns";
 import { usePesticidePage } from "./hooks/usePesticidePage";
 
@@ -23,7 +23,6 @@ export default function PesticidePage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý thuốc BVTV"
       description="Quản lý danh mục thuốc bảo vệ thực vật"
       actions={

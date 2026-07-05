@@ -15,13 +15,13 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import { useCooperativeForm } from "./hooks/useCooperativeForm";
-import { BasicInfoStep } from "./components/steps/BasicInfoStep";
-import { ContactInfoStep } from "./components/steps/ContactInfoStep";
-import { BranchesStep } from "./components/steps/BranchesStep";
 import { BankInfoStep } from "./components/steps/BankInfoStep";
-import { DocumentsStep } from "./components/steps/DocumentsStep";
+import { BasicInfoStep } from "./components/steps/BasicInfoStep";
+import { BranchesStep } from "./components/steps/BranchesStep";
 import { ConfirmStep } from "./components/steps/ConfirmStep";
+import { ContactInfoStep } from "./components/steps/ContactInfoStep";
+import { DocumentsStep } from "./components/steps/DocumentsStep";
+import { useCooperativeForm } from "./hooks/useCooperativeForm";
 
 export default function CooperativeCreatePage() {
   const [, setLocation] = useLocation();
@@ -178,7 +178,6 @@ export default function CooperativeCreatePage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Tạo mới Hợp tác xã"
       description="Điền thông tin theo từng bước để tạo mới hợp tác xã"
       actions={

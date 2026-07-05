@@ -32,7 +32,6 @@ const PlantIdentificationDetailPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title={`Thông tin cây: ${plant.id}`}
       description="Chi tiết định danh và vị trí địa lý của cây trồng"
       actions={

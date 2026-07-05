@@ -1,11 +1,11 @@
 import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft } from "lucide-react";
 import type { GrowthCycle } from "../../growth-cycle/types/types";
+import type { SeasonFormData } from "../types/types";
 import { GrowthCycleSelectDialog } from "./GrowthCycleSelectDialog";
 import { SeasonBasicInfoCard } from "./SeasonBasicInfoCard";
 import { SeasonDocumentsCard } from "./SeasonDocumentsCard";
 import { SeasonGrowthCyclesCard } from "./SeasonGrowthCyclesCard";
-import type { SeasonFormData } from "../types/types";
 
 interface SeasonFormPageProps {
   description: string;
@@ -48,7 +48,7 @@ export function SeasonFormPage({
   );
 
   return (
-    <AdminLayout isDev={true} title={title} description={description}>
+    <AdminLayout title={title} description={description}>
       <div className="mb-6">
         <Button
           variant="ghost"

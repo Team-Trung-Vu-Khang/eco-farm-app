@@ -24,7 +24,6 @@ export default function BankEditPage() {
   if (notFound) {
     return (
       <AdminLayout
-        isDev={true}
         title="Không tìm thấy"
         description="Tài khoản ngân hàng không tồn tại"
       >
@@ -43,7 +42,6 @@ export default function BankEditPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Cập nhật tài khoản ngân hàng"
       description="Chỉnh sửa thông tin tài khoản ngân hàng"
       actions={

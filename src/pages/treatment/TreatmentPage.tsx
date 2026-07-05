@@ -1,15 +1,14 @@
-import { Plus, Bug } from "lucide-react";
-import { useLocation } from "wouter";
 import {
   AdminLayout,
   Button,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { TreatmentDetail } from "./components/TreatmentDetail";
+import { Bug, Plus } from "lucide-react";
+import { useLocation } from "wouter";
 import { MaterialDetailModal } from "./components/MaterialDetailModal";
+import { TreatmentDetail } from "./components/TreatmentDetail";
 import { TreatmentSeverityStats } from "./components/TreatmentSeverityStats";
 import { TreatmentSidebar } from "./components/TreatmentSidebar";
-import { TreatmentForm } from "./components/TreatmentForm";
 import { useTreatmentPage } from "./hooks/useTreatmentPage";
 
 export default function TreatmentPage() {
@@ -38,7 +37,6 @@ export default function TreatmentPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Phác đồ điều trị"
       description="Hệ thống quản lý quy trình kỹ thuật & sâu bệnh"
       actions={

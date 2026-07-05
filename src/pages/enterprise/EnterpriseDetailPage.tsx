@@ -1,4 +1,3 @@
-import { ChevronLeft } from "lucide-react";
 import {
   AdminLayout,
   Button,
@@ -7,13 +6,14 @@ import {
   TabsList,
   TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useEnterpriseDetail } from "./hooks/useEnterpriseDetail";
+import { ChevronLeft } from "lucide-react";
 import { EnterpriseOverviewCard } from "./components/EnterpriseOverviewCard";
-import { EnterpriseInfoTab } from "./components/tabs/EnterpriseInfoTab";
-import { EnterpriseContactsTab } from "./components/tabs/EnterpriseContactsTab";
-import { EnterpriseBranchesTab } from "./components/tabs/EnterpriseBranchesTab";
 import { EnterpriseBankAccountsTab } from "./components/tabs/EnterpriseBankAccountsTab";
+import { EnterpriseBranchesTab } from "./components/tabs/EnterpriseBranchesTab";
+import { EnterpriseContactsTab } from "./components/tabs/EnterpriseContactsTab";
 import { EnterpriseDocumentsTab } from "./components/tabs/EnterpriseDocumentsTab";
+import { EnterpriseInfoTab } from "./components/tabs/EnterpriseInfoTab";
+import { useEnterpriseDetail } from "./hooks/useEnterpriseDetail";
 
 export default function EnterpriseDetailPage() {
   const {
@@ -29,11 +29,7 @@ export default function EnterpriseDetailPage() {
 
   if (loading && !data) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Chi tiết đơn vị"
-        description="Đang tải thông tin..."
-      >
+      <AdminLayout title="Chi tiết đơn vị" description="Đang tải thông tin...">
         <div className="flex flex-col items-center justify-center gap-4 p-12">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
           <div className="text-muted-foreground">
@@ -46,11 +42,7 @@ export default function EnterpriseDetailPage() {
 
   if (error) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Chi tiết đơn vị"
-        description="Đang tải thông tin..."
-      >
+      <AdminLayout title="Chi tiết đơn vị" description="Đang tải thông tin...">
         <div className="flex flex-col items-center justify-center gap-4 p-12">
           <div className="font-medium text-destructive">
             Không thể tải thông tin doanh nghiệp
@@ -67,11 +59,7 @@ export default function EnterpriseDetailPage() {
 
   if (!data) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Chi tiết đơn vị"
-        description="Đang tải thông tin..."
-      >
+      <AdminLayout title="Chi tiết đơn vị" description="Đang tải thông tin...">
         <div className="flex flex-col items-center justify-center gap-4 p-12">
           <div className="text-muted-foreground">
             Không tìm thấy thông tin doanh nghiệp
@@ -87,7 +75,6 @@ export default function EnterpriseDetailPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title={data.name}
       description={`Chi tiết thông tin ${
         data.type === "enterprise"

@@ -1,3 +1,5 @@
+import { useOrganizationById } from "@/features/organization";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 import {
   AdminLayout,
   AlertDialog,
@@ -16,15 +18,13 @@ import {
 import { ChevronLeft } from "lucide-react";
 import { useMemo } from "react";
 import { Link, useLocation, useRoute } from "wouter";
-import { useOrganizationById } from "@/features/organization";
-import { useSelectedWorkspaceId } from "@/features/workspace";
-import { useCooperativeForm } from "./hooks/useCooperativeForm";
-import { BasicInfoStep } from "./components/steps/BasicInfoStep";
-import { ContactInfoStep } from "./components/steps/ContactInfoStep";
 import { BankInfoStep } from "./components/steps/BankInfoStep";
-import { DocumentsStep } from "./components/steps/DocumentsStep";
-import { ConfirmStep } from "./components/steps/ConfirmStep";
+import { BasicInfoStep } from "./components/steps/BasicInfoStep";
 import { BranchesStep } from "./components/steps/BranchesStep";
+import { ConfirmStep } from "./components/steps/ConfirmStep";
+import { ContactInfoStep } from "./components/steps/ContactInfoStep";
+import { DocumentsStep } from "./components/steps/DocumentsStep";
+import { useCooperativeForm } from "./hooks/useCooperativeForm";
 import { toCooperativeFormData } from "./utils/cooperative.mapper";
 
 export default function CooperativeEditPage() {
@@ -42,7 +42,9 @@ export default function CooperativeEditPage() {
 
   const initialData = useMemo(
     () =>
-      cooperativeQuery.item ? toCooperativeFormData(cooperativeQuery.item) : null,
+      cooperativeQuery.item
+        ? toCooperativeFormData(cooperativeQuery.item)
+        : null,
     [cooperativeQuery.item],
   );
 
@@ -93,7 +95,6 @@ export default function CooperativeEditPage() {
   if (cooperativeQuery.loading) {
     return (
       <AdminLayout
-        isDev={true}
         title="Cập nhật Hợp tác xã"
         description="Đang tải thông tin..."
       >
@@ -107,7 +108,6 @@ export default function CooperativeEditPage() {
   if (cooperativeQuery.error) {
     return (
       <AdminLayout
-        isDev={true}
         title="Cập nhật Hợp tác xã"
         description="Không thể tải dữ liệu hợp tác xã"
         actions={
@@ -239,7 +239,6 @@ export default function CooperativeEditPage() {
   if (!initialData) {
     return (
       <AdminLayout
-        isDev={true}
         title="Cập nhật Hợp tác xã"
         description="Không tìm thấy dữ liệu hợp tác xã"
         actions={
@@ -263,7 +262,6 @@ export default function CooperativeEditPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title={`Cập nhật Hợp tác xã`}
       description="Cập nhật thông tin chi tiết"
       actions={

@@ -1,6 +1,6 @@
-import { useLocation, useRoute } from "wouter";
 import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft, PencilLine } from "lucide-react";
+import { useLocation, useRoute } from "wouter";
 import { RoleResponsibilityContent } from "./components/RoleResponsibilityContent";
 import { useRoleResponsibilityData } from "./hooks/useRoleResponsibilityData";
 
@@ -21,7 +21,6 @@ export default function RoleResponsibilityDetailPage() {
   if (!selectedRole) {
     return (
       <AdminLayout
-        isDev={true}
         title="Không tìm thấy vai trò"
         description="Vai trò bạn đang xem không còn tồn tại trong hệ thống."
       >
@@ -38,7 +37,6 @@ export default function RoleResponsibilityDetailPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Chi tiết vai trò và trách nhiệm"
       description="Theo dõi cấu hình nghiệp vụ, người dùng phụ trách và tình trạng kiểm tra điều kiện."
       actions={

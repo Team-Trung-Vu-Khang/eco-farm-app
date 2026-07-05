@@ -1,7 +1,7 @@
 import { AdminLayout, DataTable } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ProvinceWardDetailModal } from "./components/ProvinceWardDetailModal";
-import { useProvincePage } from "./hooks/useProvincePage";
 import { columns } from "./data/columns";
+import { useProvincePage } from "./hooks/useProvincePage";
 
 export default function ProvincePage() {
   const {
@@ -27,7 +27,6 @@ export default function ProvincePage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Danh sách tỉnh/thành"
       description="Tra cứu danh mục tỉnh/thành và các xã/phường trực thuộc theo dữ liệu hành chính Việt Nam"
     >

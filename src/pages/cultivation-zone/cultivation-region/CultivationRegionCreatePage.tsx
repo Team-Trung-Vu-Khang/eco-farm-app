@@ -9,14 +9,14 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
 import { FormProvider, useForm } from "react-hook-form";
+import { ZoneConfigurationStep } from "./components/ZoneConfigurationStep";
+import { ZoneGeneralInfoStep } from "./components/ZoneGeneralInfoStep";
+import { ZoneReviewStep } from "./components/ZoneReviewStep";
 import {
   cultivationZoneFormSchema,
   type CultivationZoneFormValues,
 } from "./data/cultivation-zone-form.schema";
 import { useCultivationZoneCreateForm } from "./hooks/useCultivationZoneCreateForm";
-import { ZoneGeneralInfoStep } from "./components/ZoneGeneralInfoStep";
-import { ZoneConfigurationStep } from "./components/ZoneConfigurationStep";
-import { ZoneReviewStep } from "./components/ZoneReviewStep";
 
 const CultivationRegionCreatePage = () => {
   const form = useForm<CultivationZoneFormValues>({
@@ -80,7 +80,6 @@ const CultivationRegionCreatePage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title={isEditMode ? "Cập nhật vùng canh tác" : "Thiết lập vùng canh tác"}
       description={
         isEditMode

@@ -119,7 +119,6 @@ export default function SoilAmendmentMapPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Bản đồ cải tạo đất"
       description="Phân tích chất lượng đất và kế hoạch cải tạo"
       actions={

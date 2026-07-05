@@ -4,9 +4,9 @@ import {
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Link } from "wouter";
 import { X } from "lucide-react";
 import { createPortal } from "react-dom";
+import { Link } from "wouter";
 import { VarietyDetailContent } from "./components/VarietyDetailContent";
 import { varietyColumns } from "./data/columns";
 import { varietyFilters } from "./data/constants";
@@ -76,7 +76,6 @@ const VarietyPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý giống cây"
       description="Xem và quản lý danh sách các loại giống cây trồng"
       actions={

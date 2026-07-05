@@ -1,3 +1,4 @@
+import type { VsicIndustryTreeRecord } from "@/features/master-data/types/master-data.type";
 import {
   AdminLayout,
   Badge,
@@ -8,20 +9,12 @@ import {
   CardTitle,
   DataTable,
   DeleteDialog,
-  Separator,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  BadgeCheck,
-  ChevronRight,
-  Layers3,
-  Plus,
-  TreePine,
-} from "lucide-react";
+import { ChevronRight, Plus, TreePine } from "lucide-react";
 import { EnterpriseTypeForm } from "./components/EnterpriseTypeForm";
 import { useEnterpriseGroupForm } from "./hooks/useEnterpriseGroupForm";
 import type { VsicIndustry } from "./types";
-import type { VsicIndustryTreeRecord } from "@/features/master-data/types/master-data.type";
 
 const VSIC_STATUS_OPTIONS = [
   { value: "active", label: "Hoạt động" },
@@ -157,7 +150,6 @@ const EnterpriseTypePage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Thông tin ngành nghề"
       description="Quản lý danh mục ngành nghề VSIC"
       actions={

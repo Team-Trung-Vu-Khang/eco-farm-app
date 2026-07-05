@@ -1,30 +1,30 @@
-import { Link } from "wouter";
 import {
   AdminLayout,
-  Button,
   Badge,
+  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  ChevronLeft,
-  MapPin,
-  Layers,
-  Sprout,
-  Calendar,
-  User,
-  Info,
-  ExternalLink,
-  Droplets,
-  ClipboardList,
-  Edit,
-  Building2,
-} from "lucide-react";
-import { MapContainer, TileLayer, Polygon, useMap } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import {
+  Building2,
+  Calendar,
+  ChevronLeft,
+  ClipboardList,
+  Droplets,
+  Edit,
+  ExternalLink,
+  Info,
+  Layers,
+  MapPin,
+  Sprout,
+  User,
+} from "lucide-react";
+import { MapContainer, Polygon, TileLayer, useMap } from "react-leaflet";
+import { Link } from "wouter";
 
 import { useCultivationPlotDetailPage } from "./hooks/useCultivationPlotDetailPage";
 
@@ -52,11 +52,7 @@ const CultivationPlotDetailPage = () => {
 
   if (!data) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Chi tiết Lô canh tác"
-        description="Đang tải..."
-      >
+      <AdminLayout title="Chi tiết Lô canh tác" description="Đang tải...">
         <div className="p-12 text-center text-slate-500">
           Không tìm thấy thông tin lô canh tác
         </div>
@@ -65,7 +61,6 @@ const CultivationPlotDetailPage = () => {
   }
   return (
     <AdminLayout
-      isDev={true}
       title={data.name}
       description={`Cấu hình canh tác cho Lô #${data.id}`}
       actions={

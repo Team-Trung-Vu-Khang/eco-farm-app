@@ -41,17 +41,17 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { MFMap, MFMarker, MFPolygon } from "react-map4d-map";
 import { useLocation } from "wouter";
-import useEnterpriseStore from "../../../stores/useEnterpriseStore";
-import useRegionStore from "../../../stores/useRegionStore";
-import { CultivationRegionDetailView } from "../cultivation-region/CultivationRegionDetailPage";
-import {
-  type Coordinate,
-  type Region,
-  LAND_TYPES,
-} from "../../region-chart/constants";
 import useCultivationRegionStore, {
   type CultivationRegion,
 } from "../../../stores/useCultivationRegionStore";
+import useEnterpriseStore from "../../../stores/useEnterpriseStore";
+import useRegionStore from "../../../stores/useRegionStore";
+import {
+  LAND_TYPES,
+  type Coordinate,
+  type Region,
+} from "../../region-chart/constants";
+import { CultivationRegionDetailView } from "../cultivation-region/CultivationRegionDetailPage";
 
 interface AdvancedFilters {
   // Nhóm 1: Thông tin cây trồng
@@ -827,7 +827,7 @@ const SearchZonePage = () => {
   ]);
 
   return (
-    <AdminLayout isDev={true} title="Tìm kiếm vùng canh tác">
+    <AdminLayout title="Tìm kiếm vùng canh tác">
       <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
         {/* TOP HEADER: Simple Search (Matched to temp.ts) */}
         <div className="bg-white border-b p-4 z-40 shadow-sm rounded-md">

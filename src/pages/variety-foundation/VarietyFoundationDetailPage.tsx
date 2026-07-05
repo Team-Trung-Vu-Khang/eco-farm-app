@@ -1,10 +1,10 @@
+import { useCropVarietyById } from "@/features/foundation";
 import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Sprout } from "lucide-react";
 import { Link, useParams } from "wouter";
+import { formatDaysToDuration } from "../growth-cycle/utils/duration";
 import { VarietyFoundationDetailContent } from "./components/VarietyFoundationDetailContent";
 import type { VarietyFoundation } from "./types";
-import { formatDaysToDuration } from "../growth-cycle/utils/duration";
-import { useCropVarietyById } from "@/features/foundation";
 
 interface VarietyFoundationDetailPageProps {
   id?: string;
@@ -60,7 +60,7 @@ export default function VarietyFoundationDetailPage({
 
   if (isLoading) {
     return (
-      <AdminLayout isDev={true} title="Chi tiết giống cây (nền tảng)">
+      <AdminLayout title="Chi tiết giống cây (nền tảng)">
         <div className="flex justify-center items-center py-20">
           Đang tải...
         </div>
@@ -87,7 +87,6 @@ export default function VarietyFoundationDetailPage({
 
     return isStandalone ? (
       <AdminLayout
-        isDev={true}
         title="Chi tiết giống cây (nền tảng)"
         description="Không tìm thấy thông tin"
       >
@@ -107,7 +106,6 @@ export default function VarietyFoundationDetailPage({
 
   return isStandalone ? (
     <AdminLayout
-      isDev={true}
       title="Chi tiết giống cây (nền tảng)"
       description={`Thông tin chi tiết về ${varietyFoundation.varietyFoundationName}`}
     >

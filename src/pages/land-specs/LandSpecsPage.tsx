@@ -1,14 +1,14 @@
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Plus } from "lucide-react";
+import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
 import { LandSpecsFormDialog } from "./components/LandSpecsFormDialog";
 import { landSpecsColumns } from "./data/columns";
 import { useLandSpecsPage } from "./hooks/useLandSpecsPage";
-import { useDialogBugWorkaround } from "../../shared/hooks/useDialogBugWorkaround";
 
 export default function LandSpecsPage() {
   const {
@@ -32,7 +32,6 @@ export default function LandSpecsPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý thông số địa hình"
       description="Quản lý các loại thông số địa hình trong hệ thống"
       actions={

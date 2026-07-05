@@ -15,11 +15,11 @@ import {
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft } from "lucide-react";
-import { useFarmerCreateForm } from "./hooks/useFarmerCreateForm";
-import { FarmerBasicInfoStep } from "./components/steps/FarmerBasicInfoStep";
 import { FarmerBankStep } from "./components/steps/FarmerBankStep";
+import { FarmerBasicInfoStep } from "./components/steps/FarmerBasicInfoStep";
 import { FarmerConfirmationStep } from "./components/steps/FarmerConfirmationStep";
 import { FarmerContactStep } from "./components/steps/FarmerContactStep";
+import { useFarmerCreateForm } from "./hooks/useFarmerCreateForm";
 
 export default function FarmerCreatePage() {
   const {
@@ -129,7 +129,6 @@ export default function FarmerCreatePage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title={isEdit ? "Chỉnh sửa Nông hộ" : "Tạo mới Nông hộ"}
       description="Điền thông tin theo từng bước để tạo mới nông hộ"
       actions={[

@@ -1,29 +1,29 @@
-import React, { useEffect, useRef } from "react";
-import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AdminLayout,
   Button,
   Card,
   CardContent,
-  StepperForm,
   Form,
+  StepperForm,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
-import { VarietyFoundationClassificationStep } from "./components/VarietyFoundationClassificationStep";
-import { VarietyFoundationCharacteristicsStep } from "./components/VarietyFoundationCharacteristicsStep";
-import { VarietyFoundationDocumentsStep } from "./components/VarietyFoundationDocumentsStep";
-import { VarietyFoundationConfirmationStep } from "./components/VarietyFoundationConfirmationStep";
-import { useVarietyFoundationEditForm } from "./hooks/useVarietyFoundationEditForm";
-import {
-  varietyFoundationSchema,
-  classificationSchema,
-  type VarietyFoundationFormValues,
-} from "./schemas/varietyFoundationSchema";
-import { initialEditorValue } from "../docs/mocks";
+import React, { useEffect, useRef } from "react";
+import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useLocation } from "wouter";
 import { useCrops } from "../../features/foundation";
+import { initialEditorValue } from "../docs/mocks";
+import { VarietyFoundationCharacteristicsStep } from "./components/VarietyFoundationCharacteristicsStep";
+import { VarietyFoundationClassificationStep } from "./components/VarietyFoundationClassificationStep";
+import { VarietyFoundationConfirmationStep } from "./components/VarietyFoundationConfirmationStep";
+import { VarietyFoundationDocumentsStep } from "./components/VarietyFoundationDocumentsStep";
+import { useVarietyFoundationEditForm } from "./hooks/useVarietyFoundationEditForm";
+import {
+  classificationSchema,
+  varietyFoundationSchema,
+  type VarietyFoundationFormValues,
+} from "./schemas/varietyFoundationSchema";
 
 function VarietyFoundationEditFormContent({
   fileInputRef,
@@ -175,7 +175,7 @@ export default function VarietyFoundationEditPage() {
 
   if (!isLoadingVariety && !initialValues) {
     return (
-      <AdminLayout isDev={true} title="Không tìm thấy">
+      <AdminLayout title="Không tìm thấy">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin giống cây (nền tảng) này.
@@ -190,7 +190,6 @@ export default function VarietyFoundationEditPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Chỉnh sửa giống cây (nền tảng)"
       description="Cập nhật thông tin giống cây (nền tảng), đặc tính nông học và tài liệu kỹ thuật"
       actions={

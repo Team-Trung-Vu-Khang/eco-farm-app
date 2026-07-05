@@ -1,11 +1,13 @@
+import treeMarkerIcon from "@/assets/tree.webp";
+import useGroupCropStore from "@/stores/useGroupCropStore";
 import {
   AdminLayout,
   Badge,
   Button,
+  Combobox,
   DataTable,
   Dialog,
   DialogContent,
-  Combobox,
   Input,
   Label,
   cn,
@@ -13,30 +15,28 @@ import {
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
+  Award,
+  Building2,
+  ChevronRight,
   Filter,
+  Layers,
   Leaf,
   MapPin,
   Maximize2,
   Minimize2,
-  Search,
-  ChevronRight,
-  Building2,
-  Award,
-  Layers,
   PanelLeftClose,
   PanelLeftOpen,
+  Search,
 } from "lucide-react";
 import { useState } from "react";
 import { MFMap, MFMarker, MFPolygon } from "react-map4d-map";
-import treeMarkerIcon from "@/assets/tree.webp";
 import useCropDetailStore from "../../../stores/useCropDetailStore";
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 import useRegionStore from "../../../stores/useRegionStore";
 import { PROVINCES, type Region } from "../../region-chart/constants";
 import { type CropDetail } from "../constants";
-import { CultivationZoneDialog } from "./components/CultivationZoneDialog";
 import { CropDetailDialog } from "./components/CropDetailDialog";
-import useGroupCropStore from "@/stores/useGroupCropStore";
+import { CultivationZoneDialog } from "./components/CultivationZoneDialog";
 
 const MapContent = ({
   currentRegion,
@@ -474,7 +474,7 @@ const SearchCropPage = () => {
   })();
 
   return (
-    <AdminLayout isDev={true} title="Tìm kiếm & Truy xuất nguồn gốc">
+    <AdminLayout title="Tìm kiếm & Truy xuất nguồn gốc">
       <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
         {/* TOP HEADER: Search & Advanced Search */}
         <div className="bg-white border-b rounded-md p-4 z-40 shadow-sm">

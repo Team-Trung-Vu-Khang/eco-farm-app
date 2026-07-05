@@ -1,11 +1,11 @@
-import { Link, useLocation } from "wouter";
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Plus } from "lucide-react";
+import { Link } from "wouter";
 import { planColumns, planFilters, PlanStatisticsCards } from "./data/table";
 import { usePlanPage } from "./hooks/usePlanPage";
 
@@ -24,7 +24,6 @@ export default function PlanPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý canh tác"
       description="Lập và quản lý kế hoạch theo mùa vụ"
       actions={

@@ -129,11 +129,7 @@ export default function FarmerDetailPage() {
 
   if (organizationQuery.loading && !data) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Chi tiết nông hộ"
-        description="Đang tải thông tin..."
-      >
+      <AdminLayout title="Chi tiết nông hộ" description="Đang tải thông tin...">
         <div className="flex flex-col items-center justify-center p-12 space-y-4">
           <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-primary animate-spin" />
           <div className="text-muted-foreground">
@@ -146,11 +142,7 @@ export default function FarmerDetailPage() {
 
   if (organizationQuery.error) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Chi tiết nông hộ"
-        description="Đang tải thông tin..."
-      >
+      <AdminLayout title="Chi tiết nông hộ" description="Đang tải thông tin...">
         <div className="flex flex-col items-center justify-center p-12 space-y-4">
           <div className="text-destructive font-medium">
             Không thể tải thông tin nông hộ
@@ -169,11 +161,7 @@ export default function FarmerDetailPage() {
 
   if (!data) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Chi tiết nông hộ"
-        description="Đang tải thông tin..."
-      >
+      <AdminLayout title="Chi tiết nông hộ" description="Đang tải thông tin...">
         <div className="flex flex-col items-center justify-center p-12 space-y-4">
           <div className="text-muted-foreground">Không tìm thấy nông hộ</div>
           <Button variant="outline" onClick={() => setLocation("/farmer")}>
@@ -187,7 +175,6 @@ export default function FarmerDetailPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title={data.name}
       description={`Chi tiết thông tin nông hộ`}
       actions={

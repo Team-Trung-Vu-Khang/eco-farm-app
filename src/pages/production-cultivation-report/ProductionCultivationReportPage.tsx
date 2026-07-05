@@ -245,7 +245,6 @@ export default function ProductionCultivationReportPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Báo cáo sản xuất/canh tác"
       description="Tổng hợp chỉ tiêu điều hành từ kế hoạch, công việc, mùa vụ và vùng canh tác"
       actions={

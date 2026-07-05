@@ -46,7 +46,6 @@ export default function AmendmentPlanPage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Kế hoạch cải tạo đất"
       description="Lập và theo dõi tiến độ các dự án cải tạo đất theo từng khu vực"
       actions={

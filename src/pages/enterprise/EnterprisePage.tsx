@@ -1,11 +1,11 @@
-import { Link } from "wouter";
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Plus } from "lucide-react";
+import { Link } from "wouter";
 import { useEnterprisePage } from "./hooks/useEnterprisePage";
 
 export default function EnterprisePage() {
@@ -32,7 +32,6 @@ export default function EnterprisePage() {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý doanh nghiệp"
       description="Quản lý thông tin các doanh nghiệp trong hệ thống"
       actions={

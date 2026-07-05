@@ -7,13 +7,13 @@ import {
   ScrollArea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { LayoutGrid, List, Plus } from "lucide-react";
-import type { AmendmentCycle } from "./types/amendment-cycle";
 import { AmendmentCycleCardGrid } from "./components/AmendmentCycleCardGrid";
 import { AmendmentCycleDetailDialog } from "./components/AmendmentCycleDetailDialog";
 import { AmendmentCycleFormDialog } from "./components/AmendmentCycleFormDialog";
 import { AmendmentCycleIntro } from "./components/AmendmentCycleIntro";
 import { amendmentCycleColumns } from "./data/amendmentCycleColumns";
 import { useAmendmentCyclePage } from "./hooks/useAmendmentCyclePage";
+import type { AmendmentCycle } from "./types/amendment-cycle";
 
 const AmendmentCyclePage = () => {
   const {
@@ -50,7 +50,6 @@ const AmendmentCyclePage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Chu kỳ cải tạo đất"
       description="Quản lý các quy trình và thời gian phục hồi đất canh tác"
       actions={

@@ -1,13 +1,13 @@
-import { Plus } from "lucide-react";
 import {
   AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useDepartment } from "./hooks/useDepartment";
-import { DEPARTMENT_COLUMNS } from "./data/columns";
+import { Plus } from "lucide-react";
 import { DepartmentFormDialog } from "./components/DepartmentFormDialog";
+import { DEPARTMENT_COLUMNS } from "./data/columns";
+import { useDepartment } from "./hooks/useDepartment";
 
 const DEPARTMENT_STATUS_OPTIONS = [
   { value: "active", label: "Hoạt động" },
@@ -41,7 +41,6 @@ const DepartmentPage = () => {
 
   return (
     <AdminLayout
-      isDev={true}
       title="Quản lý phòng ban"
       description="Quản lý phòng ban theo đơn vị sở hữu"
       actions={
