@@ -37,6 +37,7 @@ export default function TreatmentPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Phác đồ điều trị"
       description="Hệ thống quản lý quy trình kỹ thuật & sâu bệnh"
       actions={

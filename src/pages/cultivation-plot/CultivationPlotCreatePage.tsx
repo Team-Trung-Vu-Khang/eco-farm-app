@@ -854,6 +854,7 @@ const CultivationPlotCreatePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title={isEdit ? "Chỉnh sửa lô" : "Thiết lập lô"}
       description="Quy trình khởi tạo và cấu hình canh tác theo Khu vực (Lô)"
     >

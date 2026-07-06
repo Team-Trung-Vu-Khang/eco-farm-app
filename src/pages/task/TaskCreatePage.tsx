@@ -2708,6 +2708,7 @@ export default function TaskCreatePage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Phân bổ công việc"
       description="Quy trình 3 bước lập lịch và quản lý nguồn lực"
       actions={

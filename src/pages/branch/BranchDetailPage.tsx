@@ -27,7 +27,7 @@ export default function BranchDetailPage() {
 
   if (loading && !branch) {
     return (
-      <AdminLayout>
+      <AdminLayout isDev={true}>
         <div className="flex h-96 items-center justify-center rounded-3xl border bg-card">
           <p className="text-sm text-muted-foreground">
             Đang tải thông tin chi nhánh...
@@ -39,7 +39,7 @@ export default function BranchDetailPage() {
 
   if (error) {
     return (
-      <AdminLayout>
+      <AdminLayout isDev={true}>
         <div className="flex h-96 flex-col items-center justify-center rounded-3xl border bg-card text-center">
           <h2 className="text-2xl font-bold">Không thể tải chi nhánh</h2>
           <p className="mt-2 text-sm text-muted-foreground">{error}</p>
@@ -55,7 +55,7 @@ export default function BranchDetailPage() {
   // Show not found state if branch doesn't exist
   if (!branch) {
     return (
-      <AdminLayout>
+      <AdminLayout isDev={true}>
         <div className="flex flex-col items-center justify-center h-96">
           <h2 className="text-2xl font-bold mb-4">
             Không tìm thấy thông tin chi nhánh
@@ -70,7 +70,7 @@ export default function BranchDetailPage() {
   }
 
   return (
-    <AdminLayout>
+    <AdminLayout isDev={true}>
       <div className="max-w-6xl mx-auto space-y-6 pb-10">
         <BranchDetailHeader
           branch={branch}

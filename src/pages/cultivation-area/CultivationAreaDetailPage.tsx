@@ -52,7 +52,11 @@ const CultivationAreaDetailPage = () => {
 
   if (!data) {
     return (
-      <AdminLayout title="Chi tiết Khu vực canh tác" description="Đang tải...">
+      <AdminLayout
+        isDev={true}
+        title="Chi tiết Khu vực canh tác"
+        description="Đang tải..."
+      >
         <div className="p-12 text-center text-slate-500">
           Không tìm thấy thông tin khu vực canh tác
         </div>
@@ -61,6 +65,7 @@ const CultivationAreaDetailPage = () => {
   }
   return (
     <AdminLayout
+      isDev={true}
       title={data.name}
       description={`Cấu hình canh tác cho Khu vực #${data.id}`}
       actions={

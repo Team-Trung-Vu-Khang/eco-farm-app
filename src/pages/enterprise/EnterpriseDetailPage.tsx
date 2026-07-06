@@ -29,7 +29,11 @@ export default function EnterpriseDetailPage() {
 
   if (loading && !data) {
     return (
-      <AdminLayout title="Chi tiết đơn vị" description="Đang tải thông tin...">
+      <AdminLayout
+        isDev={true}
+        title="Chi tiết đơn vị"
+        description="Đang tải thông tin..."
+      >
         <div className="flex flex-col items-center justify-center gap-4 p-12">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
           <div className="text-muted-foreground">
@@ -42,7 +46,11 @@ export default function EnterpriseDetailPage() {
 
   if (error) {
     return (
-      <AdminLayout title="Chi tiết đơn vị" description="Đang tải thông tin...">
+      <AdminLayout
+        isDev={true}
+        title="Chi tiết đơn vị"
+        description="Đang tải thông tin..."
+      >
         <div className="flex flex-col items-center justify-center gap-4 p-12">
           <div className="font-medium text-destructive">
             Không thể tải thông tin doanh nghiệp
@@ -59,7 +67,11 @@ export default function EnterpriseDetailPage() {
 
   if (!data) {
     return (
-      <AdminLayout title="Chi tiết đơn vị" description="Đang tải thông tin...">
+      <AdminLayout
+        isDev={true}
+        title="Chi tiết đơn vị"
+        description="Đang tải thông tin..."
+      >
         <div className="flex flex-col items-center justify-center gap-4 p-12">
           <div className="text-muted-foreground">
             Không tìm thấy thông tin doanh nghiệp
@@ -75,6 +87,7 @@ export default function EnterpriseDetailPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title={data.name}
       description={`Chi tiết thông tin ${
         data.type === "enterprise"

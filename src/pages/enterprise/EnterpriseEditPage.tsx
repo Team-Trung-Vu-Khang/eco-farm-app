@@ -33,6 +33,7 @@ export default function EnterpriseEditPage() {
   return (
     <EnterpriseFormContext.Provider value={formState}>
       <AdminLayout
+        isDev={true}
         title={`Cập nhật ${
           formData.type === "enterprise"
             ? "Doanh nghiệp"

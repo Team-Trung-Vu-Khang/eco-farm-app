@@ -137,6 +137,7 @@ export default function SeasonDetailPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title={`Chi tiết ${season.name}`}
       description="Thông tin chi tiết và tiến độ mùa vụ"
       actions={

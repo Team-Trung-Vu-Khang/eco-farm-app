@@ -41,6 +41,7 @@ const FertilizerGroupPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Danh mục phân bón"
       description="Quản lý danh sách các nhóm phân bón (Master Data)"
       actions={

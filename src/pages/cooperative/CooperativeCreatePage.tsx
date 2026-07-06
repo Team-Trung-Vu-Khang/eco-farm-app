@@ -178,6 +178,7 @@ export default function CooperativeCreatePage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Tạo mới Hợp tác xã"
       description="Điền thông tin theo từng bước để tạo mới hợp tác xã"
       actions={

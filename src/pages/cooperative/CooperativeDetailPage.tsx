@@ -29,7 +29,11 @@ export default function CooperativeDetailPage() {
 
   if (loading) {
     return (
-      <AdminLayout title="Chi tiết đơn vị" description="Đang tải thông tin...">
+      <AdminLayout
+        isDev={true}
+        title="Chi tiết đơn vị"
+        description="Đang tải thông tin..."
+      >
         <div className="flex items-center justify-center p-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
@@ -40,6 +44,7 @@ export default function CooperativeDetailPage() {
   if (error) {
     return (
       <AdminLayout
+        isDev={true}
         title="Chi tiết đơn vị"
         description="Không thể tải thông tin hợp tác xã"
         actions={
@@ -59,6 +64,7 @@ export default function CooperativeDetailPage() {
   if (!data) {
     return (
       <AdminLayout
+        isDev={true}
         title="Chi tiết đơn vị"
         description="Không tìm thấy hợp tác xã"
         actions={
@@ -77,6 +83,7 @@ export default function CooperativeDetailPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title={data.name}
       description="Chi tiết thông tin hợp tác xã"
       actions={

@@ -159,6 +159,7 @@ const ContractEditPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Chỉnh sửa hợp đồng"
       description="Cập nhật thông tin hợp đồng"
     >

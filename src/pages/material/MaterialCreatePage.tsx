@@ -21,6 +21,7 @@ const MaterialCreatePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title={isEdit ? "Cập nhật vật tư" : "Thêm mới vật tư"}
       description={
         isEdit

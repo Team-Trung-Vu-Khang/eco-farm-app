@@ -17,6 +17,7 @@ export default function TeamCreatePage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Thêm mới đội nhóm"
       description="Tạo đội nhóm làm việc mới"
       actions={

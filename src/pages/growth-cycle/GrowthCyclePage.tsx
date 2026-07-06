@@ -58,6 +58,7 @@ const GrowthCyclePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý chu kỳ sinh trưởng"
       description="Quản lý riêng chu kỳ thực vật và vật nuôi/thủy sản trong cùng một không gian"
       actions={

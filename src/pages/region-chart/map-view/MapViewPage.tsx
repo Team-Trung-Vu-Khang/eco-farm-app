@@ -1568,6 +1568,7 @@ const MapViewPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Bản đồ số nông nghiệp"
       description="Quản lý trực quan vùng trồng và cây trồng"
     >

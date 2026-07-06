@@ -21,6 +21,7 @@ const PesticideCreatePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title={isEdit ? "Cập nhật thuốc BVTV" : "Thêm thuốc bảo vệ thực vật"}
       description={
         isEdit

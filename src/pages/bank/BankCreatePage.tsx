@@ -167,15 +167,20 @@ export default function BankCreatePage() {
       shouldTouch: true,
       shouldValidate: true,
     });
-    setValue("bankName", selected?.code || selected?.shortName || selected?.name || "", {
-      shouldDirty: true,
-      shouldTouch: true,
-      shouldValidate: true,
-    });
+    setValue(
+      "bankName",
+      selected?.code || selected?.shortName || selected?.name || "",
+      {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true,
+      },
+    );
   };
 
   return (
     <AdminLayout
+      isDev={true}
       title="Thêm mới tài khoản ngân hàng"
       description="Thêm tài khoản ngân hàng mới vào hệ thống"
       actions={

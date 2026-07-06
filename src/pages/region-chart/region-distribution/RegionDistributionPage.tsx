@@ -28,6 +28,7 @@ const RegionDistributionPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Phân bố vùng"
       description="Quản lý danh sách và bản đồ phân bố vùng trồng"
       actions={

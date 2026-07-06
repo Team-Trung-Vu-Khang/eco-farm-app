@@ -4,6 +4,7 @@ import { Loader2, Sparkles } from "lucide-react";
 export function AppLoadingState() {
   return (
     <AdminLayout
+      isDev={true}
       title="Đang tải ứng dụng"
       description="Vui lòng chờ vài giây, hệ thống đang nạp giao diện."
     >

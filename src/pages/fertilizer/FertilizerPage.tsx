@@ -27,6 +27,7 @@ export default function FertilizerPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý chất bón"
       description="Quản lý danh mục phân bón, chất cải tạo đất"
       actions={

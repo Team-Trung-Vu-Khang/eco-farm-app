@@ -29,7 +29,7 @@ export default function PersonnelEditPage() {
 
   if (isPersonnelLoading) {
     return (
-      <AdminLayout title="Cập nhật nhân sự">
+      <AdminLayout isDev={true} title="Cập nhật nhân sự">
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
           <p className="text-muted-foreground">Đang tải thông tin nhân sự...</p>
@@ -40,7 +40,7 @@ export default function PersonnelEditPage() {
 
   if (!personnel) {
     return (
-      <AdminLayout title="Cập nhật nhân sự">
+      <AdminLayout isDev={true} title="Cập nhật nhân sự">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin nhân sự.
@@ -55,6 +55,7 @@ export default function PersonnelEditPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Cập nhật nhân sự"
       description="Chỉnh sửa hồ sơ nhân sự"
       actions={

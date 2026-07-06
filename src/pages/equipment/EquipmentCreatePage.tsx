@@ -73,6 +73,7 @@ const EquipmentCreatePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title={isEdit ? "Cập nhật thiết bị" : "Thêm mới thiết bị"}
       description={
         isEdit

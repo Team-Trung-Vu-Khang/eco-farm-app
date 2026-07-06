@@ -15,6 +15,7 @@ export default function SettingsPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Cài đặt hệ thống"
       description="Quản lý cấu hình chung, bảo mật và thông báo"
     >

@@ -114,6 +114,7 @@ export default function CropFoundationEditPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title={`Cập nhật thông tin: ${cropName || "Đang tải..."}`}
       description="Chỉnh sửa thông tin kỹ thuật và tài liệu của cây trồng"
       actions={[

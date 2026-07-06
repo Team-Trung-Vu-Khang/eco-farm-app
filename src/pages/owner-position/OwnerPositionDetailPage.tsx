@@ -82,7 +82,7 @@ export default function OwnerPositionDetailPage() {
 
   if (positionQuery.isLoading) {
     return (
-      <AdminLayout title="Chi tiết chức vụ">
+      <AdminLayout isDev={true} title="Chi tiết chức vụ">
         <div className="flex items-center justify-center py-20 text-slate-500">
           Đang tải thông tin chức vụ...
         </div>
@@ -92,7 +92,7 @@ export default function OwnerPositionDetailPage() {
 
   if (positionQuery.error || !position) {
     return (
-      <AdminLayout title="Chi tiết chức vụ">
+      <AdminLayout isDev={true} title="Chi tiết chức vụ">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="mb-4 text-slate-500">
             Không tìm thấy thông tin chức vụ này.
@@ -111,6 +111,7 @@ export default function OwnerPositionDetailPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Chi tiết chức vụ"
       description={`Thông tin chi tiết của ${position.name}`}
       actions={

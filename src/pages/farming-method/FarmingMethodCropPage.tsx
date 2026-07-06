@@ -56,6 +56,7 @@ export default function FarmingMethodCropPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Phương thức canh tác theo cây trồng"
       description="Bảng liên kết giữa phương thức canh tác với danh sách cây trồng và giống áp dụng, kèm mô tả ngắn cho từng phương thức."
       actions={

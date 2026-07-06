@@ -1542,7 +1542,7 @@ export default function PlanCreatePage() {
   ];
 
   return (
-    <AdminLayout title={pageTitle} description={pageDescription}>
+    <AdminLayout isDev={true} title={pageTitle} description={pageDescription}>
       <div className="max-w-5xl mx-auto">
         <StepperForm
           steps={steps}

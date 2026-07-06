@@ -236,6 +236,7 @@ const IoTMapViewPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Bản đồ Giám sát IoT"
       description="Theo dõi vị trí và trạng thái thiết bị thời gian thực"
     >

@@ -24,6 +24,7 @@ export default function PlanPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý canh tác"
       description="Lập và quản lý kế hoạch theo mùa vụ"
       actions={

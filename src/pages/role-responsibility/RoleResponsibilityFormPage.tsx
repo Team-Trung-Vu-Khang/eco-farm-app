@@ -106,6 +106,7 @@ export default function RoleResponsibilityFormPage() {
   if (isEdit && !editingRole) {
     return (
       <AdminLayout
+        isDev={true}
         title="Không tìm thấy vai trò"
         description="Vai trò bạn muốn chỉnh sửa không còn tồn tại trong hệ thống."
       >
@@ -122,6 +123,7 @@ export default function RoleResponsibilityFormPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title={
         isEdit
           ? "Cập nhật vai trò và trách nhiệm"

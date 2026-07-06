@@ -60,7 +60,7 @@ export default function VarietyFoundationDetailPage({
 
   if (isLoading) {
     return (
-      <AdminLayout title="Chi tiết giống cây (nền tảng)">
+      <AdminLayout isDev={true} title="Chi tiết giống cây (nền tảng)">
         <div className="flex justify-center items-center py-20">
           Đang tải...
         </div>
@@ -87,6 +87,7 @@ export default function VarietyFoundationDetailPage({
 
     return isStandalone ? (
       <AdminLayout
+        isDev={true}
         title="Chi tiết giống cây (nền tảng)"
         description="Không tìm thấy thông tin"
       >
@@ -106,6 +107,7 @@ export default function VarietyFoundationDetailPage({
 
   return isStandalone ? (
     <AdminLayout
+      isDev={true}
       title="Chi tiết giống cây (nền tảng)"
       description={`Thông tin chi tiết về ${varietyFoundation.varietyFoundationName}`}
     >

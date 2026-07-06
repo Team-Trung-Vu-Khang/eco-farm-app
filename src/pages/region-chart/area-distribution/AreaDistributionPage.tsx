@@ -28,6 +28,7 @@ const AreaDistributionPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Phân bố khu vực"
       description="Quản lý danh sách và bản đồ phân bố các khu vực trồng"
       actions={

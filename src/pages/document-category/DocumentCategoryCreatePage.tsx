@@ -58,6 +58,7 @@ const DocumentCategoryCreatePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Tạo danh mục hồ sơ"
       description="Thiết lập các yêu cầu tệp tin cho các đơn vị trong hệ thống"
       actions={

@@ -83,6 +83,7 @@ const DocumentCategoryEditPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Cập nhật danh mục hồ sơ"
       description={`Chỉnh sửa cấu hình cho tài liệu: ${formData.name}`}
       actions={

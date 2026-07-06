@@ -28,7 +28,7 @@
 
 //   if (!area) {
 //     return (
-//       <AdminLayout
+//       <AdminLayout isDev={true}
 //
 //         title="Chi tiết khu vực"
 //         description="Không tìm thấy thông tin khu vực"
@@ -49,7 +49,7 @@
 //   }
 
 //   return (
-//     <AdminLayout
+//     <AdminLayout isDev={true}
 //
 //       description={`Mã khu vực: ${area.id}`}
 //       title={`Chi tiết khu vực: ${area.name}`}

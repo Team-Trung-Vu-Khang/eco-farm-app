@@ -34,6 +34,7 @@ export default function CropDetailPage() {
   if (!crop) {
     return (
       <AdminLayout
+        isDev={true}
         title="Chi tiết cây trồng"
         description="Thông tin chi tiết về cây trồng"
       >
@@ -49,6 +50,7 @@ export default function CropDetailPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Chi tiết cây trồng"
       description={`Quản lý và theo dõi thông tin chi tiết về ${crop.name}`}
       actions={

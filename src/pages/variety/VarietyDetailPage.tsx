@@ -37,6 +37,7 @@ export default function VarietyDetailPage({
 
     return isStandalone ? (
       <AdminLayout
+        isDev={true}
         title="Chi tiết giống cây"
         description="Không tìm thấy thông tin"
       >
@@ -53,6 +54,7 @@ export default function VarietyDetailPage({
 
   return isStandalone ? (
     <AdminLayout
+      isDev={true}
       title="Chi tiết giống cây"
       description={`Thông tin chi tiết về ${variety.varietyName}`}
     >

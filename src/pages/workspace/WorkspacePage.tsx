@@ -38,6 +38,7 @@ export default function WorkspacePage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Danh sách workspace"
       description="Quản lý danh sách workspace"
       actions={

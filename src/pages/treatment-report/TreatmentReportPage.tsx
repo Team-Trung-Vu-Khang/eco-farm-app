@@ -472,6 +472,7 @@ export default function TreatmentReportPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Theo dõi thực hiện phác đồ điều trị"
       description="Cập nhật hiện trường, vật tư sử dụng và trạng thái tái đánh giá cho từng đợt điều trị"
       actions={

@@ -47,6 +47,7 @@ const DocumentCategoryDetailPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Chi tiết danh mục hồ sơ"
       description={`Thông tin thiết lập cho loại tài liệu: ${category.name}`}
       actions={

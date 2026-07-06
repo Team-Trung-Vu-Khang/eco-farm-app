@@ -14,6 +14,7 @@ const ContractDetailPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Chi tiết hợp đồng"
       description="Xem thông tin chi tiết hợp đồng"
     >

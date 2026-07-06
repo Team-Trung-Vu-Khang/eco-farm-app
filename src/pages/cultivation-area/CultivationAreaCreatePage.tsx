@@ -952,6 +952,7 @@ const CultivationAreaCreatePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title={
         isEdit ? "Chỉnh sửa khu vực canh tác" : "Thiết lập khu vực canh tác"
       }

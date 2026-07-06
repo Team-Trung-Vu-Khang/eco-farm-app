@@ -52,7 +52,11 @@ const CultivationPlotDetailPage = () => {
 
   if (!data) {
     return (
-      <AdminLayout title="Chi tiết Lô canh tác" description="Đang tải...">
+      <AdminLayout
+        isDev={true}
+        title="Chi tiết Lô canh tác"
+        description="Đang tải..."
+      >
         <div className="p-12 text-center text-slate-500">
           Không tìm thấy thông tin lô canh tác
         </div>
@@ -61,6 +65,7 @@ const CultivationPlotDetailPage = () => {
   }
   return (
     <AdminLayout
+      isDev={true}
       title={data.name}
       description={`Cấu hình canh tác cho Lô #${data.id}`}
       actions={

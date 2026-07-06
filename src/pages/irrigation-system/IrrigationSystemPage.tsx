@@ -37,6 +37,7 @@ export default function IrrigationSystemPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Hệ thống tưới"
       description="Quản lý danh sách hệ thống tưới"
       actions={

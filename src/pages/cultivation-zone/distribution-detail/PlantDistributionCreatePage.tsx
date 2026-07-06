@@ -131,6 +131,7 @@ const PlantDistributionCreatePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Tạo phân bổ cây trồng"
       description="Thiết lập phân bổ cây trồng cho vùng, khu vực hoặc lô đất"
       actions={

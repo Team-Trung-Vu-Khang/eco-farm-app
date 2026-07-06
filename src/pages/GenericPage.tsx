@@ -251,6 +251,7 @@ export function GenericPage({
 
   return (
     <AdminLayout
+      isDev={true}
       title={title}
       description={description}
       actions={

@@ -58,6 +58,7 @@ export default function CertificatePage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Danh mục tiêu chuẩn"
       description="Quản lý loại tiêu chuẩn và tổ chức chứng nhận (Master Data)"
     >

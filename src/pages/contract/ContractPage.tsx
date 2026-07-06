@@ -18,6 +18,7 @@ const ContractPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý hợp đồng"
       description="Quản lý hợp đồng theo đơn vị sở hữu"
     >

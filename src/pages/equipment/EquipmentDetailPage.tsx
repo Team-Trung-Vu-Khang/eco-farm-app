@@ -28,7 +28,7 @@ const EquipmentDetailPage = () => {
 
   if (!item) {
     return (
-      <AdminLayout title="Chi tiết thiết bị">
+      <AdminLayout isDev={true} title="Chi tiết thiết bị">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin thiết bị.
@@ -43,6 +43,7 @@ const EquipmentDetailPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Chi tiết thiết bị"
       description={`Thông tin và lịch sử bảo dưỡng của ${item.name}`}
       actions={

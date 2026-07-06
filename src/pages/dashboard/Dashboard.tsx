@@ -9,6 +9,7 @@ import { YieldChart } from "./components/YieldChart";
 export default function Dashboard() {
   return (
     <AdminLayout
+      isDev={true}
       title="Dashboard"
       description="Tổng quan hệ thống quản lý nông trại"
     >

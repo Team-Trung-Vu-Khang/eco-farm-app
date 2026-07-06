@@ -119,6 +119,7 @@ const ContractCreatePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Tạo hợp đồng mới"
       description="Tạo hợp đồng mua bán, dịch vụ, thuê, hợp tác"
     >

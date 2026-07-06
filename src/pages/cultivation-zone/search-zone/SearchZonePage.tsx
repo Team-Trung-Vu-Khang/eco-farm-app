@@ -827,7 +827,7 @@ const SearchZonePage = () => {
   ]);
 
   return (
-    <AdminLayout title="Tìm kiếm vùng canh tác">
+    <AdminLayout isDev={true} title="Tìm kiếm vùng canh tác">
       <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
         {/* TOP HEADER: Simple Search (Matched to temp.ts) */}
         <div className="bg-white border-b p-4 z-40 shadow-sm rounded-md">

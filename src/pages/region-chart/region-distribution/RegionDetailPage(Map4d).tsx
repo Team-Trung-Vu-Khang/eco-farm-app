@@ -37,7 +37,7 @@
 
 //   if (!region) {
 //     return (
-//       <AdminLayout  title="Không tìm thấy">
+//       <AdminLayout isDev={true}  title="Không tìm thấy">
 //         <div className="flex flex-col items-center justify-center p-8">
 //           <p className="text-xl mb-4">Vùng trồng không tồn tại</p>
 //           <Button onClick={() => setLocation("/region-distribution")}>
@@ -49,7 +49,7 @@
 //   }
 
 //   return (
-//     <AdminLayout
+//     <AdminLayout isDev={true}
 //
 //       title={`Chi tiết: ${region.name}`}
 //       description={`Mã vùng: ${region.code}`}

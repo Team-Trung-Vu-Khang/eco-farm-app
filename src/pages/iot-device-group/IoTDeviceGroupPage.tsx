@@ -41,6 +41,7 @@ export default function IoTDeviceGroupPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Nhóm thiết bị IoT"
       description="Quản lý danh sách các nhóm thiết bị IoT"
       actions={

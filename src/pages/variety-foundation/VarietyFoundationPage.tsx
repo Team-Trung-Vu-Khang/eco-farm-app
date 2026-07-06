@@ -90,6 +90,7 @@ const VarietyFoundationPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý giống cây (nền tảng)"
       description="Xem và quản lý danh sách các loại giống cây trồng (nền tảng)"
       actions={

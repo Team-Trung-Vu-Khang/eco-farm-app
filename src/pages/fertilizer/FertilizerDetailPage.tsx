@@ -180,6 +180,7 @@ const FertilizerDetailPage = () => {
   if (!item) {
     return (
       <AdminLayout
+        isDev={true}
         title="Chi tiết phân bón"
         description="Đang tải thông tin..."
       >
@@ -200,6 +201,7 @@ const FertilizerDetailPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Chi tiết phân bón"
       description={`Thông tin chi tiết sản phẩm ${item.name}`}
       actions={

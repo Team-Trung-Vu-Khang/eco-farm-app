@@ -24,6 +24,7 @@ const UnitCreatePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title={isEdit ? "Cập nhật đơn vị tính" : "Thêm mới đơn vị tính"}
       description={
         isEdit

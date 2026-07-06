@@ -82,6 +82,7 @@ const PlotCreatePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title={isEditMode ? "Cập nhật lô đất" : "Thêm mới lô đất"}
       description={
         isEditMode

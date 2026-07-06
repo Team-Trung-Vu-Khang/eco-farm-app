@@ -130,6 +130,7 @@ export default function CreateVarietyFoundationPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Tạo mới giống cây (nền tảng)"
       description="Khởi tạo thông tin định danh, đặc tính và tài liệu kỹ thuật cho giống cây (nền tảng)"
       actions={

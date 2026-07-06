@@ -169,7 +169,11 @@ const DistributionDetailPage = () => {
 
   if (!detailData) {
     return (
-      <AdminLayout title="Không tìm thấy" description="Bản ghi không tồn tại">
+      <AdminLayout
+        isDev={true}
+        title="Không tìm thấy"
+        description="Bản ghi không tồn tại"
+      >
         <div className="text-sm text-muted-foreground">
           Không có dữ liệu phân bổ.
         </div>
@@ -284,6 +288,7 @@ const DistributionDetailPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title={detailData.name}
       description={`Mã: ${detailData.code} • Tạo ngày ${detailData.createdAt}`}
       actions={

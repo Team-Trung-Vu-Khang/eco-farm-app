@@ -97,7 +97,7 @@ export function VarietyFormStepper({
   ];
 
   return (
-    <AdminLayout title={title} description={description}>
+    <AdminLayout isDev={true} title={title} description={description}>
       <div className="mb-4">
         <Button
           variant="ghost"

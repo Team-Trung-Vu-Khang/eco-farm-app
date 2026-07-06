@@ -40,6 +40,7 @@ export default function GroupCropPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý nhóm cây trồng"
       description="Danh mục các nhóm cây trồng có trên thị trường"
       actions={

@@ -95,6 +95,7 @@ export default function CooperativeEditPage() {
   if (cooperativeQuery.loading) {
     return (
       <AdminLayout
+        isDev={true}
         title="Cập nhật Hợp tác xã"
         description="Đang tải thông tin..."
       >
@@ -108,6 +109,7 @@ export default function CooperativeEditPage() {
   if (cooperativeQuery.error) {
     return (
       <AdminLayout
+        isDev={true}
         title="Cập nhật Hợp tác xã"
         description="Không thể tải dữ liệu hợp tác xã"
         actions={
@@ -239,6 +241,7 @@ export default function CooperativeEditPage() {
   if (!initialData) {
     return (
       <AdminLayout
+        isDev={true}
         title="Cập nhật Hợp tác xã"
         description="Không tìm thấy dữ liệu hợp tác xã"
         actions={
@@ -262,6 +265,7 @@ export default function CooperativeEditPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title={`Cập nhật Hợp tác xã`}
       description="Cập nhật thông tin chi tiết"
       actions={

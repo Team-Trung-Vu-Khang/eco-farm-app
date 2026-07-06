@@ -175,7 +175,7 @@ export default function VarietyFoundationEditPage() {
 
   if (!isLoadingVariety && !initialValues) {
     return (
-      <AdminLayout title="Không tìm thấy">
+      <AdminLayout isDev={true} title="Không tìm thấy">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin giống cây (nền tảng) này.
@@ -190,6 +190,7 @@ export default function VarietyFoundationEditPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Chỉnh sửa giống cây (nền tảng)"
       description="Cập nhật thông tin giống cây (nền tảng), đặc tính nông học và tài liệu kỹ thuật"
       actions={

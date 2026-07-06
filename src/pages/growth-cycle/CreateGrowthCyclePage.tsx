@@ -67,6 +67,7 @@ export default function CreateGrowthCyclePage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Thêm mới chu kỳ sinh trưởng"
       description="Thiết lập các giai đoạn phát triển cho cây trồng"
       actions={[

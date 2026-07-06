@@ -80,6 +80,7 @@ const CultivationRegionCreatePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title={isEditMode ? "Cập nhật vùng canh tác" : "Thiết lập vùng canh tác"}
       description={
         isEditMode

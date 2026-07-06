@@ -103,6 +103,7 @@ export default function PlanDetailPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Chi tiết kế hoạch"
       description={`Xem thông tin chi tiết kế hoạch ${plan.code}`}
     >

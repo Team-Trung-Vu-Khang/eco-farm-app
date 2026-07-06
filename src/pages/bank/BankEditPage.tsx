@@ -28,6 +28,7 @@ export default function BankEditPage() {
   if (loading) {
     return (
       <AdminLayout
+        isDev={true}
         title="Cập nhật tài khoản ngân hàng"
         description="Đang tải dữ liệu chi tiết..."
       >
@@ -44,6 +45,7 @@ export default function BankEditPage() {
   if (error) {
     return (
       <AdminLayout
+        isDev={true}
         title="Cập nhật tài khoản ngân hàng"
         description="Không thể tải dữ liệu chi tiết"
       >
@@ -58,6 +60,7 @@ export default function BankEditPage() {
   if (notFound) {
     return (
       <AdminLayout
+        isDev={true}
         title="Không tìm thấy"
         description="Tài khoản ngân hàng không tồn tại"
       >
@@ -76,6 +79,7 @@ export default function BankEditPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Cập nhật tài khoản ngân hàng"
       description="Chỉnh sửa thông tin tài khoản ngân hàng"
       actions={
@@ -89,11 +93,19 @@ export default function BankEditPage() {
             <Trash2 className="w-4 h-4 mr-2" />
             Xóa
           </Button>
-          <Button variant="outline" onClick={goBack} disabled={isSubmitting || isDeleting}>
+          <Button
+            variant="outline"
+            onClick={goBack}
+            disabled={isSubmitting || isDeleting}
+          >
             <X className="w-4 h-4 mr-2" />
             Hủy bỏ
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting || isDeleting} loading={isSubmitting}>
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting || isDeleting}
+            loading={isSubmitting}
+          >
             <Save className="w-4 h-4 mr-2" />
             Lưu lại
           </Button>

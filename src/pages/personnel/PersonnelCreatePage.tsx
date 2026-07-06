@@ -9,6 +9,7 @@ export default function PersonnelCreatePage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Thêm mới nhân sự"
       description="Thêm hồ sơ nhân sự mới vào hệ thống"
       actions={

@@ -277,6 +277,7 @@ export default function IoTDeviceCreatePage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title={isEdit ? "Cập nhật thiết bị" : "Đăng ký thiết bị"}
       description={
         isEdit

@@ -34,6 +34,7 @@ export default function PersonnelPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý nhân sự"
       description="Danh sách nhân sự của đơn vị"
       actions={

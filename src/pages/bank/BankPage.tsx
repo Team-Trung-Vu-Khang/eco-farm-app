@@ -32,6 +32,7 @@ export default function BankPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý tài khoản ngân hàng"
       description="Danh sách tài khoản ngân hàng của đơn vị sở hữu"
       actions={

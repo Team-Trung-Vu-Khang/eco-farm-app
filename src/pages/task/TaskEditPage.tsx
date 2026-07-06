@@ -2566,6 +2566,7 @@ export default function TaskEditPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Chỉnh sửa công việc"
       description={`Cập nhật thông tin cho mã: ${task.code}`}
       actions={

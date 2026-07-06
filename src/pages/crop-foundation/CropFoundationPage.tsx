@@ -36,6 +36,7 @@ export default function CropFoundationPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý cây trồng"
       description="Danh mục các loại cây trồng có trên thị trường"
       actions={

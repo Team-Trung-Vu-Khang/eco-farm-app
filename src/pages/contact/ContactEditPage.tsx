@@ -53,7 +53,11 @@ export default function ContactEditPage() {
 
   if (loading) {
     return (
-      <AdminLayout title="Đang tải liên hệ" description="Vui lòng chờ một lát">
+      <AdminLayout
+        isDev={true}
+        title="Đang tải liên hệ"
+        description="Vui lòng chờ một lát"
+      >
         <div className="flex min-h-[40vh] items-center justify-center">
           <div className="text-sm text-muted-foreground">
             Đang tải dữ liệu liên hệ...
@@ -65,7 +69,11 @@ export default function ContactEditPage() {
 
   if (contactId && !contact) {
     return (
-      <AdminLayout title="Không tìm thấy" description="Liên hệ không tồn tại">
+      <AdminLayout
+        isDev={true}
+        title="Không tìm thấy"
+        description="Liên hệ không tồn tại"
+      >
         <div className="flex flex-col items-center justify-center h-96">
           <h2 className="text-2xl font-bold mb-4">Không tìm thấy liên hệ</h2>
           <Button onClick={goBack}>
@@ -79,6 +87,7 @@ export default function ContactEditPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Cập nhật liên hệ"
       description="Chỉnh sửa thông tin liên hệ"
       actions={

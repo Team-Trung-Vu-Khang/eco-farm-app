@@ -63,6 +63,7 @@ export default function SeasonPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý mùa vụ"
       description="Quản lý riêng vụ mùa và vụ nuôi trong cùng một không gian"
       actions={

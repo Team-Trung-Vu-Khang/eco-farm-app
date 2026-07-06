@@ -70,6 +70,7 @@ export default function CreateDocsPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Tạo mới tài liệu kỹ thuât"
       description="Thêm tài liệu kỹ thuật vào danh mục hệ thống"
     >

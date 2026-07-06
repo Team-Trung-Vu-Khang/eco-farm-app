@@ -36,6 +36,7 @@ export default function IoTDevicePage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý thiết bị IoT"
       description="Giám sát trạng thái và dữ liệu từ hệ thống cảm biến, bộ điều khiển"
       actions={

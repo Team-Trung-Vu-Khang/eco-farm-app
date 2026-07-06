@@ -18,7 +18,11 @@ const PlotDetailPage = () => {
 
   if (isLoading) {
     return (
-      <AdminLayout title="Chi tiết lô" description="Đang tải dữ liệu...">
+      <AdminLayout
+        isDev={true}
+        title="Chi tiết lô"
+        description="Đang tải dữ liệu..."
+      >
         <div className="flex items-center justify-center h-64">
           <p className="text-muted-foreground">Đang tải dữ liệu...</p>
         </div>
@@ -29,6 +33,7 @@ const PlotDetailPage = () => {
   if (!plot) {
     return (
       <AdminLayout
+        isDev={true}
         title="Chi tiết lô"
         description="Không tìm thấy thông tin lô"
         actions={
@@ -49,6 +54,7 @@ const PlotDetailPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title={`Chi tiết lô: ${plot.name}`}
       description={`Mã lô: ${plot.id}`}
       actions={

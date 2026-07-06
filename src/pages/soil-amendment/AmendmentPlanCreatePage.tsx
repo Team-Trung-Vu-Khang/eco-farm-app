@@ -309,6 +309,7 @@ export default function AmendmentPlanCreatePage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title={isEdit ? "Cập nhật kế hoạch cải tạo" : "Lập kế hoạch cải tạo mới"}
       description="Xây dựng phương án xử lý đất, phân bổ nguồn lực và giám sát thực hiện"
     >

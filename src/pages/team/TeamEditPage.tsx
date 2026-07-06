@@ -18,7 +18,7 @@ export default function TeamEditPage() {
 
   if (isTeamLoading) {
     return (
-      <AdminLayout title="Chỉnh sửa đội nhóm">
+      <AdminLayout isDev={true} title="Chỉnh sửa đội nhóm">
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
           <p className="text-muted-foreground">
@@ -31,6 +31,7 @@ export default function TeamEditPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Chỉnh sửa đội nhóm"
       description="Cập nhật thông tin đội nhóm làm việc"
       actions={

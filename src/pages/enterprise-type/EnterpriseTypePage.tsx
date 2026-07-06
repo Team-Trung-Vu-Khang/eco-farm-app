@@ -150,6 +150,7 @@ const EnterpriseTypePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Thông tin ngành nghề"
       description="Quản lý danh mục ngành nghề VSIC"
       actions={

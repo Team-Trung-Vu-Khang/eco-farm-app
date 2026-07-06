@@ -41,6 +41,7 @@ export default function CooperativePage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý hợp tác xã"
       description="Quản lý thông tin các hợp tác xã trong hệ thống"
       actions={headerActions}

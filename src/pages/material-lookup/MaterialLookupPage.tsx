@@ -67,7 +67,7 @@ const MaterialLookupPage: FC = () => {
     : null;
 
   return (
-    <AdminLayout title="Hệ thống tra cứu vật tư">
+    <AdminLayout isDev={true} title="Hệ thống tra cứu vật tư">
       <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-slate-50 font-sans">
         <CategorySidebar
           isCollapsed={isSidebarCollapsed}

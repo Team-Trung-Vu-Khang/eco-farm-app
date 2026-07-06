@@ -237,7 +237,7 @@ export default function UpdateGrowthCyclePage() {
 
   if (isLoading || !isLoaded)
     return (
-      <AdminLayout title="Đang tải..." description="Vui lòng chờ">
+      <AdminLayout isDev={true} title="Đang tải..." description="Vui lòng chờ">
         <div className="flex justify-center py-20">
           <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
         </div>
@@ -246,6 +246,7 @@ export default function UpdateGrowthCyclePage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Cập nhật chu kỳ sinh trưởng"
       description={`Chỉnh sửa thông tin cho ${varietyName || watchedCropId}`}
       actions={[

@@ -36,6 +36,7 @@ export default function TeamPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý đội nhóm"
       description="Danh sách các đội / nhóm làm việc"
       actions={

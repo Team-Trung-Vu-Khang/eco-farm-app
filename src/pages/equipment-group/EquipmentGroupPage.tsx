@@ -41,6 +41,7 @@ const EquipmentGroupPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Danh mục máy móc"
       description="Quản lý danh sách các nhóm máy móc, dụng cụ (Master Data)"
       actions={

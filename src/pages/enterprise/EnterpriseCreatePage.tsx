@@ -33,6 +33,7 @@ export default function EnterpriseCreatePage() {
   return (
     <EnterpriseFormContext.Provider value={formState}>
       <AdminLayout
+        isDev={true}
         title="Tạo mới Doanh nghiệp"
         description="Điền thông tin theo từng bước để tạo mới doanh nghiệp"
         actions={[

@@ -27,6 +27,7 @@ export default function ProvincePage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Danh sách tỉnh/thành"
       description="Tra cứu danh mục tỉnh/thành và các xã/phường trực thuộc theo dữ liệu hành chính Việt Nam"
     >

@@ -88,7 +88,11 @@ const AreaDetailPage = () => {
 
   if (isLoading) {
     return (
-      <AdminLayout title="Chi tiết khu vực" description="Đang tải...">
+      <AdminLayout
+        isDev={true}
+        title="Chi tiết khu vực"
+        description="Đang tải..."
+      >
         <div className="flex items-center justify-center h-64">
           <p className="text-muted-foreground">Đang tải dữ liệu...</p>
         </div>
@@ -99,6 +103,7 @@ const AreaDetailPage = () => {
   if (!area) {
     return (
       <AdminLayout
+        isDev={true}
         title="Chi tiết khu vực"
         description="Không tìm thấy thông tin khu vực"
         actions={
@@ -119,6 +124,7 @@ const AreaDetailPage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       description={`Mã khu vực: ${area.id}`}
       title={`Chi tiết khu vực: ${area.name}`}
       actions={

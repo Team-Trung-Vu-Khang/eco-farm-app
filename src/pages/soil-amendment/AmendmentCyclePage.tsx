@@ -50,6 +50,7 @@ const AmendmentCyclePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Chu kỳ cải tạo đất"
       description="Quản lý các quy trình và thời gian phục hồi đất canh tác"
       actions={

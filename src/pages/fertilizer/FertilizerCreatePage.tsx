@@ -58,6 +58,7 @@ const FertilizerCreatePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title={isEdit ? "Cập nhật phân bón" : "Thêm mới phân bón"}
       description={
         isEdit

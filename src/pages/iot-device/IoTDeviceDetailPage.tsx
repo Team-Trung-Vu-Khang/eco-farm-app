@@ -103,6 +103,7 @@ export default function IoTDeviceDetailPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title={device.name}
       description={`Chi tiết thiết bị ${device.type} - ${device.imei}`}
       actions={

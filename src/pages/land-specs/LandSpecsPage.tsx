@@ -32,6 +32,7 @@ export default function LandSpecsPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title="Quản lý thông số địa hình"
       description="Quản lý các loại thông số địa hình trong hệ thống"
       actions={

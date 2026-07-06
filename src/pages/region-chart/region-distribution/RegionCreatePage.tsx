@@ -80,6 +80,7 @@ const RegionCreatePage = () => {
 
   return (
     <AdminLayout
+      isDev={true}
       title={isEditMode ? "Cập nhật vùng trồng" : "Thêm mới vùng trồng"}
       description={
         isEditMode

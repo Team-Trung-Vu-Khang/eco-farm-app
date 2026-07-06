@@ -6,7 +6,7 @@ const CultivationRegionDetailPage = () => {
   const { title, description } = useCultivationRegionDetailPage();
 
   return (
-    <AdminLayout title={title} description={description}>
+    <AdminLayout isDev={true} title={title} description={description}>
       <CultivationRegionDetailView />
     </AdminLayout>
   );

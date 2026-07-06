@@ -126,6 +126,7 @@ export default function FarmerEditPage() {
 
   return (
     <AdminLayout
+      isDev={true}
       title={isEdit ? "Chỉnh sửa Nông hộ" : "Tạo mới Nông hộ"}
       description="Điền thông tin theo từng bước để tạo mới nông hộ"
       actions={[
