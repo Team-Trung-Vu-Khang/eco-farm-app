@@ -33,6 +33,7 @@ interface PlotLocationSelectorProps {
   selectedAreaId: string | null;
   selectedAreaName?: string | null;
   onSelect: (regionId: number, areaId: string) => void;
+  showEnterprise?: boolean;
 }
 
 // ── Sub-component: renders areas for a single expanded region ──────────────────
@@ -131,13 +132,14 @@ export const PlotLocationSelector = ({
   selectedAreaId,
   selectedAreaName,
   onSelect,
+  showEnterprise = false,
 }: PlotLocationSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedRegions, setExpandedRegions] = useState<string[]>([]);
 
   const filteredRegions = useMemo(() => {
-    const base = enterpriseId
+    const base = (showEnterprise && enterpriseId)
       ? regions.filter(
           (region) =>
             String(region.metadataJson?.enterpriseId || "") ===

@@ -51,7 +51,7 @@ function VarietyFoundationEditFormContent({
   const { items: crops } = useCrops();
   const selectedCrop = React.useMemo(() => {
     if (!watchedValues.crop) return undefined;
-    const crop = crops.find((c) => String(c.id) === watchedValues.crop);
+    const crop = crops.find((c) => String(c.id) === String(watchedValues.crop));
     if (!crop) return undefined;
     return {
       name: crop.name,

@@ -33,7 +33,7 @@ export function useRegionDetailPage() {
       landType: regionDataResponse.soilType?.id?.toString() || "",
       terrain: regionDataResponse.terrainFeature?.id?.toString() || "",
       note: regionDataResponse.description || "",
-      status: regionDataResponse.status === "ACTIVE" ? "active" : "inactive",
+      status: regionDataResponse.status ?? "inactive",
       coordinates: (regionDataResponse.boundary || []).map((b) => ({
         lat: b.latitude || 0,
         lng: b.longitude || 0,
@@ -52,7 +52,7 @@ export function useRegionDetailPage() {
         })),
         plots: [],
         createdAt: a.createdAt || "",
-        status: a.status === "ACTIVE" ? "active" : "inactive",
+        status: a?.status ?? "inactive",
       })),
       createdAt: regionDataResponse.createdAt || "",
     };

@@ -43,20 +43,14 @@ export default function LandPage() {
         </Button>
       }
     >
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
-          <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-green-500 animate-spin" />
-          <span className="text-sm">Đang tải danh sách loại đất...</span>
-        </div>
-      ) : (
-        <DataTable
-          columns={landColumns}
-          data={data}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          searchPlaceholder="Tìm kiếm loại đất..."
-        />
-      )}
+      <DataTable
+        columns={landColumns}
+        data={data}
+        loading={loading}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        searchPlaceholder="Tìm kiếm loại đất..."
+      />
 
       <LandFormDialog
         open={formOpen}

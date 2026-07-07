@@ -21,7 +21,11 @@ export function useRegionDistributionPage() {
     setCurrentIndex(1);
   };
 
-  const { items: apiRegions, response, isLoading } = useRegions({
+  const {
+    items: apiRegions,
+    response,
+    isLoading,
+  } = useRegions({
     params: {
       keyword: debouncedSearch.trim() || undefined,
       page: Math.max(currentIndex - 1, 0),
@@ -55,7 +59,7 @@ export function useRegionDistributionPage() {
       landType: r.soilType?.id?.toString() || "",
       terrain: r.terrainFeature?.id?.toString() || "",
       note: r.description || "",
-      status: r.status === "ACTIVE" ? "active" : "inactive",
+      status: r?.status ?? "inactive",
       coordinates: (r.boundary || []).map((b) => ({
         lat: b.latitude || 0,
         lng: b.longitude || 0,
@@ -74,7 +78,7 @@ export function useRegionDistributionPage() {
         })),
         plots: [],
         createdAt: a.createdAt || "",
-        status: a.status === "ACTIVE" ? "active" : "inactive",
+        status: a?.status ?? "inactive",
       })),
       createdAt: r.createdAt || "",
     }));

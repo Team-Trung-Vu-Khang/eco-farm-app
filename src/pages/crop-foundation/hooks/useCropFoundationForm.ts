@@ -108,7 +108,7 @@ export function useCropFoundationForm() {
         });
       }
 
-      const payload = {
+      const payload: any = {
         code: formData.code || undefined,
         name: formData.name || undefined,
         cropGroupId: Number(formData.cropGroupId),

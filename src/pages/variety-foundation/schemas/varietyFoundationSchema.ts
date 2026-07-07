@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const classificationSchema = z.object({
   crop: z.string().min(1, "Vui lòng chọn loài cây trồng"),
-  varietyFoundationCode: z.string().min(1, "Mã giống không được để trống"),
+  varietyFoundationCode: z.string().optional(),
   varietyFoundationName: z.string().min(1, "Tên giống không được để trống"),
   scientificName: z.string().optional(),
   origin: z.string().optional(),

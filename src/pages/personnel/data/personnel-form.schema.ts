@@ -31,32 +31,16 @@ export const personnelFormSchema = z
   })
   .superRefine((data, ctx) => {
     const hasAnyJobInfo =
-      !!data.departmentType ||
       !!data.department ||
-      !!data.positionType ||
       !!data.position ||
       !!data.team;
 
     if (hasAnyJobInfo) {
-      if (!data.departmentType) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Vui lòng chọn loại phòng ban",
-          path: ["departmentType"],
-        });
-      }
       if (!data.department) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Vui lòng chọn phòng ban",
           path: ["department"],
-        });
-      }
-      if (!data.positionType) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Vui lòng chọn loại chức vụ",
-          path: ["positionType"],
         });
       }
       if (!data.position) {

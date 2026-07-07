@@ -4,7 +4,7 @@ import type { Land } from "../../../stores/useLandStore";
 import { Hash } from "lucide-react";
 
 export interface LandFormData {
-  code: string;
+  code?: string;
   name: string;
   imageUrl: string;
   description: string;
@@ -14,14 +14,13 @@ export const INVALID_IMAGE_PLACEHOLDER =
   "https://placehold.co/400x200?text=Invalid+Image";
 
 export const createEmptyLandFormData = (): LandFormData => ({
-  code: "",
   name: "",
   imageUrl: "",
   description: "",
 });
 
 export const createLandFormDataFromItem = (item: Land): LandFormData => ({
-  code: item.code,
+  code: item.code || undefined,
   name: item.name,
   imageUrl: item.imageUrl || "",
   description: item.description,
@@ -35,7 +34,7 @@ export const landColumns: Column<Land>[] = [
       return (
         <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-muted-foreground bg-muted/50 px-2 py-1 rounded-md border w-fit">
           <Hash className="w-3 h-3 opacity-60" />
-          {value as string}
+          {value ? (value as string) : "---"}
         </div>
       );
     },

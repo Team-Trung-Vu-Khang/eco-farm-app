@@ -24,7 +24,13 @@ import type { AreaFormValues } from "../data/area-form.schema";
 import { AreaRegionSelector, SelectedRegionCard } from "./AreaRegionSelector";
 import React from "react";
 
-export function AreaInfoStep() {
+interface AreaInfoStepProps {
+  showEnterprise?: boolean;
+}
+
+export function AreaInfoStep({
+  showEnterprise = false,
+}: AreaInfoStepProps = {}) {
   const { control, watch, setValue } = useFormContext<AreaFormValues>();
   const enterpriseId = watch("enterpriseId");
 
@@ -33,7 +39,9 @@ export function AreaInfoStep() {
   });
 
   const regions = React.useMemo(() => {
-    return (regionsData?.content || []).filter(
+    const list = regionsData?.content || [];
+    if (!enterpriseId) return list;
+    return list.filter(
       (r) => String(r.metadataJson?.enterpriseId) === String(enterpriseId),
     );
   }, [regionsData, enterpriseId]);
@@ -51,154 +59,153 @@ export function AreaInfoStep() {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
-          <FormField
-            control={control}
-            name="enterpriseId"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel className="text-sm font-medium">
-                  Đơn vị sở hữu <span className="text-red-500">*</span>
-                </FormLabel>
-                <FormControl>
-                  <OrganizationSelector
-                    selectedId={field.value}
-                    onSelect={(value) => {
-                      field.onChange(value);
-                      setValue("regionId", undefined as any);
-                      setValue("soilType", "");
-                      setValue("terrainFeature", "");
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+          {/* Cột 1: Vùng trồng (và Đơn vị sở hữu nếu có) */}
+          <div className="space-y-4">
+            {showEnterprise && (
+              <FormField
+                control={control}
+                name="enterpriseId"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel className="text-sm font-medium">
+                      Đơn vị sở hữu <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <OrganizationSelector
+                        selectedId={field.value}
+                        onSelect={(value) => {
+                          field.onChange(value);
+                          setValue("regionId", undefined as any);
+                          setValue("soilType", "");
+                          setValue("terrainFeature", "");
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
-          />
 
-          <FormField
-            control={control}
-            name="regionId"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel className="text-sm font-semibold text-slate-700">
-                  Vùng trồng <span className="text-red-500">*</span>
-                </FormLabel>
-                <FormControl>
-                  <div>
-                    <AreaRegionSelector
-                      regions={regions as any}
-                      enterpriseId={enterpriseId ? Number(enterpriseId) : null}
-                      selectedId={field.value?.toString()}
-                      onSelect={(id) => {
-                        const region = regions.find(
-                          (item) => item.id === Number(id),
-                        );
-                        field.onChange(Number(id));
-                        if (region) {
-                          setValue(
-                            "soilType",
-                            region.soilType?.id?.toString() || "",
-                          );
-                          setValue(
-                            "terrainFeature",
-                            region.terrainFeature?.id?.toString() || "",
-                          );
+            <FormField
+              control={control}
+              name="regionId"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-semibold text-slate-700">
+                    Vùng trồng <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <div>
+                      <AreaRegionSelector
+                        regions={regions as any}
+                        showEnterprise={showEnterprise}
+                        enterpriseId={
+                          enterpriseId ? Number(enterpriseId) : null
                         }
+                        selectedId={field.value?.toString()}
+                        onSelect={(id) => {
+                          const region = regions.find(
+                            (item) => item.id === Number(id),
+                          );
+                          field.onChange(Number(id));
+                          if (region) {
+                            setValue(
+                              "soilType",
+                              region.soilType?.id?.toString() || "",
+                            );
+                            setValue(
+                              "terrainFeature",
+                              region.terrainFeature?.id?.toString() || "",
+                            );
+                          }
+                        }}
+                      />
+
+                      <div className="mt-1">
+                        {field.value ? (
+                          <SelectedRegionCard
+                            regionId={field.value.toString()}
+                            regions={regions as any}
+                            onRemove={() => {
+                              field.onChange(undefined);
+                              setValue("soilType", "");
+                              setValue("terrainFeature", "");
+                            }}
+                          />
+                        ) : (
+                          <div className="animate-in fade-in flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-100 bg-slate-50/50 px-4 py-6 text-center duration-500">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-300 shadow-sm">
+                              <MapPin className="h-4 w-4" />
+                            </div>
+                            <div className="text-[11px] font-bold text-slate-500">
+                              Chưa chọn vùng trồng
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Cột 2: Tên khu vực và Diện tích */}
+          <div className="space-y-4">
+            <FormField
+              control={control}
+              name="name"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="text-sm font-semibold text-slate-700">
+                    Tên khu vực <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Tên khu vực" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={control}
+              name="acreage"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="text-sm font-semibold text-slate-700">
+                    Diện tích (ha)
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      value={field.value ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        field.onChange(
+                          val === "" ? undefined : parseFloat(val),
+                        );
                       }}
                     />
-
-                    <div className="mt-1">
-                      {field.value ? (
-                        <SelectedRegionCard
-                          regionId={field.value.toString()}
-                          regions={regions as any}
-                          onRemove={() => {
-                            field.onChange(undefined);
-                            setValue("soilType", "");
-                            setValue("terrainFeature", "");
-                          }}
-                        />
-                      ) : (
-                        <div className="animate-in fade-in flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-100 bg-slate-50/50 px-4 py-6 text-center duration-500">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-300 shadow-sm">
-                            <MapPin className="h-4 w-4" />
-                          </div>
-                          <div className="text-[11px] font-bold text-slate-500">
-                            Chưa chọn vùng trồng
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={control}
-            name="code"
-            render={({ field }) => (
-              <FormItem className="space-y-2">
-                <FormLabel>
-                  Mã khu vực <span className="text-red-500">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="VD: KHU-A" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={control}
-            name="name"
-            render={({ field }) => (
-              <FormItem className="space-y-2">
-                <FormLabel>
-                  Tên khu vực <span className="text-red-500">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Tên khu vực" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-3 gap-4">
-          <FormField
-            control={control}
-            name="acreage"
-            render={({ field }) => (
-              <FormItem className="space-y-2">
-                <FormLabel>Diện tích (ha)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    value={field.value ?? ""}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      field.onChange(val === "" ? undefined : parseFloat(val));
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={control}
             name="soilType"
             render={({ field }) => (
               <FormItem className="space-y-2">
-                <FormLabel>Loại đất</FormLabel>
+                <FormLabel className="text-sm font-semibold text-slate-700">
+                  Loại đất
+                </FormLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger>
@@ -223,7 +230,9 @@ export function AreaInfoStep() {
             name="terrainFeature"
             render={({ field }) => (
               <FormItem className="space-y-2">
-                <FormLabel>Địa hình</FormLabel>
+                <FormLabel className="text-sm font-semibold text-slate-700">
+                  Địa hình
+                </FormLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger>

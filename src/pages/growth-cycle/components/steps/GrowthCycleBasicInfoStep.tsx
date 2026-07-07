@@ -6,10 +6,6 @@ import {
   Label,
   RadioGroup,
   RadioGroupItem,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   ChevronDown,
@@ -53,7 +49,7 @@ function ScopeOption({
   icon: ReactNode;
   inputId: string;
   title: string;
-  value: "crop" | "variety";
+  value: string;
   description: string;
   onClick: () => void;
 }) {
@@ -308,13 +304,6 @@ export function GrowthCycleBasicInfoStep({
         ? "Phạm vi đang là theo loại cây nên không cần chọn giống riêng."
         : "Phạm vi đang là theo đối tượng nuôi nên không cần chọn giống riêng.";
 
-  const cycleIntroTitle = isPlant
-    ? "Dùng cho chu kỳ cây trồng"
-    : "Dùng cho chu kỳ vật nuôi / thủy sản";
-  const cycleIntroDescription = isPlant
-    ? "Từ nảy mầm đến ra hoa, đậu trái hoặc thu hoạch."
-    : "Từ sơ sinh đến nuôi lớn, sinh sản hoặc xuất chuồng.";
-
   const scopeCropTitle = isPlant ? "Theo loại cây trồng" : "Theo loại vật nuôi";
   const scopeCropDescription = isPlant
     ? "Áp dụng cho tất cả các giống thuộc loại cây trồng này."
@@ -345,43 +334,49 @@ export function GrowthCycleBasicInfoStep({
     <div className="mx-auto max-w-4xl space-y-8 py-4">
       <div className="space-y-6">
         <div className="space-y-3">
-          <Label className="text-base font-semibold">Nhóm chu kỳ</Label>
+          <Label className="text-base font-semibold">Vụ</Label>
           <FormField
             control={control}
             name="cycleType"
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Tabs
+                  <RadioGroup
                     value={field.value ?? "plant"}
                     onValueChange={(value) => {
                       field.onChange(value);
                       setValue("cropId", "");
                       setValue("variety", "");
                     }}
-                    className="w-full"
+                    className="grid grid-cols-1 gap-4 md:grid-cols-2"
                   >
-                    <TabsList className="grid w-full grid-cols-2 mb-0">
-                      <TabsTrigger value="plant" className="gap-2">
-                        <TreeDeciduous className="w-4 h-4" />
-                        Thực vật
-                      </TabsTrigger>
-                      <TabsTrigger value="animal" className="gap-2">
-                        <Fish className="w-4 h-4" />
-                        Vật nuôi / Thủy sản
-                      </TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="plant" className="mt-4 space-y-3">
-                      <div className="rounded-lg border bg-emerald-50/40 p-4 text-sm text-emerald-900">
-                        {cycleIntroTitle}: {cycleIntroDescription}
-                      </div>
-                    </TabsContent>
-                    <TabsContent value="animal" className="mt-4 space-y-3">
-                      <div className="rounded-lg border bg-blue-50/50 p-4 text-sm text-blue-900">
-                        {cycleIntroTitle}: {cycleIntroDescription}
-                      </div>
-                    </TabsContent>
-                  </Tabs>
+                    <ScopeOption
+                      checked={(field.value ?? "plant") === "plant"}
+                      icon={<TreeDeciduous className="w-6 h-6" />}
+                      inputId="cycle-type-plant"
+                      title="Vụ mùa"
+                      value="plant"
+                      description="Từ nảy mầm đến ra hoa, đậu trái hoặc thu hoạch."
+                      onClick={() => {
+                        field.onChange("plant");
+                        setValue("cropId", "");
+                        setValue("variety", "");
+                      }}
+                    />
+                    <ScopeOption
+                      checked={field.value === "animal"}
+                      icon={<Fish className="w-6 h-6" />}
+                      inputId="cycle-type-animal"
+                      title="Vụ nuôi"
+                      value="animal"
+                      description="Từ sơ sinh đến nuôi lớn, sinh sản hoặc xuất chuồng."
+                      onClick={() => {
+                        field.onChange("animal");
+                        setValue("cropId", "");
+                        setValue("variety", "");
+                      }}
+                    />
+                  </RadioGroup>
                 </FormControl>
                 <FormMessage />
               </FormItem>

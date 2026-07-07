@@ -26,7 +26,13 @@ import { useCrops } from "@/features/foundation/hooks/useCrops";
 import { useEffect, useState, useMemo } from "react";
 import type { RegionFormValues } from "../data/region-form.schema";
 
-export const RegionInfoStep = () => {
+interface RegionInfoStepProps {
+  showEnterprise?: boolean;
+}
+
+export const RegionInfoStep = ({
+  showEnterprise = false,
+}: RegionInfoStepProps = {}) => {
   const { items: lands } = useCatalog("soil-types");
   const { items: terrains } = useCatalog("terrain-features");
   const { data: cropsData } = useCrops({ params: { size: 100 } });
@@ -72,93 +78,78 @@ export const RegionInfoStep = () => {
         <CardTitle>Thông tin cơ bản</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={control}
-            name="code"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Mã vùng <span className="text-red-500">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="VD: REG-001" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Tên vùng <span className="text-red-500">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Tên vùng trồng" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                Tên vùng <span className="text-red-500">*</span>
+              </FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Tên vùng trồng" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <FormField
-            control={control}
-            name="enterpriseId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Đơn vị sở hữu <span className="text-red-500">*</span>
-                </FormLabel>
-                <FormControl>
-                  <OrganizationSelector
-                    selectedId={field.value}
-                    onSelect={(value, selectedEnterprise) => {
-                      if (selectedEnterprise) {
-                        const normalize = (input: string) =>
-                          input
-                            .toLowerCase()
-                            .replace(/^(tỉnh|thành phố|tp\.)\s+/i, "")
-                            .trim();
+          {showEnterprise && (
+            <FormField
+              control={control}
+              name="enterpriseId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Đơn vị sở hữu <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <OrganizationSelector
+                      selectedId={field?.value ?? ""}
+                      onSelect={(value, selectedEnterprise) => {
+                        if (selectedEnterprise) {
+                          const normalize = (input: string) =>
+                            input
+                              .toLowerCase()
+                              .replace(/^(tỉnh|thành phố|tp\.)\s+/i, "")
+                              .trim();
 
-                        const matchedProvince = provinces.find(
-                          (item) =>
-                            normalize(item.name) ===
-                            normalize(selectedEnterprise.province || ""),
-                        );
+                          const matchedProvince = provinces.find(
+                            (item) =>
+                              normalize(item.name) ===
+                              normalize(selectedEnterprise.province || ""),
+                          );
 
-                        setValue("enterpriseId", value);
-                        if (selectedEnterprise.address) {
-                          setValue("address", selectedEnterprise.address);
-                        }
-
-                        if (matchedProvince) {
-                          setValue("provinceId", matchedProvince.code);
-                          // Schedule ward match after wards load
-                          if (selectedEnterprise.district) {
-                            setPendingWardName(selectedEnterprise.district);
+                          setValue("enterpriseId", value);
+                          if (selectedEnterprise.address) {
+                            setValue("address", selectedEnterprise.address);
                           }
+
+                          if (matchedProvince) {
+                            setValue("provinceId", matchedProvince.code);
+                            // Schedule ward match after wards load
+                            if (selectedEnterprise.district) {
+                              setPendingWardName(selectedEnterprise.district);
+                            }
+                          }
+                        } else {
+                          setValue("enterpriseId", value);
                         }
-                      } else {
-                        setValue("enterpriseId", value);
-                      }
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           <FormField
             control={control}
             name="cropId"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
+              <FormItem>
                 <FormLabel>Cây trồng chính</FormLabel>
                 <FormControl>
                   <Combobox
@@ -167,7 +158,7 @@ export const RegionInfoStep = () => {
                     onChange={field.onChange}
                     placeholder="Chọn cây trồng..."
                     searchPlaceholder="Tìm kiếm cây trồng..."
-                    className="w-full mt-2"
+                    className="w-full"
                   />
                 </FormControl>
                 <FormMessage />
@@ -184,7 +175,7 @@ export const RegionInfoStep = () => {
                 <FormControl>
                   <Input
                     type="number"
-                    className="h-10 border-slate-300 focus:border-primary focus:ring-primary/20"
+                    className="border-slate-300 focus:border-primary focus:ring-primary/20"
                     clearable={false}
                     value={field.value ?? ""}
                     onChange={(e) => {
@@ -205,7 +196,7 @@ export const RegionInfoStep = () => {
             control={control}
             name="provinceId"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
+              <FormItem>
                 <FormLabel>Tỉnh / Thành Phố</FormLabel>
                 <FormControl>
                   <Combobox
@@ -221,7 +212,7 @@ export const RegionInfoStep = () => {
                     disabled={isLoadingProvinces}
                     placeholder="Chọn Tỉnh / Thành Phố"
                     searchPlaceholder="Tìm kiếm..."
-                    className="w-full mt-2"
+                    className="w-full"
                   />
                 </FormControl>
                 <FormMessage />
@@ -233,7 +224,7 @@ export const RegionInfoStep = () => {
             control={control}
             name="wardId"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
+              <FormItem>
                 <FormLabel>Phường/Xã</FormLabel>
                 <FormControl>
                   <Combobox
@@ -246,7 +237,7 @@ export const RegionInfoStep = () => {
                     disabled={!provinceId || isLoadingWards}
                     placeholder="Chọn Phường / Xã"
                     searchPlaceholder="Tìm kiếm..."
-                    className="w-full mt-2"
+                    className="w-full"
                   />
                 </FormControl>
                 <FormMessage />

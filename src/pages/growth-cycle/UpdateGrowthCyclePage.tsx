@@ -198,7 +198,7 @@ export default function UpdateGrowthCyclePage() {
       await updateTemplate.mutateAsync({
         id: Number(params.id),
         data: {
-          code: currentCycle?.code || `GC-${Date.now()}`,
+          code: currentCycle?.code || undefined,
           name: generatedName,
           cropId: Number(values.cropId),
           cropVarietyId:

@@ -17,6 +17,7 @@ import { VarietyFoundationClassificationStep } from "./components/VarietyFoundat
 import { VarietyFoundationConfirmationStep } from "./components/VarietyFoundationConfirmationStep";
 import { VarietyFoundationDocumentsStep } from "./components/VarietyFoundationDocumentsStep";
 import { useVarietyFoundationForm } from "./hooks/useVarietyFoundationForm";
+import { useCrops } from "../../features/foundation";
 import {
   classificationSchema,
   varietyFoundationSchema,
@@ -44,6 +45,18 @@ function VarietyFoundationCreateFormContent({
 }) {
   const { watch, handleSubmit } = useFormContext<VarietyFoundationFormValues>();
   const watchedValues = watch();
+
+  const { items: crops } = useCrops();
+  const selectedCrop = React.useMemo(() => {
+    if (!watchedValues.crop) return undefined;
+    const crop = crops.find((c) => String(c.id) === String(watchedValues.crop));
+    if (!crop) return undefined;
+    return {
+      name: crop.name,
+      image: crop.imageUrl || "",
+      group: crop.cropGroupName || "N/A",
+    };
+  }, [watchedValues.crop, crops]);
 
   const steps: Step[] = [
     {
@@ -77,7 +90,12 @@ function VarietyFoundationCreateFormContent({
       id: "confirm",
       title: "Xác nhận",
       description: "Kiểm tra lại toàn bộ thông tin trước khi tạo",
-      content: <VarietyFoundationConfirmationStep mode="create" />,
+      content: (
+        <VarietyFoundationConfirmationStep
+          mode="create"
+          selectedCrop={selectedCrop}
+        />
+      ),
       isValid: true,
     },
   ];

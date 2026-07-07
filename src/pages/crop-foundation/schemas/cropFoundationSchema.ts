@@ -98,7 +98,7 @@ export const technicalSpecsSchema = z
   });
 
 export const basicInfoSchema = z.object({
-  code: z.string().min(1, "Mã giống cây không được để trống"),
+  code: z.string().optional(),
   name: z.string().min(1, "Tên giống cây không được để trống"),
   cropGroupId: z.string().min(1, "Vui lòng chọn nhóm cây trồng"),
   cropFoundationType: z.string().optional(),

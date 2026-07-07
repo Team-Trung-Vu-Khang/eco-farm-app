@@ -20,9 +20,9 @@ export const subAreaSchema = z.object({
 });
 
 export const regionInfoSchema = z.object({
-  code: z.string().min(1, "Vui lòng nhập mã vùng"),
+  code: z.string().optional(),
   name: z.string().min(1, "Vui lòng nhập tên vùng"),
-  enterpriseId: z.string().min(1, "Vui lòng chọn đơn vị sở hữu"),
+  enterpriseId: z.string().optional(),
   cropId: z.string().optional(),
   area: z.number().min(0).optional(),
   provinceId: z.string().optional(),

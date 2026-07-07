@@ -48,7 +48,6 @@ import {
 } from "../utils";
 
 import { useCatalog } from "@/features/foundation/hooks/useCatalog";
-import { useRegions } from "@/features/farm/hooks/useRegions";
 
 interface RegionSubAreaStepProps {
   customIcon: L.Icon;
@@ -58,7 +57,7 @@ interface RegionSubAreaStepProps {
 
 const subAreaFormSchema = z.object({
   name: z.string().min(1, "Vui lòng nhập tên khu vực"),
-  code: z.string().min(1, "Vui lòng nhập mã khu vực"),
+  code: z.string().optional(),
   area: z.coerce
     .number({
       error: "Vui lòng nhập diện tích",
@@ -93,7 +92,7 @@ interface SubAreaLayoutProps {
   ) => void;
   handleAddSubAreaPoint: () => void;
   addSubArea: () => void;
-  saveSubArea: () => void;
+  saveSubArea: (formData: SubAreaFormValues) => void;
   removeSubArea: (id: string) => void;
   onSubAreaPointSelect: (index: number, point: L.LatLng) => void;
   handleSubAreaPointDrag: (
@@ -136,8 +135,8 @@ const SubAreaEditForm = ({
   const form = useForm<SubAreaFormValues>({
     resolver: zodResolver(formSchema as unknown as any),
     defaultValues: {
+      code: editingSubArea.code,
       name: editingSubArea.name || "",
-      code: editingSubArea.code || "",
       landType: editingSubArea.landType || "",
       area: (editingSubArea.area as number) || 0,
     },
@@ -221,27 +220,6 @@ const SubAreaEditForm = ({
             <div className="grid grid-cols-2 gap-3 items-start">
               <FormField
                 control={form.control}
-                name="code"
-                render={({ field }) => (
-                  <FormItem className="grid gap-2 space-y-0">
-                    <FormLabel className="text-xs">
-                      Mã khu vực <span className="text-red-500">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        disabled
-                        clearable={false}
-                        className="h-8 text-sm font-medium"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
                 name="area"
                 render={({ field }) => (
                   <FormItem className="grid gap-2 space-y-0">
@@ -261,40 +239,40 @@ const SubAreaEditForm = ({
                   </FormItem>
                 )}
               />
-            </div>
 
-            <FormField
-              control={form.control}
-              name="landType"
-              render={({ field }) => (
-                <FormItem className="grid gap-2 space-y-0">
-                  <FormLabel className="text-xs">
-                    Loại đất <span className="text-red-500">*</span>
-                  </FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="h-8 text-sm">
-                        <SelectValue placeholder="Chọn loại đất" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {lands.map((land: any) => (
-                        <SelectItem
-                          key={land.id}
-                          value={String(land.id || land.code)}
-                        >
-                          {land.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="landType"
+                render={({ field }) => (
+                  <FormItem className="grid gap-2 space-y-0">
+                    <FormLabel className="text-xs">
+                      Loại đất <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="h-8 text-sm">
+                          <SelectValue placeholder="Chọn loại đất" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {lands.map((land: any) => (
+                          <SelectItem
+                            key={land.id}
+                            value={String(land.id || land.code)}
+                          >
+                            {land.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage className="text-xs" />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="pt-2">
               <div className="mb-2 flex items-center justify-between">
@@ -396,7 +374,6 @@ const SubAreaLayout = ({
   subAreaPointWarnings,
   subAreaWarningForDisplay,
   subAreaPoints,
-  isDraggingSubAreaPoint,
   lands,
   customIcon,
   activeIcon,
@@ -411,7 +388,6 @@ const SubAreaLayout = ({
   onSubAreaPointSelect,
   handleSubAreaPointDrag,
   applySuggestedSubAreaPoint,
-  setSubAreaPoints,
   onLoadSubAreaForEdit,
   regionArea,
 }: SubAreaLayoutProps) => {
@@ -442,8 +418,9 @@ const SubAreaLayout = ({
             if (!subArea.coordinates || subArea.coordinates.length < 3)
               return null;
 
-            const positions = subArea.coordinates.map((coordinate) =>
-              L.latLng(coordinate.lat, coordinate.lng),
+            const positions = subArea.coordinates.map(
+              (coordinate: Record<string, number>) =>
+                L.latLng(coordinate.lat, coordinate.lng),
             );
 
             return (
@@ -559,9 +536,6 @@ const SubAreaLayout = ({
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="font-medium text-primary">
-                        {subArea.code}
-                      </div>
                       <div className="text-sm font-semibold">
                         {subArea.name}
                       </div>
@@ -635,7 +609,6 @@ export const RegionSubAreaStep = ({
   const { toast } = useToast();
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const { items: regions } = useRegions({ params: { size: 100 } });
   const { items: lands } = useCatalog("soil-types", { params: { size: 100 } });
 
   const coordinates = watch("coordinates") || [];
@@ -668,7 +641,10 @@ export const RegionSubAreaStep = ({
 
   const regionPolygonFeature = useMemo(() => {
     if (regionPoints.length < 3) return null;
-    const coords = regionPoints.map((p) => [p.lng, p.lat]);
+    const coords = regionPoints.map((p: Record<string, number>) => [
+      p.lng,
+      p.lat,
+    ]);
     const first = coords[0];
     const closed = [...coords, first];
     return polygon([closed]);
@@ -911,7 +887,6 @@ export const RegionSubAreaStep = ({
   const addSubArea = () => {
     const newSub: Omit<SubArea, "regionId"> = {
       area: 0,
-      code: generateNextSubAreaCode(),
       plots: [],
       landType: "",
       coordinates: [],
@@ -949,7 +924,7 @@ export const RegionSubAreaStep = ({
     const updatedSub = {
       ...editingSubArea,
       ...formData,
-      code: formData.code.trim() || generateNextSubAreaCode(),
+      code: formData.code?.trim() || editingSubArea.code,
       coordinates: fullCoords,
     } as SubArea;
 

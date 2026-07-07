@@ -119,8 +119,8 @@ export function useVarietyFoundationForm() {
         scientificName: formData.scientificName,
       };
 
-      const payload = {
-        code: formData.varietyFoundationCode,
+      const payload: any = {
+        code: formData.varietyFoundationCode || undefined,
         name: formData.varietyFoundationName,
         cropId: Number(formData.crop),
         description: formData.description,

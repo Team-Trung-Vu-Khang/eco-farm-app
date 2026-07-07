@@ -70,14 +70,16 @@ export function VarietyFoundationConfirmationStep({
             </div>
 
             <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-1">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  Mã giống
-                </p>
-                <p className="font-bold text-slate-900 text-lg">
-                  {formData.varietyFoundationCode || "---"}
-                </p>
-              </div>
+              {formData.varietyFoundationCode && (
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    Mã giống
+                  </p>
+                  <p className="font-bold text-slate-900 text-lg">
+                    {formData.varietyFoundationCode}
+                  </p>
+                </div>
+              )}
               <div className="space-y-1">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   Tên giống

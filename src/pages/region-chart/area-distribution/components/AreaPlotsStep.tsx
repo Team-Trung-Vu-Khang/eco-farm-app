@@ -50,7 +50,7 @@ interface AreaPlotsStepProps {
 
 const plotFormSchema = z.object({
   name: z.string().min(1, "Vui lòng nhập tên lô"),
-  code: z.string().min(1, "Vui lòng nhập mã lô"),
+  code: z.string().optional(),
   acreage: z.coerce
     .number({
       error: "Vui lòng nhập diện tích",
@@ -127,7 +127,7 @@ const PlotEditForm = ({
     resolver: zodResolver(formSchema as unknown as any),
     defaultValues: {
       name: editingPlot.name || "",
-      code: editingPlot.code || "",
+      code: editingPlot.code,
       acreage: (editingPlot.acreage as number) || 0,
       elevation:
         editingPlot.elevation !== undefined
@@ -143,7 +143,7 @@ const PlotEditForm = ({
   useEffect(() => {
     form.reset({
       name: editingPlot?.name || "",
-      code: editingPlot?.code || "",
+      code: editingPlot?.code,
       acreage: (editingPlot?.acreage as number) || 0,
       elevation:
         editingPlot?.elevation !== undefined
@@ -170,7 +170,9 @@ const PlotEditForm = ({
           <div className="flex items-center justify-between">
             <div>
               <h4 className="font-semibold">
-                {editingPlot.code ? "Sửa lô" : "Thêm lô mới"}
+                {editingPlot.id && !editingPlot.id.toString().startsWith("sub-")
+                  ? "Sửa lô"
+                  : "Thêm lô mới"}
               </h4>
               <p className="text-xs text-muted-foreground">
                 Chỉnh sửa ranh giới và thông tin
@@ -231,28 +233,7 @@ const PlotEditForm = ({
               )}
             />
 
-            <div className="grid grid-cols-2 gap-3 items-start">
-              <FormField
-                control={form.control as any}
-                name="code"
-                render={({ field }) => (
-                  <FormItem className="grid gap-2 space-y-0">
-                    <FormLabel className="text-xs">
-                      Mã lô <span className="text-red-500">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        disabled
-                        clearable={false}
-                        className="h-8 text-sm font-medium"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
-              />
-
+            <div className="grid grid-cols-3 gap-3 items-start">
               <FormField
                 control={form.control as any}
                 name="acreage"
@@ -274,9 +255,7 @@ const PlotEditForm = ({
                   </FormItem>
                 )}
               />
-            </div>
 
-            <div className="grid grid-cols-2 gap-3 items-start">
               <FormField
                 control={form.control as any}
                 name="elevation"
@@ -576,9 +555,6 @@ const PlotLayout = ({
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="font-medium text-primary">
-                        {plot.code}
-                      </div>
                       <div className="text-sm font-semibold">{plot.name}</div>
                       <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
                         <span>{plot.acreage} ha</span>
@@ -659,10 +635,6 @@ export const AreaPlotsStep = ({
     () => coordinates.map((c: any) => L.latLng(c.lat, c.lng)),
     [coordinates],
   );
-
-  const generateNextPlotCode = useCallback(() => {
-    return `PLOT-${Date.now()}`;
-  }, []);
 
   const [editingPlot, setEditingPlot] = useState<any | null>(null);
 
@@ -921,7 +893,6 @@ export const AreaPlotsStep = ({
   const addPlot = () => {
     const newSub: any = {
       acreage: 0,
-      code: generateNextPlotCode(),
       coordinates: [],
       name: "Lô mới",
       id: `sub-${Date.now()}`,
@@ -955,7 +926,7 @@ export const AreaPlotsStep = ({
     const updatedSub = {
       ...editingPlot,
       ...formData,
-      code: formData.code.trim() || generateNextPlotCode(),
+      code: formData.code?.trim() || editingPlot.code,
       coordinates: fullCoords,
     } as any;
 

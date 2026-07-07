@@ -27,7 +27,7 @@ const columns = [
 
 const fieldConfig = {
   name: { required: true },
-  code: { required: true },
+  code: { required: false },
 };
 
 const FarmingMethodPage = () => {
@@ -46,17 +46,16 @@ const FarmingMethodPage = () => {
       keyword: debouncedSearch.trim() || undefined,
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
-    }
+    },
   });
   const { createCatalog, updateCatalog, deleteCatalog } =
     useCatalogMutations("farming-methods");
-  const formDialogLoading =
-    createCatalog.isPending || updateCatalog.isPending;
+  const formDialogLoading = createCatalog.isPending || updateCatalog.isPending;
 
   const data = React.useMemo(() => {
     return items.map((item) => ({
       id: item.id,
-      code: item.code || "",
+      code: item.code || undefined,
       name: item.name || "",
       description: item.description || "",
       status: (item.status as "active" | "inactive") || "active",
@@ -78,12 +77,14 @@ const FarmingMethodPage = () => {
       textDescription = await convertLexicalToHtml(textDescription.toJSON());
     }
 
-    const payload = {
-      code: formData.code,
+    const payload: any = {
       name: formData.name,
       status: "active" as const,
       description: textDescription,
     };
+    if (formData.code) {
+      payload.code = formData.code;
+    }
     if (id) {
       await updateCatalog.mutateAsync({ id, data: payload });
     } else {

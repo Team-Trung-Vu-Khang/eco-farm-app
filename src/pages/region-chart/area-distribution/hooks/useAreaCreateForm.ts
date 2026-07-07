@@ -24,10 +24,6 @@ export function useAreaCreateForm(
 
   const { createArea, updateArea } = useAreaMutations();
 
-  const generateNextAreaCode = useCallback(() => {
-    return `AREA-${Date.now()}`;
-  }, []);
-
   useEffect(() => {
     if (hasInitialized) return;
 
@@ -35,7 +31,7 @@ export function useAreaCreateForm(
       if (areaDataResponse) {
         reset({
           id: areaDataResponse.id,
-          code: areaDataResponse.code || "",
+          code: areaDataResponse.code,
           name: areaDataResponse.name || "",
           enterpriseId:
             (areaDataResponse.metadataJson?.enterpriseId as string) || "",
@@ -66,7 +62,6 @@ export function useAreaCreateForm(
       }
     } else {
       reset({
-        code: generateNextAreaCode(),
         name: "",
         enterpriseId: "",
         regionId: undefined,
@@ -85,13 +80,7 @@ export function useAreaCreateForm(
       });
       setHasInitialized(true);
     }
-  }, [
-    isEditMode,
-    areaDataResponse,
-    generateNextAreaCode,
-    reset,
-    hasInitialized,
-  ]);
+  }, [isEditMode, areaDataResponse, reset, hasInitialized]);
 
   const handleComplete = async (data: AreaFormValues) => {
     setIsSubmitting(true);
@@ -125,8 +114,12 @@ export function useAreaCreateForm(
             code: sub.code,
             name: sub.name,
             acreage: sub.acreage,
-            elevation: sub.elevation !== undefined ? Number(sub.elevation) : undefined,
-            contourInterval: sub.contourInterval !== undefined ? Number(sub.contourInterval) : undefined,
+            elevation:
+              sub.elevation !== undefined ? Number(sub.elevation) : undefined,
+            contourInterval:
+              sub.contourInterval !== undefined
+                ? Number(sub.contourInterval)
+                : undefined,
             metadataJson: {
               enterpriseId: data.enterpriseId,
             },

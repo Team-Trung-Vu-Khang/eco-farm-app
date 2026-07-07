@@ -97,6 +97,7 @@ export const OverviewTab = ({
   details,
   regionIndex,
 }: OverviewTabProps) => {
+  const showEnterprise = false;
   const [isScopeMapExpanded, setIsScopeMapExpanded] = useState(false);
 
   const [scopeMapView, setScopeMapView] = useState({
@@ -153,8 +154,6 @@ export const OverviewTab = ({
                     : 15;
 
     setScopeMapView({ center: nextCenter, zoom: nextZoom });
-
-    console.log("end");
   };
 
   const scopeMapData = useMemo(() => {
@@ -449,116 +448,132 @@ export const OverviewTab = ({
   };
 
   return (
-    <div className={styles.overviewGrid}>
+    <div
+      className={styles.overviewGrid}
+      style={
+        !showEnterprise
+          ? {
+              gridTemplateAreas: `
+                "scope info"
+                "scope map"
+                "scope map"
+                "scope map"
+              `,
+            }
+          : undefined
+      }
+    >
       {/* Enterprise Card */}
-      <div className={styles.areaEnterprise}>
-        {details.enterprise && (
-          <Card className="h-fit overflow-hidden relative shadow-md">
-            <div className="h-50 bg-gray-100 flex items-center justify-center relative">
-              <img
-                src={
-                  details.enterprise.image ||
-                  "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80"
-                }
-                alt="Cover"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute top-0 right-0 z-10">
-                <div
-                  className={cn(
-                    "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg rounded-bl-xl",
-                    details.enterprise.status === "active"
-                      ? "bg-green-600"
-                      : "bg-gray-500",
-                  )}
-                >
-                  {details.enterprise.status === "active"
-                    ? "Đang hoạt động"
-                    : "Dừng hoạt động"}
-                </div>
-              </div>
-            </div>
-            <CardHeader className="text-center pb-2">
-              <div className="mx-auto w-20 h-20 -mt-12 rounded-full border-4 border-background bg-white shadow-sm flex items-center justify-center mb-2 overflow-hidden relative">
-                {details.enterprise.image ? (
-                  <img
-                    src={details.enterprise.image}
-                    alt="Logo"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-2xl font-bold text-primary">
-                    {(
-                      details.enterprise.brandName ||
-                      details.enterprise.name ||
-                      "?"
-                    ).charAt(0)}
-                  </span>
-                )}
-              </div>
-              <CardTitle className="text-xl flex items-center justify-center gap-2">
-                {details.enterprise.brandName || details.enterprise.name}
-                {details.enterprise.status === "active" && (
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
-                  </span>
-                )}
-              </CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">
-                Mã ĐKKD: {details.enterprise.code || "Chưa cập nhật"}
-              </p>
-            </CardHeader>
-            <CardContent className="px-6 pb-6 pt-2">
-              <Separator className="mb-4" />
-              <div className="space-y-3.5 text-xs text-slate-700">
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-                  <span className="leading-relaxed">
-                    {formatFullAddress(details.enterprise)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <User className="w-4 h-4 text-muted-foreground" />
-                  <span>
-                    Đại diện: {details.enterprise.representative || "---"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Phone className="w-4 h-4 text-muted-foreground" />
-                  <span>{details.enterprise.phone || "---"}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Mail className="w-4 h-4 text-muted-foreground" />
-                  {details.enterprise.email ? (
-                    <a
-                      href={`mailto:${details.enterprise.email}`}
-                      className="hover:underline hover:text-primary transition-colors"
-                    >
-                      {details.enterprise.email}
-                    </a>
-                  ) : (
-                    <span className="text-muted-foreground">---</span>
-                  )}
-                </div>
-                {details.enterprise.website && (
-                  <div className="flex items-center gap-3">
-                    <Globe className="w-4 h-4 text-muted-foreground" />
-                    <a
-                      href={details.enterprise.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline hover:text-primary transition-colors text-blue-600"
-                    >
-                      {details.enterprise.website}
-                    </a>
+      {showEnterprise && (
+        <div className={styles.areaEnterprise}>
+          {showEnterprise && details.enterprise && (
+            <Card className="h-fit overflow-hidden relative shadow-md">
+              <div className="h-50 bg-gray-100 flex items-center justify-center relative">
+                <img
+                  src={
+                    details.enterprise.image ||
+                    "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80"
+                  }
+                  alt="Cover"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-0 right-0 z-10">
+                  <div
+                    className={cn(
+                      "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg rounded-bl-xl",
+                      details.enterprise.status === "active"
+                        ? "bg-green-600"
+                        : "bg-gray-500",
+                    )}
+                  >
+                    {details.enterprise.status === "active"
+                      ? "Đang hoạt động"
+                      : "Dừng hoạt động"}
                   </div>
-                )}
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+              <CardHeader className="text-center pb-2">
+                <div className="mx-auto w-20 h-20 -mt-12 rounded-full border-4 border-background bg-white shadow-sm flex items-center justify-center mb-2 overflow-hidden relative">
+                  {details.enterprise.image ? (
+                    <img
+                      src={details.enterprise.image}
+                      alt="Logo"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-2xl font-bold text-primary">
+                      {(
+                        details.enterprise.brandName ||
+                        details.enterprise.name ||
+                        "?"
+                      ).charAt(0)}
+                    </span>
+                  )}
+                </div>
+                <CardTitle className="text-xl flex items-center justify-center gap-2">
+                  {details.enterprise.brandName || details.enterprise.name}
+                  {details.enterprise.status === "active" && (
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                    </span>
+                  )}
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Mã ĐKKD: {details.enterprise.code || "Chưa cập nhật"}
+                </p>
+              </CardHeader>
+              <CardContent className="px-6 pb-6 pt-2">
+                <Separator className="mb-4" />
+                <div className="space-y-3.5 text-xs text-slate-700">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <span className="leading-relaxed">
+                      {formatFullAddress(details.enterprise)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    <span>
+                      Đại diện: {details.enterprise.representative || "---"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Phone className="w-4 h-4 text-muted-foreground" />
+                    <span>{details.enterprise.phone || "---"}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-4 h-4 text-muted-foreground" />
+                    {details.enterprise.email ? (
+                      <a
+                        href={`mailto:${details.enterprise.email}`}
+                        className="hover:underline hover:text-primary transition-colors"
+                      >
+                        {details.enterprise.email}
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground">---</span>
+                    )}
+                  </div>
+                  {details.enterprise.website && (
+                    <div className="flex items-center gap-3">
+                      <Globe className="w-4 h-4 text-muted-foreground" />
+                      <a
+                        href={details.enterprise.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline hover:text-primary transition-colors text-blue-600"
+                      >
+                        {details.enterprise.website}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
 
       {/* Scope Card */}
       <Card

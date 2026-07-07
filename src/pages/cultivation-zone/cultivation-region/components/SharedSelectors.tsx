@@ -293,6 +293,7 @@ interface GeographicalSelectorProps {
   onConfirm: (selections: GeographicalSelection[]) => void;
   enterpriseId: string;
   existingSelections: GeographicalSelection[];
+  showEnterprise?: boolean;
 }
 
 interface AreaPlotsListProps {
@@ -534,6 +535,7 @@ export const GeographicalSelector = ({
   onConfirm,
   enterpriseId,
   existingSelections,
+  showEnterprise = false,
 }: GeographicalSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -546,12 +548,12 @@ export const GeographicalSelector = ({
   const filteredRegions = useMemo(() => {
     return regions.filter(
       (region) =>
-        (!enterpriseId ||
+        ((!showEnterprise || !enterpriseId) ||
           region.enterpriseId === `ent-${enterpriseId}` ||
           region.enterpriseId === enterpriseId) &&
         region.name.toLowerCase().includes(searchTerm.toLowerCase()),
     );
-  }, [enterpriseId, regions, searchTerm]);
+  }, [enterpriseId, regions, searchTerm, showEnterprise]);
 
   const toggleRegion = (id: string) => {
     setExpandedRegions((prev) =>
@@ -694,7 +696,7 @@ export const GeographicalSelector = ({
           setTempSelections(existingSelections);
           setIsOpen(true);
         }}
-        disabled={!enterpriseId}
+        disabled={showEnterprise && !enterpriseId}
         className="w-full h-12 cursor-pointer border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 text-primary font-bold gap-2 transition-all rounded-lg shadow-sm hover:shadow-md"
         variant="outline"
       >

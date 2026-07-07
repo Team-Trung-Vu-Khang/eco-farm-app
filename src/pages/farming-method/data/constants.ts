@@ -39,7 +39,7 @@ export const apiToRow = (
   return {
     id: item.id,
     farmingMethodId: item.farmingMethodId,
-    code: item.code || "",
+    code: item.code || undefined,
     name: item.farmingMethodName || item.farmingMethodCode || "",
     description: item.description || "",
     status: (item.status as MethodStatus) || "active",

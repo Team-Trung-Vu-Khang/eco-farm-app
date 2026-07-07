@@ -96,23 +96,26 @@ export default function FarmingMethodCropPage() {
         title={editingItem ? "Cập nhật phương thức" : "Thêm phương thức mới"}
       >
         <div className="space-y-5">
-          {/* Row 1: Mã */}
+          {/* Row 1: Mã phương thức */}
           <div className="space-y-1.5">
             <Label htmlFor="code" className="text-sm font-medium">
-              Mã phương thức
-              <span className="text-red-500 ml-1">*</span>
+              Mã phương thức canh tác
             </Label>
             <Input
               id="code"
-              value={formData.code}
+              placeholder={
+                editingItem ? formData.code : "Tự động sinh nếu để trống"
+              }
+              value={formData.code || ""}
               onChange={(e) =>
                 setFormData((current) => ({
                   ...current,
-                  code: e.target.value.toUpperCase(),
+                  code: e.target.value,
                 }))
               }
-              placeholder="VD: FM-ORG-001"
-              className="bg-slate-50 font-mono"
+              disabled={!!editingItem}
+              clearable={!editingItem}
+              className="bg-slate-50"
             />
           </div>
 

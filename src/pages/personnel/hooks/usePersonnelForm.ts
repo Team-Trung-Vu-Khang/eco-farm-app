@@ -60,23 +60,43 @@ export function usePersonnelForm(id?: number) {
         avatarUrl: personnel.avatarUrl || "",
         avatarFile: undefined,
         departmentType:
-          (personnel.departmentType as any) ||
-          (personnel.department || personnel.departmentId
+          personnel.metadataJson?.departmentType ||
+          personnel.departmentType ||
+          (personnel.department?.source as any) ||
+          (personnel.department?.id || personnel.departmentId
             ? "OWNER"
             : undefined),
-        department: personnel.department?.id
-          ? personnel.department.id.toString()
-          : personnel.departmentId
-            ? personnel.departmentId.toString()
-            : "",
+        department:
+          personnel.department?.id &&
+          (personnel.metadataJson?.departmentType ||
+            personnel.departmentType ||
+            (personnel.department?.source as any))
+            ? `${personnel.metadataJson?.departmentType || personnel.departmentType || personnel.department.source}_${personnel.department.id}`
+            : personnel.departmentId &&
+                (personnel.metadataJson?.departmentType ||
+                  personnel.departmentType ||
+                  "OWNER")
+              ? `${personnel.metadataJson?.departmentType || personnel.departmentType || "OWNER"}_${personnel.departmentId}`
+              : "",
         positionType:
-          (personnel.positionType as any) ||
-          (personnel.position || personnel.positionId ? "OWNER" : undefined),
-        position: personnel.position?.id
-          ? personnel.position.id.toString()
-          : personnel.positionId
-            ? personnel.positionId.toString()
-            : "",
+          personnel.metadataJson?.positionType ||
+          personnel.positionType ||
+          (personnel.position?.source as any) ||
+          (personnel.position?.id || personnel.positionId
+            ? "OWNER"
+            : undefined),
+        position:
+          personnel.position?.id &&
+          (personnel.metadataJson?.positionType ||
+            personnel.positionType ||
+            (personnel.position?.source as any))
+            ? `${personnel.metadataJson?.positionType || personnel.positionType || personnel.position.source}_${personnel.position.id}`
+            : personnel.positionId &&
+                (personnel.metadataJson?.positionType ||
+                  personnel.positionType ||
+                  "OWNER")
+              ? `${personnel.metadataJson?.positionType || personnel.positionType || "OWNER"}_${personnel.positionId}`
+              : "",
         team: personnel.team?.id
           ? personnel.team.id.toString()
           : personnel.teamId
@@ -150,12 +170,29 @@ export function usePersonnelForm(id?: number) {
         taxAddress: values.taxAddress || undefined,
         avatarUrl: finalAvatarUrl || undefined,
         departmentType: values.departmentType || undefined,
-        departmentId: values.department ? Number(values.department) : undefined,
+        departmentId: values.department
+          ? Number(
+              values.department.includes("_")
+                ? values.department.split("_")[1]
+                : values.department,
+            )
+          : undefined,
         positionType: values.positionType || undefined,
-        positionId: values.position ? Number(values.position) : undefined,
+        positionId: values.position
+          ? Number(
+              values.position.includes("_")
+                ? values.position.split("_")[1]
+                : values.position,
+            )
+          : undefined,
         teamId: values.team ? Number(values.team) : undefined,
         status: values.status,
         bankAccounts: bankAccountPayload,
+        metadataJson: {
+          ...(personnel?.metadataJson || {}),
+          departmentType: values.departmentType || undefined,
+          positionType: values.positionType || undefined,
+        },
       };
 
       if (id) {

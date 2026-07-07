@@ -49,7 +49,7 @@ export interface Coordinate {
 
 export interface SubArea {
   id: string; // Keep as string for nested IDs
-  code: string;
+  code?: string;
   name: string;
   regionId: number;
   area: number;
@@ -58,7 +58,7 @@ export interface SubArea {
   coordinates: Coordinate[];
   plots: Plot[];
   createdAt: string;
-  status: "active" | "inactive";
+  status: "active" | "inactive" | "archived" | (string & {});
 }
 
 export interface RegionCrop {
@@ -82,7 +82,7 @@ export interface Region {
   landType: string;
   terrain: string;
   note: string;
-  status: "active" | "inactive";
+  status: "active" | "inactive" | "archived" | (string & {});
   coordinates: Coordinate[]; // Rectangle corners
   subAreas: SubArea[];
   createdAt: string;

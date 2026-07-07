@@ -1,5 +1,5 @@
 export interface LandSpecsFormData {
-  code: string;
+  code?: string;
   name: string;
   description: string;
 }

@@ -16,7 +16,7 @@ import {
 import type { GroupCropFormData } from "../hooks/useGroupCropPage";
 
 const formSchema = z.object({
-  code: z.string().min(1, { message: "Mã nhóm cây là bắt buộc" }),
+  code: z.string().optional(),
   name: z.string().min(1, { message: "Tên nhóm cây là bắt buộc" }),
   biological: z.string().optional(),
   description: z.string().optional(),
@@ -86,15 +86,15 @@ export const GroupCropFormDialog = ({
               name="code"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="font-semibold">
-                    Mã nhóm cây <span className="text-red-500 ml-1">*</span>
-                  </FormLabel>
+                  <FormLabel className="font-semibold">Mã nhóm cây</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="VD: CC001"
-                      className="focus-visible:ring-green-500"
+                      placeholder={
+                        isEdit ? field.value : "Tự động sinh nếu để trống"
+                      }
                       disabled={isEdit}
                       clearable={!isEdit}
+                      className="focus-visible:ring-green-500"
                       {...field}
                     />
                   </FormControl>
@@ -105,15 +105,15 @@ export const GroupCropFormDialog = ({
 
             <FormField
               control={form.control}
-              name="biological"
+              name="name"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="font-semibold">
-                    Đặc tính sinh học
+                    Tên nhóm cây <span className="text-red-500 ml-1">*</span>
                   </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="VD: Cây lâu năm"
+                      placeholder="VD: Cây có múi"
                       className="focus-visible:ring-green-500"
                       {...field}
                     />
@@ -123,18 +123,17 @@ export const GroupCropFormDialog = ({
               )}
             />
           </div>
-
           <FormField
             control={form.control}
-            name="name"
+            name="biological"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="font-semibold">
-                  Tên nhóm cây <span className="text-red-500 ml-1">*</span>
+                  Đặc tính sinh học
                 </FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="VD: Cây có múi"
+                    placeholder="VD: Cây lâu năm"
                     className="focus-visible:ring-green-500"
                     {...field}
                   />

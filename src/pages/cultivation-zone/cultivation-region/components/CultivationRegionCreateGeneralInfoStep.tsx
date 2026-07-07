@@ -45,6 +45,7 @@ type Props = {
   onToggleCertificate: (id: string) => void;
   onSelectManagers: (ids: string[]) => void;
   enterpriseDisabled?: boolean;
+  showEnterprise?: boolean;
 };
 
 export const CultivationRegionCreateGeneralInfoStep = ({
@@ -63,6 +64,7 @@ export const CultivationRegionCreateGeneralInfoStep = ({
   onToggleCertificate,
   onSelectManagers,
   enterpriseDisabled = false,
+  showEnterprise = false,
 }: Props) => {
   const groupedSelections = selections.reduce<
     Record<string, GeographicalSelection[]>
@@ -94,14 +96,18 @@ export const CultivationRegionCreateGeneralInfoStep = ({
               className="h-10 border-slate-300 focus:border-primary focus:ring-primary/20"
             />
 
-            <Label className="text-sm font-medium">
-              Đơn vị sở hữu <span className="text-red-500">*</span>
-            </Label>
-            <EnterpriseSelector
-              disabled={enterpriseDisabled}
-              selectedId={selectedEnterpriseId}
-              onSelect={onSelectEnterprise}
-            />
+            {showEnterprise && (
+              <>
+                <Label className="text-sm font-medium">
+                  Đơn vị sở hữu <span className="text-red-500">*</span>
+                </Label>
+                <EnterpriseSelector
+                  disabled={enterpriseDisabled}
+                  selectedId={selectedEnterpriseId}
+                  onSelect={onSelectEnterprise}
+                />
+              </>
+            )}
 
             <div className="space-y-4 pt-2">
               <div className="flex items-center justify-between">
@@ -120,6 +126,7 @@ export const CultivationRegionCreateGeneralInfoStep = ({
 
               <GeographicalSelector
                 regions={regions}
+                showEnterprise={showEnterprise}
                 enterpriseId={selectedEnterpriseId}
                 existingSelections={selections}
                 onConfirm={onConfirmSelections}
@@ -179,21 +186,11 @@ export const CultivationRegionCreateGeneralInfoStep = ({
           <div className="flex items-center gap-2 pb-2 border-b">
             <Award className="w-5 h-5 text-primary" />
             <h3 className="font-semibold text-slate-800">
-              Chứng nhận tiêu chuẩn
+              Nhân sự phụ trách
             </h3>
           </div>
 
           <div className="space-y-6">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">
-                Giấy chứng nhận / Tiêu chuẩn
-              </Label>
-              <CertificateSelector
-                selectedIds={selectedCertIds}
-                onToggle={onToggleCertificate}
-              />
-            </div>
-
             <div className="space-y-2">
               <Label className="text-sm font-medium">
                 Nhân viên chịu trách nhiệm

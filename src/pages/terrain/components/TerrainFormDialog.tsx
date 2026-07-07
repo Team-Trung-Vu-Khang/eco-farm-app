@@ -16,7 +16,7 @@ import {
 import type { TerrainFormData } from "../types/types";
 
 const formSchema = z.object({
-  code: z.string().min(1, { message: "Mã địa hình là bắt buộc" }),
+  code: z.string().optional(),
   name: z.string().min(1, { message: "Tên địa hình là bắt buộc" }),
   description: z.string().optional(),
 });
@@ -41,7 +41,6 @@ export function TerrainFormDialog({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      code: "",
       name: "",
       description: "",
     },
@@ -50,7 +49,7 @@ export function TerrainFormDialog({
   useEffect(() => {
     if (open) {
       form.reset({
-        code: initialData.code || "",
+        code: initialData.code || undefined,
         name: initialData.name || "",
         description: initialData.description || "",
       });
@@ -80,13 +79,10 @@ export function TerrainFormDialog({
             name="code"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>
-                  Mã địa hình
-                  <span className="text-destructive ml-1">*</span>
-                </FormLabel>
+                <FormLabel>Mã địa hình</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="VD: DH001"
+                    placeholder={isEdit ? field.value : "Tự động sinh nếu để trống"}
                     disabled={isEdit}
                     clearable={!isEdit}
                     data-testid="input-code"
@@ -97,6 +93,7 @@ export function TerrainFormDialog({
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="name"

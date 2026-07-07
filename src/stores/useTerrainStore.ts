@@ -3,7 +3,7 @@ import { devtools, persist } from "zustand/middleware";
 
 export interface Terrain {
   id: number;
-  code: string;
+  code?: string;
   name: string;
   type?: string;
   description: string;

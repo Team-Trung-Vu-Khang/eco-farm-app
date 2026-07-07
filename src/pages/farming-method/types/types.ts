@@ -12,7 +12,7 @@ export type RelatedCrop = {
 export type FarmingMethodCropRow = {
   id: number;
   farmingMethodId?: number;
-  code: string;
+  code?: string;
   name: string;
   description: string;
   relatedCrops: RelatedCrop[];
@@ -40,7 +40,7 @@ export type CropOption = {
 };
 
 export type FarmingMethodCropFormData = {
-  code: string;
+  code?: string;
   farmingMethodId: string;
   description: string;
   status: MethodStatus;

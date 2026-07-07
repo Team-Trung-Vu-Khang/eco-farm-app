@@ -19,7 +19,7 @@ import {
 } from "../data/land.constants";
 
 const formSchema = z.object({
-  code: z.string().min(1, { message: "Mã loại đất là bắt buộc" }),
+  code: z.string().optional(),
   name: z.string().min(1, { message: "Tên loại đất là bắt buộc" }),
   description: z.string().optional(),
   imageUrl: z.string().optional(),
@@ -47,7 +47,6 @@ export default function LandFormDialog({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      code: "",
       name: "",
       description: "",
       imageUrl: "",
@@ -57,7 +56,7 @@ export default function LandFormDialog({
   useEffect(() => {
     if (open) {
       form.reset({
-        code: initialData.code || "",
+        code: initialData.code || undefined,
         name: initialData.name || "",
         description: initialData.description || "",
         imageUrl: initialData.imageUrl || "",
@@ -100,13 +99,10 @@ export default function LandFormDialog({
             name="code"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>
-                  Mã loại đất
-                  <span className="text-destructive ml-1">*</span>
-                </FormLabel>
+                <FormLabel>Mã loại đất</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="VD: DAT001"
+                    placeholder={isEdit ? field.value : "Tự động sinh nếu để trống"}
                     disabled={isEdit}
                     clearable={!isEdit}
                     data-testid="input-code"

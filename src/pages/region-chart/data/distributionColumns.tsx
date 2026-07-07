@@ -26,9 +26,11 @@ export function createRegionDistributionColumns(
     {
       key: "status",
       label: "Trạng thái",
-      render: (value) => (
-        <RegionChartStatusBadge status={value as "active" | "inactive"} />
-      ),
+      render: (value) => {
+        return (
+          <RegionChartStatusBadge status={value as "active" | "inactive"} />
+        );
+      },
     },
   ];
 }
@@ -59,9 +61,11 @@ export function createAreaDistributionColumns(
     {
       key: "status",
       label: "Trạng thái",
-      render: (value) => (
-        <RegionChartStatusBadge status={value as "active" | "inactive"} />
-      ),
+      render: (value) => {
+        return (
+          <RegionChartStatusBadge status={value as "active" | "inactive"} />
+        );
+      },
     },
   ];
 }

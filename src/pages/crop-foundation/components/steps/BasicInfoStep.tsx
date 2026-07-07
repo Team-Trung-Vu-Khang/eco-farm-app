@@ -83,14 +83,14 @@ export function BasicInfoStep({ fileInputRef, isEdit }: BasicInfoStepProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-semibold">
-                    Mã <span className="text-red-500">*</span>
+                    Mã cây trồng
                   </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       disabled={isEdit}
                       clearable={!isEdit}
-                      placeholder="VD: TREE-7867"
+                      placeholder={isEdit ? field.value : "Tự động sinh nếu để trống"}
                     />
                   </FormControl>
                   <FormMessage />

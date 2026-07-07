@@ -32,7 +32,13 @@ function toRegionOptions(apiRegions: FarmRegionResponse[]) {
   }));
 }
 
-export const ZoneGeneralInfoStep = () => {
+interface ZoneGeneralInfoStepProps {
+  showEnterprise?: boolean;
+}
+
+export const ZoneGeneralInfoStep = ({
+  showEnterprise = false,
+}: ZoneGeneralInfoStepProps = {}) => {
   const {
     control,
     watch,
@@ -96,53 +102,34 @@ export const ZoneGeneralInfoStep = () => {
               )}
             />
 
-            {/* Code */}
-            <Controller
-              control={control}
-              name="code"
-              render={({ field }) => (
-                <div className="space-y-1.5">
-                  <Label htmlFor="zone-code" className="text-sm font-medium">
-                    Mã vùng canh tác
-                  </Label>
-                  <Input
-                    id="zone-code"
-                    placeholder="Tự động sinh nếu bỏ trống"
-                    {...field}
-                    value={field.value ?? ""}
-                    className="h-10 border-slate-300 focus:border-primary focus:ring-primary/20 font-mono text-sm"
-                  />
-                </div>
-              )}
-            />
-
-            {/* Owner Organization */}
-            <Controller
-              control={control}
-              name="enterpriseId"
-              render={({ field }) => (
-                <div className="space-y-1.5">
-                  <Label className="text-sm font-medium">
-                    Đơn vị sở hữu <span className="text-red-500">*</span>
-                  </Label>
-                  <OrganizationSelector
-                    disabled={false}
-                    selectedId={field.value ?? ""}
-                    onSelect={(id) => {
-                      if (id !== field.value) {
-                        field.onChange(id);
-                        setValue("selections", [], { shouldValidate: true });
-                      }
-                    }}
-                  />
-                  {errors.enterpriseId && (
-                    <p className="text-xs font-medium text-red-500 mt-1">
-                      {errors.enterpriseId.message}
-                    </p>
-                  )}
-                </div>
-              )}
-            />
+            {showEnterprise && (
+              <Controller
+                control={control}
+                name="enterpriseId"
+                render={({ field }) => (
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">
+                      Đơn vị sở hữu <span className="text-red-500">*</span>
+                    </Label>
+                    <OrganizationSelector
+                      disabled={false}
+                      selectedId={field.value ?? ""}
+                      onSelect={(id) => {
+                        if (id !== field.value) {
+                          field.onChange(id);
+                          setValue("selections", [], { shouldValidate: true });
+                        }
+                      }}
+                    />
+                    {errors.enterpriseId && (
+                      <p className="text-xs font-medium text-red-500 mt-1">
+                        {errors.enterpriseId.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+              />
+            )}
 
             {/* Geographical scope */}
             <div className="space-y-4 pt-2">
@@ -162,6 +149,7 @@ export const ZoneGeneralInfoStep = () => {
 
               <GeographicalSelector
                 regions={regionOptions}
+                showEnterprise={showEnterprise}
                 enterpriseId={enterpriseId}
                 existingSelections={geoSelections}
                 onConfirm={handleConfirmSelections}
@@ -230,45 +218,14 @@ export const ZoneGeneralInfoStep = () => {
           </div>
         </div>
 
-        {/* Right column — certificates & personnel */}
+        {/* Right column — personnel */}
         <div className="space-y-5">
           <div className="flex items-center gap-2 pb-2 border-b">
             <Award className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-slate-800">
-              Chứng nhận tiêu chuẩn
-            </h3>
+            <h3 className="font-semibold text-slate-800">Nhân sự phụ trách</h3>
           </div>
 
           <div className="space-y-6">
-            {/* Certificate selector */}
-            <Controller
-              control={control}
-              name="certificateIds"
-              render={({ field }) => {
-                const certIds = (field.value ?? []).map(String);
-                return (
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">
-                      Giấy chứng nhận / Tiêu chuẩn
-                    </Label>
-                    <CertificateSelector
-                      selectedIds={certIds}
-                      onToggle={(id) => {
-                        const numId = parseInt(id, 10);
-                        if (isNaN(numId)) return;
-                        const current = field.value ?? [];
-                        field.onChange(
-                          current.includes(numId)
-                            ? current.filter((v) => v !== numId)
-                            : [...current, numId],
-                        );
-                      }}
-                    />
-                  </div>
-                );
-              }}
-            />
-
             {/* Manager selector */}
             <Controller
               control={control}

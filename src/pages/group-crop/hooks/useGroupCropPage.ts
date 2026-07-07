@@ -5,14 +5,13 @@ import { useCatalog, useCatalogMutations } from "../../../features/foundation";
 import type { CatalogRecordResponse } from "../../../features/foundation";
 
 export interface GroupCropFormData {
-  code: string;
+  code?: string;
   name: string;
   biological: string;
   description: string;
 }
 
 const emptyFormData: GroupCropFormData = {
-  code: "",
   name: "",
   biological: "",
   description: "",
@@ -99,7 +98,7 @@ export function useGroupCropPage() {
   const handleEdit = (item: CatalogRecordResponse) => {
     setEditItem(item);
     setFormData({
-      code: item.code ?? "",
+      code: item.code,
       name: item.name ?? "",
       biological: getBiological(item),
       description: item.description ?? "",
@@ -114,8 +113,7 @@ export function useGroupCropPage() {
 
   const handleSubmit = (data: GroupCropFormData) => {
     // biological được lưu vào metadataJson.biological vì API catalog không có field riêng
-    const payload = {
-      code: data.code || undefined,
+    const payload: any = {
       name: data.name || undefined,
       description: data.description || undefined,
       status: "active" as const,
@@ -123,6 +121,10 @@ export function useGroupCropPage() {
         ? { biological: data.biological }
         : undefined,
     };
+
+    if (data.code) {
+      payload.code = data.code;
+    }
 
     if (editItem) {
       updateCatalog.mutate(

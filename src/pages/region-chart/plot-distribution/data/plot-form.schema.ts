@@ -6,16 +6,14 @@ const coordinateSchema = z.object({
 });
 
 export const plotFormSchema = z.object({
-  enterpriseId: z.number({
-    error: "Vui lòng chọn đơn vị sở hữu",
-  }),
+  enterpriseId: z.number().optional(),
   regionId: z.number({
     error: "Vui lòng chọn vùng trồng",
   }),
   areaId: z.number({
     error: "Vui lòng chọn khu vực",
   }),
-  code: z.string().min(1, "Vui lòng nhập mã lô"),
+  code: z.string().optional(),
   name: z.string().min(1, "Vui lòng nhập tên lô"),
   acreage: z.number({
     error: "Vui lòng nhập diện tích hợp lệ",

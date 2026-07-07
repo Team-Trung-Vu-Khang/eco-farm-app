@@ -17,10 +17,10 @@ export function useLandPage() {
     useCatalogMutations("soil-types");
   const { uploadStorageFile, isPending: isUploading } = useUploadStorageFile();
 
-  const data: Land[] = useMemo(() => {
+  const data: (Omit<Land, "code"> & { code?: string })[] = useMemo(() => {
     return items.map((item) => ({
       id: item.id,
-      code: item.code || "",
+      code: item.code || undefined,
       name: item.name || "",
       description: item.description || "",
       imageUrl: item.imageUrl || "",
@@ -79,8 +79,7 @@ export function useLandPage() {
         finalImageUrl = uploadRes.fileUrl;
       }
 
-      const payload = {
-        code: values.code || "",
+      const payload: any = {
         name: values.name || "",
         imageUrl: finalImageUrl,
         description: values.description || "",
@@ -88,12 +87,16 @@ export function useLandPage() {
       };
 
       if (editItem) {
+        payload.code = values.code;
         await updateCatalog.mutateAsync({ id: editItem.id, data: payload });
         toast({
           title: "Thành công",
           description: "Đã cập nhật thông tin loại đất",
         });
       } else {
+        if (values.code) {
+          payload.code = values.code;
+        }
         await createCatalog.mutateAsync(payload);
         toast({ title: "Thành công", description: "Đã thêm loại đất mới" });
       }

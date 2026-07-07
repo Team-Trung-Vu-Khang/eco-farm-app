@@ -43,15 +43,11 @@ const PlotCreatePage = () => {
       title: "Thông tin chung",
       description: "Chọn vị trí và nhập thông tin cơ bản",
       isValid:
-        !formState.errors.code &&
         !formState.errors.name &&
-        !formState.errors.enterpriseId &&
         !formState.errors.regionId &&
         !formState.errors.areaId &&
         !formState.errors.acreage &&
-        !!watch("code") &&
         !!watch("name") &&
-        !!watch("enterpriseId") &&
         !!watch("regionId") &&
         !!watch("areaId") &&
         !!watch("acreage"),

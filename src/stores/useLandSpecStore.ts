@@ -3,7 +3,7 @@ import { devtools, persist } from "zustand/middleware";
 
 export interface LandSpec {
   id: number;
-  code: string;
+  code?: string;
   name: string;
   description: string;
   status: "active" | "inactive";

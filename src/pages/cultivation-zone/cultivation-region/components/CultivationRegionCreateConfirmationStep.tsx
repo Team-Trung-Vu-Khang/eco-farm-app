@@ -116,26 +116,6 @@ export const CultivationRegionCreateConfirmationStep = ({
                     </td>
                   </tr>
                 )}
-                {selectedCerts.length > 0 && (
-                  <tr>
-                    <td className="py-3 px-4 text-muted-foreground">
-                      Chứng nhận
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex flex-wrap gap-2">
-                        {selectedCerts.map((cert) => (
-                          <div
-                            key={cert.code}
-                            className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-orange-50 text-orange-700 text-xs font-medium"
-                          >
-                            <Award className="w-3 h-3" />
-                            {cert.name}
-                          </div>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>

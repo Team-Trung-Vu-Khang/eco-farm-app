@@ -70,7 +70,7 @@ export function useCropFoundationEditForm() {
       const specs = existingData.technicalSpecs || {};
 
       return {
-        code: existingData.code || "",
+        code: existingData.code || undefined,
         name: existingData.name || "",
         cropGroupId: String(existingData.cropGroupId),
         cropFoundationType: "",

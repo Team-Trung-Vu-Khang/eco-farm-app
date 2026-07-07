@@ -3,7 +3,7 @@ import { devtools, persist } from "zustand/middleware";
 
 export interface Land {
   id: number;
-  code: string;
+  code?: string;
   name: string;
   imageUrl?: string;
   description: string;
@@ -37,7 +37,8 @@ const initialLands: Land[] = [
     id: 3,
     code: "mun",
     name: "Đất mùn",
-    imageUrl: "https://sfarm.vn/wp-content/uploads/2021/01/mun-huu-co-la-gi.jpg",
+    imageUrl:
+      "https://sfarm.vn/wp-content/uploads/2021/01/mun-huu-co-la-gi.jpg",
     description:
       "Rất giàu chất hữu cơ, kết cấu tơi xốp, thường hình thành ở các vùng đồi núi cao có điều kiện khí hậu mát mẻ.",
     status: "active",
@@ -58,7 +59,8 @@ const initialLands: Land[] = [
     id: 5,
     code: "phen",
     name: "Đất phèn",
-    imageUrl: "https://tanhuyhoang.net/wp-content/uploads/2021/10/Picture44.jpg",
+    imageUrl:
+      "https://tanhuyhoang.net/wp-content/uploads/2021/10/Picture44.jpg",
     description:
       "Có độ chua (pH) cao, chứa nhiều hợp chất phèn độc hại cho rễ cây, cần được cải tạo kỹ lưỡng bằng phương pháp thau chua rửa phèn hoặc bón vôi.",
     status: "active",

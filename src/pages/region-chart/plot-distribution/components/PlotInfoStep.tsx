@@ -22,7 +22,13 @@ import { useAreaById } from "@/features/farm/hooks/useAreas";
 import { OrganizationSelector } from "@/pages/cultivation-zone/cultivation-region/components";
 import { PlotLocationSelector } from "./PlotLocationSelector";
 
-export function PlotInfoStep() {
+interface PlotInfoStepProps {
+  showEnterprise?: boolean;
+}
+
+export function PlotInfoStep({
+  showEnterprise = false,
+}: PlotInfoStepProps = {}) {
   const { control, watch, setValue } = useFormContext<PlotFormValues>();
   const enterpriseId = watch("enterpriseId");
   const regionId = watch("regionId");
@@ -69,41 +75,43 @@ export function PlotInfoStep() {
         <CardTitle>Thông tin lô</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* EnterpriseSelector */}
-          <FormField
-            control={control}
-            name="enterpriseId"
-            render={({ field }) => (
-              <FormItem className="space-y-2 flex-1">
-                <FormLabel className="text-sm font-bold text-slate-700">
-                  Đơn vị sở hữu <span className="text-red-500">*</span>
-                </FormLabel>
-                <FormControl>
-                  <OrganizationSelector
-                    selectedId={field.value?.toString() ?? ""}
-                    onSelect={(val) => {
-                      field.onChange(val ? Number(val) : undefined);
-                      setValue("regionId", undefined as any);
-                      setValue("areaId", undefined as any);
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+          {/* Cột 1: Vùng trồng & Khu vực (và Đơn vị sở hữu nếu có) */}
+          <div className="space-y-4">
+            {showEnterprise && (
+              <FormField
+                control={control}
+                name="enterpriseId"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-sm font-bold text-slate-700">
+                      Đơn vị sở hữu <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <OrganizationSelector
+                        selectedId={field.value?.toString() ?? ""}
+                        onSelect={(val) => {
+                          field.onChange(val ? Number(val) : undefined);
+                          setValue("regionId", undefined as any);
+                          setValue("areaId", undefined as any);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
-          />
 
-          <div className="space-y-3 flex-1">
-            {/* Location tree dialog */}
             <div className="space-y-2">
               <Label className="text-sm font-bold text-slate-700">
                 Vùng trồng &amp; Khu vực <span className="text-red-500">*</span>
               </Label>
               <PlotLocationSelector
                 regions={regions}
-                enterpriseId={enterpriseId}
+                showEnterprise={showEnterprise}
                 selectedRegionId={regionId}
+                enterpriseId={enterpriseId ?? null}
                 selectedAreaId={areaId ? String(areaId) : null}
                 selectedAreaName={selectedArea?.name}
                 onSelect={(selectedRegId, selectedArId) => {
@@ -217,70 +225,59 @@ export function PlotInfoStep() {
               </div>
             )}
           </div>
+
+          {/* Cột 2: Tên lô và Diện tích */}
+          <div className="space-y-4">
+            <FormField
+              control={control}
+              name="name"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="text-sm font-bold text-slate-700">
+                    Tên lô <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Ví dụ: Lô Sầu Riêng 1" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={control}
+              name="acreage"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="text-sm font-bold text-slate-700">
+                    Diện tích (ha) <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      onChange={(e) =>
+                        field.onChange(parseFloat(e.target.value) || 0)
+                      }
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={control}
-            name="code"
-            render={({ field }) => (
-              <FormItem className="space-y-2">
-                <FormLabel>
-                  Mã lô <span className="text-red-500">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Ví dụ: LO-001" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name="name"
-            render={({ field }) => (
-              <FormItem className="space-y-2">
-                <FormLabel>
-                  Tên lô <span className="text-red-500">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Ví dụ: Lô Sầu Riêng 1" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FormField
-            control={control}
-            name="acreage"
-            render={({ field }) => (
-              <FormItem className="space-y-2">
-                <FormLabel>
-                  Diện tích (ha) <span className="text-red-500">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    onChange={(e) =>
-                      field.onChange(parseFloat(e.target.value) || 0)
-                    }
-                    value={field.value || ""}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={control}
             name="contourInterval"
             render={({ field }) => (
               <FormItem className="space-y-2">
-                <FormLabel>Đường bình độ</FormLabel>
+                <FormLabel className="text-sm font-bold text-slate-700">
+                  Đường bình độ
+                </FormLabel>
                 <FormControl>
                   <Input {...field} placeholder="100m" />
                 </FormControl>
@@ -288,12 +285,15 @@ export function PlotInfoStep() {
               </FormItem>
             )}
           />
+
           <FormField
             control={control}
             name="elevation"
             render={({ field }) => (
               <FormItem className="space-y-2">
-                <FormLabel>Độ cao (m)</FormLabel>
+                <FormLabel className="text-sm font-bold text-slate-700">
+                  Độ cao (m)
+                </FormLabel>
                 <FormControl>
                   <Input
                     type="number"

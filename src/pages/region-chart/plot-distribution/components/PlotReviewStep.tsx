@@ -16,7 +16,11 @@ import { useRegions } from "@/features/farm/hooks/useRegions";
 import { useAreaById } from "@/features/farm/hooks/useAreas";
 import useEnterpriseStore from "@/stores/useEnterpriseStore";
 
-export const PlotReviewStep = () => {
+interface PlotReviewStepProps {
+  showEnterprise?: boolean;
+}
+
+export const PlotReviewStep = ({ showEnterprise = false }: PlotReviewStepProps = {}) => {
   const { watch } = useFormContext<PlotFormValues>();
   const enterpriseId = watch("enterpriseId");
   const regionId = watch("regionId");
@@ -74,14 +78,16 @@ export const PlotReviewStep = () => {
         </CardHeader>
         <CardContent className="px-5 py-5">
           <div className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3">
-            <div className="space-y-0.5">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Đơn vị sở hữu
-              </p>
-              <p className="text-sm font-semibold text-slate-700">
-                {selectedEnterpriseName}
-              </p>
-            </div>
+            {showEnterprise && (
+              <div className="space-y-0.5">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Đơn vị sở hữu
+                </p>
+                <p className="text-sm font-semibold text-slate-700">
+                  {selectedEnterpriseName}
+                </p>
+              </div>
+            )}
             <div className="space-y-0.5">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Vùng trồng
@@ -125,12 +131,7 @@ export const PlotReviewStep = () => {
         </CardHeader>
         <CardContent className="px-5 py-5">
           <div className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3">
-            <div className="space-y-0.5">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Mã lô
-              </p>
-              <p className="text-sm font-bold text-slate-700">{code || "—"}</p>
-            </div>
+
             <div className="space-y-0.5">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Tên lô

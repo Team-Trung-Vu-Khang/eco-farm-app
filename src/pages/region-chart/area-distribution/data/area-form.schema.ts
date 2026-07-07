@@ -19,11 +19,12 @@ export const plotSchema = z.object({
 });
 
 export const areaInfoSchema = z.object({
-  enterpriseId: z.string().min(1, "Vui lòng chọn đơn vị sở hữu"),
+  // enterpriseId: z.string().min(1, "Vui lòng chọn đơn vị sở hữu"),
+  enterpriseId: z.string().optional(),
   regionId: z.number({
     error: "Vui lòng chọn vùng trồng",
   }),
-  code: z.string().min(1, "Vui lòng nhập mã khu vực"),
+  code: z.string().optional(),
   name: z.string().min(1, "Vui lòng nhập tên khu vực"),
   acreage: z.number().min(0).optional(),
   soilType: z.string().optional(),

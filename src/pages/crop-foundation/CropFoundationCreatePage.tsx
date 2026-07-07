@@ -90,7 +90,6 @@ export default function CropFoundationCreatePage() {
     resolver: zodResolver(cropFoundationSchema),
     mode: "onChange",
     defaultValues: {
-      code: "TREE-" + Math.floor(1000 + Math.random() * 9000),
       name: "",
       cropGroupId: "",
       cropFoundationType: "",

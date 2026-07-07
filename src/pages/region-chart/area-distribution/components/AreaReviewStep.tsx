@@ -12,7 +12,11 @@ import { useCatalog } from "@/features/foundation/hooks/useCatalog";
 import { useOrganizationById } from "@/features/organization/hooks/useOrganizationById";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 
-export function AreaReviewStep() {
+interface AreaReviewStepProps {
+  showEnterprise?: boolean;
+}
+
+export function AreaReviewStep({ showEnterprise = false }: AreaReviewStepProps = {}) {
   const { watch } = useFormContext<AreaFormValues>();
   const formData = watch();
 
@@ -55,21 +59,19 @@ export function AreaReviewStep() {
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <p className="text-muted-foreground mb-1">Mã khu vực</p>
-            <p className="font-medium">{formData.code || "—"}</p>
-          </div>
-          <div>
             <p className="text-muted-foreground mb-1">Tên khu vực</p>
             <p className="font-medium">{formData.name || "—"}</p>
           </div>
-          <div>
-            <p className="text-muted-foreground mb-1">Đơn vị sở hữu</p>
-            <p className="font-medium">
-              {isLoadingSelected
-                ? "Đang tải..."
-                : selectedOrganization?.name || formData.enterpriseId || "—"}
-            </p>
-          </div>
+          {showEnterprise && (
+            <div>
+              <p className="text-muted-foreground mb-1">Đơn vị sở hữu</p>
+              <p className="font-medium">
+                {isLoadingSelected
+                  ? "Đang tải..."
+                  : selectedOrganization?.name || formData.enterpriseId || "—"}
+              </p>
+            </div>
+          )}
           <div>
             <p className="text-muted-foreground mb-1">Thuộc vùng</p>
             <p className="font-medium">{region?.name || "—"}</p>
@@ -140,9 +142,6 @@ export function AreaReviewStep() {
                       <p className="font-semibold text-sm text-slate-800">
                         {plot.name}
                       </p>
-                      <span className="text-[10px] font-mono text-slate-400">
-                        ({plot.code})
-                      </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       Diện tích: {plot.acreage ? `${plot.acreage} ha` : "—"}

@@ -16,7 +16,7 @@ export function useTerrainPage() {
   const terrains: Terrain[] = useMemo(() => {
     return items.map((item) => ({
       id: item.id,
-      code: item.code || "",
+      code: item.code || undefined,
       name: item.name || "",
       description: item.description || "",
       status: (item.status as any) || "active",
@@ -58,22 +58,24 @@ export function useTerrainPage() {
   };
 
   const handleSubmit = async (values: TerrainFormData) => {
-
     try {
-      const payload = {
-        code: values.code,
+      const payload: any = {
         name: values.name,
         description: values.description || "",
         status: "active" as const,
       };
 
       if (editItem) {
+        payload.code = values.code;
         await updateCatalog.mutateAsync({ id: editItem.id, data: payload });
         toast({
           title: "Thành công",
           description: "Đã cập nhật thông tin địa hình",
         });
       } else {
+        if (values.code) {
+          payload.code = values.code;
+        }
         await createCatalog.mutateAsync(payload);
         toast({ title: "Thành công", description: "Đã thêm địa hình mới" });
       }

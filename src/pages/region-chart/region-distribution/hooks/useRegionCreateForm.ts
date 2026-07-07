@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
-import { useLocation, useRoute } from "wouter";
-import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { RegionFormValues } from "../data/region-form.schema";
 import { useRegionMutations } from "@/features/farm/hooks/useRegionMutations";
-import { useRegionById, useRegions } from "@/features/farm/hooks/useRegions";
+import { useRegionById } from "@/features/farm/hooks/useRegions";
 import type { FarmRegionRequest } from "@/features/farm/types/farm.type";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useEffect, useState } from "react";
+import { useLocation, useRoute } from "wouter";
+import type { RegionFormValues } from "../data/region-form.schema";
 
 export function useRegionCreateForm(
   reset: (values: Partial<RegionFormValues>) => void,
@@ -22,22 +22,7 @@ export function useRegionCreateForm(
     enabled: isEditMode && regionId > 0,
   });
 
-  const { items: regions, loading: regionsLoading } = useRegions({
-    params: { size: 100 },
-  });
-
   const { createRegion, updateRegion } = useRegionMutations();
-
-  const generateNextRegionCode = useCallback(() => {
-    const maxCodeNumber = regions.reduce((max, region) => {
-      const match = /^REG-(\d+)$/i.exec(region.code || "");
-      if (!match) return max;
-      const current = Number(match[1]);
-      return Number.isNaN(current) ? max : Math.max(max, current);
-    }, 0);
-
-    return `REG-${String(maxCodeNumber + 1).padStart(3, "0")}`;
-  }, [regions]);
 
   useEffect(() => {
     if (hasInitialized) return;
@@ -74,7 +59,7 @@ export function useRegionCreateForm(
           // @ts-ignore
           subAreas: (regionDataResponse.areas || []).map((area) => ({
             id: area.id?.toString(),
-            code: area.code || "",
+            code: area.code,
             name: area.name || "",
             area: area.acreage || 0,
             landType: area.soilType?.id?.toString() || "",
@@ -89,39 +74,29 @@ export function useRegionCreateForm(
         setHasInitialized(true);
       }
     } else {
-      if (!regionsLoading) {
-        reset({
-          code: generateNextRegionCode(),
-          name: "",
-          enterpriseId: "",
-          area: undefined,
-          provinceId: "",
-          wardId: "",
-          address: "",
-          cropId: "",
-          landType: "",
-          terrain: "",
-          note: "",
-          coordinates: [
-            { lat: 11.53, lng: 106.88 },
-            { lat: 11.55, lng: 106.88 },
-            { lat: 11.55, lng: 106.91 },
-            { lat: 11.53, lng: 106.91 },
-          ],
-          subAreas: [],
-          status: "active",
-        });
-        setHasInitialized(true);
-      }
+      reset({
+        name: "",
+        enterpriseId: "",
+        area: undefined,
+        provinceId: "",
+        wardId: "",
+        address: "",
+        cropId: "",
+        landType: "",
+        terrain: "",
+        note: "",
+        coordinates: [
+          { lat: 11.53, lng: 106.88 },
+          { lat: 11.55, lng: 106.88 },
+          { lat: 11.55, lng: 106.91 },
+          { lat: 11.53, lng: 106.91 },
+        ],
+        subAreas: [],
+        status: "active",
+      });
+      setHasInitialized(true);
     }
-  }, [
-    isEditMode,
-    regionDataResponse,
-    generateNextRegionCode,
-    reset,
-    hasInitialized,
-    regionsLoading,
-  ]);
+  }, [isEditMode, regionDataResponse, reset, hasInitialized]);
 
   const handleComplete = async (data: RegionFormValues) => {
     setIsSubmitting(true);

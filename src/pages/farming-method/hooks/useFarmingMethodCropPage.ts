@@ -3,6 +3,7 @@ import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useCatalog } from "../../../features/foundation/hooks/useCatalog";
 import { useFarmingMethodCrops } from "../../../features/foundation/hooks/useFarmingMethodCrops";
 import { useFarmingMethodCropMutations } from "../../../features/foundation/hooks/useFarmingMethodCropMutations";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   apiToRow,
   createEmptyForm,
@@ -16,6 +17,7 @@ import type {
 } from "../types/types";
 
 export function useFarmingMethodCropPage() {
+  const { toast } = useToast();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
   const [pageSize, setPageSize] = useState(10);
@@ -127,8 +129,7 @@ export function useFarmingMethodCropPage() {
 
   const handleSubmit = async () => {
     try {
-      const payload = {
-        code: formData.code,
+      const payload: any = {
         farmingMethodId: Number(formData.farmingMethodId),
         description: formData.description,
         status: formData.status,
@@ -141,19 +142,36 @@ export function useFarmingMethodCropPage() {
       };
 
       if (editingItem) {
+        payload.code = formData.code;
         await updateFarmingMethodCrop.mutateAsync({
           id: editingItem.id,
           data: payload,
         });
+        toast({
+          title: "Thành công",
+          description: "Đã cập nhật phương thức canh tác theo cây trồng",
+        });
       } else {
+        if (formData.code) {
+          payload.code = formData.code;
+        }
         await createFarmingMethodCrop.mutateAsync(payload);
+        toast({
+          title: "Thành công",
+          description: "Đã thêm phương thức canh tác theo cây trồng mới",
+        });
       }
 
       setFormOpen(false);
       setEditingItem(null);
       setFormData(createEmptyForm());
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: e.message || "Đã xảy ra lỗi khi thực hiện thao tác",
+      });
     }
   };
 

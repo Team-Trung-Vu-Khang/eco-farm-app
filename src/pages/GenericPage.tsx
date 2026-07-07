@@ -19,7 +19,7 @@ import { useDialogBugWorkaround } from "../shared/hooks/useDialogBugWorkaround";
 
 interface GenericItem {
   id: number;
-  code: string;
+  code?: string;
   name: string;
   image?: string;
   status: "active" | "inactive";
@@ -43,6 +43,7 @@ interface GenericPageFieldConfig {
 
 interface GenericPageProps {
   title: string;
+  showCode?: boolean;
   description: string;
   entityName: string;
   initialData: GenericItem[];
@@ -71,6 +72,7 @@ export function GenericPage({
   title,
   columns,
   description,
+  showCode,
   entityName,
   initialData,
   enableImage = false,
@@ -101,7 +103,7 @@ export function GenericPage({
   const [editItem, setEditItem] = useState<GenericItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<GenericItem | null>(null);
   const [formData, setFormData] = useState<Partial<GenericItem>>({
-    code: "",
+    code: showCode !== false ? "" : undefined,
     name: "",
     image: "",
     description: "",
@@ -145,7 +147,12 @@ export function GenericPage({
 
   const handleAdd = () => {
     setEditItem(null);
-    setFormData({ code: "", name: "", image: "", description: "" });
+    setFormData({
+      code: showCode !== false ? "" : undefined,
+      name: "",
+      image: "",
+      description: "",
+    });
     setFormOpen(true);
   };
 
@@ -168,7 +175,11 @@ export function GenericPage({
   const handleSubmit = async () => {
     // Validate required fields
     const requiredFields: Array<keyof typeof formData> = [];
-    if (fieldConfig.code?.required && !formData.code?.trim())
+    if (
+      showCode !== false &&
+      fieldConfig.code?.required &&
+      !formData.code?.trim()
+    )
       requiredFields.push("code");
     if (fieldConfig.name?.required !== false && !formData.name?.trim())
       requiredFields.push("name");
@@ -186,7 +197,11 @@ export function GenericPage({
 
     try {
       if (onSubmit) {
-        await onSubmit(formData, editItem?.id || null);
+        const submittedData = { ...formData };
+        if (!editItem && !submittedData.code?.trim()) {
+          delete submittedData.code;
+        }
+        await onSubmit(submittedData, editItem?.id || null);
         setFormOpen(false);
         return;
       }
@@ -204,7 +219,7 @@ export function GenericPage({
       } else {
         const newItem: GenericItem = {
           id: Date.now(),
-          code: formData.code || "",
+          code: formData.code?.trim() || undefined,
           name: formData.name || "",
           description: formData.description || "",
           image: formData.image,
@@ -287,7 +302,7 @@ export function GenericPage({
         loading={formDialogLoading}
       >
         <div className="w-full space-y-4">
-          {!fieldConfig.code?.hidden && (
+          {showCode !== false && !fieldConfig.code?.hidden && (
             <div className="space-y-2">
               <Label htmlFor="code">
                 {fieldConfig.code?.label ?? "Mã"}
@@ -297,11 +312,13 @@ export function GenericPage({
               </Label>
               <Input
                 id="code"
-                value={formData.code}
+                value={formData.code || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, code: e.target.value })
                 }
-                placeholder={fieldConfig.code?.placeholder ?? "Nhập mã"}
+                placeholder={editItem ? formData.code : (fieldConfig.code?.placeholder ?? "Tự động sinh nếu để trống")}
+                disabled={!!editItem}
+                clearable={!editItem}
                 data-testid="input-code"
               />
             </div>

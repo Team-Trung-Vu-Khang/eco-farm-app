@@ -1,7 +1,7 @@
 import { Badge } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 
 interface RegionChartStatusBadgeProps {
-  status: "active" | "inactive";
+  status: "active" | "inactive" | "archived" | (string & {});
   activeLabel?: string;
   inactiveLabel?: string;
   subtle?: boolean;

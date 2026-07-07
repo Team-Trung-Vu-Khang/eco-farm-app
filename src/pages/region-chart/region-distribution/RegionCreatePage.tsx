@@ -41,12 +41,8 @@ const RegionCreatePage = () => {
     {
       id: "info",
       title: "Thông tin chung",
-      description: "Mã, tên, địa chỉ vùng",
-      isValid:
-        !formState.errors.code &&
-        !formState.errors.name &&
-        !!watch("code") &&
-        !!watch("name"),
+      description: "Tên, địa chỉ vùng",
+      isValid: !formState.errors.name && !!watch("name"),
       content: <RegionInfoStep />,
     },
     {

@@ -17,7 +17,11 @@ import { useFormContext } from "react-hook-form";
 import { useMemo } from "react";
 import { getBoundsFromPoints } from "../utils";
 
-export const RegionReviewStep = () => {
+interface RegionReviewStepProps {
+  showEnterprise?: boolean;
+}
+
+export const RegionReviewStep = ({ showEnterprise = false }: RegionReviewStepProps = {}) => {
   const { watch } = useFormContext<RegionFormValues>();
   const formData = watch();
 
@@ -75,27 +79,20 @@ export const RegionReviewStep = () => {
         </CardHeader>
         <CardContent className="px-5 py-5">
           <div className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3">
-            <div className="space-y-0.5">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Đơn vị sở hữu
-              </p>
-              <p className="text-sm font-semibold text-slate-700">
-                {selectedOrganization?.name || (
-                  <span className="italic text-slate-300">Chưa chọn</span>
-                )}
-              </p>
-            </div>
+            {showEnterprise && (
+              <div className="space-y-0.5">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Đơn vị sở hữu
+                </p>
+                <p className="text-sm font-semibold text-slate-700">
+                  {selectedOrganization?.name || (
+                    <span className="italic text-slate-300">Chưa chọn</span>
+                  )}
+                </p>
+              </div>
+            )}
 
-            <div className="space-y-0.5">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Mã vùng
-              </p>
-              <p className="font-mono text-sm font-semibold text-slate-700">
-                {formData.code || (
-                  <span className="italic text-slate-300">Chưa nhập</span>
-                )}
-              </p>
-            </div>
+
 
             <div className="space-y-0.5">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">

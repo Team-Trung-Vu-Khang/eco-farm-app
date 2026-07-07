@@ -165,7 +165,7 @@ export function VarietyFoundationClassificationStep({
               render={({ field }) => (
                 <FormItem className="space-y-2">
                   <FormLabel className="text-sm font-semibold text-slate-700">
-                    Mã <span className="text-red-500">*</span>
+                    Mã giống cây
                   </FormLabel>
                   <div className="relative group">
                     <Barcode className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-green-600 transition-colors" />
@@ -174,7 +174,7 @@ export function VarietyFoundationClassificationStep({
                         {...field}
                         disabled={isEdit}
                         clearable={!isEdit}
-                        placeholder="VD: VAR-SR6"
+                        placeholder={isEdit ? field.value : "Tự động sinh nếu để trống"}
                         className="pl-10 border-slate-200 focus:border-green-500 focus:ring-green-500/20"
                       />
                     </FormControl>

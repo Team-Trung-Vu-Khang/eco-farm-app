@@ -63,11 +63,9 @@ const AreaCreatePage = () => {
       title: "Thông tin chung",
       description: "Chọn vùng và thông tin cơ bản",
       isValid:
-        !formState.errors.code &&
         !formState.errors.name &&
         !formState.errors.regionId &&
         !formState.errors.acreage &&
-        !!watch("code") &&
         !!watch("name") &&
         !!watch("regionId"),
       content: <AreaInfoStep />,

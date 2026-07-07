@@ -86,7 +86,6 @@ export function useCultivationZoneCreateForm(
       setHasInitialized(true);
     } else {
       reset({
-        code: `CZ-${Date.now()}`,
         name: "",
         selections: [],
         farmingMethodId: 0,
@@ -107,7 +106,7 @@ export function useCultivationZoneCreateForm(
     setIsSubmitting(true);
     try {
       const request: FarmCultivationZoneRequest = {
-        code: data.code || undefined,
+        code: isEditMode ? data.code : undefined,
         name: data.name,
         scopes: (data.selections ?? [])
           .map((s) => {

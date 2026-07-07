@@ -70,6 +70,7 @@ interface RegionSelectorProps {
   enterpriseId: number | null;
   onSelect: (id: string) => void;
   selectedId?: string;
+  showEnterprise?: boolean;
 }
 
 export function AreaRegionSelector({
@@ -77,6 +78,7 @@ export function AreaRegionSelector({
   enterpriseId,
   onSelect,
   selectedId,
+  showEnterprise = false,
 }: RegionSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -85,19 +87,20 @@ export function AreaRegionSelector({
     () =>
       regions.filter(
         (region) =>
-          (!enterpriseId ||
+          (!showEnterprise ||
+            !enterpriseId ||
             String(region.metadataJson?.enterpriseId) ===
               String(enterpriseId)) &&
           (region.name || "").toLowerCase().includes(searchTerm.toLowerCase()),
       ),
-    [enterpriseId, regions, searchTerm],
+    [enterpriseId, showEnterprise, regions, searchTerm],
   );
 
   return (
     <>
       <Button
         onClick={() => setIsOpen(true)}
-        disabled={!enterpriseId}
+        disabled={showEnterprise && !enterpriseId}
         className="h-12 w-full cursor-pointer gap-2 rounded-lg border-2 border-dashed border-primary/20 bg-primary/5 font-bold text-primary shadow-sm transition-all hover:border-primary/40 hover:bg-primary/10 hover:shadow-md"
         variant="outline"
       >

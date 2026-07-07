@@ -24,8 +24,12 @@ export function useCreateGrowthCycleForm() {
   const handleComplete = async (values: GrowthCycleFormValues) => {
     setIsSubmitting(true);
     try {
-      const cropName = crops.find((c) => String(c.id) === values.cropId)?.name || values.cropId;
-      const varietyName = cropVarieties.find((v) => String(v.id) === values.variety)?.name || values.variety;
+      const cropName =
+        crops.find((c) => String(c.id) === values.cropId)?.name ||
+        values.cropId;
+      const varietyName =
+        cropVarieties.find((v) => String(v.id) === values.variety)?.name ||
+        values.variety;
 
       const generatedName = `Chu kỳ sinh trưởng ${cropName}${
         values.scope === "variety" && varietyName ? ` - ${varietyName}` : ""
@@ -35,7 +39,7 @@ export function useCreateGrowthCycleForm() {
       const preparedStages = await Promise.all(
         values.stages.map(async (stage, index) => {
           let documentData: any = undefined;
-          
+
           if (stage.usePdf && stage.pdfFile instanceof File) {
             const res = await uploadFile.mutateAsync({
               file: stage.pdfFile,
@@ -50,14 +54,14 @@ export function useCreateGrowthCycleForm() {
               };
             }
           } else {
-             const html = await safeConvertLexicalToHtml(stage.content) || "";
-             if (html && html !== "<p><br></p>") {
-               documentData = {
-                 type: "editor",
-                 name: "Tài liệu kỹ thuật",
-                 content: html,
-               };
-             }
+            const html = (await safeConvertLexicalToHtml(stage.content)) || "";
+            if (html && html !== "<p><br></p>") {
+              documentData = {
+                type: "editor",
+                name: "Tài liệu kỹ thuật",
+                content: html,
+              };
+            }
           }
 
           return {
@@ -67,18 +71,24 @@ export function useCreateGrowthCycleForm() {
             document: documentData,
             displayOrder: index + 1,
           };
-        })
+        }),
       );
 
       const metadataJson = { cycleType: values.cycleType };
 
       await createTemplate.mutateAsync({
-        code: `GC-${Date.now()}`,
         name: generatedName,
         cropId: Number(values.cropId),
-        cropVarietyId: values.scope === "variety" && values.variety ? Number(values.variety) : undefined,
-        cropGroupId: crops.find((c) => String(c.id) === values.cropId)?.cropGroupId || 1, // Fallback
-        expectedDays: values.stages.reduce((sum, s) => sum + parseDurationToDays(String(s.duration)), 0),
+        cropVarietyId:
+          values.scope === "variety" && values.variety
+            ? Number(values.variety)
+            : undefined,
+        cropGroupId:
+          crops.find((c) => String(c.id) === values.cropId)?.cropGroupId || 1, // Fallback
+        expectedDays: values.stages.reduce(
+          (sum, s) => sum + parseDurationToDays(String(s.duration)),
+          0,
+        ),
         description: "Chu kỳ sinh trưởng",
         stages: preparedStages,
         displayOrder: 1,
@@ -95,7 +105,10 @@ export function useCreateGrowthCycleForm() {
       toast({
         variant: "destructive",
         title: "Lỗi",
-        description: err instanceof Error ? err.message : "Đã xảy ra lỗi trong quá trình tải tệp hoặc lưu dữ liệu",
+        description:
+          err instanceof Error
+            ? err.message
+            : "Đã xảy ra lỗi trong quá trình tải tệp hoặc lưu dữ liệu",
       });
     } finally {
       setIsSubmitting(false);

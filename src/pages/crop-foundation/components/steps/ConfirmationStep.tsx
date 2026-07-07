@@ -111,7 +111,7 @@ export function ConfirmationStep() {
           </CardHeader>
           <CardContent className="p-6 space-y-4 text-sm">
             {[
-              { label: "Mã cây", value: formData.code },
+              ...(formData.code ? [{ label: "Mã cây", value: formData.code }] : []),
               { label: "Tên cây", value: formData.name },
               { label: "Nhóm", value: groupName },
               { label: "Thu hoạch", value: formData.harvestMethod },

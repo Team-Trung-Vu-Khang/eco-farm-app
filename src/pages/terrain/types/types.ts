@@ -1,5 +1,5 @@
 export interface TerrainFormData {
-  code: string;
+  code?: string;
   name: string;
   description: string;
 }

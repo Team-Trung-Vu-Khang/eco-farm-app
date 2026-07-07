@@ -30,9 +30,7 @@ export function usePlotCreateForm(
 
   const { createPlot, updatePlot } = usePlotMutations();
 
-  const generateNextPlotCode = useCallback(() => {
-    return `PLOT-${Date.now()}`;
-  }, []);
+
 
   useEffect(() => {
     if (hasInitialized) return;
@@ -43,7 +41,7 @@ export function usePlotCreateForm(
           enterpriseId: Number(areaData.metadataJson?.enterpriseId) || undefined,
           regionId: plotData.area?.region?.id,
           areaId: plotData.area?.id,
-          code: plotData.code || "",
+          code: plotData.code,
           name: plotData.name || "",
           acreage: plotData.acreage || undefined,
           contourInterval: plotData.contourInterval ? `${plotData.contourInterval}m` : "",
@@ -57,13 +55,12 @@ export function usePlotCreateForm(
       }
     } else {
       reset({
-        code: generateNextPlotCode(),
         name: "",
         coordinates: [],
       });
       setHasInitialized(true);
     }
-  }, [isEditMode, plotData, areaData, generateNextPlotCode, reset, hasInitialized]);
+  }, [isEditMode, plotData, areaData, reset, hasInitialized]);
 
   const handleComplete = async (values: PlotFormValues) => {
     setIsSubmitting(true);
