@@ -1,7 +1,10 @@
 import { useMemo } from "react";
 import { useLocation } from "wouter";
 import { useContactGroups } from "@/features/contact-group";
-import { useFarmDepartments, useFarmPositionOptions } from "@/features/master-data";
+import {
+  useFarmDepartmentOptions,
+  useFarmPositionOptions,
+} from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import { useOrganizations } from "@/features/organization";
 import { emptyContactFormData } from "../data/constants";
@@ -19,8 +22,8 @@ export function useContactCreate() {
     workspaceId ?? "missing",
     { enabled: workspaceId !== null && workspaceId !== undefined && workspaceId !== "" },
   );
-  const departmentsQuery = useFarmDepartments({
-    params: { status: "active", size: 100 },
+  const departmentsQuery = useFarmDepartmentOptions({
+    params: { size: 100 },
     workspaceId: typeof workspaceId === "number" ? workspaceId : undefined,
   });
   const positionsQuery = useFarmPositionOptions({
@@ -35,9 +38,9 @@ export function useContactCreate() {
   return {
     defaultValues: emptyContactFormData,
     enterprises,
-    groups: groupsQuery.items,
-    departments: departmentsQuery.items,
-    positions: positionsQuery.items,
+      groups: groupsQuery.items,
+      departments: departmentsQuery.items,
+      positions: positionsQuery.items,
     goBack: () => setLocation("/contact"),
     loading:
       organizationsQuery.loading ||

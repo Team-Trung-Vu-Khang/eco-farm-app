@@ -62,28 +62,36 @@ export interface FarmDepartmentRequest {
   description?: string;
   displayOrder?: number;
   status?: FarmMasterDataStatus;
-  metadataJson?: Record<string, any>;
+  metadataJson?: Record<string, any> | null;
   [key: string]: any;
 }
 
 export interface FarmDepartmentResponse {
   id: number;
+  workspaceId: number;
+  masterDataDepartmentId: number;
   code: string;
   name: string;
   description?: string;
   displayOrder?: number;
   status: FarmMasterDataStatus;
+  metadataJson?: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
   [key: string]: any;
 }
+
+export type FarmDepartmentCreateRequest = FarmDepartmentRequest;
+export type FarmDepartmentUpdateRequest = FarmDepartmentRequest;
+export type FarmDepartmentDeleteResponse = void;
 
 export interface DepartmentOptionResponse {
   id: number;
   code: string;
   name: string;
   source: "OWNER" | "MASTER";
-  status: FarmMasterDataStatus;
+  description?: string | null;
+  displayOrder?: number;
 }
 
 // ─── Farm Positions ──────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@ import { BranchEnterpriseSelector } from "@/pages/branch/components/steps/Branch
 import type { Enterprise } from "@/pages/enterprise/data/constants";
 import type { ContactGroupRecord } from "@/features/contact-group";
 import type {
-  FarmDepartmentResponse,
+  DepartmentOptionResponse,
   PositionOptionResponse,
 } from "@/features/master-data";
 import {
@@ -26,12 +26,14 @@ import type {
   ContactFormValues,
 } from "../data/contact-form.schema";
 
+const buildOptionValue = (source: string, id: number) => `${source}_${id}`;
+
 interface ContactFormProps {
   control: Control<ContactFormInput, unknown, ContactFormValues>;
   errors: FieldErrors<ContactFormInput>;
   enterprises: Enterprise[];
   groups: ContactGroupRecord[];
-  departments: FarmDepartmentResponse[];
+  departments: DepartmentOptionResponse[];
   positions: PositionOptionResponse[];
   showStatus?: boolean;
 }
@@ -144,19 +146,22 @@ export function ContactFormCard({
                 <Select
                   value={field.value ?? ""}
                   onValueChange={field.onChange}
-                >
-                  <SelectTrigger id="position">
-                    <SelectValue placeholder="Chọn chức vụ" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {positions.map((position) => (
-                      <SelectItem key={position.id} value={position.name}>
-                        {position.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+                  >
+                    <SelectTrigger id="position">
+                      <SelectValue placeholder="Chọn chức vụ" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {positions.map((position) => (
+                        <SelectItem
+                          key={position.id}
+                          value={buildOptionValue(position.source, position.id)}
+                        >
+                          {position.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
             />
           </div>
         </div>

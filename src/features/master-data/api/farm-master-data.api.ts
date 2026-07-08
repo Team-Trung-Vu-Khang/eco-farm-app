@@ -3,6 +3,7 @@ import type {
   FarmBaseQueryParams,
   FarmPageResponse,
   FarmDepartmentRequest,
+  FarmDepartmentDeleteResponse,
   FarmDepartmentResponse,
   DepartmentOptionResponse,
   FarmPositionRequest,
@@ -57,10 +58,10 @@ export const farmDepartmentApi = {
       })
       .then((r) => r.data),
 
-  delete: (id: number, workspaceId?: number) =>
+  delete: (id: number, workspaceId?: number): Promise<FarmDepartmentDeleteResponse> =>
     apiClient.delete(`${BASE}/departments/${id}`, {
       headers: getHeaders(workspaceId),
-    }),
+    }).then(() => undefined),
 
   options: (params?: { page?: number; size?: number }, workspaceId?: number) =>
     apiClient

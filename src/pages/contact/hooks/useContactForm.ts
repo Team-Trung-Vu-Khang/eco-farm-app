@@ -9,7 +9,7 @@ import {
 import { useContactGroups } from "@/features/contact-group";
 import { useOrganizations } from "@/features/organization";
 import {
-  useFarmDepartments,
+  useFarmDepartmentOptions,
   useFarmPositionOptions,
 } from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
@@ -27,6 +27,8 @@ const normalizeContactFormStatus = (
 ): ContactFormData["status"] => {
   return status === "inactive" ? "inactive" : "active";
 };
+
+const buildOptionValue = (source: string, id: number) => `${source}_${id}`;
 
 export function useContactForm({ mode }: UseContactFormOptions) {
   const [, setLocation] = useLocation();
@@ -53,8 +55,8 @@ export function useContactForm({ mode }: UseContactFormOptions) {
         workspaceId !== null && workspaceId !== undefined && workspaceId !== "",
     },
   );
-  const departmentsQuery = useFarmDepartments({
-    params: { status: "active", size: 100 },
+  const departmentsQuery = useFarmDepartmentOptions({
+    params: { size: 100 },
     workspaceId: typeof workspaceId === "number" ? workspaceId : undefined,
   });
   const positionsQuery = useFarmPositionOptions({
@@ -67,6 +69,19 @@ export function useContactForm({ mode }: UseContactFormOptions) {
   );
 
   const contact = contactQuery.item ?? undefined;
+  const positionValue = useMemo(() => {
+    if (!contact?.position) {
+      return "";
+    }
+
+    const matchedPosition = positionsQuery.items.find(
+      (item) => item.name === contact.position,
+    );
+
+    return matchedPosition
+      ? buildOptionValue(matchedPosition.source, matchedPosition.id)
+      : contact.position;
+  }, [contact?.position, positionsQuery.items]);
 
   const defaultValues = useMemo<ContactFormData>(
     () =>
@@ -75,15 +90,15 @@ export function useContactForm({ mode }: UseContactFormOptions) {
             entityName: contact.entityName ?? "",
             groupId: contact.group?.id ? contact.group.id.toString() : "",
             department: contact.department?.name ?? "",
-            position: contact.position ?? "",
+            position: positionValue,
             fullName: contact.fullName,
             phone: contact.phone,
             email: contact.email ?? "",
             note: contact.note ?? "",
             status: normalizeContactFormStatus(contact.status),
-          }
+        }
         : emptyContactFormData,
-    [contact],
+    [contact, positionValue],
   );
 
   const submitContact = async (formData: ContactFormData) => {
@@ -98,16 +113,20 @@ export function useContactForm({ mode }: UseContactFormOptions) {
     const department = departmentsQuery.items.find(
       (item) => item.name === formData.department,
     );
+    const selectedPosition = positionsQuery.items.find((item) => {
+      const optionValue = buildOptionValue(item.source, item.id);
+      return optionValue === formData.position || item.name === formData.position;
+    });
 
     const payload: ContactUpdateRequest = {
       fullName: formData.fullName.trim(),
       name: formData.fullName.trim(),
       phone: formData.phone.trim(),
       email: formData.email.trim() || null,
-      position: formData.position.trim() || null,
+      position: (selectedPosition?.name ?? formData.position.trim()) || null,
       entityName: formData.entityName.trim() || null,
       groupId: formData.groupId ? Number(formData.groupId) : null,
-      departmentType: department ? "OWNER" : null,
+      departmentType: department?.source ?? null,
       departmentId: department ? department.id : null,
       note: formData.note.trim() || null,
       status: formData.status,

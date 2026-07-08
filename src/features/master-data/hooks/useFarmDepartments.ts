@@ -1,9 +1,9 @@
-import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { farmDepartmentApi } from "../api/farm-master-data.api";
 import type {
+  DepartmentOptionResponse,
   FarmBaseQueryParams,
   FarmDepartmentResponse,
-  DepartmentOptionResponse,
   FarmPageResponse,
 } from "../types/farm-master-data.type";
 
@@ -14,7 +14,12 @@ export const farmDepartmentKeys = {
   detail: (id: number, workspaceId?: number) =>
     [...farmDepartmentKeys.all(), "detail", id, workspaceId] as const,
   options: (params?: { page?: number; size?: number }, workspaceId?: number) =>
-    [...farmDepartmentKeys.all(), "options", params ?? {}, workspaceId] as const,
+    [
+      ...farmDepartmentKeys.all(),
+      "options",
+      params ?? {},
+      workspaceId,
+    ] as const,
 };
 
 interface UseFarmDepartmentsOptions {
@@ -28,13 +33,15 @@ export function useFarmDepartments({
   workspaceId,
   enabled = true,
 }: UseFarmDepartmentsOptions = {}) {
-  const queryResult = useQuery<FarmPageResponse<FarmDepartmentResponse>, Error>({
-    queryKey: farmDepartmentKeys.list(params, workspaceId),
-    queryFn: () => farmDepartmentApi.list(params, workspaceId),
-    enabled: enabled && workspaceId !== undefined,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
+  const queryResult = useQuery<FarmPageResponse<FarmDepartmentResponse>, Error>(
+    {
+      queryKey: farmDepartmentKeys.list(params, workspaceId),
+      queryFn: () => farmDepartmentApi.list(params, workspaceId),
+      enabled: enabled && workspaceId !== undefined,
+      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    },
+  );
 
   return {
     ...queryResult,
@@ -52,7 +59,7 @@ interface UseFarmDepartmentByIdOptions {
 
 export function useFarmDepartmentById(
   id: number,
-  { workspaceId, enabled = true }: UseFarmDepartmentByIdOptions = {}
+  { workspaceId, enabled = true }: UseFarmDepartmentByIdOptions = {},
 ) {
   return useQuery<FarmDepartmentResponse, Error>({
     queryKey: farmDepartmentKeys.detail(id, workspaceId),
@@ -72,7 +79,10 @@ export function useFarmDepartmentOptions({
   workspaceId?: number;
   enabled?: boolean;
 } = {}) {
-  const queryResult = useQuery<FarmPageResponse<DepartmentOptionResponse>, Error>({
+  const queryResult = useQuery<
+    FarmPageResponse<DepartmentOptionResponse>,
+    Error
+  >({
     queryKey: farmDepartmentKeys.options(params, workspaceId),
     queryFn: () => farmDepartmentApi.options(params, workspaceId),
     enabled: enabled && workspaceId !== undefined,
@@ -84,5 +94,7 @@ export function useFarmDepartmentOptions({
     ...queryResult,
     items: queryResult.data?.content ?? [],
     response: queryResult.data ?? null,
+    loading: queryResult.isLoading,
+    error: queryResult.error?.message ?? null,
   };
 }

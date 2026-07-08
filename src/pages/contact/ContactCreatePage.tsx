@@ -27,9 +27,8 @@ export default function ContactCreatePage() {
   const { defaultValues, enterprises, groups, departments, positions, goBack } =
     useContactCreate();
   const { createContact } = useCreateContact();
-  const activeDepartments = departments.filter(
-    (department) => department.status === "active",
-  );
+
+  const buildOptionValue = (source: string, id: number) => `${source}_${id}`;
 
   const {
     control,
@@ -42,19 +41,23 @@ export default function ContactCreatePage() {
   });
 
   const handleCreateContact = async (values: ContactFormValues) => {
-    const department = activeDepartments.find(
+    const department = departments.find(
       (item) => item.name === values.department,
     );
+    const selectedPosition = positions.find((item) => {
+      const optionValue = buildOptionValue(item.source, item.id);
+      return optionValue === values.position || item.name === values.position;
+    });
 
     const payload: ContactCreateRequest = {
       fullName: values.fullName.trim(),
       name: values.fullName.trim(),
       phone: values.phone.trim(),
       email: values.email.trim() || null,
-      position: values.position.trim() || null,
+      position: (selectedPosition?.name ?? values.position.trim()) || null,
       entityName: values.entityName.trim() || null,
       groupId: values.groupId ? Number(values.groupId) : null,
-      departmentType: department ? "OWNER" : null,
+      departmentType: department?.source ?? null,
       departmentId: department ? department.id : null,
       note: values.note.trim() || null,
       status: "active",

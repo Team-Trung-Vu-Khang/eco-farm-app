@@ -2,8 +2,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { farmDepartmentApi } from "../api/farm-master-data.api";
 import { farmDepartmentKeys } from "./useFarmDepartments";
 import type {
-  FarmDepartmentRequest,
+  FarmDepartmentCreateRequest,
+  FarmDepartmentDeleteResponse,
   FarmDepartmentResponse,
+  FarmDepartmentUpdateRequest,
 } from "../types/farm-master-data.type";
 
 export function useFarmDepartmentMutations(workspaceId?: number) {
@@ -15,7 +17,7 @@ export function useFarmDepartmentMutations(workspaceId?: number) {
   const createDepartment = useMutation<
     FarmDepartmentResponse,
     Error,
-    FarmDepartmentRequest
+    FarmDepartmentCreateRequest
   >({
     mutationFn: (data) => farmDepartmentApi.create(data, workspaceId),
     onSuccess: invalidateList,
@@ -24,7 +26,7 @@ export function useFarmDepartmentMutations(workspaceId?: number) {
   const updateDepartment = useMutation<
     FarmDepartmentResponse,
     Error,
-    { id: number; data: FarmDepartmentRequest }
+    { id: number; data: FarmDepartmentUpdateRequest }
   >({
     mutationFn: ({ id, data }) => farmDepartmentApi.update(id, data, workspaceId),
     onSuccess: (_, { id }) => {
@@ -35,7 +37,7 @@ export function useFarmDepartmentMutations(workspaceId?: number) {
     },
   });
 
-  const deleteDepartment = useMutation<void, Error, number>({
+  const deleteDepartment = useMutation<FarmDepartmentDeleteResponse, Error, number>({
     mutationFn: (id) => farmDepartmentApi.delete(id, workspaceId).then(() => undefined),
     onSuccess: invalidateList,
   });
