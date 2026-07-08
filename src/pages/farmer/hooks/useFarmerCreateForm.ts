@@ -14,7 +14,6 @@ import type { FieldErrors } from "react-hook-form";
 import { useLocation, useRoute } from "wouter";
 
 import { vietQrBankData } from "@/constants/banks";
-import { useBankDirectory } from "@/features/bank-directory/hooks/useBankDirectory";
 import { useMasterData } from "@/features/master-data";
 import {
   useCreateOrganization,
@@ -30,7 +29,6 @@ import {
   type FarmerFormInput,
   type FarmerFormValues,
 } from "../data/farmer-form.schema";
-import type { BankDirectoryItem } from "@/features/bank-directory/types/bank-directory.type";
 import type {
   OrganizationBusinessLineRecord,
   OrganizationCreateRequest,
@@ -42,6 +40,15 @@ type BusinessLineRecord = {
   id: number | string;
   code: string;
   name: string;
+};
+
+type BankMasterDataRecord = {
+  id: number | string;
+  code: string;
+  name: string;
+  shortName?: string;
+  bin?: string;
+  logoUrl?: string;
 };
 
 type QrScanResult = Array<{ rawValue: string }>;
@@ -81,11 +88,11 @@ const normalizeBytes = (size?: string) => {
   return Math.round(numeric);
 };
 
-const getBankDisplayName = (bank?: BankDirectoryItem | null) =>
+const getBankDisplayName = (bank?: BankMasterDataRecord | null) =>
   bank?.shortName || bank?.name || "";
 
 const findBankDirectoryItem = (
-  bankMasterData: BankDirectoryItem[],
+  bankMasterData: BankMasterDataRecord[],
   value: string,
 ) => {
   const query = value.toLowerCase().trim();
@@ -325,13 +332,17 @@ export function useFarmerCreateForm() {
     () => businessLinesQuery.items as BusinessLineRecord[],
     [businessLinesQuery.items],
   );
-  const { banks: bankMasterData } = useBankDirectory({
-    initialQuery: {
+  const banksQuery = useMasterData("banks", {
+    params: {
       status: "active",
       page: 0,
       size: 100,
     },
   });
+  const bankMasterData = useMemo(
+    () => banksQuery.items as BankMasterDataRecord[],
+    [banksQuery.items],
+  );
 
   const farmOrganizationType = useMemo(() => {
     const items = organizationTypesQuery.items;

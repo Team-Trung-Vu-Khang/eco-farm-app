@@ -44,14 +44,14 @@ export function EnterpriseBankAccountFormCard({
           Thêm tài khoản ngân hàng
         </CardTitle>
         <CardDescription className="text-sm text-muted-foreground">
-          Chọn ngân hàng từ master data rồi nhập thông tin tài khoản bên dưới.
+          Chọn một tài khoản có sẵn hoặc nhập thông tin tài khoản bên dưới.
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label className="text-sm font-semibold">Tên ngân hàng</Label>
+            <Label className="text-sm font-semibold">Tài khoản đã có</Label>
             <div className="flex gap-2">
               <Button
                 type="button"
@@ -78,7 +78,7 @@ export function EnterpriseBankAccountFormCard({
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Chọn ngân hàng từ danh sách master data.
+              Chọn một tài khoản từ danh sách có sẵn để điền nhanh.
             </p>
           </div>
 

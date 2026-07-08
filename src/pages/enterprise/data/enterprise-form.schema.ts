@@ -22,6 +22,7 @@ const enterpriseBranchSchema = z.object({
 });
 
 const enterpriseBankAccountSchema = z.object({
+  id: z.union([z.number(), z.string()]).optional(),
   bankId: z.union([z.number(), z.string()]).optional(),
   bankName: z.string().default(""),
   accountHolder: z.string().default(""),

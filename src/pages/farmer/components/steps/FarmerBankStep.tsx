@@ -1,6 +1,9 @@
-import { vietQrBankData } from "@/constants/banks";
-import { useBankDirectory } from "@/features/bank-directory/hooks/useBankDirectory";
-import type { BankDirectoryItem } from "@/features/bank-directory/types/bank-directory.type";
+import { useBankAccounts, type BankAccountRecord } from "@/features/bank";
+import {
+  BankSelectorDialog,
+  type BankOption,
+} from "@/features/bank/components/BankSelectorDialog";
+import { useMasterData } from "@/features/master-data";
 import {
   Badge,
   Button,
@@ -9,18 +12,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
-  ScrollArea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Banknote, Check, CreditCard, Plus, Search, Trash2 } from "lucide-react";
+import { Banknote, CreditCard, Plus, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useRoute } from "wouter";
 import type { BankAccount } from "../../types";
 
 type BankInputMethod = "manual" | "excel" | "qr-image" | "qr-scan";
@@ -43,220 +40,6 @@ interface FarmerBankStepProps {
   removeBankAccount: (index: number) => void;
 }
 
-function getBankDisplayName(bank: BankDirectoryItem) {
-  return bank.shortName || bank.name || "";
-}
-
-function getBankSelectionLabel(bank: BankDirectoryItem) {
-  const bankName = getBankDisplayName(bank);
-  return bank.bin ? `${bankName} - ${bank.bin}` : bankName;
-}
-
-function FarmerBankSelectorDialog({
-  open,
-  onOpenChange,
-  selectedBankName,
-  banks,
-  loading = false,
-  onSelect,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  selectedBankName: string;
-  banks: BankDirectoryItem[];
-  loading?: boolean;
-  onSelect: (bank: BankDirectoryItem) => void;
-}) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [tempSelectedName, setTempSelectedName] = useState(selectedBankName);
-
-  const filteredBanks = useMemo(() => {
-    const query = searchTerm.toLowerCase().trim();
-    if (!query) return banks;
-
-    return banks.filter((bank) => {
-      const searchable = [getBankDisplayName(bank), bank.code, bank.bin]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return searchable.includes(query);
-    });
-  }, [banks, searchTerm]);
-
-  const selectedBank = banks.find((bank) => {
-    const bankName = getBankDisplayName(bank);
-    const displayName = getBankSelectionLabel(bank);
-    return displayName === tempSelectedName || bankName === tempSelectedName;
-  });
-
-  const handleConfirm = () => {
-    const bank = banks.find((item) => {
-      const bankName = getBankDisplayName(item);
-      const displayName = getBankSelectionLabel(item);
-      return displayName === tempSelectedName || bankName === tempSelectedName;
-    });
-
-    if (bank) onSelect(bank);
-    onOpenChange(false);
-  };
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(nextOpen) => {
-        if (nextOpen) {
-          setTempSelectedName(selectedBankName);
-          setSearchTerm("");
-        }
-        onOpenChange(nextOpen);
-      }}
-    >
-      <DialogContent className="flex h-[90vh] max-h-[90vh] max-w-4xl flex-col overflow-hidden border-none p-0 shadow-2xl">
-        <DialogHeader className="shrink-0 border-b bg-slate-50 px-6 py-5">
-          <DialogTitle className="flex items-center gap-2 text-lg">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Search className="h-4 w-4" />
-            </div>
-            Chọn ngân hàng
-          </DialogTitle>
-          <DialogDescription className="mt-1 text-sm text-muted-foreground">
-            Chọn một ngân hàng từ master data để điền nhanh thông tin vào form.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="shrink-0 border-b bg-white px-6 py-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Tìm theo tên, mã hoặc BIN ngân hàng..."
-              className="h-11 rounded-xl border-slate-200 bg-slate-50 pl-10 transition-all focus:bg-white"
-            />
-          </div>
-          <div className="mt-3 flex items-center justify-between gap-3 text-xs text-muted-foreground">
-            <span>
-              {loading ? "Đang tải..." : `${filteredBanks.length} kết quả`}
-            </span>
-            {selectedBank && (
-              <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-primary">
-                <Check className="h-3 w-3" />
-                Đang chọn: {getBankDisplayName(selectedBank)}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <ScrollArea className="min-h-0 flex-1">
-          <div className="grid gap-3 p-6 sm:grid-cols-2">
-            {!loading &&
-              filteredBanks.map((bank) => {
-                const bankName = getBankDisplayName(bank);
-                const displayName = getBankSelectionLabel(bank);
-                const isSelected =
-                  tempSelectedName === displayName || tempSelectedName === bankName;
-
-                return (
-                  <button
-                    key={bank.id}
-                    type="button"
-                    onClick={() => setTempSelectedName(displayName)}
-                    className={[
-                      "group flex items-start gap-4 rounded-2xl border bg-white p-4 text-left transition-all hover:border-primary/30 hover:shadow-md",
-                      isSelected
-                        ? "border-primary/40 bg-primary/5 shadow-sm"
-                        : "border-slate-200",
-                    ].join(" ")}
-                  >
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-slate-100 bg-white p-2 shadow-sm">
-                      <img
-                        src={
-                          bank.logoUrl ||
-                          `https://placehold.co/56x56?text=${bankName?.[0] || "B"}`
-                        }
-                        alt={bankName}
-                        className="h-full w-full object-contain"
-                        onError={(event) => {
-                          (event.target as HTMLImageElement).src =
-                            "https://placehold.co/56x56?text=B";
-                        }}
-                      />
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <h3 className="truncate text-sm font-bold text-slate-900">
-                            {bankName}
-                          </h3>
-                          <p className="mt-1 line-clamp-2 text-xs text-slate-500">
-                            {bank.name}
-                          </p>
-                        </div>
-                        <div
-                          className={[
-                            "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
-                            isSelected
-                              ? "border-primary bg-primary text-white"
-                              : "border-slate-300 bg-white",
-                          ].join(" ")}
-                        >
-                          {isSelected && <Check className="h-3 w-3" />}
-                        </div>
-                      </div>
-
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <Badge
-                          variant="secondary"
-                          className="bg-slate-100 text-slate-700"
-                        >
-                          BIN: {bank.bin}
-                        </Badge>
-                        <Badge
-                          variant="secondary"
-                          className="bg-slate-100 text-slate-700"
-                        >
-                          Mã: {bank.code}
-                        </Badge>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-
-            {!loading && filteredBanks.length === 0 && (
-              <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-sm text-muted-foreground">
-                <Search className="mb-2 h-5 w-5 text-slate-400" />
-                Không tìm thấy ngân hàng phù hợp
-              </div>
-            )}
-
-            {loading && (
-              <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-sm text-muted-foreground">
-                <Search className="mb-2 h-5 w-5 animate-pulse text-slate-400" />
-                Đang tải danh sách ngân hàng
-              </div>
-            )}
-          </div>
-        </ScrollArea>
-
-        <DialogFooter className="shrink-0 border-t bg-white px-6 py-4">
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Hủy
-          </Button>
-          <Button
-            onClick={handleConfirm}
-            disabled={!tempSelectedName}
-            className="bg-primary hover:bg-primary/90"
-          >
-            Xác nhận
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 export const FarmerBankStep = ({
   bankAccounts,
   newBankAccount,
@@ -274,16 +57,27 @@ export const FarmerBankStep = ({
   addBankAccount,
   removeBankAccount,
 }: FarmerBankStepProps) => {
+  const [, editParams] = useRoute("/farmer/:id/edit");
   const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
-  const { banks: bankDirectory, loading: bankDirectoryLoading } =
-    useBankDirectory({
-      initialQuery: {
-        status: "active",
+  const ownerId = editParams?.id ? Number(editParams.id) : null;
+  const { items: bankAccountOptions, loading: bankAccountsLoading } =
+    useBankAccounts({
+      params: {
         page: 0,
         size: 100,
+        ownerType: "ORGANIZATION",
+        ownerId: ownerId ?? undefined,
       },
-      enabled: true,
+      enabled: ownerId !== null,
     });
+  const { items: banks, loading: banksLoading } = useMasterData("banks", {
+    params: {
+      status: "active",
+      page: 0,
+      size: 100,
+    },
+  });
+  const bankMasterData = useMemo(() => banks as BankOption[], [banks]);
 
   void bankInputMethod;
   void setBankInputMethod;
@@ -297,19 +91,32 @@ export const FarmerBankStep = ({
   const selectedBanks = useMemo(() => bankAccounts, [bankAccounts]);
 
   const selectedBankLabel = useMemo(() => {
-    if (!newBankAccount.bankName) return "Chọn ngân hàng...";
-    return newBankAccount.bin
-      ? `${newBankAccount.bankName} - ${newBankAccount.bin}`
+    if (!newBankAccount.bankName) return "Chọn tài khoản...";
+    return newBankAccount.accountNumber
+      ? `${newBankAccount.bankName} - ${newBankAccount.accountNumber}`
       : newBankAccount.bankName;
-  }, [newBankAccount.bankName, newBankAccount.bin]);
+  }, [newBankAccount.accountNumber, newBankAccount.bankName]);
 
-  const handleSelectBank = (bank: BankDirectoryItem) => {
-    const bankName = getBankDisplayName(bank);
+  const handleSelectAccount = (account: BankAccountRecord) => {
+    setNewBankAccount({
+      id: account.id,
+      bankId: account.bank?.id ?? "",
+      bankName: account.bank?.shortName || account.bank?.name || "",
+      accountHolder: account.accountHolder || "",
+      accountNumber: account.accountNumber || "",
+      branch: account.branch || "",
+      note: account.note || "",
+      bin: account.bank?.bin || "",
+      logo: account.bank?.logoUrl || "",
+    });
+  };
 
+  const handleSelectBank = (bank: BankOption) => {
     setNewBankAccount({
       ...newBankAccount,
+      id: "",
       bankId: bank.id,
-      bankName,
+      bankName: bank.shortName || bank.name || "",
       bin: bank.bin || "",
       logo: bank.logoUrl || "",
     });
@@ -386,7 +193,8 @@ export const FarmerBankStep = ({
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                Chọn nhanh từ danh sách ngân hàng master data hoặc nhập mới bên dưới.
+                Chọn nhanh từ danh sách ngân hàng master data hoặc nhập mới bên
+                dưới.
               </p>
             </div>
             <div className="space-y-2">
@@ -461,20 +269,25 @@ export const FarmerBankStep = ({
         </CardContent>
       </Card>
 
-      <FarmerBankSelectorDialog
+      <BankSelectorDialog
         open={isBankDialogOpen}
         onOpenChange={setIsBankDialogOpen}
-        selectedBankName={selectedBankLabel}
-        banks={bankDirectory}
-        loading={bankDirectoryLoading}
-        onSelect={handleSelectBank}
+        selectedAccountLabel={selectedBankLabel}
+        accounts={bankAccountOptions}
+        banks={banks as BankOption[]}
+        loading={bankAccountsLoading || banksLoading}
+        onSelect={handleSelectAccount}
+        onSelectBank={handleSelectBank}
       />
 
       <div className="space-y-4">
         <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
           <h4 className="flex items-center gap-3 text-xl font-bold">
             Danh sách đã thêm
-            <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">
+            <Badge
+              variant="secondary"
+              className="rounded-full px-3 py-1 text-sm"
+            >
               {selectedBanks.length}
             </Badge>
           </h4>
@@ -515,9 +328,8 @@ export const FarmerBankStep = ({
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {filteredAccounts.map(({ account, index }) => {
-              const bankInfo = vietQrBankData.find(
-                (bank) =>
-                  bank.shortName === account.bankName || bank.name === account.bankName,
+              const selectedBankMeta = bankMasterData.find(
+                (bank) => String(bank.id) === String(account.bankId),
               );
 
               return (
@@ -527,12 +339,12 @@ export const FarmerBankStep = ({
                 >
                   <CardContent className="flex items-center gap-4 p-4">
                     <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-white p-2 shadow-sm transition-transform group-hover:scale-105">
-                      <img
-                        src={
-                          account.logo ||
-                          bankInfo?.logo ||
-                          `https://placehold.co/56x56?text=${account.bankName?.[0] || "B"}`
-                        }
+                        <img
+                          src={
+                            account.logo ||
+                            selectedBankMeta?.logoUrl ||
+                            `https://placehold.co/56x56?text=${account.bankName?.[0] || "B"}`
+                          }
                         alt={account.bankName}
                         className="h-full w-full object-contain"
                         onError={(event) => {

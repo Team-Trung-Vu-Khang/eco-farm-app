@@ -1,4 +1,3 @@
-import type { BankDirectoryItem } from "@/features/bank-directory/types/bank-directory.type";
 import type { BankAccount } from "../../data/constants";
 import {
   Badge,
@@ -10,15 +9,24 @@ import {
 import { CreditCard, Search, Trash2 } from "lucide-react";
 import { useMemo } from "react";
 
+type BankOption = {
+  id: number | string;
+  code?: string;
+  bin?: string;
+  shortName?: string;
+  name?: string;
+  logoUrl?: string;
+};
+
 type EnterpriseBankAccountListProps = {
   accounts: BankAccount[];
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
   onRemove: (index: number) => void;
-  bankMasterData: BankDirectoryItem[];
+  bankMasterData: BankOption[];
 };
 
-function getBankDisplayName(bank: BankDirectoryItem) {
+function getBankDisplayName(bank: BankOption) {
   return bank.shortName || bank.name || "";
 }
 
