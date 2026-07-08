@@ -32,7 +32,10 @@ export function useDeleteBankAccount({
         throw new Error("Missing workspace id for bank account delete");
       }
 
-      return bankAccountApi.delete(id, workspaceId);
+      return bankAccountApi.delete({
+        id,
+        workspaceId,
+      });
     },
     onSuccess: async (data, id) => {
       if (invalidateList) {

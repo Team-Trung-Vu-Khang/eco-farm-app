@@ -144,23 +144,14 @@ export function useBankFormPage({ mode }: UseBankFormPageOptions) {
         id: bankAccountId,
         payload: {
           id: bankAccount.id,
-          ownerType: bankAccount.ownerType,
-          ownerId: bankAccount.ownerId,
-          bankId: formData.bankId || selectedBank?.id || bankAccount.bank?.id || "",
-          bankCode: selectedBank?.code || bankAccount.bank?.code || "",
-          bankName:
-            selectedBank?.shortName ||
-            selectedBank?.name ||
-            bankAccount.bank?.shortName ||
-            bankAccount.bank?.name ||
-            "",
-          bin: selectedBank?.bin || bankAccount.bank?.bin,
+          bankId:
+            formData.bankId || selectedBank?.id || bankAccount.bank?.id || "",
           accountNumber: formData.accountNumber,
           accountHolder: formData.accountHolder,
           branch: formData.branch || undefined,
           note: formData.note || undefined,
-          logoUrl: selectedBank?.logoUrl || bankAccount.bank?.logoUrl,
           status: formData.status,
+          displayOrder: bankAccount.displayOrder,
           isPrimary: bankAccount.isPrimary,
           metadataJson: bankAccount.metadataJson,
         },

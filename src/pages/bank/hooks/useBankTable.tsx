@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
 import {
   useBankAccounts,
   useDeleteBankAccount,
   type BankAccountRecord,
 } from "@/features/bank";
+import { useState } from "react";
+import { useLocation } from "wouter";
 import { bankColumns } from "../data/columns";
 import { bankFilters } from "../data/constants";
 
@@ -31,7 +31,9 @@ export function useBankTable() {
 
   const bankAccountsQuery = useBankAccounts({
     params: {
-      keyword: [searchTerm.trim(), bankNameFilter].filter(Boolean).join(" ") || undefined,
+      keyword:
+        [searchTerm.trim(), bankNameFilter].filter(Boolean).join(" ") ||
+        undefined,
       status: statusFilter === "all" ? undefined : statusFilter,
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
@@ -115,7 +117,6 @@ export function useBankTable() {
     handleDelete,
     handleConfirmDelete,
     handleEdit: (item: BankTableRow) => setLocation(`/bank/${item.id}/edit`),
-    handleView: (item: BankTableRow) => setLocation(`/bank/${item.id}/edit`),
     columns: bankColumns,
     filters: [...bankFilters],
   };

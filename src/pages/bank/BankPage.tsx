@@ -27,7 +27,6 @@ export default function BankPage() {
     handleDelete,
     handleConfirmDelete,
     handleEdit,
-    handleView,
   } = useBankTable();
 
   return (
@@ -55,7 +54,6 @@ export default function BankPage() {
         data={bankAccounts}
         searchable
         searchPlaceholder="Tìm kiếm tài khoản..."
-        onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
         filters={[...bankFilters]}

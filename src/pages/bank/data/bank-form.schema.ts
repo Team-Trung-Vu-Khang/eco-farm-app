@@ -12,7 +12,7 @@ export const bankCreateFormSchema = z.object({
   accountNumber: z.string().trim().min(1, "Vui lòng nhập số tài khoản"),
   ownerType: z.string().trim().min(1, "Vui lòng chọn đơn vị sở hữu"),
   ownerId: z.string().trim().min(1, "Vui lòng chọn đơn vị sở hữu"),
-  accountHolder: z.string().trim().min(1, "Vui lòng chọn đơn vị sở hữu"),
+  accountHolder: z.string().trim().min(1, "Vui lòng chọn chủ tài khoản"),
   branch: z.string().trim().default(""),
   note: z.string().trim().default(""),
   status: bankAccountStatusSchema.default("active"),

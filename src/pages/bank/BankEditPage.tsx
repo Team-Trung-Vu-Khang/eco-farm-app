@@ -104,10 +104,13 @@ export default function BankEditPage() {
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting || isDeleting}
-            loading={isSubmitting}
           >
-            <Save className="w-4 h-4 mr-2" />
-            Lưu lại
+            {isSubmitting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4 mr-2" />
+            )}
+            {isSubmitting ? "Đang lưu..." : "Lưu lại"}
           </Button>
         </div>
       }

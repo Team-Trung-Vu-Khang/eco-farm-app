@@ -1,3 +1,4 @@
+import type { BankAccountStatus } from "@/features/bank";
 import {
   Card,
   CardContent,
@@ -14,8 +15,8 @@ import {
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CreditCard } from "lucide-react";
+import type { BankFormData } from "../types/types";
 import BankLogo from "./BankLogo";
-import type { BankAccountStatus, BankFormData } from "../types/types";
 
 type BankOption = {
   id: number | string;
@@ -42,7 +43,9 @@ export function BankFormCard({
   onBankChange,
   onFieldChange,
 }: BankFormCardProps) {
-  const selectedBank = banks.find((bank) => String(bank.id) === String(formData.bankId));
+  const selectedBank = banks.find(
+    (bank) => String(bank.id) === String(formData.bankId),
+  );
 
   return (
     <Card>
@@ -54,10 +57,15 @@ export function BankFormCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-            <Label htmlFor="bankName">Tên ngân hàng *</Label>
-            <div className="flex gap-3">
-              <div className="flex-1">
-              <Select value={String(formData.bankId || "")} onValueChange={onBankChange}>
+          <Label htmlFor="bankName" required>
+            Tên ngân hàng
+          </Label>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <Select
+                value={String(formData.bankId || "")}
+                onValueChange={onBankChange}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn ngân hàng" />
                 </SelectTrigger>
@@ -72,7 +80,11 @@ export function BankFormCard({
             </div>
             {formData.logo && (
               <BankLogo
-                bankName={selectedBank?.shortName || selectedBank?.name || formData.bankName}
+                bankName={
+                  selectedBank?.shortName ||
+                  selectedBank?.name ||
+                  formData.bankName
+                }
                 logo={formData.logo}
                 className="rounded-lg"
               />
@@ -82,7 +94,9 @@ export function BankFormCard({
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="accountNumber">Số tài khoản *</Label>
+            <Label htmlFor="accountNumber" required>
+              Số tài khoản
+            </Label>
             <Input
               id="accountNumber"
               placeholder="Nhập số tài khoản"

@@ -17,7 +17,7 @@ import {
   Textarea,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Save, X } from "lucide-react";
+import { Loader2, Save, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   Controller,
@@ -60,18 +60,14 @@ function mapFormValuesToPayload(
 
   return {
     bankId: selectedBank?.id || values.bankId,
-    bankCode: selectedBank?.code || "",
-    bankName: selectedBank?.shortName || selectedBank?.name || "",
-    bin: selectedBank?.bin,
-    logoUrl: selectedBank?.logoUrl,
-    ownerType: values.ownerType.toUpperCase(),
-    ownerId: values.ownerId,
     accountNumber: values.accountNumber,
     accountHolder: values.accountHolder,
     branch: values.branch || undefined,
     note: values.note || undefined,
     status: values.status,
+    displayOrder: 0,
     isPrimary: values.isPrimary,
+    metadataJson: null,
   };
 }
 
@@ -194,8 +190,14 @@ export default function BankCreatePage() {
             form="bank-create-form"
             disabled={isSubmitting || createBankAccount.isPending}
           >
-            <Save className="mr-2 h-4 w-4" />
-            Lưu lại
+            {isSubmitting || createBankAccount.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            {isSubmitting || createBankAccount.isPending
+              ? "Đang lưu..."
+              : "Lưu lại"}
           </Button>
         </div>
       }

@@ -6,6 +6,7 @@ import type {
   BankAccountPageResponse,
   BankAccountQueryParams,
   BankAccountRecord,
+  BankAccountDeleteRequest,
   BankAccountUpdateRequest,
   BankAccountUpdateResponse,
 } from "../types/bank-account.type";
@@ -87,9 +88,14 @@ export const bankAccountApi = {
     return response.data;
   },
 
-  async delete(id: number | string, workspaceId: number | string): Promise<void> {
+  async delete(
+    { id, workspaceId }: BankAccountDeleteRequest,
+  ): Promise<void> {
     assertWorkspaceId(workspaceId);
 
-    await apiClient.delete(`${BANK_ACCOUNT_PATH}/${id}`, withWorkspaceHeader(workspaceId));
+    await apiClient.delete(
+      `${BANK_ACCOUNT_PATH}/${id}`,
+      withWorkspaceHeader(workspaceId),
+    );
   },
 };

@@ -20,6 +20,7 @@ export interface BankAccountRecord {
   id: number | string;
   ownerType?: string;
   ownerId?: number | string;
+  bankId?: number | string;
   bank?: BankRecord | null;
   accountNumber?: string;
   accountHolder?: string;
@@ -27,6 +28,7 @@ export interface BankAccountRecord {
   note?: string;
   isPrimary?: boolean;
   status?: BankAccountStatus;
+  displayOrder?: number;
   metadataJson?: BankAccountMetadata | null;
   createdAt?: string;
   updatedAt?: string;
@@ -51,25 +53,25 @@ export interface BankAccountQueryParams {
   size?: number;
 }
 
-export interface BankAccountCommonRequest {
+export interface BankAccountDeleteRequest {
+  id: number | string;
+  workspaceId: number | string;
+}
+
+export interface BankAccountRequest {
   id?: number | string;
-  ownerType?: string;
-  ownerId?: number | string;
   bankId?: number | string;
-  bankCode: string;
-  bankName: string;
-  bin?: string;
   accountNumber: string;
   accountHolder: string;
   branch?: string;
   note?: string;
-  logoUrl?: string;
   status?: BankAccountStatus;
+  displayOrder?: number;
   isPrimary?: boolean;
   metadataJson?: BankAccountMetadata | null;
 }
 
-export type BankAccountCreateRequest = BankAccountCommonRequest;
-export type BankAccountUpdateRequest = BankAccountCommonRequest;
+export type BankAccountCreateRequest = BankAccountRequest;
+export type BankAccountUpdateRequest = BankAccountRequest;
 export type BankAccountCreateResponse = BankAccountRecord;
 export type BankAccountUpdateResponse = BankAccountRecord;
