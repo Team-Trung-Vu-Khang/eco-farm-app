@@ -1,5 +1,5 @@
 import {
-  useFarmDepartments,
+  useFarmDepartmentOptions,
   useFarmPersonnel,
   useFarmTeamById,
   useFarmTeamMutations,
@@ -32,9 +32,9 @@ export function useTeamEditPage() {
 
   const { updateTeam } = useFarmTeamMutations(parsedWorkspaceId);
 
-  const farmDepartmentsQuery = useFarmDepartments({
+  const farmDepartmentsQuery = useFarmDepartmentOptions({
     workspaceId: parsedWorkspaceId,
-    params: { status: "active", size: 100 },
+    params: { size: 100 },
   });
 
   const farmPersonnelQuery = useFarmPersonnel({

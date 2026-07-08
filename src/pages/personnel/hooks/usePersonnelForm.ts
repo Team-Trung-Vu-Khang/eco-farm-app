@@ -2,8 +2,10 @@ import { useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
+  useFarmDepartmentOptions,
   useFarmPersonnelById,
   useFarmPersonnelMutations,
+  useFarmPositionOptions,
   useMasterData,
 } from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
@@ -21,6 +23,8 @@ export function usePersonnelForm(id?: number) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const workspaceId = useSelectedWorkspaceId();
+  const parsedWorkspaceId =
+    typeof workspaceId === "number" ? workspaceId : undefined;
 
   const { uploadFile, isUploading: isUploadingFile } = useFileUpload();
   const uploadedAvatarRef = useRef<Record<string, string>>({});
@@ -28,6 +32,16 @@ export function usePersonnelForm(id?: number) {
   const { items: banks } = useMasterData("banks", {
     params: { status: "active", size: 100 },
   });
+  const { items: departmentOptions, loading: departmentsLoading } =
+    useFarmDepartmentOptions({
+      workspaceId: parsedWorkspaceId,
+      params: { size: 100 },
+    });
+  const { items: positionOptions, loading: positionsLoading } =
+    useFarmPositionOptions({
+      workspaceId: parsedWorkspaceId,
+      params: { size: 100 },
+    });
 
   const { data: personnel, isLoading: isPersonnelLoading } =
     useFarmPersonnelById(id || 0, {
@@ -46,6 +60,39 @@ export function usePersonnelForm(id?: number) {
     mode: "onChange",
   });
 
+  const buildOptionValue = (source: string, id: number) => `${source}_${id}`;
+
+  const resolveJobValue = (
+    source: string | undefined,
+    id: number | undefined,
+    name: string | undefined,
+    options: Array<{ id: number; name: string; source: string }>,
+  ) => {
+    if (id && source) {
+      return buildOptionValue(source, id);
+    }
+
+    if (id) {
+      const matchedById = options.find((item) => item.id === id);
+      if (matchedById) {
+        return buildOptionValue(matchedById.source, matchedById.id);
+      }
+      return String(id);
+    }
+
+    if (name) {
+      const matchedByName = options.find(
+        (item) => item.name.toLowerCase() === name.toLowerCase(),
+      );
+      if (matchedByName) {
+        return buildOptionValue(matchedByName.source, matchedByName.id);
+      }
+      return name;
+    }
+
+    return "";
+  };
+
   useEffect(() => {
     if (personnel) {
       methods.reset({
@@ -63,40 +110,29 @@ export function usePersonnelForm(id?: number) {
           personnel.metadataJson?.departmentType ||
           personnel.departmentType ||
           (personnel.department?.source as any) ||
-          (personnel.department?.id || personnel.departmentId
-            ? "OWNER"
-            : undefined),
-        department:
-          personnel.department?.id &&
+          undefined,
+        department: resolveJobValue(
           (personnel.metadataJson?.departmentType ||
             personnel.departmentType ||
-            (personnel.department?.source as any))
-            ? `${personnel.metadataJson?.departmentType || personnel.departmentType || personnel.department.source}_${personnel.department.id}`
-            : personnel.departmentId &&
-                (personnel.metadataJson?.departmentType ||
-                  personnel.departmentType ||
-                  "OWNER")
-              ? `${personnel.metadataJson?.departmentType || personnel.departmentType || "OWNER"}_${personnel.departmentId}`
-              : "",
+            (personnel.department?.source as any)) as string | undefined,
+          (personnel.department?.id as number | undefined) ||
+            personnel.departmentId,
+          personnel.department?.name,
+          departmentOptions,
+        ),
         positionType:
           personnel.metadataJson?.positionType ||
           personnel.positionType ||
           (personnel.position?.source as any) ||
-          (personnel.position?.id || personnel.positionId
-            ? "OWNER"
-            : undefined),
-        position:
-          personnel.position?.id &&
+          undefined,
+        position: resolveJobValue(
           (personnel.metadataJson?.positionType ||
             personnel.positionType ||
-            (personnel.position?.source as any))
-            ? `${personnel.metadataJson?.positionType || personnel.positionType || personnel.position.source}_${personnel.position.id}`
-            : personnel.positionId &&
-                (personnel.metadataJson?.positionType ||
-                  personnel.positionType ||
-                  "OWNER")
-              ? `${personnel.metadataJson?.positionType || personnel.positionType || "OWNER"}_${personnel.positionId}`
-              : "",
+            (personnel.position?.source as any)) as string | undefined,
+          (personnel.position?.id as number | undefined) || personnel.positionId,
+          personnel.position?.name,
+          positionOptions,
+        ),
         team: personnel.team?.id
           ? personnel.team.id.toString()
           : personnel.teamId
@@ -113,7 +149,7 @@ export function usePersonnelForm(id?: number) {
         bankBranch: personnel.bankAccounts?.[0]?.branch || "",
       });
     }
-  }, [personnel, methods]);
+  }, [personnel, methods, departmentOptions, positionOptions]);
 
   const onSubmit = async (values: PersonnelFormValues) => {
     let finalAvatarUrl = values.avatarUrl;
@@ -247,5 +283,6 @@ export function usePersonnelForm(id?: number) {
     isSubmitting:
       createPersonnel.isPending || updatePersonnel.isPending || isUploadingFile,
     isDeleting: deletePersonnel.isPending,
+    loading: departmentsLoading || positionsLoading,
   };
 }

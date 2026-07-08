@@ -86,5 +86,7 @@ export function useFarmPositionOptions({
     ...queryResult,
     items: queryResult.data?.content ?? [],
     response: queryResult.data ?? null,
+    loading: queryResult.isLoading,
+    error: queryResult.error?.message ?? null,
   };
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
@@ -25,6 +25,10 @@ export function useTeamDetailPage() {
     params: { teamId: id } as any, // Passing teamId for filtering if supported
     workspaceId: typeof workspaceId === "number" ? workspaceId : undefined,
   });
+  const teamMembers = useMemo(
+    () => members.filter((member) => Number(member.teamId) === id),
+    [members, id],
+  );
 
   const { deleteTeam } = useFarmTeamMutations(
     typeof workspaceId === "number" ? workspaceId : undefined,
@@ -57,7 +61,7 @@ export function useTeamDetailPage() {
   return {
     team,
     isTeamLoading,
-    members,
+    members: teamMembers,
     isMembersLoading,
     deleteOpen,
     setDeleteOpen,

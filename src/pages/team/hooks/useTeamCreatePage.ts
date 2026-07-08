@@ -1,5 +1,5 @@
 import {
-  useFarmDepartments,
+  useFarmDepartmentOptions,
   useFarmPersonnel,
   useFarmTeamMutations,
 } from "@/features/master-data";
@@ -24,9 +24,9 @@ export function useTeamCreatePage() {
 
   const { createTeam } = useFarmTeamMutations(parsedWorkspaceId);
 
-  const farmDepartmentsQuery = useFarmDepartments({
+  const farmDepartmentsQuery = useFarmDepartmentOptions({
     workspaceId: parsedWorkspaceId,
-    params: { status: "active", size: 100 },
+    params: { size: 100 },
   });
 
   const farmPersonnelQuery = useFarmPersonnel({
