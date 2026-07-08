@@ -29,6 +29,7 @@ interface GroupFormDialogProps {
   onOpenChange: (open: boolean) => void;
   editItem: ContactGroup | null;
   onSubmit: (values: ContactGroupFormValues) => Promise<void> | void;
+  loading?: boolean;
 }
 
 const STATUS_OPTIONS = [
@@ -42,6 +43,7 @@ export function GroupFormDialog({
   onOpenChange,
   editItem,
   onSubmit,
+  loading = false,
 }: GroupFormDialogProps) {
   const defaultValues = useMemo<ContactGroupFormValues>(
     () => ({
@@ -88,6 +90,7 @@ export function GroupFormDialog({
       onOpenChange={onOpenChange}
       title={editItem ? "Chỉnh sửa nhóm danh bạ" : "Thêm nhóm danh bạ mới"}
       onSubmit={handleRHFSubmit(submitForm)}
+      loading={loading}
     >
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">

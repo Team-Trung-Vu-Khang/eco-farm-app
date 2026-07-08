@@ -8,7 +8,7 @@ import {
   Button,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Save, X } from "lucide-react";
+import { Loader2, Save, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { ContactFormCard } from "./components/ContactFormCard";
 import {
@@ -93,8 +93,12 @@ export default function ContactCreatePage() {
             onClick={handleSubmit(handleCreateContact)}
             disabled={isSubmitting}
           >
-            <Save className="w-4 h-4 mr-2" />
-            Lưu lại
+            {isSubmitting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4 mr-2" />
+            )}
+            {isSubmitting ? "Đang lưu..." : "Lưu lại"}
           </Button>
         </div>
       }

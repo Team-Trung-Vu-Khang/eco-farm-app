@@ -135,7 +135,7 @@ export function useContactForm({ mode }: UseContactFormOptions) {
     setDeleteOpen(false);
   };
 
-    return {
+  return {
       contact,
       contactId,
       defaultValues,
@@ -149,6 +149,7 @@ export function useContactForm({ mode }: UseContactFormOptions) {
         groupsQuery.loading ||
         departmentsQuery.loading ||
         positionsQuery.isLoading,
+      isDeleting: deleteContactMutation.isPending,
       deleteOpen,
       setDeleteOpen,
       submitContact,

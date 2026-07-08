@@ -1,6 +1,6 @@
-import { Link, useLocation } from "wouter";
-import { Plus } from "lucide-react";
 import { Button, DataTable } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Plus } from "lucide-react";
+import { Link, useLocation } from "wouter";
 import { getContactColumns, getContactFilters } from "../../data/columns";
 import type { Contact, ContactGroup } from "../../types/types";
 
@@ -55,7 +55,6 @@ export function ContactTab({
         columns={getContactColumns()}
         data={contacts}
         searchable
-        onView={(item) => setLocation(`/contact/${item.id}/edit`)}
         onEdit={(item) => setLocation(`/contact/${item.id}/edit`)}
         onDelete={onDelete}
         searchPlaceholder="Tìm kiếm liên hệ..."

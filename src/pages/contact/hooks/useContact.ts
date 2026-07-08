@@ -237,6 +237,10 @@ export function useContact() {
     groupFormOpen,
     setGroupFormOpen,
     editGroup,
+    isSubmittingGroup:
+      createContactGroup.isPending || updateContactGroup.isPending,
+    isDeleting:
+      deleteContact.isPending || deleteContactGroup.isPending,
     handleAddGroup,
     handleEditGroup,
     handleSubmitGroup,

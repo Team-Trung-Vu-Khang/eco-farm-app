@@ -50,6 +50,8 @@ export default function ContactPage() {
     groupFormOpen,
     setGroupFormOpen,
     editGroup,
+    isSubmittingGroup,
+    isDeleting,
     handleAddGroup,
     handleEditGroup,
     handleSubmitGroup,
@@ -127,12 +129,14 @@ export default function ContactPage() {
         onOpenChange={setGroupFormOpen}
         editItem={editGroup}
         onSubmit={handleSubmitGroup}
+        loading={isSubmittingGroup}
       />
 
       <DeleteDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
+        loading={isDeleting}
         description={`Bạn có chắc chắn muốn xóa ${
           activeTab === "contacts" ? "liên hệ" : "nhóm danh bạ"
         } này? Hoạt động này không thể hoàn tác.`}
