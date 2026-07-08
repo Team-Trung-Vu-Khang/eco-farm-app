@@ -35,6 +35,7 @@ type BankSelectorDialogProps = {
   accounts: BankAccountRecord[];
   banks: BankOption[];
   loading?: boolean;
+  defaultViewMode?: "account" | "bank";
   onSelect: (account: BankAccountRecord) => void;
   onSelectBank?: (bank: BankOption) => void;
 };
@@ -57,11 +58,14 @@ export function BankSelectorDialog({
   accounts,
   banks,
   loading = false,
+  defaultViewMode = "account",
   onSelect,
   onSelectBank,
 }: BankSelectorDialogProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState<"account" | "bank">("account");
+  const [viewMode, setViewMode] = useState<"account" | "bank">(
+    defaultViewMode,
+  );
   const [tempSelectedId, setTempSelectedId] = useState<number | string | null>(
     null,
   );
@@ -110,7 +114,7 @@ export function BankSelectorDialog({
       open={open}
       onOpenChange={(nextOpen) => {
         if (nextOpen) {
-          setViewMode("account");
+          setViewMode(defaultViewMode);
           const selected = accounts.find((account) => {
             const bankName = getAccountDisplayName(account);
             const displayLabel = getAccountLabel(account);
