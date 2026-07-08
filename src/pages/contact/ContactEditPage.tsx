@@ -4,7 +4,7 @@ import {
   Button,
   DeleteDialog,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Save, X } from "lucide-react";
+import { Loader2, Save, X } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { ContactFormCard } from "./components/ContactFormCard";
@@ -34,6 +34,7 @@ export default function ContactEditPage() {
     submitContact,
     handleDelete,
     goBack,
+    isDeleting,
   } = useContactEdit();
 
   const {
@@ -92,13 +93,20 @@ export default function ContactEditPage() {
       description="Chỉnh sửa thông tin liên hệ"
       actions={
         <div className="flex gap-2">
-          <Button variant="outline" onClick={goBack}>
+          <Button variant="outline" onClick={goBack} disabled={isSubmitting || isDeleting}>
             <X className="w-4 h-4 mr-2" />
             Hủy bỏ
           </Button>
-          <Button onClick={handleSubmit(submitContact)} disabled={isSubmitting}>
-            <Save className="w-4 h-4 mr-2" />
-            Lưu lại
+          <Button
+            onClick={handleSubmit(submitContact)}
+            disabled={isSubmitting || isDeleting}
+          >
+            {isSubmitting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4 mr-2" />
+            )}
+            {isSubmitting ? "Đang lưu..." : "Lưu lại"}
           </Button>
         </div>
       }
@@ -119,6 +127,7 @@ export default function ContactEditPage() {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         onConfirm={handleDelete}
+        loading={isDeleting}
         description={`Bạn có chắc chắn muốn xóa liên hệ ${defaultValues.fullName}?`}
       />
     </AdminLayout>
