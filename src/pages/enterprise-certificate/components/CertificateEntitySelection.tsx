@@ -17,23 +17,21 @@ import {
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Building2, MapPin, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
-import type { Area, Enterprise } from "../../../stores/useEnterpriseCertificateStore";
+import type { Area } from "../../../stores/useEnterpriseCertificateStore";
 import type { EnterpriseCertificateFormValues } from "../data/enterprise-certificate-form.schema";
+import { useSelectedWorkspaceId } from "@/features/workspace";
 
 interface EntitySelectionProps {
-  enterprises: Enterprise[];
-  areas: Area[];
+  areas?: Area[];
 }
 
 interface SelectorItem {
   id: string;
   code: string;
   name: string;
-  kind: "enterprise" | "region";
   subtitle?: string;
-  parentName?: string;
 }
 
 interface SearchSelectorProps {
@@ -73,17 +71,11 @@ function SearchSelector({
       (item) =>
         item.name.toLowerCase().includes(keyword) ||
         item.code.toLowerCase().includes(keyword) ||
-        item.subtitle?.toLowerCase().includes(keyword) ||
-        item.parentName?.toLowerCase().includes(keyword),
+        item.subtitle?.toLowerCase().includes(keyword),
     );
   }, [items, searchTerm]);
 
   const isValidTempSelection = items.some((item) => item.id === tempSelectedId);
-
-  const toneClass = (kind: "enterprise" | "region") =>
-    kind === "enterprise"
-      ? "bg-primary/10 text-primary"
-      : "bg-emerald-100 text-emerald-700";
 
   const handleOpen = () => {
     if (disabled) return;
@@ -123,14 +115,8 @@ function SearchSelector({
           {selectedItem ? (
             <div className="flex w-full items-start gap-3">
               <Avatar className="h-12 w-12 shrink-0 border border-white shadow-sm">
-                <AvatarFallback
-                  className={`${toneClass(selectedItem.kind)} font-bold`}
-                >
-                  {selectedItem.kind === "enterprise" ? (
-                    <Building2 className="h-5 w-5" />
-                  ) : (
-                    <MapPin className="h-5 w-5" />
-                  )}
+                <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold">
+                  <MapPin className="h-5 w-5" />
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
@@ -145,9 +131,7 @@ function SearchSelector({
                     variant="outline"
                     className="h-5 rounded-full px-2.5 py-0 text-[10px]"
                   >
-                    {selectedItem.kind === "enterprise"
-                      ? "Doanh nghiệp"
-                      : "Vùng trồng"}
+                    Vùng trồng
                   </Badge>
                 </div>
                 <div className="text-sm font-semibold text-slate-900">
@@ -155,9 +139,6 @@ function SearchSelector({
                 </div>
                 <div className="mt-1 space-y-1 text-xs text-muted-foreground">
                   {selectedItem.subtitle && <div>{selectedItem.subtitle}</div>}
-                  {selectedItem.parentName && (
-                    <div>Thuộc: {selectedItem.parentName}</div>
-                  )}
                 </div>
               </div>
               <div className="ml-auto hidden items-center gap-2 text-xs text-muted-foreground md:flex">
@@ -192,7 +173,7 @@ function SearchSelector({
         <DialogContent className="max-w-5xl">
           <DialogHeader className="border-b pb-4">
             <DialogTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-primary" />
+              <MapPin className="h-5 w-5 text-primary" />
               {dialogTitle}
             </DialogTitle>
           </DialogHeader>
@@ -222,14 +203,8 @@ function SearchSelector({
                     onClick={() => setTempSelectedId(item.id)}
                   >
                     <Avatar className="mt-0.5 h-12 w-12 shrink-0 border border-white shadow-sm">
-                      <AvatarFallback
-                        className={`${toneClass(item.kind)} font-bold`}
-                      >
-                        {item.kind === "enterprise" ? (
-                          <Building2 className="h-5 w-5" />
-                        ) : (
-                          <MapPin className="h-5 w-5" />
-                        )}
+                      <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold">
+                        <MapPin className="h-5 w-5" />
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
@@ -247,14 +222,11 @@ function SearchSelector({
                           variant="outline"
                           className="h-4 rounded-full px-1.5 py-0 text-[10px]"
                         >
-                          {item.kind === "enterprise"
-                            ? "Doanh nghiệp"
-                            : "Vùng trồng"}
+                          Vùng trồng
                         </Badge>
                       </div>
                       <div className="space-y-0.5 text-xs text-muted-foreground">
                         {item.subtitle && <div>{item.subtitle}</div>}
-                        {item.parentName && <div>Thuộc: {item.parentName}</div>}
                       </div>
                     </div>
                     <div className="mt-1">
@@ -301,70 +273,56 @@ function SearchSelector({
 }
 
 export function CertificateEntitySelection({
-  enterprises,
-  areas,
+  areas = [],
 }: EntitySelectionProps) {
+  const workspaceId = useSelectedWorkspaceId();
   const {
     control,
     formState: { errors },
     setValue,
+    getValues,
   } = useFormContext<EnterpriseCertificateFormValues>();
 
   const entityType = useWatch({ control, name: "entityType" });
   const entityId = useWatch({ control, name: "entityId" });
   const entityName = useWatch({ control, name: "entityName" });
-  const [selectedEnterpriseIdForArea, setSelectedEnterpriseIdForArea] =
-    useState("");
+  const safeAreas = Array.isArray(areas) ? areas : [];
 
-  const selectedArea = areas.find(
+  useEffect(() => {
+    if (entityType !== "workspace") return;
+
+    const nextWorkspaceId =
+      workspaceId === null || workspaceId === undefined ? "" : String(workspaceId);
+
+    if (getValues("entityId") !== nextWorkspaceId) {
+      setValue("entityId", nextWorkspaceId, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+
+    if (getValues("entityName") !== "Workspace hiện tại") {
+      setValue("entityName", "Workspace hiện tại", {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [entityType, getValues, setValue, workspaceId]);
+
+  const selectedArea = safeAreas.find(
     (area) => area.id === entityId || area.code === entityId,
   );
 
-  const selectedEnterprise = enterprises.find(
-    (enterprise) =>
-      enterprise.id === selectedArea?.enterpriseId ||
-      enterprise.code === selectedArea?.enterpriseId ||
-      enterprise.id === entityId ||
-      enterprise.code === entityId ||
-      enterprise.id === selectedEnterpriseIdForArea ||
-      enterprise.code === selectedEnterpriseIdForArea,
-  );
-
-  const selectedEnterpriseId =
-    entityType === "region"
-      ? selectedArea?.enterpriseId ||
-        selectedEnterpriseIdForArea
-      : selectedEnterprise?.id || selectedEnterprise?.code || "";
-
-  const selectedAreaList = useMemo(
+  const areaItems = useMemo(
     () =>
-      areas
-        .filter(
-          (area) =>
-            area.enterpriseId === selectedEnterpriseId,
-        )
-        .map((area) => ({
-          id: area.id,
-          code: area.code,
-          name: area.name,
-          kind: "region" as const,
-          subtitle: area.code,
-          parentName: selectedEnterprise?.name || "",
-        })),
-    [
-      areas,
-      selectedEnterprise?.name,
-      selectedEnterpriseId,
-    ],
+      safeAreas.map((area) => ({
+        id: area.id,
+        code: area.code,
+        name: area.name,
+        subtitle: `Mã: ${area.code}`,
+      })),
+    [safeAreas],
   );
-
-  const enterpriseItems = enterprises.map((enterprise) => ({
-    id: enterprise.id,
-    code: enterprise.code,
-    name: enterprise.name,
-    kind: "enterprise" as const,
-    subtitle: `Mã: ${enterprise.code}`,
-  }));
 
   return (
     <div className="space-y-5">
@@ -379,24 +337,40 @@ export function CertificateEntitySelection({
             <Select
               value={field.value}
               onValueChange={(val) => {
-                const nextType = val as "enterprise" | "region";
+                const nextType = val as "workspace" | "region";
                 field.onChange(nextType);
-                setValue("entityId", "", {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                });
-                setValue("entityName", "", {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                });
-                setSelectedEnterpriseIdForArea("");
+                if (nextType === "workspace") {
+                  setValue(
+                    "entityId",
+                    workspaceId === null || workspaceId === undefined
+                      ? ""
+                      : String(workspaceId),
+                    {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    },
+                  );
+                  setValue("entityName", "Workspace hiện tại", {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                } else {
+                  setValue("entityId", "", {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                  setValue("entityName", "", {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }
               }}
             >
               <SelectTrigger className="bg-white">
                 <SelectValue placeholder="Chọn phạm vi..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="enterprise">Toàn bộ doanh nghiệp</SelectItem>
+                <SelectItem value="workspace">Workspace hiện tại</SelectItem>
                 <SelectItem value="region">Vùng trồng cụ thể</SelectItem>
               </SelectContent>
             </Select>
@@ -407,67 +381,49 @@ export function CertificateEntitySelection({
         ) : null}
       </div>
 
-      <SearchSelector
-        label="Chọn doanh nghiệp"
-        required
-        placeholder="Chọn doanh nghiệp"
-        dialogTitle="Chọn doanh nghiệp"
-        searchPlaceholder="Tìm theo tên, mã hoặc nội dung mô tả..."
-        selectedId={
-          entityType === "region"
-            ? selectedEnterpriseIdForArea
-            : selectedEnterprise?.id ?? ""
-        }
-        items={enterpriseItems}
-        emptyStateText="Không tìm thấy doanh nghiệp phù hợp"
-        onConfirm={(id) => {
-          const selected = enterprises.find(
-            (enterprise) => enterprise.id === id || enterprise.code === id,
-          );
-          if (!selected) return;
-
-          if (entityType === "region") {
-            setSelectedEnterpriseIdForArea(selected.id);
-            setValue("entityId", "", {
-              shouldDirty: true,
-              shouldValidate: true,
-            });
-            setValue("entityName", "", {
-              shouldDirty: true,
-              shouldValidate: true,
-            });
-            return;
-          }
-
-          setValue("entityId", selected.code, {
-            shouldDirty: true,
-            shouldValidate: true,
-          });
-          setValue("entityName", selected.name, {
-            shouldDirty: true,
-            shouldValidate: true,
-          });
-        }}
-      />
-
-      {entityType === "region" && (
+      {entityType === "workspace" ? (
+        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <Avatar className="h-12 w-12 shrink-0 border border-white shadow-sm">
+              <AvatarFallback className="bg-primary/10 text-primary">
+                <Building2 className="h-5 w-5" />
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1 space-y-2 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-semibold text-slate-900">
+                  Workspace hiện tại
+                </span>
+                <Badge
+                  variant="outline"
+                  className="rounded-full px-3 py-1 font-mono text-[10px]"
+                >
+                  {workspaceId === null || workspaceId === undefined
+                    ? "Chưa có workspace"
+                    : String(workspaceId)}
+                </Badge>
+              </div>
+              <div className="rounded-xl bg-slate-50 p-3">
+                <div className="text-xs uppercase tracking-wide text-slate-500">
+                  Phạm vi
+                </div>
+                <div className="mt-1 font-medium text-slate-700">
+                  Áp dụng cho workspace hiện tại
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
         <SearchSelector
           label="Chọn vùng trồng"
           required
-          placeholder={
-          selectedEnterprise
-              ? "Chọn vùng trồng"
-              : "Hãy chọn doanh nghiệp trước"
-          }
+          placeholder="Chọn vùng trồng"
           dialogTitle="Chọn vùng trồng"
           searchPlaceholder="Tìm theo tên hoặc mã vùng trồng..."
           selectedId={entityId}
-          items={selectedAreaList}
-          emptyStateText={
-            selectedEnterpriseId
-              ? "Không tìm thấy vùng trồng phù hợp"
-              : "Vui lòng chọn doanh nghiệp trước"
-          }
+          items={areaItems}
+          emptyStateText="Không tìm thấy vùng trồng phù hợp"
           onConfirm={(id) => {
             const selected = areas.find(
               (area) => area.id === id || area.code === id,
@@ -483,7 +439,6 @@ export function CertificateEntitySelection({
               shouldValidate: true,
             });
           }}
-          disabled={!selectedEnterpriseId}
         />
       )}
 
@@ -517,21 +472,16 @@ export function CertificateEntitySelection({
                 <div className="text-xs uppercase tracking-wide text-slate-500">
                   Mã
                 </div>
-              <div className="mt-1 font-semibold text-slate-900">
-                {entityId ||
-                  selectedArea?.code ||
-                  selectedEnterprise?.code ||
-                  "Chưa xác định"}
-              </div>
+                <div className="mt-1 font-semibold text-slate-900">
+                  {entityId || selectedArea?.code || "Chưa xác định"}
+                </div>
               </div>
               <div className="rounded-xl bg-slate-50 p-3">
                 <div className="text-xs uppercase tracking-wide text-slate-500">
                   Loại
                 </div>
                 <div className="mt-1 font-semibold text-slate-900">
-                  {entityType === "enterprise"
-                    ? "Doanh nghiệp"
-                    : "Vùng trồng"}
+                  {entityType === "workspace" ? "Workspace" : "Vùng trồng"}
                 </div>
               </div>
             </div>
@@ -541,11 +491,9 @@ export function CertificateEntitySelection({
                 Phạm vi
               </div>
               <div className="mt-1 font-medium text-slate-700">
-                {entityType === "enterprise"
-                  ? "Toàn bộ doanh nghiệp"
-                  : `Vùng trồng thuộc ${
-                      selectedEnterprise?.name || "doanh nghiệp đã chọn"
-                    }`}
+                {entityType === "workspace"
+                  ? "Áp dụng cho workspace hiện tại"
+                  : "Áp dụng cho vùng trồng đã chọn"}
               </div>
             </div>
             {errors.entityId || errors.entityName ? (

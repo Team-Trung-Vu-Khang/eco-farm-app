@@ -3,9 +3,8 @@ import type { FarmPageResponse } from "@/features/master-data/types/farm-master-
 export type FarmCertificateStatus = "valid" | "expired" | "revoked" | (string & {});
 
 export type FarmCertificateTargetType =
-  | "enterprise"
+  | "workspace"
   | "region"
-  | "plot"
   | (string & {});
 
 export interface FarmCertificateMasterDataRef {
@@ -38,8 +37,8 @@ export interface FarmCertificateDocumentRecord {
   sizeBytes: number;
   displayOrder: number;
   content: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface FarmCertificateDocumentRequest {
@@ -60,13 +59,16 @@ export interface FarmCertificateRecord {
   name: string;
   agricultureCertificate: FarmCertificateMasterDataRef;
   issuer: FarmCertificateIssuerRecord;
-  standardType: string;
-  organization: string;
+  agricultureCertificateId?: number | string;
+  issuerId?: number | string;
+  standardType?: string;
+  organization?: string;
   issuedDate: string;
   expiryDate: string;
   targetType: FarmCertificateTargetType;
-  targetOrganization: FarmCertificateMasterDataRef | null;
-  targetRegion: FarmCertificateMasterDataRef | null;
+  targetId?: number | string;
+  targetOrganization?: FarmCertificateMasterDataRef | null;
+  targetRegion?: FarmCertificateMasterDataRef | null;
   documents: FarmCertificateDocumentRecord[];
   status: FarmCertificateStatus;
   displayOrder: number;

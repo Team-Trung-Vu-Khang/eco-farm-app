@@ -1,19 +1,15 @@
 import type { FarmRegionResponse } from "@/features/farm/types/farm.type";
-import type { OrganizationRecord } from "@/features/organization/types/organization.type";
+import type { CertificateStandardRecord } from "@/features/master-data";
 import type {
-  CertificateStandardRecord,
   FarmCertificateCreateRequest,
   FarmCertificateRecord,
 } from "@/features/farm-certificate";
 import type {
   Area,
-  Enterprise,
   EnterpriseCertificate,
   Standard,
 } from "../../stores/useEnterpriseCertificateStore";
-import type {
-  EnterpriseCertificateFormValues,
-} from "./data/enterprise-certificate-form.schema";
+import type { EnterpriseCertificateFormValues } from "./data/enterprise-certificate-form.schema";
 
 export type EnterpriseCertificateViewData = EnterpriseCertificate;
 
@@ -48,14 +44,6 @@ export const mapStandardRecordToOption = (
     record.issuers?.map((issuer) => issuer.name).filter(Boolean) ?? [],
 });
 
-export const mapOrganizationRecordToEnterprise = (
-  record: OrganizationRecord,
-): Enterprise => ({
-  id: toNumericId(record.id),
-  code: record.code,
-  name: record.name,
-});
-
 export const mapRegionRecordToArea = (record: FarmRegionResponse): Area => ({
   id: toNumericId(record.id),
   code: record.code ?? String(record.id),
@@ -67,21 +55,25 @@ export const mapFarmCertificateRecordToFormData = (
   record: FarmCertificateRecord,
 ): EnterpriseCertificateFormValues => {
   const primaryDocument = record.documents?.[0];
-  const targetType =
-    record.targetType === "enterprise" ? "enterprise" : "region";
+  const targetType = record.targetType === "region" ? "region" : "workspace";
   const targetSource =
-    targetType === "enterprise" ? record.targetOrganization : record.targetRegion;
+    targetType === "workspace"
+      ? record.targetOrganization
+      : record.targetRegion;
 
   return {
     code: record.code,
     name: record.name,
-    standardType: record.agricultureCertificate?.code ?? record.standardType,
-    organization: record.issuer?.name ?? "",
+    standardType: record.agricultureCertificate?.code ?? record.standardType ?? "",
+    organization: record.issuer?.name ?? record.organization ?? "",
     issuedDate: record.issuedDate,
     expiryDate: record.expiryDate,
     entityType: targetType,
-    entityId: toNumericId(targetSource?.code ?? targetSource?.id),
-    entityName: targetSource?.name ?? "",
+    entityId: toNumericId(record.targetId ?? targetSource?.code ?? targetSource?.id),
+    entityName:
+      targetType === "workspace"
+        ? "Workspace hiện tại"
+        : targetSource?.name ?? "",
     content: primaryDocument?.content ?? "",
     contentType: primaryDocument?.documentType === "file" ? "file" : "editor",
     fileUrl: primaryDocument?.fileUrl ?? "",
@@ -97,7 +89,7 @@ export const mapFarmCertificateRecordToView = (
   return {
     id: Number(record.id),
     ...formData,
-    entityType: formData.entityType === "region" ? "area" : "enterprise",
+    entityType: formData.entityType,
     status: calculateStatus(record.expiryDate, record.status),
     createdAt: record.createdAt,
   };
@@ -107,8 +99,8 @@ export const buildFarmCertificatePayload = (
   formData: EnterpriseCertificateFormValues,
   context: {
     standards: CertificateStandardRecord[];
-    enterprises: Enterprise[];
     areas: Area[];
+    workspaceId: number | string;
   },
 ): FarmCertificateCreateRequest => {
   const standard = context.standards.find(
@@ -127,18 +119,15 @@ export const buildFarmCertificatePayload = (
     throw new Error("Vui lòng chọn tổ chức cấp hợp lệ.");
   }
 
-  const sourceEntity =
-    formData.entityType === "enterprise"
-      ? context.enterprises.find(
+  const selectedArea =
+    formData.entityType === "region"
+      ? context.areas.find(
           (item) =>
             item.code === formData.entityId || item.id === formData.entityId,
         )
-      : context.areas.find(
-          (item) =>
-            item.code === formData.entityId || item.id === formData.entityId,
-        );
+      : null;
 
-  if (!sourceEntity) {
+  if (formData.entityType === "region" && !selectedArea) {
     throw new Error("Vui lòng chọn đúng đối tượng cấp chứng nhận.");
   }
 
@@ -146,22 +135,39 @@ export const buildFarmCertificatePayload = (
     formData.contentType === "file"
       ? [
           {
+            id: undefined,
             documentType: "file",
             name: formData.content.trim() || formData.name.trim(),
             fileUrl: formData.fileUrl.trim() || undefined,
             fileName: formData.content.trim() || formData.name.trim(),
+            mimeType: undefined,
+            sizeBytes: undefined,
             displayOrder: 1,
             content: formData.content.trim(),
           },
         ]
       : [
           {
+            id: undefined,
             documentType: "editor",
             name: formData.name.trim(),
+            fileUrl: undefined,
+            fileName: undefined,
+            mimeType: undefined,
+            sizeBytes: undefined,
             displayOrder: 1,
             content: formData.content.trim(),
           },
         ];
+
+  const targetId =
+    formData.entityType === "workspace"
+      ? context.workspaceId
+      : selectedArea?.id;
+
+  if (targetId === null || targetId === undefined || targetId === "") {
+    throw new Error("Vui lòng chọn đúng đối tượng cấp chứng nhận.");
+  }
 
   return {
     code: formData.code.trim(),
@@ -170,8 +176,8 @@ export const buildFarmCertificatePayload = (
     issuerId: issuer.id,
     issuedDate: formData.issuedDate,
     expiryDate: formData.expiryDate,
-    targetType: formData.entityType === "enterprise" ? "enterprise" : "region",
-    targetId: sourceEntity.id,
+    targetType: formData.entityType === "region" ? "region" : "workspace",
+    targetId,
     displayOrder: 1,
     documents,
     metadataJson: null,

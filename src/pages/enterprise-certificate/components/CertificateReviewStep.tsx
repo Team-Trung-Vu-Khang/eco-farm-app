@@ -4,14 +4,12 @@ import type { ReactNode } from "react";
 import { useFormContext } from "react-hook-form";
 import type {
   Area,
-  Enterprise,
   Standard,
 } from "../../../stores/useEnterpriseCertificateStore";
 import { type EnterpriseCertificateFormValues } from "../data/enterprise-certificate-form.schema";
 
 interface CertificateReviewStepProps {
   standards: Standard[];
-  enterprises: Enterprise[];
   areas: Area[];
 }
 
@@ -47,7 +45,6 @@ function FieldRow({ label, value }: { label: string; value?: ReactNode }) {
 
 export function CertificateReviewStep({
   standards,
-  enterprises,
   areas,
 }: CertificateReviewStepProps) {
   const { watch } = useFormContext<EnterpriseCertificateFormValues>();
@@ -55,10 +52,6 @@ export function CertificateReviewStep({
 
   const selectedStandard = standards.find(
     (item) => item.code === values.standardType,
-  );
-
-  const selectedEnterprise = enterprises.find(
-    (item) => item.code === values.entityId || item.id === values.entityId,
   );
 
   const selectedArea = areas.find(
@@ -105,8 +98,8 @@ export function CertificateReviewStep({
           <div className="space-y-3">
             <div className="flex flex-wrap gap-2">
               <Badge variant="secondary" className="rounded-full px-3 py-1">
-                {values.entityType === "enterprise"
-                  ? "Doanh nghiệp"
+                {values.entityType === "workspace"
+                  ? "Workspace"
                   : "Vùng trồng"}
               </Badge>
               <Badge
@@ -121,9 +114,9 @@ export function CertificateReviewStep({
               <FieldRow
                 label="Phạm vi"
                 value={
-                  values.entityType === "enterprise"
-                    ? "Áp dụng cho toàn bộ doanh nghiệp"
-                    : `Áp dụng cho ${selectedEnterprise?.name || "doanh nghiệp đã chọn"}`
+                  values.entityType === "workspace"
+                    ? "Áp dụng cho workspace hiện tại"
+                    : `Áp dụng cho ${selectedArea?.name || "vùng trồng đã chọn"}`
                 }
               />
             </div>

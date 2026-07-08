@@ -4,7 +4,6 @@ import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useRegions } from "@/features/farm/hooks/useRegions";
 import { farmCertificateApi } from "@/features/farm-certificate";
 import { useMasterData } from "@/features/master-data";
-import { organizationApi } from "@/features/organization";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import type {
   EnterpriseCertificate,
@@ -12,7 +11,6 @@ import type {
 } from "../../../stores/useEnterpriseCertificateStore";
 import {
   mapFarmCertificateRecordToView,
-  mapOrganizationRecordToEnterprise,
   mapStandardRecordToOption,
   mapRegionRecordToArea,
 } from "../utils";
@@ -39,27 +37,7 @@ export function useEnterpriseCertificateForm() {
     enabled: true,
   });
 
-  const organizationsQuery = useQuery({
-    queryKey: ["enterprise-certificate", "organizations", workspaceId] as const,
-    queryFn: async () => {
-      if (workspaceId === null || workspaceId === undefined) {
-        throw new Error("Missing workspace id");
-      }
-
-      return organizationApi.list(
-        {
-          page: 0,
-          size: 100,
-        },
-        workspaceId,
-      );
-    },
-    enabled: workspaceId !== null && workspaceId !== undefined,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
-
-  const branchesQuery = useRegions({
+  const regionsQuery = useRegions({
     params: {
       size: 100,
     },
@@ -96,16 +74,9 @@ export function useEnterpriseCertificateForm() {
     [standardsQuery.items],
   );
 
-  const enterprises = useMemo(
-    () =>
-      organizationsQuery.data?.content.map(mapOrganizationRecordToEnterprise) ??
-      [],
-    [organizationsQuery.data?.content],
-  );
-
-  const areas = useMemo(
-    () => branchesQuery.items.map(mapRegionRecordToArea),
-    [branchesQuery.items],
+  const regions = useMemo(
+    () => regionsQuery.items.map(mapRegionRecordToArea),
+    [regionsQuery.items],
   );
 
   const filteredData = useMemo(
@@ -183,18 +154,15 @@ export function useEnterpriseCertificateForm() {
     targetTypeFilter,
     filteredData,
     standards,
-    enterprises,
-    areas,
+    regions,
     loading:
       certificatesQuery.isLoading ||
       standardsQuery.loading ||
-      organizationsQuery.isLoading ||
-      branchesQuery.loading,
+      regionsQuery.loading,
     error:
       certificatesQuery.error?.message ??
       standardsQuery.error ??
-      organizationsQuery.error?.message ??
-      branchesQuery.error ??
+      regionsQuery.error ??
       null,
     handleSearch,
     handleFilterChange,

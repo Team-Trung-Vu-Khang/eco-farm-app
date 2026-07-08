@@ -19,7 +19,6 @@ import { FormProvider, useFormContext } from "react-hook-form";
 import { useLocation } from "wouter";
 import type {
   Area,
-  Enterprise,
   Standard,
 } from "../../stores/useEnterpriseCertificateStore";
 import { CertificateBasicInfoFields } from "./components/CertificateBasicInfoFields";
@@ -42,7 +41,6 @@ function EnterpriseCertificateStepperContent({
   onComplete,
   onCancel,
   standards,
-  enterprises,
   areas,
 }: {
   isEdit: boolean;
@@ -50,7 +48,6 @@ function EnterpriseCertificateStepperContent({
   onComplete: () => void;
   onCancel: () => void;
   standards: Standard[];
-  enterprises: Enterprise[];
   areas: Area[];
 }) {
   const { watch } = useFormContext<EnterpriseCertificateFormValues>();
@@ -76,11 +73,9 @@ function EnterpriseCertificateStepperContent({
     },
     {
       id: "entity",
-      title: "Đối tượng",
-      description: "Doanh nghiệp hoặc vùng trồng",
-      content: (
-        <CertificateEntitySelection enterprises={enterprises} areas={areas} />
-      ),
+      title: "Chọn đối tượng",
+      description: "Workspace hiện tại hoặc vùng trồng",
+      content: <CertificateEntitySelection areas={areas} />,
       isValid:
         enterpriseCertificateEntityStepSchema.safeParse(watchedValues).success,
     },
@@ -99,7 +94,6 @@ function EnterpriseCertificateStepperContent({
       content: (
         <CertificateReviewStep
           standards={standards}
-          enterprises={enterprises}
           areas={areas}
         />
       ),
@@ -127,7 +121,6 @@ export default function EnterpriseCertificateFormPage() {
     isEdit,
     methods,
     standards,
-    enterprises,
     areas,
     loading,
     error,
@@ -145,7 +138,7 @@ export default function EnterpriseCertificateFormPage() {
     <AdminLayout
       isDev={true}
       title={isEdit ? "Chỉnh sửa chứng nhận" : "Tạo mới chứng nhận"}
-      description="Điền thông tin theo từng bước để tạo hồ sơ chứng nhận"
+      description="Điền thông tin theo từng bước để tạo hồ sơ chứng nhận workspace hiện tại hoặc vùng trồng"
       actions={
         <Button
           variant="outline"
@@ -170,7 +163,6 @@ export default function EnterpriseCertificateFormPage() {
           onComplete={handleComplete}
           onCancel={handleCancel}
           standards={standards}
-          enterprises={enterprises}
           areas={areas}
         />
       </FormProvider>

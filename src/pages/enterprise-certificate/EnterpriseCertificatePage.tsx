@@ -30,7 +30,7 @@ const EnterpriseCertificatePage = () => {
     <AdminLayout
       isDev={true}
       title="Chứng nhận - Chứng chỉ"
-      description="Quản lý chứng nhận cho doanh nghiệp và vùng trồng"
+      description="Quản lý chứng nhận cho workspace và vùng trồng"
       actions={
         <Button
           onClick={() => setLocation("/enterprise-certificate/create")}

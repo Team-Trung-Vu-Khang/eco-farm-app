@@ -1,7 +1,6 @@
 import { farmCertificateApi } from "@/features/farm-certificate";
 import { useRegions } from "@/features/farm/hooks/useRegions";
 import { useMasterData } from "@/features/master-data";
-import { organizationApi } from "@/features/organization";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -11,7 +10,6 @@ import { useForm } from "react-hook-form";
 import { useLocation, useRoute } from "wouter";
 import type {
   Area,
-  Enterprise,
 } from "../../../stores/useEnterpriseCertificateStore";
 import {
   defaultEnterpriseCertificateFormValues,
@@ -23,7 +21,6 @@ import {
   buildFarmCertificatePayload,
   mapFarmCertificateRecordToFormData,
   mapFarmCertificateRecordToView,
-  mapOrganizationRecordToEnterprise,
   mapStandardRecordToOption,
   mapRegionRecordToArea,
 } from "../utils";
@@ -49,27 +46,7 @@ export function useEnterpriseCertificateStepperForm() {
     enabled: true,
   });
 
-  const organizationsQuery = useQuery({
-    queryKey: ["enterprise-certificate", "organizations", workspaceId] as const,
-    queryFn: async () => {
-      if (workspaceId === null || workspaceId === undefined) {
-        throw new Error("Missing workspace id");
-      }
-
-      return organizationApi.list(
-        {
-          page: 0,
-          size: 100,
-        },
-        workspaceId,
-      );
-    },
-    enabled: workspaceId !== null && workspaceId !== undefined,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
-
-  const areasQuery = useRegions({
+  const regionsQuery = useRegions({
     params: {
       size: 100,
     },
@@ -100,16 +77,9 @@ export function useEnterpriseCertificateStepperForm() {
     [standardRecords],
   );
 
-  const enterprises = useMemo<Enterprise[]>(
-    () =>
-      organizationsQuery.data?.content.map(mapOrganizationRecordToEnterprise) ??
-      [],
-    [organizationsQuery.data?.content],
-  );
-
   const areas = useMemo<Area[]>(
-    () => areasQuery.items.map(mapRegionRecordToArea),
-    [areasQuery.items],
+    () => regionsQuery.items.map(mapRegionRecordToArea),
+    [regionsQuery.items],
   );
 
   const methods = useForm<
@@ -140,8 +110,8 @@ export function useEnterpriseCertificateStepperForm() {
       farmCertificateApi.create(
         buildFarmCertificatePayload(values, {
           standards: standardRecords,
-          enterprises,
           areas,
+          workspaceId: workspaceId ?? "",
         }),
       ),
     onSuccess: async () => {
@@ -163,8 +133,8 @@ export function useEnterpriseCertificateStepperForm() {
         id,
         buildFarmCertificatePayload(values, {
           standards: standardRecords,
-          enterprises,
           areas,
+          workspaceId: workspaceId ?? "",
         }),
       ),
     onSuccess: async (_, variables) => {
@@ -231,20 +201,17 @@ export function useEnterpriseCertificateStepperForm() {
       : null,
     methods,
     standards,
-    enterprises,
     areas,
     showConfirmDialog,
     setShowConfirmDialog,
     showLoadingDialog,
     loading:
       standardsQuery.loading ||
-      organizationsQuery.isLoading ||
-      areasQuery.loading ||
+      regionsQuery.loading ||
       detailQuery.isLoading,
     error: resolveErrorMessage(
       standardsQuery.error,
-      organizationsQuery.error?.message,
-      areasQuery.error,
+      regionsQuery.error,
       detailQuery.error?.message,
     ),
     handleComplete,

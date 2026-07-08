@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const ENTERPRISE_CERTIFICATE_ENTITY_TYPES = [
-  "enterprise",
+  "workspace",
   "region",
 ] as const;
 
@@ -86,9 +86,9 @@ export const defaultEnterpriseCertificateFormValues: EnterpriseCertificateFormVa
     organization: "",
     issuedDate: "",
     expiryDate: "",
-    entityType: "enterprise",
+    entityType: "workspace",
     entityId: "",
-    entityName: "",
+    entityName: "Workspace hiện tại",
     contentType: "editor",
     content: "",
     fileUrl: "",

@@ -9,7 +9,7 @@ export interface EnterpriseCertificate {
   issuedDate: string; // Thời gian cấp
   expiryDate: string; // Thời gian hết hạn
   status: "valid" | "expired" | "expiring_soon" | "revoked"; // Tự động tính
-  entityType: "enterprise" | "area"; // Doanh nghiệp hoặc Vùng trồng
+  entityType: "workspace" | "region"; // Workspace hoặc Vùng trồng
   entityId: string; // ID của doanh nghiệp hoặc vùng trồng
   entityName: string; // Tên doanh nghiệp hoặc vùng trồng
   content: string; // Nội dung chứng nhận
@@ -166,7 +166,7 @@ const useEnterpriseCertificateStore = create<EnterpriseCertificateStore>(
         issuedDate: "2024-01-15",
         expiryDate: "2025-01-15",
         status: "valid",
-        entityType: "enterprise",
+        entityType: "workspace",
         entityId: "DN001",
         entityName: "HTX Nông nghiệp Xanh",
         content: "Chứng nhận đạt tiêu chuẩn VietGAP cho sản xuất rau an toàn",
@@ -183,7 +183,7 @@ const useEnterpriseCertificateStore = create<EnterpriseCertificateStore>(
         issuedDate: "2023-06-20",
         expiryDate: "2024-12-20",
         status: "expiring_soon",
-        entityType: "area",
+        entityType: "region",
         entityId: "VT001",
         entityName: "Vùng trồng A - Đồng bằng",
         content: "Chứng nhận đạt tiêu chuẩn GlobalGAP",
@@ -200,7 +200,7 @@ const useEnterpriseCertificateStore = create<EnterpriseCertificateStore>(
         issuedDate: "2023-03-10",
         expiryDate: "2024-03-10",
         status: "expired",
-        entityType: "enterprise",
+        entityType: "workspace",
         entityId: "DN002",
         entityName: "Trang trại hữu cơ B",
         content: "Chứng nhận sản xuất hữu cơ",

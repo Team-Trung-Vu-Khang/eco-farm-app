@@ -53,7 +53,7 @@ export const getCertificateColumns = (
             variant="outline"
             className="rounded-full px-2.5 py-1 text-[10px]"
           >
-            {row.entityType === "enterprise" ? "Doanh nghiệp" : "Vùng trồng"}
+            {row.entityType === "workspace" ? "Workspace" : "Vùng trồng"}
           </Badge>
           <Badge
             variant="secondary"
@@ -144,8 +144,8 @@ export const getFilterConfig = (standards: Standard[]) => [
     key: "entityType",
     label: "Loại đối tượng",
     options: [
-      { label: "Doanh nghiệp", value: "enterprise" },
-      { label: "Vùng trồng", value: "area" },
+      { label: "Workspace", value: "workspace" },
+      { label: "Vùng trồng", value: "region" },
     ],
   },
 ];
