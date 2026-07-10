@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useRegions } from "@/features/farm/hooks/useRegions";
 import { farmCertificateApi } from "@/features/farm-certificate";
 import { useMasterData } from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import type {
   EnterpriseCertificate,
   Standard,
@@ -12,7 +12,6 @@ import type {
 import {
   mapFarmCertificateRecordToView,
   mapStandardRecordToOption,
-  mapRegionRecordToArea,
 } from "../utils";
 
 export function useEnterpriseCertificateForm() {
@@ -20,9 +19,12 @@ export function useEnterpriseCertificateForm() {
   const queryClient = useQueryClient();
   const workspaceId = useSelectedWorkspaceId();
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
   const [statusFilter, setStatusFilter] = useState("all");
   const [standardTypeFilter, setStandardTypeFilter] = useState("all");
   const [targetTypeFilter, setTargetTypeFilter] = useState("all");
+  const [pageSize, setPageSize] = useState(10);
+  const [currentIndex, setCurrentIndex] = useState(1);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<EnterpriseCertificate | null>(
@@ -37,52 +39,42 @@ export function useEnterpriseCertificateForm() {
     enabled: true,
   });
 
-  const regionsQuery = useRegions({
-    params: {
-      size: 100,
-    },
-    enabled: true,
-  });
-
   const certificatesQuery = useQuery({
     queryKey: [
       "enterprise-certificate",
       "certificates",
       workspaceId,
-      searchQuery,
+      debouncedSearchQuery,
       statusFilter,
       standardTypeFilter,
       targetTypeFilter,
+      currentIndex,
+      pageSize,
     ] as const,
     queryFn: () =>
       farmCertificateApi.list({
-        keyword: searchQuery.trim() || undefined,
+        keyword: debouncedSearchQuery.trim() || undefined,
         status: statusFilter === "all" ? undefined : statusFilter,
         standardType:
           standardTypeFilter === "all" ? undefined : standardTypeFilter,
         targetType: targetTypeFilter === "all" ? undefined : targetTypeFilter,
-        page: 0,
-        size: 100,
+        page: Math.max(currentIndex - 1, 0),
+        size: pageSize,
       }),
     enabled: workspaceId !== null && workspaceId !== undefined,
     staleTime: 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
-  const standards = useMemo<Standard[]>(
-    () => standardsQuery.items.map(mapStandardRecordToOption),
-    [standardsQuery.items],
-  );
-
-  const regions = useMemo(
-    () => regionsQuery.items.map(mapRegionRecordToArea),
-    [regionsQuery.items],
-  );
-
   const filteredData = useMemo(
     () =>
       certificatesQuery.data?.content.map(mapFarmCertificateRecordToView) ?? [],
     [certificatesQuery.data?.content],
+  );
+
+  const standards = useMemo<Standard[]>(
+    () => standardsQuery.items.map(mapStandardRecordToOption),
+    [standardsQuery.items],
   );
 
   const deleteMutation = useMutation({
@@ -129,19 +121,32 @@ export function useEnterpriseCertificateForm() {
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
+    setCurrentIndex(1);
+  };
+
+  const handlePageSizeChange = (value: number) => {
+    setPageSize(value);
+    setCurrentIndex(1);
+  };
+
+  const handleIndexChange = (value: number) => {
+    setCurrentIndex(value);
   };
 
   const handleFilterChange = (key: string, value: string) => {
     if (key === "status") {
       setStatusFilter(value);
+      setCurrentIndex(1);
     }
 
     if (key === "standardType") {
       setStandardTypeFilter(value);
+      setCurrentIndex(1);
     }
 
     if (key === "entityType") {
       setTargetTypeFilter(value);
+      setCurrentIndex(1);
     }
   };
 
@@ -149,24 +154,22 @@ export function useEnterpriseCertificateForm() {
     deleteOpen,
     setDeleteOpen,
     searchQuery,
+    debouncedSearchQuery,
     statusFilter,
     standardTypeFilter,
     targetTypeFilter,
     filteredData,
     standards,
-    regions,
-    loading:
-      certificatesQuery.isLoading ||
-      standardsQuery.loading ||
-      regionsQuery.loading,
-    error:
-      certificatesQuery.error?.message ??
-      standardsQuery.error ??
-      regionsQuery.error ??
-      null,
+    response: certificatesQuery.data,
+    loading: certificatesQuery.isLoading || standardsQuery.loading,
+    error: certificatesQuery.error?.message ?? standardsQuery.error ?? null,
     handleSearch,
     handleFilterChange,
     handleDelete,
     handleConfirmDelete,
+    pageSize,
+    handlePageSizeChange,
+    currentIndex,
+    handleIndexChange,
   };
 }

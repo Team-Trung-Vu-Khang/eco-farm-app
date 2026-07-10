@@ -15,22 +15,27 @@ const EnterpriseCertificatePage = () => {
     deleteOpen,
     setDeleteOpen,
     filteredData,
+    response,
     standards,
     loading,
     handleSearch,
     handleFilterChange,
     handleDelete,
     handleConfirmDelete,
+    pageSize,
+    handlePageSizeChange,
+    currentIndex,
+    handleIndexChange,
   } = useEnterpriseCertificateForm();
 
-  const columns = getCertificateColumns(standards);
+  const columns = getCertificateColumns();
   const filterConfig = getFilterConfig(standards);
 
   return (
     <AdminLayout
       isDev={true}
       title="Chứng nhận - Chứng chỉ"
-      description="Quản lý chứng nhận cho workspace và vùng trồng"
+      description="Quản lý chứng nhận cho đơn vị - tổ chức và vùng canh tác"
       actions={
         <Button
           onClick={() => setLocation("/enterprise-certificate/create")}
@@ -46,6 +51,10 @@ const EnterpriseCertificatePage = () => {
         data={filteredData}
         searchable
         loading={loading}
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalElements={response?.totalElements}
+        totalPages={response?.totalPages}
         onEdit={(item) =>
           setLocation(`/enterprise-certificate/${item.id}/edit`)
         }
@@ -54,6 +63,8 @@ const EnterpriseCertificatePage = () => {
         filters={filterConfig}
         onSearch={handleSearch}
         onFilterChange={handleFilterChange}
+        onPageSize={handlePageSizeChange}
+        onIndexChange={handleIndexChange}
       />
 
       <DeleteDialog

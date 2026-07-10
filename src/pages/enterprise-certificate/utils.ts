@@ -20,6 +20,17 @@ const toNumericId = (value: number | string | undefined | null) => {
   return String(value);
 };
 
+const readMetadataValue = (
+  metadata: Record<string, unknown> | undefined,
+  key: string,
+) => {
+  const value = metadata?.[key];
+  if (typeof value === "string" || typeof value === "number") {
+    return value;
+  }
+  return undefined;
+};
+
 const calculateStatus = (expiryDate: string, apiStatus?: string) => {
   if (apiStatus === "revoked") return "revoked" as const;
   if (apiStatus === "expired") return "expired" as const;
@@ -48,7 +59,7 @@ export const mapRegionRecordToArea = (record: FarmRegionResponse): Area => ({
   id: toNumericId(record.id),
   code: record.code ?? String(record.id),
   name: record.name ?? record.code ?? String(record.id),
-  enterpriseId: toNumericId(record.metadataJson?.enterpriseId),
+  enterpriseId: toNumericId(readMetadataValue(record.metadataJson, "enterpriseId")),
 });
 
 export const mapFarmCertificateRecordToFormData = (
@@ -56,10 +67,14 @@ export const mapFarmCertificateRecordToFormData = (
 ): EnterpriseCertificateFormValues => {
   const primaryDocument = record.documents?.[0];
   const targetType = record.targetType === "region" ? "region" : "workspace";
-  const targetSource =
-    targetType === "workspace"
-      ? record.targetOrganization
-      : record.targetRegion;
+  const targetRegions =
+    record.targetRegions && record.targetRegions.length > 0
+      ? record.targetRegions
+      : record.targetRegion
+        ? [record.targetRegion]
+        : [];
+  const workspaceTargetSource = record.targetOrganization;
+  const regionTargetSource = record.targetRegion ?? targetRegions[0];
 
   return {
     code: record.code,
@@ -69,11 +84,16 @@ export const mapFarmCertificateRecordToFormData = (
     issuedDate: record.issuedDate,
     expiryDate: record.expiryDate,
     entityType: targetType,
-    entityId: toNumericId(record.targetId ?? targetSource?.code ?? targetSource?.id),
+    entityId: toNumericId(
+      record.targetId ??
+        (targetType === "workspace"
+          ? workspaceTargetSource?.code ?? workspaceTargetSource?.id
+          : regionTargetSource?.code ?? regionTargetSource?.id),
+    ),
     entityName:
       targetType === "workspace"
-        ? "Workspace hiện tại"
-        : targetSource?.name ?? "",
+        ? workspaceTargetSource?.name ?? "Workspace hiện tại"
+        : regionTargetSource?.name ?? "",
     content: primaryDocument?.content ?? "",
     contentType: primaryDocument?.documentType === "file" ? "file" : "editor",
     fileUrl: primaryDocument?.fileUrl ?? "",
@@ -85,11 +105,19 @@ export const mapFarmCertificateRecordToView = (
   record: FarmCertificateRecord,
 ): EnterpriseCertificateViewData => {
   const formData = mapFarmCertificateRecordToFormData(record);
+  const targetRegions =
+    record.targetRegions && record.targetRegions.length > 0
+      ? record.targetRegions
+      : record.targetRegion
+        ? [record.targetRegion]
+        : [];
 
   return {
     id: Number(record.id),
     ...formData,
+    agricultureCertificate: record.agricultureCertificate,
     entityType: formData.entityType,
+    targetRegions,
     status: calculateStatus(record.expiryDate, record.status),
     createdAt: record.createdAt,
   };
@@ -160,12 +188,17 @@ export const buildFarmCertificatePayload = (
           },
         ];
 
-  const targetId =
+  const targetIds =
     formData.entityType === "workspace"
-      ? context.workspaceId
-      : selectedArea?.id;
+      ? undefined
+      : selectedArea
+        ? [selectedArea.id]
+        : undefined;
 
-  if (targetId === null || targetId === undefined || targetId === "") {
+  if (
+    formData.entityType === "region" &&
+    (!targetIds || targetIds.length === 0)
+  ) {
     throw new Error("Vui lòng chọn đúng đối tượng cấp chứng nhận.");
   }
 
@@ -177,7 +210,7 @@ export const buildFarmCertificatePayload = (
     issuedDate: formData.issuedDate,
     expiryDate: formData.expiryDate,
     targetType: formData.entityType === "region" ? "region" : "workspace",
-    targetId,
+    ...(targetIds ? { targetIds } : {}),
     displayOrder: 1,
     documents,
     metadataJson: null,

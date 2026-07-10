@@ -67,6 +67,7 @@ export interface FarmCertificateRecord {
   expiryDate: string;
   targetType: FarmCertificateTargetType;
   targetId?: number | string;
+  targetRegions?: FarmCertificateMasterDataRef[];
   targetOrganization?: FarmCertificateMasterDataRef | null;
   targetRegion?: FarmCertificateMasterDataRef | null;
   documents: FarmCertificateDocumentRecord[];
@@ -94,7 +95,7 @@ export interface FarmCertificateCreateRequest {
   issuedDate: string;
   expiryDate: string;
   targetType: FarmCertificateTargetType;
-  targetId: number | string;
+  targetIds?: Array<number | string>;
   displayOrder?: number;
   documents?: FarmCertificateDocumentRequest[];
   metadataJson?: Record<string, unknown> | null;

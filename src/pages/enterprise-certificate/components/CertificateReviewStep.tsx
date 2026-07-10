@@ -8,6 +8,11 @@ import type {
 } from "../../../stores/useEnterpriseCertificateStore";
 import { type EnterpriseCertificateFormValues } from "../data/enterprise-certificate-form.schema";
 
+const ENTITY_TYPE_LABELS = {
+  workspace: "Cấp phép theo đơn vị - tổ chức",
+  region: "Cấp phép theo vùng canh tác cụ thể",
+} as const;
+
 interface CertificateReviewStepProps {
   standards: Standard[];
   areas: Area[];
@@ -99,8 +104,8 @@ export function CertificateReviewStep({
             <div className="flex flex-wrap gap-2">
               <Badge variant="secondary" className="rounded-full px-3 py-1">
                 {values.entityType === "workspace"
-                  ? "Workspace"
-                  : "Vùng trồng"}
+                  ? ENTITY_TYPE_LABELS.workspace
+                  : ENTITY_TYPE_LABELS.region}
               </Badge>
               <Badge
                 variant="outline"
@@ -115,15 +120,15 @@ export function CertificateReviewStep({
                 label="Phạm vi"
                 value={
                   values.entityType === "workspace"
-                    ? "Áp dụng cho workspace hiện tại"
-                    : `Áp dụng cho ${selectedArea?.name || "vùng trồng đã chọn"}`
+                    ? "Áp dụng theo phạm vi đơn vị - tổ chức"
+                    : `Áp dụng theo ${selectedArea?.name || "vùng canh tác đã chọn"}`
                 }
               />
             </div>
             {values.entityType === "region" ? (
               <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
                 <span className="font-medium text-slate-900">
-                  Vùng trồng đã chọn:
+                  Vùng canh tác đã chọn:
                 </span>{" "}
                 {selectedArea?.name || "Chưa có dữ liệu"}
               </div>

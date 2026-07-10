@@ -5,9 +5,12 @@ import type {
   Standard,
 } from "../../../stores/useEnterpriseCertificateStore";
 
-export const getCertificateColumns = (
-  standards: Standard[],
-): Column<EnterpriseCertificate>[] => [
+const ENTITY_TYPE_LABELS = {
+  workspace: "Cấp phép theo đơn vị - tổ chức",
+  region: "Cấp phép theo vùng canh tác cụ thể",
+} as const;
+
+export const getCertificateColumns = (): Column<EnterpriseCertificate>[] => [
   {
     key: "code",
     label: "Mã chứng nhận",
@@ -24,15 +27,13 @@ export const getCertificateColumns = (
   {
     key: "standardType",
     label: "Loại tiêu chuẩn",
-    render: (value) => {
-      const selectedStandard = standards.find((item) => item.code === value);
-
+    render: (value, row) => {
       return (
         <Badge
           variant="secondary"
           className="rounded-full bg-primary/10 px-2.5 py-1 text-primary"
         >
-          {selectedStandard?.name || (value as string)}
+          {row.agricultureCertificate?.name || (value as string)}
         </Badge>
       );
     },
@@ -53,15 +54,40 @@ export const getCertificateColumns = (
             variant="outline"
             className="rounded-full px-2.5 py-1 text-[10px]"
           >
-            {row.entityType === "workspace" ? "Workspace" : "Vùng trồng"}
+            {row.entityType === "workspace"
+              ? ENTITY_TYPE_LABELS.workspace
+              : ENTITY_TYPE_LABELS.region}
           </Badge>
-          <Badge
-            variant="secondary"
-            className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] text-slate-700"
-          >
-            {row.entityId}
-          </Badge>
+          {row.entityId ? (
+            <Badge
+              variant="secondary"
+              className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] text-slate-700"
+            >
+              {row.entityId}
+            </Badge>
+          ) : null}
         </div>
+        {row.targetRegions?.length ? (
+          <div className="flex flex-wrap gap-1.5">
+            {row.targetRegions.slice(0, 2).map((region) => (
+              <Badge
+                key={region.id}
+                variant="outline"
+                className="rounded-full px-2.5 py-1 text-[10px] text-slate-600"
+              >
+                {region.name}
+              </Badge>
+            ))}
+            {row.targetRegions.length > 2 ? (
+              <Badge
+                variant="secondary"
+                className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] text-slate-700"
+              >
+                +{row.targetRegions.length - 2}
+              </Badge>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     ),
   },
@@ -120,32 +146,34 @@ export const getCertificateColumns = (
   },
 ];
 
-export const getFilterConfig = (standards: Standard[]) => [
-  {
-    key: "status",
-    label: "Trạng thái",
-    options: [
-      { label: "Đang hiệu lực", value: "valid" },
-      { label: "Sắp hết hạn", value: "expiring_soon" },
-      { label: "Hết hạn", value: "expired" },
-    ],
-  },
-  {
-    key: "standardType",
-    label: "Loại tiêu chuẩn",
-    options: [
-      ...standards.map((standard) => ({
-        label: standard.name,
-        value: standard.code,
-      })),
-    ],
-  },
-  {
-    key: "entityType",
-    label: "Loại đối tượng",
-    options: [
-      { label: "Workspace", value: "workspace" },
-      { label: "Vùng trồng", value: "region" },
-    ],
-  },
-];
+export const getFilterConfig = (standards: Standard[]) => {
+  const standardOptions = standards.map((standard) => ({
+    label: standard.name,
+    value: standard.code,
+  }));
+
+  return [
+    {
+      key: "status",
+      label: "Trạng thái",
+      options: [
+        { label: "Đang hiệu lực", value: "valid" },
+        { label: "Sắp hết hạn", value: "expiring_soon" },
+        { label: "Hết hạn", value: "expired" },
+      ],
+    },
+    {
+      key: "standardType",
+      label: "Loại tiêu chuẩn",
+      options: standardOptions,
+    },
+    {
+      key: "entityType",
+      label: "Loại đối tượng",
+      options: [
+        { label: ENTITY_TYPE_LABELS.workspace, value: "workspace" },
+        { label: ENTITY_TYPE_LABELS.region, value: "region" },
+      ],
+    },
+  ];
+};

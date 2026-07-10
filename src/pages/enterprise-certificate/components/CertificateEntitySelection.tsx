@@ -16,12 +16,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Building2, MapPin, Search } from "lucide-react";
+import { MapPin, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import type { Area } from "../../../stores/useEnterpriseCertificateStore";
 import type { EnterpriseCertificateFormValues } from "../data/enterprise-certificate-form.schema";
 import { useSelectedWorkspaceId } from "@/features/workspace";
+
+const ENTITY_TYPE_LABELS = {
+  workspace: "Cấp phép theo đơn vị - tổ chức",
+  region: "Cấp phép theo vùng canh tác cụ thể",
+} as const;
 
 interface EntitySelectionProps {
   areas?: Area[];
@@ -131,7 +136,7 @@ function SearchSelector({
                     variant="outline"
                     className="h-5 rounded-full px-2.5 py-0 text-[10px]"
                   >
-                    Vùng trồng
+                    Vùng canh tác
                   </Badge>
                 </div>
                 <div className="text-sm font-semibold text-slate-900">
@@ -222,7 +227,7 @@ function SearchSelector({
                           variant="outline"
                           className="h-4 rounded-full px-1.5 py-0 text-[10px]"
                         >
-                          Vùng trồng
+                          Vùng canh tác
                         </Badge>
                       </div>
                       <div className="space-y-0.5 text-xs text-muted-foreground">
@@ -366,64 +371,35 @@ export function CertificateEntitySelection({
                 }
               }}
             >
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Chọn phạm vi..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="workspace">Workspace hiện tại</SelectItem>
-                <SelectItem value="region">Vùng trồng cụ thể</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-        />
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Chọn phạm vi..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="workspace">
+                    {ENTITY_TYPE_LABELS.workspace}
+                  </SelectItem>
+                  <SelectItem value="region">
+                    {ENTITY_TYPE_LABELS.region}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
         {errors.entityType ? (
           <p className="text-xs text-red-600">{errors.entityType.message}</p>
         ) : null}
       </div>
 
-      {entityType === "workspace" ? (
-        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-          <div className="flex items-start gap-3">
-            <Avatar className="h-12 w-12 shrink-0 border border-white shadow-sm">
-              <AvatarFallback className="bg-primary/10 text-primary">
-                <Building2 className="h-5 w-5" />
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1 space-y-2 text-sm">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-semibold text-slate-900">
-                  Workspace hiện tại
-                </span>
-                <Badge
-                  variant="outline"
-                  className="rounded-full px-3 py-1 font-mono text-[10px]"
-                >
-                  {workspaceId === null || workspaceId === undefined
-                    ? "Chưa có workspace"
-                    : String(workspaceId)}
-                </Badge>
-              </div>
-              <div className="rounded-xl bg-slate-50 p-3">
-                <div className="text-xs uppercase tracking-wide text-slate-500">
-                  Phạm vi
-                </div>
-                <div className="mt-1 font-medium text-slate-700">
-                  Áp dụng cho workspace hiện tại
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
+      {entityType !== "workspace" ? (
         <SearchSelector
-          label="Chọn vùng trồng"
+          label="Chọn vùng canh tác"
           required
-          placeholder="Chọn vùng trồng"
-          dialogTitle="Chọn vùng trồng"
-          searchPlaceholder="Tìm theo tên hoặc mã vùng trồng..."
+          placeholder="Chọn vùng canh tác"
+          dialogTitle="Chọn vùng canh tác"
+          searchPlaceholder="Tìm theo tên hoặc mã vùng canh tác..."
           selectedId={entityId}
           items={areaItems}
-          emptyStateText="Không tìm thấy vùng trồng phù hợp"
+          emptyStateText="Không tìm thấy vùng canh tác phù hợp"
           onConfirm={(id) => {
             const selected = areas.find(
               (area) => area.id === id || area.code === id,
@@ -440,70 +416,60 @@ export function CertificateEntitySelection({
             });
           }}
         />
-      )}
+      ) : null}
 
-      <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-        <div className="flex items-start gap-3">
-          <Avatar className="h-12 w-12 shrink-0 border border-white shadow-sm">
-            <AvatarFallback
-              className={
-                entityType === "region"
-                  ? "bg-emerald-100 text-emerald-700"
-                  : "bg-primary/10 text-primary"
-              }
-            >
-              {entityType === "region" ? (
+      {entityType === "region" ? (
+        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <Avatar className="h-12 w-12 shrink-0 border border-white shadow-sm">
+              <AvatarFallback className="bg-emerald-100 text-emerald-700">
                 <MapPin className="h-5 w-5" />
-              ) : (
-                <Building2 className="h-5 w-5" />
-              )}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1 space-y-2 text-sm">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-semibold text-slate-900">Đã chọn:</span>
-              <span className="font-medium text-slate-700">
-                {entityName || "Chưa có lựa chọn"}
-              </span>
-            </div>
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1 space-y-2 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-semibold text-slate-900">Đã chọn:</span>
+                <span className="font-medium text-slate-700">
+                  {entityName || "Chưa có lựa chọn"}
+                </span>
+              </div>
 
-            <div className="grid gap-2 md:grid-cols-2">
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <div className="text-xs uppercase tracking-wide text-slate-500">
+                    Mã
+                  </div>
+                  <div className="mt-1 font-semibold text-slate-900">
+                    {entityId || selectedArea?.code || "Chưa xác định"}
+                  </div>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <div className="text-xs uppercase tracking-wide text-slate-500">
+                    Loại
+                  </div>
+                  <div className="mt-1 font-semibold text-slate-900">
+                    {ENTITY_TYPE_LABELS.region}
+                  </div>
+                </div>
+              </div>
+
               <div className="rounded-xl bg-slate-50 p-3">
                 <div className="text-xs uppercase tracking-wide text-slate-500">
-                  Mã
+                  Phạm vi
                 </div>
-                <div className="mt-1 font-semibold text-slate-900">
-                  {entityId || selectedArea?.code || "Chưa xác định"}
-                </div>
-              </div>
-              <div className="rounded-xl bg-slate-50 p-3">
-                <div className="text-xs uppercase tracking-wide text-slate-500">
-                  Loại
-                </div>
-                <div className="mt-1 font-semibold text-slate-900">
-                  {entityType === "workspace" ? "Workspace" : "Vùng trồng"}
+                <div className="mt-1 font-medium text-slate-700">
+                  Áp dụng theo vùng canh tác cụ thể đã chọn
                 </div>
               </div>
+              {errors.entityId || errors.entityName ? (
+                <p className="text-xs text-red-600">
+                  {errors.entityId?.message || errors.entityName?.message}
+                </p>
+              ) : null}
             </div>
-
-            <div className="rounded-xl bg-slate-50 p-3">
-              <div className="text-xs uppercase tracking-wide text-slate-500">
-                Phạm vi
-              </div>
-              <div className="mt-1 font-medium text-slate-700">
-                {entityType === "workspace"
-                  ? "Áp dụng cho workspace hiện tại"
-                  : "Áp dụng cho vùng trồng đã chọn"}
-              </div>
-            </div>
-            {errors.entityId || errors.entityName ? (
-              <p className="text-xs text-red-600">
-                {errors.entityId?.message || errors.entityName?.message}
-              </p>
-            ) : null}
           </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

@@ -5,6 +5,11 @@ export interface EnterpriseCertificate {
   code: string;
   name: string;
   standardType: string; // Loại tiêu chuẩn (VietGAP, GlobalGAP...)
+  agricultureCertificate?: {
+    id: number | string;
+    code: string;
+    name: string;
+  };
   organization: string; // Tổ chức cấp
   issuedDate: string; // Thời gian cấp
   expiryDate: string; // Thời gian hết hạn
@@ -12,6 +17,11 @@ export interface EnterpriseCertificate {
   entityType: "workspace" | "region"; // Workspace hoặc Vùng trồng
   entityId: string; // ID của doanh nghiệp hoặc vùng trồng
   entityName: string; // Tên doanh nghiệp hoặc vùng trồng
+  targetRegions?: {
+    id: number | string;
+    code: string;
+    name: string;
+  }[];
   content: string; // Nội dung chứng nhận
   contentType: "editor" | "file";
   fileUrl?: string;

@@ -74,7 +74,7 @@ function EnterpriseCertificateStepperContent({
     {
       id: "entity",
       title: "Chọn đối tượng",
-      description: "Workspace hiện tại hoặc vùng trồng",
+      description: "Cấp phép theo đơn vị - tổ chức hoặc vùng canh tác cụ thể",
       content: <CertificateEntitySelection areas={areas} />,
       isValid:
         enterpriseCertificateEntityStepSchema.safeParse(watchedValues).success,
@@ -138,7 +138,7 @@ export default function EnterpriseCertificateFormPage() {
     <AdminLayout
       isDev={true}
       title={isEdit ? "Chỉnh sửa chứng nhận" : "Tạo mới chứng nhận"}
-      description="Điền thông tin theo từng bước để tạo hồ sơ chứng nhận workspace hiện tại hoặc vùng trồng"
+      description="Điền thông tin theo từng bước để tạo hồ sơ cấp phép theo đơn vị - tổ chức hoặc vùng canh tác cụ thể"
       actions={
         <Button
           variant="outline"
