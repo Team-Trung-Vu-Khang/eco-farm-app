@@ -6,8 +6,11 @@ import {
   CardHeader,
   ScrollArea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { MFMap, MFMarker } from "react-map4d-map";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { Edit2, Layers, Navigation } from "lucide-react";
+import { useEffect, useMemo } from "react";
+import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import { MOCK_SEEDS } from "../constants";
 import type {
   DistributionMethod,
@@ -28,6 +31,23 @@ type Props = {
   generatePlantLocations: () => void;
 };
 
+const defaultLeafletIcon = L.icon({
+  iconUrl: treeMarkerIcon,
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -30],
+});
+
+const MapCenterSync = ({ center }: { center: [number, number] }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setView(center, 18, { animate: true });
+  }, [center, map]);
+
+  return null;
+};
+
 export const PlantDistributionGpsStep = ({
   distributionMethod,
   plantEntries,
@@ -39,11 +59,25 @@ export const PlantDistributionGpsStep = ({
   updatePlantLocation,
   generatePlantLocations,
 }: Props) => {
-  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
   const totalPlants =
     distributionMethod === "zone"
       ? plantEntries.reduce((sum, entry) => sum + entry.quantity, 0)
       : rowConfigs.reduce((sum, row) => sum + row.quantity, 0);
+
+  const activePlantLocation = useMemo(() => {
+    return (
+      plantLocations.find((location) => location.id === selectedPlantId) ??
+      plantLocations[0] ??
+      null
+    );
+  }, [plantLocations, selectedPlantId]);
+
+  const mapCenter: [number, number] = activePlantLocation
+    ? [
+        activePlantLocation.coordinate.lat,
+        activePlantLocation.coordinate.lng,
+      ]
+    : [11.558, 107.134];
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -98,16 +132,16 @@ export const PlantDistributionGpsStep = ({
                 </Button>
               </div>
 
-              <MFMap
-                center={{
-                  lat: plantLocations[0]?.coordinate.lat || 11.558,
-                  lng: plantLocations[0]?.coordinate.lng || 107.134,
-                }}
+              <MapContainer
+                center={mapCenter}
                 zoom={18}
-                accessKey={MAP4D_ACCESS_KEY}
-                options={{ mapType: "raster", controlOptions: {} }}
-                version="2.5"
+                className="h-full w-full"
+                zoomControl={false}
+                scrollWheelZoom
               >
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <MapCenterSync center={mapCenter} />
+
                 {plantLocations.map((location) => {
                   const seed = MOCK_SEEDS.find(
                     (item) => item.id === location.seedId,
@@ -115,41 +149,29 @@ export const PlantDistributionGpsStep = ({
                   const seedName = seed?.name || "Chưa xác định";
 
                   return (
-                    <MFMarker
+                    <Marker
                       key={location.id}
-                      position={{
-                        lat: location.coordinate.lat,
-                        lng: location.coordinate.lng,
-                      }}
-                      icon={{
-                        url: treeMarkerIcon,
-                        width: 32,
-                        height: 32,
-                      }}
-                      title={`${location.plantCode} - ${seedName}`}
-                      label={""}
+                      position={[
+                        location.coordinate.lat,
+                        location.coordinate.lng,
+                      ]}
+                      icon={defaultLeafletIcon}
                       draggable
-                      clickable
-                      onDragEnd={(event: unknown) => {
-                        const eventWithLatLng = event as {
-                          latLng?: { lat?: number; lng?: number };
-                        };
-                        const lat = eventWithLatLng?.latLng?.lat;
-                        const lng = eventWithLatLng?.latLng?.lng;
-                        if (
-                          typeof lat === "number" &&
-                          typeof lng === "number"
-                        ) {
+                      title={`${location.plantCode} - ${seedName}`}
+                      eventHandlers={{
+                        click: () => {
+                          setSelectedPlantId(location.id);
+                        },
+                        dragend: (event) => {
+                          const marker = event.target as L.Marker;
+                          const { lat, lng } = marker.getLatLng();
                           updatePlantLocation(location.id, lat, lng);
-                        }
-                      }}
-                      onClick={() => {
-                        setSelectedPlantId(location.id);
+                        },
                       }}
                     />
                   );
                 })}
-              </MFMap>
+              </MapContainer>
 
               <div className="absolute bottom-4 left-4 right-auto bg-white/90 backdrop-blur-md p-3 rounded-lg shadow-lg border border-slate-200 max-w-[200px] z-[500]">
                 <div className="text-xs font-bold mb-2 text-slate-800">
@@ -350,6 +372,15 @@ export const PlantDistributionGpsStep = ({
           </div>
         </div>
       )}
+
+      <style>{`
+        .leaflet-container {
+          height: 100%;
+          width: 100%;
+          font-family: inherit;
+          background: #e2e8f0;
+        }
+      `}</style>
     </div>
   );
 };

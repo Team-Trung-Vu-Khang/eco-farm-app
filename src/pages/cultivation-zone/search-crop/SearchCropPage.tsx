@@ -28,8 +28,10 @@ import {
   PanelLeftOpen,
   Search,
 } from "lucide-react";
-import { useState } from "react";
-import { MFMap, MFMarker, MFPolygon } from "react-map4d-map";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { useEffect, useMemo, useState } from "react";
+import { MapContainer, Marker, Polygon, TileLayer, useMap } from "react-leaflet";
 import useCropDetailStore from "../../../stores/useCropDetailStore";
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 import useRegionStore from "../../../stores/useRegionStore";
@@ -38,97 +40,130 @@ import { type CropDetail } from "../constants";
 import { CropDetailDialog } from "./components/CropDetailDialog";
 import { CultivationZoneDialog } from "./components/CultivationZoneDialog";
 
+type LatLngTuple = [number, number];
+
+const cropMarkerIcon = L.icon({
+  iconUrl: treeMarkerIcon,
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -30],
+});
+
+const MapViewSync = ({
+  center,
+  zoom,
+}: {
+  center: LatLngTuple;
+  zoom: number;
+}) => {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setView(center, zoom, { animate: true });
+  }, [center, map, zoom]);
+
+  return null;
+};
+
 const MapContent = ({
   currentRegion,
   cropsInThisRegion,
-  activeCropInDialog,
   setActiveCropInDialog,
+  center,
+  zoom,
 }: {
   currentRegion: Region | undefined;
   cropsInThisRegion: CropDetail[];
-  activeCropInDialog: CropDetail | null;
   setActiveCropInDialog: (c: CropDetail) => void;
+  center: LatLngTuple;
+  zoom: number;
 }) => {
-  const toClosedPath = (coordinates?: Array<{ lat: number; lng: number }>) => {
-    if (!coordinates || coordinates.length < 3) return [];
+  const toClosedPath = useMemo(
+    () =>
+      (coordinates?: Array<{ lat: number; lng: number }>) => {
+        if (!coordinates || coordinates.length < 3) return [];
 
-    const path = coordinates.map((coord) => ({
-      lat: coord.lat,
-      lng: coord.lng,
-    }));
-    const first = path[0];
-    const last = path[path.length - 1];
-    if (first.lat !== last.lat || first.lng !== last.lng) {
-      path.push({ ...first });
-    }
+        const path = coordinates.map(
+          (coord) => [coord.lat, coord.lng] as LatLngTuple,
+        );
+        const [firstLat, firstLng] = path[0];
+        const [lastLat, lastLng] = path[path.length - 1];
+        if (firstLat !== lastLat || firstLng !== lastLng) {
+          path.push([firstLat, firstLng]);
+        }
 
-    return path;
-  };
+        return path;
+      },
+    [],
+  );
 
   const regionPath = toClosedPath(currentRegion?.coordinates);
+  const areaPaths = (currentRegion?.subAreas ?? []).map((area) => ({
+    id: area.id,
+    path: toClosedPath(area.coordinates),
+  }));
+  const plotPaths = (currentRegion?.subAreas ?? []).flatMap((area) =>
+    area.plots.map((plot) => ({
+      id: plot.id,
+      path: toClosedPath(plot.coordinates),
+    })),
+  );
 
   return (
     <>
-      {/* Region Outline (Blue) */}
-      {regionPath.length > 0 && (
-        <MFPolygon
-          paths={[regionPath]}
-          strokeColor="#3b82f6"
-          strokeWidth={3}
-          fillColor="#3b82f6"
-          fillOpacity={0.1}
+      <MapViewSync center={center} zoom={zoom} />
+
+      {regionPath.length > 0 ? (
+        <Polygon
+          positions={regionPath}
+          pathOptions={{
+            color: "#3b82f6",
+            weight: 3,
+            fillColor: "#3b82f6",
+            fillOpacity: 0.1,
+          }}
         />
+      ) : null}
+
+      {areaPaths?.map((area) =>
+        area.path.length > 0 ? (
+          <Polygon
+            key={area.id}
+            positions={area.path}
+            pathOptions={{
+              color: "#22c55e",
+              weight: 2,
+              fillColor: "#22c55e",
+              fillOpacity: 0.15,
+            }}
+          />
+        ) : null,
       )}
 
-      {/* Area Outlines (Green) */}
-      {currentRegion?.subAreas?.map((area: any) => {
-        const areaPath = toClosedPath(area.coordinates);
-        if (!areaPath.length) return null;
-
-        return (
-          <MFPolygon
-            key={area.id}
-            paths={[areaPath]}
-            strokeColor="#22c55e"
-            strokeWidth={2}
-            fillColor="#22c55e"
-            fillOpacity={0.15}
+      {plotPaths.map((plot) =>
+        plot.path.length > 0 ? (
+          <Polygon
+            key={plot.id}
+            positions={plot.path}
+            pathOptions={{
+              color: "#f97316",
+              weight: 1.5,
+              fillColor: "#f97316",
+              fillOpacity: 0.2,
+            }}
           />
-        );
-      })}
-
-      {/* Plot Outlines (Orange) */}
-      {currentRegion?.subAreas?.flatMap((area: any) =>
-        area.plots.map((plot: any) => {
-          const plotPath = toClosedPath(plot.coordinates);
-          if (!plotPath.length) return null;
-
-          return (
-            <MFPolygon
-              key={plot.id}
-              paths={[plotPath]}
-              strokeColor="#f97316"
-              strokeWidth={1.5}
-              fillColor="#f97316"
-              fillOpacity={0.2}
-            />
-          );
-        }),
+        ) : null,
       )}
 
       {cropsInThisRegion.map((c) => (
-        <MFMarker
+        <Marker
           key={c.id}
-          position={{ lat: c.coordinate.lat, lng: c.coordinate.lng }}
-          icon={{
-            url: treeMarkerIcon,
-            width: 32,
-            height: 32,
-          }}
+          position={[c.coordinate.lat, c.coordinate.lng]}
+          icon={cropMarkerIcon}
           title={c.name}
-          label={""}
-          clickable
-          onClick={() => setActiveCropInDialog(c)}
+          eventHandlers={{
+            click: () => setActiveCropInDialog(c),
+          }}
         />
       ))}
     </>
@@ -199,7 +234,7 @@ const RegionListItem = ({
   onClick,
 }: {
   region: Region;
-  enterprises: any[];
+  enterprises: Array<{ id: string | number; name?: string }>;
   filteredCrops: CropDetail[];
   isActive: boolean;
   onClick: () => void;
@@ -287,7 +322,6 @@ const RegionListItem = ({
 };
 
 const SearchCropPage = () => {
-  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
   const { toast } = useToast();
   const { crops } = useCropDetailStore();
   const { regions } = useRegionStore();
@@ -442,17 +476,17 @@ const SearchCropPage = () => {
   const mapView = (() => {
     if (activeCropInDialog) {
       return {
-        center: {
-          lat: activeCropInDialog.coordinate.lat,
-          lng: activeCropInDialog.coordinate.lng,
-        },
+        center: [
+          activeCropInDialog.coordinate.lat,
+          activeCropInDialog.coordinate.lng,
+        ] as LatLngTuple,
         zoom: 17,
       };
     }
 
     if (!selectedRegionId) {
       return {
-        center: { lat: 11.53, lng: 106.88 },
+        center: [11.53, 106.88] as LatLngTuple,
         zoom: 15,
       };
     }
@@ -462,13 +496,13 @@ const SearchCropPage = () => {
     );
     if (!firstCrop) {
       return {
-        center: { lat: 11.53, lng: 106.88 },
+        center: [11.53, 106.88] as LatLngTuple,
         zoom: 15,
       };
     }
 
     return {
-      center: { lat: firstCrop.coordinate.lat, lng: firstCrop.coordinate.lng },
+      center: [firstCrop.coordinate.lat, firstCrop.coordinate.lng] as LatLngTuple,
       zoom: 15,
     };
   })();
@@ -948,25 +982,24 @@ const SearchCropPage = () => {
                                     isCropDetailOpen && "opacity-0",
                                   )}
                                 >
-                                  <MFMap
+                                  <MapContainer
                                     center={mapView.center}
                                     zoom={mapView.zoom}
-                                    accessKey={MAP4D_ACCESS_KEY}
-                                    options={{
-                                      mapType: "raster",
-                                      controlOptions: {},
-                                    }}
-                                    version="2.5"
+                                    className="h-full w-full"
+                                    zoomControl={false}
+                                    scrollWheelZoom
                                   >
+                                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                                     <MapContent
                                       currentRegion={currentRegion}
                                       cropsInThisRegion={cropsInThisRegion}
-                                      activeCropInDialog={activeCropInDialog}
                                       setActiveCropInDialog={
                                         setActiveCropInDialog
                                       }
+                                      center={mapView.center}
+                                      zoom={mapView.zoom}
                                     />
-                                  </MFMap>
+                                  </MapContainer>
                                   <div
                                     onClick={() => setIsMapExpanded(true)}
                                     className="p-3 rounded-xl cursor-pointer absolute top-4 right-4 z-1000 bg-white/90 backdrop-blur-sm shadow-xl hover:bg-white transition-colors"
@@ -1126,13 +1159,14 @@ const SearchCropPage = () => {
               <div className="flex h-full w-full overflow-hidden">
                 {/* Map Section */}
                 <div className="flex-1 relative bg-white border-r">
-                  <MFMap
+                  <MapContainer
                     center={mapView.center}
                     zoom={mapView.zoom}
-                    accessKey={MAP4D_ACCESS_KEY}
-                    options={{ mapType: "raster", controlOptions: {} }}
-                    version="2.5"
+                    className="h-full w-full"
+                    zoomControl={false}
+                    scrollWheelZoom
                   >
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                     <MapContent
                       currentRegion={regions.find(
                         (r) => r.id === selectedRegionId,
@@ -1140,10 +1174,11 @@ const SearchCropPage = () => {
                       cropsInThisRegion={filteredCrops.filter(
                         (c) => c.regionId === selectedRegionId,
                       )}
-                      activeCropInDialog={activeCropInDialog}
                       setActiveCropInDialog={setActiveCropInDialog}
+                      center={mapView.center}
+                      zoom={mapView.zoom}
                     />
-                  </MFMap>
+                  </MapContainer>
                   <div
                     className="p-3 rounded-xl cursor-pointer absolute top-4 right-4 z-1000 bg-white/90 backdrop-blur-sm shadow-xl hover:bg-white transition-colors"
                     onClick={() => setIsMapExpanded(false)}
@@ -1225,6 +1260,14 @@ const SearchCropPage = () => {
           onOpenChange={setIsCropDetailOpen}
           crop={activeCropInDialog}
         />
+        <style>{`
+          .leaflet-container {
+            height: 100%;
+            width: 100%;
+            font-family: inherit;
+            background: #e2e8f0;
+          }
+        `}</style>
       </div>
     </AdminLayout>
   );

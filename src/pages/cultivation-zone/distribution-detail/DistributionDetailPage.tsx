@@ -13,6 +13,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Download,
@@ -24,10 +25,16 @@ import {
   Target,
   Trees,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { MFMap, MFMarker } from "react-map4d-map";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { useEffect, useMemo, useState } from "react";
+import { MapContainer, Marker, Polygon, TileLayer, useMap } from "react-leaflet";
 import { useLocation, useRoute } from "wouter";
 import { MOCK_SEEDS } from "./constants";
+
+import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
+import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
+import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 // --- Mock Data ---
 
@@ -40,6 +47,8 @@ interface PlantLocation {
   plantedDate: string;
   coordinate: { lat: number; lng: number };
 }
+
+type LatLngTuple = [number, number];
 
 const MOCK_DETAIL = {
   id: "dist-1",
@@ -62,7 +71,7 @@ const MOCK_DETAIL = {
 
 // Generate random plant locations
 const generateMockPlants = (count: number): PlantLocation[] => {
-  return Array.from({ length: 50 }).map((_, i) => ({
+  return Array.from({ length: count }).map((_, i) => ({
     id: `p-${i}`,
     code: `PLANT-${String(i + 1).padStart(3, "0")}`,
     variety: i % 2 === 0 ? "Sầu riêng Ri6" : "Sầu riêng Monthong",
@@ -85,8 +94,30 @@ interface HistoryLog {
   type: "care" | "harvest" | "monitor" | "issue";
 }
 
+type HistoryAction = Pick<HistoryLog, "action" | "type" | "details">;
+
+const defaultLeafletIcon = L.icon({
+  iconUrl: defaultMarkerIconUrl,
+  iconRetinaUrl: defaultMarkerIcon2xUrl,
+  shadowUrl: defaultMarkerShadowUrl,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const MapCenterSync = ({ center }: { center: LatLngTuple }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setView(center, map.getZoom(), { animate: true });
+  }, [center, map]);
+
+  return null;
+};
+
 const generateMockHistory = (count: number): HistoryLog[] => {
-  const actions = [
+  const actions: HistoryAction[] = [
     { action: "Tưới nước", type: "care", details: "Tưới nhỏ giọt 30 phút" },
     { action: "Bón phân", type: "care", details: "Bón NPK 20-20-15" },
     { action: "Cắt tỉa", type: "care", details: "Cắt tỉa cành sâu bệnh" },
@@ -114,26 +145,23 @@ const generateMockHistory = (count: number): HistoryLog[] => {
       action: act.action,
       details: act.details,
       performedBy: staff[Math.floor(Math.random() * staff.length)],
-      type: act.type as any,
+      type: act.type,
     };
   });
 };
 
 const DistributionDetailPage = () => {
-  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
   const [, params] = useRoute("/distribution-detail/:id");
   const [, setLocation] = useLocation();
   const { getRecordById, deleteRecord } = usePlantDistributionStore();
-  const [plants, setPlants] = useState<PlantLocation[]>([]);
-  const [history, setHistory] = useState<HistoryLog[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
 
   const distributionId = params?.id;
   const detailData = distributionId ? getRecordById(distributionId) : undefined;
 
-  useEffect(() => {
+  const plants = useMemo<PlantLocation[]>(() => {
     if (detailData?.plantLocations?.length) {
-      const mappedPlants = detailData.plantLocations.map((location) => {
+      return detailData.plantLocations.map((location) => {
         const seed = MOCK_SEEDS.find((item) => item.id === location.seedId);
         return {
           id: location.id,
@@ -145,12 +173,11 @@ const DistributionDetailPage = () => {
           coordinate: location.coordinate,
         };
       });
-      setPlants(mappedPlants);
-    } else {
-      setPlants(generateMockPlants(50));
     }
-    setHistory(generateMockHistory(15));
+    return generateMockPlants(50);
   }, [detailData]);
+
+  const history = useMemo(() => generateMockHistory(15), []);
 
   const handleBack = () => {
     setLocation("/distribution-detail");
@@ -181,81 +208,80 @@ const DistributionDetailPage = () => {
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-700 border-green-200";
-      case "completed":
-        return "bg-blue-100 text-blue-700 border-blue-200";
-      default:
-        return "bg-slate-100 text-slate-700 border-slate-200";
-    }
-  };
-
   const mapCenter =
-    plants[0]?.coordinate || ({ lat: 11.558, lng: 107.134 } as const);
+    (plants[0]?.coordinate
+      ? ([plants[0].coordinate.lat, plants[0].coordinate.lng] as LatLngTuple)
+      : ([11.558, 107.134] as LatLngTuple));
 
-  const plantColumns = [
+  const plantColumns: Column<PlantLocation>[] = [
     {
       key: "code",
       label: "Mã cây",
-      render: (v: string) => (
-        <span className="font-mono font-bold text-xs">{v}</span>
+      render: (v: unknown) => (
+        <span className="font-mono font-bold text-xs">{String(v)}</span>
       ),
     },
     {
       key: "variety",
       label: "Giống cây",
-      render: (v: string) => (
+      render: (v: unknown) => (
         <Badge variant="secondary" className="font-normal text-xs">
-          {v}
+          {String(v)}
         </Badge>
       ),
     },
     {
       key: "status",
       label: "Sức khỏe",
-      render: (v: string) => (
-        <Badge
-          className={
-            v === "healthy"
-              ? "bg-green-100 text-green-700 hover:bg-green-100 border-green-200"
-              : "bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200"
-          }
-          variant="outline"
-        >
-          {v === "healthy" ? "Tốt" : "Cần chú ý"}
-        </Badge>
-      ),
+      render: (v: unknown) => {
+        const status = v as PlantLocation["status"];
+        return (
+          <Badge
+            className={
+              status === "healthy"
+                ? "bg-green-100 text-green-700 hover:bg-green-100 border-green-200"
+                : "bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200"
+            }
+            variant="outline"
+          >
+            {status === "healthy" ? "Tốt" : "Cần chú ý"}
+          </Badge>
+        );
+      },
     },
     {
       key: "height",
       label: "Chiều cao",
-      render: (v: number) => <span className="text-xs">{v} cm</span>,
+      render: (v: unknown) => (
+        <span className="text-xs">{String(v)} cm</span>
+      ),
     },
     {
       key: "coordinate",
       label: "GPS",
-      render: (v: any) => (
-        <span className="text-[10px] font-mono text-muted-foreground">
-          {v.lat.toFixed(6)}, {v.lng.toFixed(6)}
-        </span>
-      ),
+      render: (v: unknown) => {
+        const coordinate = v as PlantLocation["coordinate"];
+        return (
+          <span className="text-[10px] font-mono text-muted-foreground">
+            {coordinate.lat.toFixed(6)}, {coordinate.lng.toFixed(6)}
+          </span>
+        );
+      },
     },
   ];
 
-  const historyColumns = [
+  const historyColumns: Column<HistoryLog>[] = [
     {
       key: "date",
       label: "Ngày thực hiện",
-      render: (v: string) => (
-        <span className="text-sm text-slate-600">{v}</span>
+      render: (v: unknown) => (
+        <span className="text-sm text-slate-600">{String(v)}</span>
       ),
     },
     {
       key: "action",
       label: "Hoạt động",
-      render: (v: string, r: HistoryLog) => (
+      render: (v: unknown, r: HistoryLog) => (
         <span className="font-medium flex items-center gap-2">
           {r.type === "issue" && (
             <span className="w-2 h-2 rounded-full bg-red-500" />
@@ -266,21 +292,21 @@ const DistributionDetailPage = () => {
           {r.type === "monitor" && (
             <span className="w-2 h-2 rounded-full bg-green-500" />
           )}
-          {v}
+          {String(v)}
         </span>
       ),
     },
     {
       key: "details",
       label: "Chi tiết",
-      render: (v: string) => <span className="text-sm">{v}</span>,
+      render: (v: unknown) => <span className="text-sm">{String(v)}</span>,
     },
     {
       key: "performedBy",
       label: "Người thực hiện",
-      render: (v: string) => (
+      render: (v: unknown) => (
         <Badge variant="outline" className="font-normal">
-          {v}
+          {String(v)}
         </Badge>
       ),
     },
@@ -430,31 +456,25 @@ const DistributionDetailPage = () => {
                   </div>
                 </CardHeader>
                 <div className="flex-1 relative z-0">
-                  <MFMap
+                  <MapContainer
                     center={mapCenter}
                     zoom={17}
-                    accessKey={MAP4D_ACCESS_KEY}
-                    options={{ mapType: "raster", controlOptions: {} }}
-                    version="2.5"
+                    className="h-full w-full"
+                    zoomControl={false}
+                    scrollWheelZoom
                   >
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    <MapCenterSync center={mapCenter} />
+
                     {plants.map((plant) => (
-                      <MFMarker
+                      <Marker
                         key={plant.id}
-                        position={{
-                          lat: plant.coordinate.lat,
-                          lng: plant.coordinate.lng,
-                        }}
-                        icon={{
-                          url: treeMarkerIcon,
-                          width: 32,
-                          height: 32,
-                        }}
+                        position={[plant.coordinate.lat, plant.coordinate.lng]}
+                        icon={defaultLeafletIcon}
                         title={`${plant.code} - ${plant.variety}`}
-                        label={""}
-                        clickable
                       />
                     ))}
-                  </MFMap>
+                  </MapContainer>
                 </div>
               </Card>
             </div>

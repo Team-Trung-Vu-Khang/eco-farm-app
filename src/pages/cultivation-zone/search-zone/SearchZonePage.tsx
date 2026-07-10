@@ -38,8 +38,16 @@ import {
   Target,
   X,
 } from "lucide-react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { MFMap, MFMarker, MFPolygon } from "react-map4d-map";
+import {
+  MapContainer,
+  Marker,
+  Polygon,
+  TileLayer,
+  useMap,
+} from "react-leaflet";
 import { useLocation } from "wouter";
 import useCultivationRegionStore, {
   type CultivationRegion,
@@ -52,6 +60,24 @@ import {
   type Region,
 } from "../../region-chart/constants";
 import { CultivationRegionDetailView } from "../cultivation-region/CultivationRegionDetailPage";
+
+type LatLngTuple = [number, number];
+
+const MapCenterSync = ({
+  center,
+  zoom,
+}: {
+  center: LatLngTuple;
+  zoom: number;
+}) => {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setView(center, zoom, { animate: true });
+  }, [center, map, zoom]);
+
+  return null;
+};
 
 interface AdvancedFilters {
   // Nhóm 1: Thông tin cây trồng
@@ -74,7 +100,6 @@ interface AdvancedFilters {
 }
 
 const SearchZonePage = () => {
-  const MAP4D_ACCESS_KEY = import.meta.env.VITE_MAP4D_ACCESS_KEY;
   const { toast } = useToast();
   const { enterprises } = useEnterpriseStore();
   const { regions } = useRegionStore();
@@ -676,38 +701,41 @@ const SearchZonePage = () => {
     {
       key: "name",
       label: "Tên vùng canh tác",
-      render: (value: string) => (
+      render: (value) => (
         <span className="font-bold text-slate-800 text-sm leading-tight">
-          {value}
+          {String(value)}
         </span>
       ),
     },
     {
       key: "scope",
       label: "Phạm vi",
-      render: (value: CultivationRegion["scope"]) => (
-        <Badge
-          className={cn(
-            "uppercase font-bold text-[10px] px-2 py-1",
-            value === "region"
-              ? "bg-blue-500"
-              : value === "area"
+      render: (value) => {
+        const scope = value as CultivationRegion["scope"];
+        return (
+          <Badge
+            className={cn(
+              "uppercase font-bold text-[10px] px-2 py-1",
+              scope === "region"
+                ? "bg-blue-500"
+                : scope === "area"
                 ? "bg-emerald-500"
                 : "bg-orange-500",
-          )}
-        >
-          {value === "region"
-            ? "Vùng trồng"
-            : value === "area"
-              ? "Khu vực"
-              : "Lô"}
-        </Badge>
-      ),
+            )}
+          >
+            {scope === "region"
+              ? "Vùng trồng"
+              : scope === "area"
+                ? "Khu vực"
+                : "Lô"}
+          </Badge>
+        );
+      },
     },
     {
       key: "status",
       label: "Trạng thái",
-      render: (value: string) => getStatusBadge(value),
+      render: (value) => getStatusBadge(String(value)),
     },
   ];
 
@@ -791,9 +819,7 @@ const SearchZonePage = () => {
     };
     return (
       <Badge
-        variant={
-          config[status as keyof typeof config]?.variant || ("default" as any)
-        }
+        variant={config[status as keyof typeof config]?.variant || "default"}
       >
         {getStatusLabel(status)}
       </Badge>
@@ -1207,13 +1233,14 @@ const SearchZonePage = () => {
                       "lg:col-span-8 rounded-2xl overflow-hidden border-4 border-white bg-white shadow-xl relative min-h-80 lg:min-h-125 transition-all duration-300 ease-in-out",
                     )}
                   >
-                    <MFMap
-                      center={mapCenter}
+                    <MapContainer
+                      center={[mapCenter.lat, mapCenter.lng]}
                       zoom={mapZoom}
-                      accessKey={MAP4D_ACCESS_KEY}
-                      options={{ mapType: "raster", controlOptions: {} }}
-                      version="2.5"
+                      className="h-full w-full"
+                      zoomControl={false}
+                      scrollWheelZoom
                     >
+                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                       <ZoneMapContent
                         regions={selectedCultivationTargets.visibleRegions}
                         enterprises={enterprises}
@@ -1230,8 +1257,10 @@ const SearchZonePage = () => {
                         onSelectUnit={(type, data) =>
                           setSelectedUnit({ type, data })
                         }
+                        center={[mapCenter.lat, mapCenter.lng]}
+                        zoom={mapZoom}
                       />
-                    </MFMap>
+                    </MapContainer>
 
                     {/* Map Controls */}
                     <div className="absolute top-4 right-4 z-[1000]">
@@ -1274,13 +1303,14 @@ const SearchZonePage = () => {
                       <div className="flex h-full">
                         {/* Left: Map */}
                         <div className="flex-1 relative bg-slate-100">
-                          <MFMap
-                            center={mapCenter}
+                          <MapContainer
+                            center={[mapCenter.lat, mapCenter.lng]}
                             zoom={mapZoom}
-                            accessKey={MAP4D_ACCESS_KEY}
-                            options={{ mapType: "raster", controlOptions: {} }}
-                            version="2.5"
+                            className="h-full w-full"
+                            zoomControl={false}
+                            scrollWheelZoom
                           >
+                            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                             <ZoneMapContent
                               regions={
                                 selectedCultivationTargets.visibleRegions
@@ -1303,8 +1333,10 @@ const SearchZonePage = () => {
                               onSelectUnit={(type, data) =>
                                 setSelectedUnit({ type, data })
                               }
+                              center={[mapCenter.lat, mapCenter.lng]}
+                              zoom={mapZoom}
                             />
-                          </MFMap>
+                          </MapContainer>
 
                           {/* Close button */}
                           <button
@@ -2264,6 +2296,8 @@ const ZoneMapContent = ({
   targetSignature,
   onFocusCoordinates,
   onSelectUnit,
+  center,
+  zoom,
 }: {
   regions: Region[];
   enterprises: any[];
@@ -2274,6 +2308,8 @@ const ZoneMapContent = ({
   targetSignature: string;
   onFocusCoordinates: (coordinates?: Coordinate[]) => void;
   onSelectUnit: (type: "region" | "area" | "plot", data: any) => void;
+  center: LatLngTuple;
+  zoom: number;
 }) => {
   useEffect(() => {
     if (!regions?.length) return;
@@ -2321,12 +2357,12 @@ const ZoneMapContent = ({
   const toClosedPath = (coordinates?: Coordinate[]) => {
     if (!coordinates || coordinates.length < 3) return [];
 
-    const path = coordinates.map((c) => ({ lat: c.lat, lng: c.lng }));
-    const first = path[0];
-    const last = path[path.length - 1];
+    const path = coordinates.map((c) => [c.lat, c.lng] as LatLngTuple);
+    const [firstLat, firstLng] = path[0];
+    const [lastLat, lastLng] = path[path.length - 1];
 
-    if (first.lat !== last.lat || first.lng !== last.lng) {
-      path.push({ ...first });
+    if (firstLat !== lastLat || firstLng !== lastLng) {
+      path.push([firstLat, firstLng]);
     }
 
     return path;
@@ -2349,6 +2385,8 @@ const ZoneMapContent = ({
 
   return (
     <>
+      <MapCenterSync center={center} zoom={zoom} />
+
       {/* Owner Logo Markers */}
       {regions.map((region) => {
         const center = getRegionCenter(region.coordinates);
@@ -2362,20 +2400,21 @@ const ZoneMapContent = ({
         if (!ownerEnterprise?.image) return null;
 
         return (
-          <MFMarker
+          <Marker
             key={`region-owner-${region.id}`}
-            position={center}
-            icon={{
-              url: ownerEnterprise.image,
-              width: 34,
-              height: 34,
-            }}
+            position={[center.lat, center.lng]}
+            icon={L.icon({
+              iconUrl: ownerEnterprise.image,
+              iconSize: [34, 34],
+              iconAnchor: [17, 17],
+              className: "rounded-full border border-white shadow-md",
+            })}
             title={ownerEnterprise.brandName || ownerEnterprise.name}
-            clickable
-            label={""}
-            onClick={() => {
-              onFocusCoordinates(region.coordinates);
-              onSelectUnit("region", region);
+            eventHandlers={{
+              click: () => {
+                onFocusCoordinates(region.coordinates);
+                onSelectUnit("region", region);
+              },
             }}
           />
         );
@@ -2387,24 +2426,26 @@ const ZoneMapContent = ({
         const regionPath = toClosedPath(region.coordinates);
         if (!regionPath.length) return null;
         return (
-          <MFPolygon
+          <Polygon
             key={`region-${region.id}`}
-            paths={[regionPath]}
-            strokeColor="#3b82f6"
-            strokeWidth={
-              selectedUnit?.type === "region" &&
-              selectedUnit.data.id === region.id
-                ? 4
-                : isTargetRegion
-                  ? 3
-                  : 2
-            }
-            fillColor="#3b82f6"
-            fillOpacity={0.1}
-            clickable
-            onClick={() => {
-              onFocusCoordinates(region.coordinates);
-              onSelectUnit("region", region);
+            positions={regionPath}
+            pathOptions={{
+              color: "#3b82f6",
+              weight:
+                selectedUnit?.type === "region" &&
+                selectedUnit.data.id === region.id
+                  ? 4
+                  : isTargetRegion
+                    ? 3
+                    : 2,
+              fillColor: "#3b82f6",
+              fillOpacity: 0.1,
+            }}
+            eventHandlers={{
+              click: () => {
+                onFocusCoordinates(region.coordinates);
+                onSelectUnit("region", region);
+              },
             }}
           />
         );
@@ -2427,24 +2468,26 @@ const ZoneMapContent = ({
           if (!areaPath.length) return [];
 
           return [
-            <MFPolygon
+            <Polygon
               key={`area-${area.id}`}
-              paths={[areaPath]}
-              strokeColor="#10b981"
-              strokeWidth={
-                selectedUnit?.type === "area" &&
-                selectedUnit.data.id === area.id
-                  ? 4
-                  : isTargetArea || hasTargetPlot
-                    ? 2.5
-                    : 1.5
-              }
-              fillColor="#10b981"
-              fillOpacity={isTargetArea ? 0.2 : 0.1}
-              clickable
-              onClick={() => {
-                onFocusCoordinates(area.coordinates);
-                onSelectUnit("area", area);
+              positions={areaPath}
+              pathOptions={{
+                color: "#10b981",
+                weight:
+                  selectedUnit?.type === "area" &&
+                  selectedUnit.data.id === area.id
+                    ? 4
+                    : isTargetArea || hasTargetPlot
+                      ? 2.5
+                      : 1.5,
+                fillColor: "#10b981",
+                fillOpacity: isTargetArea ? 0.2 : 0.1,
+              }}
+              eventHandlers={{
+                click: () => {
+                  onFocusCoordinates(area.coordinates);
+                  onSelectUnit("area", area);
+                },
               }}
             />,
           ];
@@ -2465,24 +2508,26 @@ const ZoneMapContent = ({
             if (!plotPath.length) return [];
 
             return [
-              <MFPolygon
+              <Polygon
                 key={`plot-${plot.id}`}
-                paths={[plotPath]}
-                strokeColor="#f59e0b"
-                strokeWidth={
-                  selectedUnit?.type === "plot" &&
-                  selectedUnit.data.id === plot.id
-                    ? 4
-                    : isTargetPlot
-                      ? 2
-                      : 1
-                }
-                fillColor="#f59e0b"
-                fillOpacity={isTargetPlot ? 0.25 : 0.15}
-                clickable
-                onClick={() => {
-                  onFocusCoordinates(plot.coordinates);
-                  onSelectUnit("plot", plot);
+                positions={plotPath}
+                pathOptions={{
+                  color: "#f59e0b",
+                  weight:
+                    selectedUnit?.type === "plot" &&
+                    selectedUnit.data.id === plot.id
+                      ? 4
+                      : isTargetPlot
+                        ? 2
+                        : 1,
+                  fillColor: "#f59e0b",
+                  fillOpacity: isTargetPlot ? 0.25 : 0.15,
+                }}
+                eventHandlers={{
+                  click: () => {
+                    onFocusCoordinates(plot.coordinates);
+                    onSelectUnit("plot", plot);
+                  },
                 }}
               />,
             ];
