@@ -9,6 +9,7 @@ import {
   FormLabel,
   FormMessage,
   Combobox,
+  MultiSelect,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import React, { useMemo } from "react";
 import { useFormContext } from "react-hook-form";
@@ -148,18 +149,16 @@ export function JobPositionCard() {
 
         <FormField
           control={control}
-          name="team"
+          name="teamIds"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Đội / Nhóm</FormLabel>
               <FormControl>
-                <Combobox
+                <MultiSelect
                   options={teamOptions}
-                  value={field.value ?? ""}
+                  value={field.value ?? []}
                   onChange={field.onChange}
                   placeholder="Chọn Đội / Nhóm"
-                  searchPlaceholder="Tìm đội nhóm..."
-                  emptyText="Không tìm thấy đội nhóm nào"
                 />
               </FormControl>
               <FormMessage />

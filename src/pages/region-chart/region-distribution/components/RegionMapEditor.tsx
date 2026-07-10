@@ -1,5 +1,6 @@
-import { useMemo, useCallback, useState } from "react";
+import { useMemo, useCallback, useState, useRef, useEffect } from "react";
 import { useFormContext } from "react-hook-form";
+import readXlsxFile from "read-excel-file";
 import {
   Button,
   Card,
@@ -10,13 +11,14 @@ import {
   Dialog,
   DialogContent,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Plus, X, Maximize2, Minimize2 } from "lucide-react";
+import { Plus, X, Maximize2 } from "lucide-react";
 import {
   MapContainer,
   Marker,
   Polygon,
   TileLayer,
-  useMapEvents,
+  Tooltip,
+  useMap,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -25,19 +27,6 @@ import { getBoundsFromPoints } from "../utils";
 interface RegionMapEditorProps {
   markerIcon: L.Icon;
 }
-
-const MapClickHandler = ({
-  onClick,
-}: {
-  onClick: (latlng: L.LatLng) => void;
-}) => {
-  useMapEvents({
-    click(event) {
-      onClick(event.latlng);
-    },
-  });
-  return null;
-};
 
 const DEFAULT_POINTS = [
   L.latLng(11.53, 106.88),
@@ -52,8 +41,8 @@ interface MapLayoutProps {
   markerIcon: L.Icon;
   isFullscreen: boolean;
   setIsFullscreen: (val: boolean) => void;
-  handleMapClick: (latlng: L.LatLng) => void;
   handlePointDrag: (index: number, latlng: L.LatLng) => void;
+  handlePointDragEnd: () => void;
   removePoint: (index: number) => void;
   handlePointInputChange: (
     index: number,
@@ -61,20 +50,60 @@ interface MapLayoutProps {
     value: string,
   ) => void;
   handleAddPoint: () => void;
+  justChanged: boolean;
+  handleImportExcel: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  handleDownloadSampleExcel: () => void;
+  mapFitTrigger: number;
 }
+
+const FitBoundsOnce = ({
+  points,
+  fitTrigger,
+}: {
+  points: L.LatLng[];
+  fitTrigger?: number;
+}) => {
+  const map = useMap();
+  const hasFitRef = useRef(false);
+
+  useEffect(() => {
+    if (points.length > 0 && !hasFitRef.current) {
+      const bounds = L.latLngBounds(points);
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [40, 40] });
+        hasFitRef.current = true;
+      }
+    }
+  }, [points, map]);
+
+  useEffect(() => {
+    if (points.length > 0 && fitTrigger) {
+      const bounds = L.latLngBounds(points);
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [40, 40] });
+      }
+    }
+  }, [fitTrigger, points, map]);
+
+  return null;
+};
 
 const MapLayout = ({
   center,
   regionPoints,
   markerIcon,
-  isFullscreen,
-  setIsFullscreen,
-  handleMapClick,
   handlePointDrag,
+  handlePointDragEnd,
   removePoint,
   handlePointInputChange,
   handleAddPoint,
+  justChanged,
+  handleImportExcel,
+  handleDownloadSampleExcel,
+  isFullscreen,
+  mapFitTrigger,
 }: MapLayoutProps) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   return (
     <div className="flex flex-1 gap-4 overflow-hidden p-4 h-full w-full">
       <div className="relative z-0 h-full flex-1 overflow-hidden rounded-lg border">
@@ -83,17 +112,22 @@ const MapLayout = ({
           zoom={14}
           className="h-full w-full"
         >
+          <FitBoundsOnce points={regionPoints} fitTrigger={mapFitTrigger} />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          <MapClickHandler onClick={handleMapClick} />
-
           <Polygon
             positions={regionPoints}
             pathOptions={{ color: "blue", fillOpacity: 0.1 }}
-          />
+          >
+            {justChanged && (
+              <Tooltip permanent sticky direction="top">
+                Đã tự động điều chỉnh sắp xếp các điểm để phù hợp đường bao
+              </Tooltip>
+            )}
+          </Polygon>
 
           {regionPoints.map((point, index) => (
             <Marker
@@ -105,19 +139,47 @@ const MapLayout = ({
                 drag: (event) => {
                   handlePointDrag(index, event.target.getLatLng());
                 },
+                dragend: () => {
+                  handlePointDragEnd();
+                },
               }}
             />
           ))}
         </MapContainer>
       </div>
 
-      <div className="flex h-full w-[300px] flex-col overflow-hidden rounded-lg border bg-slate-50">
-        <div className="flex items-start justify-between border-b bg-white p-3">
+      <div className="flex h-full w-75 flex-col overflow-hidden rounded-lg border bg-slate-50">
+        <div className="flex flex-col border-b bg-white p-3 gap-2.5">
           <div>
             <h4 className="text-sm font-semibold">Danh sách toạ độ</h4>
             <p className="mt-1 text-xs text-muted-foreground">
-              Kéo thả điểm trên bản đồ hoặc click để thêm điểm mới.
+              Kéo thả hoặc nhập Excel
             </p>
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept=".xlsx, .xls"
+              className="hidden"
+              onChange={handleImportExcel}
+            />
+            <a
+              download="mau_toa_do_vung_trong.xlsx"
+              className="h-8 flex-1 text-xs text-primary border border-primary/20 hover:bg-primary/5 flex items-center justify-center rounded-md font-medium transition-colors"
+              href="https://minio-api.otechz.com/mevimedia/9d1b7b5e52496f389e93b4dc826286c4906e79f2006a86d7a06ec85f06a3dff4/static/2026/07/10/a8ebdb71-713f-4467-965c-990fc4aa77fb-mau_toa_do_vung_trong.xlsx"
+            >
+              Tải file mẫu
+            </a>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 flex-1 text-xs"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Nhập Excel
+            </Button>
           </div>
         </div>
         <div className="flex-1 space-y-3 overflow-y-auto p-3">
@@ -181,10 +243,64 @@ const MapLayout = ({
   );
 };
 
+const isSegmentsIntersecting = (
+  p1: L.LatLng,
+  q1: L.LatLng,
+  p2: L.LatLng,
+  q2: L.LatLng,
+) => {
+  if (p1.equals(p2) || p1.equals(q2) || q1.equals(p2) || q1.equals(q2)) {
+    return false;
+  }
+  const ccw = (A: L.LatLng, B: L.LatLng, C: L.LatLng) => {
+    return (
+      (C.lat - A.lat) * (B.lng - A.lng) > (B.lat - A.lat) * (C.lng - A.lng)
+    );
+  };
+  return (
+    ccw(p1, p2, q2) !== ccw(q1, p2, q2) && ccw(p1, q1, p2) !== ccw(p1, q1, q2)
+  );
+};
+
+const isSelfIntersecting = (points: L.LatLng[]) => {
+  const n = points.length;
+  if (n < 4) return false;
+  for (let i = 0; i < n; i++) {
+    const p1 = points[i];
+    const q1 = points[(i + 1) % n];
+    for (let j = i + 2; j < n; j++) {
+      if ((j + 1) % n === i) continue;
+      const p2 = points[j];
+      const q2 = points[(j + 1) % n];
+      if (isSegmentsIntersecting(p1, q1, p2, q2)) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
+
 export const RegionMapEditor = ({ markerIcon }: RegionMapEditorProps) => {
   const { watch, setValue } = useFormContext();
   const { toast } = useToast();
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [justChanged, setJustChanged] = useState(false);
+  const [mapFitTrigger, setMapFitTrigger] = useState(0);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const triggerChangeTooltip = useCallback(() => {
+    setJustChanged(true);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      setJustChanged(false);
+    }, 4000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   const coordinates = watch("coordinates") || [];
 
@@ -204,13 +320,6 @@ export const RegionMapEditor = ({ markerIcon }: RegionMapEditorProps) => {
     [setValue],
   );
 
-  const handleMapClick = useCallback(
-    (latlng: L.LatLng) => {
-      setRegionPoints([...regionPoints, latlng]);
-    },
-    [regionPoints, setRegionPoints],
-  );
-
   const handlePointDrag = useCallback(
     (index: number, latlng: L.LatLng) => {
       const newPoints = [...regionPoints];
@@ -219,6 +328,44 @@ export const RegionMapEditor = ({ markerIcon }: RegionMapEditorProps) => {
     },
     [regionPoints, setRegionPoints],
   );
+
+  const handlePointDragEnd = useCallback(() => {
+    if (regionPoints.length <= 2) return;
+
+    if (isSelfIntersecting(regionPoints)) {
+      let latSum = 0;
+      let lngSum = 0;
+      for (const p of regionPoints) {
+        latSum += p.lat;
+        lngSum += p.lng;
+      }
+      const centroidLat = latSum / regionPoints.length;
+      const centroidLng = lngSum / regionPoints.length;
+
+      const sorted = [...regionPoints].sort((a, b) => {
+        const angleA = Math.atan2(a.lat - centroidLat, a.lng - centroidLng);
+        const angleB = Math.atan2(b.lat - centroidLat, b.lng - centroidLng);
+        return angleA - angleB;
+      });
+
+      let isDifferent = false;
+      for (let i = 0; i < regionPoints.length; i++) {
+        if (
+          regionPoints[i].lat !== sorted[i].lat ||
+          regionPoints[i].lng !== sorted[i].lng
+        ) {
+          isDifferent = true;
+          break;
+        }
+      }
+
+      setRegionPoints(sorted);
+
+      if (isDifferent) {
+        triggerChangeTooltip();
+      }
+    }
+  }, [regionPoints, setRegionPoints, triggerChangeTooltip]);
 
   const removePoint = useCallback(
     (index: number) => {
@@ -230,7 +377,7 @@ export const RegionMapEditor = ({ markerIcon }: RegionMapEditorProps) => {
         });
         return;
       }
-      const newPoints = regionPoints.filter((_, i) => i !== index);
+      const newPoints = regionPoints.filter((_: any, i: number) => i !== index);
       setRegionPoints(newPoints);
     },
     [regionPoints, setRegionPoints, toast],
@@ -248,20 +395,222 @@ export const RegionMapEditor = ({ markerIcon }: RegionMapEditorProps) => {
         field === "lng" ? val : currentPoint.lng,
       );
       setRegionPoints(newPoints);
+      triggerChangeTooltip();
     },
-    [regionPoints, setRegionPoints],
+    [regionPoints, setRegionPoints, triggerChangeTooltip],
+  );
+
+  const handleDownloadSampleExcel = useCallback(() => {
+    const link = document.createElement("a");
+    link.href =
+      "https://minio-api.otechz.com/mevimedia/9d1b7b5e52496f389e93b4dc826286c4906e79f2006a86d7a06ec85f06a3dff4/static/2026/07/10/a8ebdb71-713f-4467-965c-990fc4aa77fb-mau_toa_do_vung_trong.xlsx";
+    link.download = "mau_toa_do_vung_trong.xlsx";
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, []);
+
+  const handleImportExcel = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      try {
+        const rows = await readXlsxFile(file);
+        if (rows.length < 2) {
+          toast({
+            title: "Lỗi",
+            description:
+              "File excel không có dữ liệu hoặc không đúng định dạng.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const headers = rows[0] as string[];
+        let latIdx = -1;
+        let lngIdx = -1;
+
+        headers.forEach((header, i) => {
+          if (!header) return;
+          const cleanHeader = header
+            .toString()
+            .normalize("NFC")
+            .trim()
+            .toLowerCase();
+          const cleanHeaderNoDiacritics = cleanHeader
+            .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, "a")
+            .replace(/[èéẹẻẽêềếệểễ]/g, "e")
+            .replace(/[ìíịỉĩ]/g, "i")
+            .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, "o")
+            .replace(/[ùúụủũưừứựửữ]/g, "u")
+            .replace(/[ỳýỵỷỹ]/g, "y")
+            .replace(/[đ]/g, "d");
+
+          if (
+            cleanHeader === "lat" ||
+            cleanHeader.includes("latitude") ||
+            cleanHeader.includes("vĩ độ") ||
+            cleanHeaderNoDiacritics.includes("vi do")
+          ) {
+            latIdx = i;
+          }
+          if (
+            cleanHeader === "lng" ||
+            cleanHeader === "lon" ||
+            cleanHeader.includes("longitude") ||
+            cleanHeader.includes("kinh độ") ||
+            cleanHeaderNoDiacritics.includes("kinh do")
+          ) {
+            lngIdx = i;
+          }
+        });
+
+        if (latIdx === -1 || lngIdx === -1) {
+          toast({
+            title: "Lỗi",
+            description:
+              "Không tìm thấy cột Lat (Vĩ độ) hoặc Lng (Kinh độ) trong file Excel.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const parsedPoints: L.LatLng[] = [];
+        const dataRows = rows.slice(1);
+
+        for (const row of dataRows) {
+          const latVal = parseFloat(row[latIdx]?.toString() || "");
+          const lngVal = parseFloat(row[lngIdx]?.toString() || "");
+
+          if (!isNaN(latVal) && !isNaN(lngVal)) {
+            parsedPoints.push(L.latLng(latVal, lngVal));
+          }
+        }
+
+        if (parsedPoints.length < 3) {
+          toast({
+            title: "Lỗi",
+            description:
+              "Cần ít nhất 3 điểm toạ độ hợp lệ để tạo thành đa giác vùng trồng.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        let finalPoints = parsedPoints;
+        if (isSelfIntersecting(parsedPoints)) {
+          let latSum = 0;
+          let lngSum = 0;
+          for (const p of parsedPoints) {
+            latSum += p.lat;
+            lngSum += p.lng;
+          }
+          const centroidLat = latSum / parsedPoints.length;
+          const centroidLng = lngSum / parsedPoints.length;
+
+          finalPoints = [...parsedPoints].sort((a, b) => {
+            const angleA = Math.atan2(a.lat - centroidLat, a.lng - centroidLng);
+            const angleB = Math.atan2(b.lat - centroidLat, b.lng - centroidLng);
+            return angleA - angleB;
+          });
+        }
+
+        setRegionPoints(finalPoints);
+        triggerChangeTooltip();
+        setMapFitTrigger(Date.now());
+
+        toast({
+          title: "Thành công",
+          description: `Đã nhập thành công ${finalPoints.length} điểm toạ độ từ file Excel.`,
+        });
+      } catch (error) {
+        console.error(error);
+        toast({
+          title: "Lỗi",
+          description: "Có lỗi xảy ra khi đọc file Excel.",
+          variant: "destructive",
+        });
+      } finally {
+        event.target.value = "";
+      }
+    },
+    [setRegionPoints, triggerChangeTooltip, toast, setMapFitTrigger],
   );
 
   const handleAddPoint = useCallback(() => {
-    const mapCenter = getBoundsFromPoints(
-      regionPoints,
-      DEFAULT_POINTS,
-    ).getCenter();
-    setRegionPoints([
-      ...regionPoints,
-      L.latLng(mapCenter.lat + 0.005, mapCenter.lng + 0.005),
-    ]);
-  }, [regionPoints, setRegionPoints]);
+    if (regionPoints.length === 0) {
+      setRegionPoints(DEFAULT_POINTS);
+      return;
+    }
+
+    // 1. Calculate centroid
+    let latSum = 0;
+    let lngSum = 0;
+    for (const p of regionPoints) {
+      latSum += p.lat;
+      lngSum += p.lng;
+    }
+    const centroidLat = latSum / regionPoints.length;
+    const centroidLng = lngSum / regionPoints.length;
+
+    // 2. Sort existing points by angle relative to centroid
+    const sortedPoints = [...regionPoints].sort((a, b) => {
+      const angleA = Math.atan2(a.lat - centroidLat, a.lng - centroidLng);
+      const angleB = Math.atan2(b.lat - centroidLat, b.lng - centroidLng);
+      return angleA - angleB;
+    });
+
+    // 3. Find the largest angular gap between consecutive points
+    let maxGap = 0;
+    let gapIndex = 0;
+    const n = sortedPoints.length;
+
+    for (let i = 0; i < n; i++) {
+      const p1 = sortedPoints[i];
+      const p2 = sortedPoints[(i + 1) % n];
+
+      const angle1 = Math.atan2(p1.lat - centroidLat, p1.lng - centroidLng);
+      let angle2 = Math.atan2(p2.lat - centroidLat, p2.lng - centroidLng);
+
+      if (angle2 <= angle1) {
+        angle2 += 2 * Math.PI;
+      }
+
+      const gap = angle2 - angle1;
+      if (gap > maxGap) {
+        maxGap = gap;
+        gapIndex = i;
+      }
+    }
+
+    // 4. Calculate midpoint angle of the largest gap
+    const p1 = sortedPoints[gapIndex];
+    const angle1 = Math.atan2(p1.lat - centroidLat, p1.lng - centroidLng);
+    const newAngle = angle1 + maxGap / 2;
+
+    // 5. Calculate average radius (distance from centroid)
+    let distSum = 0;
+    for (const p of regionPoints) {
+      const dLat = p.lat - centroidLat;
+      const dLng = p.lng - centroidLng;
+      distSum += Math.sqrt(dLat * dLat + dLng * dLng);
+    }
+    const avgRadius = distSum / regionPoints.length;
+
+    // 6. Generate the new point
+    const newLat = centroidLat + avgRadius * Math.sin(newAngle);
+    const newLng = centroidLng + avgRadius * Math.cos(newAngle);
+    const newPoint = L.latLng(newLat, newLng);
+
+    // 7. Insert the new point and keep the sorted list
+    const finalPoints = [...sortedPoints];
+    finalPoints.splice(gapIndex + 1, 0, newPoint);
+
+    setRegionPoints(finalPoints);
+    triggerChangeTooltip();
+  }, [regionPoints, setRegionPoints, triggerChangeTooltip]);
 
   const center = useMemo(
     () => getBoundsFromPoints(regionPoints, DEFAULT_POINTS).getCenter(),
@@ -269,7 +618,7 @@ export const RegionMapEditor = ({ markerIcon }: RegionMapEditorProps) => {
   );
 
   return (
-    <Card className="flex h-[750px] flex-col">
+    <Card className="flex h-187.5 flex-col">
       <CardHeader className="flex flex-row items-center justify-between p-0 pt-3 px-4 space-y-0">
         <CardTitle>Bản đồ vị trí</CardTitle>
         <Button
@@ -289,11 +638,15 @@ export const RegionMapEditor = ({ markerIcon }: RegionMapEditorProps) => {
             markerIcon={markerIcon}
             isFullscreen={isFullscreen}
             setIsFullscreen={setIsFullscreen}
-            handleMapClick={handleMapClick}
             handlePointDrag={handlePointDrag}
+            handlePointDragEnd={handlePointDragEnd}
             removePoint={removePoint}
             handlePointInputChange={handlePointInputChange}
             handleAddPoint={handleAddPoint}
+            justChanged={justChanged}
+            handleImportExcel={handleImportExcel}
+            handleDownloadSampleExcel={handleDownloadSampleExcel}
+            mapFitTrigger={mapFitTrigger}
           />
         )}
 
@@ -309,11 +662,15 @@ export const RegionMapEditor = ({ markerIcon }: RegionMapEditorProps) => {
                 markerIcon={markerIcon}
                 isFullscreen={isFullscreen}
                 setIsFullscreen={setIsFullscreen}
-                handleMapClick={handleMapClick}
                 handlePointDrag={handlePointDrag}
+                handlePointDragEnd={handlePointDragEnd}
                 removePoint={removePoint}
                 handlePointInputChange={handlePointInputChange}
                 handleAddPoint={handleAddPoint}
+                justChanged={justChanged}
+                handleImportExcel={handleImportExcel}
+                handleDownloadSampleExcel={handleDownloadSampleExcel}
+                mapFitTrigger={mapFitTrigger}
               />
             )}
           </DialogContent>

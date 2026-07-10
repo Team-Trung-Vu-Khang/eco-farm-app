@@ -21,10 +21,11 @@ import { point, polygon } from "@turf/helpers";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Maximize2, Plus, Trash2, X, Edit } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useFormContext, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import readXlsxFile from "read-excel-file";
 import {
   MapContainer,
   Marker,
@@ -41,6 +42,43 @@ import {
   toTurfPolygonFromCoords,
   type PointWarning,
 } from "../utils/map";
+
+const isSegmentsIntersecting = (
+  p1: L.LatLng,
+  q1: L.LatLng,
+  p2: L.LatLng,
+  q2: L.LatLng,
+) => {
+  if (p1.equals(p2) || p1.equals(q2) || q1.equals(p2) || q1.equals(q2)) {
+    return false;
+  }
+  const ccw = (A: L.LatLng, B: L.LatLng, C: L.LatLng) => {
+    return (
+      (C.lat - A.lat) * (B.lng - A.lng) > (B.lat - A.lat) * (C.lng - A.lng)
+    );
+  };
+  return (
+    ccw(p1, p2, q2) !== ccw(q1, p2, q2) && ccw(p1, q1, p2) !== ccw(p1, q1, q2)
+  );
+};
+
+const isSelfIntersecting = (points: L.LatLng[]) => {
+  const n = points.length;
+  if (n < 4) return false;
+  for (let i = 0; i < n; i++) {
+    const p1 = points[i];
+    const q1 = points[(i + 1) % n];
+    for (let j = i + 2; j < n; j++) {
+      if ((j + 1) % n === i) continue;
+      const p2 = points[j];
+      const q2 = points[(j + 1) % n];
+      if (isSegmentsIntersecting(p1, q1, p2, q2)) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
 
 interface AreaPlotsStepProps {
   customIcon: L.Icon;
@@ -95,6 +133,9 @@ interface PlotLayoutProps {
   ) => void;
   applySuggestedPlotPoint: () => void;
   onLoadPlotForEdit: (plot: any) => void;
+  handleImportExcel: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  handleDownloadSampleExcel: () => void;
+  justChangedPlotCoords: boolean;
 }
 
 const PlotEditForm = ({
@@ -110,7 +151,10 @@ const PlotEditForm = ({
   savePlot,
   setEditingPlot,
   regionArea,
+  handleImportExcel,
+  handleDownloadSampleExcel,
 }: any) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const formSchema = useMemo(() => {
     return plotFormSchema.superRefine((data, ctx) => {
       if (regionArea > 0 && data.acreage > regionArea) {
@@ -309,7 +353,9 @@ const PlotEditForm = ({
 
             <div className="pt-2">
               <div className="mb-2 flex items-center justify-between">
-                <Label className="text-xs">Tọa độ ranh giới</Label>
+                <Label className="text-xs font-semibold">
+                  Tọa độ ranh giới
+                </Label>
                 <Button
                   type="button"
                   variant="ghost"
@@ -317,74 +363,96 @@ const PlotEditForm = ({
                   className="h-6 px-2 text-xs text-primary"
                   onClick={handleAddPlotPoint}
                 >
-                  <Plus className="mr-1 h-3 w-3" /> Thêm
+                  <Plus className="mr-1 h-3 w-3" /> Thêm điểm
                 </Button>
               </div>
-
-              <div className="space-y-2">
-                {plotPoints.map((point: L.LatLng, index: number) => {
-                  const isActive = activePlotPointIndex === index;
-                  const hasWarning = !!plotPointWarnings[index];
-
-                  return (
-                    <div
-                      key={`coord-${index}`}
-                      className={`rounded border p-2 transition-colors ${
-                        hasWarning
-                          ? "border-red-300 bg-red-50"
-                          : isActive
-                            ? "border-primary/50 bg-primary/5"
-                            : "bg-white"
-                      }`}
-                    >
-                      <div className="mb-1.5 flex items-center justify-between">
-                        <span
-                          className={`text-[10px] font-semibold ${hasWarning ? "text-red-600" : ""}`}
-                        >
-                          Điểm {index + 1}
-                        </span>
-                        {plotPoints.length > 3 && (
-                          <button
-                            type="button"
-                            onClick={() => removePlotPoint(index)}
-                            className="text-muted-foreground hover:text-red-500"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          className={`h-6 px-1 text-[10px] ${hasWarning ? "border-red-200 focus-visible:ring-red-200" : ""}`}
-                          type="number"
-                          value={point.lat}
-                          onChange={(e) =>
-                            handlePlotPointInputChange(
-                              index,
-                              "lat",
-                              e.target.value,
-                            )
-                          }
-                          step="0.0001"
-                        />
-                        <Input
-                          className={`h-6 px-1 text-[10px] ${hasWarning ? "border-red-200 focus-visible:ring-red-200" : ""}`}
-                          type="number"
-                          value={point.lng}
-                          onChange={(e) =>
-                            handlePlotPointInputChange(
-                              index,
-                              "lng",
-                              e.target.value,
-                            )
-                          }
-                          step="0.0001"
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="mb-3 flex gap-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept=".xlsx, .xls"
+                  className="hidden"
+                  onChange={handleImportExcel}
+                />
+                <a
+                  download="mau_toa_do_lo.xlsx"
+                  className="h-7 flex-1 text-[11px] text-primary border border-primary/20 hover:bg-primary/5 px-1 flex items-center justify-center rounded-md font-medium transition-colors"
+                  href="https://minio-api.otechz.com/mevimedia/9d1b7b5e52496f389e93b4dc826286c4906e79f2006a86d7a06ec85f06a3dff4/static/2026/07/10/d5ea3a26-b16f-491c-9d7b-5133b32ffdb2-mau_toa_do_lo.xlsx"
+                >
+                  Tải file mẫu
+                </a>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 flex-1 text-[11px] px-1"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Nhập Excel
+                </Button>
               </div>
+              {plotPoints.map((point: L.LatLng, index: number) => {
+                const isActive = activePlotPointIndex === index;
+                const hasWarning = !!plotPointWarnings[index];
+
+                return (
+                  <div
+                    key={`coord-${index}`}
+                    className={`rounded border p-2 transition-colors ${
+                      hasWarning
+                        ? "border-red-300 bg-red-50"
+                        : isActive
+                          ? "border-primary/50 bg-primary/5"
+                          : "bg-white"
+                    }`}
+                  >
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <span
+                        className={`text-[10px] font-semibold ${hasWarning ? "text-red-600" : ""}`}
+                      >
+                        Điểm {index + 1}
+                      </span>
+                      {plotPoints.length > 3 && (
+                        <button
+                          type="button"
+                          onClick={() => removePlotPoint(index)}
+                          className="text-muted-foreground hover:text-red-500"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        className={`h-6 px-1 text-[10px] ${hasWarning ? "border-red-200 focus-visible:ring-red-200" : ""}`}
+                        type="number"
+                        value={point.lat}
+                        onChange={(e) =>
+                          handlePlotPointInputChange(
+                            index,
+                            "lat",
+                            e.target.value,
+                          )
+                        }
+                        step="0.0001"
+                      />
+                      <Input
+                        className={`h-6 px-1 text-[10px] ${hasWarning ? "border-red-200 focus-visible:ring-red-200" : ""}`}
+                        type="number"
+                        value={point.lng}
+                        onChange={(e) =>
+                          handlePlotPointInputChange(
+                            index,
+                            "lng",
+                            e.target.value,
+                          )
+                        }
+                        step="0.0001"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -423,6 +491,9 @@ const PlotLayout = ({
   applySuggestedPlotPoint,
   onLoadPlotForEdit,
   regionArea,
+  handleImportExcel,
+  handleDownloadSampleExcel,
+  justChangedPlotCoords,
 }: PlotLayoutProps) => {
   return (
     <div className="grid h-full w-full grid-cols-1 gap-6 p-4 lg:grid-cols-5">
@@ -475,7 +546,13 @@ const PlotLayout = ({
                   weight: 2,
                   fillOpacity: 0.2,
                 }}
-              />
+              >
+                {justChangedPlotCoords && (
+                  <Tooltip permanent sticky direction="top">
+                    Đã tự động điều chỉnh sắp xếp các điểm để phù hợp đường bao
+                  </Tooltip>
+                )}
+              </Polygon>
 
               {plotPoints.map((point, index) => {
                 const isActive = activePlotPointIndex === index;
@@ -609,6 +686,8 @@ const PlotLayout = ({
             handlePlotPointInputChange={handlePlotPointInputChange}
             savePlot={savePlot}
             setEditingPlot={setEditingPlot}
+            handleImportExcel={handleImportExcel}
+            handleDownloadSampleExcel={handleDownloadSampleExcel}
           />
         )}
       </div>
@@ -647,6 +726,26 @@ export const AreaPlotsStep = ({
   >({});
   const [activePlotDragWarning, setActivePlotDragWarning] =
     useState<PointWarning | null>(null);
+  const [justChangedPlotCoords, setJustChangedPlotCoords] = useState(false);
+  const plotCoordsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
+  const triggerPlotCoordsTooltip = useCallback(() => {
+    setJustChangedPlotCoords(true);
+    if (plotCoordsTimeoutRef.current)
+      clearTimeout(plotCoordsTimeoutRef.current);
+    plotCoordsTimeoutRef.current = setTimeout(() => {
+      setJustChangedPlotCoords(false);
+    }, 4000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (plotCoordsTimeoutRef.current)
+        clearTimeout(plotCoordsTimeoutRef.current);
+    };
+  }, []);
 
   const regionPolygonFeature = useMemo(() => {
     if (regionPoints.length < 3) return null;
@@ -837,6 +936,45 @@ export const AreaPlotsStep = ({
     });
     if (options?.finalize) {
       setActivePlotDragWarning(null);
+
+      // Prevent self-intersection check on dragend
+      if (plotPoints.length > 2) {
+        // Find if this new configuration makes it self-intersect
+        const prospectivePoints = [...plotPoints];
+        prospectivePoints[index] = latlng;
+        if (isSelfIntersecting(prospectivePoints)) {
+          let latSum = 0;
+          let lngSum = 0;
+          for (const p of prospectivePoints) {
+            latSum += p.lat;
+            lngSum += p.lng;
+          }
+          const centroidLat = latSum / prospectivePoints.length;
+          const centroidLng = lngSum / prospectivePoints.length;
+
+          const sorted = [...prospectivePoints].sort((a, b) => {
+            const angleA = Math.atan2(a.lat - centroidLat, a.lng - centroidLng);
+            const angleB = Math.atan2(b.lat - centroidLat, b.lng - centroidLng);
+            return angleA - angleB;
+          });
+
+          let isDifferent = false;
+          for (let i = 0; i < prospectivePoints.length; i++) {
+            if (
+              prospectivePoints[i].lat !== sorted[i].lat ||
+              prospectivePoints[i].lng !== sorted[i].lng
+            ) {
+              isDifferent = true;
+              break;
+            }
+          }
+
+          setPlotPoints(sorted);
+          if (isDifferent) {
+            triggerPlotCoordsTooltip();
+          }
+        }
+      }
     }
   };
 
@@ -889,6 +1027,144 @@ export const AreaPlotsStep = ({
     setActivePlotPointIndex(index);
     setActivePlotDragWarning(null);
   };
+
+  const handleDownloadSampleExcel = useCallback(() => {
+    const link = document.createElement("a");
+    link.href =
+      "https://minio-api.otechz.com/mevimedia/9d1b7b5e52496f389e93b4dc826286c4906e79f2006a86d7a06ec85f06a3dff4/static/2026/07/10/d5ea3a26-b16f-491c-9d7b-5133b32ffdb2-mau_toa_do_lo.xlsx";
+    link.download = "mau_toa_do_khu_vuc.xlsx";
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, []);
+
+  const handleImportExcel = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      try {
+        const rows = await readXlsxFile(file);
+        if (rows.length < 2) {
+          toast({
+            title: "Lỗi",
+            description:
+              "File excel không có dữ liệu hoặc không đúng định dạng.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const headers = rows[0] as string[];
+        let latIdx = -1;
+        let lngIdx = -1;
+
+        headers.forEach((header, i) => {
+          if (!header) return;
+          const cleanHeader = header
+            .toString()
+            .normalize("NFC")
+            .trim()
+            .toLowerCase();
+          const cleanHeaderNoDiacritics = cleanHeader
+            .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, "a")
+            .replace(/[èéẹẻẽêềếệểễ]/g, "e")
+            .replace(/[ìíịỉĩ]/g, "i")
+            .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, "o")
+            .replace(/[ùúụủũưừứựửữ]/g, "u")
+            .replace(/[ỳýỵỷỹ]/g, "y")
+            .replace(/[đ]/g, "d");
+
+          if (
+            cleanHeader === "lat" ||
+            cleanHeader.includes("latitude") ||
+            cleanHeader.includes("vĩ độ") ||
+            cleanHeaderNoDiacritics.includes("vi do")
+          ) {
+            latIdx = i;
+          }
+          if (
+            cleanHeader === "lng" ||
+            cleanHeader === "lon" ||
+            cleanHeader.includes("longitude") ||
+            cleanHeader.includes("kinh độ") ||
+            cleanHeaderNoDiacritics.includes("kinh do")
+          ) {
+            lngIdx = i;
+          }
+        });
+
+        if (latIdx === -1 || lngIdx === -1) {
+          toast({
+            title: "Lỗi",
+            description:
+              "Không tìm thấy cột Lat (Vĩ độ) hoặc Lng (Kinh độ) trong file Excel.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const parsedPoints: L.LatLng[] = [];
+        const dataRows = rows.slice(1);
+
+        for (const row of dataRows) {
+          const latVal = parseFloat(row[latIdx]?.toString() || "");
+          const lngVal = parseFloat(row[lngIdx]?.toString() || "");
+
+          if (!isNaN(latVal) && !isNaN(lngVal)) {
+            parsedPoints.push(L.latLng(latVal, lngVal));
+          }
+        }
+
+        if (parsedPoints.length < 3) {
+          toast({
+            title: "Lỗi",
+            description:
+              "Cần ít nhất 3 điểm toạ độ hợp lệ để tạo thành đa giác.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        let finalPoints = parsedPoints;
+        if (isSelfIntersecting(parsedPoints)) {
+          let latSum = 0;
+          let lngSum = 0;
+          for (const p of parsedPoints) {
+            latSum += p.lat;
+            lngSum += p.lng;
+          }
+          const centroidLat = latSum / parsedPoints.length;
+          const centroidLng = lngSum / parsedPoints.length;
+
+          finalPoints = [...parsedPoints].sort((a, b) => {
+            const angleA = Math.atan2(a.lat - centroidLat, a.lng - centroidLng);
+            const angleB = Math.atan2(b.lat - centroidLat, b.lng - centroidLng);
+            return angleA - angleB;
+          });
+        }
+
+        setPlotPoints(finalPoints);
+        triggerPlotCoordsTooltip();
+
+        toast({
+          title: "Thành công",
+          description: `Đã nhập thành công ${finalPoints.length} điểm toạ độ từ file Excel.`,
+        });
+      } catch (error) {
+        console.error(error);
+        toast({
+          title: "Lỗi",
+          description: "Có lỗi xảy ra khi đọc file Excel.",
+          variant: "destructive",
+        });
+      } finally {
+        event.target.value = "";
+      }
+    },
+    [toast, triggerPlotCoordsTooltip],
+  );
 
   const addPlot = () => {
     const newSub: any = {
@@ -1017,11 +1293,14 @@ export const AreaPlotsStep = ({
             handlePlotPointDrag={handlePlotPointDrag}
             applySuggestedPlotPoint={applySuggestedPlotPoint}
             onLoadPlotForEdit={onLoadPlotForEdit}
+            handleImportExcel={handleImportExcel}
+            handleDownloadSampleExcel={handleDownloadSampleExcel}
+            justChangedPlotCoords={justChangedPlotCoords}
           />
         )}
 
         <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
-          <DialogContent className="flex h-[95vh] max-w-[95vw] flex-col overflow-hidden p-0">
+          <DialogContent className="max-w-[95vw] h-[95vh] p-0 flex flex-col overflow-hidden">
             <div className="flex items-center justify-between border-b p-4">
               <h2 className="text-lg font-semibold">Phân chia lô</h2>
             </div>
@@ -1051,6 +1330,9 @@ export const AreaPlotsStep = ({
                 handlePlotPointDrag={handlePlotPointDrag}
                 applySuggestedPlotPoint={applySuggestedPlotPoint}
                 onLoadPlotForEdit={onLoadPlotForEdit}
+                handleImportExcel={handleImportExcel}
+                handleDownloadSampleExcel={handleDownloadSampleExcel}
+                justChangedPlotCoords={justChangedPlotCoords}
               />
             )}
           </DialogContent>

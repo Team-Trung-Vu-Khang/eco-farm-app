@@ -30,6 +30,7 @@ export default function CreateGrowthCyclePage() {
     resolver: zodResolver(growthCycleFormSchema),
     mode: "onChange",
     defaultValues: {
+      name: "",
       cropId: "",
       variety: "",
       totalDays: 0,

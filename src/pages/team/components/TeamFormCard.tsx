@@ -1,22 +1,20 @@
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  Combobox,
   Input,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Textarea,
-  Combobox,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Users } from "lucide-react";
+import { useState } from "react";
 import { Controller, type Control, type FieldErrors } from "react-hook-form";
-import { TEAM_STATUS_OPTIONS } from "../data/constants";
 import type { TeamFormValues } from "../data/team-form.schema";
+import { LeaderSelectorDialog } from "./LeaderSelectorDialog";
 
 interface TeamFormCardProps {
   control: Control<TeamFormValues>;
@@ -24,6 +22,7 @@ interface TeamFormCardProps {
   clearErrors: (name?: any) => void;
   departmentOptions?: { label: string; value: string }[];
   leaderOptions?: { label: string; value: string }[];
+  isEdit?: boolean;
 }
 
 export function TeamFormCard({
@@ -32,7 +31,9 @@ export function TeamFormCard({
   clearErrors,
   departmentOptions = [],
   leaderOptions = [],
+  isEdit = false,
 }: TeamFormCardProps) {
+  const [isLeaderDialogOpen, setIsLeaderDialogOpen] = useState(false);
   return (
     <Card>
       <CardHeader>
@@ -43,60 +44,92 @@ export function TeamFormCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="code" required>
-              Mã đội
-            </Label>
-            <Controller
-              control={control}
-              name="code"
-              render={({ field }) => (
-                <Input
-                  id="code"
-                  placeholder="VD: TEAM-KD-01"
-                  aria-invalid={!!errors.code}
-                  value={field.value}
-                  onChange={(e) => {
-                    clearErrors("code");
-                    field.onChange(e.target.value.toUpperCase());
-                  }}
-                  onBlur={field.onBlur}
-                  ref={field.ref}
-                  name={field.name}
+          {isEdit ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="code">Mã đội</Label>
+                <Controller
+                  control={control}
+                  name="code"
+                  render={({ field }) => (
+                    <Input
+                      id="code"
+                      disabled={isEdit}
+                      clearable={!isEdit}
+                      placeholder="VD: TEAM-KD-01"
+                      aria-invalid={!!errors.code}
+                      value={field.value}
+                      onChange={(e) => {
+                        clearErrors("code");
+                        field.onChange(e.target.value.toUpperCase());
+                      }}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                      name={field.name}
+                    />
+                  )}
                 />
-              )}
-            />
-            {errors.code ? (
-              <p className="text-xs text-red-600">{errors.code.message}</p>
-            ) : null}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="name" required>
-              Tên đội nhóm
-            </Label>
-            <Controller
-              control={control}
-              name="name"
-              render={({ field }) => (
-                <Input
-                  id="name"
-                  placeholder="Nhập tên đội nhóm"
-                  aria-invalid={!!errors.name}
-                  value={field.value}
-                  onChange={(e) => {
-                    clearErrors("name");
-                    field.onChange(e.target.value);
-                  }}
-                  onBlur={field.onBlur}
-                  ref={field.ref}
-                  name={field.name}
+                {errors.code ? (
+                  <p className="text-xs text-red-600">{errors.code.message}</p>
+                ) : null}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="name" required>
+                  Tên đội nhóm
+                </Label>
+                <Controller
+                  control={control}
+                  name="name"
+                  render={({ field }) => (
+                    <Input
+                      id="name"
+                      placeholder="Nhập tên đội nhóm"
+                      aria-invalid={!!errors.name}
+                      value={field.value}
+                      onChange={(e) => {
+                        clearErrors("name");
+                        field.onChange(e.target.value);
+                      }}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                      name={field.name}
+                    />
+                  )}
                 />
-              )}
-            />
-            {errors.name ? (
-              <p className="text-xs text-red-600">{errors.name.message}</p>
-            ) : null}
-          </div>
+                {errors.name ? (
+                  <p className="text-xs text-red-600">{errors.name.message}</p>
+                ) : null}
+              </div>
+            </>
+          ) : (
+            <div className="col-span-2 space-y-2">
+              <Label htmlFor="name" required>
+                Tên đội nhóm
+              </Label>
+              <Controller
+                control={control}
+                name="name"
+                render={({ field }) => (
+                  <Input
+                    id="name"
+                    placeholder="Nhập tên đội nhóm"
+                    aria-invalid={!!errors.name}
+                    value={field.value}
+                    onChange={(e) => {
+                      clearErrors("name");
+                      field.onChange(e.target.value);
+                    }}
+                    onBlur={field.onBlur}
+                    ref={field.ref}
+                    name={field.name}
+                  />
+                )}
+              />
+              {errors.name ? (
+                <p className="text-xs text-red-600">{errors.name.message}</p>
+              ) : null}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -131,19 +164,52 @@ export function TeamFormCard({
             <Controller
               control={control}
               name="leader"
-              render={({ field }) => (
-                <Combobox
-                  options={leaderOptions}
-                  value={field.value ?? ""}
-                  onChange={(value) => {
-                    clearErrors("leader");
-                    field.onChange(value);
-                  }}
-                  placeholder="Chọn trưởng nhóm"
-                  searchPlaceholder="Tìm trưởng nhóm..."
-                  emptyText="Không tìm thấy trưởng nhóm"
-                />
-              )}
+              render={({ field }) => {
+                const selectedLeaderOption = leaderOptions.find(
+                  (opt) => opt.value === (field.value ?? ""),
+                );
+                const selectedLeaderLabel = selectedLeaderOption
+                  ? selectedLeaderOption.label
+                  : "Chọn trưởng nhóm";
+
+                return (
+                  <>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsLeaderDialogOpen(true)}
+                        className="h-10 flex-1 justify-between border-slate-200 bg-white text-left font-normal hover:bg-slate-50"
+                      >
+                        <span className="truncate">{selectedLeaderLabel}</span>
+                        <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      </Button>
+                      {field.value && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => {
+                            clearErrors("leader");
+                            field.onChange("");
+                          }}
+                          className="h-10 px-3 text-muted-foreground"
+                        >
+                          Xóa
+                        </Button>
+                      )}
+                    </div>
+                    <LeaderSelectorDialog
+                      open={isLeaderDialogOpen}
+                      onOpenChange={setIsLeaderDialogOpen}
+                      selectedId={field.value ? Number(field.value) : null}
+                      onSelect={(personnel) => {
+                        clearErrors("leader");
+                        field.onChange(String(personnel.id));
+                      }}
+                    />
+                  </>
+                );
+              }}
             />
             {errors.leader ? (
               <p className="text-xs text-red-600">{errors.leader.message}</p>
@@ -151,7 +217,7 @@ export function TeamFormCard({
           </div>
         </div>
 
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <Label htmlFor="status" required>
             Trạng thái
           </Label>
@@ -182,7 +248,7 @@ export function TeamFormCard({
           {errors.status ? (
             <p className="text-xs text-red-600">{errors.status.message}</p>
           ) : null}
-        </div>
+        </div> */}
 
         <div className="space-y-2">
           <Label htmlFor="description">Mô tả</Label>

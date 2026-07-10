@@ -37,7 +37,7 @@ export function useTeamCreatePage() {
   const departmentOptions = useMemo(() => {
     return farmDepartmentsQuery.items.map((d) => ({
       label: d.name,
-      value: String(d.id),
+      value: `${d.id}_${d.source}`,
     }));
   }, [farmDepartmentsQuery.items]);
 
@@ -60,15 +60,16 @@ export function useTeamCreatePage() {
 
   const onSubmit = async (values: TeamFormValues) => {
     try {
-      const departmentId = values.department?.trim()
-        ? Number(values.department)
-        : undefined;
+      let departmentId: number | undefined = undefined;
+      if (values.department?.trim()) {
+        const parts = values.department.split("_");
+        departmentId = parts[0] ? Number(parts[0]) : undefined;
+      }
       const leaderId = values.leader?.trim()
         ? Number(values.leader)
         : undefined;
 
       await createTeam.mutateAsync({
-        code: values.code.trim().toUpperCase(),
         name: values.name.trim(),
         departmentId,
         leaderId,

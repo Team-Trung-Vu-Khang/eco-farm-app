@@ -62,6 +62,7 @@ export interface FarmDepartmentRequest {
   description?: string;
   displayOrder?: number;
   status?: FarmMasterDataStatus;
+  masterDataDepartmentId?: number;
   metadataJson?: Record<string, any> | null;
   [key: string]: any;
 }
@@ -94,6 +95,15 @@ export interface DepartmentOptionResponse {
   displayOrder?: number;
 }
 
+export interface MasterDepartmentResponse {
+  id: number;
+  code: string;
+  name: string;
+  description?: string;
+  displayOrder?: number;
+  used?: boolean;
+}
+
 // ─── Farm Positions ──────────────────────────────────────────────────────────
 
 export interface FarmPositionRequest {
@@ -105,6 +115,7 @@ export interface FarmPositionRequest {
   status?: FarmMasterDataStatus;
   metadataJson?: Record<string, any>;
   positionGroupId?: number;
+  masterDataPositionId?: number;
   documents?: FarmDocumentRequest[];
   [key: string]: any;
 }
@@ -127,6 +138,17 @@ export interface PositionOptionResponse {
   name: string;
   source: "OWNER" | "MASTER";
   status: FarmMasterDataStatus;
+}
+
+export interface MasterPositionResponse {
+  id: number;
+  code: string;
+  name: string;
+  description?: string;
+  displayOrder?: number;
+  positionGroupId?: number;
+  positionGroupName?: string;
+  used?: boolean;
 }
 
 // ─── Farm Position Responsibilities ───────────────────────────────────────────
@@ -203,7 +225,7 @@ export interface FarmPersonnelRequest {
   departmentId?: number;
   positionType?: string;
   positionId?: number;
-  teamId?: number;
+  teamIds?: number[];
   avatarUrl?: string;
   status?: FarmMasterDataStatus;
   metadataJson?: Record<string, any>;
@@ -219,7 +241,7 @@ export interface FarmPersonnelResponse {
   phone?: string;
   positionId?: number;
   departmentId?: number;
-  teamId?: number;
+  teams?: FarmTeamResponse[];
   status: FarmMasterDataStatus;
   createdAt: string;
   updatedAt: string;

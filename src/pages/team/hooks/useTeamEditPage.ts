@@ -45,7 +45,7 @@ export function useTeamEditPage() {
   const departmentOptions = useMemo(() => {
     return farmDepartmentsQuery.items.map((d) => ({
       label: d.name,
-      value: String(d.id),
+      value: `${d.id}_${d.source}`,
     }));
   }, [farmDepartmentsQuery.items]);
 
@@ -72,10 +72,20 @@ export function useTeamEditPage() {
       reset({
         code: team.code ?? "",
         name: team.name ?? "",
-        department:
-          typeof team.department === "object" && team.department?.id
-            ? String(team.department.id)
-            : "",
+        department: (() => {
+          if (typeof team.department === "object" && team.department?.id) {
+            const found = farmDepartmentsQuery.items.find(
+              (d) => d.id === team.department.id,
+            );
+            if (found) {
+              return `${found.id}_${found.source}`;
+            }
+            return team.department.source
+              ? `${team.department.id}_${team.department.source}`
+              : String(team.department.id);
+          }
+          return "";
+        })(),
         leader:
           typeof team.leader === "object" && team.leader?.id
             ? String(team.leader.id)
@@ -84,13 +94,15 @@ export function useTeamEditPage() {
         status: (team.status as any) ?? "active",
       });
     }
-  }, [team, reset]);
+  }, [team, reset, farmDepartmentsQuery.items]);
 
   const onSubmit = async (values: TeamFormValues) => {
     try {
-      const departmentId = values.department?.trim()
-        ? Number(values.department)
-        : undefined;
+      let departmentId: number | undefined = undefined;
+      if (values.department?.trim()) {
+        const parts = values.department.split("_");
+        departmentId = parts[0] ? Number(parts[0]) : undefined;
+      }
       const leaderId = values.leader?.trim()
         ? Number(values.leader)
         : undefined;
@@ -98,7 +110,7 @@ export function useTeamEditPage() {
       await updateTeam.mutateAsync({
         id,
         data: {
-          code: values.code.trim().toUpperCase(),
+          code: values.code?.trim().toUpperCase() || undefined,
           name: values.name.trim(),
           departmentId,
           leaderId,

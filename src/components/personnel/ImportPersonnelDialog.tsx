@@ -292,7 +292,7 @@ export function ImportPersonnelDialog({
           department: departmentId,
           positionType,
           position: positionId,
-          team: teamId,
+          teamIds: teamId ? [teamId] : [],
           status: "active" as const,
           bankName: selectedBankCode,
           bankBranch: rowData.bankBranch || "",
@@ -344,7 +344,7 @@ export function ImportPersonnelDialog({
           departmentId: departmentId ? Number(departmentId) : undefined,
           positionType,
           positionId: positionId ? Number(positionId) : undefined,
-          teamId: teamId ? Number(teamId) : undefined,
+          teamIds: teamId ? [Number(teamId)] : undefined,
           status: "active",
           bankAccounts: bankAccountPayload,
         };

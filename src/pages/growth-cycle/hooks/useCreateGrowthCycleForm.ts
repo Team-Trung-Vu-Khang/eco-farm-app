@@ -24,16 +24,6 @@ export function useCreateGrowthCycleForm() {
   const handleComplete = async (values: GrowthCycleFormValues) => {
     setIsSubmitting(true);
     try {
-      const cropName =
-        crops.find((c) => String(c.id) === values.cropId)?.name ||
-        values.cropId;
-      const varietyName =
-        cropVarieties.find((v) => String(v.id) === values.variety)?.name ||
-        values.variety;
-
-      const generatedName = `Chu kỳ sinh trưởng ${cropName}${
-        values.scope === "variety" && varietyName ? ` - ${varietyName}` : ""
-      }`;
 
       // Upload PDFs and prepare stages
       const preparedStages = await Promise.all(
@@ -77,7 +67,7 @@ export function useCreateGrowthCycleForm() {
       const metadataJson = { cycleType: values.cycleType };
 
       await createTemplate.mutateAsync({
-        name: generatedName,
+        name: values.name.trim(),
         cropId: Number(values.cropId),
         cropVarietyId:
           values.scope === "variety" && values.variety

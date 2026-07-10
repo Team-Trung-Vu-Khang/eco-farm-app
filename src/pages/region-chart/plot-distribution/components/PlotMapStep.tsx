@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useState, useEffect } from "react";
+import { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import { useFormContext } from "react-hook-form";
 import {
   Button,
@@ -18,6 +18,7 @@ import {
   Polyline,
   TileLayer,
   Tooltip,
+  useMap,
   useMapEvents,
 } from "react-leaflet";
 import L from "leaflet";
@@ -25,16 +26,51 @@ import "leaflet/dist/leaflet.css";
 import { useAreaById } from "@/features/farm/hooks/useAreas";
 import type { PlotFormValues } from "../data/plot-form.schema";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
-import {
-  formatLatLng,
-  getBoundsFromPoints,
-  type PointWarning,
-} from "../utils";
+import { formatLatLng, getBoundsFromPoints, type PointWarning } from "../utils";
 import {
   toTurfPolygonFromCoords,
   getNearestPointOnPolygonBoundary,
 } from "../utils";
 import { point, polygon } from "@turf/helpers";
+import readXlsxFile from "read-excel-file";
+import * as turf from "@turf/turf";
+
+const isSegmentsIntersecting = (
+  p1: L.LatLng,
+  q1: L.LatLng,
+  p2: L.LatLng,
+  q2: L.LatLng,
+) => {
+  if (p1.equals(p2) || p1.equals(q2) || q1.equals(p2) || q1.equals(q2)) {
+    return false;
+  }
+  const ccw = (A: L.LatLng, B: L.LatLng, C: L.LatLng) => {
+    return (
+      (C.lat - A.lat) * (B.lng - A.lng) > (B.lat - A.lat) * (C.lng - A.lng)
+    );
+  };
+  return (
+    ccw(p1, p2, q2) !== ccw(q1, p2, q2) && ccw(p1, q1, p2) !== ccw(p1, q1, q2)
+  );
+};
+
+const isSelfIntersecting = (points: L.LatLng[]) => {
+  const n = points.length;
+  if (n < 4) return false;
+  for (let i = 0; i < n; i++) {
+    const p1 = points[i];
+    const q1 = points[(i + 1) % n];
+    for (let j = i + 2; j < n; j++) {
+      if ((j + 1) % n === i) continue;
+      const p2 = points[j];
+      const q2 = points[(j + 1) % n];
+      if (isSegmentsIntersecting(p1, q1, p2, q2)) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
 
 interface PlotMapStepProps {
   customIcon: L.Icon;
@@ -53,6 +89,46 @@ const MapClickHandler = ({
       onClick(event.latlng);
     },
   });
+  return null;
+};
+
+const FitBoundsOnce = ({
+  points,
+  areaPoints,
+  fitTrigger,
+}: {
+  points: L.LatLng[];
+  areaPoints: L.LatLng[];
+  fitTrigger?: number;
+}) => {
+  const map = useMap();
+  const hasFitRef = useRef(false);
+
+  useEffect(() => {
+    if (points.length > 0 && !hasFitRef.current) {
+      const bounds = L.latLngBounds(points);
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [40, 40] });
+        hasFitRef.current = true;
+      }
+    } else if (areaPoints.length > 0 && !hasFitRef.current) {
+      const bounds = L.latLngBounds(areaPoints);
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [40, 40] });
+        hasFitRef.current = true;
+      }
+    }
+  }, [points, areaPoints, map]);
+
+  useEffect(() => {
+    if (points.length > 0 && fitTrigger) {
+      const bounds = L.latLngBounds(points);
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [40, 40] });
+      }
+    }
+  }, [fitTrigger, points, map]);
+
   return null;
 };
 
@@ -88,6 +164,11 @@ interface MapLayoutProps {
     value: string,
   ) => void;
   onAddPoint: () => void;
+  onImportExcel: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onDownloadSample: () => void;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  fitTrigger: number;
+  boundaryWarning: string | null;
 }
 
 const MapLayout = ({
@@ -113,6 +194,11 @@ const MapLayout = ({
   onRemovePoint,
   onPointInputChange,
   onAddPoint,
+  onImportExcel,
+  onDownloadSample,
+  fileInputRef,
+  fitTrigger,
+  boundaryWarning,
 }: MapLayoutProps) => {
   return (
     <div className="flex flex-1 gap-4 overflow-hidden p-4 h-full w-full">
@@ -144,10 +230,7 @@ const MapLayout = ({
 
           {existingPlots.map((plot) => {
             if (!plot.boundary || plot.boundary.length < 3) return null;
-            if (
-              editingPlotId &&
-              String(plot.id) === String(editingPlotId)
-            ) {
+            if (editingPlotId && String(plot.id) === String(editingPlotId)) {
               return null;
             }
 
@@ -230,7 +313,13 @@ const MapLayout = ({
             />
           )}
 
-          <MapClickHandler onClick={onMapClick} />
+          {/* <MapClickHandler onClick={onMapClick} /> */}
+
+          <FitBoundsOnce
+            points={currentPoints}
+            areaPoints={areaPolygon}
+            fitTrigger={fitTrigger}
+          />
         </MapContainer>
 
         {activePersistentWarning && !isDraggingPoint && selectedAreaId && (
@@ -271,11 +360,41 @@ const MapLayout = ({
         <div className="border-b bg-white p-3">
           <h4 className="text-sm font-semibold">Danh sách toạ độ</h4>
           <p className="mt-1 text-xs text-muted-foreground">
-            Chọn marker để đổi màu xanh rồi kéo thả hoặc dùng nút Thêm điểm.
-            Nếu ra khỏi khu vực hoặc đè lên lô sẵn có, điểm sẽ đổi đỏ và hiển
-            thị gợi ý hợp lệ.
+            Chọn marker để đổi màu xanh rồi kéo thả hoặc dùng nút Thêm điểm. Nếu
+            ra khỏi khu vực hoặc đè lên lô sẵn có, điểm sẽ đổi đỏ và hiển thị
+            gợi ý hợp lệ.
           </p>
+          <div className="mt-2 flex gap-2">
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept=".xlsx, .xls"
+              className="hidden"
+              onChange={onImportExcel}
+            />
+            <a
+              href="https://minio-api.otechz.com/mevimedia/9d1b7b5e52496f389e93b4dc826286c4906e79f2006a86d7a06ec85f06a3dff4/static/2026/07/10/d5ea3a26-b16f-491c-9d7b-5133b32ffdb2-mau_toa_do_lo.xlsx"
+              download="mau_toa_do_lo.xlsx"
+              className="h-8 flex-1 text-[11px] text-primary border border-primary/20 hover:bg-primary/5 px-1 flex items-center justify-center rounded-md font-medium transition-colors"
+            >
+              Tải file mẫu
+            </a>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 flex-1 text-[11px] px-1"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Nhập Excel
+            </Button>
+          </div>
         </div>
+        {boundaryWarning && (
+          <div className="bg-red-50 text-red-600 p-2.5 text-xs border-b border-red-100 font-medium animate-in slide-in-from-top duration-200">
+            ⚠️ {boundaryWarning}
+          </div>
+        )}
         <div className="flex-1 space-y-3 overflow-y-auto p-3">
           {currentPoints.map((point, index) => (
             <div
@@ -343,7 +462,8 @@ export const PlotMapStep = ({
   invalidIcon,
   editingPlotId,
 }: PlotMapStepProps) => {
-  const { watch, setValue } = useFormContext<PlotFormValues>();
+  const { watch, setValue, setError, clearErrors } =
+    useFormContext<PlotFormValues>();
   const { toast } = useToast();
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -356,7 +476,9 @@ export const PlotMapStep = ({
 
   const areaPolygon = useMemo(() => {
     if (!selectedArea || !selectedArea.boundary) return [];
-    return selectedArea.boundary.map((b) => L.latLng(b.latitude || 0, b.longitude || 0));
+    return selectedArea.boundary.map((b) =>
+      L.latLng(b.latitude || 0, b.longitude || 0),
+    );
   }, [selectedArea]);
 
   const currentPoints = useMemo(() => {
@@ -376,9 +498,13 @@ export const PlotMapStep = ({
 
   // States for interactive map editing
   const [activePointIndex, setActivePointIndex] = useState<number | null>(null);
-  const [pointWarnings, setPointWarnings] = useState<Record<number, PointWarning>>({});
-  const [activeDragWarning, setActiveDragWarning] = useState<PointWarning | null>(null);
+  const [pointWarnings, setPointWarnings] = useState<
+    Record<number, PointWarning>
+  >({});
+  const [activeDragWarning, setActiveDragWarning] =
+    useState<PointWarning | null>(null);
   const [isDraggingPoint, setIsDraggingPoint] = useState(false);
+  const [fitTrigger, setFitTrigger] = useState(0);
 
   const areaPolygonFeature = useMemo(() => {
     if (areaPolygon.length < 3) return null;
@@ -399,13 +525,71 @@ export const PlotMapStep = ({
       })
       .map((plot) => {
         const poly = toTurfPolygonFromCoords(
-          (plot.boundary || []).map((b) => ({ lat: b.latitude || 0, lng: b.longitude || 0 }))
+          (plot.boundary || []).map((b) => ({
+            lat: b.latitude || 0,
+            lng: b.longitude || 0,
+          })),
         );
         if (!poly) return null;
-        return { id: String(plot.id), polygon: poly };
+        return { id: String(plot.id), name: plot.name || "", polygon: poly };
       })
-      .filter((item): item is { id: string; polygon: any } => item !== null);
+      .filter(
+        (item): item is { id: string; name: string; polygon: any } =>
+          item !== null,
+      );
   }, [selectedArea, editingPlotId]);
+
+  const boundaryWarning = useMemo(() => {
+    if (currentPoints.length < 3) return null;
+
+    if (areaPolygonFeature) {
+      for (const p of currentPoints) {
+        const pt = turf.point([p.lng, p.lat]);
+        if (!turf.booleanPointInPolygon(pt, areaPolygonFeature)) {
+          return "Lô đất vượt ngoài ranh giới khu vực!";
+        }
+      }
+    }
+
+    if (blockingPlotPolygons.length > 0) {
+      const currentCoords = [...currentPoints.map((p) => [p.lng, p.lat])];
+      currentCoords.push(currentCoords[0]);
+      const currentPoly = turf.polygon([currentCoords]);
+
+      for (const other of blockingPlotPolygons) {
+        // Check if any point is inside other plot
+        for (const p of currentPoints) {
+          const pt = turf.point([p.lng, p.lat]);
+          if (turf.booleanPointInPolygon(pt, other.polygon)) {
+            return `Lô đất bị chồng lấn với lô "${other.name || "Lô khác"}"!`;
+          }
+        }
+
+        // Check boundary line intersections
+        try {
+          const intersects = turf.lineIntersect(currentPoly, other.polygon);
+          if (intersects && intersects.features.length > 0) {
+            return `Lô đất giao cắt ranh giới với lô "${other.name || "Lô khác"}"!`;
+          }
+        } catch (err) {
+          console.error("lineIntersect error", err);
+        }
+      }
+    }
+
+    return null;
+  }, [currentPoints, areaPolygonFeature, blockingPlotPolygons]);
+
+  useEffect(() => {
+    if (boundaryWarning) {
+      setError("coordinates", {
+        type: "custom",
+        message: boundaryWarning,
+      });
+    } else {
+      clearErrors("coordinates");
+    }
+  }, [boundaryWarning, setError, clearErrors]);
 
   const activePersistentWarning = useMemo(() => {
     if (activePointIndex === null) return null;
@@ -423,7 +607,11 @@ export const PlotMapStep = ({
 
   // Initializing default points inside area boundaries if coordinates is empty
   useEffect(() => {
-    if (!selectedArea || !selectedArea.boundary || selectedArea.boundary.length === 0) {
+    if (
+      !selectedArea ||
+      !selectedArea.boundary ||
+      selectedArea.boundary.length === 0
+    ) {
       return;
     }
     if (coordinates.length === 0) {
@@ -488,7 +676,47 @@ export const PlotMapStep = ({
       // Modify locally and push update
       const newPoints = [...currentPoints];
       newPoints[index] = latlng;
-      setCoordinates(newPoints);
+
+      // Ngăn các điểm tọa độ tự giao nhau (trồng chéo)
+      let finalPoints = newPoints;
+      if (persist && newPoints.length >= 4 && isSelfIntersecting(newPoints)) {
+        let latSum = 0;
+        let lngSum = 0;
+        for (const p of newPoints) {
+          latSum += p.lat;
+          lngSum += p.lng;
+        }
+        const centroidLat = latSum / newPoints.length;
+        const centroidLng = lngSum / newPoints.length;
+
+        const sorted = [...newPoints].sort((a, b) => {
+          const angleA = Math.atan2(a.lat - centroidLat, a.lng - centroidLng);
+          const angleB = Math.atan2(b.lat - centroidLat, b.lng - centroidLng);
+          return angleA - angleB;
+        });
+
+        let isDifferent = false;
+        for (let i = 0; i < newPoints.length; i++) {
+          if (
+            newPoints[i].lat !== sorted[i].lat ||
+            newPoints[i].lng !== sorted[i].lng
+          ) {
+            isDifferent = true;
+            break;
+          }
+        }
+
+        if (isDifferent) {
+          finalPoints = sorted;
+          toast({
+            title: "Đã tự động sắp xếp lại điểm",
+            description:
+              "Các điểm tọa độ bị giao nhau đã được sắp xếp lại để tạo đa giác hợp lệ.",
+          });
+        }
+      }
+
+      setCoordinates(finalPoints);
 
       const clearPreview = () => {
         if (preview) {
@@ -501,7 +729,10 @@ export const PlotMapStep = ({
       let overlapPolygon: any = null;
 
       if (areaPolygonFeature) {
-        const insideArea = booleanPointInPolygon(pointFeature, areaPolygonFeature);
+        const insideArea = booleanPointInPolygon(
+          pointFeature,
+          areaPolygonFeature,
+        );
         if (!insideArea) {
           violationType = "outsideArea";
         }
@@ -612,7 +843,12 @@ export const PlotMapStep = ({
   );
 
   const handleAddPoint = useCallback(() => {
-    const basePoints = currentPoints.length > 0 ? currentPoints : areaPolygon.length > 0 ? areaPolygon : [L.latLng(0, 0)];
+    const basePoints =
+      currentPoints.length > 0
+        ? currentPoints
+        : areaPolygon.length > 0
+          ? areaPolygon
+          : [L.latLng(0, 0)];
     const c = getBoundsFromPoints(basePoints).getCenter();
     const nextIndex = currentPoints.length;
     const newLatLng = L.latLng(c.lat + 0.0002, c.lng + 0.0002);
@@ -623,6 +859,142 @@ export const PlotMapStep = ({
     setActivePointIndex(nextIndex);
     setActiveDragWarning(null);
   }, [currentPoints, areaPolygon, setPointWithValidation]);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleDownloadSampleExcel = useCallback(() => {
+    const link = document.createElement("a");
+    link.href =
+      "https://minio-api.otechz.com/mevimedia/9d1b7b5e52496f389e93b4dc826286c4906e79f2006a86d7a06ec85f06a3dff4/static/2026/07/10/d5ea3a26-b16f-491c-9d7b-5133b32ffdb2-mau_toa_do_lo.xlsx";
+    link.download = "mau_toa_do_lo.xlsx";
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, []);
+
+  const handleImportExcel = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      try {
+        const rows = await readXlsxFile(file);
+        if (rows.length < 2) {
+          toast({
+            title: "Lỗi",
+            description:
+              "File excel không có dữ liệu hoặc không đúng định dạng.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const headers = rows[0] as string[];
+        let latIdx = -1;
+        let lngIdx = -1;
+
+        headers.forEach((header, i) => {
+          if (!header) return;
+          const cleanHeader = header
+            .toString()
+            .normalize("NFC")
+            .trim()
+            .toLowerCase();
+          const cleanHeaderNoDiacritics = cleanHeader
+            .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, "a")
+            .replace(/[èéẹẻẽêềếệểễ]/g, "e")
+            .replace(/[ìíịỉĩ]/g, "i")
+            .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, "o")
+            .replace(/[ùúụủũưừứựửữ]/g, "u")
+            .replace(/[ỳýỵỷỹ]/g, "y")
+            .replace(/[đ]/g, "d");
+
+          if (
+            cleanHeader === "lat" ||
+            cleanHeader.includes("latitude") ||
+            cleanHeader.includes("vĩ độ") ||
+            cleanHeaderNoDiacritics.includes("vi do")
+          ) {
+            latIdx = i;
+          }
+          if (
+            cleanHeader === "lng" ||
+            cleanHeader === "lon" ||
+            cleanHeader.includes("longitude") ||
+            cleanHeader.includes("kinh độ") ||
+            cleanHeaderNoDiacritics.includes("kinh do")
+          ) {
+            lngIdx = i;
+          }
+        });
+
+        if (latIdx === -1 || lngIdx === -1) {
+          toast({
+            title: "Lỗi",
+            description:
+              "Không tìm thấy cột Lat (Vĩ độ) hoặc Lng (Kinh độ) trong file Excel.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const parsedPoints: L.LatLng[] = [];
+        const dataRows = rows.slice(1);
+        for (const row of dataRows) {
+          const latVal = parseFloat(row[latIdx]?.toString() || "");
+          const lngVal = parseFloat(row[lngIdx]?.toString() || "");
+          if (!isNaN(latVal) && !isNaN(lngVal)) {
+            parsedPoints.push(L.latLng(latVal, lngVal));
+          }
+        }
+
+        if (parsedPoints.length < 3) {
+          toast({
+            title: "Lỗi",
+            description:
+              "Cần ít nhất 3 điểm toạ độ hợp lệ để tạo thành đa giác.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        let finalPoints = parsedPoints;
+        if (isSelfIntersecting(parsedPoints)) {
+          let latSum = 0;
+          let lngSum = 0;
+          for (const p of parsedPoints) {
+            latSum += p.lat;
+            lngSum += p.lng;
+          }
+          const centroidLat = latSum / parsedPoints.length;
+          const centroidLng = lngSum / parsedPoints.length;
+          finalPoints = [...parsedPoints].sort((a, b) => {
+            const angleA = Math.atan2(a.lat - centroidLat, a.lng - centroidLng);
+            const angleB = Math.atan2(b.lat - centroidLat, b.lng - centroidLng);
+            return angleA - angleB;
+          });
+        }
+
+        setCoordinates(finalPoints);
+        setFitTrigger((prev) => prev + 1);
+        toast({
+          title: "Thành công",
+          description: `Đã nhập thành công ${finalPoints.length} điểm toạ độ từ file Excel.`,
+        });
+      } catch (error) {
+        console.error(error);
+        toast({
+          title: "Lỗi",
+          description: "Có lỗi xảy ra khi đọc file Excel.",
+          variant: "destructive",
+        });
+      } finally {
+        event.target.value = "";
+      }
+    },
+    [toast, setCoordinates, setFitTrigger],
+  );
 
   const handlePointDrag = useCallback(
     (index: number, latlng: L.LatLng, options?: { finalize?: boolean }) => {
@@ -690,6 +1062,11 @@ export const PlotMapStep = ({
             onRemovePoint={removePoint}
             onPointInputChange={handlePointInputChange}
             onAddPoint={handleAddPoint}
+            onImportExcel={handleImportExcel}
+            onDownloadSample={handleDownloadSampleExcel}
+            fileInputRef={fileInputRef}
+            fitTrigger={fitTrigger}
+            boundaryWarning={boundaryWarning}
           />
         )}
 
@@ -722,6 +1099,11 @@ export const PlotMapStep = ({
                 onRemovePoint={removePoint}
                 onPointInputChange={handlePointInputChange}
                 onAddPoint={handleAddPoint}
+                onImportExcel={handleImportExcel}
+                onDownloadSample={handleDownloadSampleExcel}
+                fileInputRef={fileInputRef}
+                fitTrigger={fitTrigger}
+                boundaryWarning={boundaryWarning}
               />
             )}
           </DialogContent>

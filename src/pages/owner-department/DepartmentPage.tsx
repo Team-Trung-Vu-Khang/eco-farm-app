@@ -6,6 +6,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { DepartmentFormDialog } from "./components/DepartmentFormDialog";
+import { MasterDepartmentImportDialog } from "./components/MasterDepartmentImportDialog";
 import { DEPARTMENT_COLUMNS } from "./data/columns";
 import { useDepartment } from "./hooks/useDepartment";
 
@@ -29,6 +30,8 @@ const DepartmentPage = () => {
     setCurrentIndex,
     formOpen,
     setFormOpen,
+    importOpen,
+    setImportOpen,
     deleteOpen,
     setDeleteOpen,
     editItem,
@@ -37,6 +40,8 @@ const DepartmentPage = () => {
     handleDelete,
     handleSubmit,
     handleConfirmDelete,
+    workspaceId,
+    refetchDepartments,
   } = useDepartment();
 
   return (
@@ -45,10 +50,16 @@ const DepartmentPage = () => {
       title="Quản lý phòng ban"
       description="Quản lý phòng ban theo đơn vị sở hữu"
       actions={
-        <Button onClick={handleAdd}>
-          <Plus className="w-4 h-4 mr-2" />
-          Thêm phòng ban
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Thêm từ danh sách mẫu
+          </Button>
+          <Button onClick={handleAdd}>
+            <Plus className="w-4 h-4 mr-2" />
+            Thêm phòng ban
+          </Button>
+        </div>
       }
     >
       {error ? (
@@ -87,6 +98,13 @@ const DepartmentPage = () => {
         onOpenChange={setFormOpen}
         editItem={editItem}
         onSubmit={handleSubmit}
+      />
+
+      <MasterDepartmentImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        workspaceId={workspaceId}
+        onImportSuccess={refetchDepartments}
       />
 
       <DeleteDialog

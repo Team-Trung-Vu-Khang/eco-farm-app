@@ -48,7 +48,7 @@ export const personnelColumns: Column<FarmPersonnelResponse>[] = [
   {
     key: "teamName",
     label: "Đội nhóm",
-    render: (value, item) => value || item.team?.name || "-",
+    render: (_, item) => item.teams?.map((item) => item.name).join(", ") || "-",
   },
   {
     key: "status",

@@ -4,6 +4,7 @@ import type {
   FarmBaseQueryParams,
   FarmPositionResponse,
   PositionOptionResponse,
+  MasterPositionResponse,
   FarmPageResponse,
 } from "../types/farm-master-data.type";
 
@@ -15,6 +16,8 @@ export const farmPositionKeys = {
     [...farmPositionKeys.all(), "detail", id, workspaceId] as const,
   options: (params?: { page?: number; size?: number }, workspaceId?: number) =>
     [...farmPositionKeys.all(), "options", params ?? {}, workspaceId] as const,
+  masterData: (params?: { used?: boolean; page?: number; size?: number }, workspaceId?: number) =>
+    [...farmPositionKeys.all(), "masterData", params ?? {}, workspaceId] as const,
 };
 
 interface UseFarmPositionsOptions {
@@ -76,6 +79,34 @@ export function useFarmPositionOptions({
     {
       queryKey: farmPositionKeys.options(params, workspaceId),
       queryFn: () => farmPositionApi.options(params, workspaceId),
+      enabled: enabled && workspaceId !== undefined,
+      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    },
+  );
+
+  return {
+    ...queryResult,
+    items: queryResult.data?.content ?? [],
+    response: queryResult.data ?? null,
+    loading: queryResult.isLoading,
+    error: queryResult.error?.message ?? null,
+  };
+}
+
+export function useFarmPositionsMasterData({
+  params,
+  workspaceId,
+  enabled = true,
+}: {
+  params?: { used?: boolean; page?: number; size?: number };
+  workspaceId?: number;
+  enabled?: boolean;
+} = {}) {
+  const queryResult = useQuery<FarmPageResponse<MasterPositionResponse>, Error>(
+    {
+      queryKey: farmPositionKeys.masterData(params, workspaceId),
+      queryFn: () => farmPositionApi.masterData(params, workspaceId),
       enabled: enabled && workspaceId !== undefined,
       staleTime: 5 * 60 * 1000,
       refetchOnWindowFocus: false,

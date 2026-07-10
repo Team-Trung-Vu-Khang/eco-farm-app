@@ -65,6 +65,7 @@ export default function UpdateGrowthCyclePage() {
     if (currentCycle && !isLoaded) {
       const metadata: Record<string, unknown> = currentCycle.metadataJson || {};
       reset({
+        name: currentCycle.name ?? "",
         cycleType: String(metadata.cycleType || "plant") as "plant" | "animal",
         scope: currentCycle.cropVarietyId ? "variety" : "crop",
         cropId: String(currentCycle.cropId),
@@ -130,18 +131,6 @@ export default function UpdateGrowthCyclePage() {
 
     setIsSubmitting(true);
     try {
-      const cropName =
-        crops.find((c) => String(c.id) === values.cropId)?.name ||
-        values.cropId;
-      const resolvedVarietyName =
-        cropVarieties.find((variety) => String(variety.id) === values.variety)
-          ?.name || values.variety;
-
-      const generatedName = `Chu kỳ sinh trưởng ${cropName}${
-        values.scope === "variety" && resolvedVarietyName
-          ? ` - ${resolvedVarietyName}`
-          : ""
-      }`;
 
       // Upload PDFs and prepare stages
       const preparedStages = await Promise.all(
@@ -199,7 +188,7 @@ export default function UpdateGrowthCyclePage() {
         id: Number(params.id),
         data: {
           code: currentCycle?.code || undefined,
-          name: generatedName,
+          name: values.name.trim(),
           cropId: Number(values.cropId),
           cropVarietyId:
             values.scope === "variety" && values.variety

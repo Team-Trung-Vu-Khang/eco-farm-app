@@ -1,28 +1,30 @@
+import { useCatalog, useCropVarieties } from "@/features/foundation";
 import {
-  Label,
-  Combobox,
+  Button,
   cn,
+  Combobox,
+  FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormControl,
   FormMessage,
+  Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CheckCircle2, Sprout } from "lucide-react";
+import { useState } from "react";
 import { useFormContext } from "react-hook-form";
-import { useCatalog, useCrops, useCropVarieties } from "@/features/foundation";
 import type { CreateSeedFormValues } from "../schemas/createSeedSchema";
+import { CropSelectorDialog } from "./CropSelectorDialog";
 
 export function SeedSelectionStep() {
   const { watch, setValue, control } = useFormContext<CreateSeedFormValues>();
   const selectedCrop = watch("cropId");
   const selectedCropGroup = watch("cropGroupId");
+  const watchedCropName = watch("cropName");
+
+  const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
 
   const { items: cropGroups } = useCatalog("crop-groups");
-  const { items: allCrops } = useCrops({ enabled: !!selectedCropGroup });
-  const filteredCrops = allCrops.filter(
-    (c) => c.cropGroupId === Number(selectedCropGroup),
-  );
 
   const { items: varieties } = useCropVarieties({
     params: { cropId: Number(selectedCrop) },
@@ -56,12 +58,14 @@ export function SeedSelectionStep() {
                       value: String(group.id),
                       label: group.name,
                     }))}
-                    placeholder="-- Chọn nhóm cây --"
+                    placeholder="Chọn nhóm cây"
                     value={field.value}
                     onChange={(value) => {
                       const safeValue = value ?? "";
                       field.onChange(safeValue);
                       setValue("cropId", "");
+                      setValue("cropName", "");
+                      setValue("varietyName", "");
                       setValue("cropVarietyId", "");
                     }}
                   />
@@ -74,74 +78,63 @@ export function SeedSelectionStep() {
           <FormField
             control={control}
             name="cropId"
-            render={({ field }) => (
-              <FormItem className="space-y-2">
-                <FormLabel className="text-sm font-medium text-slate-600">
-                  Cây trồng <span className="text-red-500">*</span>
-                </FormLabel>
-                <FormControl>
-                  {!selectedCropGroup ? (
-                    <div className="flex h-[120px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50 text-slate-400">
-                      <p className="text-sm font-medium">
-                        Vui lòng chọn nhóm cây trước
-                      </p>
-                    </div>
-                  ) : filteredCrops.length === 0 ? (
-                    <div className="flex h-[120px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50 text-slate-400">
-                      <p className="text-sm font-medium">
-                        Không tìm thấy cây trồng nào trong nhóm này
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-4">
-                      {filteredCrops.map((crop) => (
-                        <div
-                          key={crop.id}
+            render={({ field }) => {
+              const selectedCropLabel = watchedCropName || "Chọn cây trồng...";
+
+              return (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-slate-600">
+                    Cây trồng <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={!selectedCropGroup}
+                        onClick={() => setIsCropDialogOpen(true)}
+                        className="h-9 flex-1 justify-between border-slate-200 bg-white text-left font-normal hover:bg-slate-50"
+                      >
+                        <span className="truncate">{selectedCropLabel}</span>
+                        <Sprout className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      </Button>
+                      {field.value && (
+                        <Button
+                          type="button"
+                          variant="ghost"
                           onClick={() => {
-                            field.onChange(String(crop.id));
-                            setValue("cropName", crop.name);
+                            field.onChange("");
+                            setValue("cropName", "");
                             setValue("cropVarietyId", "");
                             setValue("varietyName", "");
                             setValue("varietyCode", "");
                           }}
-                          className={cn(
-                            "group relative flex cursor-pointer flex-col gap-2 rounded-xl border-2 bg-white p-2 transition-all hover:shadow-md",
-                            field.value === String(crop.id)
-                              ? "border-green-500 ring-2 ring-green-500/20"
-                              : "border-slate-100 hover:border-green-200",
-                          )}
+                          className="h-10 px-3 text-muted-foreground"
                         >
-                          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-slate-100">
-                            {crop.imageUrl ? (
-                              <img
-                                src={crop.imageUrl}
-                                alt={crop.name}
-                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center">
-                                <Sprout className="h-10 w-10 text-slate-300" />
-                              </div>
-                            )}
-                            {field.value === String(crop.id) && (
-                              <div className="absolute inset-0 flex items-center justify-center bg-green-500/20 backdrop-blur-[1px]">
-                                <div className="rounded-full bg-white p-1 shadow-sm">
-                                  <CheckCircle2 className="h-5 w-5 fill-green-100 text-green-600" />
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                          <p className="text-center text-sm font-bold text-slate-800">
-                            {crop.name}
-                          </p>
-                        </div>
-                      ))}
+                          Xóa
+                        </Button>
+                      )}
                     </div>
+                  </FormControl>
+                  <FormMessage />
+                  {selectedCropGroup && (
+                    <CropSelectorDialog
+                      open={isCropDialogOpen}
+                      onOpenChange={setIsCropDialogOpen}
+                      cropGroupId={Number(selectedCropGroup)}
+                      selectedId={field.value ? Number(field.value) : null}
+                      onSelect={(crop) => {
+                        field.onChange(String(crop.id));
+                        setValue("cropName", crop.name);
+                        setValue("cropVarietyId", "");
+                        setValue("varietyName", "");
+                        setValue("varietyCode", "");
+                      }}
+                    />
                   )}
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+                </FormItem>
+              );
+            }}
           />
         </div>
       </div>

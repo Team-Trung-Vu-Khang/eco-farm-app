@@ -3,7 +3,7 @@ import { z } from "zod";
 export const TEAM_FORM_STATUSES = ["active", "inactive"] as const;
 
 export const teamFormSchema = z.object({
-  code: z.string().trim().min(1, "Vui lòng nhập mã đội nhóm."),
+  code: z.string().trim().optional(),
   name: z.string().trim().min(1, "Vui lòng nhập tên đội nhóm."),
   department: z.string().trim().optional(),
   leader: z.string().trim().optional(),
@@ -16,7 +16,6 @@ export const teamFormSchema = z.object({
 export type TeamFormValues = z.infer<typeof teamFormSchema>;
 
 export const emptyTeamFormValues: TeamFormValues = {
-  code: "",
   name: "",
   department: "",
   leader: "",

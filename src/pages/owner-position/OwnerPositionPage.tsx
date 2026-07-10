@@ -6,6 +6,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { OwnerPositionFormDialog } from "./components/OwnerPositionFormDialog";
+import { MasterPositionImportDialog } from "./components/MasterPositionImportDialog";
 import { positionColumns } from "./data/columns";
 import { useOwnerPositionPage } from "./hooks/useOwnerPositionPage";
 
@@ -31,6 +32,8 @@ const OwnerPositionPage = () => {
     setCurrentIndex,
     formOpen,
     setFormOpen,
+    importOpen,
+    setImportOpen,
     deleteOpen,
     setDeleteOpen,
     editItem,
@@ -40,6 +43,8 @@ const OwnerPositionPage = () => {
     handleSubmit,
     handleConfirmDelete,
     handleView,
+    workspaceId,
+    refetchPositions,
   } = useOwnerPositionPage();
 
   return (
@@ -48,10 +53,16 @@ const OwnerPositionPage = () => {
       title="Quản lý chức vụ"
       description="Quản lý chức vụ theo nhóm chức vụ"
       actions={
-        <Button onClick={handleAdd}>
-          <Plus className="w-4 h-4 mr-2" />
-          Thêm chức vụ
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Thêm từ danh sách mẫu
+          </Button>
+          <Button onClick={handleAdd}>
+            <Plus className="w-4 h-4 mr-2" />
+            Thêm chức vụ
+          </Button>
+        </div>
       }
     >
       {error ? (
@@ -92,6 +103,13 @@ const OwnerPositionPage = () => {
         editItem={editItem}
         groupOptions={groupOptions}
         onSubmit={handleSubmit}
+      />
+
+      <MasterPositionImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        workspaceId={workspaceId}
+        onImportSuccess={refetchPositions}
       />
 
       <DeleteDialog

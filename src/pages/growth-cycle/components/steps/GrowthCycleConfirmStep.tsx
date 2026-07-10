@@ -43,6 +43,10 @@ export function GrowthCycleConfirmStep({
 
       <Card className="border-none shadow-none bg-muted/30">
         <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-12">
+          <div className="flex justify-between items-center py-2 border-b border-muted col-span-full">
+            <span className="text-sm text-muted-foreground">Tên chu kỳ:</span>
+            <span className="font-bold text-base text-slate-900">{formData.name || "-"}</span>
+          </div>
           <div className="flex justify-between items-center py-2 border-b border-muted">
             <span className="text-sm text-muted-foreground">Nhóm chu kỳ:</span>
             <Badge variant={isPlant ? "default" : "secondary"}>

@@ -6,6 +6,10 @@ import {
   Label,
   RadioGroup,
   RadioGroupItem,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  Input,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   ChevronDown,
@@ -333,56 +337,62 @@ export function GrowthCycleBasicInfoStep({
   return (
     <div className="mx-auto max-w-4xl space-y-8 py-4">
       <div className="space-y-6">
-        <div className="space-y-3">
-          <Label className="text-base font-semibold">Vụ</Label>
-          <FormField
-            control={control}
-            name="cycleType"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <RadioGroup
-                    value={field.value ?? "plant"}
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      setValue("cropId", "");
-                      setValue("variety", "");
-                    }}
-                    className="grid grid-cols-1 gap-4 md:grid-cols-2"
-                  >
-                    <ScopeOption
-                      checked={(field.value ?? "plant") === "plant"}
-                      icon={<TreeDeciduous className="w-6 h-6" />}
-                      inputId="cycle-type-plant"
-                      title="Vụ mùa"
+        <FormField
+          control={control}
+          name="cycleType"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <Tabs
+                  value={field.value ?? "plant"}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    setValue("cropId", "");
+                    setValue("variety", "");
+                  }}
+                  className="w-full"
+                >
+                  <TabsList className="grid w-full grid-cols-2 bg-slate-100 p-1 border border-slate-200 rounded-xl h-auto">
+                    <TabsTrigger
                       value="plant"
-                      description="Từ nảy mầm đến ra hoa, đậu trái hoặc thu hoạch."
-                      onClick={() => {
-                        field.onChange("plant");
-                        setValue("cropId", "");
-                        setValue("variety", "");
-                      }}
-                    />
-                    <ScopeOption
-                      checked={field.value === "animal"}
-                      icon={<Fish className="w-6 h-6" />}
-                      inputId="cycle-type-animal"
-                      title="Vụ nuôi"
+                      className="flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
+                    >
+                      <TreeDeciduous className="w-4 h-4" />
+                      Vụ mùa
+                    </TabsTrigger>
+                    <TabsTrigger
                       value="animal"
-                      description="Từ sơ sinh đến nuôi lớn, sinh sản hoặc xuất chuồng."
-                      onClick={() => {
-                        field.onChange("animal");
-                        setValue("cropId", "");
-                        setValue("variety", "");
-                      }}
-                    />
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+                      className="flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
+                    >
+                      <Fish className="w-4 h-4" />
+                      Vụ nuôi
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={control}
+          name="name"
+          render={({ field }) => (
+            <FormItem className="space-y-2">
+              <Label className="text-sm font-semibold" required>
+                Tên chu kỳ sinh trưởng
+              </Label>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="VD: Chu kỳ sinh trưởng Lúa mùa, Chu kỳ chăn nuôi Heo thịt..."
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="space-y-3">
           <Label className="text-base font-semibold">Phạm vi áp dụng</Label>

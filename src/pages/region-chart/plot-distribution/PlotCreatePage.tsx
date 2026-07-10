@@ -57,7 +57,7 @@ const PlotCreatePage = () => {
       id: "map",
       title: "Bản đồ lô đất",
       description: "Xác định ranh giới lô đất",
-      isValid: coordinates.length >= 3,
+      isValid: coordinates.length >= 3 && !formState.errors.coordinates,
       content: (
         <PlotMapStep
           customIcon={customIcon}

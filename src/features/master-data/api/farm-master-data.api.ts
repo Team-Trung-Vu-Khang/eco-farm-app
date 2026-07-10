@@ -6,9 +6,11 @@ import type {
   FarmDepartmentDeleteResponse,
   FarmDepartmentResponse,
   DepartmentOptionResponse,
+  MasterDepartmentResponse,
   FarmPositionRequest,
   FarmPositionResponse,
   PositionOptionResponse,
+  MasterPositionResponse,
   FarmPositionResponsibilityRequest,
   FarmPositionResponsibilityResponse,
   PositionResponsibilityQueryParams,
@@ -70,6 +72,17 @@ export const farmDepartmentApi = {
         headers: getHeaders(workspaceId),
       })
       .then((r) => r.data),
+
+  masterData: (
+    params?: { used?: boolean; page?: number; size?: number },
+    workspaceId?: number,
+  ) =>
+    apiClient
+      .get<FarmPageResponse<MasterDepartmentResponse>>(`${BASE}/departments/master-data`, {
+        params,
+        headers: getHeaders(workspaceId),
+      })
+      .then((r) => r.data),
 };
 
 // ─── Farm Positions API ───────────────────────────────────────────────────────
@@ -112,6 +125,17 @@ export const farmPositionApi = {
   options: (params?: { page?: number; size?: number }, workspaceId?: number) =>
     apiClient
       .get<FarmPageResponse<PositionOptionResponse>>(`${BASE}/positions/options`, {
+        params,
+        headers: getHeaders(workspaceId),
+      })
+      .then((r) => r.data),
+
+  masterData: (
+    params?: { used?: boolean; page?: number; size?: number },
+    workspaceId?: number,
+  ) =>
+    apiClient
+      .get<FarmPageResponse<MasterPositionResponse>>(`${BASE}/positions/master-data`, {
         params,
         headers: getHeaders(workspaceId),
       })

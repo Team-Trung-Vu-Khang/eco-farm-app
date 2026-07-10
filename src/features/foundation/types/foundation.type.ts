@@ -120,7 +120,9 @@ export interface FoundationCropResponse {
   updatedAt: string;
 }
 
-export type CropQueryParams = BaseQueryParams;
+export interface CropQueryParams extends BaseQueryParams {
+  cropGroupId?: number;
+}
 
 // ─── Crop Varieties ───────────────────────────────────────────────────────────
 // Endpoint: GET/POST /api/foundation/crop-varieties

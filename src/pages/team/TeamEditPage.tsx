@@ -53,6 +53,7 @@ export default function TeamEditPage() {
     >
       <div className="max-w-2xl mx-auto">
         <TeamFormCard
+          isEdit={true}
           control={control}
           errors={errors}
           clearErrors={clearErrors}

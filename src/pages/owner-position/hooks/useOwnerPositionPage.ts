@@ -102,6 +102,7 @@ export function useOwnerPositionPage() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [currentIndex, setCurrentIndex] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editItem, setEditItem] = useState<PositionItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<PositionItem | null>(null);
@@ -250,6 +251,8 @@ export function useOwnerPositionPage() {
     setCurrentIndex,
     formOpen,
     setFormOpen,
+    importOpen,
+    setImportOpen,
     deleteOpen,
     setDeleteOpen,
     editItem,
@@ -259,5 +262,7 @@ export function useOwnerPositionPage() {
     handleDelete,
     handleSubmit,
     handleConfirmDelete,
+    workspaceId: parsedWorkspaceId,
+    refetchPositions: () => positionsQuery.refetch(),
   };
 }

@@ -58,6 +58,7 @@ export function useDepartment() {
   const [currentIndex, setCurrentIndex] = useState(1);
 
   const [formOpen, setFormOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editItem, setEditItem] = useState<DepartmentItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<DepartmentItem | null>(null);
@@ -176,6 +177,8 @@ export function useDepartment() {
     setCurrentIndex,
     formOpen,
     setFormOpen,
+    importOpen,
+    setImportOpen,
     deleteOpen,
     setDeleteOpen,
     editItem,
@@ -184,5 +187,7 @@ export function useDepartment() {
     handleDelete,
     handleSubmit,
     handleConfirmDelete,
+    workspaceId: parsedWorkspaceId,
+    refetchDepartments: () => departmentQuery.refetch(),
   };
 }

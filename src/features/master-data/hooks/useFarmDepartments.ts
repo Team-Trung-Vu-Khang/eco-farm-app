@@ -4,6 +4,7 @@ import type {
   DepartmentOptionResponse,
   FarmBaseQueryParams,
   FarmDepartmentResponse,
+  MasterDepartmentResponse,
   FarmPageResponse,
 } from "../types/farm-master-data.type";
 
@@ -17,6 +18,13 @@ export const farmDepartmentKeys = {
     [
       ...farmDepartmentKeys.all(),
       "options",
+      params ?? {},
+      workspaceId,
+    ] as const,
+  masterData: (params?: { used?: boolean; page?: number; size?: number }, workspaceId?: number) =>
+    [
+      ...farmDepartmentKeys.all(),
+      "masterData",
       params ?? {},
       workspaceId,
     ] as const,
@@ -85,6 +93,35 @@ export function useFarmDepartmentOptions({
   >({
     queryKey: farmDepartmentKeys.options(params, workspaceId),
     queryFn: () => farmDepartmentApi.options(params, workspaceId),
+    enabled: enabled && workspaceId !== undefined,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  return {
+    ...queryResult,
+    items: queryResult.data?.content ?? [],
+    response: queryResult.data ?? null,
+    loading: queryResult.isLoading,
+    error: queryResult.error?.message ?? null,
+  };
+}
+
+export function useFarmDepartmentsMasterData({
+  params,
+  workspaceId,
+  enabled = true,
+}: {
+  params?: { used?: boolean; page?: number; size?: number };
+  workspaceId?: number;
+  enabled?: boolean;
+} = {}) {
+  const queryResult = useQuery<
+    FarmPageResponse<MasterDepartmentResponse>,
+    Error
+  >({
+    queryKey: farmDepartmentKeys.masterData(params, workspaceId),
+    queryFn: () => farmDepartmentApi.masterData(params, workspaceId),
     enabled: enabled && workspaceId !== undefined,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

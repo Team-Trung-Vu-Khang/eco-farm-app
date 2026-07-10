@@ -22,7 +22,7 @@ export const personnelFormSchema = z
     department: z.string().optional(),
     positionType: z.enum(["OWNER", "MASTER"]).optional(),
     position: z.string().optional(),
-    team: z.string().optional(),
+    teamIds: z.array(z.string()).optional(),
     status: z.enum(["active", "inactive", "archived"] as const), // Added archived
     bankName: z.string().optional(),
     accountNumber: z.string().optional(),
@@ -33,7 +33,7 @@ export const personnelFormSchema = z
     const hasAnyJobInfo =
       !!data.department ||
       !!data.position ||
-      !!data.team;
+      (data.teamIds && data.teamIds.length > 0);
 
     if (hasAnyJobInfo) {
       if (!data.department) {
@@ -50,11 +50,11 @@ export const personnelFormSchema = z
           path: ["position"],
         });
       }
-      if (!data.team) {
+      if (!data.teamIds || data.teamIds.length === 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Vui lòng chọn đội / nhóm",
-          path: ["team"],
+          path: ["teamIds"],
         });
       }
     }
@@ -114,7 +114,7 @@ export const emptyPersonnelFormValues: PersonnelFormValues = {
   department: "",
   positionType: undefined,
   position: "",
-  team: "",
+  teamIds: [],
   status: "active",
   bankName: "",
   accountNumber: "",

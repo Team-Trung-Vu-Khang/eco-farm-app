@@ -33,6 +33,7 @@ export const growthStageSchema = z.object({
 
 export const growthCycleFormSchema = z
   .object({
+    name: z.string().trim().min(1, { message: "Vui lòng nhập tên chu kỳ sinh trưởng." }),
     cycleType: z.enum(["plant", "animal"]),
     scope: z.enum(["crop", "variety"]),
     cropId: z.string().min(1, { message: "Vui lòng chọn loại" }),

@@ -133,11 +133,11 @@ export function usePersonnelForm(id?: number) {
           personnel.position?.name,
           positionOptions,
         ),
-        team: personnel.team?.id
-          ? personnel.team.id.toString()
+        teamIds: personnel.teams
+          ? personnel.teams.map((t: any) => t.id.toString())
           : personnel.teamId
-            ? personnel.teamId.toString()
-            : "",
+            ? [personnel.teamId.toString()]
+            : [],
         status: (personnel.status as any) || "active",
         bankName:
           personnel.bankAccounts?.[0]?.bank?.code ||
@@ -221,7 +221,10 @@ export function usePersonnelForm(id?: number) {
                 : values.position,
             )
           : undefined,
-        teamId: values.team ? Number(values.team) : undefined,
+        teamIds:
+          values.teamIds && values.teamIds.length > 0
+            ? values.teamIds.map((tid) => Number(tid))
+            : undefined,
         status: values.status,
         bankAccounts: bankAccountPayload,
         metadataJson: {
