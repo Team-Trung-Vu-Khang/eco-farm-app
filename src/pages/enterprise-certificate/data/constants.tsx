@@ -41,55 +41,61 @@ export const getCertificateColumns = (): Column<EnterpriseCertificate>[] => [
   {
     key: "entityName",
     label: "Đối tượng",
-    render: (value, row) => (
-      <div className="flex flex-col gap-1.5">
-        <div className="flex flex-wrap gap-1.5">
+    render: (value, row) => {
+      if (row.entityType === "workspace") {
+        return (
           <Badge
             variant="secondary"
-            className="max-w-[220px] rounded-full bg-slate-100 px-2.5 py-1 text-slate-800"
+            className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-800"
           >
-            <span className="truncate">{value as string}</span>
+            Đơn vị - Tổ chức
           </Badge>
+        );
+      }
+
+      const targetNames =
+        row.targetNames?.filter(Boolean) ??
+        String(value ?? "")
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean);
+
+      if (targetNames.length === 0) {
+        return (
           <Badge
-            variant="outline"
-            className="rounded-full px-2.5 py-1 text-[10px]"
+            variant="secondary"
+            className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-800"
           >
-            {row.entityType === "workspace"
-              ? ENTITY_TYPE_LABELS.workspace
-              : ENTITY_TYPE_LABELS.region}
+            Chưa xác định
           </Badge>
-          {row.entityId ? (
+        );
+      }
+
+      const visibleNames = targetNames.slice(0, 2);
+      const hiddenCount = targetNames.length - visibleNames.length;
+
+      return (
+        <div className="flex flex-wrap gap-1.5">
+          {visibleNames.map((name, index) => (
             <Badge
+              key={`${name}-${index}`}
               variant="secondary"
-              className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] text-slate-700"
+              className="max-w-[220px] rounded-full bg-slate-100 px-2.5 py-1 text-slate-800"
             >
-              {row.entityId}
+              <span className="truncate">{name}</span>
+            </Badge>
+          ))}
+          {hiddenCount > 0 ? (
+            <Badge
+              variant="outline"
+              className="rounded-full px-2.5 py-1 text-[10px] text-slate-600"
+            >
+              +{hiddenCount}
             </Badge>
           ) : null}
         </div>
-        {row.targetRegions?.length ? (
-          <div className="flex flex-wrap gap-1.5">
-            {row.targetRegions.slice(0, 2).map((region) => (
-              <Badge
-                key={region.id}
-                variant="outline"
-                className="rounded-full px-2.5 py-1 text-[10px] text-slate-600"
-              >
-                {region.name}
-              </Badge>
-            ))}
-            {row.targetRegions.length > 2 ? (
-              <Badge
-                variant="secondary"
-                className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] text-slate-700"
-              >
-                +{row.targetRegions.length - 2}
-              </Badge>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-    ),
+      );
+    },
   },
   {
     key: "organization",

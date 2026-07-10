@@ -17,6 +17,8 @@ export interface EnterpriseCertificate {
   entityType: "workspace" | "region"; // Workspace hoặc Vùng trồng
   entityId: string; // ID của doanh nghiệp hoặc vùng trồng
   entityName: string; // Tên doanh nghiệp hoặc vùng trồng
+  targetIds?: string[]; // Danh sách ID vùng canh tác
+  targetNames?: string[]; // Danh sách tên vùng canh tác
   targetRegions?: {
     id: number | string;
     code: string;

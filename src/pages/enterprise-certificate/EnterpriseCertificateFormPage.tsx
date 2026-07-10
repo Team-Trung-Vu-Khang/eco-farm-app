@@ -17,6 +17,7 @@ import {
 import { ArrowLeft } from "lucide-react";
 import { FormProvider, useFormContext } from "react-hook-form";
 import { useLocation } from "wouter";
+import type { FarmRegionResponse } from "@/features/farm/types/farm.type";
 import type {
   Area,
   Standard,
@@ -41,6 +42,7 @@ function EnterpriseCertificateStepperContent({
   onComplete,
   onCancel,
   standards,
+  regions,
   areas,
 }: {
   isEdit: boolean;
@@ -48,6 +50,7 @@ function EnterpriseCertificateStepperContent({
   onComplete: () => void;
   onCancel: () => void;
   standards: Standard[];
+  regions: FarmRegionResponse[];
   areas: Area[];
 }) {
   const { watch } = useFormContext<EnterpriseCertificateFormValues>();
@@ -73,9 +76,9 @@ function EnterpriseCertificateStepperContent({
     },
     {
       id: "entity",
-      title: "Chọn đối tượng",
-      description: "Cấp phép theo đơn vị - tổ chức hoặc vùng canh tác cụ thể",
-      content: <CertificateEntitySelection areas={areas} />,
+      title: "Phạm vi chứng nhận",
+      description: "Đơn vị - tổ chức hoặc vùng canh tác cụ thể",
+      content: <CertificateEntitySelection regions={regions} />,
       isValid:
         enterpriseCertificateEntityStepSchema.safeParse(watchedValues).success,
     },
@@ -121,6 +124,7 @@ export default function EnterpriseCertificateFormPage() {
     isEdit,
     methods,
     standards,
+    regions,
     areas,
     loading,
     error,
@@ -138,7 +142,7 @@ export default function EnterpriseCertificateFormPage() {
     <AdminLayout
       isDev={true}
       title={isEdit ? "Chỉnh sửa chứng nhận" : "Tạo mới chứng nhận"}
-      description="Điền thông tin theo từng bước để tạo hồ sơ cấp phép theo đơn vị - tổ chức hoặc vùng canh tác cụ thể"
+      description="Điền thông tin theo từng bước để tạo hồ sơ phạm vi chứng nhận: đơn vị - tổ chức hoặc vùng canh tác cụ thể"
       actions={
         <Button
           variant="outline"
@@ -163,6 +167,7 @@ export default function EnterpriseCertificateFormPage() {
           onComplete={handleComplete}
           onCancel={handleCancel}
           standards={standards}
+          regions={regions}
           areas={areas}
         />
       </FormProvider>

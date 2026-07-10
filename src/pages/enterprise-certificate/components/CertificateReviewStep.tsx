@@ -59,9 +59,14 @@ export function CertificateReviewStep({
     (item) => item.code === values.standardType,
   );
 
-  const selectedArea = areas.find(
-    (item) => item.code === values.entityId || item.id === values.entityId,
-  );
+  const selectedAreas =
+    values.entityType === "region"
+      ? areas.filter(
+          (item) =>
+            values.targetIds.includes(item.id) ||
+            values.targetIds.includes(item.code),
+        )
+      : [];
 
   return (
     <div className="space-y-6">
@@ -99,7 +104,7 @@ export function CertificateReviewStep({
           </div>
         </ReviewSection>
 
-        <ReviewSection title="Đối tượng">
+        <ReviewSection title="Phạm vi chứng nhận">
           <div className="space-y-3">
             <div className="flex flex-wrap gap-2">
               <Badge variant="secondary" className="rounded-full px-3 py-1">
@@ -111,7 +116,9 @@ export function CertificateReviewStep({
                 variant="outline"
                 className="rounded-full px-3 py-1 font-mono text-[10px]"
               >
-                {values.entityId || "Chưa chọn"}
+                {values.entityType === "workspace"
+                  ? values.entityId || "Chưa chọn"
+                  : `${values.targetIds.length} vùng`}
               </Badge>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
@@ -121,16 +128,40 @@ export function CertificateReviewStep({
                 value={
                   values.entityType === "workspace"
                     ? "Áp dụng theo phạm vi đơn vị - tổ chức"
-                    : `Áp dụng theo ${selectedArea?.name || "vùng canh tác đã chọn"}`
+                    : "Áp dụng theo vùng canh tác đã chọn"
                 }
               />
             </div>
             {values.entityType === "region" ? (
               <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
-                <span className="font-medium text-slate-900">
+                <div className="font-medium text-slate-900">
                   Vùng canh tác đã chọn:
-                </span>{" "}
-                {selectedArea?.name || "Chưa có dữ liệu"}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {selectedAreas.length > 0 ? (
+                    selectedAreas.map((area) => (
+                      <Badge
+                        key={area.id}
+                        variant="outline"
+                        className="rounded-full px-2.5 py-1 text-[10px]"
+                      >
+                        {area.name}
+                      </Badge>
+                    ))
+                  ) : values.targetNames.length > 0 ? (
+                    values.targetNames.map((name, index) => (
+                      <Badge
+                        key={`${name}-${index}`}
+                        variant="outline"
+                        className="rounded-full px-2.5 py-1 text-[10px]"
+                      >
+                        {name}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span>Chưa có dữ liệu</span>
+                  )}
+                </div>
               </div>
             ) : null}
           </div>

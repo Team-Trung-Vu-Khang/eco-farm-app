@@ -201,6 +201,7 @@ export function useEnterpriseCertificateStepperForm() {
       : null,
     methods,
     standards,
+    regions: regionsQuery.items,
     areas,
     showConfirmDialog,
     setShowConfirmDialog,

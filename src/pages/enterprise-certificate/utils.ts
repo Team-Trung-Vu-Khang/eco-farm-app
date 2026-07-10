@@ -75,6 +75,8 @@ export const mapFarmCertificateRecordToFormData = (
         : [];
   const workspaceTargetSource = record.targetOrganization;
   const regionTargetSource = record.targetRegion ?? targetRegions[0];
+  const regionTargetIds = targetRegions.map((item) => toNumericId(item.id));
+  const regionTargetNames = targetRegions.map((item) => item.name);
 
   return {
     code: record.code,
@@ -93,7 +95,21 @@ export const mapFarmCertificateRecordToFormData = (
     entityName:
       targetType === "workspace"
         ? workspaceTargetSource?.name ?? "Workspace hiện tại"
-        : regionTargetSource?.name ?? "",
+        : regionTargetNames.join(", ") ||
+          regionTargetSource?.name ||
+          "",
+    targetIds:
+      targetType === "region"
+        ? regionTargetIds
+        : record.targetId
+          ? [toNumericId(record.targetId)]
+          : [],
+    targetNames:
+      targetType === "region"
+        ? regionTargetNames
+        : workspaceTargetSource?.name
+          ? [workspaceTargetSource.name]
+          : [],
     content: primaryDocument?.content ?? "",
     contentType: primaryDocument?.documentType === "file" ? "file" : "editor",
     fileUrl: primaryDocument?.fileUrl ?? "",
@@ -147,18 +163,6 @@ export const buildFarmCertificatePayload = (
     throw new Error("Vui lòng chọn tổ chức cấp hợp lệ.");
   }
 
-  const selectedArea =
-    formData.entityType === "region"
-      ? context.areas.find(
-          (item) =>
-            item.code === formData.entityId || item.id === formData.entityId,
-        )
-      : null;
-
-  if (formData.entityType === "region" && !selectedArea) {
-    throw new Error("Vui lòng chọn đúng đối tượng cấp chứng nhận.");
-  }
-
   const documents =
     formData.contentType === "file"
       ? [
@@ -191,14 +195,16 @@ export const buildFarmCertificatePayload = (
   const targetIds =
     formData.entityType === "workspace"
       ? undefined
-      : selectedArea
-        ? [selectedArea.id]
-        : undefined;
+      : formData.targetIds
+          .map((value) =>
+            context.areas.find(
+              (item) => item.id === value || item.code === value,
+            ),
+          )
+          .filter((item): item is Area => Boolean(item))
+          .map((item) => item.id);
 
-  if (
-    formData.entityType === "region" &&
-    (!targetIds || targetIds.length === 0)
-  ) {
+  if (formData.entityType === "region" && (!targetIds || targetIds.length === 0)) {
     throw new Error("Vui lòng chọn đúng đối tượng cấp chứng nhận.");
   }
 

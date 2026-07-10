@@ -1,3 +1,4 @@
+import { useSelectedWorkspaceId } from "@/features/workspace";
 import {
   Avatar,
   AvatarFallback,
@@ -16,12 +17,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { MapPin, Search } from "lucide-react";
+import { Check, MapPin, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
-import type { Area } from "../../../stores/useEnterpriseCertificateStore";
+import type { FarmRegionResponse } from "@/features/farm/types/farm.type";
 import type { EnterpriseCertificateFormValues } from "../data/enterprise-certificate-form.schema";
-import { useSelectedWorkspaceId } from "@/features/workspace";
+import { CertificateRegionScopeMap } from "./CertificateRegionScopeMap";
 
 const ENTITY_TYPE_LABELS = {
   workspace: "Cấp phép theo đơn vị - tổ chức",
@@ -29,7 +30,7 @@ const ENTITY_TYPE_LABELS = {
 } as const;
 
 interface EntitySelectionProps {
-  areas?: Area[];
+  regions?: FarmRegionResponse[];
 }
 
 interface SelectorItem {
@@ -45,10 +46,10 @@ interface SearchSelectorProps {
   placeholder: string;
   dialogTitle: string;
   searchPlaceholder: string;
-  selectedId: string;
+  selectedIds: string[];
   items: SelectorItem[];
   emptyStateText: string;
-  onConfirm: (id: string) => void;
+  onConfirm: (ids: string[]) => void;
   disabled?: boolean;
 }
 
@@ -58,7 +59,7 @@ function SearchSelector({
   placeholder,
   dialogTitle,
   searchPlaceholder,
-  selectedId,
+  selectedIds,
   items,
   emptyStateText,
   onConfirm,
@@ -66,9 +67,11 @@ function SearchSelector({
 }: SearchSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [tempSelectedId, setTempSelectedId] = useState(selectedId);
+  const [tempSelectedIds, setTempSelectedIds] = useState(selectedIds);
 
-  const selectedItem = items.find((item) => item.id === selectedId);
+  const selectedItems = items.filter((item) => selectedIds.includes(item.id));
+  const primarySelectedItem =
+    selectedItems[0] ?? items.find((item) => item.id === selectedIds[0]);
 
   const filteredItems = useMemo(() => {
     const keyword = searchTerm.toLowerCase();
@@ -80,24 +83,24 @@ function SearchSelector({
     );
   }, [items, searchTerm]);
 
-  const isValidTempSelection = items.some((item) => item.id === tempSelectedId);
+  const isValidTempSelection = tempSelectedIds.length > 0;
 
   const handleOpen = () => {
     if (disabled) return;
-    setTempSelectedId(selectedId);
+    setTempSelectedIds(selectedIds);
     setSearchTerm("");
     setIsOpen(true);
   };
 
   const handleCancel = () => {
-    setTempSelectedId(selectedId);
+    setTempSelectedIds(selectedIds);
     setSearchTerm("");
     setIsOpen(false);
   };
 
   const handleConfirm = () => {
-    if (!tempSelectedId || !isValidTempSelection) return;
-    onConfirm(tempSelectedId);
+    if (!isValidTempSelection) return;
+    onConfirm(tempSelectedIds);
     setIsOpen(false);
   };
 
@@ -108,7 +111,7 @@ function SearchSelector({
         <div
           className={[
             "group flex min-h-16 cursor-pointer items-center rounded-2xl border p-4 transition-all",
-            selectedItem
+            primarySelectedItem
               ? "border-slate-200 bg-white/90 shadow-sm"
               : "border-dashed border-slate-300 bg-white/70",
             disabled
@@ -117,7 +120,7 @@ function SearchSelector({
           ].join(" ")}
           onClick={handleOpen}
         >
-          {selectedItem ? (
+          {primarySelectedItem ? (
             <div className="flex w-full items-start gap-3">
               <Avatar className="h-12 w-12 shrink-0 border border-white shadow-sm">
                 <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold">
@@ -130,7 +133,7 @@ function SearchSelector({
                     variant="secondary"
                     className="h-5 rounded-full px-2.5 py-0 text-[10px] font-mono"
                   >
-                    {selectedItem.code}
+                    {primarySelectedItem.code}
                   </Badge>
                   <Badge
                     variant="outline"
@@ -138,12 +141,35 @@ function SearchSelector({
                   >
                     Vùng canh tác
                   </Badge>
+                  {selectedItems.length > 1 ? (
+                    <Badge
+                      variant="secondary"
+                      className="h-5 rounded-full px-2.5 py-0 text-[10px]"
+                    >
+                      +{selectedItems.length - 1}
+                    </Badge>
+                  ) : null}
                 </div>
                 <div className="text-sm font-semibold text-slate-900">
-                  {selectedItem.name}
+                  {primarySelectedItem.name}
                 </div>
                 <div className="mt-1 space-y-1 text-xs text-muted-foreground">
-                  {selectedItem.subtitle && <div>{selectedItem.subtitle}</div>}
+                  {primarySelectedItem.subtitle && (
+                    <div>{primarySelectedItem.subtitle}</div>
+                  )}
+                  {selectedItems.length > 1 ? (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {selectedItems.slice(1, 4).map((item) => (
+                        <Badge
+                          key={item.id}
+                          variant="outline"
+                          className="rounded-full px-2 py-0 text-[10px]"
+                        >
+                          {item.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               </div>
               <div className="ml-auto hidden items-center gap-2 text-xs text-muted-foreground md:flex">
@@ -201,11 +227,17 @@ function SearchSelector({
                     key={item.id}
                     className={[
                       "flex cursor-pointer items-start gap-3 rounded-2xl border p-3 transition-all hover:shadow-md",
-                      tempSelectedId === item.id
+                      tempSelectedIds.includes(item.id)
                         ? "border-primary bg-primary/5 ring-1 ring-primary/20"
                         : "border-slate-200 bg-white/90 hover:border-primary/40",
                     ].join(" ")}
-                    onClick={() => setTempSelectedId(item.id)}
+                    onClick={() =>
+                      setTempSelectedIds((current) =>
+                        current.includes(item.id)
+                          ? current.filter((id) => id !== item.id)
+                          : [...current, item.id],
+                      )
+                    }
                   >
                     <Avatar className="mt-0.5 h-12 w-12 shrink-0 border border-white shadow-sm">
                       <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold">
@@ -238,13 +270,13 @@ function SearchSelector({
                       <div
                         className={[
                           "flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all",
-                          tempSelectedId === item.id
+                          tempSelectedIds.includes(item.id)
                             ? "border-primary bg-primary text-white"
                             : "border-slate-300 bg-white",
                         ].join(" ")}
                       >
-                        {tempSelectedId === item.id && (
-                          <div className="h-2 w-2 rounded-full bg-white" />
+                        {tempSelectedIds.includes(item.id) && (
+                          <Check className="h-3 w-3 text-white" />
                         )}
                       </div>
                     </div>
@@ -268,6 +300,9 @@ function SearchSelector({
               </Button>
               <Button onClick={handleConfirm} disabled={!isValidTempSelection}>
                 Chọn
+                {tempSelectedIds.length > 0
+                  ? ` (${tempSelectedIds.length})`
+                  : ""}
               </Button>
             </div>
           </div>
@@ -278,7 +313,7 @@ function SearchSelector({
 }
 
 export function CertificateEntitySelection({
-  areas = [],
+  regions = [],
 }: EntitySelectionProps) {
   const workspaceId = useSelectedWorkspaceId();
   const {
@@ -289,15 +324,19 @@ export function CertificateEntitySelection({
   } = useFormContext<EnterpriseCertificateFormValues>();
 
   const entityType = useWatch({ control, name: "entityType" });
-  const entityId = useWatch({ control, name: "entityId" });
-  const entityName = useWatch({ control, name: "entityName" });
-  const safeAreas = Array.isArray(areas) ? areas : [];
+  const targetIds = useWatch({ control, name: "targetIds" });
+  const safeRegions = useMemo(
+    () => (Array.isArray(regions) ? regions : []),
+    [regions],
+  );
 
   useEffect(() => {
     if (entityType !== "workspace") return;
 
     const nextWorkspaceId =
-      workspaceId === null || workspaceId === undefined ? "" : String(workspaceId);
+      workspaceId === null || workspaceId === undefined
+        ? ""
+        : String(workspaceId);
 
     if (getValues("entityId") !== nextWorkspaceId) {
       setValue("entityId", nextWorkspaceId, {
@@ -312,21 +351,31 @@ export function CertificateEntitySelection({
         shouldValidate: true,
       });
     }
+
+    if ((getValues("targetIds") ?? []).length > 0) {
+      setValue("targetIds", [], {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+
+    if ((getValues("targetNames") ?? []).length > 0) {
+      setValue("targetNames", [], {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
   }, [entityType, getValues, setValue, workspaceId]);
 
-  const selectedArea = safeAreas.find(
-    (area) => area.id === entityId || area.code === entityId,
-  );
-
-  const areaItems = useMemo(
+  const regionItems = useMemo(
     () =>
-      safeAreas.map((area) => ({
-        id: area.id,
-        code: area.code,
-        name: area.name,
-        subtitle: `Mã: ${area.code}`,
+      safeRegions.map((region) => ({
+        id: String(region.id),
+        code: region.code || String(region.id),
+        name: region.name || region.code || String(region.id),
+        subtitle: region.province || region.address || undefined,
       })),
-    [safeAreas],
+    [safeRegions],
   );
 
   return (
@@ -368,23 +417,31 @@ export function CertificateEntitySelection({
                     shouldDirty: true,
                     shouldValidate: true,
                   });
+                  setValue("targetIds", [], {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                  setValue("targetNames", [], {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
                 }
               }}
             >
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Chọn phạm vi..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="workspace">
-                    {ENTITY_TYPE_LABELS.workspace}
-                  </SelectItem>
-                  <SelectItem value="region">
-                    {ENTITY_TYPE_LABELS.region}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          />
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="Chọn phạm vi..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="workspace">
+                  {ENTITY_TYPE_LABELS.workspace}
+                </SelectItem>
+                <SelectItem value="region">
+                  {ENTITY_TYPE_LABELS.region}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+        />
         {errors.entityType ? (
           <p className="text-xs text-red-600">{errors.entityType.message}</p>
         ) : null}
@@ -397,20 +454,37 @@ export function CertificateEntitySelection({
           placeholder="Chọn vùng canh tác"
           dialogTitle="Chọn vùng canh tác"
           searchPlaceholder="Tìm theo tên hoặc mã vùng canh tác..."
-          selectedId={entityId}
-          items={areaItems}
+          selectedIds={targetIds}
+          items={regionItems}
           emptyStateText="Không tìm thấy vùng canh tác phù hợp"
-          onConfirm={(id) => {
-            const selected = areas.find(
-              (area) => area.id === id || area.code === id,
+          onConfirm={(ids) => {
+            const selectedRegions = safeRegions.filter(
+              (region) =>
+                ids.includes(String(region.id)) ||
+                ids.includes(region.code || String(region.id)),
             );
-            if (!selected) return;
+            if (selectedRegions.length === 0) return;
 
-            setValue("entityId", selected.code, {
+            const nextTargetIds = selectedRegions.map((region) =>
+              String(region.id),
+            );
+            const nextTargetNames = selectedRegions.map(
+              (region) => region.name || region.code || String(region.id),
+            );
+
+            setValue("targetIds", nextTargetIds, {
               shouldDirty: true,
               shouldValidate: true,
             });
-            setValue("entityName", selected.name, {
+            setValue("targetNames", nextTargetNames, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+            setValue("entityId", nextTargetIds[0], {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+            setValue("entityName", nextTargetNames.join(", "), {
               shouldDirty: true,
               shouldValidate: true,
             });
@@ -419,56 +493,10 @@ export function CertificateEntitySelection({
       ) : null}
 
       {entityType === "region" ? (
-        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-          <div className="flex items-start gap-3">
-            <Avatar className="h-12 w-12 shrink-0 border border-white shadow-sm">
-              <AvatarFallback className="bg-emerald-100 text-emerald-700">
-                <MapPin className="h-5 w-5" />
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1 space-y-2 text-sm">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-semibold text-slate-900">Đã chọn:</span>
-                <span className="font-medium text-slate-700">
-                  {entityName || "Chưa có lựa chọn"}
-                </span>
-              </div>
-
-              <div className="grid gap-2 md:grid-cols-2">
-                <div className="rounded-xl bg-slate-50 p-3">
-                  <div className="text-xs uppercase tracking-wide text-slate-500">
-                    Mã
-                  </div>
-                  <div className="mt-1 font-semibold text-slate-900">
-                    {entityId || selectedArea?.code || "Chưa xác định"}
-                  </div>
-                </div>
-                <div className="rounded-xl bg-slate-50 p-3">
-                  <div className="text-xs uppercase tracking-wide text-slate-500">
-                    Loại
-                  </div>
-                  <div className="mt-1 font-semibold text-slate-900">
-                    {ENTITY_TYPE_LABELS.region}
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-slate-50 p-3">
-                <div className="text-xs uppercase tracking-wide text-slate-500">
-                  Phạm vi
-                </div>
-                <div className="mt-1 font-medium text-slate-700">
-                  Áp dụng theo vùng canh tác cụ thể đã chọn
-                </div>
-              </div>
-              {errors.entityId || errors.entityName ? (
-                <p className="text-xs text-red-600">
-                  {errors.entityId?.message || errors.entityName?.message}
-                </p>
-              ) : null}
-            </div>
-          </div>
-        </div>
+        <CertificateRegionScopeMap
+          regions={safeRegions}
+          selectedIds={targetIds}
+        />
       ) : null}
     </div>
   );
