@@ -13,6 +13,8 @@ export interface LegalIdentificationFileMeta {
   size: number;
   type: string;
   uploadedAt: string;
+  fileUrl?: string;
+  previewUrl?: string;
 }
 
 export interface LegalIdentificationRecord {

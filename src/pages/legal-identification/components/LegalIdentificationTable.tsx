@@ -1,10 +1,8 @@
 import {
   Badge,
-  Button,
   DataTable,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Eye, Edit, Trash2 } from "lucide-react";
 import {
   LEGAL_FILE_GROUPS,
   LEGAL_STATUS_CLASSNAMES,
@@ -35,6 +33,13 @@ type LegalIdentificationTableProps = {
   searchable?: boolean;
   searchPlaceholder?: string;
   onSearch?: (value: string) => void;
+  filters?: Array<{
+    key: string;
+    label: string;
+    options: Array<{ label: string; value: string }>;
+  }>;
+  onFilterChange?: (key: string, value: string) => void;
+  loading?: boolean;
 };
 
 export function LegalIdentificationTable({
@@ -45,6 +50,9 @@ export function LegalIdentificationTable({
   searchable = false,
   searchPlaceholder = "Tìm kiếm hồ sơ...",
   onSearch,
+  filters,
+  onFilterChange,
+  loading,
 }: LegalIdentificationTableProps) {
   const columns: Column<LegalIdentificationRecord>[] = [
     {
@@ -64,7 +72,9 @@ export function LegalIdentificationTable({
       key: "name",
       render: (_, item) => (
         <div className="space-y-1">
-          <div className="text-sm font-semibold text-slate-900">{item.name}</div>
+          <div className="text-sm font-semibold text-slate-900">
+            {item.name}
+          </div>
           <div className="text-[11px] text-slate-500">
             {item.regionName} • {item.areaName}
           </div>
@@ -102,45 +112,12 @@ export function LegalIdentificationTable({
       label: "Trạng thái",
       key: "status",
       render: (_, item) => (
-        <Badge variant="outline" className={LEGAL_STATUS_CLASSNAMES[item.status]}>
+        <Badge
+          variant="outline"
+          className={LEGAL_STATUS_CLASSNAMES[item.status]}
+        >
           {LEGAL_STATUS_LABELS[item.status]}
         </Badge>
-      ),
-    },
-    {
-      label: "Thao tác",
-      key: "id",
-      render: (_, item) => (
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => onView(item.id)}
-          >
-            <Eye className="mr-1.5 h-4 w-4" />
-            Xem
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => onEdit(item.id)}
-          >
-            <Edit className="mr-1.5 h-4 w-4" />
-            Sửa
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => onDelete(item.id)}
-            className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
-          >
-            <Trash2 className="mr-1.5 h-4 w-4" />
-            Xóa
-          </Button>
-        </div>
       ),
     },
   ];
@@ -152,6 +129,12 @@ export function LegalIdentificationTable({
       searchable={searchable}
       searchPlaceholder={searchPlaceholder}
       onSearch={onSearch}
+      filters={filters}
+      onFilterChange={onFilterChange}
+      loading={loading}
+      onView={(row) => onView(row.id)}
+      onEdit={(row) => onEdit(row.id)}
+      onDelete={(row) => onDelete(row.id)}
       selectable={false}
     />
   );

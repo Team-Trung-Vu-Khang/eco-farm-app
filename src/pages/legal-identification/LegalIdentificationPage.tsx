@@ -1,3 +1,4 @@
+import useLegalIdentificationStore from "@/stores/useLegalIdentificationStore";
 import {
   AdminLayout,
   Button,
@@ -6,24 +7,38 @@ import {
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
+import { LegalIdentificationTable } from "./components/LegalIdentificationTable";
 import {
   LEGAL_FILE_GROUPS,
+  LEGAL_STATUS_LABELS,
+  type LegalIdentificationStatus,
   type LegalIdentificationRecord,
 } from "./data/constants";
-import { LegalIdentificationTable } from "./components/LegalIdentificationTable";
-import useLegalIdentificationStore from "@/stores/useLegalIdentificationStore";
+
+const LEGAL_STATUS_OPTIONS = [
+  { value: "all", label: "Tất cả" },
+  { value: "draft", label: LEGAL_STATUS_LABELS.draft },
+  { value: "in_review", label: LEGAL_STATUS_LABELS.in_review },
+  { value: "approved", label: LEGAL_STATUS_LABELS.approved },
+];
 
 export default function LegalIdentificationPage() {
   const [, setLocation] = useLocation();
   const { records, deleteRecord } = useLegalIdentificationStore();
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    LegalIdentificationStatus | "all"
+  >("all");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const filteredRecords = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return records;
     return records.filter((record) => {
+      if (statusFilter !== "all" && record.status !== statusFilter) {
+        return false;
+      }
+
       const searchableFields = [
         record.code,
         record.name,
@@ -44,23 +59,10 @@ export default function LegalIdentificationPage() {
         .join(" ")
         .toLowerCase();
 
+      if (!query) return true;
       return searchableFields.includes(query);
     });
-  }, [records, search]);
-
-  const totalFiles = useMemo(
-    () =>
-      records.reduce(
-        (sum, record) =>
-          sum +
-          LEGAL_FILE_GROUPS.reduce(
-            (groupSum, group) => groupSum + (record.documents[group.id]?.length || 0),
-            0,
-          ),
-        0,
-      ),
-    [records],
-  );
+  }, [records, search, statusFilter]);
 
   const handleDelete = (id: number) => {
     setSelectedId(id);
@@ -86,38 +88,23 @@ export default function LegalIdentificationPage() {
         </Button>
       }
     >
-      <div className="mb-5 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-200/70 shadow-sm">
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-            Tổng hồ sơ
-          </div>
-          <div className="mt-1 text-xl font-semibold text-slate-900">
-            {records.length}
-          </div>
-        </div>
-        <div className="rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-200/70 shadow-sm">
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-            Đang hiển thị
-          </div>
-          <div className="mt-1 text-xl font-semibold text-slate-900">
-            {filteredRecords.length}
-          </div>
-        </div>
-        <div className="rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-200/70 shadow-sm">
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-            Tổng file
-          </div>
-          <div className="mt-1 text-xl font-semibold text-slate-900">
-            {totalFiles}
-          </div>
-        </div>
-      </div>
-
       <LegalIdentificationTable
         data={filteredRecords as LegalIdentificationRecord[]}
         searchable
         searchPlaceholder="Tìm kiếm hồ sơ, vùng trồng, khu vực, chủ đất..."
         onSearch={setSearch}
+        filters={[
+          {
+            key: "status",
+            label: "Trạng thái",
+            options: LEGAL_STATUS_OPTIONS,
+          },
+        ]}
+        onFilterChange={(key, value) => {
+          if (key === "status") {
+            setStatusFilter(value as LegalIdentificationStatus | "all");
+          }
+        }}
         onView={(id) => setLocation(`/legal-identification/${id}`)}
         onEdit={(id) => setLocation(`/legal-identification/${id}/edit`)}
         onDelete={handleDelete}
