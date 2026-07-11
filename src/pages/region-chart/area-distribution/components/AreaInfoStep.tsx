@@ -1,4 +1,5 @@
 import { useRegions } from "@/features/farm/hooks/useRegions";
+import type { FarmRegionResponse } from "@/features/farm/types/farm.type";
 import { useCatalog } from "@/features/foundation/hooks/useCatalog";
 import { OrganizationSelector } from "@/pages/cultivation-zone/cultivation-region/components";
 import {
@@ -22,14 +23,17 @@ import { MapPin } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 import type { AreaFormValues } from "../data/area-form.schema";
 import { AreaRegionSelector, SelectedRegionCard } from "./AreaRegionSelector";
+import { CenterPointMapPicker } from "../../region-distribution/components/CenterPointMapPicker";
 import React from "react";
 
 interface AreaInfoStepProps {
   showEnterprise?: boolean;
+  showCenterPoint?: boolean;
 }
 
 export function AreaInfoStep({
   showEnterprise = false,
+  showCenterPoint = false,
 }: AreaInfoStepProps = {}) {
   const { control, watch, setValue } = useFormContext<AreaFormValues>();
   const enterpriseId = watch("enterpriseId");
@@ -72,10 +76,10 @@ export function AreaInfoStep({
                     </FormLabel>
                     <FormControl>
                       <OrganizationSelector
-                        selectedId={field.value}
+                        selectedId={field.value ?? ""}
                         onSelect={(value) => {
                           field.onChange(value);
-                          setValue("regionId", undefined as any);
+                          setValue("regionId", undefined as unknown as number);
                           setValue("soilType", "");
                           setValue("terrainFeature", "");
                         }}
@@ -98,7 +102,7 @@ export function AreaInfoStep({
                   <FormControl>
                     <div>
                       <AreaRegionSelector
-                        regions={regions as any}
+                        regions={regions as FarmRegionResponse[]}
                         showEnterprise={showEnterprise}
                         enterpriseId={
                           enterpriseId ? Number(enterpriseId) : null
@@ -126,7 +130,7 @@ export function AreaInfoStep({
                         {field.value ? (
                           <SelectedRegionCard
                             regionId={field.value.toString()}
-                            regions={regions as any}
+                            regions={regions as FarmRegionResponse[]}
                             onRemove={() => {
                               field.onChange(undefined);
                               setValue("soilType", "");
@@ -255,6 +259,12 @@ export function AreaInfoStep({
             )}
           />
         </div>
+
+        {showCenterPoint && (
+          <div className="mt-6 border-t pt-6">
+            <CenterPointMapPicker />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

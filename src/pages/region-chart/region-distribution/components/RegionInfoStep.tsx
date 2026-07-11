@@ -4,7 +4,6 @@ import {
   CardHeader,
   CardTitle,
   Input,
-  Label,
   Select,
   SelectContent,
   SelectItem,
@@ -25,13 +24,16 @@ import { useCatalog } from "@/features/foundation/hooks/useCatalog";
 import { useCrops } from "@/features/foundation/hooks/useCrops";
 import { useEffect, useState, useMemo } from "react";
 import type { RegionFormValues } from "../data/region-form.schema";
+import { CenterPointMapPicker } from "./CenterPointMapPicker";
 
 interface RegionInfoStepProps {
   showEnterprise?: boolean;
+  showCenterPoint?: boolean;
 }
 
 export const RegionInfoStep = ({
   showEnterprise = false,
+  showCenterPoint = false,
 }: RegionInfoStepProps = {}) => {
   const { items: lands } = useCatalog("soil-types");
   const { items: terrains } = useCatalog("terrain-features");
@@ -68,6 +70,7 @@ export const RegionInfoStep = ({
       if (matchedWard) {
         setValue("wardId", matchedWard.code);
       }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPendingWardName(null);
     }
   }, [wards, pendingWardName, setValue]);
@@ -317,6 +320,8 @@ export const RegionInfoStep = ({
             )}
           />
         </div>
+
+        {showCenterPoint && <CenterPointMapPicker />}
 
         <FormField
           control={control}

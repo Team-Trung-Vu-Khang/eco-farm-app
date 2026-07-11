@@ -5,6 +5,8 @@ import {
   Button,
   StepperForm,
   type Step,
+  Switch,
+  Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import "leaflet/dist/leaflet.css";
 import { ChevronLeft } from "lucide-react";
@@ -42,6 +44,42 @@ const AreaCreatePage = () => {
           });
         }
       }
+
+      if (data.isDetailed !== false) {
+        if (!data.coordinates || data.coordinates.length < 3) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["coordinates"],
+            message: "Khu vực cần ít nhất 3 điểm",
+          });
+        }
+        if (data.plots && data.plots.length > 0) {
+          data.plots.forEach((plot, idx) => {
+            if (!plot.coordinates || plot.coordinates.length < 3) {
+              ctx.addIssue({
+                code: "custom",
+                path: ["plots", idx, "coordinates"],
+                message: "Lô cần ít nhất 3 điểm",
+              });
+            }
+          });
+        }
+      } else {
+        if (data.centerPoint?.lat === undefined || isNaN(data.centerPoint.lat)) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["centerPoint", "lat"],
+            message: "Vui lòng nhập vĩ độ",
+          });
+        }
+        if (data.centerPoint?.lng === undefined || isNaN(data.centerPoint.lng)) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["centerPoint", "lng"],
+            message: "Vui lòng nhập kinh độ",
+          });
+        }
+      }
     });
   }, [regionsData]);
 
@@ -50,11 +88,12 @@ const AreaCreatePage = () => {
     resolver: zodResolver(dynamicSchema),
   });
 
-  const { reset, watch, handleSubmit, formState } = form;
+  const { reset, watch, setValue, handleSubmit, formState } = form;
 
   const { isEditMode, handleComplete, handleCancel, isSubmitting } =
     useAreaCreateForm(reset);
 
+  const isDetailed = watch("isDetailed") !== false;
   const coordinates = watch("coordinates") || [];
 
   const steps: Step[] = [
@@ -109,24 +148,65 @@ const AreaCreatePage = () => {
           : "Tạo khu vực mới theo quy trình từng bước"
       }
       actions={
-        <Button
-          variant="outline"
-          onClick={handleCancel}
-          disabled={isSubmitting}
-        >
-          <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại
-        </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Label
+              htmlFor="map-mode"
+              className="text-sm font-medium cursor-pointer text-slate-700 select-none"
+            >
+              Giao diện chi tiết
+            </Label>
+            <Switch
+              id="map-mode"
+              checked={isDetailed}
+              onCheckedChange={(checked) => {
+                setValue("isDetailed", checked, { shouldValidate: true });
+              }}
+            />
+          </div>
+          <Button
+            variant="outline"
+            onClick={handleCancel}
+            disabled={isSubmitting}
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại
+          </Button>
+        </div>
       }
     >
       <div className="max-w-5xl mx-auto pb-10">
         <FormProvider {...form}>
-          <StepperForm
-            steps={steps}
-            loading={isSubmitting}
-            onCancel={handleCancel}
-            onComplete={handleSubmit(handleComplete)}
-            completeLabel={isEditMode ? "Lưu thay đổi" : "Tạo khu vực"}
-          />
+          {isDetailed ? (
+            <StepperForm
+              key="detailed"
+              steps={steps}
+              loading={isSubmitting}
+              onCancel={handleCancel}
+              onComplete={handleSubmit(handleComplete)}
+              completeLabel={isEditMode ? "Lưu thay đổi" : "Tạo khu vực"}
+            />
+          ) : (
+            <div className="space-y-6">
+              <AreaInfoStep showCenterPoint={true} />
+              <div className="flex justify-end gap-3 bg-white p-4 rounded-lg border">
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={handleCancel}
+                  disabled={isSubmitting}
+                >
+                  Hủy
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleSubmit(handleComplete)}
+                  disabled={isSubmitting || !formState.isValid}
+                >
+                  {isEditMode ? "Lưu thay đổi" : "Tạo khu vực"}
+                </Button>
+              </div>
+            </div>
+          )}
         </FormProvider>
       </div>
     </AdminLayout>

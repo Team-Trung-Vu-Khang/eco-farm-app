@@ -29,10 +29,15 @@ export function useRegionCreateForm(
 
     if (isEditMode) {
       if (regionDataResponse) {
+        const isDetailed = (regionDataResponse.boundary || []).length >= 3;
         reset({
+          isDetailed,
           id: regionDataResponse.id,
           code: regionDataResponse.code,
           name: regionDataResponse.name,
+          metadataJson: {
+            address: (regionDataResponse.metadataJson?.address as string) || "",
+          },
           enterpriseId:
             (regionDataResponse.metadataJson?.enterpriseId as string) || "",
           area: regionDataResponse.acreage || undefined,
@@ -50,13 +55,19 @@ export function useRegionCreateForm(
           landType: regionDataResponse.soilType?.id?.toString() || "",
           terrain: regionDataResponse.terrainFeature?.id?.toString() || "",
           note: regionDataResponse.description || "",
-          // @ts-ignore
+          // @ts-expect-error status type mismatch
           status: regionDataResponse.status ?? "active",
           coordinates: (regionDataResponse.boundary || []).map((b) => ({
             lat: b.latitude || 0,
             lng: b.longitude || 0,
           })),
-          // @ts-ignore
+          centerPoint: regionDataResponse.centerPoint
+            ? {
+                lat: regionDataResponse.centerPoint.latitude || 0,
+                lng: regionDataResponse.centerPoint.longitude || 0,
+              }
+            : undefined,
+          // @ts-expect-error subAreas type mismatch
           subAreas: (regionDataResponse.areas || []).map((area) => ({
             id: area.id?.toString(),
             code: area.code,
@@ -71,12 +82,17 @@ export function useRegionCreateForm(
             status: area.status ?? "active",
           })),
         });
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setHasInitialized(true);
       }
     } else {
       reset({
+        isDetailed: true,
         name: "",
         enterpriseId: "",
+        metadataJson: {
+          address: "",
+        },
         area: undefined,
         provinceId: "",
         wardId: "",
@@ -91,6 +107,10 @@ export function useRegionCreateForm(
           { lat: 11.55, lng: 106.91 },
           { lat: 11.53, lng: 106.91 },
         ],
+        centerPoint: {
+          lat: 11.54,
+          lng: 106.895,
+        },
         subAreas: [],
         status: "active",
       });
@@ -115,30 +135,41 @@ export function useRegionCreateForm(
         status: data.status,
         metadataJson: {
           enterpriseId: data.enterpriseId,
+          address: data.metadataJson?.address,
         },
         crops: data.cropId
           ? [{ cropId: parseInt(data.cropId, 10), role: "MAIN" }]
           : undefined,
-        boundary: (data.coordinates || []).map((c) => ({
-          latitude: c.lat,
-          longitude: c.lng,
-        })),
-        areas: (data.subAreas || []).map((sub) => ({
-          id: sub.id ? parseInt(sub.id, 10) : undefined,
-          code: sub.code,
-          name: sub.name,
-          acreage: sub.area,
-          soilTypeId: sub.landType ? parseInt(sub.landType, 10) : undefined,
-          terrainFeatureId: sub.terrain ? parseInt(sub.terrain, 10) : undefined,
-          status: sub.status,
-          metadataJson: {
-            enterpriseId: data.enterpriseId,
-          },
-          boundary: (sub.coordinates || []).map((c) => ({
-            latitude: c.lat,
-            longitude: c.lng,
-          })),
-        })),
+        boundary: data.isDetailed
+          ? (data.coordinates || []).map((c) => ({
+              latitude: c.lat,
+              longitude: c.lng,
+            }))
+          : undefined,
+        centerPoint: data.centerPoint
+          ? {
+              latitude: data.centerPoint.lat,
+              longitude: data.centerPoint.lng,
+            }
+          : undefined,
+        areas: data.isDetailed
+          ? (data.subAreas || []).map((sub) => ({
+              id: sub.id ? parseInt(sub.id, 10) : undefined,
+              code: sub.code,
+              name: sub.name,
+              acreage: sub.area,
+              soilTypeId: sub.landType ? parseInt(sub.landType, 10) : undefined,
+              terrainFeatureId: sub.terrain ? parseInt(sub.terrain, 10) : undefined,
+              status: sub.status,
+              metadataJson: {
+                enterpriseId: data.enterpriseId,
+              },
+              boundary: (sub.coordinates || []).map((c) => ({
+                latitude: c.lat,
+                longitude: c.lng,
+              })),
+            }))
+          : undefined,
       };
 
       if (isEditMode && regionId > 0) {
@@ -156,6 +187,7 @@ export function useRegionCreateForm(
       }
       setLocation("/region-distribution");
     } catch (error) {
+      console.error("Error saving region:", error);
       toast({
         title: "Lỗi",
         description: "Đã xảy ra lỗi khi lưu thông tin",

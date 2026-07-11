@@ -136,6 +136,10 @@ export interface FarmRegionResponse {
   soilType?: CatalogRef;
   terrainFeature?: CatalogRef;
   boundary?: CoordinatePoint[];
+  centerPoint?: {
+    latitude: number;
+    longitude: number;
+  };
   description?: string;
   status?: FoundationStatus;
   displayOrder?: number;
@@ -166,6 +170,7 @@ export interface FarmAreaRequest {
   soilTypeId?: number;
   terrainFeatureId?: number;
   boundary?: CoordinatePoint[];
+  centerPoint?: CoordinatePoint;
   status?: FoundationStatus;
   displayOrder?: number;
   metadataJson?: Record<string, unknown>;
@@ -182,6 +187,7 @@ export interface FarmAreaResponse {
   soilType?: CatalogRef;
   terrainFeature?: CatalogRef;
   boundary?: CoordinatePoint[];
+  centerPoint?: CoordinatePoint;
   status?: FoundationStatus;
   displayOrder?: number;
   metadataJson?: Record<string, unknown>;

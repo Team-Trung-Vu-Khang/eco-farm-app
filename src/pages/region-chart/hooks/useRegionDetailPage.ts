@@ -1,4 +1,5 @@
 import { useLocation, useRoute } from "wouter";
+import L from "leaflet";
 import { getBoundsFromCoordinates, getMapCenter } from "../utils/map";
 import { useRegionById } from "@/features/farm/hooks/useRegions";
 import { useAddressOptions } from "@/features/master-data/hooks/useAddressOptions";
@@ -54,12 +55,53 @@ export function useRegionDetailPage() {
         createdAt: a.createdAt || "",
         status: a?.status ?? "inactive",
       })),
+      centerPoint: regionDataResponse.centerPoint
+        ? {
+            latitude: regionDataResponse.centerPoint.latitude,
+            longitude: regionDataResponse.centerPoint.longitude,
+          }
+        : undefined,
+      metadataJson: regionDataResponse.metadataJson
+        ? {
+            address: regionDataResponse.metadataJson.address as
+              | string
+              | undefined,
+            enterpriseId: regionDataResponse.metadataJson.enterpriseId as
+              | string
+              | undefined,
+          }
+        : undefined,
       createdAt: regionDataResponse.createdAt || "",
     };
   }, [regionDataResponse]);
 
-  const bounds = getBoundsFromCoordinates(region?.coordinates);
-  const center = getMapCenter(region?.coordinates);
+  const bounds = useMemo(() => {
+    if (region?.coordinates && region.coordinates.length >= 3) {
+      return getBoundsFromCoordinates(region.coordinates);
+    }
+    if (
+      region?.centerPoint?.latitude !== undefined &&
+      region?.centerPoint?.longitude !== undefined
+    ) {
+      const lat = region.centerPoint.latitude;
+      const lng = region.centerPoint.longitude;
+      return L.latLngBounds([lat - 0.01, lng - 0.01], [lat + 0.01, lng + 0.01]);
+    }
+    return getBoundsFromCoordinates(region?.coordinates);
+  }, [region]);
+
+  const center = useMemo(() => {
+    if (
+      region?.centerPoint?.latitude !== undefined &&
+      region?.centerPoint?.longitude !== undefined
+    ) {
+      return [region.centerPoint.latitude, region.centerPoint.longitude] as [
+        number,
+        number,
+      ];
+    }
+    return getMapCenter(region?.coordinates);
+  }, [region]);
 
   const { provinces, wards } = useAddressOptions(region?.provinceId);
   const { items: lands } = useCatalog("soil-types");

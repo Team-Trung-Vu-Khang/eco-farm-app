@@ -84,6 +84,14 @@ export interface Region {
   note: string;
   status: "active" | "inactive" | "archived" | (string & {});
   coordinates: Coordinate[]; // Rectangle corners
+  centerPoint?: {
+    latitude?: number;
+    longitude?: number;
+  };
+  metadataJson?: {
+    address?: string;
+    enterpriseId?: string;
+  };
   subAreas: SubArea[];
   createdAt: string;
   cropVarieties?: RegionCrop[];

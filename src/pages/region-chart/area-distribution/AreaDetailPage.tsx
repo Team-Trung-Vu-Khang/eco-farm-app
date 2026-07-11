@@ -9,16 +9,18 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { ChevronLeft, Edit, MapPin } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import {
   MapContainer,
   Polygon,
   TileLayer,
   Tooltip,
   useMap,
+  Marker,
 } from "react-leaflet";
 
-import type { FarmPlotResponse } from "@/features/farm";
+import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
+import type { FarmPlotResponse, CoordinatePoint } from "@/features/farm";
 import { RegionChartStatusBadge } from "../components/RegionChartStatusBadge";
 import { useAreaDetailPage } from "../hooks/useAreaDetailPage";
 
@@ -78,13 +80,31 @@ const AreaDetailPage = () => {
     navigateToDetail,
   } = useAreaDetailPage();
 
-  const areaPath = coordinates ? closePath(coordinates) : [];
-  const plotPaths = (area?.plots || []).map((plot: any) =>
-    closePath(plot.boundary || plot.coordinates || []),
-  );
-  const bounds = getBoundsFromPolygons(
-    [areaPath, ...plotPaths].filter((path) => path.length > 0),
-  );
+  const areaPath = useMemo(() => {
+    return coordinates ? closePath(coordinates) : [];
+  }, [coordinates]);
+
+  const plotPaths = useMemo(() => {
+    return (area?.plots || []).map((plot: FarmPlotResponse) => {
+      const p = plot as FarmPlotResponse & { coordinates?: CoordinatePoint[] };
+      return closePath(p.boundary || p.coordinates || []);
+    });
+  }, [area?.plots]);
+  const bounds = useMemo(() => {
+    const polys = [areaPath, ...plotPaths].filter((path) => path.length > 0);
+    if (polys.length > 0) {
+      return getBoundsFromPolygons(polys);
+    }
+    if (
+      area?.centerPoint?.latitude !== undefined &&
+      area?.centerPoint?.longitude !== undefined
+    ) {
+      const lat = area.centerPoint.latitude;
+      const lng = area.centerPoint.longitude;
+      return L.latLngBounds([lat - 0.01, lng - 0.01], [lat + 0.01, lng + 0.01]);
+    }
+    return null;
+  }, [areaPath, plotPaths, area]);
 
   if (isLoading) {
     return (
@@ -159,7 +179,7 @@ const AreaDetailPage = () => {
                     subtle
                     activeLabel="Đang hoạt động"
                     inactiveLabel="Ngừng hoạt động"
-                    status={area.status as unknown as any}
+                    status={area.status as "active" | "inactive" | "archived"}
                   />
                 </div>
               </div>
@@ -193,6 +213,31 @@ const AreaDetailPage = () => {
                 </span>
                 <p className="font-medium mt-1">{terrainName}</p>
               </div>
+
+              {area?.centerPoint && (
+                <div>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Tọa độ trung tâm
+                  </span>
+                  <p className="font-medium mt-1 font-mono text-xs">
+                    Vĩ độ: {area.centerPoint.latitude}, Kinh độ:{" "}
+                    {area.centerPoint.longitude}
+                  </p>
+                </div>
+              )}
+
+              {area?.metadataJson?.address ? (
+                <div>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Địa chỉ định vị
+                  </span>
+                  <p className="font-medium mt-1 text-sm text-slate-700">
+                    {area.metadataJson.address as string}
+                  </p>
+                </div>
+              ) : (
+                <></>
+              )}
             </CardContent>
           </Card>
 
@@ -269,18 +314,34 @@ const AreaDetailPage = () => {
                     </Polygon>
                   )}
 
-                  {area.plots?.map((plot: any) => {
+                  {area.centerPoint?.latitude !== undefined &&
+                    area.centerPoint?.longitude !== undefined && (
+                      <Marker
+                        position={[
+                          area.centerPoint.latitude,
+                          area.centerPoint.longitude,
+                        ]}
+                        icon={getMarkerIcon("blue")}
+                      >
+                        <Tooltip direction="top">{area.name}</Tooltip>
+                      </Marker>
+                    )}
+
+                  {area.plots?.map((plot: FarmPlotResponse) => {
+                    const p = plot as FarmPlotResponse & {
+                      coordinates?: CoordinatePoint[];
+                    };
                     if (
-                      !(plot.boundary || plot.coordinates) ||
-                      (plot.boundary || plot.coordinates).length < 3
+                      !(p.boundary || p.coordinates) ||
+                      (p.boundary || p.coordinates).length < 3
                     ) {
                       return null;
                     }
 
                     return (
                       <Polygon
-                        key={plot.id}
-                        positions={closePath(plot.boundary || plot.coordinates)}
+                        key={p.id}
+                        positions={closePath(p.boundary || p.coordinates)}
                         pathOptions={{
                           color: "#f59e0b",
                           weight: 2,
@@ -288,7 +349,7 @@ const AreaDetailPage = () => {
                           fillOpacity: 0.3,
                         }}
                       >
-                        <Tooltip direction="top">{plot.name}</Tooltip>
+                        <Tooltip direction="top">{p.name}</Tooltip>
                       </Polygon>
                     );
                   })}

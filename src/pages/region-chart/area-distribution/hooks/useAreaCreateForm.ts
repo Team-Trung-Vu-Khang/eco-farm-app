@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { AreaFormValues } from "../data/area-form.schema";
@@ -29,22 +29,33 @@ export function useAreaCreateForm(
 
     if (isEditMode) {
       if (areaDataResponse) {
+        const isDetailed = (areaDataResponse.boundary || []).length >= 3;
         reset({
+          isDetailed,
           id: areaDataResponse.id,
           code: areaDataResponse.code,
           name: areaDataResponse.name || "",
+          metadataJson: {
+            address: (areaDataResponse.metadataJson?.address as string) || "",
+          },
           enterpriseId:
             (areaDataResponse.metadataJson?.enterpriseId as string) || "",
           regionId: areaDataResponse.region?.id,
           acreage: areaDataResponse.acreage || undefined,
           soilType: areaDataResponse.soilType?.id?.toString() || "",
           terrainFeature: areaDataResponse.terrainFeature?.id?.toString() || "",
-          // @ts-ignore
+          // @ts-expect-error status type mismatch
           status: areaDataResponse.status ?? "active",
           coordinates: (areaDataResponse.boundary || []).map((b) => ({
             lat: b.latitude || 0,
             lng: b.longitude || 0,
           })),
+          centerPoint: areaDataResponse.centerPoint
+            ? {
+                lat: areaDataResponse.centerPoint.latitude || 0,
+                lng: areaDataResponse.centerPoint.longitude || 0,
+              }
+            : undefined,
           plots: (areaDataResponse.plots || []).map((plot) => ({
             id: plot.id?.toString(),
             code: plot.code || "",
@@ -58,12 +69,17 @@ export function useAreaCreateForm(
             })),
           })),
         });
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setHasInitialized(true);
       }
     } else {
       reset({
+        isDetailed: true,
         name: "",
         enterpriseId: "",
+        metadataJson: {
+          address: "",
+        },
         regionId: undefined,
         acreage: undefined,
         soilType: "",
@@ -75,6 +91,10 @@ export function useAreaCreateForm(
           { lat: 11.55, lng: 106.91 },
           { lat: 11.53, lng: 106.91 },
         ],
+        centerPoint: {
+          lat: 11.54,
+          lng: 106.895,
+        },
         plots: [],
         status: "active",
       });
@@ -97,38 +117,53 @@ export function useAreaCreateForm(
         status: data.status ?? "active",
         metadataJson: {
           enterpriseId: data.enterpriseId,
+          address: data.metadataJson?.address,
         },
-        boundary: (data.coordinates || []).map((c) => ({
-          latitude: c.lat,
-          longitude: c.lng,
-        })),
-        plots: (data.plots || []).map((sub) => {
-          const plotId =
-            sub.id && typeof sub.id === "string" && sub.id.startsWith("sub-")
-              ? undefined
-              : sub.id
-                ? Number(sub.id)
-                : undefined;
-          return {
-            id: plotId,
-            code: sub.code,
-            name: sub.name,
-            acreage: sub.acreage,
-            elevation:
-              sub.elevation !== undefined ? Number(sub.elevation) : undefined,
-            contourInterval:
-              sub.contourInterval !== undefined
-                ? Number(sub.contourInterval)
-                : undefined,
-            metadataJson: {
-              enterpriseId: data.enterpriseId,
-            },
-            boundary: (sub.coordinates || []).map((c) => ({
+        boundary: data.isDetailed
+          ? (data.coordinates || []).map((c) => ({
               latitude: c.lat,
               longitude: c.lng,
-            })),
-          };
-        }),
+            }))
+          : undefined,
+        centerPoint: data.centerPoint
+          ? {
+              latitude: data.centerPoint.lat,
+              longitude: data.centerPoint.lng,
+            }
+          : undefined,
+        plots: data.isDetailed
+          ? (data.plots || []).map((sub) => {
+              const plotId =
+                sub.id &&
+                typeof sub.id === "string" &&
+                sub.id.startsWith("sub-")
+                  ? undefined
+                  : sub.id
+                    ? Number(sub.id)
+                    : undefined;
+              return {
+                id: plotId,
+                code: sub.code,
+                name: sub.name,
+                acreage: sub.acreage,
+                elevation:
+                  sub.elevation !== undefined
+                    ? Number(sub.elevation)
+                    : undefined,
+                contourInterval:
+                  sub.contourInterval !== undefined
+                    ? Number(sub.contourInterval)
+                    : undefined,
+                metadataJson: {
+                  enterpriseId: data.enterpriseId,
+                },
+                boundary: (sub.coordinates || []).map((c) => ({
+                  latitude: c.lat,
+                  longitude: c.lng,
+                })),
+              };
+            })
+          : undefined,
       };
 
       if (isEditMode && areaId > 0) {
@@ -149,6 +184,7 @@ export function useAreaCreateForm(
       }
       setLocation("/area-distribution");
     } catch (error) {
+      console.error("Error saving area:", error);
       toast({
         title: "Lỗi",
         description: "Đã xảy ra lỗi khi lưu thông tin",

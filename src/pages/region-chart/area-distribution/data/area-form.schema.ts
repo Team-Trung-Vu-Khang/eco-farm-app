@@ -12,10 +12,7 @@ export const plotSchema = z.object({
   acreage: z.number().min(0, "Diện tích không hợp lệ").optional(),
   elevation: z.number({ error: "Vui lòng nhập số" }).optional(),
   contourInterval: z.number({ error: "Vui lòng nhập số" }).optional(),
-  coordinates: z
-    .array(coordinateSchema)
-    .min(3, "Lô cần ít nhất 3 điểm")
-    .optional(),
+  coordinates: z.array(coordinateSchema).optional(),
 });
 
 export const areaInfoSchema = z.object({
@@ -33,7 +30,19 @@ export const areaInfoSchema = z.object({
 });
 
 export const areaFormSchema = areaInfoSchema.extend({
-  coordinates: z.array(coordinateSchema).min(3, "Khu vực cần ít nhất 3 điểm"),
+  isDetailed: z.boolean().optional(),
+  coordinates: z.array(coordinateSchema).optional(),
+  centerPoint: z
+    .object({
+      lat: z.number({ error: "Vĩ độ phải là số" }).optional(),
+      lng: z.number({ error: "Kinh độ phải là số" }).optional(),
+    })
+    .optional(),
+  metadataJson: z
+    .object({
+      address: z.string().optional(),
+    })
+    .optional(),
   plots: z.array(plotSchema).optional(),
   status: z.enum(["active", "inactive", "archived"]).optional(),
   id: z.number().optional(),

@@ -16,8 +16,10 @@ import {
   TileLayer,
   Tooltip,
   useMap,
+  Marker,
 } from "react-leaflet";
 
+import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
 import { RegionChartStatusBadge } from "../components/RegionChartStatusBadge";
 import { LAND_TYPES } from "../constants";
 import { useRegionDetailPage } from "../hooks/useRegionDetailPage";
@@ -57,7 +59,6 @@ const RegionDetailPage = () => {
     center,
     provinceName,
     districtName,
-    enterpriseName,
     landTypeName,
     terrainName,
     isLoading,
@@ -161,6 +162,30 @@ const RegionDetailPage = () => {
                 <span className="text-muted-foreground">Địa hình</span>
                 <span className="col-span-2">{terrainName}</span>
               </div>
+              {region?.centerPoint && (
+                <div>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Tọa độ trung tâm
+                  </span>
+                  <p className="font-medium mt-1 font-mono text-xs">
+                    Vĩ độ: {region.centerPoint.latitude}, Kinh độ:{" "}
+                    {region.centerPoint.longitude}
+                  </p>
+                </div>
+              )}
+
+              {region?.metadataJson?.address ? (
+                <div>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Địa chỉ định vị
+                  </span>
+                  <p className="font-medium mt-1 text-sm text-slate-700">
+                    {region.metadataJson.address as string}
+                  </p>
+                </div>
+              ) : (
+                <></>
+              )}
               <div className="grid grid-cols-3 gap-2 py-1">
                 <span className="text-muted-foreground">Ghi chú</span>
                 <span className="col-span-2 italic text-muted-foreground">
@@ -236,6 +261,19 @@ const RegionDetailPage = () => {
                       <Tooltip direction="right">{region.name}</Tooltip>
                     </Polygon>
                   )}
+
+                  {region.centerPoint?.latitude !== undefined &&
+                    region.centerPoint?.longitude !== undefined && (
+                      <Marker
+                        position={[
+                          region.centerPoint.latitude,
+                          region.centerPoint.longitude,
+                        ]}
+                        icon={getMarkerIcon("blue")}
+                      >
+                        <Tooltip direction="top">{region.name}</Tooltip>
+                      </Marker>
+                    )}
 
                   {region.subAreas?.map((sub) => {
                     if (!sub.coordinates || sub.coordinates.length < 3) {
