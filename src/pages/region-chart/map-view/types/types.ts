@@ -1,5 +1,3 @@
-import type { GeoJsonObject } from "geojson";
-
 export interface SelectedEntityStats {
   total: number;
   healthy: number;
@@ -8,11 +6,19 @@ export interface SelectedEntityStats {
   types: Record<string, number>;
 }
 
+export interface SelectedLocationInfo {
+  zoneName?: string;
+  areaName?: string;
+  plotName?: string;
+}
+
 export interface SelectedEntity {
   type: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   properties: any;
   stats: SelectedEntityStats;
+  center?: [number, number] | null;
+  locationInfo?: SelectedLocationInfo;
 }
 
 export interface SoilData {
