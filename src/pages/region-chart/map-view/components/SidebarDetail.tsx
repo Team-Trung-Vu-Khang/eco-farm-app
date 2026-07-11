@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Button,
   ScrollArea,
@@ -17,6 +16,7 @@ import {
   Route,
   Share2,
 } from "lucide-react";
+import React from "react";
 
 import type {
   DrilldownItem,
@@ -430,7 +430,9 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
                   />
                   <MetricCard
                     label={
-                      selectedEntity.level === "plant" ? "Sâu bệnh" : "Bị sâu bệnh"
+                      selectedEntity.level === "plant"
+                        ? "Sâu bệnh"
+                        : "Bị sâu bệnh"
                     }
                     value={selectedEntity.stats.diseased}
                     tone="red"
@@ -469,12 +471,16 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
                           {soilCluster.label}
                         </div>
                         <div className="text-sm text-slate-500">
-                          {soilCluster.position} • {soilCluster.deviceCount} thiết bị
+                          {soilCluster.position} • {soilCluster.deviceCount}{" "}
+                          thiết bị
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
-                        <MetricCard label="Độ pH" value={soilCluster.metrics.ph} />
+                        <MetricCard
+                          label="Độ pH"
+                          value={soilCluster.metrics.ph}
+                        />
                         <MetricCard
                           label="Độ ẩm"
                           value={`${soilCluster.metrics.moisture}%`}
@@ -582,7 +588,8 @@ export const SidebarDetail: React.FC<SidebarDetailProps> = ({
                                 {cluster.label}
                               </div>
                               <div className="text-xs text-slate-500">
-                                {cluster.position} • {cluster.deviceCount} thiết bị
+                                {cluster.position} • {cluster.deviceCount} thiết
+                                bị
                               </div>
                             </div>
                             <span className="text-xs text-slate-500">

@@ -164,6 +164,7 @@ const MapContent = () => {
     plant: false,
   });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [isDetailExpanded, setIsDetailExpanded] = useState(true);
   const [selectionTrail, setSelectionTrail] = useState<SelectedEntity[]>([]);
   const [soilData, setSoilData] = useState<Record<string, SoilData>>(
@@ -570,6 +571,7 @@ const MapContent = () => {
     const trail = buildTrail(level, index);
     if (!trail.length) return;
     setSelectionTrail(finalizeTrail(trail));
+    setIsSidebarVisible(true);
     setIsSidebarCollapsed(false);
     setIsDetailExpanded(true);
   };
@@ -611,6 +613,7 @@ const MapContent = () => {
     };
 
     setSelectionTrail((prev) => [...prev, clusterNode]);
+    setIsSidebarVisible(true);
     setIsDetailExpanded(true);
     setIsSidebarCollapsed(false);
   };
@@ -620,11 +623,12 @@ const MapContent = () => {
   };
 
   const handleCloseSidebar = () => {
+    setIsSidebarVisible(false);
     setSelectionTrail([]);
   };
 
   useEffect(() => {
-    if (!selectionTrail.length && zoneFeatures.length > 0) {
+    if (isSidebarVisible && !selectionTrail.length && zoneFeatures.length > 0) {
       const firstZoneTrail = buildTrail("zone", 0);
       if (firstZoneTrail.length) {
         // Seed the sidebar with the first zone so the user lands on useful context.
@@ -632,7 +636,7 @@ const MapContent = () => {
         setSelectionTrail(finalizeTrail(firstZoneTrail));
       }
     }
-  }, [buildTrail, finalizeTrail, selectionTrail.length, zoneFeatures.length]);
+  }, [buildTrail, finalizeTrail, isSidebarVisible, selectionTrail.length, zoneFeatures.length]);
 
   const selectedEntity = selectionTrail[selectionTrail.length - 1] || null;
 
@@ -758,7 +762,7 @@ const MapContent = () => {
           isFullScreenParam ? "h-screen w-screen" : "h-[calc(100vh-140px)]",
         )}
       >
-        {selectedEntity && (
+        {selectedEntity && isSidebarVisible && (
           <div
             className={cn(
               "shrink-0 flex h-full flex-col overflow-hidden bg-card transition-all duration-300",
@@ -791,7 +795,7 @@ const MapContent = () => {
           </div>
         )}
 
-        {selectedEntity && (
+        {selectedEntity && isSidebarVisible && (
           <button
             onClick={() => setIsSidebarCollapsed((prev) => !prev)}
             className={`absolute top-[40dvh] z-[1100] ${isSidebarCollapsed ? "-translate-x-1/2" : ""} rounded-r-md border border-slate-200 bg-white px-1.5 py-4 text-slate-700 shadow-md transition-colors hover:bg-slate-50`}
