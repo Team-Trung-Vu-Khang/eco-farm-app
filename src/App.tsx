@@ -123,6 +123,16 @@ const PlotDetailPage = lazy(
 const MapViewPage = lazy(
   () => import("./pages/region-chart/map-view/MapViewPage"),
 );
+const LegalIdentificationPage = lazy(
+  () => import("./pages/legal-identification/LegalIdentificationPage"),
+);
+const LegalIdentificationCreateEditPage = lazy(
+  () =>
+    import("./pages/legal-identification/LegalIdentificationCreateEditPage"),
+);
+const LegalIdentificationDetailPage = lazy(
+  () => import("./pages/legal-identification/LegalIdentificationDetailPage"),
+);
 const SoilAmendmentMapPage = lazy(
   () => import("./pages/region-chart/soil-map/SoilAmendmentMapPage"),
 );
@@ -503,6 +513,19 @@ function Router() {
         component={PlotDetailPage}
       />
       <Route path="/map-view" component={MapViewPage} />
+      <Route path="/legal-identification" component={LegalIdentificationPage} />
+      <Route
+        path="/legal-identification/create"
+        component={LegalIdentificationCreateEditPage}
+      />
+      <Route
+        path="/legal-identification/:id/edit"
+        component={LegalIdentificationCreateEditPage}
+      />
+      <Route
+        path="/legal-identification/:id"
+        component={LegalIdentificationDetailPage}
+      />
       <Route path="/soil-amendment-map" component={SoilAmendmentMapPage} />
       <Route
         path="/soil-amendment-treatment"

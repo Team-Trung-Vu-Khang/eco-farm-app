@@ -294,6 +294,7 @@ interface GeographicalSelectorProps {
   enterpriseId: string;
   existingSelections: GeographicalSelection[];
   showEnterprise?: boolean;
+  customTrigger?: React.ReactNode;
 }
 
 interface AreaPlotsListProps {
@@ -536,6 +537,7 @@ export const GeographicalSelector = ({
   enterpriseId,
   existingSelections,
   showEnterprise = false,
+  customTrigger,
 }: GeographicalSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -690,19 +692,34 @@ export const GeographicalSelector = ({
 
   return (
     <>
-      <Button
-        type="button"
-        onClick={() => {
-          setTempSelections(existingSelections);
-          setIsOpen(true);
-        }}
-        disabled={showEnterprise && !enterpriseId}
-        className="w-full h-12 cursor-pointer border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 text-primary font-bold gap-2 transition-all rounded-lg shadow-sm hover:shadow-md"
-        variant="outline"
-      >
-        <Plus className="w-5 h-5" />
-        Thêm phạm vi địa lý
-      </Button>
+      {customTrigger ? (
+        <div
+          onClick={() => {
+            setTempSelections(existingSelections);
+            setIsOpen(true);
+          }}
+          className={cn(
+            "w-full",
+            showEnterprise && !enterpriseId && "pointer-events-none opacity-60",
+          )}
+        >
+          {customTrigger}
+        </div>
+      ) : (
+        <Button
+          type="button"
+          onClick={() => {
+            setTempSelections(existingSelections);
+            setIsOpen(true);
+          }}
+          disabled={showEnterprise && !enterpriseId}
+          className="w-full h-12 cursor-pointer border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 text-primary font-bold gap-2 transition-all rounded-lg shadow-sm hover:shadow-md"
+          variant="outline"
+        >
+          <Plus className="w-5 h-5" />
+          Thêm phạm vi địa lý
+        </Button>
+      )}
 
       <Dialog
         open={isOpen}
