@@ -1,7 +1,17 @@
+import type {
+  Feature,
+  FeatureCollection,
+  GeoJsonProperties,
+  Geometry,
+  Position,
+} from "geojson";
 import type { SelectedEntity } from "../types/types";
 import areaData from "../../../../assets/map/area.json";
 import plotData from "../../../../assets/map/plot.json";
 import zoneData from "../../../../assets/map/zone.json";
+
+type GeoFeature = Feature<Geometry, GeoJsonProperties>;
+type GeoCollection = FeatureCollection<Geometry, GeoJsonProperties>;
 
 export const isPointInPolygon = (point: [number, number], vs: [number, number][]) => {
   if (!point || !vs || !Array.isArray(vs) || vs.length === 0) return false;
@@ -22,23 +32,23 @@ export const isPointInPolygon = (point: [number, number], vs: [number, number][]
 };
 
 export const getLocationInfo = (lng: number, lat: number) => {
-  const findContainer = (data: { features?: unknown[] }) => {
-    return data.features?.find((f: any) => {
-      if (f.geometry.type === "Polygon") {
-        return isPointInPolygon([lng, lat], f.geometry.coordinates[0]);
+  const findContainer = (data: GeoCollection) => {
+    return data.features.find((feature) => {
+      if (feature.geometry.type === "Polygon") {
+        return isPointInPolygon([lng, lat], feature.geometry.coordinates[0]);
       }
-      if (f.geometry.type === "MultiPolygon") {
-        return f.geometry.coordinates.some((poly: any[]) =>
-          isPointInPolygon([lng, lat], poly[0]),
+      if (feature.geometry.type === "MultiPolygon") {
+        return feature.geometry.coordinates.some((polygon) =>
+          isPointInPolygon([lng, lat], polygon[0]),
         );
       }
       return false;
     });
   };
 
-  const zone = findContainer(zoneData);
-  const area = findContainer(areaData);
-  const plot = findContainer(plotData);
+  const zone = findContainer(zoneData as GeoCollection);
+  const area = findContainer(areaData as GeoCollection);
+  const plot = findContainer(plotData as GeoCollection);
 
   return {
     zoneName: zone?.properties?.name,
@@ -47,14 +57,13 @@ export const getLocationInfo = (lng: number, lat: number) => {
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const getPolygonCenter = (
-  feature: any,
+  feature: GeoFeature | null | undefined,
 ): { lat: number; lng: number } | null => {
   if (!feature.geometry) return null;
 
   try {
-    let coordinates: any[] = [];
+    let coordinates: Position[] = [];
     if (feature.geometry.type === "Polygon") {
       coordinates = feature.geometry.coordinates?.[0] || [];
     } else if (feature.geometry.type === "MultiPolygon") {
@@ -66,12 +75,12 @@ export const getPolygonCenter = (
         maxLat = -90,
         minLng = 180,
         maxLng = -180;
-      coordinates.forEach((c: any) => {
+      coordinates.forEach((c) => {
         if (c && c.length >= 2) {
-          minLng = Math.min(minLng, c[0]);
-          maxLng = Math.max(maxLng, c[0]);
-          minLat = Math.min(minLat, c[1]);
-          maxLat = Math.max(maxLat, c[1]);
+          minLng = Math.min(minLng, c[0] ?? minLng);
+          maxLng = Math.max(maxLng, c[0] ?? maxLng);
+          minLat = Math.min(minLat, c[1] ?? minLat);
+          maxLat = Math.max(maxLat, c[1] ?? maxLat);
         }
       });
       return { lat: (minLat + maxLat) / 2, lng: (minLng + maxLng) / 2 };
@@ -82,12 +91,13 @@ export const getPolygonCenter = (
   return null;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const convertGeoJsonToPath = (geometry: any) => {
+export const convertGeoJsonToPath = (
+  geometry: Geometry | null | undefined,
+) => {
   if (!geometry) return [];
   if (geometry.type === "Polygon") {
     return (
-      geometry.coordinates?.[0]?.map((c: any) => ({
+      geometry.coordinates?.[0]?.map((c) => ({
         lat: c[1],
         lng: c[0],
       })) || []
@@ -95,7 +105,7 @@ export const convertGeoJsonToPath = (geometry: any) => {
   }
   if (geometry.type === "MultiPolygon") {
     return (
-      geometry.coordinates?.[0]?.[0]?.map((c: any) => ({
+      geometry.coordinates?.[0]?.[0]?.map((c) => ({
         lat: c[1],
         lng: c[0],
       })) || []

@@ -1,15 +1,23 @@
 import { AdminLayout, cn } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { Feature, GeoJsonObject } from "geojson";
+import type {
+  Feature,
+  FeatureCollection,
+  GeoJsonObject,
+  GeoJsonProperties,
+  Geometry,
+  Position,
+} from "geojson";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { ChevronLeft, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   GeoJSON,
   LayerGroup,
   LayersControl,
   MapContainer,
   Marker,
+  Polyline,
   TileLayer,
   useMap,
   useMapEvents,
@@ -25,8 +33,10 @@ import { SidebarDetail } from "./components/SidebarDetail";
 import { SidebarFilter } from "./components/SidebarFilter";
 import { SoilEditDialog } from "./components/SoilEditDialog";
 import type {
+  DrilldownItem,
   SelectedEntity,
   SelectedEntityStats,
+  SoilClusterInfo,
   SoilData,
 } from "./types/types";
 import {
@@ -35,6 +45,10 @@ import {
   getPolygonCenter,
   isPointInPolygon,
 } from "./utils/utils";
+
+const DEFAULT_CENTER: [number, number] = [11.558, 107.134];
+type GeoFeature = Feature<Geometry, GeoJsonProperties>;
+type GeoFeatureCollection = FeatureCollection<Geometry, GeoJsonProperties>;
 
 const MapUpdater = ({
   center,
@@ -79,6 +93,60 @@ const createDefaultSoilData = (): Record<string, SoilData> => {
   };
 };
 
+const getFeatureLabel = (feature?: GeoFeature | null) =>
+  feature?.properties?.name ||
+  feature?.properties?.code ||
+  feature?.properties?.id ||
+  "Không rõ";
+
+const getPolygonCoordinates = (
+  feature?: GeoFeature | null,
+): [number, number][] => {
+  if (!feature?.geometry) return [];
+
+  if (feature.geometry.type === "Polygon") {
+    return (feature.geometry.coordinates?.[0] || []).map((coord) =>
+      [coord[0] ?? 0, coord[1] ?? 0] as [number, number],
+    );
+  }
+
+  if (feature.geometry.type === "MultiPolygon") {
+    return (feature.geometry.coordinates?.[0]?.[0] || []).map((coord) =>
+      [coord[0] ?? 0, coord[1] ?? 0] as [number, number],
+    );
+  }
+
+  return [];
+};
+
+const getPointCoordinates = (
+  feature?: GeoFeature | null,
+): [number, number] | null => {
+  if (!feature?.geometry || feature.geometry.type !== "Point") return null;
+  const [lng, lat] = feature.geometry.coordinates as Position;
+  if (typeof lng !== "number" || typeof lat !== "number") return null;
+  return [lng, lat];
+};
+
+const getFeatureCenterPoint = (
+  feature?: GeoFeature | null,
+): [number, number] | null => {
+  if (!feature?.geometry) return null;
+  if (feature.geometry.type === "Point") {
+    return getPointCoordinates(feature);
+  }
+
+  const center = getPolygonCenter(feature);
+  return center ? [center.lng, center.lat] : null;
+};
+
+const getCollectionFeatures = (
+  collection: unknown,
+): GeoFeature[] => {
+  const typedCollection = collection as GeoFeatureCollection | null | undefined;
+  return Array.isArray(typedCollection?.features) ? typedCollection.features : [];
+};
+
 const MapContent = () => {
   const isFullScreenParam =
     new URLSearchParams(window.location.search).get("fullscreen") === "true";
@@ -93,18 +161,43 @@ const MapContent = () => {
   });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isDetailExpanded, setIsDetailExpanded] = useState(true);
-  const [selectedEntity, setSelectedEntity] = useState<SelectedEntity | null>(
-    null,
-  );
+  const [selectionTrail, setSelectionTrail] = useState<SelectedEntity[]>([]);
   const [soilData, setSoilData] = useState<Record<string, SoilData>>(
     createDefaultSoilData,
   );
   const [isEditingSoil, setIsEditingSoil] = useState(false);
   const [tempSoil, setTempSoil] = useState<SoilData | null>(null);
 
+  const zoneFeatures = useMemo(() => getCollectionFeatures(zoneData), []);
+  const areaFeatures = useMemo(() => getCollectionFeatures(areaData), []);
+  const plotFeatures = useMemo(() => getCollectionFeatures(plotData), []);
+
+  const processedPlantData = useMemo(() => {
+    const statuses = ["healthy", "diseased", "harvesting"];
+    const features = getCollectionFeatures(plantData).map((feature, index) => {
+      const status = statuses[index % statuses.length];
+      return {
+        ...feature,
+        properties: {
+          ...feature.properties,
+          status,
+        },
+      };
+    });
+
+    return {
+      ...plantData,
+      features,
+    } as GeoFeatureCollection;
+  }, []);
+
+  const plantFeatures = useMemo(
+    () => getCollectionFeatures(processedPlantData),
+    [processedPlantData],
+  );
+
   const handleEditSoil = () => {
-    const currentId =
-      selectedEntity?.properties?.code || selectedEntity?.properties?.id;
+    const currentId = selectedEntity?.id || selectedEntity?.key;
     setTempSoil(
       soilData[currentId] || {
         ph: 0,
@@ -123,8 +216,7 @@ const MapContent = () => {
   };
 
   const handleSaveSoil = () => {
-    const currentId =
-      selectedEntity?.properties?.code || selectedEntity?.properties?.id;
+    const currentId = selectedEntity?.id || selectedEntity?.key;
     if (!currentId || !tempSoil) return;
 
     setSoilData((prev) => ({
@@ -134,77 +226,405 @@ const MapContent = () => {
     setIsEditingSoil(false);
   };
 
-  const processedPlantData = useMemo(() => {
-    const statuses = ["healthy", "diseased", "harvesting"];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const features = (plantData as any).features.map(
-      (feature: any, index: number) => {
-        const randomStatus = statuses[index % statuses.length];
-        return {
-          ...feature,
-          properties: {
-            ...feature.properties,
-            status: randomStatus,
-          },
-        };
+  const calculateStats = useCallback(
+    (polyCoords: [number, number][]): SelectedEntityStats => {
+      const plants = plantFeatures.filter((feature: GeoFeature) => {
+        const point = getPointCoordinates(feature);
+        return point ? isPointInPolygon(point, polyCoords) : false;
+      });
+
+      const stats: SelectedEntityStats = {
+        total: plants.length,
+        healthy: 0,
+        diseased: 0,
+        harvesting: 0,
+        types: {},
+      };
+
+      plants.forEach((feature: GeoFeature) => {
+        const status = feature.properties?.status;
+        if (status === "healthy") stats.healthy += 1;
+        else if (status === "diseased") stats.diseased += 1;
+        else if (status === "harvesting") stats.harvesting += 1;
+
+        const name = feature.properties?.name || "Unknown";
+        stats.types[name] = (stats.types[name] || 0) + 1;
+      });
+
+      return stats;
+    },
+    [plantFeatures],
+  );
+
+  const buildSoilClusters = (
+    entityId: string,
+    baseSoil: SoilData | undefined,
+  ): SoilClusterInfo[] => {
+    const soil = baseSoil || {
+      ph: 0,
+      nitrogen: 0,
+      phosphorus: 0,
+      potassium: 0,
+      moisture: 0,
+      organicMatter: 0,
+      ec: 0,
+      temperature: 0,
+      compaction: 0,
+      lastTested: new Date().toISOString().split("T")[0],
+    };
+
+    return [
+      {
+        key: `${entityId}-cluster-a`,
+        label: "Vị trí A",
+        position: "Phía Bắc",
+        deviceCount: 2,
+        lastSynced: soil.lastTested,
+        metrics: soil,
       },
-    );
-    return {
-      ...plantData,
-      features,
-    } as GeoJsonObject;
-  }, []);
+      {
+        key: `${entityId}-cluster-b`,
+        label: "Vị trí B",
+        position: "Phía Nam",
+        deviceCount: 2,
+        lastSynced: soil.lastTested,
+        metrics: {
+          ...soil,
+          ph: Number((soil.ph + 0.1).toFixed(1)),
+          moisture: Math.min(100, soil.moisture + 2),
+          temperature: Number((soil.temperature + 0.5).toFixed(1)),
+        },
+      },
+    ];
+  };
 
-  const calculateStats = (
-    polyCoords: [number, number][],
-  ): SelectedEntityStats => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const plants = (processedPlantData as any).features.filter((f: any) =>
-      isPointInPolygon(f.geometry.coordinates, polyCoords),
-    );
+  const buildNode = useCallback(
+    (level: SelectedEntity["level"], index: number): SelectedEntity | null => {
+    const collectionMap: Record<
+      Exclude<SelectedEntity["level"], "soil-cluster">,
+      GeoFeature[]
+    > = {
+      zone: zoneFeatures,
+      area: areaFeatures,
+      plot: plotFeatures,
+      plant: plantFeatures,
+    };
 
-    const stats: SelectedEntityStats = {
-      total: plants.length,
+    if (level === "soil-cluster") return null;
+
+    const feature = collectionMap[level][index];
+    if (!feature) return null;
+
+    const center = getFeatureCenterPoint(feature);
+    const locationInfo = center
+      ? getLocationInfo(center[0], center[1])
+      : undefined;
+
+    let children: DrilldownItem[] = [];
+    let stats: SelectedEntityStats = {
+      total: 0,
       healthy: 0,
       diseased: 0,
       harvesting: 0,
       types: {},
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    plants.forEach((p: any) => {
-      if (p.properties.status === "healthy") stats.healthy++;
-      else if (p.properties.status === "diseased") stats.diseased++;
-      else if (p.properties.status === "harvesting") stats.harvesting++;
+    if (level === "zone") {
+      const polygon = getPolygonCoordinates(feature);
+      const childItems = areaFeatures
+        .map((childFeature: GeoFeature, childIndex: number) => ({
+          feature: childFeature,
+          index: childIndex,
+          center: getFeatureCenterPoint(childFeature),
+        }))
+        .filter(({ center: childCenter }) =>
+          childCenter ? isPointInPolygon(childCenter, polygon) : false,
+        );
 
-      const name = p.properties.name || "Unknown";
-      stats.types[name] = (stats.types[name] || 0) + 1;
-    });
+      children = childItems.map(({ feature: childFeature, index: childIndex, center: childCenter }) => ({
+        key: `area-${childIndex}`,
+        level: "area",
+        title: getFeatureLabel(childFeature),
+        subtitle:
+          childFeature.properties?.code ||
+          `${childFeature.properties?.plots?.length || 0} lô`,
+        center: childCenter,
+        featureIndex: childIndex,
+        source: "geojson",
+      }));
+      stats = calculateStats(polygon);
+    }
 
-    return stats;
-  };
+    if (level === "area") {
+      const polygon = getPolygonCoordinates(feature);
+      const childItems = plotFeatures
+        .map((childFeature: GeoFeature, childIndex: number) => ({
+          feature: childFeature,
+          index: childIndex,
+          center: getFeatureCenterPoint(childFeature),
+        }))
+        .filter(({ center: childCenter }) =>
+          childCenter ? isPointInPolygon(childCenter, polygon) : false,
+        );
 
-  const allPlantData = processedPlantData;
+      children = childItems.map(({ feature: childFeature, index: childIndex, center: childCenter }) => ({
+        key: `plot-${childIndex}`,
+        level: "plot",
+        title: getFeatureLabel(childFeature),
+        subtitle:
+          childFeature.properties?.code ||
+          `${childFeature.properties?.area || "N/A"} ha`,
+        center: childCenter,
+        featureIndex: childIndex,
+        source: "geojson",
+      }));
+      stats = calculateStats(polygon);
+    }
 
-  const regionOptions = useMemo(
-    () =>
-      MOCK_REGIONS.map((r) => ({
-        value: r.id.toString(),
-        label: r.code,
+    if (level === "plot") {
+      const polygon = getPolygonCoordinates(feature);
+      const childItems = plantFeatures
+        .map((childFeature: GeoFeature, childIndex: number) => ({
+          feature: childFeature,
+          index: childIndex,
+          center: getPointCoordinates(childFeature),
+        }))
+        .filter(({ center: childCenter }) =>
+          childCenter ? isPointInPolygon(childCenter, polygon) : false,
+        );
+
+      children = childItems.map(({ feature: childFeature, index: childIndex, center: childCenter }) => ({
+        key: `plant-${childIndex}`,
+        level: "plant",
+        title: getFeatureLabel(childFeature),
+        subtitle: childFeature.properties?.code || childFeature.properties?.rowId || "",
+        center: childCenter,
+        featureIndex: childIndex,
+        source: "geojson",
+      }));
+      stats = calculateStats(polygon);
+    }
+
+    if (level === "plant") {
+      const status = feature.properties?.status;
+      stats = {
+        total: 1,
+        healthy: status === "healthy" ? 1 : 0,
+        diseased: status === "diseased" ? 1 : 0,
+        harvesting: status === "harvesting" ? 1 : 0,
+        types: {
+          [feature.properties?.name || "Plant"]: 1,
+        },
+      };
+    }
+
+    const entityId =
+      String(feature.properties?.code || feature.properties?.id || `${level}-${index}`);
+    const title = getFeatureLabel(feature);
+    const soilClusters = buildSoilClusters(
+      entityId,
+      soilData[entityId],
+    );
+
+    return {
+      id: entityId,
+      key: `${level}-${index}`,
+      level,
+      type: title,
+      properties: feature.properties,
+      stats,
+      center,
+      locationInfo,
+      children,
+      soilClusters,
+      description: feature.properties?.note || feature.properties?.address,
+    };
+    },
+    [
+      areaFeatures,
+      calculateStats,
+      plantFeatures,
+      plotFeatures,
+      soilData,
+      zoneFeatures,
+    ],
+  );
+
+  const buildTrail = useCallback(
+    (
+      level: Exclude<SelectedEntity["level"], "soil-cluster">,
+      index: number,
+    ) => {
+    const node = buildNode(level, index);
+    if (!node) return [];
+
+    if (level === "zone") return [node];
+
+    if (level === "area") {
+      const center = node.center;
+      const zoneIndex =
+        center && zoneFeatures.length
+          ? zoneFeatures.findIndex((feature) => {
+              const polygon = getPolygonCoordinates(feature);
+              return polygon.length ? isPointInPolygon(center, polygon) : false;
+            })
+          : -1;
+      return zoneIndex >= 0 ? [buildNode("zone", zoneIndex)!, node] : [node];
+    }
+
+    if (level === "plot") {
+      const center = node.center;
+      const areaIndex =
+        center && areaFeatures.length
+          ? areaFeatures.findIndex((feature) => {
+              const polygon = getPolygonCoordinates(feature);
+              return polygon.length ? isPointInPolygon(center, polygon) : false;
+            })
+          : -1;
+      const zoneIndex =
+        areaIndex >= 0
+          ? zoneFeatures.findIndex((feature) => {
+              const areaFeature = areaFeatures[areaIndex];
+              const areaCenter = areaFeature ? getFeatureCenterPoint(areaFeature) : null;
+              const polygon = getPolygonCoordinates(feature);
+              return areaCenter && polygon.length
+                ? isPointInPolygon(areaCenter, polygon)
+                : false;
+            })
+          : -1;
+
+      const trail = [];
+      if (zoneIndex >= 0) trail.push(buildNode("zone", zoneIndex)!);
+      if (areaIndex >= 0) trail.push(buildNode("area", areaIndex)!);
+      trail.push(node);
+      return trail;
+    }
+
+    if (level === "plant") {
+      const center = node.center;
+      const plotIndex =
+        center && plotFeatures.length
+          ? plotFeatures.findIndex((feature) => {
+              const polygon = getPolygonCoordinates(feature);
+              return polygon.length ? isPointInPolygon(center, polygon) : false;
+            })
+          : -1;
+
+      const areaIndex =
+        plotIndex >= 0
+          ? areaFeatures.findIndex((feature) => {
+              const plotFeature = plotFeatures[plotIndex];
+              const plotCenter = plotFeature ? getFeatureCenterPoint(plotFeature) : null;
+              const polygon = getPolygonCoordinates(feature);
+              return plotCenter && polygon.length
+                ? isPointInPolygon(plotCenter, polygon)
+                : false;
+            })
+          : -1;
+
+      const zoneIndex =
+        areaIndex >= 0
+          ? zoneFeatures.findIndex((feature) => {
+              const areaFeature = areaFeatures[areaIndex];
+              const areaCenter = areaFeature ? getFeatureCenterPoint(areaFeature) : null;
+              const polygon = getPolygonCoordinates(feature);
+              return areaCenter && polygon.length
+                ? isPointInPolygon(areaCenter, polygon)
+                : false;
+            })
+          : -1;
+
+      const trail = [];
+      if (zoneIndex >= 0) trail.push(buildNode("zone", zoneIndex)!);
+      if (areaIndex >= 0) trail.push(buildNode("area", areaIndex)!);
+      if (plotIndex >= 0) trail.push(buildNode("plot", plotIndex)!);
+      trail.push(node);
+      return trail;
+    }
+
+    return [node];
+    },
+    [areaFeatures, buildNode, plotFeatures, zoneFeatures],
+  );
+
+  const finalizeTrail = useCallback(
+    (trail: SelectedEntity[]) =>
+      trail.map((node, index) => ({
+        ...node,
+        lineage: trail.slice(0, index + 1).map((trailNode) => trailNode.type),
       })),
     [],
   );
 
-  const areaOptions = useMemo(
-    () =>
-      MOCK_AREAS.filter(
-        (a) => filterRegion === "all" || a.regionId.toString() === filterRegion,
-      ).map((a) => ({
-        value: a.id.toString(),
-        label: a.code,
-      })),
-    [filterRegion],
-  );
+  const selectLevel = (level: Exclude<SelectedEntity["level"], "soil-cluster">, index: number) => {
+    const trail = buildTrail(level, index);
+    if (!trail.length) return;
+    setSelectionTrail(finalizeTrail(trail));
+    setIsSidebarCollapsed(false);
+    setIsDetailExpanded(true);
+  };
+
+  const handleSelectChild = (item: DrilldownItem) => {
+    if (item.source === "geojson" && typeof item.featureIndex === "number") {
+      selectLevel(item.level as Exclude<SelectedEntity["level"], "soil-cluster">, item.featureIndex);
+    }
+  };
+
+  const handleSelectSoilCluster = (cluster: SoilClusterInfo) => {
+    if (!selectedEntity) return;
+
+    const clusterNode: SelectedEntity = {
+      id: cluster.key,
+      key: cluster.key,
+      level: "soil-cluster",
+      type: cluster.label,
+      properties: {
+        code: cluster.key,
+        name: cluster.label,
+        position: cluster.position,
+        deviceCount: cluster.deviceCount,
+      },
+      stats: {
+        total: cluster.deviceCount,
+        healthy: 0,
+        diseased: 0,
+        harvesting: 0,
+        types: {},
+      },
+      center: selectedEntity.center,
+      locationInfo: selectedEntity.locationInfo,
+      soilCluster: cluster,
+      children: [],
+      soilClusters: [cluster],
+      description: `${cluster.position} • ${cluster.deviceCount} thiết bị`,
+      lineage: [...(selectedEntity.lineage || []), cluster.label],
+    };
+
+    setSelectionTrail((prev) => [...prev, clusterNode]);
+    setIsDetailExpanded(true);
+    setIsSidebarCollapsed(false);
+  };
+
+  const handleBack = () => {
+    setSelectionTrail((prev) => prev.slice(0, -1));
+  };
+
+  const handleCloseSidebar = () => {
+    setSelectionTrail([]);
+  };
+
+  useEffect(() => {
+    if (!selectionTrail.length && zoneFeatures.length > 0) {
+      const firstZoneTrail = buildTrail("zone", 0);
+      if (firstZoneTrail.length) {
+        // Seed the sidebar with the first zone so the user lands on useful context.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSelectionTrail(finalizeTrail(firstZoneTrail));
+      }
+    }
+  }, [buildTrail, finalizeTrail, selectionTrail.length, zoneFeatures.length]);
+
+  const selectedEntity = selectionTrail[selectionTrail.length - 1] || null;
 
   const mapViewport = useMemo(() => {
     if (filterArea !== "all") {
@@ -216,18 +636,17 @@ const MapContent = () => {
     }
 
     if (filterRegion !== "all") {
-      const reg = MOCK_REGIONS.find((r) => r.id.toString() === filterRegion);
-      if (reg?.coordinates.length) {
-        const center = getCenterFromCoordinates(reg.coordinates);
+      const region = MOCK_REGIONS.find((r) => r.id.toString() === filterRegion);
+      if (region?.coordinates.length) {
+        const center = getCenterFromCoordinates(region.coordinates);
         if (center) return { center, zoom: 14 };
       }
     }
 
-    return { center: [11.558, 107.134] as [number, number], zoom: 15 };
+    return { center: DEFAULT_CENTER, zoom: 15 };
   }, [filterArea, filterRegion]);
 
-  const mapCenter = mapViewport.center;
-  const mapZoom = mapViewport.zoom;
+  const [mapCenter, mapZoom] = [mapViewport.center, mapViewport.zoom];
 
   const onZoomChange = (zoom: number) => {
     if (zoom < 14) {
@@ -262,87 +681,59 @@ const MapContent = () => {
       color: "white",
       weight: 1,
       opacity: 1,
-      fillOpacity: 0.8,
+      fillOpacity: 0.85,
     });
   };
 
-  const onEachFeature = (feature: Feature, layer: L.Layer) => {
-    const buildPopupContent = (extraInfo?: string) => {
-      let popupContent = `<div class="font-bold">${feature.properties?.name || "Unnamed"}</div>`;
-      if (feature.properties?.code)
-        popupContent += `<div class="text-xs">Mã: ${feature.properties.code}</div>`;
-      if (feature.properties?.status) {
-        const labels: Record<string, string> = {
-          healthy: "Khỏe mạnh",
-          diseased: "Sâu bệnh",
-          harvesting: "Đang thu hoạch",
-        };
-        popupContent += `<div class="text-xs mt-1">Trạng thái: ${labels[feature.properties.status]}</div>`;
+  const createFeatureHandler = (
+    level: Exclude<SelectedEntity["level"], "soil-cluster">,
+    collection: GeoFeature[],
+  ) => {
+    return (feature: GeoFeature, layer: L.Layer) => {
+      const index = collection.findIndex((item) => item === feature);
+      layer.bindTooltip(getFeatureLabel(feature), { sticky: true });
+
+      if (feature.geometry.type === "Point") {
+        const point = getPointCoordinates(feature);
+        if (point) {
+          const [lng, lat] = point;
+          const { zoneName, areaName, plotName } = getLocationInfo(lng, lat);
+          layer.bindPopup(
+            `<div class="font-semibold">${getFeatureLabel(feature)}</div>
+             <div class="text-xs text-slate-500">${zoneName || ""}</div>
+             <div class="text-xs text-slate-500">${areaName || ""}</div>
+             <div class="text-xs text-slate-500">${plotName || ""}</div>`,
+          );
+        }
       }
-      if (extraInfo) popupContent += extraInfo;
-      return popupContent;
+
+      layer.on("click", (event) => {
+        L.DomEvent.stopPropagation(event);
+        selectLevel(level, index);
+      });
     };
-
-    if (feature.geometry.type === "Point") {
-      layer.bindPopup(buildPopupContent("<i>Đang tải thông tin...</i>"));
-      layer.on("click", () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const coords = (feature.geometry as any).coordinates;
-        const { zoneName, areaName, plotName } = getLocationInfo(
-          coords[0],
-          coords[1],
-        );
-        let extra = `<div class="mt-2 text-xs border-t pt-1 space-y-0.5">`;
-        extra += `<div class="text-muted-foreground">📍 ${coords[1].toFixed(6)}, ${coords[0].toFixed(6)}</div>`;
-        if (zoneName) extra += `<div>🏠 Vùng: <b>${zoneName}</b></div>`;
-        if (areaName) extra += `<div>🌳 Khu vực: <b>${areaName}</b></div>`;
-        if (plotName) extra += `<div>🌱 Lô: <b>${plotName}</b></div>`;
-        extra += `</div>`;
-        layer.setPopupContent(buildPopupContent(extra));
-      });
-      return;
-    }
-
-    layer.bindTooltip(feature.properties?.name, { sticky: true });
-    layer.on("click", (e) => {
-      L.DomEvent.stopPropagation(e);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let polyCoords = (feature.geometry as any).coordinates[0];
-      if (feature.geometry.type === "MultiPolygon") {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        polyCoords = (feature.geometry as any).coordinates[0][0];
-      }
-
-      const calculatedStats = calculateStats(polyCoords);
-      const center = getPolygonCenter(feature);
-      const locationInfo = center
-        ? getLocationInfo(center.lng, center.lat)
-        : undefined;
-
-      setIsSidebarCollapsed(false);
-      setIsDetailExpanded(true);
-      setSelectedEntity({
-        type: feature.properties?.name || "Selected Area",
-        properties: feature.properties,
-        stats: calculatedStats,
-        center: center ? [center.lat, center.lng] : null,
-        locationInfo,
-      });
-    });
   };
+
+  const selectedPath = useMemo(
+    () =>
+      selectionTrail
+        .map((node) => node.center)
+        .filter(Boolean) as [number, number][],
+    [selectionTrail],
+  );
 
   return (
     <>
       <div
         className={cn(
-          "flex relative group",
+          "relative flex group",
           isFullScreenParam ? "h-screen w-screen" : "h-[calc(100vh-140px)]",
         )}
       >
         {selectedEntity && (
           <div
             className={cn(
-              "shrink-0 bg-card flex flex-col h-full overflow-hidden transition-all duration-300",
+              "shrink-0 flex h-full flex-col overflow-hidden bg-card transition-all duration-300",
               isSidebarCollapsed
                 ? "w-0 min-w-0 max-w-0 border-r-0"
                 : "w-[380px] min-w-[380px] max-w-[380px] border-r",
@@ -357,8 +748,12 @@ const MapContent = () => {
               <SidebarDetail
                 selectedEntity={selectedEntity}
                 soilData={soilData}
-                onClose={() => setSelectedEntity(null)}
+                canGoBack={selectionTrail.length > 1}
+                onBack={handleBack}
+                onClose={handleCloseSidebar}
                 onEditSoil={handleEditSoil}
+                onSelectChild={handleSelectChild}
+                onSelectSoilCluster={handleSelectSoilCluster}
                 isDetailExpanded={isDetailExpanded}
                 onToggleDetailExpanded={() =>
                   setIsDetailExpanded((prev) => !prev)
@@ -371,7 +766,7 @@ const MapContent = () => {
         {selectedEntity && (
           <button
             onClick={() => setIsSidebarCollapsed((prev) => !prev)}
-            className={`absolute top-[40dvh] z-[1100] ${isSidebarCollapsed && "-translate-x-1/2"} rounded-r-md border border-slate-200 bg-white px-1.5 py-4 text-slate-700 shadow-md transition-colors hover:bg-slate-50`}
+            className={`absolute top-[40dvh] z-[1100] ${isSidebarCollapsed ? "-translate-x-1/2" : ""} rounded-r-md border border-slate-200 bg-white px-1.5 py-4 text-slate-700 shadow-md transition-colors hover:bg-slate-50`}
             style={{ left: isSidebarCollapsed ? 16 : 380 }}
             title={
               isSidebarCollapsed
@@ -392,14 +787,24 @@ const MapContent = () => {
           </button>
         )}
 
-        <div className="flex-1 relative bg-slate-100 -z-0">
+        <div className="relative -z-0 flex-1 bg-slate-100">
           <SidebarFilter
             filterRegion={filterRegion}
             setFilterRegion={setFilterRegion}
             filterArea={filterArea}
             setFilterArea={setFilterArea}
-            regionOptions={regionOptions}
-            areaOptions={areaOptions}
+            regionOptions={MOCK_REGIONS.map((region) => ({
+              value: region.id.toString(),
+              label: region.code,
+            }))}
+            areaOptions={MOCK_AREAS.filter(
+              (area) =>
+                filterRegion === "all" ||
+                area.regionId.toString() === filterRegion,
+            ).map((area) => ({
+              value: area.id.toString(),
+              label: area.code,
+            }))}
           />
 
           <MapContainer
@@ -423,85 +828,86 @@ const MapContent = () => {
                   url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
                 />
               </LayersControl.BaseLayer>
-              <LayersControl.Overlay
-                checked={visibleLayers.zone}
-                name="Vùng trồng (Regions)"
-              >
+
+              <LayersControl.Overlay checked={visibleLayers.zone} name="Vùng trồng">
                 <LayerGroup>
                   {visibleLayers.zone && (
                     <GeoJSON
                       key="layer-zone"
-                      data={zoneData as any}
+                      data={zoneData as GeoJsonObject}
                       style={zoneStyle}
-                      onEachFeature={onEachFeature}
+                      onEachFeature={createFeatureHandler("zone", zoneFeatures)}
                     />
                   )}
                 </LayerGroup>
               </LayersControl.Overlay>
 
-              <LayersControl.Overlay
-                checked={visibleLayers.area}
-                name="Khu vực (Areas)"
-              >
+              <LayersControl.Overlay checked={visibleLayers.area} name="Khu vực">
                 <LayerGroup>
                   {visibleLayers.area && (
                     <GeoJSON
                       key="layer-area"
-                      data={areaData as any}
+                      data={areaData as GeoJsonObject}
                       style={areaStyle}
-                      onEachFeature={onEachFeature}
+                      onEachFeature={createFeatureHandler("area", areaFeatures)}
                     />
                   )}
                 </LayerGroup>
               </LayersControl.Overlay>
 
-              <LayersControl.Overlay
-                checked={visibleLayers.plot}
-                name="Lô trồng (Plots)"
-              >
+              <LayersControl.Overlay checked={visibleLayers.plot} name="Lô trồng">
                 <LayerGroup>
                   {visibleLayers.plot && (
                     <GeoJSON
                       key="layer-plot"
-                      data={plotData as any}
+                      data={plotData as GeoJsonObject}
                       style={plotStyle}
-                      onEachFeature={onEachFeature}
+                      onEachFeature={createFeatureHandler("plot", plotFeatures)}
                     />
                   )}
                 </LayerGroup>
               </LayersControl.Overlay>
 
-              <LayersControl.Overlay
-                checked={visibleLayers.plant}
-                name="Cây trồng (Plants)"
-              >
+              <LayersControl.Overlay checked={visibleLayers.plant} name="Cây trồng">
                 <LayerGroup>
                   {visibleLayers.plant && (
                     <GeoJSON
                       key="layer-plant"
-                      data={allPlantData}
+                      data={processedPlantData as GeoJsonObject}
                       pointToLayer={pointToLayer}
-                      onEachFeature={onEachFeature}
+                      onEachFeature={createFeatureHandler("plant", plantFeatures)}
                     />
                   )}
                 </LayerGroup>
               </LayersControl.Overlay>
             </LayersControl>
 
+            {selectedPath.length > 1 && (
+              <Polyline
+                positions={selectedPath}
+                pathOptions={{
+                  color: "#0ea5e9",
+                  weight: 3,
+                  opacity: 0.75,
+                  dashArray: "8 6",
+                }}
+              />
+            )}
+
             {visibleLayers.zone &&
-              (zoneData as any).features.map((f: any, i: number) => {
-                const center = getPolygonCenter(f);
+              zoneFeatures.map((feature, index) => {
+                const center = getPolygonCenter(feature);
                 if (!center) return null;
                 return (
                   <Marker
-                    key={`label-zone-${i}`}
+                    key={`label-zone-${index}`}
                     position={center}
                     icon={L.divIcon({
                       className: "bg-transparent border-none",
                       html: `
                         <div class="flex flex-col items-center justify-center">
                           <div class="w-2 h-2 bg-blue-500 rounded-full border border-white shadow-sm"></div>
-                          <div class="text-blue-800 text-xs font-bold whitespace-nowrap drop-shadow-md mt-0.5">${f.properties.name}</div>
+                          <div class="text-blue-800 text-xs font-bold whitespace-nowrap drop-shadow-md mt-0.5">${getFeatureLabel(feature)}</div>
                         </div>
                       `,
                       iconSize: [0, 0],
@@ -511,19 +917,19 @@ const MapContent = () => {
               })}
 
             {visibleLayers.area &&
-              (areaData as any).features.map((f: any, i: number) => {
-                const center = getPolygonCenter(f);
+              areaFeatures.map((feature, index) => {
+                const center = getPolygonCenter(feature);
                 if (!center) return null;
                 return (
                   <Marker
-                    key={`label-area-${i}`}
+                    key={`label-area-${index}`}
                     position={center}
                     icon={L.divIcon({
                       className: "bg-transparent border-none",
                       html: `
                         <div class="flex flex-col items-center justify-center">
                           <div class="w-1.5 h-1.5 bg-red-500 rounded-full border border-white shadow-sm"></div>
-                          <div class="text-red-700 text-[10px] font-bold whitespace-nowrap drop-shadow-md mt-0.5">${f.properties.name}</div>
+                          <div class="text-red-700 text-[10px] font-bold whitespace-nowrap drop-shadow-md mt-0.5">${getFeatureLabel(feature)}</div>
                         </div>
                       `,
                       iconSize: [0, 0],
@@ -533,19 +939,19 @@ const MapContent = () => {
               })}
 
             {visibleLayers.plot &&
-              (plotData as any).features.map((f: any, i: number) => {
-                const center = getPolygonCenter(f);
+              plotFeatures.map((feature, index) => {
+                const center = getPolygonCenter(feature);
                 if (!center) return null;
                 return (
                   <Marker
-                    key={`label-plot-${i}`}
+                    key={`label-plot-${index}`}
                     position={center}
                     icon={L.divIcon({
                       className: "bg-transparent border-none",
                       html: `
                         <div class="flex flex-col items-center justify-center">
                           <div class="w-1.5 h-1.5 bg-green-500 rounded-full border border-white shadow-sm"></div>
-                          <div class="text-green-900 text-[9px] font-bold whitespace-nowrap drop-shadow-md mt-0.5">${f.properties.name}</div>
+                          <div class="text-green-900 text-[9px] font-bold whitespace-nowrap drop-shadow-md mt-0.5">${getFeatureLabel(feature)}</div>
                         </div>
                       `,
                       iconSize: [0, 0],
@@ -557,7 +963,7 @@ const MapContent = () => {
             <MapLegend visibleLayers={visibleLayers} />
           </MapContainer>
 
-          <div className="absolute top-4 right-16 z-1000">
+          <div className="absolute right-16 top-4 z-[1000]">
             <button
               onClick={() => {
                 if (isFullScreenParam) {
@@ -569,9 +975,7 @@ const MapContent = () => {
                 window.open(url.toString(), "_blank");
               }}
               className="rounded-md border border-slate-200 bg-white p-2 text-slate-700 shadow-md transition-colors hover:bg-slate-50 hover:text-primary"
-              title={
-                isFullScreenParam ? "Thoát toàn màn hình" : "Toàn màn hình"
-              }
+              title={isFullScreenParam ? "Thoát toàn màn hình" : "Toàn màn hình"}
             >
               {isFullScreenParam ? (
                 <Minimize2 className="h-5 w-5" />
