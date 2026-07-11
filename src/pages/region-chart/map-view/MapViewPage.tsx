@@ -133,12 +133,16 @@ const getFeatureCenterPoint = (
 ): [number, number] | null => {
   if (!feature?.geometry) return null;
   if (feature.geometry.type === "Point") {
-    return getPointCoordinates(feature);
+    const point = getPointCoordinates(feature);
+    return point ? [point[1], point[0]] : null;
   }
 
   const center = getPolygonCenter(feature);
-  return center ? [center.lng, center.lat] : null;
+  return center ? [center.lat, center.lng] : null;
 };
+
+const toPolygonPoint = (center: [number, number]) =>
+  [center[1], center[0]] as [number, number];
 
 const getCollectionFeatures = (
   collection: unknown,
@@ -317,7 +321,7 @@ const MapContent = () => {
 
     const center = getFeatureCenterPoint(feature);
     const locationInfo = center
-      ? getLocationInfo(center[0], center[1])
+      ? getLocationInfo(center[1], center[0])
       : undefined;
 
     let children: DrilldownItem[] = [];
@@ -338,7 +342,7 @@ const MapContent = () => {
           center: getFeatureCenterPoint(childFeature),
         }))
         .filter(({ center: childCenter }) =>
-          childCenter ? isPointInPolygon(childCenter, polygon) : false,
+          childCenter ? isPointInPolygon(toPolygonPoint(childCenter), polygon) : false,
         );
 
       children = childItems.map(({ feature: childFeature, index: childIndex, center: childCenter }) => ({
@@ -364,7 +368,7 @@ const MapContent = () => {
           center: getFeatureCenterPoint(childFeature),
         }))
         .filter(({ center: childCenter }) =>
-          childCenter ? isPointInPolygon(childCenter, polygon) : false,
+          childCenter ? isPointInPolygon(toPolygonPoint(childCenter), polygon) : false,
         );
 
       children = childItems.map(({ feature: childFeature, index: childIndex, center: childCenter }) => ({
@@ -466,7 +470,9 @@ const MapContent = () => {
         center && zoneFeatures.length
           ? zoneFeatures.findIndex((feature) => {
               const polygon = getPolygonCoordinates(feature);
-              return polygon.length ? isPointInPolygon(center, polygon) : false;
+              return polygon.length
+                ? isPointInPolygon(toPolygonPoint(center), polygon)
+                : false;
             })
           : -1;
       return zoneIndex >= 0 ? [buildNode("zone", zoneIndex)!, node] : [node];
@@ -478,7 +484,9 @@ const MapContent = () => {
         center && areaFeatures.length
           ? areaFeatures.findIndex((feature) => {
               const polygon = getPolygonCoordinates(feature);
-              return polygon.length ? isPointInPolygon(center, polygon) : false;
+              return polygon.length
+                ? isPointInPolygon(toPolygonPoint(center), polygon)
+                : false;
             })
           : -1;
       const zoneIndex =
@@ -488,7 +496,7 @@ const MapContent = () => {
               const areaCenter = areaFeature ? getFeatureCenterPoint(areaFeature) : null;
               const polygon = getPolygonCoordinates(feature);
               return areaCenter && polygon.length
-                ? isPointInPolygon(areaCenter, polygon)
+                ? isPointInPolygon(toPolygonPoint(areaCenter), polygon)
                 : false;
             })
           : -1;
@@ -506,7 +514,9 @@ const MapContent = () => {
         center && plotFeatures.length
           ? plotFeatures.findIndex((feature) => {
               const polygon = getPolygonCoordinates(feature);
-              return polygon.length ? isPointInPolygon(center, polygon) : false;
+              return polygon.length
+                ? isPointInPolygon(toPolygonPoint(center), polygon)
+                : false;
             })
           : -1;
 
@@ -517,7 +527,7 @@ const MapContent = () => {
               const plotCenter = plotFeature ? getFeatureCenterPoint(plotFeature) : null;
               const polygon = getPolygonCoordinates(feature);
               return plotCenter && polygon.length
-                ? isPointInPolygon(plotCenter, polygon)
+                ? isPointInPolygon(toPolygonPoint(plotCenter), polygon)
                 : false;
             })
           : -1;
@@ -529,7 +539,7 @@ const MapContent = () => {
               const areaCenter = areaFeature ? getFeatureCenterPoint(areaFeature) : null;
               const polygon = getPolygonCoordinates(feature);
               return areaCenter && polygon.length
-                ? isPointInPolygon(areaCenter, polygon)
+                ? isPointInPolygon(toPolygonPoint(areaCenter), polygon)
                 : false;
             })
           : -1;
@@ -646,7 +656,25 @@ const MapContent = () => {
     return { center: DEFAULT_CENTER, zoom: 15 };
   }, [filterArea, filterRegion]);
 
-  const [mapCenter, mapZoom] = [mapViewport.center, mapViewport.zoom];
+  const selectionViewport = useMemo(() => {
+    if (!selectedEntity?.center) return null;
+
+    const zoomByLevel: Record<SelectedEntity["level"], number> = {
+      zone: 13,
+      area: 15,
+      plot: 17,
+      plant: 19,
+      "soil-cluster": 19,
+    };
+
+    return {
+      center: selectedEntity.center,
+      zoom: zoomByLevel[selectedEntity.level],
+    };
+  }, [selectedEntity]);
+
+  const mapCenter = selectionViewport?.center || mapViewport.center;
+  const mapZoom = selectionViewport?.zoom || mapViewport.zoom;
 
   const onZoomChange = (zoom: number) => {
     if (zoom < 14) {
