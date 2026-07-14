@@ -165,9 +165,9 @@ function SearchSelector({
                 </div>
 
                 <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                      Các vùng đã chọn
+                  <div className="mb-2 flex items-center justify-between gap-2 flex-nowrap">
+                    <div className="min-w-0 truncate text-[11px] font-semibold text-slate-500">
+                      Vùng đã chọn
                     </div>
                   </div>
                   <div className="max-h-24 overflow-y-auto pr-1">

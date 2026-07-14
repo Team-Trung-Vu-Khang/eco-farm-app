@@ -147,7 +147,7 @@ export function CertificateRegionScopeMap({
             <MapPin className="h-3.5 w-3.5 text-emerald-600" />
             Danh sách vùng trồng
           </div>
-          <div className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+          <div className="inline-flex shrink-0 min-w-max whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
             {selectedIds.length} đã chọn
           </div>
         </div>
