@@ -140,6 +140,7 @@ const SearchUnitPage = () => {
             regionLogoMarkers={regionLogoMarkers}
             selectedEnterpriseId={selectedEnterpriseId}
             isDetailOpen={!!selectedEnterpriseId}
+            onSelectEnterprise={setSelectedEnterpriseId}
           />
 
           {selectedEnterprise && (
