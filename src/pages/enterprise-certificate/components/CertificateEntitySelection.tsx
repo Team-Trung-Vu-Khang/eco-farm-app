@@ -1,3 +1,4 @@
+import type { FarmRegionResponse } from "@/features/farm/types/farm.type";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import {
   Avatar,
@@ -20,7 +21,6 @@ import {
 import { Check, MapPin, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
-import type { FarmRegionResponse } from "@/features/farm/types/farm.type";
 import type { EnterpriseCertificateFormValues } from "../data/enterprise-certificate-form.schema";
 import { CertificateRegionScopeMap } from "./CertificateRegionScopeMap";
 
@@ -38,6 +38,7 @@ interface SelectorItem {
   code: string;
   name: string;
   subtitle?: string;
+  details?: string;
 }
 
 interface SearchSelectorProps {
@@ -79,7 +80,8 @@ function SearchSelector({
       (item) =>
         item.name.toLowerCase().includes(keyword) ||
         item.code.toLowerCase().includes(keyword) ||
-        item.subtitle?.toLowerCase().includes(keyword),
+        item.subtitle?.toLowerCase().includes(keyword) ||
+        item.details?.toLowerCase().includes(keyword),
     );
   }, [items, searchTerm]);
 
@@ -127,8 +129,8 @@ function SearchSelector({
                   <MapPin className="h-5 w-5" />
                 </AvatarFallback>
               </Avatar>
-              <div className="min-w-0 flex-1">
-                <div className="mb-2 flex flex-wrap items-center gap-2">
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Badge
                     variant="secondary"
                     className="h-5 rounded-full px-2.5 py-0 text-[10px] font-mono"
@@ -150,26 +152,42 @@ function SearchSelector({
                     </Badge>
                   ) : null}
                 </div>
-                <div className="text-sm font-semibold text-slate-900">
-                  {primarySelectedItem.name}
+
+                <div className="space-y-1">
+                  <div className="text-sm font-semibold leading-tight text-slate-900">
+                    {primarySelectedItem.name}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {primarySelectedItem.subtitle ||
+                      primarySelectedItem.details ||
+                      "Chưa có thông tin bổ sung"}
+                  </div>
                 </div>
-                <div className="mt-1 space-y-1 text-xs text-muted-foreground">
-                  {primarySelectedItem.subtitle && (
-                    <div>{primarySelectedItem.subtitle}</div>
-                  )}
-                  {selectedItems.length > 1 ? (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {selectedItems.slice(1, 4).map((item) => (
+
+                <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+                  <div className="mb-2 flex items-center justify-between gap-2 flex-nowrap">
+                    <div className="min-w-0 truncate text-[11px] font-semibold text-slate-500">
+                      Vùng đã chọn
+                    </div>
+                  </div>
+                  <div className="max-h-24 overflow-y-auto pr-1">
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedItems.map((item) => (
                         <Badge
                           key={item.id}
-                          variant="outline"
+                          variant={
+                            item.id === primarySelectedItem.id
+                              ? "secondary"
+                              : "outline"
+                          }
                           className="rounded-full px-2 py-0 text-[10px]"
+                          title={item.name}
                         >
                           {item.name}
                         </Badge>
                       ))}
                     </div>
-                  ) : null}
+                  </div>
                 </div>
               </div>
               <div className="ml-auto hidden items-center gap-2 text-xs text-muted-foreground md:flex">
@@ -244,8 +262,8 @@ function SearchSelector({
                         <MapPin className="h-5 w-5" />
                       </AvatarFallback>
                     </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 line-clamp-2 min-h-10 text-sm font-semibold leading-tight text-slate-900">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="line-clamp-2 text-sm font-semibold leading-tight text-slate-900">
                         {item.name}
                       </div>
                       <div className="mb-1 flex flex-wrap gap-1.5">
@@ -264,6 +282,7 @@ function SearchSelector({
                       </div>
                       <div className="space-y-0.5 text-xs text-muted-foreground">
                         {item.subtitle && <div>{item.subtitle}</div>}
+                        {item.details && <div>{item.details}</div>}
                       </div>
                     </div>
                     <div className="mt-1">
@@ -373,7 +392,11 @@ export function CertificateEntitySelection({
         id: String(region.id),
         code: region.code || String(region.id),
         name: region.name || region.code || String(region.id),
-        subtitle: region.province || region.address || undefined,
+        subtitle:
+          typeof region.acreage === "number"
+            ? `${region.acreage} ha`
+            : region.province || region.district || region.ward || undefined,
+        details: region.address,
       })),
     [safeRegions],
   );

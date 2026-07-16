@@ -7,6 +7,7 @@ import {
   MapContainer,
   Marker,
   Polygon,
+  Tooltip,
   TileLayer,
   useMap,
 } from "react-leaflet";
@@ -39,6 +40,7 @@ interface EnterpriseMapSectionProps {
   }>;
   selectedEnterpriseId: number | null;
   isDetailOpen: boolean;
+  onSelectEnterprise: (enterpriseId: number) => void;
 }
 
 type LeafletMapLike = L.Map & {
@@ -63,6 +65,12 @@ const makeImageIcon = (image: string, size: number) =>
     popupAnchor: [0, -size],
     className: "rounded-full border border-white shadow-lg",
   });
+
+const getEnterpriseTypeLabel = (type: "enterprise" | "farm" | "cooperative") => {
+  if (type === "enterprise") return "Doanh nghiệp";
+  if (type === "cooperative") return "Hợp tác xã";
+  return "Nông hộ";
+};
 
 const toClosedPath = (coords: [number, number][]) => {
   if (!coords || coords.length < 3) return [];
@@ -170,6 +178,7 @@ export const EnterpriseMapSection: React.FC<EnterpriseMapSectionProps> = ({
   enterpriseMarkers,
   regionLogoMarkers,
   isDetailOpen,
+  onSelectEnterprise,
 }) => {
   return (
     <div className="flex-1 flex flex-col relative bg-slate-100 z-1">
@@ -219,7 +228,27 @@ export const EnterpriseMapSection: React.FC<EnterpriseMapSectionProps> = ({
                   : defaultLeafletIcon
               }
               title={`${marker.code} - ${marker.name}`}
-            />
+              eventHandlers={{
+                click: () => onSelectEnterprise(marker.id),
+              }}
+            >
+              <Tooltip
+                direction="top"
+                offset={[0, -18]}
+                opacity={1}
+                sticky={false}
+                className="enterprise-tooltip"
+              >
+                <div className="min-w-[180px] rounded-md bg-slate-900 px-3 py-2 shadow-xl">
+                  <div className="text-xs font-semibold text-white line-clamp-2">
+                    {marker.name}
+                  </div>
+                  <div className="mt-1 text-[10px] uppercase tracking-wider text-slate-300">
+                    {getEnterpriseTypeLabel(marker.type)}
+                  </div>
+                </div>
+              </Tooltip>
+            </Marker>
           ))}
 
           {regionLogoMarkers.map((marker) => (
@@ -244,6 +273,15 @@ export const EnterpriseMapSection: React.FC<EnterpriseMapSectionProps> = ({
             width: 100%;
             font-family: inherit;
             background: #e2e8f0;
+          }
+          .enterprise-tooltip.leaflet-tooltip {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+          }
+          .enterprise-tooltip.leaflet-tooltip::before {
+            border-top-color: #0f172a;
           }
           .leaflet-pane,
           .leaflet-tile,
