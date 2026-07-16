@@ -174,7 +174,7 @@ export function BankInfoStep({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label className="text-sm font-semibold">
                 Chọn tài khoản từ danh sách
@@ -259,7 +259,7 @@ export function BankInfoStep({
                 className="bg-muted/30 focus-visible:ring-primary"
               />
             </div>
-            <div className="md:col-span-2 space-y-2">
+            <div className="sm:col-span-2 space-y-2">
               <Label className="text-sm font-semibold">Ghi chú</Label>
               <Input
                 value={newBankAccount.note}
@@ -342,7 +342,7 @@ export function BankInfoStep({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {filteredAccounts.map(({ account, index }) => {
               const selectedBankMeta = bankMasterData.find(
                 (bank) => String(bank.id) === String(account.bankId),

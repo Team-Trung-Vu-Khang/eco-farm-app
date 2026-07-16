@@ -15,7 +15,7 @@ export function ConfirmStep({ formData, enterpriseName }: ConfirmStepProps) {
           <h3 className="font-semibold text-lg flex items-center gap-2 border-b pb-2">
             <FileText className="w-5 h-5 text-primary" /> Thông tin chung
           </h3>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Mã chi nhánh:</span>
               <span className="font-medium">{formData.code}</span>
@@ -24,7 +24,7 @@ export function ConfirmStep({ formData, enterpriseName }: ConfirmStepProps) {
               <span className="text-muted-foreground">Tên chi nhánh:</span>
               <span className="font-medium">{formData.name}</span>
             </div>
-            <div className="flex justify-between col-span-2">
+            <div className="flex justify-between col-span-1 sm:col-span-2">
               <span className="text-muted-foreground">Đơn vị chủ quản:</span>
               <span className="font-medium">{enterpriseName || "-"}</span>
             </div>
@@ -48,11 +48,11 @@ export function ConfirmStep({ formData, enterpriseName }: ConfirmStepProps) {
             <MapPin className="w-5 h-5 text-primary" /> Địa chỉ & Liên hệ
           </h3>
           <div className="space-y-3 text-sm">
-            <div className="flex justify-between">
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
               <span className="text-muted-foreground min-w-[100px]">
                 Địa chỉ:
               </span>
-              <span className="font-medium text-right">
+              <span className="font-medium text-left sm:text-right">
                 {[
                   formData.address,
                   formData.ward,
@@ -63,9 +63,9 @@ export function ConfirmStep({ formData, enterpriseName }: ConfirmStepProps) {
                   .join(", ")}
               </span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
               <span className="text-muted-foreground">Website:</span>
-              <span className="font-medium">{formData.website || "-"}</span>
+              <span className="font-medium break-all">{formData.website || "-"}</span>
             </div>
           </div>
         </div>

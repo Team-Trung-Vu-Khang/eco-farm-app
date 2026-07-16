@@ -108,9 +108,9 @@ export default function EnterpriseDetailPage() {
           <EnterpriseOverviewCard data={data} setLocation={setLocation} />
         </div>
 
-        <div className="lg:col-span-2">
-          <Tabs defaultValue="info" className="w-full">
-            <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent gap-6">
+        <div className="lg:col-span-2 w-full overflow-auto">
+          <Tabs defaultValue="info" className="w-full overflow-auto">
+            <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent gap-6 overflow-auto">
               <TabsTrigger
                 value="info"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-3"

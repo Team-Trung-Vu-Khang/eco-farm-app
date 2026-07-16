@@ -217,7 +217,7 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label className="text-sm font-semibold">
                 Chọn tài khoản từ danh sách
@@ -294,7 +294,7 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
                 className="bg-muted/30 focus-visible:ring-primary"
               />
             </div>
-            <div className="md:col-span-2 space-y-2">
+            <div className="sm:col-span-2 space-y-2">
               <Label className="text-sm font-semibold">Ghi chú</Label>
               <Input
                 value={draftBank.note}
@@ -382,7 +382,7 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {filteredAccounts.map((account) => {
               const bankInfo = bankMasterData.find(
                 (bank) =>
@@ -463,7 +463,7 @@ export function BankingStep({ formData, updateFormData }: BankingStepProps) {
                             onClick={() =>
                               handleSetPrimaryBankAccount(account.id)
                             }
-                            className="ml-auto h-7 px-2 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                            className="ml-auto h-7 px-2 text-muted-foreground hover:bg-muted/50"
                           >
                             Đặt làm chính
                           </Button>

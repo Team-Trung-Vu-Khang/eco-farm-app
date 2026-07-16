@@ -190,7 +190,7 @@ export function ConfirmStep({
         {/* Detailed Info (Column 2-3) */}
         <div className="lg:col-span-2 space-y-8">
           <Tabs defaultValue="legal" className="w-full">
-            <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent gap-8 mb-6">
+            <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent gap-4 sm:gap-8 mb-6 overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-none">
               <TabsTrigger
                 value="legal"
                 className="text-sm font-bold rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-4 tracking-wide"
@@ -226,7 +226,7 @@ export function ConfirmStep({
                       Thông tin thuế & Pháp lý
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="grid md:grid-cols-2 gap-8 py-6 px-6">
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 py-6 px-6">
                     <div className="space-y-6">
                       <div>
                         <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
@@ -270,10 +270,10 @@ export function ConfirmStep({
                       {formData.contacts.map((contact, i) => (
                         <div
                           key={i}
-                          className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-border/50 hover:bg-muted/50 transition-colors"
+                          className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 bg-muted/30 rounded-xl border border-border/50 hover:bg-muted/50 gap-3 sm:gap-4 transition-colors"
                         >
                           <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
                               <User className="w-5 h-5" />
                             </div>
                             <div>
@@ -281,13 +281,13 @@ export function ConfirmStep({
                                 {contact.name}
                               </div>
                               <div className="text-sm font-medium text-muted-foreground flex items-center gap-2 mt-0.5">
-                                <Phone className="w-3 h-3" /> {contact.phone}
+                                <Phone className="w-3 h-3 text-primary shrink-0" /> {contact.phone}
                               </div>
                             </div>
                           </div>
                           {contact.email && (
-                            <div className="text-sm font-medium text-muted-foreground flex items-center gap-2 bg-background/50 px-3 py-1.5 rounded-lg border">
-                              <Mail className="w-3 h-3 text-primary" />{" "}
+                            <div className="text-sm font-medium text-muted-foreground flex items-center justify-center sm:justify-start gap-2 bg-background/50 px-3 py-1.5 rounded-lg border w-full sm:w-auto truncate" title={contact.email}>
+                              <Mail className="w-3 h-3 text-primary shrink-0" />{" "}
                               {contact.email}
                             </div>
                           )}
@@ -342,7 +342,7 @@ export function ConfirmStep({
                               Hoạt động
                             </Badge>
                           </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-muted/30 p-4 rounded-lg">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-muted/30 p-4 rounded-lg">
                             <div>
                               <span className="text-[10px] text-muted-foreground uppercase font-bold block mb-1">
                                 Mã số thuế
@@ -393,7 +393,7 @@ export function ConfirmStep({
                 value="banks"
                 className="m-0 space-y-6 animate-in fade-in duration-300"
               >
-                <div className="flex flex-col gap-4 justify-between bg-muted/5 p-4 rounded-xl border border-primary/10">
+                <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between bg-muted/5 p-4 rounded-xl border border-primary/10">
                   <div className="flex items-center gap-3">
                     <CreditCard className="w-5 h-5 text-primary" />
                     <h4 className="font-bold text-lg">Tài khoản thanh toán</h4>
@@ -422,7 +422,7 @@ export function ConfirmStep({
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     {formData.bankAccounts
                       .filter((acc) => {
                         const query = confirmBankSearchQuery.toLowerCase();
@@ -466,7 +466,7 @@ export function ConfirmStep({
                                 </div>
                                 <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
                               </div>
-                              <div className="grid grid-cols-2 gap-4 text-xs font-medium border-t pt-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-medium border-t pt-4">
                                 <div>
                                   <span className="text-muted-foreground uppercase text-[9px] font-bold block mb-0.5">
                                     Chủ tài khoản
@@ -511,7 +511,7 @@ export function ConfirmStep({
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {formData.documents.map((doc, i) => (
                       <Card
                         key={i}

@@ -159,7 +159,7 @@ export function ContactInfoStep({
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>
                 Số điện thoại <span className="text-red-500">*</span>
@@ -233,7 +233,7 @@ export function ContactInfoStep({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {formData.contactInfos.map((contactInfo, index) => (
               <Card
                 key={contactInfo.id}
@@ -265,7 +265,7 @@ export function ContactInfoStep({
                           onClick={() =>
                             handleSetPrimaryContactInfo(contactInfo.id)
                           }
-                          className="h-8 px-2 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                          className="h-8 px-2 text-muted-foreground hover:bg-muted/50"
                         >
                           Đặt làm chính
                         </Button>

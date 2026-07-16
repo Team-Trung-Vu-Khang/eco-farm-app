@@ -103,7 +103,7 @@ export function BasicInfoStep({ enterprises, isEdit }: BasicInfoStepProps) {
         ) : null}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="code" required>
             Mã chi nhánh
@@ -160,7 +160,7 @@ export function BasicInfoStep({ enterprises, isEdit }: BasicInfoStepProps) {
           ) : null}
         </div>
 
-        <div className="col-span-2 space-y-2">
+        <div className="col-span-1 sm:col-span-2 space-y-2">
           <Label htmlFor="website">Website</Label>
           <Controller
             control={control}
@@ -224,7 +224,7 @@ export function BasicInfoStep({ enterprises, isEdit }: BasicInfoStepProps) {
           <FileText className="h-5 w-5 text-primary" />
           <h3 className="font-semibold">Thông tin thuế</h3>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="taxCode">Mã số thuế chi nhánh</Label>
             <Controller

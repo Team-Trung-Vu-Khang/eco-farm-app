@@ -43,7 +43,7 @@ export function TeamFormCard({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {isEdit ? (
             <>
               <div className="space-y-2">
@@ -132,7 +132,7 @@ export function TeamFormCard({
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="department">Thuộc phòng ban</Label>
             <Controller

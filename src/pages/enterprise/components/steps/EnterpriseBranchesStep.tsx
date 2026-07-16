@@ -74,7 +74,7 @@ export function EnterpriseBranchesStep() {
               className="space-y-4 animate-in fade-in-50 duration-300"
             >
               <div className="space-y-6">
-                <div className="flex items-center justify-between p-4 bg-blue-50/50 border border-blue-100 rounded-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-blue-50/50 border border-blue-100 rounded-xl">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
                       <Download className="w-5 h-5 text-blue-600" />
@@ -144,7 +144,7 @@ export function EnterpriseBranchesStep() {
               value="create"
               className="space-y-4 animate-in fade-in-50 duration-300"
             >
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label required>Tên chi nhánh</Label>
                   <Input
@@ -214,7 +214,7 @@ export function EnterpriseBranchesStep() {
                     placeholder="Địa chỉ hoạt động"
                   />
                 </div>
-                <div className="col-span-2 space-y-2">
+                <div className="col-span-1 sm:col-span-2 space-y-2">
                   <Label>Ghi chú</Label>
                   <Textarea
                     value={newBranch.note}
@@ -255,7 +255,8 @@ export function EnterpriseBranchesStep() {
           </div>
         ) : (
           <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[600px]">
               <thead>
                 <tr className="border-b bg-muted/40">
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">
@@ -311,6 +312,7 @@ export function EnterpriseBranchesStep() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>

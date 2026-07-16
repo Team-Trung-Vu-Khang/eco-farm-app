@@ -172,7 +172,7 @@ export const EnterpriseMapSection: React.FC<EnterpriseMapSectionProps> = ({
   isDetailOpen,
 }) => {
   return (
-    <div className="flex-1 flex flex-col relative bg-slate-100">
+    <div className="flex-1 flex flex-col relative bg-slate-100 z-1">
       <div className="flex-1 relative">
         <MapContainer
           key={mapRenderKey}
@@ -254,7 +254,7 @@ export const EnterpriseMapSection: React.FC<EnterpriseMapSectionProps> = ({
         `}</style>
 
         {!isDetailOpen && (
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 w-max max-w-[90%]">
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-1000 w-max max-w-[90%]">
             <Card className="bg-white/95 backdrop-blur shadow-xl border rounded-md overflow-hidden">
               <div className="px-6 py-4 flex items-center gap-4 border-b border-slate-100 bg-slate-100/30">
                 <Layers className="text-primary animate-pulse" size={24} />

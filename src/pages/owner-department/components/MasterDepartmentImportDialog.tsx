@@ -192,7 +192,7 @@ export function MasterDepartmentImportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-6">
+      <DialogContent className="w-[95vw] sm:w-full max-w-2xl max-h-[85vh] flex flex-col p-4 sm:p-6">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold text-slate-900">
             Thêm phòng ban từ danh sách mẫu
@@ -203,7 +203,7 @@ export function MasterDepartmentImportDialog({
         </DialogHeader>
 
         {/* Search and Select All Bar */}
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
@@ -226,7 +226,7 @@ export function MasterDepartmentImportDialog({
         </div>
 
         {/* List Content */}
-        <div className="flex-1 overflow-hidden border border-slate-100 rounded-2xl bg-slate-50/50 p-2">
+        <div className="flex-1 min-h-0 w-full overflow-hidden border border-slate-100 rounded-2xl bg-slate-50/50 p-2">
           {masterDataQuery.loading && page === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-slate-400">
               <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-500 mb-2"></span>
@@ -243,8 +243,8 @@ export function MasterDepartmentImportDialog({
               </p>
             </div>
           ) : (
-            <ScrollArea className="h-[45vh] pr-2">
-              <div className="space-y-2">
+            <ScrollArea className="h-[45vh] w-full pr-2">
+              <div className="space-y-2 w-full min-w-0">
                 {filteredDepartments.map((dep) => {
                   const isChecked = selectedIds.includes(dep.id);
                   return (
@@ -252,7 +252,7 @@ export function MasterDepartmentImportDialog({
                       key={dep.id}
                       onClick={() => handleToggleSelect(dep.id)}
                       className={`
-                        flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer select-none
+                        flex w-full min-w-0 items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer select-none
                         ${
                           isChecked
                             ? "bg-white border-violet-200 shadow-sm"
@@ -270,11 +270,14 @@ export function MasterDepartmentImportDialog({
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-semibold text-slate-800 truncate">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                          <p className="font-semibold text-slate-800 break-words">
                             {dep.name}
                           </p>
-                          <span className="inline-block shrink-0 px-2 py-0.5 text-xs font-semibold rounded-md bg-slate-100 text-slate-600 uppercase">
+                          <span
+                            className="inline-block self-start shrink-0 px-2 py-0.5 text-[10px] sm:text-xs font-semibold rounded-md bg-slate-100 text-slate-600 uppercase"
+                            title={dep.code}
+                          >
                             {dep.code}
                           </span>
                         </div>

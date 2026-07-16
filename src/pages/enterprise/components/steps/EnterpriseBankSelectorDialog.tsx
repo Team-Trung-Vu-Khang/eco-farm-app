@@ -117,8 +117,8 @@ export function EnterpriseBankSelectorDialog({
         onOpenChange(nextOpen);
       }}
     >
-      <DialogContent className="flex h-[90vh] max-h-[90vh] max-w-4xl flex-col overflow-hidden border-none p-0 shadow-2xl">
-        <DialogHeader className="shrink-0 border-b bg-slate-50 px-6 py-5">
+      <DialogContent className="flex h-[90vh] max-h-[90vh] w-[95vw] sm:w-full max-w-4xl flex-col overflow-hidden border-none p-0 shadow-2xl">
+        <DialogHeader className="shrink-0 border-b bg-slate-50 px-4 py-4 sm:px-6 sm:py-5">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Search className="h-4 w-4" />
@@ -131,8 +131,8 @@ export function EnterpriseBankSelectorDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="shrink-0 border-b bg-white px-6 py-4 flex items-start flex-row gap-4">
-          <div className="mb-3 max-w-32">
+        <div className="shrink-0 border-b bg-white px-4 py-4 sm:px-6 flex flex-col sm:flex-row items-stretch sm:items-start gap-3 sm:gap-4">
+          <div className="w-full sm:max-w-32">
             <Select
               value={viewMode}
               onValueChange={(value) => {
@@ -166,7 +166,7 @@ export function EnterpriseBankSelectorDialog({
         </div>
 
         <ScrollArea className="min-h-0 flex-1">
-          <div className="grid gap-3 p-6 sm:grid-cols-2">
+          <div className="grid gap-3 p-4 sm:p-6 sm:grid-cols-2">
             {loading && (
               <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-sm text-muted-foreground">
                 Đang tải danh sách tài khoản...
@@ -184,7 +184,7 @@ export function EnterpriseBankSelectorDialog({
                     type="button"
                     onClick={() => setTempSelectedId(account.id)}
                     className={[
-                      "group flex items-start gap-4 rounded-2xl border bg-white p-4 text-left transition-all hover:border-primary/30 hover:shadow-md",
+                      "group flex w-full min-w-0 items-start gap-4 rounded-2xl border bg-white p-4 text-left transition-all hover:border-primary/30 hover:shadow-md",
                       isSelected
                         ? "border-primary/40 bg-primary/5 shadow-sm"
                         : "border-slate-200",
@@ -269,7 +269,7 @@ export function EnterpriseBankSelectorDialog({
                     type="button"
                     onClick={() => setTempSelectedId(bank.id)}
                     className={[
-                      "group flex items-start gap-4 rounded-2xl border bg-white p-4 text-left transition-all hover:border-primary/30 hover:shadow-md",
+                      "group flex w-full min-w-0 items-start gap-4 rounded-2xl border bg-white p-4 text-left transition-all hover:border-primary/30 hover:shadow-md",
                       isSelected
                         ? "border-primary/40 bg-primary/5 shadow-sm"
                         : "border-slate-200",
@@ -347,7 +347,7 @@ export function EnterpriseBankSelectorDialog({
           </div>
         </ScrollArea>
 
-        <DialogFooter className="shrink-0 border-t bg-white px-6 py-4">
+        <DialogFooter className="shrink-0 border-t bg-white px-4 py-4 sm:px-6">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Hủy
           </Button>

@@ -191,9 +191,9 @@ function EnterpriseBasicInfoStepContent({
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex flex-col items-center gap-4 mb-6">
         <Label>Logo / Hình ảnh đại diện</Label>
-        <div className="flex items-center gap-6 w-full">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-6 w-full">
           <div
-            className={`w-32 h-32 rounded-lg border-2 border-dashed flex items-center justify-center overflow-hidden relative cursor-pointer transition-all group ${isDragging["logo"] ? "border-primary bg-primary/5 scale-105" : "border-gray-300 bg-gray-50 hover:border-primary"}`}
+            className={`w-32 h-32 rounded-lg border-2 border-dashed flex items-center justify-center overflow-hidden relative cursor-pointer transition-all group shrink-0 ${isDragging["logo"] ? "border-primary bg-primary/5 scale-105" : "border-gray-300 bg-gray-50 hover:border-primary"}`}
             onClick={() => document.getElementById("avatar-upload")?.click()}
             onDragEnter={(e) => handleDrag("logo", e)}
             onDragOver={(e) => handleDrag("logo", e)}
@@ -218,7 +218,7 @@ function EnterpriseBasicInfoStepContent({
               </div>
             )}
           </div>
-          <div className="flex-1 space-y-2">
+          <div className="flex-1 space-y-2 text-center sm:text-left">
             <input
               id="avatar-upload"
               type="file"
@@ -243,7 +243,7 @@ function EnterpriseBasicInfoStepContent({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="code" required>
             Mã doanh nghiệp
@@ -304,7 +304,7 @@ function EnterpriseBasicInfoStepContent({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="brandName">Tên thương hiệu</Label>
           <Controller
@@ -343,7 +343,7 @@ function EnterpriseBasicInfoStepContent({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="taxAuthority">Cơ quan thuế</Label>
           <Controller
@@ -382,7 +382,7 @@ function EnterpriseBasicInfoStepContent({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="taxAddress">Địa chỉ thuế</Label>
           <Controller
@@ -436,7 +436,7 @@ function EnterpriseBasicInfoStepContent({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="classification">Phân loại</Label>
           <Controller
@@ -454,7 +454,7 @@ function EnterpriseBasicInfoStepContent({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="representative" required>
             Người đại diện pháp luật
@@ -527,7 +527,7 @@ function EnterpriseBasicInfoStepContent({
           <MapPin className="w-5 h-5 text-primary" />
           <h3 className="font-semibold">Địa chỉ trụ sở</h3>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="province" required>
               Tỉnh / Thành phố

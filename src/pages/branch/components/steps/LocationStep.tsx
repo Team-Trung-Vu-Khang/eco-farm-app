@@ -14,7 +14,13 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapPin } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import {
+  MapContainer,
+  Marker,
+  TileLayer,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
 
 import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
 import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
@@ -215,30 +221,33 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
     return value as LatLngLike;
   };
 
-  const extractLatLng = useCallback((source: unknown): { lat: number; lon: number } | null => {
-    const candidates: Array<LatLngLike | undefined> = [
-      toLatLngLike(toLatLngLike(source)?.location),
-      toLatLngLike(toLatLngLike(source)?.latLng),
-      toLatLngLike(toLatLngLike(source)?.geometry?.location),
-      toLatLngLike(source),
-    ];
+  const extractLatLng = useCallback(
+    (source: unknown): { lat: number; lon: number } | null => {
+      const candidates: Array<LatLngLike | undefined> = [
+        toLatLngLike(toLatLngLike(source)?.location),
+        toLatLngLike(toLatLngLike(source)?.latLng),
+        toLatLngLike(toLatLngLike(source)?.geometry?.location),
+        toLatLngLike(source),
+      ];
 
-    for (const candidate of candidates) {
-      const latRaw = candidate?.lat ?? candidate?.latitude;
-      const lonRaw =
-        candidate?.lng ??
-        candidate?.lon ??
-        candidate?.longitude ??
-        candidate?.long;
-      const lat = Number(latRaw);
-      const lon = Number(lonRaw);
-      if (Number.isFinite(lat) && Number.isFinite(lon)) {
-        return { lat, lon };
+      for (const candidate of candidates) {
+        const latRaw = candidate?.lat ?? candidate?.latitude;
+        const lonRaw =
+          candidate?.lng ??
+          candidate?.lon ??
+          candidate?.longitude ??
+          candidate?.long;
+        const lat = Number(latRaw);
+        const lon = Number(lonRaw);
+        if (Number.isFinite(lat) && Number.isFinite(lon)) {
+          return { lat, lon };
+        }
       }
-    }
 
-    return null;
-  }, []);
+      return null;
+    },
+    [],
+  );
 
   const normalizeMap4dSuggestion = useCallback(
     (
@@ -362,7 +371,12 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
       return;
     }
 
-    const current = [formData.address, formData.ward, formData.district, formData.city]
+    const current = [
+      formData.address,
+      formData.ward,
+      formData.district,
+      formData.city,
+    ]
       .filter(Boolean)
       .join(", ");
     setSearchAddress(current);
@@ -516,7 +530,7 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
           </MapContainer>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Vĩ độ</Label>
             <Input value={formData.latitude.toFixed(6)} disabled />
@@ -545,11 +559,13 @@ export function LocationStep({ formData, updateFormData }: LocationStepProps) {
             <Input
               id="address"
               value={formData.address}
-              onChange={(event) => updateFormData({ address: event.target.value })}
+              onChange={(event) =>
+                updateFormData({ address: event.target.value })
+              }
               placeholder="Số nhà, tên đường"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="city">Tỉnh / Thành phố</Label>
               <Select

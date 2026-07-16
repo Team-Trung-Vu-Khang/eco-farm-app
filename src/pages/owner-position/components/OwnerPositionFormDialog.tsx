@@ -212,7 +212,7 @@ export function OwnerPositionFormDialog({
       loading={isSubmitting}
     >
       <div className="space-y-4 max-h-[70dvh] overflow-y-auto px-1">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="code" required>
               Mã chức vụ
@@ -409,7 +409,7 @@ export function OwnerPositionFormDialog({
 
                       return (
                         <div className="space-y-3">
-                          <div className="grid gap-3 md:grid-cols-2">
+                          <div className="grid gap-3 sm:grid-cols-2">
                             <div className="space-y-2">
                               <Label
                                 htmlFor={`documents.${index}.type`}

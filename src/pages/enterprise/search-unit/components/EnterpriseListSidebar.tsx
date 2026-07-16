@@ -132,10 +132,10 @@ export const EnterpriseListSidebar: React.FC<EnterpriseListSidebarProps> = ({
       {/* Expand Button - Positioned absolutely so it's visible even when width is 0 */}
       <button
         className={cn(
-          "absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-12 bg-white border border-slate-200 rounded-full shadow-md flex items-center justify-center text-slate-400 hover:text-primary transition-all z-30",
+          "absolute top-1/2 -translate-y-1/2 w-6 h-12 bg-white border border-slate-200 rounded-full shadow-md flex items-center justify-center text-slate-400 hover:text-primary transition-all z-30",
           isCollapsed
-            ? "opacity-100 translate-x-0"
-            : "opacity-0 invisible translate-x-[-10px]",
+            ? "left-0 opacity-100 translate-x-0"
+            : "-right-3 opacity-0 invisible translate-x-[-10px]",
         )}
         onClick={() => onToggleCollapse(false)}
       >

@@ -45,7 +45,7 @@ export function BankInfoCard() {
         <CardDescription>Thông tin tài khoản nhận lương/thưởng</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField
             control={control}
             name="bankName"
@@ -80,7 +80,7 @@ export function BankInfoCard() {
             )}
           />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField
             control={control}
             name="accountNumber"

@@ -218,7 +218,7 @@ export function EnterpriseConfirmationStep() {
         {/* Detailed Info (Column 2-3) */}
         <div className="lg:col-span-2 space-y-8">
           <Tabs defaultValue="legal" className="w-full">
-            <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent gap-8 mb-6">
+            <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent gap-4 sm:gap-8 mb-6 overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-none">
               <TabsTrigger
                 value="legal"
                 className="text-sm font-bold rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-4 tracking-wide"
@@ -260,7 +260,7 @@ export function EnterpriseConfirmationStep() {
                       Thông tin thuế & Pháp lý
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="grid md:grid-cols-2 gap-8 py-6 px-6">
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 py-6 px-6">
                     <div className="space-y-6">
                       <div>
                         <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
@@ -301,7 +301,7 @@ export function EnterpriseConfirmationStep() {
                         </div>
                       </div>
                     </div>
-                    <div className="col-span-2">
+                    <div className="col-span-1 md:col-span-2">
                       <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
                         Mô tả doanh nghiệp
                       </div>
@@ -320,7 +320,7 @@ export function EnterpriseConfirmationStep() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4 py-6 px-6">
-                    <div className="grid md:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div>
                         <div className="text-xs text-muted-foreground mb-1 uppercase font-bold tracking-widest">
                           Hotline {defaultContact ? "(Liên hệ đầu tiên)" : ""}
@@ -388,7 +388,7 @@ export function EnterpriseConfirmationStep() {
                               Hoạt động
                             </Badge>
                           </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-muted/30 p-4 rounded-lg">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-muted/30 p-4 rounded-lg">
                             <div>
                               <span className="text-[10px] text-muted-foreground uppercase font-bold block mb-1">
                                 Mã số thuế
@@ -508,7 +508,7 @@ export function EnterpriseConfirmationStep() {
                 value="banks"
                 className="m-0 space-y-6 animate-in fade-in duration-300"
               >
-                <div className="flex flex-col gap-4 justify-between bg-muted/5 p-4 rounded-xl border border-primary/10">
+                <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between bg-muted/5 p-4 rounded-xl border border-primary/10">
                   <div className="flex items-center gap-3">
                     <CreditCard className="w-5 h-5 text-primary" />
                     <h4 className="font-bold text-lg">Tài khoản thanh toán</h4>
@@ -581,7 +581,7 @@ export function EnterpriseConfirmationStep() {
                                 </div>
                                 <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
                               </div>
-                              <div className="grid grid-cols-2 gap-4 text-xs font-medium border-t pt-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-medium border-t pt-4">
                                 <div>
                                   <span className="text-muted-foreground uppercase text-[9px] font-bold block mb-0.5">
                                     Chủ tài khoản

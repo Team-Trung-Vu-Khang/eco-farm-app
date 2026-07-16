@@ -57,8 +57,8 @@ export function ContactSelectorDialog({
         onOpenChange(nextOpen);
       }}
     >
-      <DialogContent className="flex h-[90vh] max-h-[90vh] max-w-4xl flex-col overflow-hidden rounded-2xl border-none p-0 shadow-2xl">
-        <DialogHeader className="shrink-0 border-b bg-slate-50 px-6 py-5">
+      <DialogContent className="flex h-[90vh] max-h-[90vh] w-[95vw] sm:w-full max-w-4xl flex-col overflow-hidden rounded-2xl border-none p-0 shadow-2xl">
+        <DialogHeader className="shrink-0 border-b bg-slate-50 px-4 py-4 sm:px-6 sm:py-5">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Search className="h-4 w-4" />
@@ -70,7 +70,7 @@ export function ContactSelectorDialog({
           </p>
         </DialogHeader>
 
-        <div className="shrink-0 border-b bg-white px-6 py-4">
+        <div className="shrink-0 border-b bg-white px-4 py-4 sm:px-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -80,23 +80,28 @@ export function ContactSelectorDialog({
               className="h-11 rounded-xl border-slate-200 bg-slate-50 pl-10 transition-all focus:bg-white"
             />
           </div>
-          <div className="mt-3 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
             <span>
               {contactsQuery.loading
                 ? "Đang tải..."
                 : `${filteredContacts.length} kết quả`}
             </span>
             {selectedContact && (
-              <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-primary">
-                <Check className="h-3 w-3" />
-                Đang chọn: {selectedContact.fullName}
+              <span
+                className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-primary max-w-full"
+                title={`Đang chọn: ${selectedContact.fullName}`}
+              >
+                <Check className="h-3 w-3 shrink-0" />
+                <span className="truncate">
+                  Đang chọn: {selectedContact.fullName}
+                </span>
               </span>
             )}
           </div>
         </div>
 
         <ScrollArea className="min-h-0 flex-1">
-          <div className="grid gap-3 p-6 sm:grid-cols-2">
+          <div className="grid gap-3 p-4 sm:p-6 sm:grid-cols-2">
             {filteredContacts.map((contact) => {
               const isSelected = tempSelectedId === contact.id;
 
@@ -106,7 +111,7 @@ export function ContactSelectorDialog({
                   type="button"
                   onClick={() => setTempSelectedId(contact.id)}
                   className={cn(
-                    "group flex items-start gap-4 rounded-2xl border bg-white p-4 text-left transition-all hover:border-primary/30 hover:shadow-md",
+                    "group flex w-full min-w-0 items-start gap-4 rounded-2xl border bg-white p-4 text-left transition-all hover:border-primary/30 hover:shadow-md",
                     isSelected
                       ? "border-primary/40 bg-primary/5 shadow-sm"
                       : "border-slate-200",
@@ -128,7 +133,9 @@ export function ContactSelectorDialog({
                         </h3>
                         <p className="mt-1 line-clamp-2 text-xs text-slate-500">
                           {contact.position || ""}
-                          {contact.position && contact.department?.name ? " • " : ""}
+                          {contact.position && contact.department?.name
+                            ? " • "
+                            : ""}
                           {contact.department?.name || ""}
                         </p>
                       </div>
@@ -145,11 +152,18 @@ export function ContactSelectorDialog({
                     </div>
 
                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                      <Badge
+                        variant="secondary"
+                        className="bg-slate-100 text-slate-700"
+                      >
                         {contact.phone}
                       </Badge>
-                      <Badge variant="secondary" className="bg-slate-100 text-slate-700">
-                        {contact.entityName}
+                      <Badge
+                        variant="secondary"
+                        className="bg-slate-100 text-slate-700 max-w-full"
+                        title={contact.entityName ?? ""}
+                      >
+                        <span className="truncate">{contact.entityName}</span>
                       </Badge>
                     </div>
 
@@ -178,7 +192,7 @@ export function ContactSelectorDialog({
           </div>
         </ScrollArea>
 
-        <DialogFooter className="shrink-0 border-t bg-white px-6 py-4">
+        <DialogFooter className="shrink-0 border-t bg-white px-4 py-4 sm:px-6">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Hủy
           </Button>

@@ -20,9 +20,7 @@ import type { FarmerFormData } from "../../types";
 import { farmerClassificationOptions } from "../../types";
 
 const asInputValue = (value: unknown) =>
-  typeof value === "string" || typeof value === "number"
-    ? String(value)
-    : "";
+  typeof value === "string" || typeof value === "number" ? String(value) : "";
 
 const asMultiValue = (value: unknown) => (Array.isArray(value) ? value : []);
 
@@ -165,9 +163,9 @@ export const FarmerBasicInfoStep = ({
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex flex-col items-center gap-4 mb-6">
         <Label>Logo / Hình ảnh đại diện</Label>
-        <div className="flex items-center gap-6 w-full">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-6 w-full">
           <div
-            className={`w-32 h-32 rounded-lg border-2 border-dashed flex items-center justify-center overflow-hidden relative cursor-pointer transition-all group ${isDragging ? "border-primary bg-primary/5 scale-105" : "border-gray-300 bg-gray-50 hover:border-primary"}`}
+            className={`w-32 h-32 rounded-lg border-2 border-dashed flex items-center justify-center overflow-hidden relative cursor-pointer transition-all group shrink-0 ${isDragging ? "border-primary bg-primary/5 scale-105" : "border-gray-300 bg-gray-50 hover:border-primary"}`}
             onClick={() => document.getElementById("avatar-upload")?.click()}
             onDragEnter={(e) => handleDrag("logo", e)}
             onDragOver={(e) => handleDrag("logo", e)}
@@ -192,7 +190,7 @@ export const FarmerBasicInfoStep = ({
               </div>
             )}
           </div>
-          <div className="flex-1 space-y-2">
+          <div className="flex-1 space-y-2 text-center sm:text-left">
             <input
               id="avatar-upload"
               type="file"
@@ -217,7 +215,7 @@ export const FarmerBasicInfoStep = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="code" required>
             Mã nông hộ
@@ -304,7 +302,7 @@ export const FarmerBasicInfoStep = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="taxAuthority">Cơ quan thuế</Label>
           <Controller
@@ -343,7 +341,7 @@ export const FarmerBasicInfoStep = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="classification">Phân loại</Label>
           <Controller
@@ -379,7 +377,7 @@ export const FarmerBasicInfoStep = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="representative" required>
             Người đại diện pháp luật
@@ -431,7 +429,7 @@ export const FarmerBasicInfoStep = ({
           <MapPin className="w-5 h-5 text-primary" />
           <h3 className="font-semibold">Địa chỉ nông hộ</h3>
         </div>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="province" required>
               Tỉnh / Thành Phố

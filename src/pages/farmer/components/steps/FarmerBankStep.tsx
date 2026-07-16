@@ -155,7 +155,7 @@ export const FarmerBankStep = ({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label className="text-sm font-semibold">
                 Chọn tài khoản từ danh sách
@@ -243,7 +243,7 @@ export const FarmerBankStep = ({
                 className="bg-muted/30 focus-visible:ring-primary"
               />
             </div>
-            <div className="md:col-span-2 space-y-2">
+            <div className="sm:col-span-2 space-y-2">
               <Label className="text-sm font-semibold">Ghi chú</Label>
               <Input
                 value={newBankAccount.note}
@@ -326,7 +326,7 @@ export const FarmerBankStep = ({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {filteredAccounts.map(({ account, index }) => {
               const selectedBankMeta = bankMasterData.find(
                 (bank) => String(bank.id) === String(account.bankId),
@@ -361,7 +361,7 @@ export const FarmerBankStep = ({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-destructive opacity-0 transition-opacity group-hover:opacity-100 hover:bg-destructive/10"
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
                           onClick={() => removeBankAccount(index)}
                         >
                           <Trash2 className="h-4 w-4" />

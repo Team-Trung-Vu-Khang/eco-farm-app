@@ -111,7 +111,7 @@ export function ContactFormCard({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="department">Phòng ban</Label>
             <Controller
@@ -220,7 +220,7 @@ export function ContactFormCard({
           ) : null}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="phone" required>
               Số điện thoại
