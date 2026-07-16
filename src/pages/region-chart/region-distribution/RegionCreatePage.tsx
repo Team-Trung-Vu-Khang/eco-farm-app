@@ -9,7 +9,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import "leaflet/dist/leaflet.css";
 import { ChevronLeft } from "lucide-react";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 
 import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
 import { RegionInfoStep } from "./components/RegionInfoStep";
@@ -32,13 +32,19 @@ const RegionCreatePage = () => {
     mode: "onChange",
   });
 
-  const { reset, watch, handleSubmit, formState, setValue } = form;
+  const { reset, handleSubmit, formState, setValue, control } = form;
 
   const { isEditMode, handleComplete, handleCancel, isSubmitting } =
     useRegionCreateForm(reset);
 
-  const coordinates = watch("coordinates") || [];
-  const isDetailed = watch("isDetailed") !== false;
+  const coordinates = useWatch({
+    control,
+    name: "coordinates",
+  }) || [];
+  const isDetailed = useWatch({
+    control,
+    name: "isDetailed",
+  }) !== false;
 
 
 
@@ -47,7 +53,7 @@ const RegionCreatePage = () => {
       id: "info",
       title: "Thông tin chung",
       description: "Tên, địa chỉ vùng",
-      isValid: !formState.errors.name && !!watch("name"),
+      isValid: !formState.errors.name,
       content: <RegionInfoStep showCenterPoint={false} />,
     },
     {
