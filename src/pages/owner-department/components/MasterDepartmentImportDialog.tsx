@@ -1,6 +1,11 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import type { MasterDepartmentResponse } from "@/features/master-data";
+import {
+  useFarmDepartmentMutations,
+  useFarmDepartmentsMasterData,
+} from "@/features/master-data";
 import {
   Button,
+  Checkbox,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -8,15 +13,10 @@ import {
   DialogTitle,
   Input,
   ScrollArea,
-  Checkbox,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Search, ShieldAlert } from "lucide-react";
-import {
-  useFarmDepartmentsMasterData,
-  useFarmDepartmentMutations,
-} from "@/features/master-data";
-import type { MasterDepartmentResponse } from "@/features/master-data";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface MasterDepartmentImportDialogProps {
   open: boolean;
@@ -195,10 +195,10 @@ export function MasterDepartmentImportDialog({
       <DialogContent className="w-[95vw] sm:w-full max-w-2xl max-h-[85vh] flex flex-col p-4 sm:p-6">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold text-slate-900">
-            Thêm phòng ban từ danh sách mẫu
+            Danh mục phòng ban trong hệ thống
           </DialogTitle>
           <p className="text-sm text-slate-500 mt-1">
-            Chọn các phòng ban chuẩn từ danh mục mẫu để gán nhanh cho Owner.
+            Chọn phòng ban định nghĩa sẵn trong hệ thống
           </p>
         </DialogHeader>
 
@@ -207,7 +207,7 @@ export function MasterDepartmentImportDialog({
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
-              placeholder="Tìm kiếm theo tên hoặc mã phòng ban..."
+              placeholder="Tìm kiếm theo tên phòng ban"
               className="pl-10 pr-4 border-slate-200"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}

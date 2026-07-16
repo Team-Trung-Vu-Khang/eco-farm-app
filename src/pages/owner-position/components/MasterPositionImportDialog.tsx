@@ -1,6 +1,11 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import type { MasterPositionResponse } from "@/features/master-data";
+import {
+  useFarmPositionMutations,
+  useFarmPositionsMasterData,
+} from "@/features/master-data";
 import {
   Button,
+  Checkbox,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -8,15 +13,10 @@ import {
   DialogTitle,
   Input,
   ScrollArea,
-  Checkbox,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Search, ShieldAlert } from "lucide-react";
-import {
-  useFarmPositionsMasterData,
-  useFarmPositionMutations,
-} from "@/features/master-data";
-import type { MasterPositionResponse } from "@/features/master-data";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface MasterPositionImportDialogProps {
   open: boolean;
@@ -197,10 +197,10 @@ export function MasterPositionImportDialog({
       <DialogContent className="w-[95vw] sm:w-full max-w-2xl max-h-[85vh] flex flex-col p-4 sm:p-6">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold text-slate-900">
-            Thêm chức vụ từ danh sách mẫu
+            Danh mục chức vụ trong hệ thống
           </DialogTitle>
           <p className="text-sm text-slate-500 mt-1">
-            Chọn các chức vụ chuẩn từ danh mục mẫu để gán nhanh cho Owner.
+            Chọn chức vụ định nghĩa sẵn trong hệ thống
           </p>
         </DialogHeader>
 
@@ -209,7 +209,7 @@ export function MasterPositionImportDialog({
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
-              placeholder="Tìm kiếm theo tên, mã hoặc nhóm..."
+              placeholder="Tìm kiếm theo tên chức vụ"
               className="pl-10 pr-4 border-slate-200"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
