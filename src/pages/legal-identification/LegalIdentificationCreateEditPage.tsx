@@ -71,6 +71,7 @@ function LegalIdentificationFormBody({
   initialDocuments,
   regions,
   initialCode,
+  isSubmitting,
 }: {
   isEditMode: boolean;
   onSave: (
@@ -80,6 +81,7 @@ function LegalIdentificationFormBody({
   initialFormValue: LegalIdentificationFormState;
   initialDocuments: Record<LegalFileGroupId, LegalIdentificationFileMeta[]>;
   initialCode: string;
+  isSubmitting: boolean;
   regions: Array<{
     id: string | number;
     name: string;
@@ -179,7 +181,7 @@ function LegalIdentificationFormBody({
   ];
 
   return (
-      <StepperForm
+    <StepperForm
       steps={steps}
       onComplete={() =>
         onSave({
@@ -189,6 +191,7 @@ function LegalIdentificationFormBody({
         })
       }
       onCancel={onCancel}
+      loading={isSubmitting}
       completeLabel={isEditMode ? "Lưu thay đổi" : "Tạo hồ sơ"}
     />
   );
@@ -345,6 +348,7 @@ export default function LegalIdentificationCreateEditPage() {
           initialFormValue={initialFormValue}
           initialDocuments={initialDocuments}
           initialCode={initialCode}
+          isSubmitting={createMutation.isPending || updateMutation.isPending}
           regions={regionOptions}
         />
       </div>

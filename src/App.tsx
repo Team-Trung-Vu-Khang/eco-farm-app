@@ -123,6 +123,24 @@ const PlotDetailPage = lazy(
 const MapViewPage = lazy(
   () => import("./pages/region-chart/map-view/MapViewPage"),
 );
+const RegionBasicDistributionPage = lazy(
+  () =>
+    import(
+      "./pages/region-chart/region-basic-distribution/RegionBasicDistributionPage"
+    ),
+);
+const RegionBasicDistributionCreateEditPage = lazy(
+  () =>
+    import(
+      "./pages/region-chart/region-basic-distribution/RegionBasicDistributionCreateEditPage"
+    ),
+);
+const RegionBasicDistributionDetailPage = lazy(
+  () =>
+    import(
+      "./pages/region-chart/region-basic-distribution/RegionBasicDistributionDetailPage"
+    ),
+);
 const LegalIdentificationPage = lazy(
   () => import("./pages/legal-identification/LegalIdentificationPage"),
 );
@@ -525,6 +543,22 @@ function Router() {
       <Route
         path="/legal-identification/:id"
         component={LegalIdentificationDetailPage}
+      />
+      <Route
+        path="/region-basic-distribution"
+        component={RegionBasicDistributionPage}
+      />
+      <Route
+        path="/region-basic-distribution/create"
+        component={RegionBasicDistributionCreateEditPage}
+      />
+      <Route
+        path="/region-basic-distribution/edit/:id"
+        component={RegionBasicDistributionCreateEditPage}
+      />
+      <Route
+        path="/region-basic-distribution/detail/:id"
+        component={RegionBasicDistributionDetailPage}
       />
       <Route path="/soil-amendment-map" component={SoilAmendmentMapPage} />
       <Route

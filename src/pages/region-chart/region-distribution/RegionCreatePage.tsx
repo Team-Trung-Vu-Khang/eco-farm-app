@@ -4,8 +4,6 @@ import {
   Button,
   StepperForm,
   type Step,
-  Switch,
-  Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import "leaflet/dist/leaflet.css";
 import { ChevronLeft } from "lucide-react";
@@ -41,12 +39,6 @@ const RegionCreatePage = () => {
     control,
     name: "coordinates",
   }) || [];
-  const isDetailed = useWatch({
-    control,
-    name: "isDetailed",
-  }) !== false;
-
-
 
   const steps: Step[] = [
     {
@@ -95,65 +87,25 @@ const RegionCreatePage = () => {
           : "Tạo vùng trồng mới theo quy trình từng bước"
       }
       actions={
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Label
-              htmlFor="map-mode"
-              className="text-sm font-medium cursor-pointer text-slate-700 select-none"
-            >
-              Giao diện chi tiết
-            </Label>
-            <Switch
-              id="map-mode"
-              checked={isDetailed}
-              onCheckedChange={(checked) => {
-                setValue("isDetailed", checked, { shouldValidate: true });
-              }}
-            />
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => handleCancel()}
-            disabled={isSubmitting}
-          >
-            <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          onClick={() => handleCancel()}
+          disabled={isSubmitting}
+        >
+          <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại
+        </Button>
       }
     >
       <div className="max-w-4xl mx-auto pb-10">
         <FormProvider {...form}>
-          {isDetailed ? (
-            <StepperForm
-              key="detailed"
-              steps={steps}
-              loading={isSubmitting}
-              onCancel={handleCancel}
-              onComplete={handleSubmit(handleComplete)}
-              completeLabel={isEditMode ? "Lưu thay đổi" : "Tạo vùng trồng"}
-            />
-          ) : (
-            <div className="space-y-6">
-              <RegionInfoStep showCenterPoint={true} />
-              <div className="flex justify-end gap-3 bg-white p-4 rounded-lg border">
-                <Button
-                  variant="outline"
-                  type="button"
-                  onClick={() => handleCancel()}
-                  disabled={isSubmitting}
-                >
-                  Hủy
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleSubmit(handleComplete)}
-                  disabled={isSubmitting || !formState.isValid}
-                >
-                  {isEditMode ? "Lưu thay đổi" : "Tạo vùng trồng"}
-                </Button>
-              </div>
-            </div>
-          )}
+          <StepperForm
+            key="detailed"
+            steps={steps}
+            loading={isSubmitting}
+            onCancel={handleCancel}
+            onComplete={handleSubmit(handleComplete)}
+            completeLabel={isEditMode ? "Lưu thay đổi" : "Tạo vùng trồng"}
+          />
         </FormProvider>
       </div>
     </AdminLayout>
