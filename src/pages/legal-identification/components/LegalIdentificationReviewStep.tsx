@@ -19,10 +19,7 @@ function describeScope(selection: GeographicalSelection) {
   if (selection.type === "region") {
     return selection.regionName || selection.name || "Vùng trồng";
   }
-  if (selection.type === "area") {
-    return `${selection.regionName || "Vùng trồng"} • ${selection.areaName || selection.name || "Khu vực"}`;
-  }
-  return `${selection.regionName || "Vùng trồng"} • ${selection.areaName || "Khu vực"} • ${selection.name || "Lô đất"}`;
+  return selection.regionName || selection.name || "Vùng trồng";
 }
 
 export function LegalIdentificationReviewStep({
@@ -37,14 +34,6 @@ export function LegalIdentificationReviewStep({
             <div className="space-y-4">
               <div className="space-y-1">
                 <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  Mã hồ sơ
-                </div>
-                <div className="text-sm font-semibold text-slate-900">
-                  {formValue.code || "Chưa nhập"}
-                </div>
-              </div>
-              <div className="space-y-1">
-                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                   Tên hồ sơ
                 </div>
                 <div className="text-sm font-semibold text-slate-900">
@@ -53,10 +42,12 @@ export function LegalIdentificationReviewStep({
               </div>
               <div className="space-y-1">
                 <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  Chủ đất / Đơn vị sử dụng
+                  Phạm vi vùng trồng
                 </div>
                 <div className="text-sm text-slate-700">
-                  {formValue.ownerName || "Chưa nhập"}
+                  {formValue.scopeSelections.length > 0
+                    ? `${formValue.scopeSelections.length} vùng`
+                    : "Chưa nhập"}
                 </div>
               </div>
               <div className="space-y-1">
@@ -95,15 +86,6 @@ export function LegalIdentificationReviewStep({
                       ))}
                     </div>
                   ) : null}
-                </div>
-              </div>
-              <div className="space-y-1">
-                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  Vùng trồng / Khu vực
-                </div>
-                <div className="text-sm text-slate-700">
-                  {formValue.regionName || "Chưa nhập"} •{" "}
-                  {formValue.areaName || "Chưa nhập"}
                 </div>
               </div>
               <div className="space-y-1">

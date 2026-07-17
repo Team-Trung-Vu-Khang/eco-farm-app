@@ -1,11 +1,13 @@
 import { useRegions } from "@/features/farm/hooks/useRegions";
 import {
-  useOrganizations,
-  type OrganizationRecord,
-} from "@/features/organization";
-import { useSelectedWorkspaceId } from "@/features/workspace";
-import type { Enterprise } from "@/pages/enterprise/data/constants";
-import useLegalIdentificationStore from "@/stores/useLegalIdentificationStore";
+  useCreateLegalIdentification,
+  useLegalIdentificationById,
+  useUpdateLegalIdentification,
+} from "@/features/legal-identification";
+import {
+  mapLegalIdentificationRecordToUpsertRequest,
+  mapLegalIdentificationResponseToRecord,
+} from "@/pages/legal-identification/utils/legal-identification.mapper";
 import {
   AdminLayout,
   Button,
@@ -30,50 +32,10 @@ import {
   type LegalIdentificationRecord,
 } from "./data/constants";
 
-function mapOrganizationToEnterprise(
-  organization: OrganizationRecord,
-): Enterprise {
-  return {
-    id: Number(organization.id),
-    code: organization.code,
-    name: organization.name,
-    image: organization.imageUrl || undefined,
-    type: "enterprise",
-    classification: ["other"],
-    taxCode: organization.taxCode || "",
-    address: organization.address || "",
-    phone: organization.contacts?.[0]?.phone || "",
-    email: organization.contacts?.[0]?.email || "",
-    status: organization.status === "inactive" ? "inactive" : "active",
-    createdAt: organization.createdAt || new Date().toISOString(),
-    brandName: organization.brandName,
-    representative: organization.representative,
-    foundedDate: organization.foundedDate,
-    website: organization.website,
-    province: organization.province,
-    district: organization.district,
-    ward: organization.ward,
-    latitude: organization.latitude,
-    longitude: organization.longitude,
-    taxAddress: organization.taxAddress,
-    taxAuthority: organization.taxAuthority,
-    issueDate: organization.issueDate,
-    description: organization.description,
-    contacts: [],
-    branches: [],
-    bankAccounts: [],
-    documents: [],
-  };
-}
-
 const emptyFormValue: LegalIdentificationFormState = {
-  code: "",
   name: "",
   scopeSelections: [],
-  regionName: "",
-  areaName: "",
   address: "",
-  ownerName: "",
   note: "",
   status: "draft",
 };
@@ -82,13 +44,9 @@ function getFormValueFromRecord(
   record: LegalIdentificationRecord,
 ): LegalIdentificationFormState {
   return {
-    code: record.code,
     name: record.name,
     scopeSelections: record.scopeSelections ?? [],
-    regionName: record.regionName,
-    areaName: record.areaName,
     address: record.address,
-    ownerName: record.ownerName,
     note: record.note || "",
     status: record.status,
   };
@@ -111,8 +69,8 @@ function LegalIdentificationFormBody({
   onCancel,
   initialFormValue,
   initialDocuments,
-  enterprises,
   regions,
+  initialCode,
 }: {
   isEditMode: boolean;
   onSave: (
@@ -121,11 +79,10 @@ function LegalIdentificationFormBody({
   onCancel: () => void;
   initialFormValue: LegalIdentificationFormState;
   initialDocuments: Record<LegalFileGroupId, LegalIdentificationFileMeta[]>;
-  enterprises: Enterprise[];
+  initialCode: string;
   regions: Array<{
     id: string | number;
     name: string;
-    enterpriseId?: string;
   }>;
 }) {
   const [formValue, setFormValue] =
@@ -134,6 +91,14 @@ function LegalIdentificationFormBody({
     useState<Record<LegalFileGroupId, LegalIdentificationFileMeta[]>>(
       initialDocuments,
     );
+
+  useEffect(() => {
+    setFormValue(initialFormValue);
+  }, [initialFormValue]);
+
+  useEffect(() => {
+    setDocuments(initialDocuments);
+  }, [initialDocuments]);
 
   const updateFiles =
     (groupId: LegalFileGroupId) =>
@@ -145,11 +110,10 @@ function LegalIdentificationFormBody({
     {
       id: "info",
       title: "Thông tin hồ sơ",
-      description: "Mã, vùng trồng, khu vực và trạng thái",
+      description: "Vùng trồng và trạng thái",
       content: (
         <LegalIdentificationInfoStep
           value={formValue}
-          enterprises={enterprises}
           regions={regions}
           showStatus={isEditMode}
           onChange={(nextValue) =>
@@ -158,13 +122,9 @@ function LegalIdentificationFormBody({
         />
       ),
       isValid:
-        formValue.code.trim().length > 0 &&
         formValue.name.trim().length > 0 &&
         formValue.scopeSelections.length > 0 &&
-        formValue.regionName.trim().length > 0 &&
-        formValue.areaName.trim().length > 0 &&
-        formValue.address.trim().length > 0 &&
-        formValue.ownerName.trim().length > 0,
+        formValue.address.trim().length > 0,
     },
     {
       id: "land",
@@ -219,10 +179,11 @@ function LegalIdentificationFormBody({
   ];
 
   return (
-    <StepperForm
+      <StepperForm
       steps={steps}
       onComplete={() =>
         onSave({
+          code: initialCode,
           ...formValue,
           documents,
         })
@@ -236,29 +197,33 @@ function LegalIdentificationFormBody({
 export default function LegalIdentificationCreateEditPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { addRecord, updateRecord, getRecordById } =
-    useLegalIdentificationStore();
   const { items: regionItems } = useRegions({ params: { size: 100 } });
-  const workspaceId = useSelectedWorkspaceId();
-  const organizationsQuery = useOrganizations(
-    { type: "enterprise", page: 0, size: 100 },
-    workspaceId ?? "missing",
-    {
-      enabled: workspaceId !== null,
-    },
-  );
   const [matchEdit, paramsEdit] = useRoute("/legal-identification/:id/edit");
   const recordId = Number(paramsEdit?.id || 0);
   const isEditMode = Boolean(matchEdit && recordId > 0);
 
+  const recordQuery = useLegalIdentificationById(recordId, {
+    enabled: isEditMode,
+  });
+
+  const createMutation = useCreateLegalIdentification();
+  const updateMutation = useUpdateLegalIdentification();
+
   const record = useMemo(
-    () => (isEditMode ? getRecordById(recordId) : undefined),
-    [getRecordById, isEditMode, recordId],
+    () =>
+      isEditMode && recordQuery.item
+        ? mapLegalIdentificationResponseToRecord(recordQuery.item)
+        : undefined,
+    [isEditMode, recordQuery.item],
   );
 
   const initialFormValue = useMemo(
     () =>
       isEditMode && record ? getFormValueFromRecord(record) : emptyFormValue,
+    [isEditMode, record],
+  );
+  const initialCode = useMemo(
+    () => (isEditMode && record ? record.code : ""),
     [isEditMode, record],
   );
   const initialDocuments = useMemo(
@@ -270,47 +235,90 @@ export default function LegalIdentificationCreateEditPage() {
       regionItems.map((region) => ({
         id: region.id,
         name: region.name ?? "",
-        enterpriseId: region.metadataJson?.enterpriseId
-          ? String(region.metadataJson.enterpriseId)
-          : undefined,
       })),
     [regionItems],
   );
-  const enterpriseOptions = useMemo(
-    () =>
-      organizationsQuery.items
-        .slice()
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map(mapOrganizationToEnterprise),
-    [organizationsQuery.items],
-  );
 
-  const handleSave = (
+  const handleSave = async (
     payload: Omit<LegalIdentificationRecord, "id" | "createdAt" | "updatedAt">,
   ) => {
-    if (isEditMode && record) {
-      updateRecord(record.id, payload);
+    const request = mapLegalIdentificationRecordToUpsertRequest(payload);
+
+    try {
+      if (isEditMode && record) {
+        const updated = await updateMutation.updateLegalIdentification({
+          id: record.id,
+          payload: request,
+        });
+
+        toast({
+          title: "Thành công",
+          description: "Đã cập nhật hồ sơ pháp lý.",
+        });
+        setLocation(`/legal-identification/${updated.id}`);
+        return;
+      }
+
+      const created = await createMutation.createLegalIdentification(request);
       toast({
         title: "Thành công",
-        description: "Đã cập nhật hồ sơ pháp lý.",
+        description: "Đã tạo mới hồ sơ pháp lý.",
       });
-      setLocation(`/legal-identification/${record.id}`);
-      return;
+      setLocation(`/legal-identification/${created.id}`);
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description:
+          error instanceof Error ? error.message : "Không thể lưu hồ sơ pháp lý.",
+        variant: "destructive",
+      });
     }
-
-    const createdRecord = addRecord(payload);
-    toast({
-      title: "Thành công",
-      description: "Đã tạo mới hồ sơ pháp lý.",
-    });
-    setLocation(`/legal-identification/${createdRecord.id}`);
   };
 
   useEffect(() => {
-    if (matchEdit && recordId > 0 && !record) {
+    if (isEditMode && !recordQuery.loading && !recordQuery.item) {
       setLocation("/legal-identification");
     }
-  }, [matchEdit, record, recordId, setLocation]);
+  }, [isEditMode, recordQuery.item, recordQuery.loading, setLocation]);
+
+  if (isEditMode && recordQuery.loading) {
+    return (
+      <AdminLayout
+        isDev={true}
+        title="Đang tải hồ sơ pháp lý"
+        description="Vui lòng chờ trong giây lát"
+      >
+        <div className="flex min-h-[40vh] items-center justify-center">
+          <div className="text-sm text-slate-500">
+            Đang tải dữ liệu hồ sơ pháp lý...
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (isEditMode && !record) {
+    return (
+      <AdminLayout
+        isDev={true}
+        title="Không tìm thấy hồ sơ"
+        description="Hồ sơ pháp lý không tồn tại hoặc đã bị xóa."
+      >
+        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4">
+          <div className="text-sm text-slate-500">
+            Không tìm thấy hồ sơ pháp lý này.
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setLocation("/legal-identification")}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Quay lại danh sách
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout
@@ -336,7 +344,7 @@ export default function LegalIdentificationCreateEditPage() {
           onCancel={() => setLocation("/legal-identification")}
           initialFormValue={initialFormValue}
           initialDocuments={initialDocuments}
-          enterprises={enterpriseOptions}
+          initialCode={initialCode}
           regions={regionOptions}
         />
       </div>
