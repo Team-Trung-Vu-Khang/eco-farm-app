@@ -294,6 +294,7 @@ interface GeographicalSelectorProps {
   enterpriseId: string;
   existingSelections: GeographicalSelection[];
   showEnterprise?: boolean;
+  regionOnly?: boolean;
   customTrigger?: React.ReactNode;
 }
 
@@ -537,6 +538,7 @@ export const GeographicalSelector = ({
   enterpriseId,
   existingSelections,
   showEnterprise = false,
+  regionOnly = false,
   customTrigger,
 }: GeographicalSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -618,6 +620,10 @@ export const GeographicalSelector = ({
     regionName?: string,
     areaName?: string,
   ) => {
+    if (regionOnly && type !== "region") {
+      return;
+    }
+
     if (type === "area") {
       const regionSelected = tempSelections.some(
         (selection) =>
@@ -738,7 +744,9 @@ export const GeographicalSelector = ({
               Chọn phạm vi canh tác
             </DialogTitle>
             <p className="text-xs text-muted-foreground mt-1">
-              Bạn có thể chọn Vùng trồng, Khu vực hoặc từng Lô đất cụ thể
+              {regionOnly
+                ? "Chỉ chọn Vùng trồng"
+                : "Bạn có thể chọn Vùng trồng, Khu vực hoặc từng Lô đất cụ thể"}
             </p>
           </DialogHeader>
 
@@ -759,17 +767,19 @@ export const GeographicalSelector = ({
               {filteredRegions.map((region) => (
                 <div key={region.id} className="space-y-2">
                   <div className="flex items-center gap-2 group">
-                    <button
-                      type="button"
-                      onClick={() => toggleRegion(region.id.toString())}
-                      className="p-1 hover:bg-slate-100 rounded transition-colors"
-                    >
-                      {expandedRegions.includes(region.id.toString()) ? (
-                        <ChevronDown className="w-4 h-4 text-slate-400" />
-                      ) : (
-                        <ChevronRight className="w-4 h-4 text-slate-400" />
-                      )}
-                    </button>
+                    {!regionOnly && (
+                      <button
+                        type="button"
+                        onClick={() => toggleRegion(region.id.toString())}
+                        className="p-1 hover:bg-slate-100 rounded transition-colors"
+                      >
+                        {expandedRegions.includes(region.id.toString()) ? (
+                          <ChevronDown className="w-4 h-4 text-slate-400" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-slate-400" />
+                        )}
+                      </button>
+                    )}
                     <div
                       onClick={() =>
                         handleSelect(
@@ -818,7 +828,7 @@ export const GeographicalSelector = ({
                     </div>
                   </div>
 
-                  {expandedRegions.includes(region.id.toString()) && (
+                  {!regionOnly && expandedRegions.includes(region.id.toString()) && (
                     <div className="ml-6 pl-4 border-l-2 border-slate-100 space-y-2 py-1">
                       <RegionAreasList
                         regionId={region.id.toString()}

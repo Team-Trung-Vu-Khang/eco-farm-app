@@ -1,3 +1,4 @@
+import { useUploadStorageFile } from "@/features/storage/hooks/useUploadStorageFile";
 import {
   Badge,
   Button,
@@ -23,6 +24,7 @@ type LegalIdentificationFileGroupProps = {
   onChange?: (files: LegalIdentificationFileMeta[]) => void;
   readOnly?: boolean;
   variant?: "card" | "flat";
+  uploadFolder?: string;
 };
 
 export function LegalIdentificationFileGroup({
@@ -31,36 +33,55 @@ export function LegalIdentificationFileGroup({
   onChange,
   readOnly = false,
   variant = "card",
+  uploadFolder,
 }: LegalIdentificationFileGroupProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewFile, setPreviewFile] =
     useState<LegalIdentificationFileMeta | null>(null);
+  const uploadFile = useUploadStorageFile();
+  const folder = uploadFolder || `legal-identification`;
 
-  const handleFiles = (incoming: FileList | File[]) => {
+  const handleFiles = async (incoming: FileList | File[]) => {
     const nextFiles = [...files];
     let validationError: string | null = null;
 
-    Array.from(incoming).forEach((file) => {
+    for (const file of Array.from(incoming)) {
       if (file.size > 25 * 1024 * 1024) {
         validationError = `File ${file.name} vượt quá 25MB.`;
-        return;
+        continue;
       }
 
       const duplicate = nextFiles.some(
         (current) => current.name === file.name && current.size === file.size,
       );
-      if (!duplicate) {
-        nextFiles.push({
-          id: `${file.name}-${file.size}-${Math.random().toString(36).slice(2, 8)}`,
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          uploadedAt: new Date().toISOString(),
-        });
+      if (duplicate) {
+        continue;
       }
-    });
+
+      try {
+        const uploaded = await uploadFile.uploadStorageFile({
+          file,
+          folder,
+        });
+
+        nextFiles.push({
+          id: uploaded.objectKey || uploaded.fileUrl,
+          name: uploaded.fileName || file.name,
+          size: uploaded.sizeBytes || file.size,
+          type: uploaded.mimeType || file.type,
+          uploadedAt: new Date().toISOString(),
+          fileUrl: uploaded.fileUrl,
+          previewUrl: uploaded.fileUrl,
+        });
+      } catch (uploadError) {
+        validationError =
+          uploadError instanceof Error
+            ? uploadError.message
+            : `Không thể tải file ${file.name}.`;
+      }
+    }
 
     setError(validationError);
     onChange?.(nextFiles);
@@ -86,14 +107,14 @@ export function LegalIdentificationFileGroup({
     setIsDragging(false);
     if (readOnly) return;
     if (event.dataTransfer.files?.length) {
-      handleFiles(event.dataTransfer.files);
+      void handleFiles(event.dataTransfer.files);
     }
   };
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (readOnly) return;
     if (event.target.files?.length) {
-      handleFiles(event.target.files);
+      void handleFiles(event.target.files);
     }
     event.target.value = "";
   };
@@ -110,7 +131,9 @@ export function LegalIdentificationFileGroup({
           <h3 className="text-base font-semibold text-slate-900">
             {group.title}
           </h3>
-          <p className="max-w-3xl text-sm text-slate-500">{group.description}</p>
+          <p className="max-w-3xl text-sm text-slate-500">
+            {group.description}
+          </p>
         </div>
         <Badge
           variant="outline"
@@ -148,12 +171,19 @@ export function LegalIdentificationFileGroup({
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <Upload className="h-5 w-5" />
+                <Upload
+                  className={cn(
+                    "h-5 w-5",
+                    uploadFile.isPending && "animate-pulse",
+                  )}
+                />
               </div>
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-medium text-slate-900">
-                    Kéo thả hoặc bấm để tải file
+                    {uploadFile.isPending
+                      ? "Đang tải file..."
+                      : "Kéo thả hoặc bấm để tải file"}
                   </p>
                   <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-500 ring-1 ring-slate-200/70">
                     PDF, Word, Excel, ảnh scan
@@ -172,6 +202,7 @@ export function LegalIdentificationFileGroup({
               accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.heic,.tif,.tiff"
               onChange={handleInputChange}
               className="hidden"
+              disabled={uploadFile.isPending}
             />
           </div>
 
@@ -185,11 +216,11 @@ export function LegalIdentificationFileGroup({
       <div className={cn("mt-4", readOnly && "mt-3")}>
         {files.length > 0 ? (
           <div className="space-y-2">
-              {files.map((file) => (
-                <div
-                  key={file.id}
-                  className={cn(
-                    "flex items-center gap-3 rounded-2xl px-4 py-3",
+            {files.map((file) => (
+              <div
+                key={file.id}
+                className={cn(
+                  "flex items-center gap-3 rounded-2xl px-4 py-3",
                   variant === "flat"
                     ? "border border-slate-100 bg-white/80"
                     : "bg-slate-50 ring-1 ring-slate-200/70",
@@ -198,41 +229,41 @@ export function LegalIdentificationFileGroup({
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-slate-500 ring-1 ring-slate-200/70">
                   <Paperclip className="h-4 w-4" />
                 </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium text-slate-900">
-                      {file.name}
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      {formatLegalFileSize(file.size)}
-                    </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium text-slate-900">
+                    {file.name}
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="text-xs text-slate-500">
+                    {formatLegalFileSize(file.size)}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-slate-400 hover:text-primary"
+                    onClick={() => openPreview(file)}
+                    aria-label={`Preview ${file.name}`}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  {!readOnly && (
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-slate-400 hover:text-primary"
-                      onClick={() => openPreview(file)}
-                      aria-label={`Preview ${file.name}`}
+                      className="h-8 w-8 text-slate-400 hover:text-red-500"
+                      onClick={() => removeFile(file.id)}
+                      aria-label={`Xóa ${file.name}`}
                     >
-                      <Eye className="h-4 w-4" />
+                      <X className="h-4 w-4" />
                     </Button>
-                    {!readOnly && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-slate-400 hover:text-red-500"
-                        onClick={() => removeFile(file.id)}
-                        aria-label={`Xóa ${file.name}`}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+                  )}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+          </div>
         ) : (
           <div
             className={cn(
@@ -252,7 +283,8 @@ export function LegalIdentificationFileGroup({
   const previewSource = previewFile?.previewUrl || previewFile?.fileUrl || "";
   const canRenderInlinePreview =
     Boolean(previewSource) &&
-    (previewFile?.type.startsWith("image/") || previewFile?.type === "application/pdf");
+    (previewFile?.type.startsWith("image/") ||
+      previewFile?.type === "application/pdf");
 
   return (
     <>
@@ -264,7 +296,10 @@ export function LegalIdentificationFileGroup({
         </Card>
       )}
 
-      <Dialog open={Boolean(previewFile)} onOpenChange={(open) => !open && setPreviewFile(null)}>
+      <Dialog
+        open={Boolean(previewFile)}
+        onOpenChange={(open) => !open && setPreviewFile(null)}
+      >
         <DialogContent className="max-w-3xl">
           <DialogHeader className="border-b pb-4">
             <DialogTitle className="flex items-center gap-2">

@@ -40,6 +40,12 @@ type LegalIdentificationTableProps = {
   }>;
   onFilterChange?: (key: string, value: string) => void;
   loading?: boolean;
+  pageSize?: number;
+  currentIndex?: number;
+  totalElements?: number;
+  totalPages?: number;
+  onPageSize?: (size: number) => void;
+  onIndexChange?: (index: number) => void;
 };
 
 export function LegalIdentificationTable({
@@ -53,6 +59,12 @@ export function LegalIdentificationTable({
   filters,
   onFilterChange,
   loading,
+  pageSize,
+  currentIndex,
+  totalElements,
+  totalPages,
+  onPageSize,
+  onIndexChange,
 }: LegalIdentificationTableProps) {
   const columns: Column<LegalIdentificationRecord>[] = [
     {
@@ -132,6 +144,12 @@ export function LegalIdentificationTable({
       filters={filters}
       onFilterChange={onFilterChange}
       loading={loading}
+      pageSize={pageSize}
+      currentIndex={currentIndex}
+      totalElements={totalElements}
+      totalPages={totalPages}
+      onPageSize={onPageSize}
+      onIndexChange={onIndexChange}
       onView={(row) => onView(row.id)}
       onEdit={(row) => onEdit(row.id)}
       onDelete={(row) => onDelete(row.id)}

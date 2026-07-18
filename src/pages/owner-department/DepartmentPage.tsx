@@ -53,7 +53,7 @@ const DepartmentPage = () => {
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setImportOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
-            Thêm từ danh sách mẫu
+            Thêm từ hệ thống
           </Button>
           <Button onClick={handleAdd}>
             <Plus className="w-4 h-4 mr-2" />

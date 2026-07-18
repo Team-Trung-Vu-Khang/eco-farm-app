@@ -4,12 +4,10 @@ import {
   Button,
   StepperForm,
   type Step,
-  Switch,
-  Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import "leaflet/dist/leaflet.css";
 import { ChevronLeft } from "lucide-react";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 
 import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
 import { RegionInfoStep } from "./components/RegionInfoStep";
@@ -32,22 +30,22 @@ const RegionCreatePage = () => {
     mode: "onChange",
   });
 
-  const { reset, watch, handleSubmit, formState, setValue } = form;
+  const { reset, handleSubmit, formState, setValue, control } = form;
 
   const { isEditMode, handleComplete, handleCancel, isSubmitting } =
     useRegionCreateForm(reset);
 
-  const coordinates = watch("coordinates") || [];
-  const isDetailed = watch("isDetailed") !== false;
-
-
+  const coordinates = useWatch({
+    control,
+    name: "coordinates",
+  }) || [];
 
   const steps: Step[] = [
     {
       id: "info",
       title: "Thông tin chung",
       description: "Tên, địa chỉ vùng",
-      isValid: !formState.errors.name && !!watch("name"),
+      isValid: !formState.errors.name,
       content: <RegionInfoStep showCenterPoint={false} />,
     },
     {
@@ -89,65 +87,25 @@ const RegionCreatePage = () => {
           : "Tạo vùng trồng mới theo quy trình từng bước"
       }
       actions={
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Label
-              htmlFor="map-mode"
-              className="text-sm font-medium cursor-pointer text-slate-700 select-none"
-            >
-              Giao diện chi tiết
-            </Label>
-            <Switch
-              id="map-mode"
-              checked={isDetailed}
-              onCheckedChange={(checked) => {
-                setValue("isDetailed", checked, { shouldValidate: true });
-              }}
-            />
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => handleCancel()}
-            disabled={isSubmitting}
-          >
-            <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          onClick={() => handleCancel()}
+          disabled={isSubmitting}
+        >
+          <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại
+        </Button>
       }
     >
       <div className="max-w-4xl mx-auto pb-10">
         <FormProvider {...form}>
-          {isDetailed ? (
-            <StepperForm
-              key="detailed"
-              steps={steps}
-              loading={isSubmitting}
-              onCancel={handleCancel}
-              onComplete={handleSubmit(handleComplete)}
-              completeLabel={isEditMode ? "Lưu thay đổi" : "Tạo vùng trồng"}
-            />
-          ) : (
-            <div className="space-y-6">
-              <RegionInfoStep showCenterPoint={true} />
-              <div className="flex justify-end gap-3 bg-white p-4 rounded-lg border">
-                <Button
-                  variant="outline"
-                  type="button"
-                  onClick={() => handleCancel()}
-                  disabled={isSubmitting}
-                >
-                  Hủy
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleSubmit(handleComplete)}
-                  disabled={isSubmitting || !formState.isValid}
-                >
-                  {isEditMode ? "Lưu thay đổi" : "Tạo vùng trồng"}
-                </Button>
-              </div>
-            </div>
-          )}
+          <StepperForm
+            key="detailed"
+            steps={steps}
+            loading={isSubmitting}
+            onCancel={handleCancel}
+            onComplete={handleSubmit(handleComplete)}
+            completeLabel={isEditMode ? "Lưu thay đổi" : "Tạo vùng trồng"}
+          />
         </FormProvider>
       </div>
     </AdminLayout>

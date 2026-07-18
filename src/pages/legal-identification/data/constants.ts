@@ -22,10 +22,10 @@ export interface LegalIdentificationRecord {
   code: string;
   name: string;
   scopeSelections: GeographicalSelection[];
-  regionName: string;
-  areaName: string;
+  regionName?: string;
+  areaName?: string;
   address: string;
-  ownerName: string;
+  ownerName?: string;
   note?: string;
   status: LegalIdentificationStatus;
   documents: Record<LegalFileGroupId, LegalIdentificationFileMeta[]>;

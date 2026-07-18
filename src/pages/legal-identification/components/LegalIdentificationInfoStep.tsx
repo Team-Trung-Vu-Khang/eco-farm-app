@@ -1,8 +1,6 @@
 import { GeographicalSelector } from "@/pages/cultivation-zone/cultivation-region/components/SharedSelectors";
 import type { GeographicalSelection } from "@/pages/cultivation-zone/cultivation-region/components/types";
-import type { Enterprise } from "@/pages/enterprise/data/constants";
 import {
-  Badge,
   Card,
   CardContent,
   Input,
@@ -11,40 +9,27 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { MapPin } from "lucide-react";
 import type { LegalIdentificationStatus } from "../data/constants";
-import { LegalIdentificationOwnerSelector } from "./LegalIdentificationOwnerSelector";
 
 export interface LegalIdentificationFormState {
-  code: string;
   name: string;
   scopeSelections: GeographicalSelection[];
-  regionName: string;
-  areaName: string;
   address: string;
-  ownerName: string;
   note: string;
   status: LegalIdentificationStatus;
 }
 
 type LegalIdentificationInfoStepProps = {
   value: LegalIdentificationFormState;
-  enterprises: Enterprise[];
   regions: Array<{
     id: string | number;
     name: string;
-    enterpriseId?: string;
   }>;
   showStatus: boolean;
   onChange: (value: Partial<LegalIdentificationFormState>) => void;
 };
 
 function describeScopeChip(selection: GeographicalSelection) {
-  if (selection.type === "region") {
-    return selection.regionName || selection.name || "Vùng trồng";
-  }
-  if (selection.type === "area") {
-    return `${selection.regionName || "Vùng trồng"} • ${selection.areaName || selection.name || "Khu vực"}`;
-  }
-  return `${selection.regionName || "Vùng trồng"} • ${selection.areaName || "Khu vực"} • ${selection.name || "Lô đất"}`;
+  return selection.regionName || selection.name || "Vùng trồng";
 }
 
 function describeSelectedScopes(selections: GeographicalSelection[]) {
@@ -55,7 +40,6 @@ function describeSelectedScopes(selections: GeographicalSelection[]) {
 
 export function LegalIdentificationInfoStep({
   value,
-  enterprises,
   regions,
   showStatus,
   onChange,
@@ -64,13 +48,8 @@ export function LegalIdentificationInfoStep({
     const nextSelections = value.scopeSelections.filter(
       (selection) => selection.id !== selectionId,
     );
-    const primary = nextSelections[0];
 
-    onChange({
-      scopeSelections: nextSelections,
-      regionName: primary?.regionName || primary?.name || "",
-      areaName: primary?.areaName || primary?.name || primary?.regionName || "",
-    });
+    onChange({ scopeSelections: nextSelections });
   };
 
   return (
@@ -78,31 +57,25 @@ export function LegalIdentificationInfoStep({
       <CardContent className="p-5">
         <div className="space-y-6">
           <div className="space-y-2">
-            <Label>Chủ đất / Đơn vị sử dụng</Label>
-            <LegalIdentificationOwnerSelector
-              enterprises={enterprises}
-              value={value.ownerName}
-              onChange={(nextValue) => onChange({ ownerName: nextValue })}
-            />
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label>Vùng trồng / Khu vực / Lô</Label>
+            <Label>Phạm vi vùng trồng</Label>
             <GeographicalSelector
               regions={regions}
               enterpriseId=""
               showEnterprise={false}
+              regionOnly
               existingSelections={value.scopeSelections}
               onConfirm={(selections) => {
-                const primary = selections[0];
-                onChange({
-                  scopeSelections: selections,
-                  regionName: primary?.regionName || primary?.name || "",
-                  areaName:
-                    primary?.areaName ||
-                    primary?.name ||
-                    primary?.regionName ||
-                    "",
-                });
+                const uniqueSelections = selections.filter(
+                  (selection, index, current) =>
+                    selection.type === "region" &&
+                    current.findIndex(
+                      (item) =>
+                        item.type === "region" &&
+                        item.regionId === selection.regionId,
+                    ) === index,
+                );
+
+                onChange({ scopeSelections: uniqueSelections });
               }}
               customTrigger={
                 <button
@@ -120,19 +93,18 @@ export function LegalIdentificationInfoStep({
                       {describeSelectedScopes(value.scopeSelections)}
                     </div>
                     <div className="mt-1 text-xs text-slate-500">
-                      Bấm để mở tìm kiếm vùng trồng, khu vực hoặc lô.
+                      Bấm để chọn vùng trồng.
                     </div>
                   </div>
-                  <Badge
-                    variant="outline"
+                  <div
                     className={
                       value.scopeSelections.length > 0
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                        : "border-slate-200 bg-white text-slate-500"
+                        ? "rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700"
+                        : "rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500"
                     }
                   >
                     {value.scopeSelections.length > 0 ? "Đã chọn" : "Chưa chọn"}
-                  </Badge>
+                  </div>
                 </button>
               }
             />
@@ -164,31 +136,21 @@ export function LegalIdentificationInfoStep({
               </div>
             )}
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Mã hồ sơ</Label>
-              <Input
-                value={value.code}
-                onChange={(event) => onChange({ code: event.target.value })}
-                placeholder="VD: LD-003"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Tên hồ sơ</Label>
-              <Input
-                value={value.name}
-                onChange={(event) => onChange({ name: event.target.value })}
-                placeholder="VD: Hồ sơ pháp lý vùng trồng Khu C"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label>Tên hồ sơ</Label>
+            <Input
+              value={value.name}
+              onChange={(event) => onChange({ name: event.target.value })}
+              placeholder="VD: Hồ sơ pháp lý vùng trồng Khu C"
+            />
           </div>
 
           <div className="space-y-2">
-            <Label>Địa chỉ thửa đất</Label>
+            <Label>Địa chỉ</Label>
             <Input
               value={value.address}
               onChange={(event) => onChange({ address: event.target.value })}
-              placeholder="Nhập địa chỉ thửa đất"
+              placeholder="Nhập địa chỉ"
             />
           </div>
           {showStatus && (
