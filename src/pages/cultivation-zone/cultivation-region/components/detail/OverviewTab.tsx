@@ -449,19 +449,9 @@ export const OverviewTab = ({
 
   return (
     <div
-      className={styles.overviewGrid}
-      style={
-        !showEnterprise
-          ? {
-              gridTemplateAreas: `
-                "scope info"
-                "scope map"
-                "scope map"
-                "scope map"
-              `,
-            }
-          : undefined
-      }
+      className={cn(styles.overviewGrid, {
+        [styles.noEnterprise]: !showEnterprise,
+      })}
     >
       {/* Enterprise Card */}
       {showEnterprise && (
@@ -863,7 +853,7 @@ export const OverviewTab = ({
           <DialogHeader className="sr-only">
             <DialogTitle>Bản đồ phạm vi vùng canh tác</DialogTitle>
           </DialogHeader>
-          <div className="flex h-full">
+          <div className="flex flex-col md:flex-row h-full">
             <div className="flex-1 relative bg-slate-100">
               <MapContainer
                 center={[scopeMapView.center.lat, scopeMapView.center.lng]}
@@ -890,7 +880,7 @@ export const OverviewTab = ({
               </button>
             </div>
 
-            <div className="w-[360px] bg-white border-l border-slate-100 flex flex-col overflow-hidden shrink-0">
+            <div className="w-full md:w-[360px] h-[300px] md:h-full bg-white border-t md:border-t-0 md:border-l border-slate-100 flex flex-col overflow-hidden shrink-0">
               <div className="px-5 pt-5 pb-4 border-b bg-slate-50/60">
                 <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                   <MapPin size={14} className="text-primary" />

@@ -63,7 +63,14 @@ const RegionDetailPage = () => {
     terrainName,
     isLoading,
     navigateToDetail,
+    crops,
   } = useRegionDetailPage();
+
+  const mainCropsText = (crops || [])
+    .filter((c) => c.role === "MAIN")
+    .map((c) => c.crop?.name || "")
+    .filter(Boolean)
+    .join(", ");
 
   const regionPath = region?.coordinates ? closePath(region.coordinates) : [];
   const subAreaPaths =
@@ -153,6 +160,16 @@ const RegionDetailPage = () => {
               <div className="grid grid-cols-3 gap-2 py-1 border-b">
                 <span className="text-muted-foreground">Diện tích</span>
                 <span className="col-span-2 font-medium">{region.area} ha</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 py-1 border-b">
+                <span className="text-muted-foreground">Cây trồng chính</span>
+                <span className="col-span-2 font-medium">
+                  {mainCropsText || (
+                    <span className="italic text-muted-foreground">
+                      Chưa chọn
+                    </span>
+                  )}
+                </span>
               </div>
               <div className="grid grid-cols-3 gap-2 py-1 border-b">
                 <span className="text-muted-foreground">Loại đất</span>

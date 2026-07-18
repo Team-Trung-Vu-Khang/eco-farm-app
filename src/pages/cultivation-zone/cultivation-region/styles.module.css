@@ -11,6 +11,14 @@
   align-items: start;
 }
 
+.noEnterprise {
+  grid-template-areas:
+    "scope info"
+    "scope map"
+    "scope map"
+    "scope map";
+}
+
 .areaEnterprise {
   grid-area: enterprise;
 }
@@ -34,6 +42,13 @@
     grid-template-rows: auto;
     grid-template-areas:
       "enterprise"
+      "info"
+      "map"
+      "scope";
+  }
+
+  .overviewGrid.noEnterprise {
+    grid-template-areas:
       "info"
       "map"
       "scope";

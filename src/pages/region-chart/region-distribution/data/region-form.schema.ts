@@ -23,7 +23,7 @@ export const regionInfoSchema = z.object({
   code: z.string().optional(),
   name: z.string().min(1, "Vui lòng nhập tên vùng"),
   enterpriseId: z.string().optional(),
-  cropId: z.string().optional(),
+  cropIds: z.array(z.string()).optional(),
   area: z.number().min(0).optional(),
   provinceId: z.string().optional(),
   wardId: z.string().optional(),

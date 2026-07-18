@@ -87,6 +87,8 @@ export default function UpdateSeedPage() {
         cropGroupId: "0", // dummy value to pass validation
         cropId: String(seed.crop.id),
         cropVarietyId: String(seed.cropVariety.id),
+        code: seed.code || "",
+        name: seed.name || "",
         cropName: seed.crop.name,
         varietyName: seed.cropVariety.name,
         varietyCode: seed.cropVariety.code || `SEED-${seed.cropVariety.id}`,
@@ -110,6 +112,11 @@ export default function UpdateSeedPage() {
       });
     }
   }, [isSuccess, seed, reset]);
+
+  const identityWatch = useWatch({
+    control,
+    name: ["name"],
+  });
 
   const detailsWatch = useWatch({
     control,
@@ -202,6 +209,8 @@ export default function UpdateSeedPage() {
         id: seedId,
         data: {
           cropVarietyId: seed!.cropVariety.id,
+          code: data.code || undefined,
+          name: data.name,
           origin: data.origin,
           avgYieldFrom: data.avgYieldFrom || undefined,
           avgYieldTo: data.avgYieldTo || undefined,
@@ -238,9 +247,9 @@ export default function UpdateSeedPage() {
     {
       id: "identity",
       title: "Thông tin định danh",
-      description: "Thông tin cơ bản về giống cây trồng (Không thể thay đổi)",
+      description: "Thông tin định danh hạt giống và giống cây trồng gốc",
       content: <SeedIdentityStep />,
-      isValid: true,
+      isValid: !!identityWatch[0],
     },
     {
       id: "details",

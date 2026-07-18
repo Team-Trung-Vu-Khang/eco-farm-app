@@ -12,6 +12,9 @@ export function SeedReviewStep({ formData }: { formData: CreateVarietyForm }) {
     name: "baseIllustrationUrl",
   });
 
+  const watchedName = useWatch({ control, name: "name" });
+  const watchedCode = useWatch({ control, name: "code" });
+
   const illustrationPreview = watchedIllustration
     ? URL.createObjectURL(watchedIllustration as File)
     : watchedBaseIllustration || "";
@@ -34,9 +37,9 @@ export function SeedReviewStep({ formData }: { formData: CreateVarietyForm }) {
           </div>
           <div>
             <h3 className="text-lg font-bold text-slate-800">
-              {formData.varietyName}
+              {watchedName || formData.varietyName}
             </h3>
-            <p className="text-sm text-slate-500">{formData.varietyCode}</p>
+            <p className="text-sm font-mono text-slate-500">{watchedCode || formData.varietyCode}</p>
           </div>
         </div>
 

@@ -126,6 +126,7 @@ export function useRegionDetailPage() {
     setLocation,
     region,
     isLoading,
+    crops: regionDataResponse?.crops || [],
     center,
     bounds,
     navigateToDetail,

@@ -72,6 +72,7 @@ function buildDefaultValues(editItem: PositionFormSource): PositionFormInput {
     description: editItem.description ?? "",
     responsibilityDescription: editItem.responsibilityDescription ?? "",
     displayOrder: editItem.displayOrder ?? 1,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     documents: (editItem.documents ?? []).map((document: any) => ({
       id: document.id,
       type: (document.documentType || document.type || "editor").toLowerCase(),
@@ -150,6 +151,7 @@ export function OwnerPositionFormDialog({
     if (open) {
       reset(resolvedDefaultValues);
       clearErrors();
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUploadingDocumentIndex(null);
     }
   }, [clearErrors, open, reset, resolvedDefaultValues]);
@@ -356,7 +358,7 @@ export function OwnerPositionFormDialog({
           ) : null}
         </div>
         <div className="space-y-3 rounded-xl border bg-slate-50/80 p-4">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <Label className="text-sm font-medium">Tài liệu</Label>
               <p className="text-xs text-slate-500">Thêm tài liệu đính kèm.</p>
@@ -486,7 +488,7 @@ export function OwnerPositionFormDialog({
                             </div>
 
                             {isEditor ? (
-                              <div className="space-y-2 md:col-span-2">
+                              <div className="space-y-2 sm:col-span-2">
                                 <Label
                                   htmlFor={`documents.${index}.content`}
                                   required
@@ -513,14 +515,14 @@ export function OwnerPositionFormDialog({
                             ) : null}
 
                             {!isEditor ? (
-                              <div className="space-y-2 md:col-span-2">
+                              <div className="space-y-2 sm:col-span-2">
                                 <Label
                                   htmlFor={`documents.${index}.upload`}
                                   required
                                 >
                                   File PDF
                                 </Label>
-                                <div className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3">
+                                <div className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3 max-w-full overflow-hidden">
                                   <input
                                     id={`documents.${index}.upload`}
                                     type="file"
@@ -534,17 +536,17 @@ export function OwnerPositionFormDialog({
                                       e.target.value = "";
                                     }}
                                   />
-                                  <div className="flex items-center justify-between gap-3">
-                                    <div className="min-w-0 flex-1">
+                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full overflow-hidden">
+                                    <div className="min-w-0 flex-1 w-full overflow-hidden">
                                       <p className="truncate text-sm font-medium text-slate-700">
                                         {field.fileName || "Chưa tải file PDF"}
                                       </p>
-                                      <p className="truncate text-xs text-slate-500">
+                                      <p className="break-all text-xs text-slate-500">
                                         {field.fileUrl ||
                                           "Chọn file PDF để tải lên storage"}
                                       </p>
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 shrink-0">
                                       {field.fileUrl ? (
                                         <Button
                                           type="button"

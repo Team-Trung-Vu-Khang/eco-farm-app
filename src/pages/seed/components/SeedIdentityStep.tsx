@@ -1,4 +1,14 @@
-import { Card, CardContent, Label } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  Card,
+  CardContent,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+  Input,
+  Label,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Hash, Info, Sprout } from "lucide-react";
 import { useFormContext, useWatch } from "react-hook-form";
 import type { CreateSeedFormValues } from "../schemas/createSeedSchema";
@@ -20,17 +30,46 @@ export function SeedIdentityStep() {
                 <Hash className="h-4 w-4" />
               </div>
               <Label className="text-base font-bold text-slate-700">
-                Mã trích xuất
+                Thông tin định danh hạt giống
               </Label>
             </div>
-            <div className="space-y-1">
-              <div className="font-mono text-2xl font-black tracking-tight text-slate-800">
-                {varietyCode}
-              </div>
-              <p className="text-xs font-medium text-slate-500">
-                Mã định danh duy nhất trên hệ thống
-              </p>
-            </div>
+
+            <FormField
+              control={control}
+              name="code"
+              render={({ field }) => (
+                <FormItem className="space-y-1">
+                  <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Mã giống (Tùy chọn)
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      disabled
+                      clearable={false}
+                      placeholder="Mã giống tự động tạo nếu bỏ trống"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={control}
+              name="name"
+              render={({ field }) => (
+                <FormItem className="space-y-1">
+                  <FormLabel className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Tên hạt giống <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Nhập tên giống riêng" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
 
@@ -41,7 +80,7 @@ export function SeedIdentityStep() {
                 <Sprout className="h-4 w-4" />
               </div>
               <Label className="text-base font-bold text-slate-700">
-                Thông tin giống
+                Thông tin giống gốc
               </Label>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -61,6 +100,14 @@ export function SeedIdentityStep() {
                   {cropName}
                 </div>
               </div>
+              <div className="col-span-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Mã giống gốc
+                </Label>
+                <div className="text-base font-mono font-medium text-slate-800">
+                  {varietyCode}
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -70,12 +117,11 @@ export function SeedIdentityStep() {
         <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-500" />
         <div className="space-y-1">
           <p className="text-sm font-bold text-blue-700">
-            Thông tin định danh được bảo vệ
+            Thông tin giống gốc được bảo vệ
           </p>
           <p className="text-xs text-blue-600/80">
-            Để đảm bảo tính toàn vẹn dữ liệu, các thông tin cơ bản về giống cây
-            trồng không thể chỉnh sửa trực tiếp. Vui lòng liên hệ quản trị viên
-            nếu cần thay đổi.
+            Các thông tin cơ bản về giống cây trồng gốc kế thừa từ cơ sở dữ liệu
+            danh mục của hệ thống và không thể chỉnh sửa trực tiếp từ đây.
           </p>
         </div>
       </div>

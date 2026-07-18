@@ -20,12 +20,9 @@ export const PlantIdentificationIdentityCard = ({
           </div>
           <div className="flex-1 space-y-4">
             <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900">
-                  {plant.name}
-                </h2>
-                <p className="text-slate-500 font-mono text-sm">{plant.code}</p>
-              </div>
+              <h2 className="text-2xl font-bold text-slate-900 font-mono">
+                {plant.code}
+              </h2>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-2">
               <div className="space-y-1">

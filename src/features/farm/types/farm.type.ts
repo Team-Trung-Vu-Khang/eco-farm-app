@@ -28,6 +28,8 @@ export interface FarmDocumentResponse {
 
 export interface FarmSeedRequest {
   cropVarietyId: number;
+  code?: string;
+  name?: string;
   supplierOrganizationId: number;
   origin?: string;
   avgYieldFrom?: number;
@@ -43,6 +45,8 @@ export interface FarmSeedRequest {
 
 export interface FarmSeedResponse {
   id: number;
+  code?: string;
+  name?: string;
   cropVariety: {
     id: number;
     code?: string;
@@ -269,8 +273,9 @@ export interface PersonnelRef {
 
 export interface SeedRef {
   id: number;
-  code?: string;
-  name?: string;
+  cropVarietyCode?: string;
+  cropVarietyName?: string;
+  cropName?: string;
 }
 
 export interface FarmCultivationZoneScopeResponse {
@@ -321,3 +326,51 @@ export interface CultivationZoneQueryParams {
   page?: number;
   size?: number;
 }
+
+// ─── Plant Identification ───────────────────────────────────────────────────
+
+export interface FarmPlantIdentificationRequest {
+  code?: string;
+  location: FarmCultivationZoneScopeRequest;
+  cultivationZoneId?: number;
+  height?: number;
+  durationDays?: number;
+  plantedAt?: string;
+  latitude: number;
+  longitude: number;
+  notes?: string;
+  status?: "active" | "inactive" | "archived";
+  displayOrder?: number;
+  metadataJson?: Record<string, unknown>;
+}
+
+export interface FarmPlantIdentificationResponse {
+  id: number;
+  workspaceId?: number;
+  location?: FarmCultivationZoneScopeResponse;
+  cultivationZone?: CatalogRef;
+  code?: string;
+  height?: number;
+  durationDays?: number;
+  plantedAt?: string;
+  latitude?: number;
+  longitude?: number;
+  notes?: string;
+  status: "active" | "inactive" | "archived";
+  displayOrder?: number;
+  metadataJson?: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PlantIdentificationQueryParams {
+  regionId?: number;
+  areaId?: number;
+  plotId?: number;
+  cultivationZoneId?: number;
+  keyword?: string;
+  status?: string;
+  page?: number;
+  size?: number;
+}
+

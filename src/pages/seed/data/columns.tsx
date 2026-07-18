@@ -21,23 +21,37 @@ export const seedColumns: Column<FarmSeedResponse>[] = [
     ),
   },
   {
-    key: "cropVariety",
-    label: "Mã giống",
+    key: "code",
+    label: "Mã hạt giống",
     render: (_, item) => (
       <Link href={`/seed/${item.id}`}>
-        <span className="cursor-pointer text-green-600 transition-colors hover:text-green-700 hover:underline">
-          {item.cropVariety?.code || ""}
+        <span className="cursor-pointer text-green-600 transition-colors hover:text-green-700 hover:underline font-mono">
+          {item.code || item.cropVariety?.code || ""}
         </span>
       </Link>
     ),
   },
   {
-    key: "varietyName",
-    label: "Tên giống",
+    key: "name",
+    label: "Tên hạt giống",
     render: (_, item) => (
       <span className="text-sm font-bold text-foreground">
-        {item.cropVariety?.name || ""}
+        {item.name || item.cropVariety?.name || ""}
       </span>
+    ),
+  },
+  {
+    key: "cropVariety",
+    label: "Giống cây trồng",
+    render: (_, item) => (
+      <div className="flex flex-col">
+        <span className="text-xs font-semibold text-slate-700">
+          {item.cropVariety?.name || ""}
+        </span>
+        <span className="font-mono text-[10px] text-slate-400">
+          {item.cropVariety?.code || ""}
+        </span>
+      </div>
     ),
   },
   {

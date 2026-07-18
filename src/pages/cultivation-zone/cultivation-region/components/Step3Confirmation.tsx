@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import {
   Badge,
@@ -13,7 +14,6 @@ import {
 import {
   AlertTriangle,
   Beaker,
-  Briefcase,
   CheckCircle2,
   Layers,
   MapPin,
@@ -26,7 +26,6 @@ import { type PlantEntry } from "./types";
 interface Step3ConfirmationProps {
   plants: PlantEntry[];
   initialData: any;
-  selectedEnterprise: any;
   selectedCultivationRegion: any;
   geographicalUnits: any[];
   manager: any[];
@@ -38,7 +37,6 @@ interface Step3ConfirmationProps {
 export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
   plants,
   initialData,
-  selectedEnterprise,
   selectedCultivationRegion,
   geographicalUnits,
   manager,
@@ -71,65 +69,12 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
       </div>
 
       {/* Overview row */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="flex flex-col col-span-4 gap-4 w-full border rounded-xl p-4 shadow-sm bg-white">
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 overflow-hidden shadow-sm">
-              {selectedEnterprise?.image ? (
-                <img
-                  src={selectedEnterprise?.image}
-                  alt={selectedEnterprise?.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Briefcase className="w-6 h-6 text-primary" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <Badge
-                  variant="outline"
-                  className="font-mono text-[10px] py-0 h-4 bg-primary/5 text-primary border-primary/20"
-                >
-                  {selectedEnterprise?.code}
-                </Badge>
-                <Badge
-                  variant="secondary"
-                  className="text-[10px] py-0 h-4 bg-slate-100 capitalize font-medium"
-                >
-                  {selectedEnterprise?.type}
-                </Badge>
-              </div>
-              <div className="font-bold text-slate-900 text-base leading-tight mb-1">
-                {selectedEnterprise?.name}
-              </div>
-              <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                <span className="font-medium text-slate-500">MST:</span>
-                <span>{selectedEnterprise?.taxCode}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-2 pt-3 border-t border-slate-100">
-            <div className="flex items-start gap-2.5 text-xs text-slate-600">
-              <div className="bg-slate-100 p-1 rounded-md shrink-0">
-                <MapPin className="w-3.5 h-3.5 text-slate-500" />
-              </div>
-              <div className="leading-relaxed">
-                <span className="font-medium text-slate-800 mr-1">
-                  Địa chỉ:
-                </span>
-                {selectedEnterprise?.address}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white border rounded-xl p-2 text-center shadow-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div className="bg-white border rounded-xl p-4 text-center shadow-sm col-span-1 sm:col-span-1">
           <div className="text-2xl font-bold text-primary">{plants.length}</div>
           <div className="text-xs text-muted-foreground mt-1">cây trồng</div>
         </div>
-        <div className="bg-white col-span-3 border rounded-xl p-4 text-center shadow-sm">
+        <div className="bg-white col-span-1 sm:col-span-3 border rounded-xl p-4 text-center shadow-sm">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
               <Layers className="w-5 h-5 text-primary" />
@@ -139,8 +84,8 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
                 {selectedCultivationRegion?.name}
               </div>
               <div className="text-[11px] text-muted-foreground flex items-center gap-2">
-                <span className="truncate">
-                  {selectedCultivationRegion?.targetName}
+                <span className="truncate font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-600">
+                  Mã vùng: {selectedCultivationRegion?.code || "—"}
                 </span>
               </div>
             </div>
@@ -208,13 +153,14 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
                 Giống cây trồng
               </div>
               {selectedCropsData.length > 0 ? (
-                <div className="border rounded-xl overflow-hidden">
+                <div className="border rounded-xl overflow-hidden bg-white">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
                         <TableHead className="w-[80px]">Hình ảnh</TableHead>
                         <TableHead>Mã giống</TableHead>
                         <TableHead>Tên giống</TableHead>
+                        <TableHead>Tên cây trồng</TableHead>
                         <TableHead className="text-right">
                           Tỷ lệ nảy mầm
                         </TableHead>
@@ -224,51 +170,73 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {selectedCropsData.map((c: any) => (
-                        <TableRow key={c.id} className="hover:bg-slate-50/30">
-                          <TableCell>
-                            <div className="w-10 h-10 rounded-lg bg-slate-50 overflow-hidden border border-slate-100 flex items-center justify-center shrink-0">
-                              {c.illustration ? (
-                                <img
-                                  src={
-                                    typeof c.illustration === "string"
-                                      ? c.illustration
-                                      : URL.createObjectURL(c.illustration)
-                                  }
-                                  alt={c.varietyName}
-                                  className="w-full h-full object-cover"
-                                />
+                      {selectedCropsData.map((c: any) => {
+                        const varietyCode = c.cropVarietyCode || c.varietyCode;
+                        const varietyName = c.cropVarietyName || c.varietyName;
+                        const cropName = c.cropName || "—";
+                        return (
+                          <TableRow key={c.id} className="hover:bg-slate-50/30">
+                            <TableCell>
+                              <div className="w-10 h-10 rounded-lg bg-slate-50 overflow-hidden border border-slate-100 flex items-center justify-center shrink-0">
+                                {c.illustration ? (
+                                  <img
+                                    src={
+                                      typeof c.illustration === "string"
+                                        ? c.illustration
+                                        : URL.createObjectURL(c.illustration)
+                                    }
+                                    alt={varietyName}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <Sprout className="w-4 h-4 text-slate-300" />
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {varietyCode ? (
+                                <span className="font-mono text-[10px] font-bold text-primary bg-primary/5 px-2 py-0.5 rounded border border-primary/10">
+                                  {varietyCode}
+                                </span>
                               ) : (
-                                <Sprout className="w-4 h-4 text-slate-300" />
+                                "—"
                               )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-mono text-[10px] font-bold text-primary bg-primary/5 px-2 py-0.5 rounded border border-primary/10">
-                              {c.varietyCode}
-                            </span>
-                          </TableCell>
-                          <TableCell className="font-semibold text-slate-800">
-                            {c.varietyName}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Badge
-                              variant="outline"
-                              className="border-green-100 text-green-600 bg-green-50/50 text-[10px]"
-                            >
-                              {c.germinationRate}%
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Badge
-                              variant="outline"
-                              className="border-blue-100 text-blue-600 bg-blue-50/50 text-[10px]"
-                            >
-                              {c.uniformity}%
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                            </TableCell>
+                            <TableCell className="font-semibold text-slate-800">
+                              {varietyName || "—"}
+                            </TableCell>
+                            <TableCell className="text-slate-600 text-xs">
+                              {cropName}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {c.germinationRate !== undefined &&
+                              c.germinationRate !== null ? (
+                                <Badge
+                                  variant="outline"
+                                  className="border-green-100 text-green-600 bg-green-50/50 text-[10px]"
+                                >
+                                  {c.germinationRate}%
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {c.uniformity !== undefined &&
+                              c.uniformity !== null ? (
+                                <Badge
+                                  variant="outline"
+                                  className="border-blue-100 text-blue-600 bg-blue-50/50 text-[10px]"
+                                >
+                                  {c.uniformity}%
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
@@ -288,7 +256,7 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
           <Sprout className="w-4 h-4 text-slate-500" />
           <h4 className="font-semibold text-slate-800">Danh sách cây trồng</h4>
         </div>
-        <div className="overflow-hidden bg-white">
+        <div className="overflow-x-auto bg-white">
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b">

@@ -10,6 +10,7 @@ import { usePlantIdentificationDetailPage } from "./hooks/usePlantIdentification
 const PlantIdentificationDetailPage = () => {
   const {
     data,
+    isLoading,
     deleteOpen,
     setDeleteOpen,
     cultivationRegion,
@@ -23,6 +24,20 @@ const PlantIdentificationDetailPage = () => {
     goToEdit,
     handleConfirmDelete,
   } = usePlantIdentificationDetailPage();
+
+  if (isLoading) {
+    return (
+      <AdminLayout
+        isDev={true}
+        title="Đang tải..."
+        description="Đang tải chi tiết định danh và vị trí địa lý của cây trồng"
+      >
+        <div className="p-12 text-center text-slate-400">
+          <p>Đang tải thông tin cây trồng...</p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   if (!data?.plant) {
     return <PlantIdentificationNotFoundState onBack={goToList} />;
@@ -57,10 +72,10 @@ const PlantIdentificationDetailPage = () => {
               area={area}
               plot={plot}
             />
-            <PlantIdentificationHistoryTabs
+            {/* <PlantIdentificationHistoryTabs
               historyColumns={historyColumns}
               historyData={historyData}
-            />
+            /> */}
           </div>
 
           <PlantIdentificationSidebar

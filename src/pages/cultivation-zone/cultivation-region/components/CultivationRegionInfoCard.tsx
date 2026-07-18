@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   Badge,
   Card,
@@ -5,192 +6,143 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Beaker, Layers, MapPin, Sprout, User } from "lucide-react";
-import { useMemo } from "react";
-import { GeographicalHierarchyDisplay } from "./GeographicalHierarchyDisplay";
-import { GeographicalScopeModal } from "./GeographicalScopeModal";
-import { buildGeographicalTree } from "./GeographicalTree";
-import type { GeographicalUnit } from "./GeographicalTree";
+import { Beaker, Layers, Sprout, User } from "lucide-react";
 
 interface CultivationRegionInfoCardProps {
   selectedCultivationRegion: any;
-  geographicalUnits: GeographicalUnit[];
-  selectedScopeIds: string[];
-  onScopeChange: (ids: string[]) => void;
   manager: any[];
   farmingMethod: any;
   irrigationMethod: any;
   selectedCropsData: any[];
-  regionStore: any;
 }
 
 export const CultivationRegionInfoCard = ({
   selectedCultivationRegion,
-  geographicalUnits,
-  selectedScopeIds,
-  onScopeChange,
   manager,
   farmingMethod,
   irrigationMethod,
   selectedCropsData,
-  regionStore,
 }: CultivationRegionInfoCardProps) => {
-  const treeData = useMemo(
-    () =>
-      buildGeographicalTree(geographicalUnits, selectedScopeIds, regionStore),
-    [geographicalUnits, selectedScopeIds, regionStore],
-  );
-
-  if (!selectedCultivationRegion) return null;
-
   return (
-    <Card className="border-none shadow-sm rounded-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500 mt-4">
-      <CardHeader className="border-b py-4 bg-slate-50/80">
+    <Card className="border-none shadow-sm rounded-2xl overflow-hidden">
+      <CardHeader className="border-b py-5 bg-slate-50/80">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <Layers className="w-4 h-4 text-primary" />
+          <CardTitle className="text-base font-bold flex items-center gap-2">
+            <Layers className="w-5 h-5 text-primary" />
             Thông tin vùng canh tác
           </CardTitle>
         </div>
       </CardHeader>
       <CardContent className="p-6 space-y-6">
-        {/* Configuration Summary - Grid Layout */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="flex items-start gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/30">
-            <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-primary shrink-0 border border-slate-100">
-              <User className="w-4 h-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">
-                Quản lý
+        {!selectedCultivationRegion ? (
+          <div className="py-12 flex flex-col items-center justify-center text-center gap-3">
+            <Layers className="w-10 h-10 text-slate-200" />
+            <div>
+              <div className="text-sm font-semibold text-slate-500 mb-1">
+                Chưa chọn vùng canh tác
               </div>
-              <div className="text-sm font-semibold text-slate-900">
-                {manager && manager.length > 0 ? (
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {manager.map((m: any) => (
-                      <Badge
-                        key={m.id}
-                        variant="outline"
-                        className="text-[10px] py-0 px-1.5 h-4 bg-white font-medium border-slate-200"
-                      >
-                        {m.fullName}
-                      </Badge>
-                    ))}
+              <div className="text-xs text-slate-400">
+                Chọn vùng canh tác bên trái để xem thông tin
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Manager */}
+            <div className="flex items-start gap-4 p-4 rounded-xl border border-slate-100 bg-slate-50/30">
+              <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-primary shrink-0 border border-slate-100">
+                <User className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">
+                  Quản lý
+                </div>
+                <div className="text-sm font-semibold text-slate-900">
+                  {manager && manager.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {manager.map((m: any) => (
+                        <Badge
+                          key={m.id}
+                          variant="outline"
+                          className="text-xs py-0.5 px-2 bg-white font-medium border-slate-200"
+                        >
+                          {m.fullName}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-slate-400 text-sm">
+                      Chưa phân công
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Farming Method & Irrigation */}
+            <div className="flex items-start gap-4 p-4 rounded-xl border border-slate-100 bg-slate-50/30">
+              <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-primary shrink-0 border border-slate-100">
+                <Beaker className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">
+                  Kỹ thuật &amp; Tưới tiêu
+                </div>
+                <div className="text-base font-semibold text-slate-900">
+                  {farmingMethod?.name || "Chưa thiết lập"}
+                </div>
+                {irrigationMethod && (
+                  <div className="text-xs text-primary font-medium bg-primary/5 px-2 py-0.5 rounded-full inline-block mt-1.5">
+                    {irrigationMethod.name}
                   </div>
-                ) : (
-                  "Chưa phân công"
                 )}
               </div>
             </div>
-          </div>
 
-          <div className="flex items-start gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/30">
-            <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-primary shrink-0 border border-slate-100">
-              <Beaker className="w-4 h-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">
-                Kỹ thuật & Tưới tiêu
+            {/* Seed Varieties */}
+            <div>
+              <div className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
+                <Sprout className="w-4 h-4 text-green-500" />
+                Giống cây trồng
               </div>
-              <div className="text-sm font-semibold text-slate-900 truncate">
-                {farmingMethod?.name || "Chưa thiết lập"}
-              </div>
-              {irrigationMethod && (
-                <div className="text-[10px] text-primary font-medium bg-primary/5 px-1.5 py-0.5 rounded-full inline-block mt-1">
-                  {irrigationMethod.name}
+              {selectedCropsData.length > 0 ? (
+                <div className="grid grid-cols-1 gap-3">
+                  {selectedCropsData.map((c: any) => (
+                    <div
+                      key={c.id}
+                      className="flex items-center gap-4 p-4 rounded-xl bg-white border border-slate-100 shadow-sm"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-green-50 overflow-hidden shrink-0 border border-green-100 flex items-center justify-center">
+                        <Sprout className="w-5 h-5 text-green-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-bold text-slate-900 mb-0.5">
+                          {c.cropVarietyName}
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {c.cropVarietyCode && (
+                            <span className="text-[10px] font-bold text-primary font-mono uppercase bg-primary/5 px-1.5 py-0.5 rounded">
+                              {c.cropVarietyCode}
+                            </span>
+                          )}
+                          {c.cropName && (
+                            <span className="text-xs text-slate-500">
+                              {c.cropName}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-5 text-center text-sm text-slate-400 bg-slate-50/50 border border-dashed border-slate-200 rounded-xl">
+                  Chưa có thông tin giống cây trồng
                 </div>
               )}
             </div>
-          </div>
-        </div>
-
-        {/* Geographical Scope Box */}
-        <div>
-          <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
-            <MapPin className="w-3 h-3 text-primary" />
-            Vị trí địa lý
-          </div>
-          {geographicalUnits.length > 0 ? (
-            <GeographicalScopeModal
-              key={selectedCultivationRegion.id}
-              selectedScopeIds={selectedScopeIds}
-              onSelect={onScopeChange}
-              treeData={treeData}
-              regionStore={regionStore}
-              customTrigger={
-                <GeographicalHierarchyDisplay
-                  selectedHierarchy={treeData.selectedHierarchy}
-                />
-              }
-            />
-          ) : (
-            <GeographicalHierarchyDisplay
-              selectedHierarchy={treeData.selectedHierarchy}
-            />
-          )}
-        </div>
-
-        {/* Seed Varieties */}
-        <div className="pt-2">
-          <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
-            <Sprout className="w-3 h-3 text-green-500" />
-            Giống cây trồng
-          </div>
-          {selectedCropsData.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {selectedCropsData.map((c: any) => (
-                <div
-                  key={c.id}
-                  className="flex items-start gap-3 p-3 rounded-xl bg-white border border-slate-100 shadow-sm"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-slate-50 overflow-hidden shrink-0 border border-slate-100 flex items-center justify-center">
-                    {c.illustration ? (
-                      <img
-                        src={
-                          typeof c.illustration === "string"
-                            ? c.illustration
-                            : URL.createObjectURL(c.illustration)
-                        }
-                        alt={c.varietyName}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Sprout className="w-4 h-4 text-slate-300" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className="text-[9px] font-bold text-primary font-mono uppercase bg-primary/5 px-1 py-0.5 rounded">
-                        {c.varietyCode}
-                      </span>
-                      <span className="text-xs font-bold text-slate-900 truncate">
-                        {c.varietyName}
-                      </span>
-                    </div>
-                    <div className="flex gap-1 mt-1 flex-wrap">
-                      <Badge
-                        variant="outline"
-                        className="text-[9px] px-1 py-0 border-green-200 text-green-600 bg-green-50/50"
-                      >
-                        Nảy mầm: {c.germinationRate}%
-                      </Badge>
-                      <Badge
-                        variant="outline"
-                        className="text-[9px] px-1 py-0 border-blue-200 text-blue-600 bg-blue-50/50"
-                      >
-                        Đồng đều: {c.uniformity}%
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-4 text-center text-xs text-slate-400 bg-slate-50/50 border border-dashed border-slate-200 rounded-xl">
-              Chưa có thông tin giống cây trồng
-            </div>
-          )}
-        </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );

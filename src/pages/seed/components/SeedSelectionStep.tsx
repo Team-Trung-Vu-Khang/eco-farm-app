@@ -8,6 +8,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  Input,
   Label,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CheckCircle2, Sprout } from "lucide-react";
@@ -17,7 +18,8 @@ import type { CreateSeedFormValues } from "../schemas/createSeedSchema";
 import { CropSelectorDialog } from "./CropSelectorDialog";
 
 export function SeedSelectionStep() {
-  const { watch, setValue, control } = useFormContext<CreateSeedFormValues>();
+  const { watch, setValue, control, getValues } =
+    useFormContext<CreateSeedFormValues>();
   const selectedCrop = watch("cropId");
   const selectedCropGroup = watch("cropGroupId");
   const watchedCropName = watch("cropName");
@@ -199,6 +201,14 @@ export function SeedSelectionStep() {
                                 variety.avgYieldTo ?? null,
                               );
 
+                              // // Auto-fill seed name/code if not edited yet
+                              // if (!getValues("name")) {
+                              //   setValue("name", variety.name);
+                              // }
+                              // if (!getValues("code")) {
+                              //   setValue("code", variety.code || "");
+                              // }
+
                               setValue("illustration", null);
                               if (varietyImageUrl) {
                                 setValue(
@@ -248,6 +258,59 @@ export function SeedSelectionStep() {
                       })}
                     </div>
                   )}
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </div>
+
+      <div className="my-6 border-t border-slate-100" />
+
+      <div className="space-y-4">
+        <div className="mb-2 flex items-center gap-2">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-xs font-bold text-green-600">
+            3
+          </span>
+          <Label className="text-base font-semibold text-slate-800">
+            Thông tin định danh hạt giống
+          </Label>
+        </div>
+
+        <div className="grid grid-cols-1 gap-8 pl-8 md:grid-cols-2">
+          <FormField
+            control={control}
+            name="code"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel className="text-sm font-medium text-slate-600">
+                  Mã giống (Tùy chọn)
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="Nhập mã giống (tự động tạo nếu để trống)"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={control}
+            name="name"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel className="text-sm font-medium text-slate-600">
+                  Tên hạt giống <span className="text-red-500">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="Ví dụ: Sầu riêng Ri6 hạt lép loại 1"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

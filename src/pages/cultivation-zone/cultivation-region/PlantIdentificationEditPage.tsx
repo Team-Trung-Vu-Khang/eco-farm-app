@@ -1,17 +1,65 @@
-import { AdminLayout } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { AdminLayout, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Trees } from "lucide-react";
 import { useLocation, useParams } from "wouter";
-import usePlantStore from "../../../stores/usePlantStore";
 import PlantIdentificationForm from "./components/PlantIdentificationForm";
+import {
+  usePlantIdentificationById,
+  usePlantIdentificationMutations,
+} from "@/features/farm";
+import {
+  mapApiPlantToFrontend,
+  mapFrontendPlantToApiRequest,
+} from "./utils/plantMapper";
+import { useMemo } from "react";
 
 const PlantIdentificationEditPage = () => {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
-  const { getPlantById, updatePlant } = usePlantStore();
+  const { toast } = useToast();
+  const { data: apiData, isLoading } = usePlantIdentificationById(Number(id));
+  const { updatePlant } = usePlantIdentificationMutations();
 
-  const data = getPlantById(id || "");
+  const plant = useMemo(() => {
+    if (!apiData) return null;
+    return mapApiPlantToFrontend(apiData);
+  }, [apiData]);
 
-  if (!data?.plant) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleSubmit = async (formData: any) => {
+    if (!id) return;
+    try {
+      const payload = mapFrontendPlantToApiRequest(formData);
+      await updatePlant.mutateAsync({ id: Number(id), data: payload });
+      toast({
+        title: "Thành công",
+        description: `Đã cập nhật cây trồng thành công`,
+      });
+      setLocation(`/plant-identification/${id}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      toast({
+        title: "Lỗi",
+        description: error?.message || "Không thể cập nhật cây trồng",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <AdminLayout
+        isDev={true}
+        title="Đang tải..."
+        description="Đang tải thông tin cây trồng"
+      >
+        <div className="p-12 text-center text-slate-400">
+          <p>Đang tải thông tin cây trồng...</p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (!plant) {
     return (
       <AdminLayout
         isDev={true}
@@ -26,22 +74,16 @@ const PlantIdentificationEditPage = () => {
     );
   }
 
-  const handleSubmit = (formData: any) => {
-    if (id) {
-      updatePlant(id, formData);
-      setLocation(`/plant-identification/${id}`);
-    }
-  };
-
   return (
     <AdminLayout
       isDev={true}
-      title={`Chỉnh sửa: ${data.plant.code}`}
+      title={`Chỉnh sửa: ${plant.code}`}
       description="Cập nhật thông tin định danh và thông số sinh trưởng"
     >
       <PlantIdentificationForm
-        initialData={data.plant}
+        initialData={plant}
         onSubmit={handleSubmit}
+        loading={updatePlant.isPending}
       />
     </AdminLayout>
   );

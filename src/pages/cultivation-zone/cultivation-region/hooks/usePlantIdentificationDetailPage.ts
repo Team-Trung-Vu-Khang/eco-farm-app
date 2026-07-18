@@ -2,11 +2,19 @@ import { useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { Plant } from "../../../region-chart/constants";
-import useCultivationRegionStore from "../../../../stores/useCultivationRegionStore";
-import useFarmingMethodStore from "../../../../stores/useFarmingMethodStore";
-import useIrrigationSystemStore from "../../../../stores/useIrrigationSystemStore";
-import usePersonnelStore from "../../../../stores/usePersonnelStore";
-import usePlantStore from "../../../../stores/usePlantStore";
+import {
+  usePlantIdentificationById,
+  usePlantIdentificationMutations,
+  useCultivationZoneById,
+  regionApi,
+  areaApi,
+  plotApi,
+} from "@/features/farm";
+import { useQuery } from "@tanstack/react-query";
+import { regionKeys } from "@/features/farm/hooks/useRegions";
+import { areaKeys } from "@/features/farm/hooks/useAreas";
+import { plotKeys } from "@/features/farm/hooks/usePlots";
+import { mapApiPlantToFrontend } from "../utils/plantMapper";
 
 const HISTORY_DATA = [
   {
@@ -39,9 +47,20 @@ export const plantHistoryColumns = [
   { key: "executor", label: "Người thực hiện" },
 ];
 
-export type PlantIdentificationDetailData = NonNullable<
-  ReturnType<ReturnType<typeof usePlantStore>["getPlantById"]>
->;
+export type PlantIdentificationDetailData = {
+  plant: Plant;
+  plot: any;
+  area: any;
+  region: any;
+};
+
+/** Convert API boundary (latitude/longitude) → map coords ({lat,lng}) */
+function boundaryToCoords(boundary?: Array<{ latitude?: number; longitude?: number }>): { lat: number; lng: number }[] {
+  if (!boundary) return [];
+  return boundary
+    .map((p) => ({ lat: p.latitude ?? 0, lng: p.longitude ?? 0 }))
+    .filter((c) => c.lat !== 0 || c.lng !== 0);
+}
 
 const formatAge = (plant: Plant) => {
   if (plant.ageValue && plant.ageUnit) {
@@ -61,70 +80,125 @@ export const usePlantIdentificationDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { getPlantById, deletePlant } = usePlantStore();
-  const { areas: cultivationRegions } = useCultivationRegionStore();
-  const { personnel } = usePersonnelStore();
-  const { farmingMethods } = useFarmingMethodStore();
-  const { irrigationSystems } = useIrrigationSystemStore();
+  const { data: apiData, isLoading } = usePlantIdentificationById(Number(id));
+  const { deletePlant } = usePlantIdentificationMutations();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  // 1. Resolve location details directly from apiData payload
   const data = useMemo(() => {
-    if (!id) return null;
-    return getPlantById(id) ?? null;
-  }, [getPlantById, id]);
+    if (!apiData) return null;
+    const plant = mapApiPlantToFrontend(apiData);
 
-  const cultivationRegion = useMemo(() => {
-    if (!data?.plant?.cultivationRegionId) return null;
-    return (
-      cultivationRegions.find(
-        (region) => region.id === data.plant.cultivationRegionId,
-      ) ?? null
-    );
-  }, [cultivationRegions, data]);
+    let plot: any = null;
+    let area: any = null;
+    let region: any = null;
 
-  const primaryManagerId = cultivationRegion?.managerIds?.[0];
+    const loc = apiData.location;
+    if (loc) {
+      if (loc.scopeType === "PLOT" && loc.plot) {
+        plot = { id: loc.plot.id, code: loc.plot.code, name: loc.plot.name };
+        if (loc.plot.area) {
+          area = { id: loc.plot.area.id, code: loc.plot.area.code, name: loc.plot.area.name };
+          if (loc.plot.area.region) {
+            region = { id: loc.plot.area.region.id, code: loc.plot.area.region.code, name: loc.plot.area.region.name };
+          }
+        }
+      } else if (loc.scopeType === "AREA" && loc.area) {
+        area = { id: loc.area.id, code: loc.area.code, name: loc.area.name };
+        if (loc.area.region) {
+          region = { id: loc.area.region.id, code: loc.area.region.code, name: loc.area.region.name };
+        }
+      } else if (loc.scopeType === "REGION" && loc.region) {
+        region = { id: loc.region.id, code: loc.region.code, name: loc.region.name };
+      }
+    }
+
+    return {
+      plant,
+      plot,
+      area,
+      region,
+    };
+  }, [apiData]);
+
+  // 2. Fetch detailed coordinates (boundaries) for the resolved geo entities
+  const plotId = data?.plot?.id;
+  const { data: plotDetail } = useQuery({
+    queryKey: plotKeys.detail(Number(plotId)),
+    queryFn: () => plotApi.getById(Number(plotId)),
+    enabled: !!plotId,
+  });
+
+  const areaId = data?.area?.id;
+  const { data: areaDetail } = useQuery({
+    queryKey: areaKeys.detail(Number(areaId)),
+    queryFn: () => areaApi.getById(Number(areaId)),
+    enabled: !!areaId,
+  });
+
+  const regionId = data?.region?.id;
+  const { data: regionDetail } = useQuery({
+    queryKey: regionKeys.detail(Number(regionId)),
+    queryFn: () => regionApi.getById(Number(regionId)),
+    enabled: !!regionId,
+  });
+
+  const resolvedData = useMemo(() => {
+    if (!data) return null;
+    return {
+      plant: data.plant,
+      plot: data.plot ? { ...data.plot, coordinates: boundaryToCoords(plotDetail?.boundary) } : null,
+      area: data.area ? { ...data.area, coordinates: boundaryToCoords(areaDetail?.boundary) } : null,
+      region: data.region ? { ...data.region, coordinates: boundaryToCoords(regionDetail?.boundary) } : null,
+    };
+  }, [data, plotDetail, areaDetail, regionDetail]);
+
+  // 3. Fetch full cultivation zone details using API (no Zustand store)
+  const cultivationZoneId = apiData?.cultivationZone?.id;
+  const { data: cultivationRegionDetail } = useCultivationZoneById(
+    Number(cultivationZoneId),
+    { enabled: !!cultivationZoneId },
+  );
+
+  const cultivationRegion = cultivationRegionDetail || null;
 
   const manager = useMemo(() => {
-    if (!primaryManagerId) return null;
-    return (
-      personnel.find((item) => String(item.id) === String(primaryManagerId)) ??
-      null
-    );
-  }, [personnel, primaryManagerId]);
+    return cultivationRegionDetail?.personnel?.[0] || null;
+  }, [cultivationRegionDetail]);
 
   const farmingMethod = useMemo(() => {
-    if (!cultivationRegion?.farmingMethodId) return null;
-    return (
-      farmingMethods.find(
-        (method) => method.id === cultivationRegion.farmingMethodId,
-      ) ?? null
-    );
-  }, [cultivationRegion, farmingMethods]);
+    return cultivationRegionDetail?.farmingMethod || null;
+  }, [cultivationRegionDetail]);
 
   const irrigationMethod = useMemo(() => {
-    if (!cultivationRegion?.irrigationMethodId) return null;
-    return (
-      irrigationSystems.find(
-        (system) => system.id === cultivationRegion.irrigationMethodId,
-      ) ?? null
-    );
-  }, [cultivationRegion, irrigationSystems]);
+    return cultivationRegionDetail?.irrigationSystem || null;
+  }, [cultivationRegionDetail]);
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!id) return;
-
-    deletePlant(id);
-    toast({
-      title: "Thành công",
-      description: `Đã xóa cây có mã ${data?.plant?.code || id}`,
-    });
-    setLocation("/plant-identification");
-    setDeleteOpen(false);
+    try {
+      await deletePlant.mutateAsync(Number(id));
+      toast({
+        title: "Thành công",
+        description: `Đã xóa cây có mã ${data?.plant?.code || id}`,
+      });
+      setLocation("/plant-identification");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      toast({
+        title: "Lỗi",
+        description: error?.message || "Không thể xóa cây trồng",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteOpen(false);
+    }
   };
 
   return {
     id,
-    data,
+    data: resolvedData,
+    isLoading,
     deleteOpen,
     setDeleteOpen,
     cultivationRegion,

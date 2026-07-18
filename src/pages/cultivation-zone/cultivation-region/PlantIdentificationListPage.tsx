@@ -32,8 +32,8 @@ const PlantIdentificationListPage = () => {
       }
     >
       <DataTable
-        columns={columns}
         data={plants}
+        columns={columns}
         selectable={false}
         onDelete={handleDelete}
       />

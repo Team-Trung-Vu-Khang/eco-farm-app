@@ -16,6 +16,7 @@ import {
   FormLabel,
   FormMessage,
   Combobox,
+  MultiSelect,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { OrganizationSelector } from "@/pages/cultivation-zone/cultivation-region/components";
 import { useFormContext } from "react-hook-form";
@@ -150,18 +151,18 @@ export const RegionInfoStep = ({
 
           <FormField
             control={control}
-            name="cropId"
+            name="cropIds"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Cây trồng chính</FormLabel>
                 <FormControl>
-                  <Combobox
+                  <MultiSelect
                     options={cropOptions}
-                    value={field.value ?? ""}
+                    value={field.value ?? []}
                     onChange={field.onChange}
                     placeholder="Chọn cây trồng..."
                     searchPlaceholder="Tìm kiếm cây trồng..."
-                    className="w-full"
+                    emptyText="Không tìm thấy cây trồng"
                   />
                 </FormControl>
                 <FormMessage />
@@ -194,7 +195,7 @@ export const RegionInfoStep = ({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField
             control={control}
             name="provinceId"
@@ -263,7 +264,7 @@ export const RegionInfoStep = ({
           )}
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField
             control={control}
             name="landType"

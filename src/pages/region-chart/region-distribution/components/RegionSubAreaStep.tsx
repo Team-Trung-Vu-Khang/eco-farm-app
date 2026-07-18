@@ -472,8 +472,8 @@ const SubAreaLayout = ({
   subAreaMapFitTrigger,
 }: SubAreaLayoutProps) => {
   return (
-    <div className="grid h-full w-full grid-cols-1 gap-6 p-4 lg:grid-cols-5">
-      <div className="relative overflow-hidden rounded-lg border lg:col-span-3">
+    <div className="grid h-auto lg:h-full w-full grid-cols-1 gap-6 p-4 lg:grid-cols-5 overflow-y-auto lg:overflow-hidden">
+      <div className="relative z-0 h-96 lg:h-full w-full lg:col-span-3 shrink-0 lg:shrink overflow-hidden rounded-lg border">
         <MapContainer
           center={[center.lat, center.lng]}
           zoom={14}
@@ -599,7 +599,7 @@ const SubAreaLayout = ({
         </MapContainer>
       </div>
 
-      <div className="flex h-full flex-col overflow-hidden rounded-lg border bg-slate-50 lg:col-span-2">
+      <div className="flex h-[500px] lg:h-full w-full lg:col-span-2 shrink-0 lg:shrink flex-col overflow-hidden rounded-lg border bg-slate-50">
         {!editingSubArea ? (
           <div className="flex h-full flex-col">
             <div className="flex items-center justify-between border-b bg-white p-4">
@@ -1468,7 +1468,7 @@ export const RegionSubAreaStep = ({
   const center = getBoundsFromPoints(regionPoints).getCenter();
 
   return (
-    <Card className="flex h-[750px] flex-col">
+    <Card className="flex h-auto lg:h-[750px] min-h-[600px] lg:min-h-0 flex-col">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 px-4 pt-3">
         <CardTitle>Phân chia khu vực con</CardTitle>
         <Button

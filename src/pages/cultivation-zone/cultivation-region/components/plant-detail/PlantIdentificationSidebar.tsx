@@ -10,24 +10,23 @@ import {
   Sprout,
   User,
 } from "lucide-react";
-import type { Plant, Region, SubArea } from "../../../../region-chart/constants";
-import type { Personnel } from "../../../../stores/usePersonnelStore";
-
-type PlotLike = {
-  name: string;
-};
+import type { Plant } from "../../../../region-chart/constants";
 
 type Props = {
   plant: Plant;
   cultivationRegion?: {
-    id: string;
+    id: number;
+    name?: string;
   } | null;
-  manager?: Personnel | null;
-  farmingMethod?: { name: string } | null;
-  irrigationMethod?: { name: string } | null;
-  region?: Region | null;
-  area?: SubArea | null;
-  plot?: PlotLike | null;
+  manager?: {
+    id: number;
+    fullName?: string;
+  } | null;
+  farmingMethod?: { name?: string } | null;
+  irrigationMethod?: { name?: string } | null;
+  region?: { name?: string } | null;
+  area?: { name?: string } | null;
+  plot?: { name?: string } | null;
 };
 
 export const PlantIdentificationSidebar = ({

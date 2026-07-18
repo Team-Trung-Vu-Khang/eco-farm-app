@@ -26,7 +26,7 @@ export interface PlantEntry {
   isInvalidBoundary?: boolean;
 }
 
-export const makeEmptyPlant = (): PlantEntry => ({
+export const makeEmptyPlant = (lat = 11.548, lng = 106.896): PlantEntry => ({
   entryId: `plant-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
   height: "",
   ageValue: "",
@@ -34,6 +34,6 @@ export const makeEmptyPlant = (): PlantEntry => ({
   plantedDate: new Date().toISOString().split("T")[0],
   note: "",
   plotId: "",
-  coordinate: { lat: 11.548, lng: 106.896 },
+  coordinate: { lat, lng },
   isInvalidBoundary: false,
 });

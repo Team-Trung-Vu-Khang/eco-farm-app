@@ -228,7 +228,7 @@ function LegalIdentificationFormBody({
         })
       }
       onCancel={onCancel}
-      completeLabel={isEditMode ? "Lưu thay đổi" : "Tạo hồ sơ"}
+      completeLabel={isEditMode ? "Lưu thay đổi" : "Tiến hành xét duyệt"}
     />
   );
 }
@@ -315,7 +315,7 @@ export default function LegalIdentificationCreateEditPage() {
   return (
     <AdminLayout
       isDev={true}
-      title={isEditMode ? "Chỉnh sửa hồ sơ pháp lý" : "Tạo hồ sơ pháp lý"}
+      title={isEditMode ? "Cập nhật hồ sơ pháp lý" : "Khai báo sơ pháp lý"}
       description="Nhập thông tin theo từng bước để hoàn thiện bộ hồ sơ định danh pháp lý cho vùng trồng."
       actions={
         <Button

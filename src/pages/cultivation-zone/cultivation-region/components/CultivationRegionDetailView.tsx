@@ -18,7 +18,6 @@ import { OverviewTab } from "./detail/OverviewTab";
 import { CropsTab } from "./detail/CropsTab";
 import { StaffTab } from "./detail/StaffTab";
 import { CertificatesTab } from "./detail/CertificatesTab";
-import { useAreaById } from "@/features/farm/hooks/useAreas";
 
 export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
   const params = useParams<{ id: string }>();
@@ -166,28 +165,31 @@ export const CultivationRegionDetailView = ({ id }: { id?: string }) => {
 
   return (
     <Tabs defaultValue="overview" className="space-y-6 mt-6">
-      <TabsList className="grid w-full grid-cols-6 overflow-x-auto rounded-2xl bg-slate-100/50 p-1">
-        <TabsTrigger value="overview" className="font-bold text-xs">
+      <TabsList className="flex w-full overflow-x-auto rounded-2xl bg-slate-100/50 p-1 gap-1">
+        <TabsTrigger
+          value="overview"
+          className="flex-1 min-w-20 font-bold text-xs"
+        >
           Thông tin
         </TabsTrigger>
-        <TabsTrigger value="crops" className="font-bold text-xs">
+        <TabsTrigger
+          value="crops"
+          className="flex-1 min-w-20 font-bold text-xs"
+        >
           Cây trồng
         </TabsTrigger>
-        <TabsTrigger value="staff" className="font-bold text-xs">
+        <TabsTrigger
+          value="staff"
+          className="flex-1 min-w-20 font-bold text-xs"
+        >
           Nhân viên
         </TabsTrigger>
-        <TabsTrigger value="certificates" className="font-bold text-xs">
+        <TabsTrigger
+          value="certificates"
+          className="flex-1 min-w-20 font-bold text-xs"
+        >
           Chứng nhận
         </TabsTrigger>
-        {/* <TabsTrigger value="plans" className="rounded-xl font-bold text-xs">
-          Kế hoạch & Công việc
-        </TabsTrigger>
-        <TabsTrigger
-          value="statistics"
-          className="rounded-xl font-bold text-xs"
-        >
-          Thống kê
-        </TabsTrigger> */}
       </TabsList>
 
       {/* Overview Tab */}

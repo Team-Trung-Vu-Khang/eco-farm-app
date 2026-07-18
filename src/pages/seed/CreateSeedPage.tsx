@@ -61,7 +61,7 @@ export default function CreateSeedPage() {
 
   const selectionWatch = useWatch({
     control,
-    name: ["cropGroupId", "cropId", "cropVarietyId"],
+    name: ["cropGroupId", "cropId", "cropVarietyId", "name"],
   });
 
   const detailsWatch = useWatch({
@@ -98,8 +98,8 @@ export default function CreateSeedPage() {
     const cropVarietyId = Number(data.cropVarietyId);
     const supplierId = Number(data.supplierOrganizationId);
 
-    const avgYieldFrom = data.avgYieldFrom || undefined;
-    const avgYieldTo = data.avgYieldTo || undefined;
+    const avgYieldFrom = data.avgYieldFrom ?? undefined;
+    const avgYieldTo = data.avgYieldTo ?? undefined;
 
     try {
       let finalImageUrl = data.baseIllustrationUrl || undefined;
@@ -171,6 +171,8 @@ export default function CreateSeedPage() {
 
       await createSeed.mutateAsync({
         cropVarietyId,
+        code: data.code || undefined,
+        name: data.name,
         origin: data.origin,
         avgYieldFrom,
         avgYieldTo,
@@ -209,7 +211,10 @@ export default function CreateSeedPage() {
       description: "Lựa chọn loại cây và giống cây cần nhập kho",
       content: <SeedSelectionStep />,
       isValid:
-        !!selectionWatch[0] && !!selectionWatch[1] && !!selectionWatch[2],
+        !!selectionWatch[0] &&
+        !!selectionWatch[1] &&
+        !!selectionWatch[2] &&
+        !!selectionWatch[3],
     },
     {
       id: "details",

@@ -1,43 +1,52 @@
 import { useMemo, useState } from "react";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import usePlantStore from "@/stores/usePlantStore";
-import useRegionStore from "@/stores/useRegionStore";
-import { getPlantIdentificationColumns } from "../data/plantIdentificationColumns";
+import { plantIdentificationColumns } from "../data/plantIdentificationColumns";
 import type { Plant } from "@/pages/region-chart/constants";
+import {
+  usePlantIdentifications,
+  usePlantIdentificationMutations,
+} from "@/features/farm";
+import { mapApiPlantToFrontend } from "../utils/plantMapper";
+
+export { mapApiPlantToFrontend };
 
 export const usePlantIdentificationListPage = () => {
-  const { plants, deletePlant } = usePlantStore();
+  const { items } = usePlantIdentifications();
+  const { deletePlant } = usePlantIdentificationMutations();
   const { toast } = useToast();
-  const regionStore = useRegionStore();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Plant | null>(null);
 
+  const plants = useMemo(() => items.map(mapApiPlantToFrontend), [items]);
+
   return {
     plants,
-    columns: useMemo(
-      () =>
-        getPlantIdentificationColumns(
-          regionStore.regions,
-          regionStore.getAreaById,
-          regionStore.getPlotById,
-        ),
-      [regionStore.getAreaById, regionStore.getPlotById, regionStore.regions],
-    ),
     deleteOpen,
     setDeleteOpen,
+    columns: plantIdentificationColumns,
     handleDelete: (item: Plant) => {
       setDeleteItem(item);
       setDeleteOpen(true);
     },
-    handleConfirmDelete: () => {
+    handleConfirmDelete: async () => {
       if (!deleteItem) return;
-      deletePlant(deleteItem.id);
-      toast({
-        title: "Thành công",
-        description: `Đã xóa cây có mã ${deleteItem.code || deleteItem.id}`,
-      });
-      setDeleteOpen(false);
-      setDeleteItem(null);
+      try {
+        await deletePlant.mutateAsync(Number(deleteItem.id));
+        toast({
+          title: "Thành công",
+          description: `Đã xóa cây có mã ${deleteItem.code || deleteItem.id}`,
+        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
+        toast({
+          title: "Lỗi",
+          description: error?.message || "Không thể xóa cây trồng",
+          variant: "destructive",
+        });
+      } finally {
+        setDeleteOpen(false);
+        setDeleteItem(null);
+      }
     },
   };
 };

@@ -70,30 +70,35 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="relative overflow-hidden rounded-xl border border-blue-200 bg-linear-to-r from-blue-50 via-white to-blue-50 p-5 shadow-sm">
-        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          {/* Left: icon + title + description */}
+          <div className="flex items-start gap-4 flex-1 min-w-0">
             <div className="w-12 h-12 rounded-xl bg-white shadow-sm border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
               <Sprout className="w-6 h-6" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-bold text-blue-900">
-                Danh sách cây trồng
-              </h3>
+              <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                <h3 className="text-base font-bold text-blue-900">
+                  Danh sách cây trồng
+                </h3>
+                <span className="shrink-0 px-2.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">
+                  {plants.length} cây
+                </span>
+              </div>
               <p className="text-sm text-blue-700/80">
                 Mỗi cây có thể thuộc một lô/vị trí khác nhau trong vùng canh
                 tác.
               </p>
             </div>
-            <div className="shrink-0 px-3 py-1 bg-blue-100 text-blue-700 text-sm font-bold rounded-full">
-              {plants.length} cây
-            </div>
           </div>
+
+          {/* Right: import button */}
           {!initialData && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => setIsImportOpen(true)}
-              className="bg-white hover:bg-blue-50 text-blue-700 border-blue-200 shrink-0"
+              className="bg-white hover:bg-blue-50 text-blue-700 border-blue-200 sm:w-auto shrink-0"
             >
               <Upload className="w-4 h-4 mr-2" /> Nhập từ Excel
             </Button>
@@ -101,6 +106,40 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
         </div>
         <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl" />
       </div>
+
+      {/* Warning: unplaced or out-of-boundary plants block next step */}
+      {(() => {
+        const unplaced = plants.filter((p) => !p.plotId);
+        const invalid = plants.filter((p) => p.plotId && p.isInvalidBoundary);
+        if (unplaced.length === 0 && invalid.length === 0) return null;
+        return (
+          <div className="flex items-start gap-3 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 animate-in fade-in slide-in-from-top-1 duration-300">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+            <div className="text-sm space-y-0.5">
+              {unplaced.length > 0 && (
+                <div>
+                  <span className="font-bold">
+                    {unplaced.length === 1
+                      ? "1 cây chưa được xác định vị trí."
+                      : `${unplaced.length} cây chưa được xác định vị trí.`}
+                  </span>{" "}
+                  Bấm vào lô trên bản đồ để đặt vị trí.
+                </div>
+              )}
+              {invalid.length > 0 && (
+                <div>
+                  <span className="font-bold">
+                    {invalid.length === 1
+                      ? "1 cây đang nằm ngoài ranh giới hợp lệ."
+                      : `${invalid.length} cây đang nằm ngoài ranh giới hợp lệ.`}
+                  </span>{" "}
+                  Áp dụng gợi ý hoặc di chuyển marker vào trong vùng hợp lệ.
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Left: Plant list */}
@@ -226,7 +265,7 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
               )}
               <div
                 className={cn(
-                  "h-125 relative z-0 transition-all duration-100 ease-in-out",
+                  "h-96 lg:h-125 relative z-0 transition-all duration-100 ease-in-out",
                   isMapExpanded ? "hidden opacity-0" : "",
                 )}
               >

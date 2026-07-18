@@ -30,30 +30,20 @@ export interface TreeData {
   selectedScopeUnits: GeographicalUnit[];
 }
 
+/**
+ * Builds the geographical tree from flat lists and pre-built parent maps.
+ * areasByRegion and plotsByArea should be derived from the API response scopes,
+ * not from any local store.
+ */
 export const buildGeographicalTree = (
   geographicalUnits: GeographicalUnit[],
   selectedScopeIds: string[],
-  regionStore: any,
+  areasByRegion: Record<string, GeographicalUnit[]>,
+  plotsByArea: Record<string, GeographicalUnit[]>,
 ): TreeData => {
   const regions = geographicalUnits.filter((u) => u.level === 3);
   const areas = geographicalUnits.filter((u) => u.level === 2);
   const plots = geographicalUnits.filter((u) => u.level === 1);
-
-  const areasByRegion: Record<string, GeographicalUnit[]> = {};
-  areas.forEach((area) => {
-    const ac = regionStore.getAreaById?.(area.id);
-    const rid = ac?.region?.id?.toString() || "";
-    if (!areasByRegion[rid]) areasByRegion[rid] = [];
-    areasByRegion[rid].push(area);
-  });
-
-  const plotsByArea: Record<string, GeographicalUnit[]> = {};
-  plots.forEach((plot) => {
-    const pc = regionStore.getPlotById?.(plot.id);
-    const aid = pc?.area?.id?.toString() || "";
-    if (!plotsByArea[aid]) plotsByArea[aid] = [];
-    plotsByArea[aid].push(plot);
-  });
 
   const selectedHierarchy: RegionNode[] = regions
     .filter(

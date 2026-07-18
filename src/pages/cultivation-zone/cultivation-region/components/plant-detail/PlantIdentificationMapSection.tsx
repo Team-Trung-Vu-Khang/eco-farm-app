@@ -1,4 +1,4 @@
-import type { Plant, Region, SubArea } from "../../../../region-chart/constants";
+import type { Plant } from "../../../../region-chart/constants";
 import {
   Button,
   Card,
@@ -12,17 +12,11 @@ import { useEffect, useMemo } from "react";
 import { MapContainer, Marker, Polygon, TileLayer, useMap } from "react-leaflet";
 import treeMarkerIcon from "@/assets/tree.webp";
 
-type PlotLike = {
-  id: string;
-  name: string;
-  coordinates: Array<{ lat: number; lng: number }>;
-};
-
 type Props = {
   plant: Plant;
-  region?: Region | null;
-  area?: SubArea | null;
-  plot?: PlotLike | null;
+  region?: { coordinates?: Array<{ lat: number; lng: number }> } | null;
+  area?: { coordinates?: Array<{ lat: number; lng: number }> } | null;
+  plot?: { coordinates?: Array<{ lat: number; lng: number }> } | null;
 };
 
 type LatLngTuple = [number, number];

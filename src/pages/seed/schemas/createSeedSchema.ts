@@ -4,6 +4,8 @@ export const seedSelectionSchema = z.object({
   cropGroupId: z.string().min(1, "Vui lòng chọn nhóm cây trồng"),
   cropId: z.string().min(1, "Vui lòng chọn cây trồng"),
   cropVarietyId: z.string().min(1, "Vui lòng chọn giống cây"),
+  code: z.string().optional(),
+  name: z.string().min(1, "Vui lòng nhập tên hạt giống"),
   cropName: z.string().optional(),
   varietyName: z.string().optional(),
   varietyCode: z.string().optional(),

@@ -418,7 +418,7 @@ export const PlantCard = ({
                   value={plant.ageUnit}
                   onValueChange={(val) => onUpdate({ ageUnit: val })}
                 >
-                  <SelectTrigger className="w-25">
+                  <SelectTrigger className="w-28">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -429,7 +429,7 @@ export const PlantCard = ({
                 </Select>
               </div>
             </div>
-            <div className="space-y-2 col-span-2">
+            <div className="space-y-2 col-span-1 sm:col-span-2">
               <Label htmlFor={`date-${plant.entryId}`} className="text-xs">
                 Ngày trồng
               </Label>
@@ -494,11 +494,13 @@ export const PlantCard = ({
                   {validationError}
                 </div>
                 {suggestion && (
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-slate-600">Gợi ý gần nhất:</span>
-                    <span className="font-mono bg-white px-1.5 py-0.5 rounded border border-red-200 font-bold">
-                      {suggestion.lat.toFixed(5)}, {suggestion.lng.toFixed(5)}
-                    </span>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-0.5 w-full">
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-600">Gợi ý gần nhất:</span>
+                      <span className="font-mono bg-white px-1.5 py-0.5 rounded border border-red-200 font-bold">
+                        {suggestion.lat.toFixed(5)}, {suggestion.lng.toFixed(5)}
+                      </span>
+                    </div>
                     <button
                       type="button"
                       onClick={() => {
@@ -578,7 +580,7 @@ export const PlantCard = ({
                         setValidationError(null);
                         setSuggestion(null);
                       }}
-                      className="ml-auto text-primary font-bold hover:underline"
+                      className="sm:ml-auto text-primary font-bold hover:underline text-left text-[11px]"
                     >
                       Dùng gợi ý
                     </button>

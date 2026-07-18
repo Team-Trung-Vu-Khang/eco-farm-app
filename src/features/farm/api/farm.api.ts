@@ -16,6 +16,9 @@ import type {
   FarmCultivationZoneRequest,
   FarmCultivationZoneResponse,
   CultivationZoneQueryParams,
+  FarmPlantIdentificationRequest,
+  FarmPlantIdentificationResponse,
+  PlantIdentificationQueryParams,
 } from "../types/farm.type";
 import type { PageResponse } from "../../foundation/types/foundation.type";
 
@@ -166,3 +169,31 @@ export const cultivationZoneApi = {
   delete: (id: number) =>
     apiClient.delete(`${FARM_ENDPOINTS.cultivationZones}/${id}`),
 };
+
+// ─── Plant Identification API ────────────────────────────────────────────────
+
+export const plantIdentificationApi = {
+  list: (params?: PlantIdentificationQueryParams) =>
+    apiClient
+      .get<PageResponse<FarmPlantIdentificationResponse>>(FARM_ENDPOINTS.plantIdentifications, { params })
+      .then((r) => r.data),
+
+  getById: (id: number) =>
+    apiClient
+      .get<FarmPlantIdentificationResponse>(`${FARM_ENDPOINTS.plantIdentifications}/${id}`)
+      .then((r) => r.data),
+
+  create: (data: FarmPlantIdentificationRequest) =>
+    apiClient
+      .post<FarmPlantIdentificationResponse>(FARM_ENDPOINTS.plantIdentifications, data)
+      .then((r) => r.data),
+
+  update: (id: number, data: FarmPlantIdentificationRequest) =>
+    apiClient
+      .put<FarmPlantIdentificationResponse>(`${FARM_ENDPOINTS.plantIdentifications}/${id}`, data)
+      .then((r) => r.data),
+
+  delete: (id: number) =>
+    apiClient.delete(`${FARM_ENDPOINTS.plantIdentifications}/${id}`),
+};
+

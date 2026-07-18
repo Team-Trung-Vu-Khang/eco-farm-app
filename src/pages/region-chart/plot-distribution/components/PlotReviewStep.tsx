@@ -77,7 +77,7 @@ export const PlotReviewStep = ({ showEnterprise = false }: PlotReviewStepProps =
           </div>
         </CardHeader>
         <CardContent className="px-5 py-5">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3">
             {showEnterprise && (
               <div className="space-y-0.5">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -130,7 +130,7 @@ export const PlotReviewStep = ({ showEnterprise = false }: PlotReviewStepProps =
           </div>
         </CardHeader>
         <CardContent className="px-5 py-5">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3">
 
             <div className="space-y-0.5">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">

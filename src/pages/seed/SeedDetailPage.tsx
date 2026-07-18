@@ -109,7 +109,7 @@ export default function SeedDetailPage() {
     <AdminLayout
       isDev={true}
       title="Chi tiết hạt giống"
-      description={`Thông tin chi tiết về ${seed.cropVariety?.name || "Hạt giống"}`}
+      description={`Thông tin chi tiết về ${seed.name || seed.cropVariety?.name || "Hạt giống"}`}
       actions={
         <div className="flex items-center gap-3">
           <Link href="/seed">
@@ -170,17 +170,22 @@ export default function SeedDetailPage() {
             {/* Info Content */}
             <div className="flex-1 space-y-8 pt-2">
               <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-none px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider">
-                    {seed.cropVariety?.code || "N/A"}
+                <div className="flex items-center gap-3 mb-3 flex-wrap">
+                  <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-none px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider font-mono">
+                    {seed.code || seed.cropVariety?.code || "N/A"}
                   </Badge>
                   <span className="text-sm font-medium text-slate-400 flex items-center gap-1">
                     <Leaf className="w-3.5 h-3.5" />
                     {seed.crop?.name || "N/A"}
                   </span>
+                  {seed.name && seed.cropVariety?.name && seed.name !== seed.cropVariety?.name && (
+                    <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
+                      Giống gốc: {seed.cropVariety.name} ({seed.cropVariety.code})
+                    </span>
+                  )}
                 </div>
                 <h1 className="text-4xl md:text-5xl font-black text-slate-800 tracking-tight leading-tight mb-4">
-                  {seed.cropVariety?.name || "Hạt giống"}
+                  {seed.name || seed.cropVariety?.name || "Hạt giống"}
                 </h1>
                 <p className="text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">
                   Thông tin năng suất, khả năng nảy mầm và nguồn gốc chi tiết

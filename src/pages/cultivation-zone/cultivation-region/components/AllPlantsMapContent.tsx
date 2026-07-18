@@ -17,7 +17,7 @@ import type { PlantEntry } from "./types";
 export const RecenterMap = ({ lat, lng }: { lat: number; lng: number }) => {
   const map = useMapEvents({});
   useEffect(() => {
-    map.setView([lat, lng]);
+    map.flyTo([lat, lng], Math.max(map.getZoom(), 17), { duration: 0.6 });
   }, [lat, lng, map]);
   return null;
 };
@@ -140,8 +140,8 @@ export const AllPlantsMapContent = ({
         attribution="Esri"
       />
       <MapClickHandler />
-      {/* Auto-pan to active plant */}
-      {activePlant?.plotId && (
+      {/* Auto-pan to active plant on tab click */}
+      {activePlant && (
         <RecenterMap
           lat={activePlant.coordinate.lat}
           lng={activePlant.coordinate.lng}

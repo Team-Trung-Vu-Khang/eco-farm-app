@@ -25,16 +25,12 @@ interface GeographicalScopeModalProps {
   selectedScopeIds: string[];
   onSelect: (ids: string[]) => void;
   treeData: TreeData;
-  regionStore: any;
-  customTrigger?: React.ReactNode;
 }
 
 export const GeographicalScopeModal = ({
   selectedScopeIds,
   onSelect,
   treeData,
-  regionStore,
-  customTrigger,
 }: GeographicalScopeModalProps) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -45,7 +41,6 @@ export const GeographicalScopeModal = ({
     plots,
     areasByRegion,
     plotsByArea,
-    selectedScopeUnits,
   } = treeData;
 
   const [expandedRegions, setExpandedRegions] = useState<string[]>(
@@ -64,24 +59,20 @@ export const GeographicalScopeModal = ({
     const isCurrentlySelected = tempIds.includes(id);
 
     if (isCurrentlySelected) {
+      // Clicking the already-selected item clears the whole selection
       setTempIds([]);
       return;
     }
 
-    const nextIds = new Set<string>();
-
+    // Replace entire selection with this item + its descendants
+    const nextIds = new Set<string>([id]);
     if (level === 3) {
-      nextIds.add(id);
-      const regionAreas = areasByRegion[id] || [];
-      regionAreas.forEach((area) => {
+      (areasByRegion[id] || []).forEach((area) => {
         nextIds.add(area.id);
         (plotsByArea[area.id] || []).forEach((plot) => nextIds.add(plot.id));
       });
     } else if (level === 2) {
-      nextIds.add(id);
       (plotsByArea[id] || []).forEach((plot) => nextIds.add(plot.id));
-    } else {
-      nextIds.add(id);
     }
 
     setTempIds(Array.from(nextIds));
@@ -94,30 +85,19 @@ export const GeographicalScopeModal = ({
 
   return (
     <>
-      {customTrigger ? (
-        <div
-          onClick={() => {
-            setTempIds(selectedScopeIds);
-            setOpen(true);
-          }}
-        >
-          {customTrigger}
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => {
-            setTempIds(selectedScopeIds);
-            setOpen(true);
-          }}
-          className="h-8 px-3 text-xs cursor-pointer border border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 text-primary font-bold gap-2 transition-all rounded-lg flex items-center justify-center shrink-0"
-        >
-          <Plus className="w-3 h-3" />
-          {selectedScopeUnits.length > 0
-            ? `Chỉnh sửa (${selectedScopeUnits.length})`
-            : "Chọn vị trí địa lý"}
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => {
+          setTempIds(selectedScopeIds);
+          setOpen(true);
+        }}
+        className="h-8 px-3 text-xs cursor-pointer border border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 text-primary font-bold gap-2 transition-all rounded-lg flex items-center justify-center shrink-0"
+      >
+        <Plus className="w-3 h-3" />
+        {selectedScopeIds.length > 0
+          ? `Chỉnh sửa phạm vi (${selectedScopeIds.length})`
+          : "Chọn vị trí địa lý"}
+      </button>
 
       <Dialog
         open={open}
@@ -157,8 +137,11 @@ export const GeographicalScopeModal = ({
                   {areas
                     .filter((a) => a.name.toLowerCase().includes(lowerSearch))
                     .map((area: any) => {
-                      const ac = regionStore.getAreaById?.(area.id);
-                      const rid = ac?.region?.id?.toString() || "";
+                      // Find which region this area belongs to by scanning areasByRegion
+                      const rid =
+                        Object.keys(areasByRegion).find((rId) =>
+                          areasByRegion[rId].some((a) => a.id === area.id),
+                        ) || "";
                       const isInherited = tempIds.includes(rid);
 
                       return (
@@ -199,10 +182,16 @@ export const GeographicalScopeModal = ({
                   {plots
                     .filter((p) => p.name.toLowerCase().includes(lowerSearch))
                     .map((plot: any) => {
-                      const pc = regionStore.getPlotById?.(plot.id);
-                      const aid = pc?.area?.id?.toString() || "";
-                      const ac = regionStore.getAreaById?.(aid);
-                      const rid = ac?.region?.id?.toString() || "";
+                      // Find which area this plot belongs to
+                      const aid =
+                        Object.keys(plotsByArea).find((aId) =>
+                          plotsByArea[aId].some((p) => p.id === plot.id),
+                        ) || "";
+                      // Find which region that area belongs to
+                      const rid =
+                        Object.keys(areasByRegion).find((rId) =>
+                          areasByRegion[rId].some((a) => a.id === aid),
+                        ) || "";
                       const isInherited =
                         tempIds.includes(rid) || tempIds.includes(aid);
 

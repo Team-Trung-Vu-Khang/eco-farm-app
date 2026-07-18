@@ -48,7 +48,7 @@ export const GeographicalHierarchyDisplay = ({
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight leading-none mb-1">
                   Vùng trồng
                 </div>
-                <div className="text-sm font-bold text-slate-800">
+                <div className="text-base font-bold text-slate-800">
                   {region.name}
                 </div>
               </div>

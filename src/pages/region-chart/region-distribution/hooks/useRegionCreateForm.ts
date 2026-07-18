@@ -44,14 +44,11 @@ export function useRegionCreateForm(
           provinceId: regionDataResponse.province || "",
           wardId: regionDataResponse.ward || regionDataResponse.district || "",
           address: regionDataResponse.address || "",
-          cropId:
+          cropIds:
             regionDataResponse.crops
-              ?.find((c) => c.role === "MAIN")
-              ?.cropId?.toString() ||
-            regionDataResponse.crops
-              ?.find((c) => c.role === "MAIN")
-              ?.crop?.id?.toString() ||
-            "",
+              ?.filter((c) => c.role === "MAIN")
+              .map((c) => (c.cropId || c.crop?.id)?.toString())
+              .filter(Boolean) as string[] || [],
           landType: regionDataResponse.soilType?.id?.toString() || "",
           terrain: regionDataResponse.terrainFeature?.id?.toString() || "",
           note: regionDataResponse.description || "",
@@ -97,7 +94,7 @@ export function useRegionCreateForm(
         provinceId: "",
         wardId: "",
         address: "",
-        cropId: "",
+        cropIds: [],
         landType: "",
         terrain: "",
         note: "",
@@ -137,8 +134,8 @@ export function useRegionCreateForm(
           enterpriseId: data.enterpriseId,
           address: data.metadataJson?.address,
         },
-        crops: data.cropId
-          ? [{ cropId: parseInt(data.cropId, 10), role: "MAIN" }]
+        crops: data.cropIds?.length
+          ? data.cropIds.map((id) => ({ cropId: parseInt(id, 10), role: "MAIN" }))
           : undefined,
         boundary: data.isDetailed
           ? (data.coordinates || []).map((c) => ({

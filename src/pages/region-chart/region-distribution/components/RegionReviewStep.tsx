@@ -21,14 +21,15 @@ interface RegionReviewStepProps {
   showEnterprise?: boolean;
 }
 
-export const RegionReviewStep = ({ showEnterprise = false }: RegionReviewStepProps = {}) => {
+export const RegionReviewStep = ({
+  showEnterprise = false,
+}: RegionReviewStepProps = {}) => {
   const { watch } = useFormContext<RegionFormValues>();
   const formData = watch();
 
   const { items: lands } = useCatalog("soil-types");
   const { items: terrains } = useCatalog("terrain-features");
   const { data: cropsData } = useCrops({ params: { size: 100 } });
-  const crops = cropsData?.content || [];
 
   const workspaceId = useSelectedWorkspaceId();
   const parsedWorkspaceId =
@@ -38,8 +39,7 @@ export const RegionReviewStep = ({ showEnterprise = false }: RegionReviewStepPro
     formData.enterpriseId || "",
     parsedWorkspaceId ?? "missing",
     {
-      enabled:
-        parsedWorkspaceId !== undefined && !!formData.enterpriseId,
+      enabled: parsedWorkspaceId !== undefined && !!formData.enterpriseId,
     },
   );
 
@@ -50,6 +50,16 @@ export const RegionReviewStep = ({ showEnterprise = false }: RegionReviewStepPro
     const coordinates = formData.coordinates || [];
     return coordinates.map((c) => L.latLng(c.lat, c.lng));
   }, [formData.coordinates]);
+
+  const cropIds = formData.cropIds;
+  const selectedCropsText = useMemo(() => {
+    if (!cropIds || cropIds.length === 0) return "";
+    const cropsList = cropsData?.content || [];
+    return cropIds
+      .map((id) => cropsList.find((c) => c.id.toString() === id)?.name)
+      .filter(Boolean)
+      .join(", ");
+  }, [cropIds, cropsData?.content]);
 
   return (
     <div className="space-y-5">
@@ -78,7 +88,7 @@ export const RegionReviewStep = ({ showEnterprise = false }: RegionReviewStepPro
           </div>
         </CardHeader>
         <CardContent className="px-5 py-5">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3">
             {showEnterprise && (
               <div className="space-y-0.5">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -92,8 +102,6 @@ export const RegionReviewStep = ({ showEnterprise = false }: RegionReviewStepPro
               </div>
             )}
 
-
-
             <div className="space-y-0.5">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Tên vùng
@@ -101,6 +109,17 @@ export const RegionReviewStep = ({ showEnterprise = false }: RegionReviewStepPro
               <p className="text-sm font-semibold text-slate-700">
                 {formData.name || (
                   <span className="italic text-slate-300">Chưa nhập</span>
+                )}
+              </p>
+            </div>
+
+            <div className="space-y-0.5">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Cây trồng chính
+              </p>
+              <p className="text-sm font-semibold text-slate-700">
+                {selectedCropsText || (
+                  <span className="italic text-slate-300">Chưa chọn</span>
                 )}
               </p>
             </div>
@@ -123,8 +142,11 @@ export const RegionReviewStep = ({ showEnterprise = false }: RegionReviewStepPro
                 Tỉnh / Thành phố
               </p>
               <p className="text-sm text-slate-700">
-                {provinces.find((province) => province.code === formData.provinceId)
-                  ?.name || <span className="italic text-slate-300">Chưa chọn</span>}
+                {provinces.find(
+                  (province) => province.code === formData.provinceId,
+                )?.name || (
+                  <span className="italic text-slate-300">Chưa chọn</span>
+                )}
               </p>
             </div>
 
@@ -133,8 +155,9 @@ export const RegionReviewStep = ({ showEnterprise = false }: RegionReviewStepPro
                 Phường / Xã
               </p>
               <p className="text-sm text-slate-700">
-                {wards.find((ward) => ward.code === formData.wardId)
-                  ?.name || <span className="italic text-slate-300">Chưa chọn</span>}
+                {wards.find((ward) => ward.code === formData.wardId)?.name || (
+                  <span className="italic text-slate-300">Chưa chọn</span>
+                )}
               </p>
             </div>
 
@@ -157,7 +180,9 @@ export const RegionReviewStep = ({ showEnterprise = false }: RegionReviewStepPro
                 {lands.find(
                   (land) =>
                     String(land.id || land.code) === String(formData.landType),
-                )?.name || <span className="italic text-slate-300">Chưa chọn</span>}
+                )?.name || (
+                  <span className="italic text-slate-300">Chưa chọn</span>
+                )}
               </p>
             </div>
 
@@ -168,8 +193,11 @@ export const RegionReviewStep = ({ showEnterprise = false }: RegionReviewStepPro
               <p className="text-sm text-slate-700">
                 {terrains.find(
                   (terrain) =>
-                    String(terrain.id || terrain.code) === String(formData.terrain),
-                )?.name || <span className="italic text-slate-300">Chưa chọn</span>}
+                    String(terrain.id || terrain.code) ===
+                    String(formData.terrain),
+                )?.name || (
+                  <span className="italic text-slate-300">Chưa chọn</span>
+                )}
               </p>
             </div>
 
@@ -234,10 +262,9 @@ export const RegionReviewStep = ({ showEnterprise = false }: RegionReviewStepPro
                 <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
 
                 <Polygon
-                  positions={regionPoints.map((point) => [
-                    point.lat,
-                    point.lng,
-                  ] as [number, number])}
+                  positions={regionPoints.map(
+                    (point) => [point.lat, point.lng] as [number, number],
+                  )}
                   pathOptions={{
                     color: "#10b981",
                     fillColor: "#10b981",
@@ -248,14 +275,17 @@ export const RegionReviewStep = ({ showEnterprise = false }: RegionReviewStepPro
                 />
 
                 {subAreas
-                  .filter((subArea) => subArea.coordinates && subArea.coordinates.length >= 3)
+                  .filter(
+                    (subArea) =>
+                      subArea.coordinates && subArea.coordinates.length >= 3,
+                  )
                   .map((subArea, index) => (
                     <Polygon
                       key={subArea.id || index}
-                      positions={subArea.coordinates!.map((coordinate) => [
-                        coordinate.lat,
-                        coordinate.lng,
-                      ] as [number, number])}
+                      positions={subArea.coordinates!.map(
+                        (coordinate) =>
+                          [coordinate.lat, coordinate.lng] as [number, number],
+                      )}
                       pathOptions={{
                         color: "#f59e0b",
                         fillColor: "#f59e0b",
@@ -263,7 +293,11 @@ export const RegionReviewStep = ({ showEnterprise = false }: RegionReviewStepPro
                         weight: 2,
                       }}
                     >
-                      <Tooltip permanent direction="center" className="text-[10px] font-bold">
+                      <Tooltip
+                        permanent
+                        direction="center"
+                        className="text-[10px] font-bold"
+                      >
                         {subArea.name || `Khu ${index + 1}`}
                       </Tooltip>
                     </Polygon>
@@ -286,7 +320,8 @@ export const RegionReviewStep = ({ showEnterprise = false }: RegionReviewStepPro
                   <span className="text-slate-600">Ranh giới vùng trồng</span>
                 </div>
                 {subAreas.filter(
-                  (subArea) => subArea.coordinates && subArea.coordinates.length >= 3,
+                  (subArea) =>
+                    subArea.coordinates && subArea.coordinates.length >= 3,
                 ).length > 0 && (
                   <div className="flex items-center gap-1.5">
                     <span className="inline-block h-3 w-4 rounded-sm border border-amber-400 bg-amber-400/30" />
