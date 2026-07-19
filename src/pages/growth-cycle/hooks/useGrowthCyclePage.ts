@@ -129,6 +129,10 @@ export function useGrowthCyclePage() {
     setLocation(`/growth-cycle/${item.id}/edit`);
   };
 
+  const handleWorkflow = (item: GrowthCycle) => {
+    setLocation(`/growth-cycle/${item.id}/workflow`);
+  };
+
   const handleDelete = (item: GrowthCycle) => {
     setDeleteItem(item);
     setDeleteOpen(true);
@@ -175,6 +179,7 @@ export function useGrowthCyclePage() {
     deleteOpen,
     setDeleteOpen,
     handleEdit,
+    handleWorkflow,
     handleDelete,
     handleConfirmDelete,
     filters,

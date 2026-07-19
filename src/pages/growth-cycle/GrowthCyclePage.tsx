@@ -14,7 +14,7 @@ import {
 import { Fish, Leaf, PawPrint, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
-import { growthCycleColumns } from "./data/columns";
+import { createGrowthCycleColumns } from "./data/columns";
 import GrowthCycleDetailPage from "./GrowthCycleDetailPage";
 import { useGrowthCyclePage } from "./hooks/useGrowthCyclePage";
 
@@ -29,6 +29,7 @@ const GrowthCyclePage = () => {
     deleteOpen,
     setDeleteOpen,
     handleEdit,
+    handleWorkflow,
     handleDelete,
     handleConfirmDelete,
     loading,
@@ -43,6 +44,17 @@ const GrowthCyclePage = () => {
   } = useGrowthCyclePage();
 
   useDialogBugWorkaround([deleteOpen, detailOpen]);
+
+  const growthCycleColumns = useMemo(
+    () =>
+      createGrowthCycleColumns({
+        onView: handleView,
+        onEdit: handleEdit,
+        onDelete: handleDelete,
+        onWorkflow: handleWorkflow,
+      }),
+    [handleDelete, handleEdit, handleView, handleWorkflow],
+  );
 
   const plantCycles = useMemo(
     () =>
@@ -94,9 +106,6 @@ const GrowthCyclePage = () => {
             data={plantCycles}
             selectable={false}
             columns={growthCycleColumns}
-            onView={handleView}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
             searchPlaceholder="Tìm kiếm chu kỳ thực vật..."
             searchable
             onSearch={handleSearch}
@@ -131,9 +140,6 @@ const GrowthCyclePage = () => {
               data={animalCycles}
               selectable={false}
               columns={growthCycleColumns}
-              onView={handleView}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
               searchPlaceholder="Tìm kiếm chu kỳ vật nuôi / thủy sản..."
               searchable
               onSearch={handleSearch}

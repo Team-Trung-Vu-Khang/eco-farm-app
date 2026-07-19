@@ -210,6 +210,9 @@ const CreateGrowthCyclePage = lazy(
 const UpdateGrowthCyclePage = lazy(
   () => import("./pages/growth-cycle/UpdateGrowthCyclePage"),
 );
+const GrowthCycleWorkflowPage = lazy(
+  () => import("./pages/growth-cycle/GrowthCycleWorkflowPage"),
+);
 const SeasonPage = lazy(() => import("./pages/season/SeasonPage"));
 const CreateSeasonPage = lazy(() => import("./pages/season/CreateSeasonPage"));
 const UpdateSeasonPage = lazy(() => import("./pages/season/UpdateSeasonPage"));
@@ -708,6 +711,10 @@ function Router() {
       <Route path="/seed/:id" component={SeedDetailPage} />
       <Route path="/growth-cycle" component={GrowthCyclePage} />
       <Route path="/growth-cycle/create" component={CreateGrowthCyclePage} />
+      <Route
+        path="/growth-cycle/:id/workflow"
+        component={GrowthCycleWorkflowPage}
+      />
       <Route path="/growth-cycle/:id/edit" component={UpdateGrowthCyclePage} />
       <Route path="/season" component={SeasonPage} />
       <Route path="/season/create" component={CreateSeasonPage} />

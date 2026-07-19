@@ -6,16 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  ArrowLeft,
-  Calendar,
-  Edit,
-  FileText,
-  Fish,
-  Layers,
-  Leaf,
-  Sprout,
-} from "lucide-react";
+import { ArrowLeft, Calendar, Edit, FileText, Fish, Layers, Leaf, Sprout } from "lucide-react";
 import { formatDaysToDuration } from "./utils/duration";
 import { Link, useParams } from "wouter";
 import { useGrowthCycleTemplateById } from "../../features/foundation";
