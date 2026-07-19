@@ -21,7 +21,7 @@ import {
   Workflow,
 } from "lucide-react";
 
-export type WorkflowNodeKind = "cycle" | "stage" | "plan";
+export type WorkflowNodeKind = "cycle" | "stage" | "plan" | "task";
 
 export type WorkflowNodeStatus =
   | "not_started"
@@ -90,6 +90,13 @@ const kindConfig: Record<
       "border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100/80 shadow-slate-100/60",
     iconClass: "text-slate-600",
     defaultIcon: CalendarRange,
+  },
+  task: {
+    badge: "Công việc",
+    wrapperClass:
+      "border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100/80 shadow-slate-100/60",
+    iconClass: "text-slate-600",
+    defaultIcon: Activity,
   },
 };
 
@@ -190,7 +197,7 @@ export function WorkflowCardNode({
         />
       )}
 
-      {data.kind === "plan" && (
+      {(data.kind === "plan" || data.kind === "task") && (
         <>
           <WorkflowHandle
             id={data.targetTopHandleId ?? `target-${data.title}`}

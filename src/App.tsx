@@ -43,6 +43,7 @@ const PlanPage = lazy(() => import("./pages/plan/PlanPage"));
 const PlanCreatePage = lazy(() => import("./pages/plan/PlanCreatePage"));
 const PlanDetailPage = lazy(() => import("./pages/plan/PlanDetailPage"));
 const PlanEditPage = lazy(() => import("./pages/plan/PlanEditPage"));
+const PlanWorkflowPage = lazy(() => import("./pages/plan/PlanWorkflowPage"));
 const PlanTypePage = lazy(() => import("./pages/plan-type/PlanTypePage"));
 const FertilizerCreatePage = lazy(
   () => import("./pages/fertilizer/FertilizerCreatePage"),
@@ -764,6 +765,7 @@ function Router() {
       <Route path="/plan-type" component={PlanTypePage} />
       <Route path="/plan" component={PlanPage} />
       <Route path="/plan/create" component={PlanCreatePage} />
+      <Route path="/plan/:id/workflow" component={PlanWorkflowPage} />
       <Route path="/plan/:id/edit" component={PlanEditPage} />
       <Route path="/plan/:id" component={PlanDetailPage} />
       <Route

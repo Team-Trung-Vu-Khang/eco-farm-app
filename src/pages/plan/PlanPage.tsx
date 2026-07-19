@@ -36,22 +36,24 @@ export default function PlanPage() {
         </Link>
       }
     >
-      <PlanStatisticsCards
-        activeCount={statistics.active}
-        draftCount={statistics.draft}
-        completedCount={statistics.completed}
-      />
+      <div className="space-y-6">
+        <PlanStatisticsCards
+          activeCount={statistics.active}
+          draftCount={statistics.draft}
+          completedCount={statistics.completed}
+        />
 
-      <DataTable
-        columns={planColumns}
-        data={plans}
-        onView={(item) => goToView(item.id)}
-        onEdit={(item) => goToEdit(item.id)}
-        onDuplicate={handleDuplicate}
-        onDelete={handleDelete}
-        searchPlaceholder="Tìm kiếm kế hoạch..."
-        filters={planFilters}
-      />
+        <DataTable
+          columns={planColumns}
+          data={plans}
+          onView={(item) => goToView(item.id)}
+          onEdit={(item) => goToEdit(item.id)}
+          onDuplicate={handleDuplicate}
+          onDelete={handleDelete}
+          searchPlaceholder="Tìm kiếm kế hoạch..."
+          filters={planFilters}
+        />
+      </div>
 
       <DeleteDialog
         open={deleteOpen}

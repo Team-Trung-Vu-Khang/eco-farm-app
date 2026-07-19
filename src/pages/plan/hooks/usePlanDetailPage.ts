@@ -94,6 +94,7 @@ export function usePlanDetailPage() {
       summarizeTaskSelections(selections as any, regions),
     handleEdit: () => setLocation(`/plan/${params.id}/edit`),
     handleDelete: () => setDeleteOpen(true),
+    goToWorkflow: () => setLocation(`/plan/${params.id}/workflow`),
     handleConfirmDelete: () => {
       if (!plan) return;
       deletePlan(plan.id);

@@ -30,6 +30,7 @@ import {
   Trash2,
   Users,
   Wrench,
+  Workflow,
 } from "lucide-react";
 import { useMemo } from "react";
 import { usePlanDetailPage } from "./hooks/usePlanDetailPage";
@@ -48,6 +49,7 @@ export default function PlanDetailPage() {
     selectionSummary,
     summarizeTaskSelections: getTaskSelectionSummary,
     handleEdit,
+    goToWorkflow,
     handleDelete,
     handleConfirmDelete,
     goBack,
@@ -118,6 +120,10 @@ export default function PlanDetailPage() {
             <Button variant="outline" onClick={handleEdit} className="gap-2">
               <Edit className="w-4 h-4" />
               Chỉnh sửa
+            </Button>
+            <Button variant="outline" onClick={goToWorkflow} className="gap-2">
+              <Workflow className="w-4 h-4" />
+              Workflow
             </Button>
             <Button
               variant="destructive"
