@@ -4,6 +4,12 @@ export interface GeographicalUnit {
   level: number;
   type: string;
   coordinates?: any[];
+  createdAt?: string;
+  area?: number;
+  landType?: string;
+  terrain?: string;
+  altitude?: number;
+  contour?: string;
 }
 
 export interface PlotNode extends GeographicalUnit {

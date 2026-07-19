@@ -20,7 +20,6 @@ import {
   Eye,
   PencilLine,
   Plus,
-  RefreshCw,
   Search,
   Trash2,
 } from "lucide-react";
@@ -42,11 +41,14 @@ import { Link, useLocation, useParams } from "wouter";
 import { useGrowthCycleTemplateById } from "../../features/foundation";
 import usePlanStore from "../../stores/usePlanStore";
 import type { Plan } from "../../stores/usePlanStore";
+import useRegionStore from "../../stores/useRegionStore";
+import { summarizePlanSelections } from "../plan/utils/location";
 import type {
   WorkflowActionItem,
   WorkflowCardNodeData,
   WorkflowNodeKind,
   WorkflowNodeStatus,
+  WorkflowSummaryItem,
 } from "./components/workflow/WorkflowCardNode";
 import { WorkflowCardNode } from "./components/workflow/WorkflowCardNode";
 
@@ -126,16 +128,6 @@ function getNodeTitle(node: Node) {
     : node.id;
 }
 
-function formatDate(value?: number) {
-  if (!value) return "Chưa có";
-
-  return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(new Date(value));
-}
-
 function toTimestamp(value?: string | number | Date | null) {
   if (value == null || value === "") return null;
 
@@ -155,6 +147,92 @@ function addDays(
   if (timestamp == null) return null;
 
   return timestamp + days * 86400000;
+}
+
+function getDurationLabel(
+  startDate: string | number | Date | null | undefined,
+  endDate: string | number | Date | null | undefined,
+) {
+  const start = toTimestamp(startDate);
+  const end = toTimestamp(endDate);
+
+  if (start == null || end == null) return "Chưa xác định";
+
+  const totalDays = Math.max(0, Math.round((end - start) / 86400000));
+  if (totalDays < 30) return `${totalDays} ngày`;
+
+  const totalMonths = totalDays / 30;
+  const roundedMonths = Math.round(totalMonths * 10) / 10;
+  const monthLabel = Number.isInteger(roundedMonths)
+    ? `${roundedMonths}`
+    : roundedMonths.toLocaleString("vi-VN", {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      });
+
+  return `${monthLabel} tháng`;
+}
+
+function getPlanWorkerCount(plan: Plan) {
+  return plan.taskAllocations.reduce((sum, task) => {
+    const match = String(task.labor).match(/\d+/);
+    return sum + (match ? Number(match[0]) : 0);
+  }, 0);
+}
+
+function getPlanMaterialBreakdown(plan: Plan) {
+  const categories = plan.materialAllocations.reduce<Record<string, number>>(
+    (acc, allocation) => {
+      const label = allocation.materialCategory?.trim() || "Vật tư khác";
+      acc[label] = (acc[label] || 0) + 1;
+      return acc;
+    },
+    {},
+  );
+
+  return {
+    "Thuốc BVTV": categories["Thuốc BVTV"] || 0,
+    "Phân bón": categories["Phân bón"] || 0,
+    "Vật tư khác": Object.entries(categories).reduce((sum, [label, count]) => {
+      if (label === "Thuốc BVTV" || label === "Phân bón") return sum;
+      return sum + count;
+    }, 0),
+  };
+}
+
+function getPosterMetricItems(plan: Plan): WorkflowSummaryItem[] {
+  const workerCount = getPlanWorkerCount(plan);
+  const materialBreakdown = getPlanMaterialBreakdown(plan);
+
+  return [
+    { label: "Nhân lực", value: String(workerCount || 0) },
+    { label: "Thuốc BVTV", value: String(materialBreakdown["Thuốc BVTV"]) },
+    { label: "Phân bón", value: String(materialBreakdown["Phân bón"]) },
+    { label: "Vật tư khác", value: String(materialBreakdown["Vật tư khác"]) },
+  ];
+}
+
+function getPlanStageTags(plan: Plan) {
+  if (!plan.selectedStages.length) return ["Chưa chọn giai đoạn"];
+  if (plan.selectedStages.length <= 2) return plan.selectedStages;
+  return [plan.selectedStages[0], plan.selectedStages[1]];
+}
+
+function getPlanRegionLabels(plan: Plan, regions: any[]) {
+  const summaries = summarizePlanSelections(plan, regions);
+
+  if (!summaries.length) {
+    const fallbackLabel =
+      plan.zone || plan.cultivationRegion || plan.plot || "Vùng canh tác";
+    return [fallbackLabel];
+  }
+
+  return summaries.map((group) => {
+    const itemLabel = group.items.map((item) => item.name).join(", ");
+    return itemLabel
+      ? `${group.regionName} (${itemLabel})`
+      : group.regionName;
+  });
 }
 
 function getGridPosition(
@@ -293,8 +371,7 @@ function buildPlanNodeData(
   fallback: {
     title: string;
     subtitle: string;
-    startDate: string;
-    endDate: string;
+    duration: string;
     description: string;
     status: WorkflowNodeStatus;
     workerSummary: string;
@@ -302,41 +379,47 @@ function buildPlanNodeData(
   },
 ): WorkflowCardNodeData {
   if (!plan) {
+    const title = fallback.duration
+      ? `${fallback.title} (${fallback.duration})`
+      : fallback.title;
+
     return {
       kind: "plan",
       eyebrow: "Kế hoạch",
-      title: fallback.title,
+      title,
       subtitle: fallback.subtitle,
       status: fallback.status,
       wide: true,
       targetTopHandleId: "",
       sourceBottomHandleId: "",
       summaries: [
-        { label: "Bắt đầu", value: fallback.startDate },
-        { label: "Kết thúc", value: fallback.endDate },
+        { label: "Thời gian dự kiến", value: fallback.duration },
         { label: "Nhân lực", value: fallback.workerSummary },
         { label: "Vật tư", value: fallback.materialSummary },
+        { label: "Giai đoạn", value: fallback.subtitle },
       ],
       description: fallback.description,
       actions: [],
     };
   }
 
+  const duration = getDurationLabel(plan.startDate, plan.endDate);
+
   return {
     kind: "plan",
     eyebrow: "Kế hoạch",
-    title: plan.name,
+    title: `${plan.name}${duration ? ` (${duration})` : ""}`,
     subtitle: getPlanStageLabel(plan),
     status: getPlanStatusNodeStatus(plan.status),
     wide: true,
     summaries: [
       {
-        label: "Bắt đầu",
-        value: formatDate(toTimestamp(plan.startDate) ?? undefined),
+        label: "Thời gian dự kiến",
+        value: duration,
       },
       {
-        label: "Kết thúc",
-        value: formatDate(toTimestamp(plan.endDate) ?? undefined),
+        label: "Giai đoạn",
+        value: `${plan.selectedStages.length} giai đoạn`,
       },
       { label: "Nhân lực", value: getPlanWorkerSummary(plan) },
       { label: "Vật tư", value: getPlanMaterialSummary(plan) },
@@ -406,6 +489,7 @@ export default function GrowthCycleWorkflowPage() {
   const { toast } = useToast();
   const id = params?.id;
   const plans = usePlanStore((state) => state.plans);
+  const regions = useRegionStore((state) => state.regions);
   const [flowRevision, setFlowRevision] = useState(0);
   const [dragHint, setDragHint] = useState<string | null>(null);
   const [activeDragNodeId, setActiveDragNodeId] = useState<string | null>(null);
@@ -426,6 +510,45 @@ export default function GrowthCycleWorkflowPage() {
     enabled: !!id,
   });
   const stages = cycle?.stages ?? [];
+  const fallbackRegionLabel =
+    cycle?.cropVarietyName || cycle?.cropName || "Vùng canh tác";
+
+  const openNodeDialog = (
+    mode: NodeDialogMode,
+    context: NodeDialogContext,
+  ) => {
+    setNodeDialogContext(context);
+    setNodeDialogMode(mode);
+    setNodeDialogOpen(true);
+  };
+
+  const buildPlanPosterExtras = (
+    plan: Plan | undefined,
+    sourceNodeId: string,
+  ) => ({
+    variant: "poster" as const,
+    tags: plan ? getPlanStageTags(plan) : ["Chưa chọn giai đoạn"],
+    regionLabels: plan
+      ? getPlanRegionLabels(plan, regions)
+      : [fallbackRegionLabel],
+    summaries: plan
+      ? getPosterMetricItems(plan)
+      : [
+          { label: "Nhân lực", value: "0" },
+          { label: "Thuốc BVTV", value: "0" },
+          { label: "Phân bón", value: "0" },
+          { label: "Vật tư khác", value: "0" },
+        ],
+    footerAction: {
+      label: "Thêm node",
+      icon: Plus,
+      onClick: () =>
+        openNodeDialog("chooser", {
+          sourceNodeId,
+          sourceKind: "plan",
+        }),
+    },
+  });
 
   const flowDefinition = useMemo(() => {
     if (!cycle) {
@@ -455,15 +578,6 @@ export default function GrowthCycleWorkflowPage() {
         title,
         description,
       });
-    };
-
-    const openNodeDialog = (
-      mode: NodeDialogMode,
-      context: NodeDialogContext,
-    ) => {
-      setNodeDialogContext(context);
-      setNodeDialogMode(mode);
-      setNodeDialogOpen(true);
     };
 
     const buildStageActions = (stageName: string): WorkflowActionItem[] => [
@@ -499,44 +613,25 @@ export default function GrowthCycleWorkflowPage() {
 
     const buildPlanActions = (planName: string): WorkflowActionItem[] => [
       {
-        label: "Đổi kế hoạch mới",
-        icon: RefreshCw,
+        label: "Điều chỉnh thông tin",
+        icon: PencilLine,
         onClick: () =>
           openActionToast(
-            "Đổi kế hoạch mới",
-            `Bạn có thể thay thế "${planName}" bằng một kế hoạch khác.`,
+            "Điều chỉnh thông tin",
+            `Mở màn hình chỉnh sửa cho "${planName}".`,
           ),
       },
       {
-        label: "Xem chi tiết",
-        icon: Eye,
-        onClick: () =>
-          openActionToast(
-            "Xem chi tiết kế hoạch",
-            "Mở trang chi tiết kế hoạch nếu có liên kết thật.",
-          ),
-      },
-      {
-        label: "Xoá",
+        label: "Xóa kế hoạch",
         icon: Trash2,
         tone: "destructive",
         onClick: () =>
           openActionToast(
-            "Xoá kế hoạch",
-            `Kế hoạch "${planName}" chỉ phục vụ demo workflow.`,
+            "Xóa kế hoạch",
+            `Kế hoạch "${planName}" sẽ được đánh dấu xóa trong workflow.`,
           ),
       },
     ];
-
-    const addChildPlanAction: WorkflowActionItem = {
-      label: "Thêm kế hoạch con",
-      icon: Plus,
-      onClick: () =>
-        openNodeDialog("plan", {
-          sourceNodeId: `plan-${cycle.id}-1`,
-          sourceKind: "plan",
-        }),
-    };
 
     const nodesList: Node[] = [
       {
@@ -554,6 +649,15 @@ export default function GrowthCycleWorkflowPage() {
               : "Áp dụng theo giống cụ thể",
           sourceTopHandleId: `cycle-${cycle.id}-source-top`,
           sourceBottomHandleId: `cycle-${cycle.id}-source-bottom`,
+          footerAction: {
+            label: "Thêm node",
+            icon: Plus,
+            onClick: () =>
+              openNodeDialog("chooser", {
+                sourceNodeId: `cycle-${cycle.id}`,
+                sourceKind: "cycle",
+              }),
+          },
           summaries: [
             {
               label: "Phạm vi",
@@ -602,6 +706,15 @@ export default function GrowthCycleWorkflowPage() {
           status: getStageNodeStatus(index, stages.length),
           subtitle: `Giai đoạn ${index + 1}`,
           targetBottomHandleId: `stage-${stage.id}-target-bottom`,
+          footerAction: {
+            label: "Thêm node",
+            icon: Plus,
+            onClick: () =>
+              openNodeDialog("chooser", {
+                sourceNodeId: `stage-${stage.id}`,
+                sourceKind: "stage",
+              }),
+          },
           summaries: [
             {
               label: "Thời gian",
@@ -635,16 +748,16 @@ export default function GrowthCycleWorkflowPage() {
               cycle.name,
               "Kế hoạch tổng hợp",
             ),
-            startDate: formatDate(toTimestamp(cycle.createdAt) ?? undefined),
-            endDate: formatDate(toTimestamp(cycle.updatedAt) ?? undefined),
+            duration: getDurationLabel(cycle.createdAt, cycle.updatedAt),
             description: `Kế hoạch chuẩn bị cho ${cycle.cropName || "chu kì"} và các giai đoạn đầu tiên trong workflow.`,
             status: getPlanNodeStatus(0),
             workerSummary: "Chưa phân bổ",
             materialSummary: "Chưa phân bổ",
           }),
+          ...buildPlanPosterExtras(plan1, `plan-${cycle.id}-1`),
           targetTopHandleId: `plan-${cycle.id}-1-target-top`,
           sourceBottomHandleId: `plan-${cycle.id}-1-source-bottom`,
-          actions: [addChildPlanAction, ...buildPlanActions("Kế hoạch 1")],
+          actions: buildPlanActions("Kế hoạch 1"),
         },
       },
       {
@@ -665,14 +778,17 @@ export default function GrowthCycleWorkflowPage() {
               cycle.name,
               "Kế hoạch giữa chu kì",
             ),
-            startDate: formatDate(addDays(cycle.createdAt, 7) ?? undefined),
-            endDate: formatDate(addDays(cycle.updatedAt, 21) ?? undefined),
+            duration: getDurationLabel(
+              addDays(cycle.createdAt, 7),
+              addDays(cycle.updatedAt, 21),
+            ),
             description:
               "Theo dõi sức cây, điều phối tài nguyên và giữ nhịp cho giai đoạn sinh trưởng chính.",
             status: getPlanNodeStatus(1),
             workerSummary: "Chưa phân bổ",
             materialSummary: "Chưa phân bổ",
           }),
+          ...buildPlanPosterExtras(plan2, `plan-${cycle.id}-2`),
           targetTopHandleId: `plan-${cycle.id}-2-target-top`,
           sourceBottomHandleId: `plan-${cycle.id}-2-source-bottom`,
           actions: buildPlanActions("Kế hoạch 2"),
@@ -696,14 +812,17 @@ export default function GrowthCycleWorkflowPage() {
               cycle.name,
               "Kế hoạch cuối vụ",
             ),
-            startDate: formatDate(addDays(cycle.createdAt, 35) ?? undefined),
-            endDate: formatDate(addDays(cycle.updatedAt, 60) ?? undefined),
+            duration: getDurationLabel(
+              addDays(cycle.createdAt, 35),
+              addDays(cycle.updatedAt, 60),
+            ),
             description:
               "Tập trung vào chốt kế hoạch, hoàn tất dữ liệu và chuẩn bị sang chu kì mới.",
             status: getPlanNodeStatus(2),
             workerSummary: "Chưa phân bổ",
             materialSummary: "Chưa phân bổ",
           }),
+          ...buildPlanPosterExtras(plan3, `plan-${cycle.id}-3`),
           targetTopHandleId: `plan-${cycle.id}-3-target-top`,
           sourceBottomHandleId: `plan-${cycle.id}-3-source-bottom`,
           actions: buildPlanActions("Kế hoạch 3"),
@@ -733,14 +852,17 @@ export default function GrowthCycleWorkflowPage() {
               cycle.name,
               "Chi tiết nhánh",
             ),
-            startDate: formatDate(addDays(cycle.createdAt, 3) ?? undefined),
-            endDate: formatDate(addDays(cycle.createdAt, 12) ?? undefined),
+            duration: getDurationLabel(
+              addDays(cycle.createdAt, 3),
+              addDays(cycle.createdAt, 12),
+            ),
             description:
               "Nhánh kế hoạch phụ cho các công việc tiền đề và chuẩn bị vật tư.",
             status: getPlanNodeStatus(3),
             workerSummary: "Chưa phân bổ",
             materialSummary: "Chưa phân bổ",
           }),
+          ...buildPlanPosterExtras(plan11, `plan-${cycle.id}-1-1`),
           targetTopHandleId: `plan-${cycle.id}-1-1-target-top`,
           actions: buildPlanActions("Kế hoạch 1.1"),
         },
@@ -769,14 +891,17 @@ export default function GrowthCycleWorkflowPage() {
               cycle.name,
               "Chi tiết nhánh",
             ),
-            startDate: formatDate(addDays(cycle.createdAt, 13) ?? undefined),
-            endDate: formatDate(addDays(cycle.createdAt, 24) ?? undefined),
+            duration: getDurationLabel(
+              addDays(cycle.createdAt, 13),
+              addDays(cycle.createdAt, 24),
+            ),
             description:
               "Nhánh xử lý tiếp theo sau khi hoàn thành phần nền tảng.",
             status: getPlanNodeStatus(4),
             workerSummary: "Chưa phân bổ",
             materialSummary: "Chưa phân bổ",
           }),
+          ...buildPlanPosterExtras(plan12, `plan-${cycle.id}-1-2`),
           targetTopHandleId: `plan-${cycle.id}-1-2-target-top`,
           actions: buildPlanActions("Kế hoạch 1.2"),
         },
@@ -889,7 +1014,7 @@ export default function GrowthCycleWorkflowPage() {
     ];
 
     return { nodes: nodesList, edges: edgesList };
-  }, [cycle, plans, setLocation, toast, stages]);
+  }, [cycle, plans, regions, setLocation, toast, stages]);
 
   const storageKey = cycle ? getWorkflowStorageKey(cycle.id) : null;
   const savedPositions = useMemo(
@@ -1127,49 +1252,34 @@ export default function GrowthCycleWorkflowPage() {
         ...buildPlanNodeData(plan, {
           title,
           subtitle: getPlanStageLabel(plan),
-          startDate: formatDate(toTimestamp(plan.startDate) ?? undefined),
-          endDate: formatDate(toTimestamp(plan.endDate) ?? undefined),
+          duration: getDurationLabel(plan.startDate, plan.endDate),
           description: plan.description || "Kế hoạch được chọn từ danh sách.",
           status:
             nodeDialogContext.sourceKind === "plan" ? "paused" : "not_started",
           workerSummary: getPlanWorkerSummary(plan),
           materialSummary: getPlanMaterialSummary(plan),
         }),
+        ...buildPlanPosterExtras(plan, nodeId),
         eyebrow: "Kế hoạch mới",
         targetTopHandleId: `${nodeId}-target-top`,
         sourceBottomHandleId: `${nodeId}-source-bottom`,
         actions: [
           {
-            label: "Đổi kế hoạch mới",
-            icon: RefreshCw,
-            onClick: () => {
-              setNodeDialogContext({
-                sourceNodeId: `cycle-${cycle.id}`,
-                sourceKind: "cycle",
-                replaceNodeId: nodeId,
-              });
-              setNodeDialogMode("plan");
-              setPlanSearch("");
-              setSelectedPlanId(null);
-              setNodeDialogOpen(true);
-            },
-          },
-          {
-            label: "Xem chi tiết",
-            icon: Eye,
+            label: "Điều chỉnh thông tin",
+            icon: PencilLine,
             onClick: () =>
               toast({
-                title: "Xem chi tiết kế hoạch",
-                description: `Mở chi tiết của "${title}".`,
+                title: "Điều chỉnh thông tin",
+                description: `Mở màn hình chỉnh sửa cho "${title}".`,
               }),
           },
           {
-            label: "Xoá",
+            label: "Xóa kế hoạch",
             icon: Trash2,
             tone: "destructive",
             onClick: () =>
               toast({
-                title: "Xoá kế hoạch",
+                title: "Xóa kế hoạch",
                 description: `Bạn vừa bấm xoá "${title}".`,
               }),
           },
@@ -1572,10 +1682,10 @@ export default function GrowthCycleWorkflowPage() {
 
                               <div className="mt-3 grid grid-cols-2 gap-2">
                                 <Badge variant="outline" className="justify-center">
-                                  {formatDate(toTimestamp(plan.startDate) ?? undefined)}
+                                  {getDurationLabel(plan.startDate, plan.endDate)}
                                 </Badge>
                                 <Badge variant="outline" className="justify-center">
-                                  {formatDate(toTimestamp(plan.endDate) ?? undefined)}
+                                  {`${plan.selectedStages.length} giai đoạn`}
                                 </Badge>
                                 <Badge variant="outline" className="justify-center">
                                   {getPlanWorkerSummary(plan)}

@@ -63,6 +63,10 @@ export interface WorkflowCardNodeData {
   status?: WorkflowNodeStatus;
   wide?: boolean;
   summaries?: WorkflowSummaryItem[];
+  tags?: string[];
+  regionLabels?: string[];
+  footerAction?: WorkflowActionItem;
+  variant?: "default" | "poster";
   actions?: WorkflowActionItem[];
   sourceTopHandleId?: string;
   sourceBottomHandleId?: string;
@@ -162,6 +166,10 @@ const toneVariant: Record<WorkflowActionTone, "outline" | "destructive"> = {
   destructive: "destructive",
 };
 
+const footerActionButtonClass =
+  "h-[72px] w-[72px] rounded-full border-2 border-slate-300 bg-white p-0 text-slate-900 shadow-[0_18px_40px_rgba(15,23,42,0.14)] hover:bg-slate-50";
+const footerActionIconClass = "h-8 w-8";
+
 function WorkflowHandle({
   id,
   type,
@@ -196,9 +204,188 @@ export function WorkflowCardNode({
   const showStatus =
     data.kind !== "region" && data.kind !== "area" && data.kind !== "plot";
   const status = showStatus && data.status ? statusConfig[data.status] : null;
-  const widthClass = data.wide ? "w-[320px]" : "w-[228px]";
+  const isPosterPlan = data.kind === "plan" && data.variant === "poster";
+  const widthClass = isPosterPlan
+    ? "w-[820px] max-w-[calc(100vw-32px)]"
+    : data.kind === "cycle" || data.kind === "stage"
+      ? "w-[360px]"
+    : data.wide
+      ? "w-[340px]"
+      : "w-[228px]";
+  const renderFooterAction = () => {
+    if (!data.footerAction) return null;
+
+    return (
+      <div className="mt-4 flex justify-center">
+        <Button
+          type="button"
+          variant="outline"
+          aria-label={data.footerAction.label}
+          className={footerActionButtonClass}
+          onClick={(event) => {
+            event.stopPropagation();
+            data.footerAction?.onClick();
+          }}
+          onMouseDown={(event) => event.stopPropagation()}
+        >
+          <data.footerAction.icon className={footerActionIconClass} />
+        </Button>
+      </div>
+    );
+  };
+
+  if (isPosterPlan) {
+    const posterStatusClass = status
+      ? "border-blue-200 bg-blue-50 text-blue-700"
+      : "";
+    const posterBadgeClass =
+      "border-slate-200 bg-white/80 text-slate-700 shadow-none";
+
+    return (
+      <div className={widthClass}>
+        {data.targetTopHandleId && (
+          <WorkflowHandle
+            id={data.targetTopHandleId}
+            type="target"
+            position={Position.Top}
+          />
+        )}
+        {data.sourceBottomHandleId && (
+          <WorkflowHandle
+            id={data.sourceBottomHandleId}
+            type="source"
+            position={Position.Bottom}
+          />
+        )}
+
+        <div
+          className={[
+            "rounded-[28px] border p-4 shadow-[0_24px_80px_rgba(15,23,42,0.10)] ring-1 ring-black/5 backdrop-blur-sm",
+            config.wrapperClass,
+          ].join(" ")}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <Badge
+              variant="outline"
+              className={[
+                "h-9 rounded-xl px-4 text-[13px] font-semibold",
+                posterBadgeClass,
+              ].join(" ")}
+            >
+              {data.eyebrow ?? config.badge}
+            </Badge>
+
+            {status && (
+              <Badge
+                variant="outline"
+                className={[
+                  "h-9 rounded-xl px-4 text-[13px] font-semibold",
+                  posterStatusClass,
+                ].join(" ")}
+              >
+                {status.label}
+              </Badge>
+            )}
+          </div>
+
+          <h3 className="mt-4 text-[28px] font-extrabold leading-[1.05] tracking-[-0.04em] text-slate-900 sm:text-[32px]">
+            {data.title}
+          </h3>
+
+          {data.tags?.length ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {data.tags.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="outline"
+                  className={[
+                    "h-9 rounded-xl px-4 text-[13px] font-semibold",
+                    posterBadgeClass,
+                  ].join(" ")}
+                >
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
+
+          {data.description && (
+            <p className="mt-4 max-w-[720px] text-[15px] leading-6 text-slate-700">
+              {data.description}
+            </p>
+          )}
+
+          {data.summaries?.length ? (
+            <div className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
+              {data.summaries.map((summary) => (
+                <div
+                  key={`${data.title}-${summary.label}`}
+                  className="rounded-[22px] border border-white/80 bg-white/75 px-3 py-3.5 text-center shadow-sm"
+                >
+                  <p className="text-[12px] font-medium leading-4 text-slate-700">
+                    {summary.label}
+                  </p>
+                  <p className="mt-1 text-[28px] font-extrabold leading-none text-slate-900">
+                    {summary.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          {data.regionLabels?.length ? (
+            <div className="mt-6 rounded-[24px] border border-dashed border-slate-300 p-3.5">
+              <p className="text-[15px] font-semibold text-slate-900">
+                Vùng canh tác
+              </p>
+              <div className="mt-3 grid gap-2.5 md:grid-cols-2">
+                {data.regionLabels.map((label) => (
+                  <div
+                    key={label}
+                    className="rounded-[20px] border border-slate-300 bg-white/80 px-3.5 py-3.5 text-[14px] font-medium leading-5 text-slate-800 shadow-sm"
+                  >
+                    {label}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {data.actions?.length ? (
+            <div className="mt-6 grid gap-3 md:grid-cols-2">
+              {data.actions.map((action) => {
+                const ActionIcon = action.icon;
+
+                return (
+                  <Button
+                    key={`${data.title}-${action.label}`}
+                    size="sm"
+                    variant="outline"
+                    className={[
+                      "nodrag h-14 justify-center gap-2 rounded-[18px] border-2 px-4 text-[15px] font-semibold shadow-none",
+                      "border-slate-300 bg-white/80 text-slate-900 hover:border-slate-400 hover:bg-white",
+                    ].join(" ")}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      action.onClick();
+                    }}
+                    onMouseDown={(event) => event.stopPropagation()}
+                  >
+                    <ActionIcon className="h-4 w-4" />
+                    {action.label}
+                  </Button>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+        {renderFooterAction()}
+      </div>
+    );
+  }
 
   return (
+    <>
     <div
       className={[
         widthClass,
@@ -344,6 +531,8 @@ export function WorkflowCardNode({
         </div>
       ) : null}
     </div>
+    {renderFooterAction()}
+    </>
   );
 }
 
