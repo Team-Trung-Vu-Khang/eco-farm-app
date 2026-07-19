@@ -102,9 +102,12 @@ export const useCultivationRegionPage = () => {
 
   const { deleteCultivationZone } = useCultivationZoneMutations();
 
-  const columns = useMemo(() => getCultivationRegionColumns(), []);
-
   const handleAdd = () => setLocation("/cultivation-region/create");
+
+  const handleView = (id: number) => setLocation(`/cultivation-region/${id}`);
+
+  const handleWorkflow = (id: number) =>
+    setLocation(`/cultivation-region/${id}/workflow`);
 
   const handleEdit = (id: number) =>
     setLocation(`/cultivation-region/${id}/edit`);
@@ -113,6 +116,8 @@ export const useCultivationRegionPage = () => {
     setDeletingId(id);
     setDeleteOpen(true);
   };
+
+  const columns = useMemo(() => getCultivationRegionColumns(), []);
 
   const handleConfirmDelete = async () => {
     if (!deletingId) return;
@@ -139,6 +144,8 @@ export const useCultivationRegionPage = () => {
     deleteOpen,
     setDeleteOpen,
     handleAdd,
+    handleView,
+    handleWorkflow,
     handleEdit,
     handleSearch,
     handleDelete,

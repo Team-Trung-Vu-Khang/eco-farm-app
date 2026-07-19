@@ -4,9 +4,9 @@ import {
   Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { ArrowLeft, Eye, PencilLine } from "lucide-react";
+import { useEffect, useMemo } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -19,21 +19,14 @@ import {
   type Edge,
   type Node,
 } from "reactflow";
-import {
-  ArrowLeft,
-  Eye,
-  PencilLine,
-  Workflow,
-} from "lucide-react";
-import { useEffect, useMemo } from "react";
 import { useLocation, useParams } from "wouter";
-import { WorkflowCardNode } from "./../growth-cycle/components/workflow/WorkflowCardNode";
+import usePlanStore, { type Plan } from "../../stores/usePlanStore";
 import type {
   WorkflowActionItem,
   WorkflowCardNodeData,
   WorkflowNodeStatus,
 } from "./../growth-cycle/components/workflow/WorkflowCardNode";
-import usePlanStore, { type Plan } from "../../stores/usePlanStore";
+import { WorkflowCardNode } from "./../growth-cycle/components/workflow/WorkflowCardNode";
 import { getPlanStatusBadge } from "./utils/status";
 
 const nodeTypes = {
@@ -189,7 +182,6 @@ function buildPlanNode(
   };
 }
 
-
 function getTaskActions(
   planId: number,
   navigate: (path: string) => void,
@@ -248,7 +240,10 @@ export default function PlanWorkflowPage() {
           summaries: [
             { label: "Công việc", value: getTaskCountLabel(group.tasks) },
             { label: "Sở hữu", value: plan.seasonName || "Chưa rõ" },
-            { label: "Vật tư", value: group.tasks.length ? "Đã có danh sách" : "Chưa có" },
+            {
+              label: "Vật tư",
+              value: group.tasks.length ? "Đã có danh sách" : "Chưa có",
+            },
           ],
           description: `Công việc thuộc giai đoạn "${group.label}" của kế hoạch ${plan.code}.`,
           actions: [
@@ -281,7 +276,9 @@ export default function PlanWorkflowPage() {
       });
 
       const taskGap = group.tasks.length > 1 ? 280 : 0;
-      const taskStartX = stageNode.position.x - ((Math.max(group.tasks.length, 1) - 1) * taskGap) / 2;
+      const taskStartX =
+        stageNode.position.x -
+        ((Math.max(group.tasks.length, 1) - 1) * taskGap) / 2;
 
       group.tasks.forEach((task, taskIndex) => {
         const taskNodeId = `task-${task.id}`;
@@ -310,7 +307,10 @@ export default function PlanWorkflowPage() {
         };
         nodes.push(taskNode);
 
-        const sourceId = taskIndex === 0 ? stageNodeId : `task-${group.tasks[taskIndex - 1].id}`;
+        const sourceId =
+          taskIndex === 0
+            ? stageNodeId
+            : `task-${group.tasks[taskIndex - 1].id}`;
         edges.push({
           id: `edge-${sourceId}-${taskNodeId}`,
           source: sourceId,
@@ -348,7 +348,11 @@ export default function PlanWorkflowPage() {
 
   if (!plan) {
     return (
-      <AdminLayout isDev title="Workflow kế hoạch" description="Không tìm thấy kế hoạch">
+      <AdminLayout
+        isDev
+        title="Workflow kế hoạch"
+        description="Không tìm thấy kế hoạch"
+      >
         <div className="flex h-[60vh] items-center justify-center">
           <div className="max-w-md rounded-2xl border bg-background p-6 text-center shadow-sm">
             <p className="text-lg font-semibold">Không tìm thấy kế hoạch</p>
@@ -374,15 +378,26 @@ export default function PlanWorkflowPage() {
       description={`Trực quan hóa kế hoạch ${plan.code} và danh sách công việc`}
       actions={
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" className="h-9 px-3" onClick={() => setLocation("/plan")}>
+          <Button
+            variant="outline"
+            className="h-9 px-3"
+            onClick={() => setLocation("/plan")}
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Danh sách
           </Button>
-          <Button variant="outline" className="h-9 px-3" onClick={() => setLocation(`/plan/${plan.id}`)}>
+          <Button
+            variant="outline"
+            className="h-9 px-3"
+            onClick={() => setLocation(`/plan/${plan.id}`)}
+          >
             <Eye className="mr-2 h-4 w-4" />
             Chi tiết
           </Button>
-          <Button className="h-9 px-3" onClick={() => setLocation(`/plan/${plan.id}/edit`)}>
+          <Button
+            className="h-9 px-3"
+            onClick={() => setLocation(`/plan/${plan.id}/edit`)}
+          >
             <PencilLine className="mr-2 h-4 w-4" />
             Chỉnh sửa
           </Button>
@@ -392,19 +407,19 @@ export default function PlanWorkflowPage() {
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Badge variant="secondary">{plan.code}</Badge>
         <Badge variant="outline">{plan.seasonName}</Badge>
-        <Badge variant="outline">{plan.crop}{plan.variety ? ` - ${plan.variety}` : ""}</Badge>
+        <Badge variant="outline">
+          {plan.crop}
+          {plan.variety ? ` - ${plan.variety}` : ""}
+        </Badge>
         <Badge variant="outline">{plan.selectedStages.length} giai đoạn</Badge>
         <Badge variant="outline">{plan.taskAllocations.length} công việc</Badge>
-        <Badge variant="outline">{plan.materialAllocations.length} nhóm vật tư</Badge>
+        <Badge variant="outline">
+          {plan.materialAllocations.length} nhóm vật tư
+        </Badge>
         {getPlanStatusBadge(plan.status)}
       </div>
 
       <Card className="border-slate-200 shadow-sm">
-        <CardHeader className="border-b bg-slate-50/80">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Workflow className="h-5 w-5 text-slate-700" />
-          </CardTitle>
-        </CardHeader>
         <CardContent className="p-0">
           <div className="h-[920px] overflow-hidden bg-[#f8fafc]">
             <ReactFlow

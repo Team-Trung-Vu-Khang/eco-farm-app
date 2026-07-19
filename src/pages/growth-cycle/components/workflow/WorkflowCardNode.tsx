@@ -15,13 +15,22 @@ import {
   CheckCircle2,
   Eye,
   Layers3,
+  MapPin,
   Plus,
   PencilLine,
+  Sprout,
   Trash2,
   Workflow,
 } from "lucide-react";
 
-export type WorkflowNodeKind = "cycle" | "stage" | "plan" | "task";
+export type WorkflowNodeKind =
+  | "cycle"
+  | "stage"
+  | "plan"
+  | "task"
+  | "region"
+  | "area"
+  | "plot";
 
 export type WorkflowNodeStatus =
   | "not_started"
@@ -98,6 +107,27 @@ const kindConfig: Record<
     iconClass: "text-slate-600",
     defaultIcon: Activity,
   },
+  region: {
+    badge: "Vùng",
+    wrapperClass:
+      "border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100/80 shadow-slate-100/60",
+    iconClass: "text-slate-600",
+    defaultIcon: MapPin,
+  },
+  area: {
+    badge: "Khu vực",
+    wrapperClass:
+      "border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100/80 shadow-slate-100/60",
+    iconClass: "text-slate-600",
+    defaultIcon: Layers3,
+  },
+  plot: {
+    badge: "Lô",
+    wrapperClass:
+      "border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100/80 shadow-slate-100/60",
+    iconClass: "text-slate-600",
+    defaultIcon: Sprout,
+  },
 };
 
 const statusConfig: Record<
@@ -163,7 +193,9 @@ export function WorkflowCardNode({
 }: NodeProps<WorkflowCardNodeData>) {
   const config = kindConfig[data.kind];
   const Icon = data.icon ?? config.defaultIcon;
-  const status = data.status ? statusConfig[data.status] : null;
+  const showStatus =
+    data.kind !== "region" && data.kind !== "area" && data.kind !== "plot";
+  const status = showStatus && data.status ? statusConfig[data.status] : null;
   const widthClass = data.wide ? "w-[320px]" : "w-[228px]";
 
   return (
@@ -197,7 +229,11 @@ export function WorkflowCardNode({
         />
       )}
 
-      {(data.kind === "plan" || data.kind === "task") && (
+      {(data.kind === "plan" ||
+        data.kind === "task" ||
+        data.kind === "region" ||
+        data.kind === "area" ||
+        data.kind === "plot") && (
         <>
           <WorkflowHandle
             id={data.targetTopHandleId ?? `target-${data.title}`}
