@@ -5,7 +5,7 @@ import {
   Card,
   CardContent,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ArrowLeft, Eye, PencilLine } from "lucide-react";
+import { ArrowLeft, Eye, PencilLine, Plus } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import {
   Background,
@@ -144,6 +144,7 @@ function buildPlanNode(
   plan: Plan,
   onEdit: () => void,
   onView: () => void,
+  onCreate: () => void,
 ): Node<WorkflowCardNodeData> {
   return {
     id: `plan-${plan.id}`,
@@ -178,6 +179,11 @@ function buildPlanNode(
           onClick: onEdit,
         },
       ],
+      footerAction: {
+        label: "Thêm mới",
+        icon: Plus,
+        onClick: onCreate,
+      },
     },
   };
 }
@@ -218,6 +224,7 @@ export default function PlanWorkflowPage() {
       plan,
       () => setLocation(`/plan/${plan.id}/edit`),
       () => setLocation(`/plan/${plan.id}`),
+      () => setLocation(`/plan/${plan.id}/create`),
     );
     nodes.push(rootNode);
 
@@ -246,13 +253,18 @@ export default function PlanWorkflowPage() {
             },
           ],
           description: `Công việc thuộc giai đoạn "${group.label}" của kế hoạch ${plan.code}.`,
-          actions: [
-            {
-              label: "Thêm mới",
-              icon: PencilLine,
-              onClick: () => setLocation(`/plan/${plan.id}/edit`),
-            },
-          ],
+          // actions: [
+          //   {
+          //     label: "Thêm mới",
+          //     icon: PencilLine,
+          //     onClick: () => setLocation(`/plan/${plan.id}/edit`),
+          //   },
+          // ],
+          footerAction: {
+            label: "Thêm mới",
+            icon: Plus,
+            onClick: () => setLocation(`/task/create`),
+          },
         },
       };
       nodes.push(stageNode);
@@ -384,7 +396,7 @@ export default function PlanWorkflowPage() {
             onClick={() => setLocation("/plan")}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Danh sách
+            Quay lại
           </Button>
           <Button
             variant="outline"

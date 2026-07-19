@@ -1,12 +1,4 @@
-import {
-  Badge,
-  Button,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  Handle,
-  Position,
-  type NodeProps,
-} from "reactflow";
+import { Badge, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
@@ -16,12 +8,13 @@ import {
   Eye,
   Layers3,
   MapPin,
-  Plus,
   PencilLine,
+  Plus,
   Sprout,
   Trash2,
   Workflow,
 } from "lucide-react";
+import { Handle, Position, type NodeProps } from "reactflow";
 
 export type WorkflowNodeKind =
   | "cycle"
@@ -167,7 +160,7 @@ const toneVariant: Record<WorkflowActionTone, "outline" | "destructive"> = {
 };
 
 const footerActionButtonClass =
-  "h-[72px] w-[72px] rounded-full border-2 border-slate-300 bg-white p-0 text-slate-900 shadow-[0_18px_40px_rgba(15,23,42,0.14)] hover:bg-slate-50";
+  "h-[50px] w-[50px] rounded-full border-2 border-slate-300 bg-white p-0 text-slate-900 shadow-[0_18px_40px_rgba(15,23,42,0.14)] hover:bg-slate-50";
 const footerActionIconClass = "h-8 w-8";
 
 function WorkflowHandle({
@@ -196,9 +189,7 @@ function WorkflowHandle({
   );
 }
 
-export function WorkflowCardNode({
-  data,
-}: NodeProps<WorkflowCardNodeData>) {
+export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
   const config = kindConfig[data.kind];
   const Icon = data.icon ?? config.defaultIcon;
   const showStatus =
@@ -209,9 +200,9 @@ export function WorkflowCardNode({
     ? "w-[820px] max-w-[calc(100vw-32px)]"
     : data.kind === "cycle" || data.kind === "stage"
       ? "w-[360px]"
-    : data.wide
-      ? "w-[340px]"
-      : "w-[228px]";
+      : data.wide
+        ? "w-[340px]"
+        : "w-[228px]";
   const renderFooterAction = () => {
     if (!data.footerAction) return null;
 
@@ -386,152 +377,156 @@ export function WorkflowCardNode({
 
   return (
     <>
-    <div
-      className={[
-        widthClass,
-        "rounded-[22px] border p-3 shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur-sm",
-        config.wrapperClass,
-      ].join(" ")}
-    >
-      {data.kind === "cycle" && (
-        <>
-          <WorkflowHandle
-            id={data.sourceTopHandleId ?? "cycle-top"}
-            type="source"
-            position={Position.Top}
-          />
-          <WorkflowHandle
-            id={data.sourceBottomHandleId ?? "cycle-bottom"}
-            type="source"
-            position={Position.Bottom}
-          />
-        </>
-      )}
+      <div
+        className={[
+          widthClass,
+          "rounded-[22px] border p-3 shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur-sm",
+          config.wrapperClass,
+        ].join(" ")}
+      >
+        {data.kind === "cycle" && (
+          <>
+            <WorkflowHandle
+              id={data.sourceTopHandleId ?? "cycle-top"}
+              type="source"
+              position={Position.Top}
+            />
+            <WorkflowHandle
+              id={data.sourceBottomHandleId ?? "cycle-bottom"}
+              type="source"
+              position={Position.Bottom}
+            />
+          </>
+        )}
 
-      {data.kind === "stage" && (
-        <WorkflowHandle
-          id={data.targetBottomHandleId ?? `target-${data.title}`}
-          type="target"
-          position={Position.Bottom}
-        />
-      )}
-
-      {(data.kind === "plan" ||
-        data.kind === "task" ||
-        data.kind === "region" ||
-        data.kind === "area" ||
-        data.kind === "plot") && (
-        <>
+        {data.kind === "stage" && (
           <WorkflowHandle
-            id={data.targetTopHandleId ?? `target-${data.title}`}
+            id={data.targetBottomHandleId ?? `target-${data.title}`}
             type="target"
-            position={Position.Top}
-          />
-          <WorkflowHandle
-            id={data.sourceBottomHandleId ?? `source-${data.title}`}
-            type="source"
             position={Position.Bottom}
           />
-        </>
-      )}
+        )}
 
-      <div className="flex items-start gap-2.5">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/90 shadow-sm ring-1 ring-black/5">
-          <Icon className={["h-4 w-4", config.iconClass].join(" ")} />
-        </div>
+        {(data.kind === "plan" ||
+          data.kind === "task" ||
+          data.kind === "region" ||
+          data.kind === "area" ||
+          data.kind === "plot") && (
+          <>
+            <WorkflowHandle
+              id={data.targetTopHandleId ?? `target-${data.title}`}
+              type="target"
+              position={Position.Top}
+            />
+            <WorkflowHandle
+              id={data.sourceBottomHandleId ?? `source-${data.title}`}
+              type="source"
+              position={Position.Bottom}
+            />
+          </>
+        )}
 
-        <div className="min-w-0 flex-1">
-          <div className="mb-1 flex flex-wrap items-center gap-1.5">
-            <Badge variant="secondary" className="text-[9px] uppercase tracking-[0.18em]">
-              {data.eyebrow ?? config.badge}
-            </Badge>
-            {status && (
+        <div className="flex items-start gap-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/90 shadow-sm ring-1 ring-black/5">
+            <Icon className={["h-4 w-4", config.iconClass].join(" ")} />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex flex-wrap items-center gap-1.5">
               <Badge
-                variant="outline"
-                className={["text-[9px] uppercase tracking-[0.18em]", status.badgeClass].join(" ")}
+                variant="secondary"
+                className="text-[9px] uppercase tracking-[0.18em]"
               >
-                {status.label}
+                {data.eyebrow ?? config.badge}
               </Badge>
+              {status && (
+                <Badge
+                  variant="outline"
+                  className={[
+                    "text-[9px] uppercase tracking-[0.18em]",
+                    status.badgeClass,
+                  ].join(" ")}
+                >
+                  {status.label}
+                </Badge>
+              )}
+            </div>
+            <h3
+              className="text-[15px] font-semibold leading-5 text-slate-900"
+              style={{
+                display: "-webkit-box",
+                WebkitBoxOrient: "vertical",
+                WebkitLineClamp: 2,
+                overflow: "hidden",
+              }}
+            >
+              {data.title}
+            </h3>
+            {data.subtitle && (
+              <p className="mt-1 text-sm text-slate-600">{data.subtitle}</p>
             )}
           </div>
-          <h3
-            className="text-[15px] font-semibold leading-5 text-slate-900"
-            style={{
-              display: "-webkit-box",
-              WebkitBoxOrient: "vertical",
-              WebkitLineClamp: 2,
-              overflow: "hidden",
-            }}
-          >
-            {data.title}
-          </h3>
-          {data.subtitle && (
-            <p className="mt-1 text-sm text-slate-600">
-              {data.subtitle}
-            </p>
-          )}
         </div>
-      </div>
 
-      {data.summaries?.length ? (
-        <div className="mt-3.5 grid grid-cols-2 gap-2">
-          {data.summaries.map((summary) => (
-            <div
-              key={`${data.title}-${summary.label}`}
-              className="rounded-xl border border-white/70 bg-white/70 px-2.5 py-2 shadow-sm"
-            >
-              <p className="text-[9px] uppercase tracking-wide text-slate-500">
-                {summary.label}
-              </p>
-              <p className="mt-1 text-[13px] font-semibold leading-4 text-slate-900">
-                {summary.value}
-              </p>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
-      {data.description && (
-        <div className="mt-3 rounded-xl border border-white/70 bg-white/80 px-2.5 py-2 text-[13px] leading-5 text-slate-700 shadow-sm">
-          <p
-            className="overflow-hidden text-ellipsis"
-            style={{
-              display: "-webkit-box",
-              WebkitBoxOrient: "vertical",
-              WebkitLineClamp: 3,
-            }}
-          >
-            {data.description}
-          </p>
-        </div>
-      )}
-
-      {data.actions?.length ? (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {data.actions.map((action) => {
-            const ActionIcon = action.icon;
-
-            return (
-              <Button
-                key={`${data.title}-${action.label}`}
-                size="sm"
-                variant={toneVariant[action.tone ?? "default"]}
-                className="nodrag h-7 gap-1.5 px-2.5 text-[10.5px] shadow-none"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  action.onClick();
-                }}
-                onMouseDown={(event) => event.stopPropagation()}
+        {data.summaries?.length ? (
+          <div className="mt-3.5 grid grid-cols-2 gap-2">
+            {data.summaries.map((summary) => (
+              <div
+                key={`${data.title}-${summary.label}`}
+                className="rounded-xl border border-white/70 bg-white/70 px-2.5 py-2 shadow-sm"
               >
-                <ActionIcon className="h-3 w-3" />
-                {action.label}
-              </Button>
-            );
-          })}
-        </div>
-      ) : null}
-    </div>
-    {renderFooterAction()}
+                <p className="text-[9px] uppercase tracking-wide text-slate-500">
+                  {summary.label}
+                </p>
+                <p className="mt-1 text-[13px] font-semibold leading-4 text-slate-900">
+                  {summary.value}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {data.description && (
+          <div className="mt-3 rounded-xl border border-white/70 bg-white/80 px-2.5 py-2 text-[13px] leading-5 text-slate-700 shadow-sm">
+            <p
+              className="overflow-hidden text-ellipsis"
+              style={{
+                display: "-webkit-box",
+                WebkitBoxOrient: "vertical",
+                WebkitLineClamp: 3,
+              }}
+            >
+              {data.description}
+            </p>
+          </div>
+        )}
+
+        {data.actions?.length ? (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {data.actions.map((action) => {
+              const ActionIcon = action.icon;
+
+              return (
+                <Button
+                  key={`${data.title}-${action.label}`}
+                  size="sm"
+                  variant={toneVariant[action.tone ?? "default"]}
+                  className="nodrag h-7 gap-1.5 px-2.5 text-[10.5px] shadow-none"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    action.onClick();
+                  }}
+                  onMouseDown={(event) => event.stopPropagation()}
+                >
+                  <ActionIcon className="h-3 w-3" />
+                  {action.label}
+                </Button>
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
+      {renderFooterAction()}
     </>
   );
 }
