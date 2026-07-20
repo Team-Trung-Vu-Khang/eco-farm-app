@@ -16,7 +16,9 @@ const CultivationRegionPage = () => {
     deleteOpen,
     setDeleteOpen,
     handleAdd,
+    handleView,
     handleEdit,
+    handleWorkflow,
     handleDelete,
     handleConfirmDelete,
     handleSearch,
@@ -55,7 +57,9 @@ const CultivationRegionPage = () => {
         totalPages={response?.totalPages}
         onPageSize={setPageSize}
         onIndexChange={setCurrentIndex}
+        onView={(item) => handleView(item.id)}
         onEdit={(item) => handleEdit(item.id)}
+        onWorkflow={(item) => handleWorkflow(item.id)}
         onDelete={(item) => handleDelete(item.id)}
       />
 

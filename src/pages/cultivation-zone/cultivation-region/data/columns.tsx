@@ -4,7 +4,6 @@ import { Link } from "wouter";
 import type {
   FarmCultivationZoneResponse,
   FarmCultivationZoneScopeResponse,
-  CatalogRef,
 } from "../../../../features/farm/types/farm.type";
 
 const SCOPE_TYPE_LABELS: Record<string, string> = {

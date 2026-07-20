@@ -177,6 +177,10 @@ const CultivationRegionCreatePage = lazy(
   () =>
     import("./pages/cultivation-zone/cultivation-region/CultivationRegionCreatePage"),
 );
+const CultivationRegionWorkflowPage = lazy(
+  () =>
+    import("./pages/cultivation-zone/cultivation-region/CultivationRegionWorkflowPage"),
+);
 const DistributionDetailPage = lazy(
   () =>
     import("./pages/cultivation-zone/distribution-detail/DistributionDetailPage"),
@@ -584,6 +588,10 @@ function Router() {
       <Route
         path="/cultivation-region/:id"
         component={CultivationRegionDetailPage}
+      />
+      <Route
+        path="/cultivation-region/:id/workflow"
+        component={CultivationRegionWorkflowPage}
       />
       <Route
         path="/cultivation-region/:id/edit"
