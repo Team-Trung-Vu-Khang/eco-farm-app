@@ -126,21 +126,15 @@ const MapViewPage = lazy(
 );
 const RegionBasicDistributionPage = lazy(
   () =>
-    import(
-      "./pages/region-chart/region-basic-distribution/RegionBasicDistributionPage"
-    ),
+    import("./pages/region-chart/region-basic-distribution/RegionBasicDistributionPage"),
 );
 const RegionBasicDistributionCreateEditPage = lazy(
   () =>
-    import(
-      "./pages/region-chart/region-basic-distribution/RegionBasicDistributionCreateEditPage"
-    ),
+    import("./pages/region-chart/region-basic-distribution/RegionBasicDistributionCreateEditPage"),
 );
 const RegionBasicDistributionDetailPage = lazy(
   () =>
-    import(
-      "./pages/region-chart/region-basic-distribution/RegionBasicDistributionDetailPage"
-    ),
+    import("./pages/region-chart/region-basic-distribution/RegionBasicDistributionDetailPage"),
 );
 const LegalIdentificationPage = lazy(
   () => import("./pages/legal-identification/LegalIdentificationPage"),
@@ -549,19 +543,19 @@ function Router() {
         component={LegalIdentificationDetailPage}
       />
       <Route
-        path="/region-basic-distribution"
+        path="/cultivation-region-identification/crop"
         component={RegionBasicDistributionPage}
       />
       <Route
-        path="/region-basic-distribution/create"
+        path="/cultivation-region-identification/crop/create"
         component={RegionBasicDistributionCreateEditPage}
       />
       <Route
-        path="/region-basic-distribution/edit/:id"
+        path="/cultivation-region-identification/crop/edit/:id"
         component={RegionBasicDistributionCreateEditPage}
       />
       <Route
-        path="/region-basic-distribution/detail/:id"
+        path="/cultivation-region-identification/crop/detail/:id"
         component={RegionBasicDistributionDetailPage}
       />
       <Route path="/soil-amendment-map" component={SoilAmendmentMapPage} />
