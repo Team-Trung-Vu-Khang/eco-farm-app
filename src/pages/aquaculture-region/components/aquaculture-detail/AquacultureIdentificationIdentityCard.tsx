@@ -27,7 +27,7 @@ export const PlantIdentificationIdentityCard = ({
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-2">
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Ngày trồng
+                  Ngày ghi nhận
                 </p>
                 <p className="text-sm font-semibold">{plant.plantedDate}</p>
               </div>

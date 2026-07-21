@@ -81,7 +81,7 @@ export function ImportPlantDialog({
     },
     {
       key: "plantedDate",
-      label: "Ngày trồng",
+      label: "Ngày ghi nhận",
       render: (value, item) => (
         <span
           className={
@@ -242,7 +242,7 @@ export function ImportPlantDialog({
       setImportData(parsedData);
       toast({
         title: "Tải file thành công",
-        description: `Đã đọc được ${parsedData.length} dòng dữ liệu cây trồng.`,
+        description: `Đã đọc được ${parsedData.length} dòng dữ liệu thủy sản.`,
       });
     } catch (error) {
       console.error("Error parsing Excel:", error);
@@ -292,7 +292,7 @@ export function ImportPlantDialog({
 
     toast({
       title: "Chuyển dữ liệu thành công",
-      description: `Đã đưa ${validItems.length} cây vào danh sách thêm mới.`,
+        description: `Đã đưa ${validItems.length} mục vào danh sách thêm mới.`,
     });
   };
 
@@ -329,7 +329,7 @@ export function ImportPlantDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="w-5 h-5 text-primary" />
-            Nhập danh sách cây trồng từ Excel
+            Nhập danh sách thủy sản từ Excel
           </DialogTitle>
         </DialogHeader>
 
@@ -350,7 +350,7 @@ export function ImportPlantDialog({
                   <h4 className="font-bold text-green-900">Mẫu file Excel</h4>
                   <p className="text-sm text-green-700 opacity-80">
                     Tải xuống file mẫu (Gồm: Chiều cao, Độ tuổi, Đơn vị tuổi,
-                    Ngày trồng, Vĩ độ, Kinh độ, Ghi chú)
+                    Ngày ghi nhận, Vĩ độ, Kinh độ, Ghi chú)
                   </p>
                 </div>
               </div>
@@ -385,7 +385,7 @@ export function ImportPlantDialog({
                     />
                   </div>
                   <h3 className="text-xl font-bold text-gray-800 mb-2 text-center">
-                    Tải lên danh sách cây trồng
+                    Tải lên danh sách thủy sản
                   </h3>
                   <p className="text-sm text-center text-gray-500 max-w-sm mb-8 leading-relaxed">
                     Kéo thả file .xlsx hoặc .xls vào đây để trích xuất dữ liệu

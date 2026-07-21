@@ -146,8 +146,8 @@ export const GeographicalScopeCard = ({
           <div className="py-8 flex flex-col items-center justify-center text-center gap-3 text-slate-400">
             <MapPin className="w-9 h-9 text-slate-200" />
             <div>
-              <div className="text-sm font-semibold text-slate-500 mb-1">Chưa chọn vùng canh tác</div>
-              <div className="text-xs text-slate-400">Chọn vùng canh tác để thiết lập vị trí địa lý</div>
+              <div className="text-sm font-semibold text-slate-500 mb-1">Chưa chọn vùng nuôi trồng</div>
+              <div className="text-xs text-slate-400">Chọn vùng nuôi trồng để thiết lập vị trí địa lý</div>
             </div>
           </div>
         ) : (
@@ -165,7 +165,7 @@ export const GeographicalScopeCard = ({
             )}
             {geographicalUnits.length === 0 && (
               <div className="py-4 text-sm text-slate-400 text-center bg-slate-50/50 border border-dashed border-slate-200 rounded-xl">
-                Vùng canh tác này chưa có dữ liệu vị trí địa lý
+                Vùng nuôi trồng này chưa có dữ liệu vị trí địa lý
               </div>
             )}
           </>

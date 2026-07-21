@@ -19,11 +19,6 @@ interface Step1GeographicalSelectionProps {
   geographicalUnits: any[];
   selectedScopeIds: string[];
   onScopeChange: (ids: string[]) => void;
-  manager: any[];
-  farmingMethod: any;
-  irrigationMethod: any;
-  selectedCropsData: any[];
-  setPlants: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
 export const Step1GeographicalSelection: React.FC<
@@ -36,33 +31,14 @@ export const Step1GeographicalSelection: React.FC<
   geographicalUnits,
   selectedScopeIds,
   onScopeChange,
-  manager,
-  farmingMethod,
-  irrigationMethod,
-  selectedCropsData,
-  setPlants,
 }) => {
   const handleCultivationRegionSelect = (val: string) => {
     setCultivationRegionId(val);
     onScopeChange([]);
-    setPlants((prev) =>
-      prev.map((p) => ({
-        ...p,
-        plotId: "",
-        coordinate: { lat: 11.548, lng: 106.896 },
-      })),
-    );
   };
 
   const handleScopeChange = (ids: string[]) => {
     onScopeChange(ids);
-    setPlants((prev) =>
-      prev.map((p) => ({
-        ...p,
-        plotId: "",
-        coordinate: { lat: 11.548, lng: 106.896 },
-      })),
-    );
   };
 
   return (
@@ -75,11 +51,11 @@ export const Step1GeographicalSelection: React.FC<
           </div>
           <div>
             <h3 className="text-base font-bold text-green-900">
-              Định vị vùng canh tác
+              Định vị vùng nuôi trồng
             </h3>
             <p className="text-sm text-green-700/80">
-              Chọn vùng canh tác trước. Vị trí cụ thể của từng cây sẽ được chọn
-              ở bước tiếp theo.
+              Chọn vùng nuôi trồng trước. Vị trí cụ thể của từng đối tượng nuôi
+              sẽ được chọn ở bước tiếp theo.
             </p>
           </div>
         </div>
@@ -95,7 +71,7 @@ export const Step1GeographicalSelection: React.FC<
             <CardHeader className="border-b py-4">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Layers className="w-4 h-4 text-primary" />
-                Vùng canh tác <span className="text-red-500">*</span>
+                Vùng nuôi trồng <span className="text-red-500">*</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
@@ -120,10 +96,6 @@ export const Step1GeographicalSelection: React.FC<
         <div className="min-w-0">
           <CultivationRegionInfoCard
             selectedCultivationRegion={selectedCultivationRegion}
-            manager={manager}
-            farmingMethod={farmingMethod}
-            irrigationMethod={irrigationMethod}
-            selectedCropsData={selectedCropsData}
           />
         </div>
       </div>

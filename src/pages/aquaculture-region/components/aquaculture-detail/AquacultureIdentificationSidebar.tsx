@@ -43,17 +43,17 @@ export const PlantIdentificationSidebar = ({
     <div className="space-y-6">
       <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
         <CardHeader className="border-b py-4">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <Sprout className="w-4 h-4 text-emerald-600" />
-            Thông số sinh trưởng
-          </CardTitle>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Sprout className="w-4 h-4 text-emerald-600" />
+            Thông số nuôi trồng
+            </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="divide-y divide-slate-50">
             <div className="p-4 flex justify-between items-center group hover:bg-slate-50 transition-colors">
               <span className="text-sm text-slate-500 flex items-center gap-2">
                 <Ruler className="w-4 h-4" />
-                Chiều cao (m)
+                Chỉ số mẫu
               </span>
               <span className="font-bold text-slate-900">{plant.height}</span>
             </div>
@@ -64,7 +64,7 @@ export const PlantIdentificationSidebar = ({
       {cultivationRegion && (
         <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
           <CardHeader className="border-b py-4">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <User className="w-4 h-4 text-primary" />
               Đơn vị quản lý & Kỹ thuật
             </CardTitle>
@@ -81,7 +81,7 @@ export const PlantIdentificationSidebar = ({
               </div>
               <div className="p-4 flex flex-col gap-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Phương pháp canh tác
+                  Phương pháp nuôi trồng
                 </span>
                 <span className="font-semibold text-slate-900">
                   {farmingMethod?.name || "N/A"}
@@ -89,7 +89,7 @@ export const PlantIdentificationSidebar = ({
               </div>
               <div className="p-4 flex flex-col gap-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Hệ thống tưới tiêu
+                  Hệ thống cấp thoát nước
                 </span>
                 <span className="font-semibold text-slate-900">
                   {irrigationMethod?.name || "N/A"}
@@ -110,7 +110,7 @@ export const PlantIdentificationSidebar = ({
         <CardContent className="p-4 space-y-4">
           <div className="space-y-1">
             <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
-              Vùng trồng
+              Vùng nuôi trồng
             </p>
             <p className="text-sm font-bold text-indigo-900">
               {region?.name || "N/A"}
@@ -126,7 +126,7 @@ export const PlantIdentificationSidebar = ({
           </div>
           <div className="space-y-1">
             <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
-              Lô trồng
+              Lô nuôi
             </p>
             <p className="text-sm font-bold text-indigo-900">
               {plot?.name || "N/A"}

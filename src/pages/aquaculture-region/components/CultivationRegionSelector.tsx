@@ -116,7 +116,7 @@ export const CultivationRegionSelector = ({
         ) : (
           <div className="flex flex-col items-center justify-center py-4 text-center gap-2 text-muted-foreground group-hover:text-primary transition-colors">
             <Plus className="w-6 h-6" />
-            <div className="text-base font-medium">Chọn vùng canh tác</div>
+            <div className="text-base font-medium">Chọn vùng nuôi trồng</div>
           </div>
         )}
       </div>
@@ -126,7 +126,7 @@ export const CultivationRegionSelector = ({
           <DialogHeader className="border-b pb-6 w-full">
             <DialogTitle className="flex items-start gap-2">
               <Layers className="w-5 h-5 text-primary" />
-              Chọn vùng canh tác
+              Chọn vùng nuôi trồng
             </DialogTitle>
           </DialogHeader>
 
@@ -138,7 +138,7 @@ export const CultivationRegionSelector = ({
                   value={searchTerm}
                   className="w-full max-w-xl pl-10 h-10 bg-white"
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Tìm tên vùng, phạm vi, mã..."
+                placeholder="Tìm tên vùng nuôi trồng, phạm vi, mã..."
                 />
               </div>
               <div className="h-80 w-full max-w-xl overflow-y-auto overflow-x-hidden pr-1">
@@ -208,7 +208,7 @@ export const CultivationRegionSelector = ({
                   })}
                   {filteredAreas.length === 0 && (
                     <div className="py-10 text-center text-sm text-slate-400 italic">
-                      Không tìm thấy vùng canh tác nào
+                      Không tìm thấy vùng nuôi trồng nào
                     </div>
                   )}
                 </div>

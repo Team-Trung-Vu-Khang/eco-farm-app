@@ -10,18 +10,18 @@ import { Beaker, Layers, Sprout, User } from "lucide-react";
 
 interface CultivationRegionInfoCardProps {
   selectedCultivationRegion: any;
-  manager: any[];
-  farmingMethod: any;
-  irrigationMethod: any;
-  selectedCropsData: any[];
+  manager?: any[];
+  farmingMethod?: any;
+  irrigationMethod?: any;
+  selectedCropsData?: any[];
 }
 
 export const CultivationRegionInfoCard = ({
   selectedCultivationRegion,
-  manager,
-  farmingMethod,
-  irrigationMethod,
-  selectedCropsData,
+  manager = [],
+  farmingMethod = null,
+  irrigationMethod = null,
+  selectedCropsData = [],
 }: CultivationRegionInfoCardProps) => {
   return (
     <Card className="border-none shadow-sm rounded-2xl overflow-hidden">
@@ -29,7 +29,7 @@ export const CultivationRegionInfoCard = ({
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-bold flex items-center gap-2">
             <Layers className="w-5 h-5 text-primary" />
-            Thông tin vùng canh tác
+            Thông tin vùng nuôi trồng
           </CardTitle>
         </div>
       </CardHeader>
@@ -39,10 +39,10 @@ export const CultivationRegionInfoCard = ({
             <Layers className="w-10 h-10 text-slate-200" />
             <div>
               <div className="text-sm font-semibold text-slate-500 mb-1">
-                Chưa chọn vùng canh tác
+                Chưa chọn vùng nuôi trồng
               </div>
               <div className="text-xs text-slate-400">
-                Chọn vùng canh tác bên trái để xem thông tin
+                Chọn vùng nuôi trồng bên trái để xem thông tin
               </div>
             </div>
           </div>
@@ -103,7 +103,7 @@ export const CultivationRegionInfoCard = ({
             <div>
               <div className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
                 <Sprout className="w-4 h-4 text-green-500" />
-                Giống cây trồng
+                Giống thuỷ sản
               </div>
               {selectedCropsData.length > 0 ? (
                 <div className="grid grid-cols-1 gap-3">
@@ -137,7 +137,7 @@ export const CultivationRegionInfoCard = ({
                 </div>
               ) : (
                 <div className="p-5 text-center text-sm text-slate-400 bg-slate-50/50 border border-dashed border-slate-200 rounded-xl">
-                  Chưa có thông tin giống cây trồng
+                  Chưa có thông tin đối tượng nuôi
                 </div>
               )}
             </div>

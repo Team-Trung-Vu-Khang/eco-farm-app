@@ -80,6 +80,18 @@ const IoTDeviceGroupPage = lazy(
 const IrrigationSystemPage = lazy(
   () => import("./pages/irrigation-system/IrrigationSystemPage"),
 );
+const AquacultureIdentificationListPage = lazy(
+  () => import("./pages/aquaculture-identification/AquacultureIdentificationListPage"),
+);
+const AquacultureIdentificationCreatePage = lazy(
+  () => import("./pages/aquaculture-identification/AquacultureIdentificationCreatePage"),
+);
+const AquacultureIdentificationDetailPage = lazy(
+  () => import("./pages/aquaculture-identification/AquacultureIdentificationDetailPage"),
+);
+const AquacultureIdentificationEditPage = lazy(
+  () => import("./pages/aquaculture-identification/AquacultureIdentificationEditPage"),
+);
 
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 import {
@@ -690,6 +702,22 @@ function Router() {
       <Route
         path="/plant-identification/:id/edit"
         component={PlantIdentificationEditPage}
+      />
+      <Route
+        path="/aquaculture-identification"
+        component={AquacultureIdentificationListPage}
+      />
+      <Route
+        path="/aquaculture-identification/create"
+        component={AquacultureIdentificationCreatePage}
+      />
+      <Route
+        path="/aquaculture-identification/:id"
+        component={AquacultureIdentificationDetailPage}
+      />
+      <Route
+        path="/aquaculture-identification/:id/edit"
+        component={AquacultureIdentificationEditPage}
       />
       <Route path="/crop" component={CropPage} />
       <Route path="/crop/create" component={CropCreatePage} />
