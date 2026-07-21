@@ -2,16 +2,10 @@ import { Badge, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
-  CalendarDays,
   CalendarRange,
-  CheckCircle2,
-  Eye,
   Layers3,
   MapPin,
-  PencilLine,
-  Plus,
   Sprout,
-  Trash2,
   Workflow,
 } from "lucide-react";
 import { Handle, Position, type NodeProps } from "reactflow";
@@ -160,8 +154,8 @@ const toneVariant: Record<WorkflowActionTone, "outline" | "destructive"> = {
 };
 
 const footerActionButtonClass =
-  "h-[50px] w-[50px] rounded-full border-2 border-slate-300 bg-white p-0 text-slate-900 shadow-[0_18px_40px_rgba(15,23,42,0.14)] hover:bg-slate-50";
-const footerActionIconClass = "h-8 w-8";
+  "h-[42px] w-[42px] rounded-full border border-slate-200 bg-white p-0 text-slate-900 shadow-[0_10px_22px_rgba(15,23,42,0.10)] hover:bg-slate-50";
+const footerActionIconClass = "h-6 w-6";
 
 function WorkflowHandle({
   id,
@@ -231,6 +225,8 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
       : "";
     const posterBadgeClass =
       "border-slate-200 bg-white/80 text-slate-700 shadow-none";
+    const posterWrapperClass =
+      "border-slate-200 bg-white shadow-[0_16px_44px_rgba(15,23,42,0.08)]";
 
     return (
       <div className={widthClass}>
@@ -251,15 +247,15 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
 
         <div
           className={[
-            "rounded-[28px] border p-4 shadow-[0_24px_80px_rgba(15,23,42,0.10)] ring-1 ring-black/5 backdrop-blur-sm",
-            config.wrapperClass,
+            "rounded-[24px] border p-4 backdrop-blur-sm",
+            posterWrapperClass,
           ].join(" ")}
         >
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-3">
             <Badge
               variant="outline"
               className={[
-                "h-9 rounded-xl px-4 text-[13px] font-semibold",
+                "h-8 rounded-xl px-3.5 text-[11px] font-semibold tracking-[0.14em]",
                 posterBadgeClass,
               ].join(" ")}
             >
@@ -270,7 +266,7 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
               <Badge
                 variant="outline"
                 className={[
-                  "h-9 rounded-xl px-4 text-[13px] font-semibold",
+                  "h-8 rounded-xl px-3.5 text-[11px] font-semibold tracking-[0.14em]",
                   posterStatusClass,
                 ].join(" ")}
               >
@@ -279,7 +275,7 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
             )}
           </div>
 
-          <h3 className="mt-4 text-[28px] font-extrabold leading-[1.05] tracking-[-0.04em] text-slate-900 sm:text-[32px]">
+          <h3 className="mt-4 text-[20px] font-extrabold leading-[1.12] tracking-[-0.03em] text-slate-900 sm:text-[22px]">
             {data.title}
           </h3>
 
@@ -290,7 +286,7 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
                   key={tag}
                   variant="outline"
                   className={[
-                    "h-9 rounded-xl px-4 text-[13px] font-semibold",
+                    "h-8 rounded-xl px-3.5 text-[11px] font-semibold tracking-[0.14em]",
                     posterBadgeClass,
                   ].join(" ")}
                 >
@@ -301,22 +297,22 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
           ) : null}
 
           {data.description && (
-            <p className="mt-4 max-w-[720px] text-[15px] leading-6 text-slate-700">
+            <p className="mt-3 max-w-[720px] text-[13px] leading-6 text-slate-700">
               {data.description}
             </p>
           )}
 
           {data.summaries?.length ? (
-            <div className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="mt-5 grid grid-cols-2 gap-x-5 gap-y-3 lg:grid-cols-4">
               {data.summaries.map((summary) => (
                 <div
                   key={`${data.title}-${summary.label}`}
-                  className="rounded-[22px] border border-white/80 bg-white/75 px-3 py-3.5 text-center shadow-sm"
+                  className="rounded-2xl bg-slate-50/80 px-3 py-2.5"
                 >
-                  <p className="text-[12px] font-medium leading-4 text-slate-700">
+                  <p className="text-[9px] font-medium uppercase tracking-[0.12em] text-slate-500">
                     {summary.label}
                   </p>
-                  <p className="mt-1 text-[28px] font-extrabold leading-none text-slate-900">
+                  <p className="mt-1 text-[13px] font-semibold leading-snug text-slate-900 sm:text-[14px]">
                     {summary.value}
                   </p>
                 </div>
@@ -325,15 +321,15 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
           ) : null}
 
           {data.regionLabels?.length ? (
-            <div className="mt-6 rounded-[24px] border border-dashed border-slate-300 p-3.5">
-              <p className="text-[15px] font-semibold text-slate-900">
+            <div className="mt-5 border-t border-slate-100 pt-4">
+              <p className="text-[12px] font-semibold text-slate-900">
                 Vùng canh tác
               </p>
-              <div className="mt-3 grid gap-2.5 md:grid-cols-2">
+              <div className="mt-2.5 grid gap-2 md:grid-cols-2">
                 {data.regionLabels.map((label) => (
                   <div
                     key={label}
-                    className="rounded-[20px] border border-slate-300 bg-white/80 px-3.5 py-3.5 text-[14px] font-medium leading-5 text-slate-800 shadow-sm"
+                    className="rounded-xl bg-slate-50/80 px-3 py-2 text-[12px] font-medium leading-5 text-slate-800"
                   >
                     {label}
                   </div>
@@ -343,7 +339,7 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
           ) : null}
 
           {data.actions?.length ? (
-            <div className="mt-6 grid gap-3 md:grid-cols-2">
+            <div className="mt-5 grid gap-2.5 md:grid-cols-2">
               {data.actions.map((action) => {
                 const ActionIcon = action.icon;
 
@@ -353,8 +349,8 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
                     size="sm"
                     variant="outline"
                     className={[
-                      "nodrag h-14 justify-center gap-2 rounded-[18px] border-2 px-4 text-[15px] font-semibold shadow-none",
-                      "border-slate-300 bg-white/80 text-slate-900 hover:border-slate-400 hover:bg-white",
+                      "nodrag h-10 justify-center gap-2 rounded-xl border border-slate-200 px-4 text-[12px] font-semibold shadow-none",
+                      "bg-white text-slate-900 hover:border-slate-300 hover:bg-slate-50",
                     ].join(" ")}
                     onClick={(event) => {
                       event.stopPropagation();
@@ -452,7 +448,7 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
               )}
             </div>
             <h3
-              className="text-[15px] font-semibold leading-5 text-slate-900"
+              className="text-[14px] font-semibold leading-5 text-slate-900"
               style={{
                 display: "-webkit-box",
                 WebkitBoxOrient: "vertical",
@@ -478,7 +474,7 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
                 <p className="text-[9px] uppercase tracking-wide text-slate-500">
                   {summary.label}
                 </p>
-                <p className="mt-1 text-[13px] font-semibold leading-4 text-slate-900">
+                <p className="mt-1 text-[12px] font-semibold leading-4 text-slate-900">
                   {summary.value}
                 </p>
               </div>
@@ -530,13 +526,3 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
     </>
   );
 }
-
-export const workflowActionIcons = {
-  view: Eye,
-  edit: PencilLine,
-  delete: Trash2,
-  add: Plus,
-  refresh: Activity,
-  calendar: CalendarDays,
-  done: CheckCircle2,
-};

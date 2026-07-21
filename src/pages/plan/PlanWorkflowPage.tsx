@@ -22,7 +22,6 @@ import {
 import { useLocation, useParams } from "wouter";
 import usePlanStore, { type Plan } from "../../stores/usePlanStore";
 import type {
-  WorkflowActionItem,
   WorkflowCardNodeData,
   WorkflowNodeStatus,
 } from "./../growth-cycle/components/workflow/WorkflowCardNode";
@@ -33,10 +32,11 @@ const nodeTypes = {
   workflowCard: WorkflowCardNode,
 };
 
-type TaskGroup = {
+type WorkflowSlot = {
   label: string;
-  tasks: Plan["taskAllocations"];
-  color: string;
+  plan: Plan;
+  position: { x: number; y: number };
+  isPrimary?: boolean;
 };
 
 function formatDate(value?: string) {
@@ -50,10 +50,6 @@ function formatDate(value?: string) {
     month: "2-digit",
     year: "numeric",
   }).format(parsed);
-}
-
-function normalizeText(value?: string) {
-  return value?.trim().toLowerCase() || "";
 }
 
 function getStatusNode(status: Plan["status"]): WorkflowNodeStatus {
@@ -102,108 +98,241 @@ function countMaterials(materials: Plan["materialAllocations"]) {
   return entries.slice(0, 3).join(", ");
 }
 
-function getTaskCountLabel(tasks: Plan["taskAllocations"]) {
-  if (tasks.length === 0) return "0 công việc";
-  if (tasks.length === 1) return "1 công việc";
-  return `${tasks.length} công việc`;
+function clonePlan(base: Plan, overrides: Partial<Plan>): Plan {
+  return {
+    ...base,
+    ...overrides,
+    selectedRegionIds: overrides.selectedRegionIds ?? base.selectedRegionIds,
+    selectedZoneIds: overrides.selectedZoneIds ?? base.selectedZoneIds,
+    selectedPlotIds: overrides.selectedPlotIds ?? base.selectedPlotIds,
+    materialAllocations: overrides.materialAllocations ?? base.materialAllocations,
+    taskAllocations: overrides.taskAllocations ?? base.taskAllocations,
+    selectedStages: overrides.selectedStages ?? base.selectedStages,
+  };
 }
 
-function buildTaskGroups(plan: Plan): TaskGroup[] {
-  const selectedStages = plan.selectedStages.length
-    ? plan.selectedStages
-    : ["Công việc"];
+function createDemoWorkflowPlans(base: Plan) {
+  const plan2 = clonePlan(base, {
+    id: 2001,
+    code: "KH-DEMO-002",
+    name: "Kế hoạch nuôi trái sầu riêng Monthong ĐNB (Chống sượng, vô cơm)",
+    description:
+      "Cung cấp dinh dưỡng phân kỳ theo tuổi trái, tỉa trái non sinh lý và bón Kali Sulphate để lên cơm vàng.",
+    seasonName: "Chính vụ Đông Nam Bộ",
+    startDate: "2024-03-01",
+    endDate: "2024-06-30",
+    status: "active",
+    selectedStages: ["Nuôi trái", "Siết nước"],
+    taskAllocations: [
+      {
+        id: 20011,
+        stageId: "Nuôi trái",
+        name: "Bón phân hữu cơ",
+        description: "Bón phân theo đợt để nuôi trái đều",
+        labor: "3 người",
+        duration: "7 ngày",
+      },
+    ],
+    materialAllocations: [
+      {
+        id: 20012,
+        stageId: "Nuôi trái",
+        materialCategory: "Phân bón",
+        materialType: "Phân hữu cơ",
+        materialName: "Phân hữu cơ hoai mục",
+        quantity: "2",
+        unit: "bao",
+      },
+    ],
+  });
 
-  const groups = selectedStages.map((stage) => ({
-    label: stage,
-    tasks: plan.taskAllocations.filter(
-      (task) => normalizeText(task.stageId) === normalizeText(stage),
-    ),
-    color: "#3b82f6",
-  }));
+  const plan3 = clonePlan(base, {
+    id: 2002,
+    code: "KH-DEMO-003",
+    name: "Kế hoạch phòng ngừa sâu bệnh giai đoạn sau mưa",
+    description:
+      "Theo dõi dịch hại, phun phòng ngừa và duy trì ẩm độ ổn định để tránh bùng phát bệnh.",
+    seasonName: "Chính vụ Đông Nam Bộ",
+    startDate: "2024-07-01",
+    endDate: "2024-08-15",
+    status: "draft",
+    selectedStages: ["Theo dõi", "Phòng ngừa"],
+    taskAllocations: [
+      {
+        id: 20021,
+        stageId: "Phòng ngừa",
+        name: "Phun phòng bệnh",
+        description: "Phun định kỳ theo lịch",
+        labor: "2 người",
+        duration: "3 ngày",
+      },
+    ],
+    materialAllocations: [
+      {
+        id: 20022,
+        stageId: "Phòng ngừa",
+        materialCategory: "Thuốc BTVT",
+        materialType: "Thuốc phòng bệnh",
+        materialName: "Thuốc phòng nấm sinh học",
+        quantity: "1",
+        unit: "lít",
+      },
+    ],
+  });
 
-  const groupedTaskIds = new Set(
-    groups.flatMap((group) => group.tasks.map((task) => task.id)),
-  );
+  const plan11 = clonePlan(base, {
+    id: 2003,
+    code: "KH-DEMO-011",
+    name: "Kế hoạch 1.1 - Tăng trưởng cơi lá",
+    description:
+      "Nhánh phụ cho giai đoạn tăng trưởng cơi lá, có thể tách riêng để xử lý dinh dưỡng.",
+    seasonName: "Chính vụ Đông Nam Bộ",
+    startDate: "2024-03-15",
+    endDate: "2024-05-10",
+    status: "active",
+    selectedStages: ["Cơi lá", "Dưỡng cây"],
+    taskAllocations: [
+      {
+        id: 20031,
+        stageId: "Cơi lá",
+        name: "Bón thúc cơi lá",
+        description: "Bón thúc định kỳ cho cơi lá mới",
+        labor: "4 người",
+        duration: "5 ngày",
+      },
+    ],
+    materialAllocations: [
+      {
+        id: 20032,
+        stageId: "Cơi lá",
+        materialCategory: "Phân bón lá",
+        materialType: "Dinh dưỡng",
+        materialName: "Amino acid",
+        quantity: "2",
+        unit: "lít",
+      },
+    ],
+  });
 
-  const unassignedTasks = plan.taskAllocations.filter(
-    (task) => !groupedTaskIds.has(task.id),
-  );
+  const plan12 = clonePlan(base, {
+    id: 2004,
+    code: "KH-DEMO-012",
+    name: "Kế hoạch 1.2 - Ổn định sau tỉa trái",
+    description:
+      "Nhánh tiếp nối sau 1.1, tập trung ổn định cây và chuyển sang nuôi trái.",
+    seasonName: "Chính vụ Đông Nam Bộ",
+    startDate: "2024-05-15",
+    endDate: "2024-07-20",
+    status: "completed",
+    selectedStages: ["Ổn định", "Nuôi trái"],
+    taskAllocations: [
+      {
+        id: 20041,
+        stageId: "Ổn định",
+        name: "Tưới giữ ẩm",
+        description: "Giữ ẩm ổn định cho cây",
+        labor: "2 người",
+        duration: "4 ngày",
+      },
+    ],
+    materialAllocations: [
+      {
+        id: 20042,
+        stageId: "Ổn định",
+        materialCategory: "Phân bón",
+        materialType: "Dinh dưỡng",
+        materialName: "Kali Sulphate",
+        quantity: "1",
+        unit: "bao",
+      },
+    ],
+  });
 
-  if (unassignedTasks.length > 0) {
-    groups.push({
-      label: "Chưa gán giai đoạn",
-      tasks: unassignedTasks,
-      color: "#f59e0b",
-    });
-  }
-
-  return groups;
+  return [
+    {
+      label: "Kế hoạch 1",
+      plan: base,
+      position: { x: 0, y: 0 },
+      isPrimary: true,
+    },
+    {
+      label: "Kế hoạch 2",
+      plan: plan2,
+      position: { x: 1160, y: 0 },
+    },
+    {
+      label: "Kế hoạch 3",
+      plan: plan3,
+      position: { x: 2320, y: 0 },
+    },
+    {
+      label: "Kế hoạch 1.1",
+      plan: plan11,
+      position: { x: 580, y: 760 },
+    },
+    {
+      label: "Kế hoạch 1.2",
+      plan: plan12,
+      position: { x: 1740, y: 760 },
+    },
+  ] satisfies WorkflowSlot[];
 }
 
 function buildPlanNode(
   plan: Plan,
+  label: string,
   onEdit: () => void,
   onView: () => void,
   onCreate: () => void,
+  options?: { interactive?: boolean },
 ): Node<WorkflowCardNodeData> {
+  const interactive = options?.interactive ?? true;
   return {
     id: `plan-${plan.id}`,
     type: "workflowCard",
     position: { x: 0, y: 0 },
     data: {
       kind: "plan",
-      eyebrow: "Kế hoạch cha",
+      eyebrow: label,
       title: plan.name,
       subtitle: `${plan.seasonName} · ${plan.crop}${plan.variety ? ` - ${plan.variety}` : ""}`,
       status: getStatusNode(plan.status),
+      variant: "poster",
       wide: true,
+      targetTopHandleId: `plan-${plan.id}-target-top`,
       sourceBottomHandleId: `plan-${plan.id}-source-bottom`,
       summaries: [
         { label: "Bắt đầu", value: formatDate(plan.startDate) },
         { label: "Kết thúc", value: formatDate(plan.endDate) },
-        { label: "Giai đoạn", value: plan.selectedStages.length.toString() },
+        { label: "Giai đoạn", value: `${plan.selectedStages.length}` },
         { label: "Nhân lực", value: countWorkers(plan.taskAllocations) },
         { label: "Vật tư", value: countMaterials(plan.materialAllocations) },
         { label: "Mục đích", value: getPurposeLabel(plan) },
       ],
       description: plan.description || "Chưa có mô tả cho kế hoạch này.",
-      actions: [
-        {
-          label: "Xem chi tiết",
-          icon: Eye,
-          onClick: onView,
-        },
-        {
-          label: "Chỉnh sửa",
-          icon: PencilLine,
-          onClick: onEdit,
-        },
-      ],
-      footerAction: {
-        label: "Thêm mới",
-        icon: Plus,
-        onClick: onCreate,
-      },
+      actions: interactive
+        ? [
+            {
+              label: "Xem chi tiết",
+              icon: Eye,
+              onClick: onView,
+            },
+            {
+              label: "Chỉnh sửa",
+              icon: PencilLine,
+              onClick: onEdit,
+            },
+          ]
+        : undefined,
+      footerAction: interactive
+        ? {
+            label: "Thêm kế hoạch",
+            icon: Plus,
+            onClick: onCreate,
+          }
+        : undefined,
     },
   };
-}
-
-function getTaskActions(
-  planId: number,
-  navigate: (path: string) => void,
-): WorkflowActionItem[] {
-  return [
-    {
-      label: "Xem chi tiết",
-      icon: Eye,
-      onClick: () => navigate(`/plan/${planId}`),
-    },
-    {
-      label: "Chỉnh sửa",
-      icon: PencilLine,
-      onClick: () => navigate(`/plan/${planId}/edit`),
-    },
-  ];
 }
 
 export default function PlanWorkflowPage() {
@@ -216,65 +345,41 @@ export default function PlanWorkflowPage() {
       return { nodes: [] as Node[], edges: [] as Edge[] };
     }
 
-    const taskGroups = buildTaskGroups(plan);
-    const nodes: Node<WorkflowCardNodeData>[] = [];
+    const slots = createDemoWorkflowPlans(plan);
+
+    const nodes = slots.map((slot) =>
+      buildPlanNode(
+        slot.plan,
+        slot.label,
+        () => setLocation(`/plan/${slot.plan.id}/edit`),
+        () => setLocation(`/plan/${slot.plan.id}`),
+        () => setLocation("/plan/create"),
+        { interactive: slot.isPrimary },
+      ),
+    ).map((node, index) => ({
+      ...node,
+      position: slots[index]?.position ?? node.position,
+    }));
+
+    const slotByLabel = new Map(slots.map((slot) => [slot.label, slot]));
     const edges: Edge[] = [];
 
-    const rootNode = buildPlanNode(
-      plan,
-      () => setLocation(`/plan/${plan.id}/edit`),
-      () => setLocation(`/plan/${plan.id}`),
-      () => setLocation(`/plan/${plan.id}/create`),
-    );
-    nodes.push(rootNode);
-
-    const stageGap = taskGroups.length > 1 ? 320 : 0;
-    const stageStartX = -((Math.max(taskGroups.length, 1) - 1) * stageGap) / 2;
-
-    taskGroups.forEach((group, stageIndex) => {
-      const stageNodeId = `stage-${stageIndex}`;
-      const stageNode: Node<WorkflowCardNodeData> = {
-        id: stageNodeId,
-        type: "workflowCard",
-        position: { x: stageStartX + stageIndex * stageGap, y: 280 },
-        data: {
-          kind: "stage",
-          eyebrow: "Giai đoạn",
-          title: group.label,
-          subtitle: `${group.tasks.length} công việc`,
-          status: group.tasks.length ? "in_progress" : "not_started",
-          targetBottomHandleId: `${stageNodeId}-target-bottom`,
-          summaries: [
-            { label: "Công việc", value: getTaskCountLabel(group.tasks) },
-            { label: "Sở hữu", value: plan.seasonName || "Chưa rõ" },
-            {
-              label: "Vật tư",
-              value: group.tasks.length ? "Đã có danh sách" : "Chưa có",
-            },
-          ],
-          description: `Công việc thuộc giai đoạn "${group.label}" của kế hoạch ${plan.code}.`,
-          // actions: [
-          //   {
-          //     label: "Thêm mới",
-          //     icon: PencilLine,
-          //     onClick: () => setLocation(`/plan/${plan.id}/edit`),
-          //   },
-          // ],
-          footerAction: {
-            label: "Thêm mới",
-            icon: Plus,
-            onClick: () => setLocation(`/task/create`),
-          },
-        },
-      };
-      nodes.push(stageNode);
+    const connect = (
+      sourceLabel: string,
+      targetLabel: string,
+      stroke: string,
+      dashed = false,
+    ) => {
+      const source = slotByLabel.get(sourceLabel);
+      const target = slotByLabel.get(targetLabel);
+      if (!source || !target) return;
 
       edges.push({
-        id: `edge-plan-stage-${stageIndex}`,
-        source: `plan-${plan.id}`,
-        target: stageNodeId,
-        sourceHandle: `plan-${plan.id}-source-bottom`,
-        targetHandle: `${stageNodeId}-target-bottom`,
+        id: `edge-${source.plan.id}-${target.plan.id}`,
+        source: `plan-${source.plan.id}`,
+        target: `plan-${target.plan.id}`,
+        sourceHandle: `plan-${source.plan.id}-source-bottom`,
+        targetHandle: `plan-${target.plan.id}-target-top`,
         type: "step",
         markerEnd: {
           type: MarkerType.ArrowClosed,
@@ -282,70 +387,17 @@ export default function PlanWorkflowPage() {
           height: 14,
         },
         style: {
-          strokeWidth: 2,
-          stroke: group.color,
+          strokeWidth: dashed ? 1.75 : 2,
+          stroke,
+          strokeDasharray: dashed ? "6 6" : undefined,
         },
       });
+    };
 
-      const taskGap = group.tasks.length > 1 ? 280 : 0;
-      const taskStartX =
-        stageNode.position.x -
-        ((Math.max(group.tasks.length, 1) - 1) * taskGap) / 2;
-
-      group.tasks.forEach((task, taskIndex) => {
-        const taskNodeId = `task-${task.id}`;
-        const taskNode: Node<WorkflowCardNodeData> = {
-          id: taskNodeId,
-          type: "workflowCard",
-          position: {
-            x: taskStartX + taskIndex * taskGap,
-            y: 560,
-          },
-          data: {
-            kind: "task",
-            eyebrow: "Công việc",
-            title: task.name,
-            subtitle: `${group.label} · ${task.duration || "Chưa xác định"}`,
-            status: "not_started",
-            targetTopHandleId: `${taskNodeId}-target-top`,
-            sourceBottomHandleId: `${taskNodeId}-source-bottom`,
-            summaries: [
-              { label: "Nhân lực", value: task.labor || "Chưa có" },
-              { label: "Thời lượng", value: task.duration || "Chưa xác định" },
-            ],
-            description: task.description || "Chưa có mô tả công việc.",
-            actions: getTaskActions(plan.id, setLocation),
-          },
-        };
-        nodes.push(taskNode);
-
-        const sourceId =
-          taskIndex === 0
-            ? stageNodeId
-            : `task-${group.tasks[taskIndex - 1].id}`;
-        edges.push({
-          id: `edge-${sourceId}-${taskNodeId}`,
-          source: sourceId,
-          target: taskNodeId,
-          sourceHandle:
-            sourceId === stageNodeId
-              ? `${stageNodeId}-target-bottom`
-              : `task-${group.tasks[taskIndex - 1].id}-source-bottom`,
-          targetHandle: `${taskNodeId}-target-top`,
-          type: "step",
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            width: 12,
-            height: 12,
-          },
-          style: {
-            strokeWidth: 1.75,
-            stroke: group.color,
-            strokeDasharray: taskIndex === 0 ? undefined : "5 5",
-          },
-        });
-      });
-    });
+    connect("Kế hoạch 1", "Kế hoạch 2", "#1f2937");
+    connect("Kế hoạch 2", "Kế hoạch 3", "#1f2937");
+    connect("Kế hoạch 1", "Kế hoạch 1.1", "#2563eb", true);
+    connect("Kế hoạch 1.1", "Kế hoạch 1.2", "#2563eb", true);
 
     return { nodes, edges };
   }, [plan, setLocation]);
@@ -387,7 +439,7 @@ export default function PlanWorkflowPage() {
     <AdminLayout
       isDev
       title="Workflow kế hoạch"
-      description={`Trực quan hóa kế hoạch ${plan.code} và danh sách công việc`}
+      description="Chỉ hiển thị các node kế hoạch theo kiểu chuỗi và nhánh"
       actions={
         <div className="flex flex-wrap gap-2">
           <Button
@@ -407,11 +459,16 @@ export default function PlanWorkflowPage() {
             Chi tiết
           </Button>
           <Button
+            variant="outline"
             className="h-9 px-3"
             onClick={() => setLocation(`/plan/${plan.id}/edit`)}
           >
             <PencilLine className="mr-2 h-4 w-4" />
             Chỉnh sửa
+          </Button>
+          <Button className="h-9 px-3" onClick={() => setLocation("/plan/create")}>
+            <Plus className="mr-2 h-4 w-4" />
+            Thêm kế hoạch
           </Button>
         </div>
       }
@@ -422,11 +479,6 @@ export default function PlanWorkflowPage() {
         <Badge variant="outline">
           {plan.crop}
           {plan.variety ? ` - ${plan.variety}` : ""}
-        </Badge>
-        <Badge variant="outline">{plan.selectedStages.length} giai đoạn</Badge>
-        <Badge variant="outline">{plan.taskAllocations.length} công việc</Badge>
-        <Badge variant="outline">
-          {plan.materialAllocations.length} nhóm vật tư
         </Badge>
         {getPlanStatusBadge(plan.status)}
       </div>
@@ -441,8 +493,8 @@ export default function PlanWorkflowPage() {
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               fitView
-              fitViewOptions={{ padding: 0.2 }}
-              minZoom={0.35}
+              fitViewOptions={{ padding: 0.22 }}
+              minZoom={0.22}
               maxZoom={1.25}
               nodesDraggable
               nodesConnectable={false}
@@ -467,8 +519,7 @@ export default function PlanWorkflowPage() {
                 nodeColor={(node) => {
                   const kind = node.data?.kind as string | undefined;
                   if (kind === "plan") return "#0f172a";
-                  if (kind === "stage") return "#10b981";
-                  return "#f59e0b";
+                  return "#94a3b8";
                 }}
                 maskColor="rgba(248,250,252,0.75)"
                 className="!rounded-xl !border !border-slate-200 !bg-white/95 !shadow-lg"
