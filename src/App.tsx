@@ -86,6 +86,9 @@ const AquacultureIdentificationListPage = lazy(
 const AquacultureIdentificationCreatePage = lazy(
   () => import("./pages/aquaculture-identification/AquacultureIdentificationCreatePage"),
 );
+const AquacultureIdentificationSearchPage = lazy(
+  () => import("./pages/aquaculture-identification/AquacultureIdentificationSearchPage"),
+);
 const AquacultureIdentificationDetailPage = lazy(
   () => import("./pages/aquaculture-identification/AquacultureIdentificationDetailPage"),
 );
@@ -710,6 +713,10 @@ function Router() {
       <Route
         path="/aquaculture-identification/create"
         component={AquacultureIdentificationCreatePage}
+      />
+      <Route
+        path="/aquaculture-identification/search"
+        component={AquacultureIdentificationSearchPage}
       />
       <Route
         path="/aquaculture-identification/:id"
