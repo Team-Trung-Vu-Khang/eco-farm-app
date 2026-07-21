@@ -173,13 +173,22 @@ const CultivationRegionPage = lazy(
   () =>
     import("./pages/cultivation-zone/cultivation-region/CultivationRegionPage"),
 );
+const AquacultureRegionPage = lazy(
+  () => import("./pages/aquaculture-region/AquacultureRegionPage"),
+);
 const CultivationRegionCreatePage = lazy(
   () =>
     import("./pages/cultivation-zone/cultivation-region/CultivationRegionCreatePage"),
 );
+const AquacultureRegionCreatePage = lazy(
+  () => import("./pages/aquaculture-region/AquacultureRegionCreatePage"),
+);
 const CultivationRegionWorkflowPage = lazy(
   () =>
     import("./pages/cultivation-zone/cultivation-region/CultivationRegionWorkflowPage"),
+);
+const AquacultureRegionWorkflowPage = lazy(
+  () => import("./pages/aquaculture-region/AquacultureRegionWorkflowPage"),
 );
 const DistributionDetailPage = lazy(
   () =>
@@ -289,6 +298,9 @@ const RegionDetailPage = lazy(
 const CultivationRegionDetailPage = lazy(
   () =>
     import("./pages/cultivation-zone/cultivation-region/CultivationRegionDetailPage"),
+);
+const AquacultureRegionDetailPage = lazy(
+  () => import("./pages/aquaculture-region/AquacultureRegionDetailPage"),
 );
 
 const ContractDetailPage = lazy(
@@ -596,6 +608,23 @@ function Router() {
       <Route
         path="/cultivation-region/:id/edit"
         component={CultivationRegionCreatePage}
+      />
+      <Route path="/aquaculture-region" component={AquacultureRegionPage} />
+      <Route
+        path="/aquaculture-region/create"
+        component={AquacultureRegionCreatePage}
+      />
+      <Route
+        path="/aquaculture-region/:id"
+        component={AquacultureRegionDetailPage}
+      />
+      <Route
+        path="/aquaculture-region/:id/workflow"
+        component={AquacultureRegionWorkflowPage}
+      />
+      <Route
+        path="/aquaculture-region/:id/edit"
+        component={AquacultureRegionCreatePage}
       />
       <Route
         path="/distribution-detail"
