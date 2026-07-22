@@ -209,6 +209,18 @@ const DistributionDetailPage = lazy(
   () =>
     import("./pages/cultivation-zone/distribution-detail/DistributionDetailPage"),
 );
+const AquacultureDistributionDetailPage = lazy(
+  () =>
+    import("./pages/aquaculture-distribution-detail/AquacultureDistributionDetailPage"),
+);
+const AquacultureDistributionCreatePage = lazy(
+  () =>
+    import("./pages/aquaculture-distribution-detail/AquacultureDistributionCreatePage"),
+);
+const AquacultureDistributionListPage = lazy(
+  () =>
+    import("./pages/aquaculture-distribution-detail/AquacultureDistributionListPage"),
+);
 const PlantDistributionCreatePage = lazy(
   () =>
     import("./pages/cultivation-zone/distribution-detail/PlantDistributionCreatePage"),
@@ -218,6 +230,9 @@ const SearchCropPage = lazy(
 );
 const SearchZonePage = lazy(
   () => import("./pages/cultivation-zone/search-zone/SearchZonePage"),
+);
+const AquacultureSearchFarmPage = lazy(
+  () => import("./pages/aquaculture-search-farm/AquacultureSearchFarmPage"),
 );
 const SearchUnitPage = lazy(
   () => import("./pages/enterprise/search-unit/SearchUnitPage"),
@@ -657,6 +672,18 @@ function Router() {
         path="/distribution-detail/:id/edit"
         component={PlantDistributionCreatePage}
       />
+      <Route
+        path="/aquaculture-distribution-detail"
+        component={AquacultureDistributionListPage}
+      />
+      <Route
+        path="/aquaculture-distribution-detail/create"
+        component={AquacultureDistributionCreatePage}
+      />
+      <Route
+        path="/aquaculture-distribution-detail/:id"
+        component={AquacultureDistributionDetailPage}
+      />
       {/* Cultivation Area Routes */}
       <Route path="/cultivation-area" component={CultivationAreaPage} />
       <Route
@@ -688,6 +715,10 @@ function Router() {
       <Route path="/treatment" component={TreatmentPage} />
       <Route path="/search-crop" component={SearchCropPage} />
       <Route path="/search-zone" component={SearchZonePage} />
+      <Route
+        path="/aquaculture-search-farm"
+        component={AquacultureSearchFarmPage}
+      />
       <Route path="/search-unit" component={SearchUnitPage} />
       <Route path="/lookup-material" component={MaterialLookupPage} />
       <Route
