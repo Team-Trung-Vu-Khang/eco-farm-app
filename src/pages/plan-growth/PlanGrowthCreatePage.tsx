@@ -6,6 +6,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  cn,
   Input,
   Label,
   ScrollArea,
@@ -21,10 +22,10 @@ import {
   TabsList,
   TabsTrigger,
   Textarea,
-  cn,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
+  AlertTriangle,
   Apple,
   Bug,
   Calendar,
@@ -49,15 +50,14 @@ import { StageAllocation } from "./components/StageAllocation";
 import { StageItem } from "./components/StageItem";
 import { usePlanForm } from "./hooks/usePlanForm";
 
-interface PlanEditPageProps {
+interface PlanGrowthCreatePageProps {
   basePath?: string;
 }
 
-export default function PlanEditPage({
+export default function PlanGrowthCreatePage({
   basePath = "/plan-growth",
-}: PlanEditPageProps) {
+}: PlanGrowthCreatePageProps) {
   const {
-    plan,
     formData,
     setFormData,
     selections,
@@ -69,6 +69,7 @@ export default function PlanEditPage({
     regimens,
     growthCycles,
     selectionSummary,
+    dateWarning,
     calculateArea,
     summarizeTaskSelections: getTaskSelectionSummary,
     handleSeasonChange,
@@ -82,7 +83,7 @@ export default function PlanEditPage({
     pageTitle,
     pageDescription,
     completeLabel,
-  } = usePlanForm("edit", basePath);
+  } = usePlanForm("create", basePath);
 
   const [newManualStage, setNewManualStage] = useState("");
 
@@ -98,9 +99,9 @@ export default function PlanEditPage({
               <Sprout className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h3 className="font-semibold">Chỉnh sửa kế hoạch</h3>
+              <h3 className="font-semibold">Thiết lập kế hoạch</h3>
               <p className="text-sm text-blue-700">
-                Điều chỉnh thông tin mùa vụ và thời gian thực hiện.
+                Bắt đầu bằng việc chọn mùa vụ và đặt tên cho kế hoạch của bạn.
               </p>
             </div>
           </div>
@@ -150,6 +151,13 @@ export default function PlanEditPage({
               </div>
             </div>
 
+            {dateWarning && (
+              <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-3 rounded border border-amber-200">
+                <AlertTriangle className="w-4 h-4" />
+                {dateWarning}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Mã kế hoạch *</Label>
@@ -168,7 +176,7 @@ export default function PlanEditPage({
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  placeholder="VD: Kế hoạch canh tác Đông Xuân"
+                  placeholder="VD: Kế hoạch Đông Xuân"
                 />
               </div>
             </div>
@@ -196,6 +204,7 @@ export default function PlanEditPage({
         <div className="max-w-4xl mx-auto space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-6">
+              {/* Vùng canh tác Selection */}
               <div className="space-y-4">
                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 text-xs font-bold">
@@ -203,7 +212,7 @@ export default function PlanEditPage({
                   </span>
                   Chọn vùng canh tác
                 </h3>
-                <Label className="text-sm font-medium text-slate-700">
+                <Label className="text-sm font-medium">
                   Đơn vị sở hữu <span className="text-red-500">*</span>
                 </Label>
                 <EnterpriseSelector
@@ -213,7 +222,7 @@ export default function PlanEditPage({
                     setSelections([]);
                   }}
                 />
-                <div className="p-5 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm space-y-4">
+                <div className="p-5 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm space-y-4 relative">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
@@ -222,7 +231,7 @@ export default function PlanEditPage({
                       {!selectedEnterpriseId && (
                         <Badge
                           variant="outline"
-                          className="text-[10px] bg-amber-50"
+                          className="text-[10px] text-amber-600 border-amber-200 bg-amber-50"
                         >
                           Chọn đơn vị sở hữu trước
                         </Badge>
@@ -234,41 +243,94 @@ export default function PlanEditPage({
                       existingSelections={selections}
                       onConfirm={handleGeographicalConfirm}
                     />
+
+                    {selectionSummary.length > 0 && (
+                      <div className="mt-4 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
+                        <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
+                          <Layers className="w-3 h-3" />
+                          Phạm vi đã chọn ({selections.length} mục)
+                        </div>
+                        <div className="space-y-3">
+                          {selectionSummary.map((group) => (
+                            <div key={group.regionId} className="space-y-2">
+                              <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
+                                <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                                {group.regionName}
+                              </div>
+                              <div className="flex flex-wrap gap-1.5 pl-2.5">
+                                {group.items.map((item, idx) => (
+                                  <Badge
+                                    key={idx}
+                                    variant="outline"
+                                    className={cn(
+                                      "text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm",
+                                      item.type === "region"
+                                        ? "bg-emerald-100 text-emerald-800"
+                                        : item.type === "area"
+                                          ? "bg-blue-50 text-blue-700 border-blue-100"
+                                          : "bg-white text-slate-600 border-slate-200",
+                                    )}
+                                  >
+                                    <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
+                                      {item.type === "region"
+                                        ? "Vùng"
+                                        : item.type === "area"
+                                          ? "Khu"
+                                          : "Lô"}
+                                    </span>
+                                    {item.name}
+                                    {item.parentName && (
+                                      <span className="ml-1 opacity-50 font-normal italic">
+                                        ({item.parentName})
+                                      </span>
+                                    )}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
+              {/* Ghi chú Section */}
               <div className="space-y-2">
-                <Label className="text-slate-700 font-bold">
-                  Ghi chú phạm vi
-                </Label>
+                <Label className="text-slate-700 font-bold">Ghi chú</Label>
                 <Textarea
-                  placeholder="Nhập ghi chú thêm..."
+                  placeholder="Nhập thông tin ghi chú thêm..."
                   value={formData.description}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
-                  className="bg-white"
+                  className="bg-white border-slate-200 min-h-[100px]"
                 />
               </div>
             </div>
 
             <div className="space-y-6">
+              {/* Summary Section */}
               <div className="space-y-4">
                 <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
                   <Package className="w-4 h-4 text-emerald-600" />
                   Tóm tắt phạm vi đã chọn
                 </h3>
-                <div className="bg-linear-to-br from-emerald-600 to-teal-700 p-6 rounded-3xl text-white shadow-xl space-y-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center">
+                <div className="bg-linear-to-br from-emerald-600 to-teal-700 p-6 rounded-3xl text-white shadow-xl space-y-6 relative overflow-hidden">
+                  {/* Decorative blobs */}
+                  <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+                  <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-24 h-24 bg-black/10 rounded-full blur-2xl" />
+
+                  <div className="flex items-start gap-4 relative z-10">
+                    <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg ring-1 ring-white/30">
                       <MapPin className="w-7 h-7 text-white" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-emerald-100 text-[10px] font-bold uppercase tracking-widest mb-1">
+                      <p className="text-emerald-100 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">
                         Khu vực canh tác
                       </p>
-                      <h4 className="text-xl font-black leading-tight">
+                      <h4 className="text-2xl font-black leading-tight tracking-tight">
                         {regions
                           .filter((r) =>
                             formData.selectedRegionIds.includes(
@@ -279,37 +341,64 @@ export default function PlanEditPage({
                           .join(", ") || "Chưa chọn vùng"}
                       </h4>
                       <div className="flex items-center gap-3 mt-2">
-                        <Badge className="bg-white/20 text-white font-bold h-5">
+                        <Badge
+                          variant="secondary"
+                          className="bg-white/20 text-white border-transparent text-[10px] font-bold h-5"
+                        >
                           {formData.selectedPlotIds.length} LÔ ĐẤT
                         </Badge>
-                        <Badge className="bg-white/20 text-white font-bold h-5">
+                        <Badge
+                          variant="secondary"
+                          className="bg-white/20 text-white border-transparent text-[10px] font-bold h-5"
+                        >
                           {calculateArea()} HA
                         </Badge>
                       </div>
                     </div>
                   </div>
 
-                  {selectionSummary.length > 0 && (
-                    <div className="space-y-3">
-                      <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider">
-                        Chi tiết phạm vi
+                  <div className="grid grid-cols-2 gap-4 relative z-10">
+                    <div className="bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-sm">
+                      <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider mb-1">
+                        Cây trồng
                       </p>
-                      <ScrollArea className="h-40 pr-2">
+                      <p className="font-bold text-sm truncate">
+                        {formData.crop || "---"}
+                      </p>
+                    </div>
+                    <div className="bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-sm">
+                      <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider mb-1">
+                        Giống
+                      </p>
+                      <p className="font-bold text-sm truncate">
+                        {formData.variety || "---"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {selectionSummary.length > 0 && (
+                    <div className="space-y-3 relative z-10">
+                      <div className="flex items-center justify-between">
+                        <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider">
+                          Chi tiết phạm vi
+                        </p>
+                      </div>
+                      <ScrollArea className="h-32 pr-2">
                         <div className="space-y-3">
                           {selectionSummary.map((group) => (
                             <div key={group.regionId} className="space-y-1.5">
-                              <div className="text-[10px] font-bold text-emerald-100 uppercase opacity-60">
+                              <div className="text-[10px] font-bold text-emerald-100 uppercase tracking-wider opacity-60">
                                 {group.regionName}
                               </div>
                               {group.items.map((item, idx) => (
                                 <div
                                   key={idx}
-                                  className="flex items-center justify-between p-2 rounded-xl bg-white/10 border border-white/5"
+                                  className="flex items-center justify-between p-2 rounded-xl bg-white/10 border border-white/5 hover:bg-white/15 transition-colors"
                                 >
                                   <div className="flex items-center gap-2">
                                     <div
                                       className={cn(
-                                        "w-1.5 h-1.5 rounded-full",
+                                        "w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.5)]",
                                         item.type === "region"
                                           ? "bg-amber-400"
                                           : item.type === "area"
@@ -317,10 +406,24 @@ export default function PlanEditPage({
                                             : "bg-emerald-400",
                                       )}
                                     />
-                                    <span className="text-xs font-medium">
-                                      {item.name}
-                                    </span>
+                                    <div className="flex flex-col">
+                                      <span className="text-[10px] uppercase font-black opacity-40 leading-none mb-0.5">
+                                        {item.type === "region"
+                                          ? "Toàn vùng"
+                                          : item.type === "area"
+                                            ? "Khu vực"
+                                            : "Lô đất"}
+                                      </span>
+                                      <span className="text-xs font-medium truncate max-w-[150px]">
+                                        {item.name}
+                                      </span>
+                                    </div>
                                   </div>
+                                  {item.parentName && (
+                                    <span className="text-[9px] font-bold opacity-50 italic truncate max-w-[80px]">
+                                      {item.parentName}
+                                    </span>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -329,6 +432,19 @@ export default function PlanEditPage({
                       </ScrollArea>
                     </div>
                   )}
+
+                  <div className="bg-black/20 p-4 rounded-2xl border border-white/10 relative z-10">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Info className="w-4 h-4 text-emerald-300" />
+                      <span className="text-[10px] font-black text-emerald-200 uppercase tracking-widest">
+                        Lưu ý
+                      </span>
+                    </div>
+                    <p className="text-xs text-emerald-50/80 leading-relaxed italic text-justify">
+                      Quy trình canh tác sẽ được áp dụng đồng bộ cho tất cả các
+                      lô đất đã chọn trong danh sách trên.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -667,7 +783,6 @@ export default function PlanEditPage({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
                               {cycle!.stages.map((stage, idx) => {
                                 const stageKey = `${cycle!.id}:${stage.name}`;
-
                                 return (
                                   <StageItem
                                     key={stage.id}
@@ -834,10 +949,11 @@ export default function PlanEditPage({
     },
     {
       id: "confirmation",
-      title: "Xác nhận thay đổi",
-      description: "Kiểm tra lại trước khi lưu",
+      title: "Xác nhận & Kích hoạt",
+      description: "Kiểm tra lại toàn bộ thông tin",
       content: (
-        <div className="mx-auto space-y-8">
+        <div className="space-y-6 animation-fade-in">
+          {/* Plan Header Card - same style as PlanDetailPage */}
           <Card className="border-l-4 border-l-primary shadow-sm">
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -1119,7 +1235,7 @@ export default function PlanEditPage({
                   ? stageKey.split(":")
                   : [null, stageKey];
                 const cycle = cycleId
-                  ? growthCycles?.find((c) => c.id === cycleId)
+                  ? growthCycles.find((c) => c.id === cycleId)
                   : null;
 
                 const stageMaterials = formData.materialAllocations.filter(
@@ -1430,8 +1546,6 @@ export default function PlanEditPage({
       ),
     },
   ];
-
-  if (!plan) return null;
 
   return (
     <AdminLayout isDev={true} title={pageTitle} description={pageDescription}>

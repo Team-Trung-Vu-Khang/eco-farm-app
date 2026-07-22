@@ -39,7 +39,7 @@ type WorkflowSlot = {
   isPrimary?: boolean;
 };
 
-interface PlanWorkflowPageProps {
+interface PlanGrowthWorkflowPageProps {
   basePath?: string;
 }
 
@@ -340,7 +340,7 @@ function buildPlanNode(
   };
 }
 
-export default function PlanWorkflowPage({
+export default function PlanGrowthWorkflowPage({
   basePath = "/plan-growth",
 }: PlanWorkflowPageProps) {
   const params = useParams<{ id: string }>();

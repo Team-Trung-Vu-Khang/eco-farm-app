@@ -44,11 +44,21 @@ const PlanCreatePage = lazy(() => import("./pages/plan/PlanCreatePage"));
 const PlanDetailPage = lazy(() => import("./pages/plan/PlanDetailPage"));
 const PlanEditPage = lazy(() => import("./pages/plan/PlanEditPage"));
 const PlanWorkflowPage = lazy(() => import("./pages/plan/PlanWorkflowPage"));
-const PlanGrowthPage = lazy(() => import("./pages/plan-growth/PlanPage"));
-const PlanGrowthCreatePage = lazy(() => import("./pages/plan-growth/PlanCreatePage"));
-const PlanGrowthDetailPage = lazy(() => import("./pages/plan-growth/PlanDetailPage"));
-const PlanGrowthEditPage = lazy(() => import("./pages/plan-growth/PlanEditPage"));
-const PlanGrowthWorkflowPage = lazy(() => import("./pages/plan-growth/PlanWorkflowPage"));
+const PlanGrowthPage = lazy(
+  () => import("./pages/plan-growth/PlanGrowthPage"),
+);
+const PlanGrowthCreatePage = lazy(
+  () => import("./pages/plan-growth/PlanGrowthCreatePage"),
+);
+const PlanGrowthDetailPage = lazy(
+  () => import("./pages/plan-growth/PlanGrowthDetailPage"),
+);
+const PlanGrowthEditPage = lazy(
+  () => import("./pages/plan-growth/PlanGrowthEditPage"),
+);
+const PlanGrowthWorkflowPage = lazy(
+  () => import("./pages/plan-growth/PlanGrowthWorkflowPage"),
+);
 const PlanTypePage = lazy(() => import("./pages/plan-type/PlanTypePage"));
 const FertilizerCreatePage = lazy(
   () => import("./pages/fertilizer/FertilizerCreatePage"),
