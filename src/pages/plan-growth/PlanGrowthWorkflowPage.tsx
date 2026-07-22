@@ -4,18 +4,31 @@ import {
   Button,
   Card,
   CardContent,
+  Checkbox,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   DeleteDialog,
+  Input,
+  Label,
+  ScrollArea,
+  Textarea,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   ArrowLeft,
   ClipboardList,
   Eye,
+  Milestone,
   PencilLine,
   Plus,
   Trash2,
+  Workflow,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -38,6 +51,8 @@ import type {
 import { WorkflowCardNode } from "./../growth-cycle/components/workflow/WorkflowCardNode";
 import { getPlanStatusBadge } from "./utils/status";
 import { summarizePlanSelections } from "./utils/location";
+
+type WorkflowViewMode = "workflow" | "milestone";
 
 const nodeTypes = {
   workflowCard: WorkflowCardNode,
@@ -87,6 +102,56 @@ function getPurposeLabel(plan: Plan) {
   if (plan.purpose === "amendment") return "Cải tạo";
   if (plan.purpose === "harvest") return "Thu hoạch";
   return "Phát sinh";
+}
+
+function getDurationLabel(
+  startDate?: string | null,
+  endDate?: string | null,
+) {
+  if (!startDate || !endDate) return "Chưa xác định";
+
+  const start = new Date(startDate).getTime();
+  const end = new Date(endDate).getTime();
+  if (Number.isNaN(start) || Number.isNaN(end)) return "Chưa xác định";
+
+  const totalDays = Math.max(0, Math.round((end - start) / 86400000));
+  if (totalDays < 30) return `${totalDays} ngày`;
+
+  const months = totalDays / 30;
+  const roundedMonths = Math.round(months * 10) / 10;
+  return `${Number.isInteger(roundedMonths) ? roundedMonths : roundedMonths.toLocaleString("vi-VN", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })} tháng`;
+}
+
+function getWorkflowTitle(plan: Plan) {
+  const text = `${plan.crop} ${plan.variety ?? ""} ${plan.seasonName ?? ""}`.toLowerCase();
+
+  if (/(tôm|cá|thủy sản|nuôi trồng)/.test(text)) {
+    return "Sơ đồ quy trình nuôi trồng thủy sản";
+  }
+
+  if (/(heo|bò|gà|vịt|chăn nuôi|gia súc|gia cầm)/.test(text)) {
+    return "Sơ đồ quy trình chăn nuôi";
+  }
+
+  return "Sơ đồ quy trình canh tác";
+}
+
+function getWorkflowDescription(plan: Plan) {
+  return "Quy trình triển khai các kế hoạch được liên kết với nhau trên sơ đồ.";
+}
+
+function getSelectedRegionNames(plan: Plan, regions: any[]) {
+  return (plan.selectedRegionIds || [])
+    .map((regionId) => {
+      const region = (regions || []).find(
+        (item) => String(item.id) === String(regionId),
+      );
+      return region?.name || String(regionId);
+    })
+    .filter(Boolean);
 }
 
 function countWorkers(tasks: Plan["taskAllocations"]) {
@@ -348,7 +413,7 @@ function buildPlanNode(
     data: {
       kind: "plan",
       eyebrow: label,
-      title: plan.name,
+      title: `${plan.name} (${getDurationLabel(plan.startDate, plan.endDate)})`,
       subtitle: `${plan.seasonName} · ${plan.crop}${plan.variety ? ` - ${plan.variety}` : ""}`,
       status: getStatusNode(plan.status),
       statusLabel: getStatusLabel(plan.status),
@@ -359,14 +424,10 @@ function buildPlanNode(
       sourceBottomHandleId: `plan-${plan.id}-source-bottom`,
       tags: (plan.selectedStages || []).slice(0, 3),
       summaries: [
-        { label: "Bắt đầu", value: formatDate(plan.startDate) },
-        { label: "Khởi tạo", value: formatDate(plan.createdAt) },
-        { label: "Giai đoạn", value: `${plan.selectedStages.length}` },
         { label: "Nhân lực", value: countWorkers(plan.taskAllocations) },
         { label: "Thuốc BVTV", value: `${materialGroups.pesticide}` },
-        { label: "Phân bón", value: `${materialGroups.fertilizer}` },
+        { label: "Phân Bón", value: `${materialGroups.fertilizer}` },
         { label: "Vật tư khác", value: `${materialGroups.other}` },
-        { label: "Mục đích", value: getPurposeLabel(plan) },
       ],
       description: plan.description || "Chưa có mô tả cho kế hoạch này.",
       regionLabels,
@@ -408,13 +469,47 @@ export default function PlanGrowthWorkflowPage({
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { regions } = useRegionStore();
+  const updatePlan = usePlanStore((state) => state.updatePlan);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<WorkflowViewMode>("workflow");
+  const [editDraft, setEditDraft] = useState<{
+    name: string;
+    description: string;
+    regionIds: string[];
+  }>({
+    name: "",
+    description: "",
+    regionIds: [],
+  });
   const plan = usePlanStore((state) => state.getPlanById(Number(params.id)));
   const deletePlan = usePlanStore((state) => state.deletePlan);
+  const workflowTitle = useMemo(
+    () => (plan ? getWorkflowTitle(plan) : "Sơ đồ quy trình"),
+    [plan],
+  );
+  const workflowDescription = useMemo(
+    () =>
+      plan
+        ? getWorkflowDescription(plan)
+        : "Quy trình triển khai các kế hoạch được liên kết với nhau trên sơ đồ.",
+    [plan],
+  );
   const primaryRegionLabels = useMemo(
     () => (plan ? getRegionLabels(plan, regions || []) : []),
     [plan, regions],
   );
+
+  const openEditDialog = useCallback(() => {
+    if (!plan) return;
+
+    setEditDraft({
+      name: plan.name || "",
+      description: plan.description || "",
+      regionIds: [...(plan.selectedRegionIds || [])],
+    });
+    setEditOpen(true);
+  }, [plan]);
 
   const handleConfirmDelete = () => {
     if (!plan) return;
@@ -427,6 +522,32 @@ export default function PlanGrowthWorkflowPage({
     setLocation(basePath);
   };
 
+  const handleConfirmEdit = () => {
+    if (!plan) return;
+
+    const selectedRegions = (regions || []).filter((region) =>
+      editDraft.regionIds.includes(String(region.id)),
+    );
+    const regionLabel = selectedRegions.map((region) => region.name).join(", ");
+
+    updatePlan(plan.id, {
+      name: editDraft.name.trim() || plan.name,
+      description: editDraft.description.trim(),
+      selectedRegionIds: editDraft.regionIds,
+      selectedZoneIds: [],
+      selectedPlotIds: [],
+      cultivationRegion: regionLabel || plan.cultivationRegion,
+      zone: undefined,
+      plot: undefined,
+    });
+
+    toast({
+      title: "Thành công",
+      description: "Đã cập nhật thông tin sơ bộ của kế hoạch",
+    });
+    setEditOpen(false);
+  };
+
   const flowDefinition = useMemo(() => {
     if (!plan) {
       return { nodes: [] as Node[], edges: [] as Edge[] };
@@ -434,27 +555,81 @@ export default function PlanGrowthWorkflowPage({
 
     const slots = createDemoWorkflowPlans(plan);
 
-    const nodes = slots
-      .map((slot) =>
-        buildPlanNode(
-          slot.plan,
-          slot.label,
-          () => setLocation(`${basePath}/${slot.plan.id}/edit`),
-          () => setLocation(`${basePath}/${slot.plan.id}/edit#task-allocation`),
-          () => {
-            if (slot.isPrimary) {
-              setDeleteOpen(true);
-            }
+    const planNodePositionMap: Record<string, { x: number; y: number }> =
+      viewMode === "milestone"
+        ? {
+            "Kế hoạch 1": { x: 620, y: 0 },
+            "Kế hoạch 2": { x: 1820, y: 0 },
+            "Kế hoạch 3": { x: 3020, y: 0 },
+            "Kế hoạch 1.1": { x: 1820, y: 420 },
+            "Kế hoạch 1.2": { x: 3020, y: 420 },
+          }
+        : {
+            "Kế hoạch 1": { x: 620, y: 0 },
+            "Kế hoạch 2": { x: 1820, y: 0 },
+            "Kế hoạch 3": { x: 3020, y: 0 },
+            "Kế hoạch 1.1": { x: 1220, y: 760 },
+            "Kế hoạch 1.2": { x: 2420, y: 760 },
+          };
+
+    const rootNode: Node<WorkflowCardNodeData> = {
+      id: `plan-root-${plan.id}`,
+      type: "workflowCard",
+      position: { x: 0, y: 0 },
+      data: {
+        kind: "cycle",
+        icon: Plus,
+        eyebrow: "Kế hoạch chính",
+        title: "Kế hoạch chính",
+        subtitle: plan.name || plan.seasonName || "Điểm bắt đầu của sơ đồ",
+        status: "not_started",
+        statusLabel: "Kế hoạch chính",
+        wide: true,
+        targetTopHandleId: `plan-root-${plan.id}-target-top`,
+        sourceBottomHandleId: `plan-root-${plan.id}-source-bottom`,
+        summaries: [
+          { label: "Loại", value: getPurposeLabel(plan) },
+          {
+            label: "Vùng",
+            value: primaryRegionLabels[0] || "Chưa xác định",
           },
-          () => setLocation(`${basePath}/create`),
-          slot.isPrimary ? primaryRegionLabels : getRegionLabels(slot.plan, regions || []),
-          { interactive: slot.isPrimary },
-        ),
-      )
-      .map((node, index) => ({
-        ...node,
-        position: slots[index]?.position ?? node.position,
-      }));
+          { label: "Khởi tạo", value: formatDate(plan.createdAt) },
+        ],
+        description:
+          plan.description || "Điểm bắt đầu của sơ đồ kế hoạch liên kết.",
+        footerAction: {
+          label: "Khởi tạo kế hoạch mới",
+          icon: Plus,
+          onClick: () => setLocation(`${basePath}/create`),
+        },
+      },
+    };
+
+    const nodes = [
+      rootNode,
+      ...slots.map((slot) => {
+        const position = planNodePositionMap[slot.label] ?? slot.position;
+        return {
+          ...buildPlanNode(
+            slot.plan,
+            slot.label,
+            () => openEditDialog(),
+            () => setLocation(`${basePath}/${slot.plan.id}/edit#task-allocation`),
+            () => {
+              if (slot.isPrimary) {
+                setDeleteOpen(true);
+              }
+            },
+            () => setLocation(`${basePath}/create`),
+            slot.isPrimary
+              ? primaryRegionLabels
+              : getRegionLabels(slot.plan, regions || []),
+            { interactive: slot.isPrimary },
+          ),
+          position,
+        };
+      }),
+    ];
 
     const slotByLabel = new Map(slots.map((slot) => [slot.label, slot]));
     const edges: Edge[] = [];
@@ -489,13 +664,31 @@ export default function PlanGrowthWorkflowPage({
       });
     };
 
+    edges.push({
+      id: `edge-root-${plan.id}-plan-1`,
+      source: rootNode.id,
+      target: `plan-${slots[0].plan.id}`,
+      sourceHandle: `${rootNode.id}-source-bottom`,
+      targetHandle: `plan-${slots[0].plan.id}-target-top`,
+      type: "step",
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 16,
+        height: 16,
+      },
+      style: {
+        strokeWidth: 2,
+        stroke: "#1f2937",
+      },
+    });
+
     connect("Kế hoạch 1", "Kế hoạch 2", "#1f2937");
     connect("Kế hoạch 2", "Kế hoạch 3", "#1f2937");
     connect("Kế hoạch 1", "Kế hoạch 1.1", "#2563eb", true);
     connect("Kế hoạch 1.1", "Kế hoạch 1.2", "#2563eb", true);
 
     return { nodes, edges };
-  }, [basePath, plan, primaryRegionLabels, regions, setLocation]);
+  }, [basePath, plan, primaryRegionLabels, regions, setLocation, viewMode, openEditDialog]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(flowDefinition.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(flowDefinition.edges);
@@ -533,8 +726,8 @@ export default function PlanGrowthWorkflowPage({
   return (
     <AdminLayout
       isDev
-      title="Workflow kế hoạch"
-      description="Chỉ hiển thị các node kế hoạch theo kiểu chuỗi và nhánh"
+      title={workflowTitle}
+      description={workflowDescription}
       actions={
         <div className="flex flex-wrap gap-2">
           <Button
@@ -544,29 +737,6 @@ export default function PlanGrowthWorkflowPage({
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Quay lại
-          </Button>
-          <Button
-            variant="outline"
-            className="h-9 px-3"
-            onClick={() => setLocation(`${basePath}/${plan.id}`)}
-          >
-            <Eye className="mr-2 h-4 w-4" />
-            Chi tiết
-          </Button>
-          <Button
-            variant="outline"
-            className="h-9 px-3"
-            onClick={() => setLocation(`${basePath}/${plan.id}/edit`)}
-          >
-            <PencilLine className="mr-2 h-4 w-4" />
-            Chỉnh sửa
-          </Button>
-          <Button
-            className="h-9 px-3"
-            onClick={() => setLocation(`${basePath}/create`)}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Khởi tạo kế hoạch mới
           </Button>
         </div>
       }
@@ -581,16 +751,50 @@ export default function PlanGrowthWorkflowPage({
         {getPlanStatusBadge(plan.status)}
       </div>
 
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-2 text-sm text-slate-600">
+          <Workflow className="h-4 w-4 text-emerald-600" />
+          <span>Chọn cách hiển thị sơ đồ</span>
+        </div>
+        <div className="flex items-center gap-2 rounded-2xl bg-slate-100 p-1">
+          <Button
+            type="button"
+            variant={viewMode === "workflow" ? "default" : "ghost"}
+            className="h-9 rounded-xl px-4"
+            onClick={() => setViewMode("workflow")}
+          >
+            <Workflow className="mr-2 h-4 w-4" />
+            Workflow
+          </Button>
+          <Button
+            type="button"
+            variant={viewMode === "milestone" ? "default" : "ghost"}
+            className="h-9 rounded-xl px-4"
+            onClick={() => setViewMode("milestone")}
+          >
+            <Milestone className="mr-2 h-4 w-4" />
+            Cột mốc
+          </Button>
+        </div>
+      </div>
+
       <Card className="border-slate-200 shadow-sm">
         <CardContent className="p-0">
-          <div className="h-[920px] overflow-hidden bg-[#f8fafc]">
+          <div className="overflow-x-auto bg-[#f8fafc]">
+            <div
+              className="h-[920px]"
+              style={{
+                width: viewMode === "milestone" ? "3600px" : "100%",
+                minWidth: viewMode === "milestone" ? "3600px" : "100%",
+              }}
+            >
             <ReactFlow
               nodes={nodes}
               edges={edges}
               nodeTypes={nodeTypes}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
-              fitView
+              fitView={viewMode !== "milestone"}
               fitViewOptions={{ padding: 0.22 }}
               minZoom={0.22}
               maxZoom={1.25}
@@ -623,9 +827,125 @@ export default function PlanGrowthWorkflowPage({
                 className="!rounded-xl !border !border-slate-200 !bg-white/95 !shadow-lg"
               />
             </ReactFlow>
+            </div>
           </div>
         </CardContent>
       </Card>
+      <Dialog
+        open={editOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditOpen(false);
+          }
+        }}
+      >
+        <DialogContent className="max-w-2xl rounded-2xl border-slate-200 bg-white">
+          <DialogHeader>
+            <DialogTitle>Chỉnh sửa thông tin sơ bộ</DialogTitle>
+            <DialogDescription>
+              Cập nhật nhanh tên kế hoạch, mô tả và vùng áp dụng.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="plan-name">Tên kế hoạch</Label>
+              <Input
+                id="plan-name"
+                value={editDraft.name}
+                onChange={(event) =>
+                  setEditDraft((current) => ({
+                    ...current,
+                    name: event.target.value,
+                  }))
+                }
+                placeholder="Nhập tên kế hoạch"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="plan-desc">Mô tả</Label>
+              <Textarea
+                id="plan-desc"
+                value={editDraft.description}
+                onChange={(event) =>
+                  setEditDraft((current) => ({
+                    ...current,
+                    description: event.target.value,
+                  }))
+                }
+                placeholder="Mô tả ngắn"
+                rows={4}
+              />
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <Label>Vùng canh tác / vùng nuôi trồng</Label>
+                <span className="text-xs text-muted-foreground">
+                  Chọn nhiều vùng ở cấp vùng
+                </span>
+              </div>
+              <ScrollArea className="max-h-56 rounded-2xl border border-slate-200 p-3">
+                <div className="space-y-2">
+                  {(regions || []).map((region) => {
+                    const checked = editDraft.regionIds.includes(
+                      String(region.id),
+                    );
+
+                    return (
+                      <label
+                        key={region.id}
+                        className={[
+                          "flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors",
+                          checked
+                            ? "border-primary bg-primary/5"
+                            : "border-slate-200 bg-white hover:bg-slate-50",
+                        ].join(" ")}
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(value) => {
+                            setEditDraft((current) => ({
+                              ...current,
+                              regionIds: value
+                                ? [
+                                    ...current.regionIds,
+                                    String(region.id),
+                                  ]
+                                : current.regionIds.filter(
+                                    (item) => item !== String(region.id),
+                                  ),
+                            }));
+                          }}
+                        />
+                        <div className="min-w-0">
+                          <div className="font-medium text-slate-900">
+                            {region.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Cấp vùng
+                          </div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setEditOpen(false)}
+            >
+              Hủy
+            </Button>
+            <Button onClick={handleConfirmEdit}>Lưu thay đổi</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <DeleteDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}

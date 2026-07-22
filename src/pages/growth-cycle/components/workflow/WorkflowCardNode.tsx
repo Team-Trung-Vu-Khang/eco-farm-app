@@ -46,6 +46,7 @@ export interface WorkflowCardNodeData {
   subtitle?: string;
   description?: string;
   eyebrow?: string;
+  badgeBelowTitle?: string;
   icon?: LucideIcon;
   status?: WorkflowNodeStatus;
   statusLabel?: string;
@@ -320,6 +321,20 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
           >
             {data.title}
           </h3>
+
+          {data.badgeBelowTitle ? (
+            <div className="mt-3">
+              <Badge
+                variant="outline"
+                className={[
+                  "h-8 rounded-xl px-3.5 text-[11px] font-semibold tracking-[0.14em]",
+                  posterBadgeClass,
+                ].join(" ")}
+              >
+                {data.badgeBelowTitle}
+              </Badge>
+            </div>
+          ) : null}
 
           {data.tags?.length ? (
             <div className="mt-3 flex flex-wrap gap-2">
