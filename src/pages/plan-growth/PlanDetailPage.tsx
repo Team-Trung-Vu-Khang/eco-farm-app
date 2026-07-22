@@ -35,8 +35,18 @@ import {
 import { useMemo } from "react";
 import { usePlanDetailPage } from "./hooks/usePlanDetailPage";
 import { getPlanStatusBadge } from "./utils/status";
- 
-export default function PlanDetailPage() {
+import { useRoute } from "wouter";
+
+interface PlanDetailPageProps {
+  basePath?: string;
+  routeBase?: string;
+}
+
+export default function PlanDetailPage({
+  basePath = "/plan-growth",
+  routeBase = "/plan-growth",
+}: PlanDetailPageProps) {
+  const [, params] = useRoute(`${routeBase}/:id`);
   const {
     params,
     plan,
@@ -53,7 +63,7 @@ export default function PlanDetailPage() {
     handleDelete,
     handleConfirmDelete,
     goBack,
-  } = usePlanDetailPage();
+  } = usePlanDetailPage(basePath);
 
   if (!plan) {
     return null;

@@ -45,7 +45,7 @@ function createEmptyFormData(): PlanFormData {
   };
 }
 
-export function usePlanForm(mode: "create" | "edit") {
+export function usePlanForm(mode: "create" | "edit", basePath = "/plan-growth") {
   const [, setLocation] = useLocation();
   const params = useParams();
   const { toast } = useToast();
@@ -254,7 +254,7 @@ export function usePlanForm(mode: "create" | "edit") {
         title: "Thành công",
         description: `Đã cập nhật kế hoạch ${formData.name}`,
       });
-      setLocation(`/plan/${params.id}`);
+      setLocation(`${basePath}/${params.id}`);
       return;
     }
 
@@ -263,7 +263,7 @@ export function usePlanForm(mode: "create" | "edit") {
       title: "Thành công",
       description: `Đã tạo kế hoạch ${formData.name}`,
     });
-    setLocation("/plan");
+    setLocation(basePath);
   };
 
   return {
@@ -294,8 +294,8 @@ export function usePlanForm(mode: "create" | "edit") {
     handleComplete,
     goBack:
     mode === "edit" && params.id
-        ? () => setLocation(`/plan/${params.id}`)
-        : () => setLocation("/plan"),
+        ? () => setLocation(`${basePath}/${params.id}`)
+        : () => setLocation(basePath),
     pageTitle: mode === "edit" ? "Chỉnh sửa Kế hoạch" : "Lập kế hoạch",
     pageDescription:
       mode === "edit" && plan

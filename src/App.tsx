@@ -44,6 +44,11 @@ const PlanCreatePage = lazy(() => import("./pages/plan/PlanCreatePage"));
 const PlanDetailPage = lazy(() => import("./pages/plan/PlanDetailPage"));
 const PlanEditPage = lazy(() => import("./pages/plan/PlanEditPage"));
 const PlanWorkflowPage = lazy(() => import("./pages/plan/PlanWorkflowPage"));
+const PlanGrowthPage = lazy(() => import("./pages/plan-growth/PlanPage"));
+const PlanGrowthCreatePage = lazy(() => import("./pages/plan-growth/PlanCreatePage"));
+const PlanGrowthDetailPage = lazy(() => import("./pages/plan-growth/PlanDetailPage"));
+const PlanGrowthEditPage = lazy(() => import("./pages/plan-growth/PlanEditPage"));
+const PlanGrowthWorkflowPage = lazy(() => import("./pages/plan-growth/PlanWorkflowPage"));
 const PlanTypePage = lazy(() => import("./pages/plan-type/PlanTypePage"));
 const FertilizerCreatePage = lazy(
   () => import("./pages/fertilizer/FertilizerCreatePage"),
@@ -888,6 +893,14 @@ function Router() {
       <Route path="/plan/:id/workflow" component={PlanWorkflowPage} />
       <Route path="/plan/:id/edit" component={PlanEditPage} />
       <Route path="/plan/:id" component={PlanDetailPage} />
+      <Route path="/plan-growth" component={PlanGrowthPage} />
+      <Route path="/plan-growth/create" component={PlanGrowthCreatePage} />
+      <Route
+        path="/plan-growth/:id/workflow"
+        component={PlanGrowthWorkflowPage}
+      />
+      <Route path="/plan-growth/:id/edit" component={PlanGrowthEditPage} />
+      <Route path="/plan-growth/:id" component={PlanGrowthDetailPage} />
       <Route
         path="/production-cultivation-report"
         component={ProductionCultivationReportPage}
