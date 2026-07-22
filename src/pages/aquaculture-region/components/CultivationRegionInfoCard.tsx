@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Beaker, Layers, Sprout, User } from "lucide-react";
+import { Beaker, Fish, Layers, User } from "lucide-react";
 
 interface CultivationRegionInfoCardProps {
   selectedCultivationRegion: any;
@@ -18,11 +18,19 @@ interface CultivationRegionInfoCardProps {
 
 export const CultivationRegionInfoCard = ({
   selectedCultivationRegion,
-  manager = [],
-  farmingMethod = null,
-  irrigationMethod = null,
-  selectedCropsData = [],
+  manager,
+  farmingMethod,
+  irrigationMethod,
+  selectedCropsData,
 }: CultivationRegionInfoCardProps) => {
+  const resolvedManagers = manager ?? selectedCultivationRegion?.personnel ?? [];
+  const resolvedFarmingMethod =
+    farmingMethod ?? selectedCultivationRegion?.farmingMethod ?? null;
+  const resolvedIrrigationMethod =
+    irrigationMethod ?? selectedCultivationRegion?.irrigationSystem ?? null;
+  const resolvedSelectedCropsData =
+    selectedCropsData ?? selectedCultivationRegion?.cropVarieties ?? [];
+
   return (
     <Card className="border-none shadow-sm rounded-2xl overflow-hidden">
       <CardHeader className="border-b py-5 bg-slate-50/80">
@@ -58,9 +66,9 @@ export const CultivationRegionInfoCard = ({
                   Quản lý
                 </div>
                 <div className="text-sm font-semibold text-slate-900">
-                  {manager && manager.length > 0 ? (
+                  {resolvedManagers.length > 0 ? (
                     <div className="flex flex-wrap gap-1.5 mt-1">
-                      {manager.map((m: any) => (
+                      {resolvedManagers.map((m: any) => (
                         <Badge
                           key={m.id}
                           variant="outline"
@@ -89,11 +97,11 @@ export const CultivationRegionInfoCard = ({
                   Kỹ thuật &amp; Tưới tiêu
                 </div>
                 <div className="text-base font-semibold text-slate-900">
-                  {farmingMethod?.name || "Chưa thiết lập"}
+                  {resolvedFarmingMethod?.name || "Chưa thiết lập"}
                 </div>
-                {irrigationMethod && (
+                {resolvedIrrigationMethod && (
                   <div className="text-xs text-primary font-medium bg-primary/5 px-2 py-0.5 rounded-full inline-block mt-1.5">
-                    {irrigationMethod.name}
+                    {resolvedIrrigationMethod.name}
                   </div>
                 )}
               </div>
@@ -102,18 +110,18 @@ export const CultivationRegionInfoCard = ({
             {/* Seed Varieties */}
             <div>
               <div className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
-                <Sprout className="w-4 h-4 text-green-500" />
+                <Fish className="w-4 h-4 text-cyan-500" />
                 Giống thuỷ sản
               </div>
-              {selectedCropsData.length > 0 ? (
+              {resolvedSelectedCropsData.length > 0 ? (
                 <div className="grid grid-cols-1 gap-3">
-                  {selectedCropsData.map((c: any) => (
+                  {resolvedSelectedCropsData.map((c: any) => (
                     <div
                       key={c.id}
                       className="flex items-center gap-4 p-4 rounded-xl bg-white border border-slate-100 shadow-sm"
                     >
-                      <div className="w-12 h-12 rounded-xl bg-green-50 overflow-hidden shrink-0 border border-green-100 flex items-center justify-center">
-                        <Sprout className="w-5 h-5 text-green-400" />
+                      <div className="w-12 h-12 rounded-xl bg-cyan-50 overflow-hidden shrink-0 border border-cyan-100 flex items-center justify-center">
+                        <Fish className="w-5 h-5 text-cyan-500" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-bold text-slate-900 mb-0.5">

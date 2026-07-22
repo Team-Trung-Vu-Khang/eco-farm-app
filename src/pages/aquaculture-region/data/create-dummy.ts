@@ -32,7 +32,7 @@ export const AQUACULTURE_GEO_OPTIONS: AquacultureGeoOption[] = [
     regionId: "2",
     areaId: "21",
     plotId: "211",
-    parentName: "Khu nuôi cá Tra Vinh",
+    parentName: "Vùng nuôi cá tra Trà Vinh",
   },
   {
     id: "region-2",
@@ -87,24 +87,34 @@ export const AQUACULTURE_MANAGERS = [
     position: "Giám sát lô",
     department: "Giám sát",
   },
+  {
+    id: 14,
+    fullName: "Phạm Ngọc Anh",
+    avatarUrl: "",
+    position: "Quản lý kỹ thuật",
+    department: "Nuôi trồng",
+  },
 ];
 
 export const AQUACULTURE_CERTIFICATES = [
   { id: 101, code: "ASC", name: "ASC" },
   { id: 102, code: "VietGAP", name: "VietGAP" },
   { id: 103, code: "BAP", name: "BAP" },
+  { id: 104, code: "GlobalGAP", name: "GlobalGAP" },
 ];
 
 export const AQUACULTURE_FARMING_METHODS = [
   { id: "1", name: "Nuôi ao đất" },
   { id: "2", name: "Nuôi lồng bè" },
   { id: "3", name: "Nuôi tuần hoàn RAS" },
+  { id: "4", name: "Nuôi bể xi măng" },
 ];
 
 export const AQUACULTURE_IRRIGATION_SYSTEMS = [
   { id: "1", name: "Cấp thoát nước riêng" },
   { id: "2", name: "Tuần hoàn lọc sinh học" },
   { id: "3", name: "Bơm tự động" },
+  { id: "4", name: "Kênh dẫn ven biển" },
 ];
 
 export const AQUACULTURE_SPECIES = [
@@ -113,6 +123,7 @@ export const AQUACULTURE_SPECIES = [
   { id: 203, varietyName: "Cá tra" },
   { id: 204, varietyName: "Nghêu" },
   { id: 205, varietyName: "Cá mú" },
+  { id: 206, varietyName: "Cá rô phi đơn tính" },
 ];
 
 export const AQUACULTURE_REGION_TREE = [
@@ -127,12 +138,16 @@ export const AQUACULTURE_REGION_TREE = [
         plots: [
           { id: "111", name: "Lô nuôi số 1" },
           { id: "112", name: "Lô nuôi số 2" },
+          { id: "113", name: "Lô nuôi số 3" },
         ],
       },
       {
         id: "12",
         name: "Khu ươm giống ven biển",
-        plots: [{ id: "121", name: "Lô ươm giống 1" }],
+        plots: [
+          { id: "121", name: "Lô ươm giống 1" },
+          { id: "122", name: "Lô ươm giống 2" },
+        ],
       },
     ],
   },
@@ -147,6 +162,7 @@ export const AQUACULTURE_REGION_TREE = [
         plots: [
           { id: "211", name: "Lô nghêu A" },
           { id: "212", name: "Lô nghêu B" },
+          { id: "213", name: "Lô nghêu C" },
         ],
       },
     ],
@@ -159,7 +175,10 @@ export const AQUACULTURE_REGION_TREE = [
       {
         id: "31",
         name: "Khu ao nuôi tập trung",
-        plots: [{ id: "311", name: "Lô cá tra 1" }],
+        plots: [
+          { id: "311", name: "Lô cá tra 1" },
+          { id: "312", name: "Lô cá tra 2" },
+        ],
       },
     ],
   },
@@ -189,10 +208,10 @@ export const AQUACULTURE_DRAFT_BY_ID = {
     enterpriseId: "ent-2",
     farmingMethodId: 2,
     irrigationSystemId: 2,
-    seedIds: [201, 202],
-    certificateIds: [101, 102],
-    personnelIds: [11, 12],
-    notes: "Bản nháp thủy sản dùng dữ liệu giả.",
+    seedIds: [201, 202, 206],
+    certificateIds: [101, 102, 104],
+    personnelIds: [11, 12, 14],
+    notes: "Bản nháp thủy sản dùng dữ liệu giả, đã có đủ thông tin mẫu.",
     status: "active" as const,
   },
 } as const;

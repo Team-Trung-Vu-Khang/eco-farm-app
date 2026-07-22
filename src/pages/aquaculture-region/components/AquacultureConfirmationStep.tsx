@@ -10,13 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  CheckCircle2,
-  Fish,
-  Layers,
-  MapPin,
-  Sprout,
-} from "lucide-react";
+import { Fish, Layers, MapPin } from "lucide-react";
+import { AQUACULTURE_SPECIES } from "../data/create-dummy";
 import { type PlantEntry } from "./types";
 
 interface Step3ConfirmationProps {
@@ -42,15 +37,15 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
   );
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-4xl mx-auto">
-      <div className="bg-green-50 border border-green-100 rounded-2xl p-8 text-center relative overflow-hidden">
-        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-sm relative z-10">
-          <CheckCircle2 className="w-10 h-10 text-green-600" />
+    <div className="mx-auto max-w-4xl space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="relative overflow-hidden rounded-2xl border border-cyan-100 bg-cyan-50 p-8 text-center">
+        <div className="relative z-10 mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-cyan-100 shadow-sm">
+          <Fish className="h-10 w-10 text-cyan-600" />
         </div>
-        <h3 className="text-2xl font-bold text-green-900 z-10 relative">
+        <h3 className="relative z-10 text-2xl font-bold text-cyan-900">
           Xác nhận thông tin
         </h3>
-        <p className="text-green-700/80 mt-2 z-10 relative max-w-lg mx-auto">
+        <p className="relative z-10 mx-auto mt-2 max-w-lg text-cyan-700/80">
           Sắp {initialData ? "cập nhật" : "lưu"}{" "}
           <span className="font-bold">{plants.length} đối tượng nuôi</span>{" "}
           trong vùng{" "}
@@ -59,31 +54,33 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
           </span>
           .
         </p>
-        <div className="absolute top-0 left-0 w-full h-full opacity-10">
-          <div className="absolute top-10 left-10 w-20 h-20 bg-green-500 rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-10 w-32 h-32 bg-green-600 rounded-full blur-3xl" />
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute left-10 top-10 h-20 w-20 rounded-full bg-cyan-500 blur-3xl" />
+          <div className="absolute bottom-10 right-10 h-32 w-32 rounded-full bg-cyan-600 blur-3xl" />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white border rounded-xl p-4 text-center shadow-sm">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border bg-white p-4 text-center shadow-sm">
           <div className="text-2xl font-bold text-primary">{plants.length}</div>
-          <div className="text-xs text-muted-foreground mt-1">đối tượng nuôi</div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            đối tượng nuôi
+          </div>
         </div>
-        <div className="bg-white border rounded-xl p-4 shadow-sm sm:col-span-2">
+        <div className="rounded-xl border bg-white p-4 shadow-sm sm:col-span-2">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
-              <Layers className="w-5 h-5 text-primary" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10">
+              <Layers className="h-5 w-5 text-primary" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-left font-bold text-slate-900 truncate">
+              <div className="truncate text-left font-bold text-slate-900">
                 {selectedCultivationRegion?.name || "Chưa chọn vùng nuôi trồng"}
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                <span className="truncate font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-600">
+                <span className="truncate rounded bg-slate-100 px-2 py-0.5 font-mono text-slate-600">
                   Mã vùng: {selectedCultivationRegion?.code || "—"}
                 </span>
-                <span className="truncate font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-600">
+                <span className="truncate rounded bg-slate-100 px-2 py-0.5 font-mono text-slate-600">
                   Phạm vi: {selectedScopes.length} mục
                 </span>
               </div>
@@ -92,59 +89,62 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
         </div>
       </div>
 
-      <Card className="border-slate-200 shadow-sm overflow-hidden">
-        <div className="bg-slate-50 border-b p-4 flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-slate-500" />
+      <Card className="overflow-hidden border-slate-200 shadow-sm">
+        <div className="flex items-center gap-2 border-b bg-slate-50 p-4">
+          <MapPin className="h-4 w-4 text-slate-500" />
           <h4 className="font-semibold text-slate-800">Phạm vi nuôi trồng</h4>
         </div>
-        <div className="p-6 bg-white">
+        <div className="bg-white p-6">
           {selectedScopes.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {selectedScopes.map((scope) => (
                 <Badge
                   key={scope.id}
                   variant="outline"
-                  className="bg-slate-50 text-slate-700 border-slate-200"
+                  className="border-slate-200 bg-slate-50 text-slate-700"
                 >
                   {scope.name || scope.id}
                 </Badge>
               ))}
             </div>
           ) : (
-            <div className="py-4 text-center text-muted-foreground italic border-2 border-dashed rounded-2xl bg-slate-50/30 text-sm">
-                  Chưa chọn phạm vi nuôi trồng
-                </div>
-              )}
+            <div className="rounded-2xl border-2 border-dashed bg-slate-50/30 py-4 text-center text-sm italic text-muted-foreground">
+              Chưa chọn phạm vi nuôi trồng
             </div>
+          )}
+        </div>
       </Card>
 
-      <Card className="border-slate-200 shadow-sm overflow-hidden">
-        <div className="bg-slate-50 border-b p-4 flex items-center gap-2">
-          <Fish className="w-4 h-4 text-slate-500" />
+      <Card className="overflow-hidden border-slate-200 shadow-sm">
+        <div className="flex items-center gap-2 border-b bg-slate-50 p-4">
+          <Fish className="h-4 w-4 text-slate-500" />
           <h4 className="font-semibold text-slate-800">
-            Danh sách đối tượng nuôi
+            Danh sách đối tượng thủy sản
           </h4>
         </div>
-        <div className="overflow-x-auto bg-white">
+        <div className="bg-white">
           <Table>
             <TableHeader>
-              <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b">
-                <TableHead className="w-[50px] text-center font-bold text-[10px] uppercase tracking-wider">
+              <TableRow className="border-b bg-slate-50/80 hover:bg-slate-50/80">
+                <TableHead className="w-[50px] text-center text-[10px] font-bold uppercase tracking-wider">
                   #
                 </TableHead>
-                <TableHead className="font-bold text-[10px] uppercase tracking-wider">
+                <TableHead className="text-[10px] font-bold uppercase tracking-wider">
                   Đối tượng nuôi
                 </TableHead>
-                <TableHead className="font-bold text-[10px] uppercase tracking-wider">
+                <TableHead className="text-[10px] font-bold uppercase tracking-wider">
+                  Giống
+                </TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-wider">
                   Kích cỡ / chiều dài
                 </TableHead>
-                <TableHead className="font-bold text-[10px] uppercase tracking-wider text-center">
+                <TableHead className="text-center text-[10px] font-bold uppercase tracking-wider">
                   Độ tuổi
                 </TableHead>
-                <TableHead className="font-bold text-[10px] uppercase tracking-wider">
+                <TableHead className="text-[10px] font-bold uppercase tracking-wider">
                   Ngày ghi nhận
                 </TableHead>
-                <TableHead className="font-bold text-[10px] uppercase tracking-wider">
+                <TableHead className="text-[10px] font-bold uppercase tracking-wider">
                   Ghi chú
                 </TableHead>
               </TableRow>
@@ -153,28 +153,33 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
               {plants.map((plant, idx) => (
                 <TableRow
                   key={plant.entryId}
-                  className="hover:bg-slate-50/30 transition-colors border-b border-slate-100 last:border-0"
+                  className="border-b border-slate-100 transition-colors hover:bg-slate-50/30 last:border-0"
                 >
-                  <TableCell className="text-center font-medium text-slate-400 text-xs">
+                  <TableCell className="text-center text-xs font-medium text-slate-400">
                     {idx + 1}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded flex items-center justify-center shrink-0 bg-emerald-50 text-emerald-600">
-                        <Sprout className="w-3 h-3" />
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-cyan-50 text-cyan-600">
+                        <Fish className="h-3 w-3" />
                       </div>
                       <span className="text-sm font-semibold text-slate-700">
-                        Đối tượng nuôi {idx + 1}
+                        Đối tượng thủy sản {idx + 1}
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-slate-600 text-xs">
+                  <TableCell className="text-xs text-slate-600">
+                    {AQUACULTURE_SPECIES.find(
+                      (species) => String(species.id) === plant.speciesId,
+                    )?.varietyName || "—"}
+                  </TableCell>
+                  <TableCell className="text-xs text-slate-600">
                     {plant.height || "—"}
                   </TableCell>
                   <TableCell className="text-center">
                     <Badge
                       variant="secondary"
-                      className="bg-slate-100 text-slate-600 text-[10px] py-0 px-2 border-none"
+                      className="border-none bg-slate-100 px-2 py-0 text-[10px] text-slate-600"
                     >
                       {plant.ageValue
                         ? `${plant.ageValue} ${
@@ -187,12 +192,12 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
                         : "—"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-slate-600 text-xs">
+                  <TableCell className="text-xs text-slate-600">
                     {plant.plantedDate
                       ? new Date(plant.plantedDate).toLocaleDateString("vi-VN")
                       : "—"}
                   </TableCell>
-                  <TableCell className="max-w-[220px] truncate text-slate-500 text-xs italic">
+                  <TableCell className="max-w-[220px] truncate text-xs italic text-slate-500">
                     {plant.note || "—"}
                   </TableCell>
                 </TableRow>

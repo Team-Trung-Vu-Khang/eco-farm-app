@@ -54,6 +54,7 @@ export const useAquacultureIdentificationForm = ({
       return [
         {
           entryId: initialData.id || `aq-plant-${Date.now()}`,
+          speciesId: (initialData as any).speciesId || "201",
           height: initialData.height?.toString() || "",
           ageValue: initialData.ageValue?.toString() || "",
           ageUnit:
@@ -71,6 +72,7 @@ export const useAquacultureIdentificationForm = ({
     if (initialList && initialList.length > 0) {
       return initialList.map((item, index) => ({
         entryId: item.id || `aq-plant-${Date.now()}-${index}`,
+        speciesId: (item as any).speciesId || "201",
         height: item.height?.toString() || "",
         ageValue: item.ageValue?.toString() || "",
         ageUnit: (item.ageUnit as "days" | "months" | "years") || "years",
@@ -225,6 +227,7 @@ export const useAquacultureIdentificationForm = ({
   const handleImport = (importedPlants: any[]) => {
     const nextPlants = importedPlants.map((plant, index) => ({
       entryId: plant.entryId || plant.id || `aq-import-${Date.now()}-${index}`,
+      speciesId: plant.speciesId || "201",
       height: plant.height?.toString() || "",
       ageValue: plant.ageValue?.toString() || "",
       ageUnit: plant.ageUnit || "years",

@@ -32,7 +32,12 @@ export const GeographicalScopeCard = ({
         if (rId) {
           if (!abr[rId]) abr[rId] = [];
           if (!abr[rId].some((a) => a.id === String(scope.area.id))) {
-            abr[rId].push({ id: String(scope.area.id), name: scope.area.name, level: 2, type: "Khu vực" });
+            abr[rId].push({
+              id: String(scope.area.id),
+              name: scope.area.name,
+              level: 2,
+              type: "Khu vực",
+            });
           }
         }
       } else if (scope.scopeType === "PLOT" && scope.plot) {
@@ -42,12 +47,22 @@ export const GeographicalScopeCard = ({
           const rId = String(area.region?.id ?? "");
           if (!pba[aId]) pba[aId] = [];
           if (!pba[aId].some((p) => p.id === String(scope.plot.id))) {
-            pba[aId].push({ id: String(scope.plot.id), name: scope.plot.name, level: 1, type: "Lô trồng" });
+            pba[aId].push({
+              id: String(scope.plot.id),
+              name: scope.plot.name,
+              level: 1,
+              type: "Lô nuôi",
+            });
           }
           if (rId) {
             if (!abr[rId]) abr[rId] = [];
             if (!abr[rId].some((a) => a.id === aId)) {
-              abr[rId].push({ id: aId, name: area.name, level: 2, type: "Khu vực" });
+              abr[rId].push({
+                id: aId,
+                name: area.name,
+                level: 2,
+                type: "Khu vực",
+              });
             }
           }
         }
@@ -110,7 +125,11 @@ export const GeographicalScopeCard = ({
       .map((r) => {
         const isRegionSelected = selectedScopeIds.includes(r.id);
         return {
-          id: r.id, name: r.name, level: 3, type: "Vùng trồng", isSelected: isRegionSelected,
+          id: r.id,
+          name: r.name,
+          level: 3,
+          type: "Vùng nuôi",
+          isSelected: isRegionSelected,
           areas: Array.from(r.areas.values())
             .filter((a) => {
               if (isRegionSelected) return true;
@@ -120,12 +139,20 @@ export const GeographicalScopeCard = ({
             .map((a) => {
               const isAreaSelected = isRegionSelected || selectedScopeIds.includes(a.id);
               return {
-                id: a.id, name: a.name, level: 2, type: "Khu vực", isSelected: isAreaSelected,
+                id: a.id,
+                name: a.name,
+                level: 2,
+                type: "Khu vực",
+                isSelected: isAreaSelected,
                 plots: Array.from(a.plots.values())
                   .filter((p) => isAreaSelected || selectedScopeIds.includes(p.id))
                   .map((p) => ({
-                    id: p.id, name: p.name, level: 1, type: "Lô trồng",
-                    isSelected: isAreaSelected || selectedScopeIds.includes(p.id),
+                    id: p.id,
+                    name: p.name,
+                    level: 1,
+                    type: "Lô nuôi",
+                    isSelected:
+                      isAreaSelected || selectedScopeIds.includes(p.id),
                   })),
               };
             }),

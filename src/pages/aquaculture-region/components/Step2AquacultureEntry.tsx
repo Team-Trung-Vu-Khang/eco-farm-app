@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Plus, Sprout, Upload } from "lucide-react";
+import { Fish, Plus, Upload } from "lucide-react";
 import { PlantCard } from "./AquacultureEntryCard";
 import { type PlantEntry } from "./types";
 
@@ -29,12 +29,12 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
           {/* Left: icon + title + description */}
           <div className="flex items-start gap-4 flex-1 min-w-0">
             <div className="w-12 h-12 rounded-xl bg-white shadow-sm border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-              <Sprout className="w-6 h-6" />
+              <Fish className="w-6 h-6" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-0.5">
                 <h3 className="text-base font-bold text-blue-900">
-                  Danh sách đối tượng nuôi
+                  Danh sách đối tượng thủy sản
                 </h3>
                 <span className="shrink-0 px-2.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">
                   {plants.length} mục
@@ -81,7 +81,7 @@ export const Step2PlantEntry: React.FC<Step2PlantEntryProps> = ({
             className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 border-dashed border-primary/30 text-primary hover:border-primary/60 hover:bg-primary/5 transition-all text-sm font-medium"
           >
             <Plus className="w-4 h-4" />
-            Thêm đối tượng nuôi
+            Thêm đối tượng thủy sản
           </button>
         )}
       </div>

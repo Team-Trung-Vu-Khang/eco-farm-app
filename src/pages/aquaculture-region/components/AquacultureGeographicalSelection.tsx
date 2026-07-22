@@ -84,7 +84,7 @@ export const Step1GeographicalSelection: React.FC<
           </Card>
 
           {/* Geographical scope card — shown only when a region is selected */}
-          <GeographicalScopeCard
+              <GeographicalScopeCard
             selectedCultivationRegion={selectedCultivationRegion}
             geographicalUnits={geographicalUnits}
             selectedScopeIds={selectedScopeIds}

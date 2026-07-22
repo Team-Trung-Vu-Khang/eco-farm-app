@@ -8,8 +8,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ChevronDown, ChevronRight, Sprout, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Fish, Trash2 } from "lucide-react";
 import type { PlantEntry } from "./types";
+import { AQUACULTURE_SPECIES } from "../data/create-dummy";
 
 interface PlantCardProps {
   plant: PlantEntry;
@@ -70,11 +71,11 @@ export const PlantCard = ({
         <div className="p-5 space-y-5">
           <div className="flex items-start gap-3 p-4 rounded-xl border border-emerald-100 bg-emerald-50/40">
             <div className="w-10 h-10 rounded-xl bg-white border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-              <Sprout className="w-5 h-5" />
+              <Fish className="w-5 h-5" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-1">
-                Thông tin mẫu
+                Thông tin thủy sản
               </div>
               <div className="text-sm text-emerald-900">
                 Nhập thông tin cơ bản của từng cá thể thủy sản. Không cần
@@ -84,6 +85,26 @@ export const PlantCard = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2 col-span-1 sm:col-span-2">
+              <Label htmlFor={`species-${plant.entryId}`} className="text-xs">
+                Giống thủy sản
+              </Label>
+              <Select
+                value={plant.speciesId}
+                onValueChange={(val) => onUpdate({ speciesId: val })}
+              >
+                <SelectTrigger id={`species-${plant.entryId}`} className="h-10">
+                  <SelectValue placeholder="Chọn giống thủy sản" />
+                </SelectTrigger>
+                <SelectContent>
+                  {AQUACULTURE_SPECIES.map((species) => (
+                    <SelectItem key={species.id} value={String(species.id)}>
+                      {species.varietyName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2">
               <Label htmlFor={`height-${plant.entryId}`} className="text-xs">
                 Kích cỡ / chiều dài

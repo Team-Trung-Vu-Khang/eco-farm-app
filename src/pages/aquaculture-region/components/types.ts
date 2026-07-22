@@ -16,6 +16,7 @@ export interface GeographicalSelection {
 
 export interface PlantEntry {
   entryId: string;
+  speciesId: string;
   height: string;
   ageValue: string;
   ageUnit: string;
@@ -28,6 +29,7 @@ export interface PlantEntry {
 
 export const makeEmptyPlant = (lat = 11.548, lng = 106.896): PlantEntry => ({
   entryId: `plant-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+  speciesId: "201",
   height: "",
   ageValue: "",
   ageUnit: "years",
