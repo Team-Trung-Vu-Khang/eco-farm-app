@@ -303,16 +303,16 @@ function getPlanNodeStatus(index: number): WorkflowNodeStatus {
 
 function getPlanStatusNodeStatus(status: Plan["status"]): WorkflowNodeStatus {
   if (status === "active") return "in_progress";
-  if (status === "completed") return "completed";
+  if (status === "completed") return "ended";
   if (status === "cancelled") return "ended";
   return "not_started";
 }
 
 function getPlanStatusLabel(status: Plan["status"]) {
   if (status === "active") return "Đang triển khai";
-  if (status === "completed") return "Hoàn tất";
-  if (status === "cancelled") return "Đã huỷ";
-  return "Nháp";
+  if (status === "completed") return "Đã kết thúc";
+  if (status === "cancelled") return "Đã kết thúc";
+  return "Thiếu thông tin";
 }
 
 function formatCycleStageLabel(
@@ -391,6 +391,7 @@ function buildPlanNodeData(
       title,
       subtitle: fallback.subtitle,
       status: fallback.status,
+      statusLabel: "Thiếu thông tin",
       wide: true,
       targetTopHandleId: "",
       sourceBottomHandleId: "",
@@ -413,6 +414,8 @@ function buildPlanNodeData(
     title: `${plan.name}${duration ? ` (${duration})` : ""}`,
     subtitle: getPlanStageLabel(plan),
     status: getPlanStatusNodeStatus(plan.status),
+    statusLabel: getPlanStatusLabel(plan.status),
+    posterTheme: "light",
     wide: true,
     summaries: [
       {

@@ -48,12 +48,14 @@ export interface WorkflowCardNodeData {
   eyebrow?: string;
   icon?: LucideIcon;
   status?: WorkflowNodeStatus;
+  statusLabel?: string;
   wide?: boolean;
   summaries?: WorkflowSummaryItem[];
   tags?: string[];
   regionLabels?: string[];
   footerAction?: WorkflowActionItem;
   variant?: "default" | "poster";
+  posterTheme?: "light" | "dark";
   actions?: WorkflowActionItem[];
   sourceTopHandleId?: string;
   sourceBottomHandleId?: string;
@@ -190,6 +192,7 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
     data.kind !== "region" && data.kind !== "area" && data.kind !== "plot";
   const status = showStatus && data.status ? statusConfig[data.status] : null;
   const isPosterPlan = data.kind === "plan" && data.variant === "poster";
+  const isDarkPoster = isPosterPlan && data.posterTheme === "dark";
   const widthClass = isPosterPlan
     ? "w-[820px] max-w-[calc(100vw-32px)]"
     : data.kind === "cycle" || data.kind === "stage"
@@ -220,13 +223,47 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
   };
 
   if (isPosterPlan) {
-    const posterStatusClass = status
-      ? "border-blue-200 bg-blue-50 text-blue-700"
-      : "";
-    const posterBadgeClass =
-      "border-slate-200 bg-white/80 text-slate-700 shadow-none";
-    const posterWrapperClass =
-      "border-slate-200 bg-white shadow-[0_16px_44px_rgba(15,23,42,0.08)]";
+    const posterStatusClass = isDarkPoster
+      ? "border-sky-400/50 bg-sky-500/20 text-sky-100"
+      : status
+        ? "border-blue-200 bg-blue-50 text-blue-700"
+        : "";
+    const posterBadgeClass = isDarkPoster
+      ? "border-white/15 bg-white/5 text-slate-100 shadow-none"
+      : "border-slate-200 bg-white/80 text-slate-700 shadow-none";
+    const posterWrapperClass = isDarkPoster
+      ? "border-slate-500/60 bg-[#111111] text-slate-100 shadow-[0_16px_44px_rgba(0,0,0,0.45)]"
+      : "border-slate-200 bg-white shadow-[0_16px_44px_rgba(15,23,42,0.08)]";
+    const posterChipClass = isDarkPoster
+      ? "border-white/15 bg-black/25 text-slate-100"
+      : "border-slate-200 bg-white/80 text-slate-700";
+    const posterDescriptionClass = isDarkPoster
+      ? "text-slate-300"
+      : "text-slate-700";
+    const posterSummaryClass = isDarkPoster
+      ? "border border-white/15 bg-black/20 px-3 py-2.5 text-slate-100 shadow-none"
+      : "rounded-2xl bg-slate-50/80 px-3 py-2.5";
+    const posterSummaryLabelClass = isDarkPoster
+      ? "text-[9px] font-medium uppercase tracking-[0.12em] text-slate-400"
+      : "text-[9px] font-medium uppercase tracking-[0.12em] text-slate-500";
+    const posterSummaryValueClass = isDarkPoster
+      ? "mt-1 text-[13px] font-semibold leading-snug text-slate-50 sm:text-[14px]"
+      : "mt-1 text-[13px] font-semibold leading-snug text-slate-900 sm:text-[14px]";
+    const posterRegionWrapClass = isDarkPoster
+      ? "border-white/20 bg-black/20"
+      : "border-slate-100";
+    const posterRegionTitleClass = isDarkPoster
+      ? "bg-[#111111] text-slate-300"
+      : "bg-white text-slate-700";
+    const posterRegionChipClass = isDarkPoster
+      ? "border-white/15 bg-white/5 text-slate-100"
+      : "bg-slate-50/80 px-3 py-2 text-[12px] font-medium leading-5 text-slate-800";
+    const posterActionClass = isDarkPoster
+      ? "border-white/15 bg-white/5 text-slate-100 hover:border-white/30 hover:bg-white/10"
+      : "border border-slate-200 bg-white text-slate-900 hover:border-slate-300 hover:bg-slate-50";
+    const posterFooterButtonClass = isDarkPoster
+      ? "border-white/20 bg-black/30 text-white shadow-[0_10px_22px_rgba(0,0,0,0.35)] hover:bg-black/45"
+      : footerActionButtonClass;
 
     return (
       <div className={widthClass}>
@@ -270,12 +307,17 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
                   posterStatusClass,
                 ].join(" ")}
               >
-                {status.label}
+                {data.statusLabel ?? status.label}
               </Badge>
             )}
           </div>
 
-          <h3 className="mt-4 text-[20px] font-extrabold leading-[1.12] tracking-[-0.03em] text-slate-900 sm:text-[22px]">
+          <h3
+            className={[
+              "mt-4 text-[20px] font-extrabold leading-[1.12] tracking-[-0.03em] sm:text-[22px]",
+              isDarkPoster ? "text-white" : "text-slate-900",
+            ].join(" ")}
+          >
             {data.title}
           </h3>
 
@@ -297,7 +339,12 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
           ) : null}
 
           {data.description && (
-            <p className="mt-3 max-w-[720px] text-[13px] leading-6 text-slate-700">
+            <p
+              className={[
+                "mt-3 max-w-[720px] text-[13px] leading-6",
+                posterDescriptionClass,
+              ].join(" ")}
+            >
               {data.description}
             </p>
           )}
@@ -307,29 +354,38 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
               {data.summaries.map((summary) => (
                 <div
                   key={`${data.title}-${summary.label}`}
-                  className="rounded-2xl bg-slate-50/80 px-3 py-2.5"
+                  className={posterSummaryClass}
                 >
-                  <p className="text-[9px] font-medium uppercase tracking-[0.12em] text-slate-500">
-                    {summary.label}
-                  </p>
-                  <p className="mt-1 text-[13px] font-semibold leading-snug text-slate-900 sm:text-[14px]">
-                    {summary.value}
-                  </p>
+                  <p className={posterSummaryLabelClass}>{summary.label}</p>
+                  <p className={posterSummaryValueClass}>{summary.value}</p>
                 </div>
               ))}
             </div>
           ) : null}
 
           {data.regionLabels?.length ? (
-            <div className="mt-5 border-t border-slate-100 pt-4">
-              <p className="text-[12px] font-semibold text-slate-900">
+            <div
+              className={[
+                "mt-5 rounded-[18px] border border-dashed px-4 py-3",
+                posterRegionWrapClass,
+              ].join(" ")}
+            >
+              <div
+                className={[
+                  "mx-auto -mt-6 w-fit rounded-full px-3 text-[11px] font-semibold uppercase tracking-[0.16em]",
+                  posterRegionTitleClass,
+                ].join(" ")}
+              >
                 Vùng canh tác
-              </p>
-              <div className="mt-2.5 grid gap-2 md:grid-cols-2">
+              </div>
+              <div className="mt-3 grid gap-2 md:grid-cols-2">
                 {data.regionLabels.map((label) => (
                   <div
                     key={label}
-                    className="rounded-xl bg-slate-50/80 px-3 py-2 text-[12px] font-medium leading-5 text-slate-800"
+                    className={[
+                      "rounded-xl border px-3 py-2 text-[12px] font-medium leading-5",
+                      posterRegionChipClass,
+                    ].join(" ")}
                   >
                     {label}
                   </div>
@@ -339,7 +395,7 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
           ) : null}
 
           {data.actions?.length ? (
-            <div className="mt-5 grid gap-2.5 md:grid-cols-2">
+            <div className="mt-5 grid gap-2.5 md:grid-cols-3">
               {data.actions.map((action) => {
                 const ActionIcon = action.icon;
 
@@ -349,8 +405,8 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
                     size="sm"
                     variant="outline"
                     className={[
-                      "nodrag h-10 justify-center gap-2 rounded-xl border border-slate-200 px-4 text-[12px] font-semibold shadow-none",
-                      "bg-white text-slate-900 hover:border-slate-300 hover:bg-slate-50",
+                      "nodrag h-10 justify-center gap-2 rounded-xl px-4 text-[12px] font-semibold shadow-none",
+                      posterActionClass,
                     ].join(" ")}
                     onClick={(event) => {
                       event.stopPropagation();
@@ -366,7 +422,34 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
             </div>
           ) : null}
         </div>
-        {renderFooterAction()}
+        {isDarkPoster && data.footerAction ? (
+          <div className="flex justify-center">
+            <div className="mt-[-18px] rounded-full border border-white/15 bg-[#111111] p-1.5 shadow-[0_8px_20px_rgba(0,0,0,0.35)]">
+              <Button
+                type="button"
+                variant="outline"
+                aria-label={data.footerAction?.label ?? "Thêm node"}
+                className={[
+                  "h-[42px] w-[42px] rounded-full border px-0",
+                  posterFooterButtonClass,
+                ].join(" ")}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  data.footerAction?.onClick();
+                }}
+                onMouseDown={(event) => event.stopPropagation()}
+              >
+                {data.footerAction ? (
+                  <data.footerAction.icon className={footerActionIconClass} />
+                ) : (
+                  <Workflow className={footerActionIconClass} />
+                )}
+                </Button>
+            </div>
+          </div>
+        ) : (
+          renderFooterAction()
+        )}
       </div>
     );
   }

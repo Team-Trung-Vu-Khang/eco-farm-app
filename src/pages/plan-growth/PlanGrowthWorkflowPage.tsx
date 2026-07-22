@@ -4,9 +4,18 @@ import {
   Button,
   Card,
   CardContent,
+  DeleteDialog,
+  useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ArrowLeft, Eye, PencilLine, Plus } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import {
+  ArrowLeft,
+  ClipboardList,
+  Eye,
+  PencilLine,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -20,6 +29,7 @@ import {
   type Node,
 } from "reactflow";
 import { useLocation, useParams } from "wouter";
+import useRegionStore from "@/stores/useRegionStore";
 import usePlanStore, { type Plan } from "../../stores/usePlanStore";
 import type {
   WorkflowCardNodeData,
@@ -27,6 +37,7 @@ import type {
 } from "./../growth-cycle/components/workflow/WorkflowCardNode";
 import { WorkflowCardNode } from "./../growth-cycle/components/workflow/WorkflowCardNode";
 import { getPlanStatusBadge } from "./utils/status";
+import { summarizePlanSelections } from "./utils/location";
 
 const nodeTypes = {
   workflowCard: WorkflowCardNode,
@@ -58,9 +69,16 @@ function formatDate(value?: string) {
 
 function getStatusNode(status: Plan["status"]): WorkflowNodeStatus {
   if (status === "active") return "in_progress";
-  if (status === "completed") return "completed";
+  if (status === "completed") return "ended";
   if (status === "cancelled") return "ended";
   return "not_started";
+}
+
+function getStatusLabel(status: Plan["status"]) {
+  if (status === "active") return "Đang triển khai";
+  if (status === "completed") return "Đã kết thúc";
+  if (status === "cancelled") return "Đã kết thúc";
+  return "Thiếu thông tin";
 }
 
 function getPurposeLabel(plan: Plan) {
@@ -80,26 +98,52 @@ function countWorkers(tasks: Plan["taskAllocations"]) {
   return total > 0 ? `${total} người` : "Chưa phân bổ";
 }
 
-function countMaterials(materials: Plan["materialAllocations"]) {
-  if (materials.length === 0) return "Chưa phân bổ";
+function countMaterialsByCategory(materials: Plan["materialAllocations"]) {
+  return materials.reduce(
+    (acc, item) => {
+      const category = (item.materialCategory || "").toLowerCase();
+      if (category.includes("thuốc") || category.includes("bvtv")) {
+        acc.pesticide += 1;
+        return acc;
+      }
+      if (category.includes("phân")) {
+        acc.fertilizer += 1;
+        return acc;
+      }
+      acc.other += 1;
+      return acc;
+    },
+    { pesticide: 0, fertilizer: 0, other: 0 },
+  );
+}
 
-  const categories = materials.reduce<Record<string, number>>((acc, item) => {
-    const label = item.materialCategory?.trim() || "Vật tư";
-    acc[label] = (acc[label] || 0) + 1;
-    return acc;
-  }, {});
+function getRegionLabels(plan: Plan, regions: any[]) {
+  const summary = summarizePlanSelections(plan, regions);
 
-  const preferred = ["Máy móc", "Thuốc BTVT", "Phân bón"];
-  const entries = [
-    ...preferred
-      .filter((label) => categories[label])
-      .map((label) => `${categories[label]} ${label.toLowerCase()}`),
-    ...Object.entries(categories)
-      .filter(([label]) => !preferred.includes(label))
-      .map(([label, amount]) => `${amount} ${label.toLowerCase()}`),
-  ];
+  if (!summary.length) {
+    return ["Chưa xác định"];
+  }
 
-  return entries.slice(0, 3).join(", ");
+  return summary.map((group) => {
+    const areaNames = group.items
+      .filter((item) => item.type === "area")
+      .map((item) => item.name);
+    const plotNames = group.items
+      .filter((item) => item.type === "plot")
+      .map((item) =>
+        item.parentName ? `${item.parentName} (${item.name})` : item.name,
+      );
+
+    if (plotNames.length) {
+      return `${group.regionName} (${plotNames.join(", ")})`;
+    }
+
+    if (areaNames.length) {
+      return `${group.regionName} (${areaNames.join(", ")})`;
+    }
+
+    return group.regionName;
+  });
 }
 
 function clonePlan(base: Plan, overrides: Partial<Plan>): Plan {
@@ -287,11 +331,16 @@ function buildPlanNode(
   plan: Plan,
   label: string,
   onEdit: () => void,
-  onView: () => void,
+  onAssign: () => void,
+  onDelete: () => void,
   onCreate: () => void,
+  regionLabels: string[],
   options?: { interactive?: boolean },
 ): Node<WorkflowCardNodeData> {
   const interactive = options?.interactive ?? true;
+  const materialGroups = countMaterialsByCategory(plan.materialAllocations);
+  const canManage =
+    interactive && plan.status !== "completed" && plan.status !== "cancelled";
   return {
     id: `plan-${plan.id}`,
     type: "workflowCard",
@@ -302,34 +351,46 @@ function buildPlanNode(
       title: plan.name,
       subtitle: `${plan.seasonName} · ${plan.crop}${plan.variety ? ` - ${plan.variety}` : ""}`,
       status: getStatusNode(plan.status),
+      statusLabel: getStatusLabel(plan.status),
       variant: "poster",
+      posterTheme: "light",
       wide: true,
       targetTopHandleId: `plan-${plan.id}-target-top`,
       sourceBottomHandleId: `plan-${plan.id}-source-bottom`,
+      tags: (plan.selectedStages || []).slice(0, 3),
       summaries: [
         { label: "Bắt đầu", value: formatDate(plan.startDate) },
-        { label: "Kết thúc", value: formatDate(plan.endDate) },
+        { label: "Khởi tạo", value: formatDate(plan.createdAt) },
         { label: "Giai đoạn", value: `${plan.selectedStages.length}` },
         { label: "Nhân lực", value: countWorkers(plan.taskAllocations) },
-        { label: "Vật tư", value: countMaterials(plan.materialAllocations) },
+        { label: "Thuốc BVTV", value: `${materialGroups.pesticide}` },
+        { label: "Phân bón", value: `${materialGroups.fertilizer}` },
+        { label: "Vật tư khác", value: `${materialGroups.other}` },
         { label: "Mục đích", value: getPurposeLabel(plan) },
       ],
       description: plan.description || "Chưa có mô tả cho kế hoạch này.",
-      actions: interactive
+      regionLabels,
+      actions: canManage
         ? [
             {
-              label: "Xem chi tiết",
-              icon: Eye,
-              onClick: onView,
-            },
-            {
-              label: "Chỉnh sửa",
+              label: "Điều chỉnh thông tin",
               icon: PencilLine,
               onClick: onEdit,
             },
+            {
+              label: "Phân bổ công việc",
+              icon: ClipboardList,
+              onClick: onAssign,
+            },
+            {
+              label: "Xóa kế hoạch",
+              icon: Trash2,
+              tone: "destructive",
+              onClick: onDelete,
+            },
           ]
         : undefined,
-      footerAction: interactive
+      footerAction: canManage
         ? {
             label: "Khởi tạo kế hoạch mới",
             icon: Plus,
@@ -342,10 +403,29 @@ function buildPlanNode(
 
 export default function PlanGrowthWorkflowPage({
   basePath = "/plan-growth",
-}: PlanWorkflowPageProps) {
+}: PlanGrowthWorkflowPageProps) {
   const params = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const { regions } = useRegionStore();
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const plan = usePlanStore((state) => state.getPlanById(Number(params.id)));
+  const deletePlan = usePlanStore((state) => state.deletePlan);
+  const primaryRegionLabels = useMemo(
+    () => (plan ? getRegionLabels(plan, regions || []) : []),
+    [plan, regions],
+  );
+
+  const handleConfirmDelete = () => {
+    if (!plan) return;
+    deletePlan(plan.id);
+    toast({
+      title: "Thành công",
+      description: "Đã xóa kế hoạch",
+    });
+    setDeleteOpen(false);
+    setLocation(basePath);
+  };
 
   const flowDefinition = useMemo(() => {
     if (!plan) {
@@ -360,8 +440,14 @@ export default function PlanGrowthWorkflowPage({
           slot.plan,
           slot.label,
           () => setLocation(`${basePath}/${slot.plan.id}/edit`),
-          () => setLocation(`${basePath}/${slot.plan.id}`),
+          () => setLocation(`${basePath}/${slot.plan.id}/edit#task-allocation`),
+          () => {
+            if (slot.isPrimary) {
+              setDeleteOpen(true);
+            }
+          },
           () => setLocation(`${basePath}/create`),
+          slot.isPrimary ? primaryRegionLabels : getRegionLabels(slot.plan, regions || []),
           { interactive: slot.isPrimary },
         ),
       )
@@ -409,7 +495,7 @@ export default function PlanGrowthWorkflowPage({
     connect("Kế hoạch 1.1", "Kế hoạch 1.2", "#2563eb", true);
 
     return { nodes, edges };
-  }, [plan, setLocation]);
+  }, [basePath, plan, primaryRegionLabels, regions, setLocation]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(flowDefinition.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(flowDefinition.edges);
@@ -540,6 +626,11 @@ export default function PlanGrowthWorkflowPage({
           </div>
         </CardContent>
       </Card>
+      <DeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onConfirm={handleConfirmDelete}
+      />
     </AdminLayout>
   );
 }
