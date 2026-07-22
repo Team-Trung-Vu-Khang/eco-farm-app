@@ -28,7 +28,7 @@ import useVarietyStore from "../../stores/useVarietyStore";
 import {
   animalBreedOptions,
   animalCycleOptions,
-} from "../growth-cycle/data/cycleSelectionData";
+} from "./data/cycleSelectionData";
 import type { SeasonDocument } from "./types/types";
 
 function resolveSeasonType(season: { seasonType?: "plant" | "animal" }) {

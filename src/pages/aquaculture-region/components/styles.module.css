@@ -1,0 +1,56 @@
+.overviewGrid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr 2fr;
+  grid-template-rows: auto auto auto auto;
+  grid-template-areas:
+    "enterprise info"
+    "enterprise map"
+    "scope      map"
+    "scope      map";
+  align-items: start;
+}
+
+.noEnterprise {
+  grid-template-areas:
+    "scope info"
+    "scope map"
+    "scope map"
+    "scope map";
+}
+
+.areaEnterprise {
+  grid-area: enterprise;
+}
+
+.areaInfo {
+  grid-area: info;
+}
+
+.areaMap {
+  grid-area: map;
+}
+
+.areaScope {
+  grid-area: scope;
+  align-self: start;
+}
+
+@media (max-width: 1024px) {
+  .overviewGrid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    grid-template-areas:
+      "enterprise"
+      "info"
+      "map"
+      "scope";
+  }
+
+  .overviewGrid.noEnterprise {
+    grid-template-areas:
+      "info"
+      "map"
+      "scope";
+  }
+}

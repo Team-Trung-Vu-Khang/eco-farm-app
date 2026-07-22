@@ -105,7 +105,8 @@ function clonePlan(base: Plan, overrides: Partial<Plan>): Plan {
     selectedRegionIds: overrides.selectedRegionIds ?? base.selectedRegionIds,
     selectedZoneIds: overrides.selectedZoneIds ?? base.selectedZoneIds,
     selectedPlotIds: overrides.selectedPlotIds ?? base.selectedPlotIds,
-    materialAllocations: overrides.materialAllocations ?? base.materialAllocations,
+    materialAllocations:
+      overrides.materialAllocations ?? base.materialAllocations,
     taskAllocations: overrides.taskAllocations ?? base.taskAllocations,
     selectedStages: overrides.selectedStages ?? base.selectedStages,
   };
@@ -326,7 +327,7 @@ function buildPlanNode(
         : undefined,
       footerAction: interactive
         ? {
-            label: "Thêm kế hoạch",
+            label: "Khởi tạo kế hoạch mới",
             icon: Plus,
             onClick: onCreate,
           }
@@ -347,19 +348,21 @@ export default function PlanWorkflowPage() {
 
     const slots = createDemoWorkflowPlans(plan);
 
-    const nodes = slots.map((slot) =>
-      buildPlanNode(
-        slot.plan,
-        slot.label,
-        () => setLocation(`/plan/${slot.plan.id}/edit`),
-        () => setLocation(`/plan/${slot.plan.id}`),
-        () => setLocation("/plan/create"),
-        { interactive: slot.isPrimary },
-      ),
-    ).map((node, index) => ({
-      ...node,
-      position: slots[index]?.position ?? node.position,
-    }));
+    const nodes = slots
+      .map((slot) =>
+        buildPlanNode(
+          slot.plan,
+          slot.label,
+          () => setLocation(`/plan/${slot.plan.id}/edit`),
+          () => setLocation(`/plan/${slot.plan.id}`),
+          () => setLocation("/plan/create"),
+          { interactive: slot.isPrimary },
+        ),
+      )
+      .map((node, index) => ({
+        ...node,
+        position: slots[index]?.position ?? node.position,
+      }));
 
     const slotByLabel = new Map(slots.map((slot) => [slot.label, slot]));
     const edges: Edge[] = [];
@@ -466,9 +469,12 @@ export default function PlanWorkflowPage() {
             <PencilLine className="mr-2 h-4 w-4" />
             Chỉnh sửa
           </Button>
-          <Button className="h-9 px-3" onClick={() => setLocation("/plan/create")}>
+          <Button
+            className="h-9 px-3"
+            onClick={() => setLocation("/plan/create")}
+          >
             <Plus className="mr-2 h-4 w-4" />
-            Thêm kế hoạch
+            Khởi tạo kế hoạch mới
           </Button>
         </div>
       }

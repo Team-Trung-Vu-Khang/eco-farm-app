@@ -10,7 +10,7 @@ export interface GrowthStage {
 export interface GrowthCycle {
   id: string;
   name: string;
-  cycleType?: "plant" | "animal";
+  cycleType?: "plant";
   scope: "crop" | "variety";
   cropId: string;
   cropName: string;
@@ -23,7 +23,7 @@ export interface GrowthCycle {
 }
 
 export interface CreateGrowthCycleForm {
-  cycleType?: "plant" | "animal";
+  cycleType?: "plant";
   scope: "crop" | "variety";
   cropId: string;
   variety?: string;

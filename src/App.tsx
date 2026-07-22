@@ -44,6 +44,55 @@ const PlanCreatePage = lazy(() => import("./pages/plan/PlanCreatePage"));
 const PlanDetailPage = lazy(() => import("./pages/plan/PlanDetailPage"));
 const PlanEditPage = lazy(() => import("./pages/plan/PlanEditPage"));
 const PlanWorkflowPage = lazy(() => import("./pages/plan/PlanWorkflowPage"));
+const PlanGrowthPage = lazy(
+  () => import("./pages/plan-growth/PlanGrowthPage"),
+);
+const PlanGrowthCreatePage = lazy(
+  () => import("./pages/plan-growth/PlanGrowthCreatePage"),
+);
+const PlanGrowthDetailPage = lazy(
+  () => import("./pages/plan-growth/PlanGrowthDetailPage"),
+);
+const PlanGrowthEditPage = lazy(
+  () => import("./pages/plan-growth/PlanGrowthEditPage"),
+);
+const PlanGrowthWorkflowPage = lazy(
+  () => import("./pages/plan-growth/PlanGrowthWorkflowPage"),
+);
+const PlanAnimalGrowthPage = lazy(
+  () => import("./pages/plan-animal-growth/PlanAnimalGrowthPage"),
+);
+const PlanAnimalGrowthCreatePage = lazy(
+  () => import("./pages/plan-animal-growth/PlanAnimalGrowthCreatePage"),
+);
+const PlanAnimalGrowthDetailPage = lazy(
+  () => import("./pages/plan-animal-growth/PlanAnimalGrowthDetailPage"),
+);
+const PlanAnimalGrowthEditPage = lazy(
+  () => import("./pages/plan-animal-growth/PlanAnimalGrowthEditPage"),
+);
+const PlanAnimalGrowthWorkflowPage = lazy(
+  () => import("./pages/plan-animal-growth/PlanAnimalGrowthWorkflowPage"),
+);
+const PlanAquacultureGrowthPage = lazy(
+  () => import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthPage"),
+);
+const PlanAquacultureGrowthCreatePage = lazy(
+  () =>
+    import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthCreatePage"),
+);
+const PlanAquacultureGrowthDetailPage = lazy(
+  () =>
+    import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthDetailPage"),
+);
+const PlanAquacultureGrowthEditPage = lazy(
+  () =>
+    import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthEditPage"),
+);
+const PlanAquacultureGrowthWorkflowPage = lazy(
+  () =>
+    import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthWorkflowPage"),
+);
 const PlanTypePage = lazy(() => import("./pages/plan-type/PlanTypePage"));
 const FertilizerCreatePage = lazy(
   () => import("./pages/fertilizer/FertilizerCreatePage"),
@@ -79,6 +128,21 @@ const IoTDeviceGroupPage = lazy(
 );
 const IrrigationSystemPage = lazy(
   () => import("./pages/irrigation-system/IrrigationSystemPage"),
+);
+const AquacultureIdentificationListPage = lazy(
+  () => import("./pages/aquaculture-identification/AquacultureIdentificationListPage"),
+);
+const AquacultureIdentificationCreatePage = lazy(
+  () => import("./pages/aquaculture-identification/AquacultureIdentificationCreatePage"),
+);
+const AquacultureIdentificationSearchPage = lazy(
+  () => import("./pages/aquaculture-identification/AquacultureIdentificationSearchPage"),
+);
+const AquacultureIdentificationDetailPage = lazy(
+  () => import("./pages/aquaculture-identification/AquacultureIdentificationDetailPage"),
+);
+const AquacultureIdentificationEditPage = lazy(
+  () => import("./pages/aquaculture-identification/AquacultureIdentificationEditPage"),
 );
 
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
@@ -173,17 +237,38 @@ const CultivationRegionPage = lazy(
   () =>
     import("./pages/cultivation-zone/cultivation-region/CultivationRegionPage"),
 );
+const AquacultureRegionPage = lazy(
+  () => import("./pages/aquaculture-region/AquacultureRegionPage"),
+);
 const CultivationRegionCreatePage = lazy(
   () =>
     import("./pages/cultivation-zone/cultivation-region/CultivationRegionCreatePage"),
+);
+const AquacultureRegionCreatePage = lazy(
+  () => import("./pages/aquaculture-region/AquacultureRegionCreatePage"),
 );
 const CultivationRegionWorkflowPage = lazy(
   () =>
     import("./pages/cultivation-zone/cultivation-region/CultivationRegionWorkflowPage"),
 );
+const AquacultureRegionWorkflowPage = lazy(
+  () => import("./pages/aquaculture-region/AquacultureRegionWorkflowPage"),
+);
 const DistributionDetailPage = lazy(
   () =>
     import("./pages/cultivation-zone/distribution-detail/DistributionDetailPage"),
+);
+const AquacultureDistributionDetailPage = lazy(
+  () =>
+    import("./pages/aquaculture-distribution-detail/AquacultureDistributionDetailPage"),
+);
+const AquacultureDistributionCreatePage = lazy(
+  () =>
+    import("./pages/aquaculture-distribution-detail/AquacultureDistributionCreatePage"),
+);
+const AquacultureDistributionListPage = lazy(
+  () =>
+    import("./pages/aquaculture-distribution-detail/AquacultureDistributionListPage"),
 );
 const PlantDistributionCreatePage = lazy(
   () =>
@@ -195,6 +280,9 @@ const SearchCropPage = lazy(
 const SearchZonePage = lazy(
   () => import("./pages/cultivation-zone/search-zone/SearchZonePage"),
 );
+const AquacultureSearchFarmPage = lazy(
+  () => import("./pages/aquaculture-search-farm/AquacultureSearchFarmPage"),
+);
 const SearchUnitPage = lazy(
   () => import("./pages/enterprise/search-unit/SearchUnitPage"),
 );
@@ -202,6 +290,17 @@ const SearchUnitPage = lazy(
 const SeedPage = lazy(() => import("./pages/seed/SeedPage"));
 const GrowthCyclePage = lazy(
   () => import("./pages/growth-cycle/GrowthCyclePage"),
+);
+const AquacultureGrowthCyclePage = lazy(
+  () => import("./pages/aquaculture-growth-cycle/AquacultureGrowthCyclePage"),
+);
+const CreateAquacultureGrowthCyclePage = lazy(
+  () =>
+    import("./pages/aquaculture-growth-cycle/CreateAquacultureGrowthCyclePage"),
+);
+const AquacultureGrowthCycleEditPage = lazy(
+  () =>
+    import("./pages/aquaculture-growth-cycle/AquacultureGrowthCycleEditPage"),
 );
 const CreateGrowthCyclePage = lazy(
   () => import("./pages/growth-cycle/CreateGrowthCyclePage"),
@@ -289,6 +388,9 @@ const RegionDetailPage = lazy(
 const CultivationRegionDetailPage = lazy(
   () =>
     import("./pages/cultivation-zone/cultivation-region/CultivationRegionDetailPage"),
+);
+const AquacultureRegionDetailPage = lazy(
+  () => import("./pages/aquaculture-region/AquacultureRegionDetailPage"),
 );
 
 const ContractDetailPage = lazy(
@@ -768,6 +870,23 @@ function Router() {
         component={AnimalGrowthCycleWorkflowPage}
       />
 
+      <Route path="/aquaculture-region" component={AquacultureRegionPage} />
+      <Route
+        path="/aquaculture-region/create"
+        component={AquacultureRegionCreatePage}
+      />
+      <Route
+        path="/aquaculture-region/:id"
+        component={AquacultureRegionDetailPage}
+      />
+      <Route
+        path="/aquaculture-region/:id/workflow"
+        component={AquacultureRegionWorkflowPage}
+      />
+      <Route
+        path="/aquaculture-region/:id/edit"
+        component={AquacultureRegionCreatePage}
+      />
       <Route
         path="/distribution-detail"
         component={PlantDistributionListPage}
@@ -783,6 +902,18 @@ function Router() {
       <Route
         path="/distribution-detail/:id/edit"
         component={PlantDistributionCreatePage}
+      />
+      <Route
+        path="/aquaculture-distribution-detail"
+        component={AquacultureDistributionListPage}
+      />
+      <Route
+        path="/aquaculture-distribution-detail/create"
+        component={AquacultureDistributionCreatePage}
+      />
+      <Route
+        path="/aquaculture-distribution-detail/:id"
+        component={AquacultureDistributionDetailPage}
       />
       {/* Cultivation Area Routes */}
       <Route path="/cultivation-area" component={CultivationAreaPage} />
@@ -815,6 +946,10 @@ function Router() {
       <Route path="/treatment" component={TreatmentPage} />
       <Route path="/search-crop" component={SearchCropPage} />
       <Route path="/search-zone" component={SearchZonePage} />
+      <Route
+        path="/aquaculture-search-farm"
+        component={AquacultureSearchFarmPage}
+      />
       <Route path="/search-unit" component={SearchUnitPage} />
       <Route path="/lookup-material" component={MaterialLookupPage} />
       <Route
@@ -832,6 +967,26 @@ function Router() {
       <Route
         path="/plant-identification/:id/edit"
         component={PlantIdentificationEditPage}
+      />
+      <Route
+        path="/aquaculture-identification"
+        component={AquacultureIdentificationListPage}
+      />
+      <Route
+        path="/aquaculture-identification/create"
+        component={AquacultureIdentificationCreatePage}
+      />
+      <Route
+        path="/aquaculture-identification/search"
+        component={AquacultureIdentificationSearchPage}
+      />
+      <Route
+        path="/aquaculture-identification/:id"
+        component={AquacultureIdentificationDetailPage}
+      />
+      <Route
+        path="/aquaculture-identification/:id/edit"
+        component={AquacultureIdentificationEditPage}
       />
       <Route path="/crop" component={CropPage} />
       <Route path="/crop/create" component={CropCreatePage} />
@@ -884,6 +1039,18 @@ function Router() {
       <Route path="/seed/:id/edit" component={UpdateSeedPage} />
       <Route path="/seed/:id" component={SeedDetailPage} />
       <Route path="/growth-cycle" component={GrowthCyclePage} />
+      <Route
+        path="/aquaculture-growth-cycle"
+        component={AquacultureGrowthCyclePage}
+      />
+      <Route
+        path="/aquaculture-growth-cycle/create"
+        component={CreateAquacultureGrowthCyclePage}
+      />
+      <Route
+        path="/aquaculture-growth-cycle/:id/edit"
+        component={AquacultureGrowthCycleEditPage}
+      />
       <Route path="/growth-cycle/create" component={CreateGrowthCyclePage} />
       <Route
         path="/growth-cycle/:id/workflow"
@@ -941,6 +1108,51 @@ function Router() {
       <Route path="/plan/:id/workflow" component={PlanWorkflowPage} />
       <Route path="/plan/:id/edit" component={PlanEditPage} />
       <Route path="/plan/:id" component={PlanDetailPage} />
+      <Route path="/plan-growth" component={PlanGrowthPage} />
+      <Route path="/plan-growth/create" component={PlanGrowthCreatePage} />
+      <Route
+        path="/plan-growth/:id/workflow"
+        component={PlanGrowthWorkflowPage}
+      />
+      <Route path="/plan-growth/:id/edit" component={PlanGrowthEditPage} />
+      <Route path="/plan-growth/:id" component={PlanGrowthDetailPage} />
+      <Route path="/plan-animal-growth" component={PlanAnimalGrowthPage} />
+      <Route
+        path="/plan-animal-growth/create"
+        component={PlanAnimalGrowthCreatePage}
+      />
+      <Route
+        path="/plan-animal-growth/:id/workflow"
+        component={PlanAnimalGrowthWorkflowPage}
+      />
+      <Route
+        path="/plan-animal-growth/:id/edit"
+        component={PlanAnimalGrowthEditPage}
+      />
+      <Route
+        path="/plan-animal-growth/:id"
+        component={PlanAnimalGrowthDetailPage}
+      />
+      <Route
+        path="/plan-aquaculture-growth"
+        component={PlanAquacultureGrowthPage}
+      />
+      <Route
+        path="/plan-aquaculture-growth/create"
+        component={PlanAquacultureGrowthCreatePage}
+      />
+      <Route
+        path="/plan-aquaculture-growth/:id/workflow"
+        component={PlanAquacultureGrowthWorkflowPage}
+      />
+      <Route
+        path="/plan-aquaculture-growth/:id/edit"
+        component={PlanAquacultureGrowthEditPage}
+      />
+      <Route
+        path="/plan-aquaculture-growth/:id"
+        component={PlanAquacultureGrowthDetailPage}
+      />
       <Route
         path="/production-cultivation-report"
         component={ProductionCultivationReportPage}

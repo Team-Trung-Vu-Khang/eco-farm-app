@@ -93,14 +93,13 @@ export function useGrowthCyclePage() {
   // Map from API response to GrowthCycle UI model
   const growthCycles: GrowthCycle[] = apiItems.map((item) => {
     const metadata = (item.metadataJson || {}) as Record<string, unknown>;
-    const cycleType = String(metadata.cycleType || "plant") as
-      | "plant"
-      | "animal";
+    const cycleType = String(metadata.cycleType || "plant");
+    if (cycleType !== "plant") return null;
 
     return {
       id: String(item.id),
       name: item.name,
-      cycleType: cycleType,
+      cycleType: "plant",
       scope: item.cropVarietyId ? "variety" : "crop",
       cropId: String(item.cropId),
       cropName: item.cropName || "",
@@ -118,7 +117,7 @@ export function useGrowthCyclePage() {
       createdAt: item.createdAt ? new Date(item.createdAt).getTime() : 0,
       updatedAt: item.updatedAt ? new Date(item.updatedAt).getTime() : 0,
     };
-  });
+  }).filter((item): item is GrowthCycle => item !== null);
 
   const handleView = (item: GrowthCycle) => {
     setSelectedId(item.id);

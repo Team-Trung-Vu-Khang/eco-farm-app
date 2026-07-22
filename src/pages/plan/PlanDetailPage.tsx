@@ -35,7 +35,7 @@ import {
 import { useMemo } from "react";
 import { usePlanDetailPage } from "./hooks/usePlanDetailPage";
 import { getPlanStatusBadge } from "./utils/status";
-
+ 
 export default function PlanDetailPage() {
   const {
     params,

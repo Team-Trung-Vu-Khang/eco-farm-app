@@ -293,7 +293,7 @@ export function usePlanForm(mode: "create" | "edit") {
     handleRemoveTask,
     handleComplete,
     goBack:
-      mode === "edit" && params.id
+    mode === "edit" && params.id
         ? () => setLocation(`/plan/${params.id}`)
         : () => setLocation("/plan"),
     pageTitle: mode === "edit" ? "Chỉnh sửa Kế hoạch" : "Lập kế hoạch",

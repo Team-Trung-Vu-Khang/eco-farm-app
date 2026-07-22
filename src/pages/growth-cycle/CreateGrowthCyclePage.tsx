@@ -73,6 +73,7 @@ export default function CreateGrowthCyclePage() {
       description="Thiết lập các giai đoạn phát triển cho cây trồng"
       actions={[
         <Button
+          key="back-button"
           variant="outline"
           size="sm"
           className="-ml-2 text-muted-foreground hover:text-foreground"

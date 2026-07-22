@@ -1882,6 +1882,282 @@ export const initialPlans: Plan[] = [
     "area": "50.5",
     "createdAt": "2026-05-28"
   }
+  ,
+  {
+    "id": 101,
+    "code": "AQ-2025-001",
+    "name": "Kế hoạch chuẩn bị ao nuôi tôm thẻ vụ Q2/2025",
+    "description": "Cải tạo ao, xử lý nước đầu vụ và bố trí hệ thống quạt nước trước khi thả giống tôm thẻ.",
+    "seasonId": "AQ-2025-Q2",
+    "seasonName": "Vụ nuôi Q2/2025",
+    "startDate": "2025-04-01",
+    "endDate": "2025-04-20",
+    "selectedRegionIds": ["1"],
+    "selectedZoneIds": ["sub-1-1"],
+    "selectedPlotIds": ["plot-1-1", "plot-1-2"],
+    "crop": "Tôm thẻ chân trắng",
+    "variety": "PL12",
+    "purpose": "cultivation",
+    "area": "2.7",
+    "expectedYield": "18",
+    "growthCycleId": "AQ-TOM-THU-STD",
+    "selectedStages": ["Cải tạo ao", "Gây màu nước", "Thả giống"],
+    "materialAllocations": [
+      {
+        "id": 301,
+        "stageId": "Cải tạo ao",
+        "materialCategory": "Thuốc thú y thủy sản",
+        "materialType": "Vôi CaO",
+        "materialName": "Vôi CaO xử lý ao",
+        "quantity": "250",
+        "unit": "kg"
+      },
+      {
+        "id": 302,
+        "stageId": "Gây màu nước",
+        "materialCategory": "Chế phẩm sinh học",
+        "materialType": "Chế phẩm sinh học",
+        "materialName": "Men vi sinh gây màu nước",
+        "quantity": "20",
+        "unit": "chai"
+      },
+      {
+        "id": 303,
+        "stageId": "Thả giống",
+        "materialCategory": "Con giống",
+        "materialType": "Tôm post 12",
+        "materialName": "Post-larvae PL12",
+        "quantity": "200000",
+        "unit": "con"
+      }
+    ],
+    "taskAllocations": [
+      {
+        "id": 401,
+        "stageId": "Cải tạo ao",
+        "name": "Nạo vét và khử trùng đáy ao",
+        "description": "Thu gom bùn đáy, phơi ao và khử trùng toàn bộ khu nuôi trước khi cấp nước.",
+        "labor": "5 người",
+        "duration": "5 ngày"
+      },
+      {
+        "id": 402,
+        "stageId": "Gây màu nước",
+        "name": "Theo dõi pH và độ kiềm",
+        "description": "Đo chỉ số môi trường mỗi ngày để ổn định màu nước trước khi thả giống.",
+        "labor": "2 người",
+        "duration": "7 ngày"
+      },
+      {
+        "id": 403,
+        "stageId": "Thả giống",
+        "name": "Thuần nhiệt và thả post",
+        "description": "Thuần nhiệt độ, độ mặn và mật độ trước khi thả post-larvae xuống ao.",
+        "labor": "4 người",
+        "duration": "2 ngày"
+      }
+    ],
+    "status": "active",
+    "createdAt": "2025-03-20"
+  },
+  {
+    "id": 102,
+    "code": "AQ-2025-002",
+    "name": "Kế hoạch nuôi cá tra tăng trưởng vụ Q3/2025",
+    "description": "Quản lý cho ăn, kiểm soát oxy hòa tan và theo dõi tăng trưởng đàn cá tra thương phẩm.",
+    "seasonId": "AQ-2025-Q3",
+    "seasonName": "Vụ nuôi Q3/2025",
+    "startDate": "2025-07-01",
+    "endDate": "2025-09-15",
+    "selectedRegionIds": ["3"],
+    "selectedZoneIds": ["sub-2-1"],
+    "selectedPlotIds": ["plot-2-1", "plot-2-2"],
+    "crop": "Cá tra",
+    "variety": "Thương phẩm",
+    "purpose": "cultivation",
+    "area": "4.2",
+    "expectedYield": "75",
+    "growthCycleId": "AQ-CA-TRA-STD",
+    "selectedStages": ["Thả giống", "Cho ăn tăng trưởng", "Quản lý chất lượng nước"],
+    "materialAllocations": [
+      {
+        "id": 304,
+        "stageId": "Thả giống",
+        "materialCategory": "Con giống",
+        "materialType": "Cá tra giống",
+        "materialName": "Cá tra giống cỡ 12-15cm",
+        "quantity": "50000",
+        "unit": "con"
+      },
+      {
+        "id": 305,
+        "stageId": "Cho ăn tăng trưởng",
+        "materialCategory": "Thức ăn thủy sản",
+        "materialType": "Cám chìm 28%",
+        "materialName": "Cám chìm 28%",
+        "quantity": "1200",
+        "unit": "kg"
+      },
+      {
+        "id": 306,
+        "stageId": "Quản lý chất lượng nước",
+        "materialCategory": "Chế phẩm sinh học",
+        "materialType": "Chế phẩm sinh học",
+        "materialName": "Vi sinh xử lý nước",
+        "quantity": "15",
+        "unit": "chai"
+      }
+    ],
+    "taskAllocations": [
+      {
+        "id": 404,
+        "stageId": "Thả giống",
+        "name": "Kiểm tra sức khỏe đàn giống",
+        "description": "Kiểm tra ngoại hình, kích cỡ và khả năng thích nghi trước khi thả.",
+        "labor": "3 người",
+        "duration": "2 ngày"
+      },
+      {
+        "id": 405,
+        "stageId": "Cho ăn tăng trưởng",
+        "name": "Điều chỉnh khẩu phần theo cỡ cá",
+        "description": "Theo dõi lượng ăn hằng ngày và điều chỉnh theo tốc độ tăng trưởng.",
+        "labor": "2 người",
+        "duration": "60 ngày"
+      },
+      {
+        "id": 406,
+        "stageId": "Quản lý chất lượng nước",
+        "name": "Đo oxy và NH3",
+        "description": "Theo dõi oxy hòa tan, NH3 và pH để hạn chế sốc môi trường.",
+        "labor": "2 người",
+        "duration": "45 ngày"
+      }
+    ],
+    "status": "draft",
+    "createdAt": "2025-06-10"
+  },
+  {
+    "id": 103,
+    "code": "AQ-2025-003",
+    "name": "Kế hoạch phòng bệnh cá rô phi vụ Q3/2025",
+    "description": "Tăng cường sục khí, phòng bệnh và ổn định chất lượng nước cho bè nuôi cá rô phi.",
+    "seasonId": "AQ-2025-Q3",
+    "seasonName": "Vụ nuôi Q3/2025",
+    "startDate": "2025-08-01",
+    "endDate": "2025-09-30",
+    "selectedRegionIds": ["5"],
+    "selectedZoneIds": ["sub-3-1"],
+    "selectedPlotIds": ["plot-3-1", "plot-3-2"],
+    "crop": "Cá rô phi",
+    "variety": "Thâm canh",
+    "purpose": "treatment",
+    "area": "1.8",
+    "expectedYield": "22",
+    "growthCycleId": "",
+    "regimenId": "AQUA-PREVENT-001",
+    "selectedStages": ["Theo dõi oxy", "Phòng bệnh"],
+    "materialAllocations": [
+      {
+        "id": 307,
+        "stageId": "Theo dõi oxy",
+        "materialCategory": "Dụng cụ",
+        "materialType": "Máy đo oxy",
+        "materialName": "Máy đo oxy cầm tay",
+        "quantity": "2",
+        "unit": "cái"
+      },
+      {
+        "id": 308,
+        "stageId": "Phòng bệnh",
+        "materialCategory": "Thuốc thú y thủy sản",
+        "materialType": "Iodine",
+        "materialName": "Iodine sát khuẩn ao",
+        "quantity": "10",
+        "unit": "lít"
+      }
+    ],
+    "taskAllocations": [
+      {
+        "id": 407,
+        "stageId": "Theo dõi oxy",
+        "name": "Đo oxy sáng sớm",
+        "description": "Đo oxy trước bình minh để xử lý sục khí kịp thời.",
+        "labor": "2 người",
+        "duration": "30 ngày"
+      },
+      {
+        "id": 408,
+        "stageId": "Phòng bệnh",
+        "name": "Xử lý nước định kỳ",
+        "description": "Khử khuẩn và kiểm tra mật độ tảo để hạn chế bùng phát bệnh.",
+        "labor": "3 người",
+        "duration": "20 ngày"
+      }
+    ],
+    "status": "active",
+    "createdAt": "2025-07-18"
+  },
+  {
+    "id": 104,
+    "code": "AQ-2025-004",
+    "name": "Kế hoạch thu hoạch tôm thẻ chân trắng vụ Q4/2025",
+    "description": "Theo dõi cỡ tôm, siết thức ăn và chuẩn bị thu hoạch đồng loạt cho ao nuôi lót bạt.",
+    "seasonId": "AQ-2025-Q4",
+    "seasonName": "Vụ nuôi Q4/2025",
+    "startDate": "2025-10-01",
+    "endDate": "2025-11-10",
+    "selectedRegionIds": ["1"],
+    "selectedZoneIds": ["sub-1-1"],
+    "selectedPlotIds": ["plot-1-1", "plot-1-2"],
+    "crop": "Tôm thẻ chân trắng",
+    "variety": "Thương phẩm",
+    "purpose": "harvest",
+    "area": "2.7",
+    "expectedYield": "20",
+    "growthCycleId": "AQ-TOM-THU-STD",
+    "selectedStages": ["Siết thức ăn", "Thu hoạch"],
+    "materialAllocations": [
+      {
+        "id": 309,
+        "stageId": "Siết thức ăn",
+        "materialCategory": "Thức ăn thủy sản",
+        "materialType": "Cám nổi 32%",
+        "materialName": "Cám nổi 32%",
+        "quantity": "300",
+        "unit": "kg"
+      },
+      {
+        "id": 310,
+        "stageId": "Thu hoạch",
+        "materialCategory": "Dụng cụ",
+        "materialType": "Vợt thu hoạch",
+        "materialName": "Vợt thu hoạch inox",
+        "quantity": "10",
+        "unit": "cái"
+      }
+    ],
+    "taskAllocations": [
+      {
+        "id": 409,
+        "stageId": "Siết thức ăn",
+        "name": "Giảm khẩu phần 30%",
+        "description": "Giảm dần lượng thức ăn để chuẩn bị thu hoạch.",
+        "labor": "2 người",
+        "duration": "7 ngày"
+      },
+      {
+        "id": 410,
+        "stageId": "Thu hoạch",
+        "name": "Thu tôm và phân loại",
+        "description": "Dùng lưới thu hoạch, phân loại theo cỡ và đóng gói tại ao.",
+        "labor": "6 người",
+        "duration": "3 ngày"
+      }
+    ],
+    "status": "completed",
+    "createdAt": "2025-09-25"
+  }
 
 ];
 

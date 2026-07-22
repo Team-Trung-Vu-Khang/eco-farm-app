@@ -31,7 +31,7 @@ export default function PlanPage() {
         <Link href="/plan/create">
           <Button data-testid="add-plan">
             <Plus className="w-4 h-4 mr-2" />
-            Thêm kế hoạch
+            Khởi tạo kế hoạch mới
           </Button>
         </Link>
       }

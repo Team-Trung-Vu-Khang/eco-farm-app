@@ -35,7 +35,7 @@ import {
   animalBreedOptions,
   animalCycleOptions,
   plantCycleOptions,
-} from "../../growth-cycle/data/cycleSelectionData";
+} from "../data/cycleSelectionData";
 import { SEASON_STATUS_OPTIONS } from "../utils/utils";
 import type { SeasonFormData, SeasonStatus } from "../types/types";
 import type { Variety } from "@/pages/variety/types";
