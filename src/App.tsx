@@ -74,6 +74,25 @@ const PlanAnimalGrowthEditPage = lazy(
 const PlanAnimalGrowthWorkflowPage = lazy(
   () => import("./pages/plan-animal-growth/PlanAnimalGrowthWorkflowPage"),
 );
+const PlanAquacultureGrowthPage = lazy(
+  () => import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthPage"),
+);
+const PlanAquacultureGrowthCreatePage = lazy(
+  () =>
+    import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthCreatePage"),
+);
+const PlanAquacultureGrowthDetailPage = lazy(
+  () =>
+    import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthDetailPage"),
+);
+const PlanAquacultureGrowthEditPage = lazy(
+  () =>
+    import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthEditPage"),
+);
+const PlanAquacultureGrowthWorkflowPage = lazy(
+  () =>
+    import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthWorkflowPage"),
+);
 const PlanTypePage = lazy(() => import("./pages/plan-type/PlanTypePage"));
 const FertilizerCreatePage = lazy(
   () => import("./pages/fertilizer/FertilizerCreatePage"),
@@ -942,6 +961,26 @@ function Router() {
       <Route
         path="/plan-animal-growth/:id"
         component={PlanAnimalGrowthDetailPage}
+      />
+      <Route
+        path="/plan-aquaculture-growth"
+        component={PlanAquacultureGrowthPage}
+      />
+      <Route
+        path="/plan-aquaculture-growth/create"
+        component={PlanAquacultureGrowthCreatePage}
+      />
+      <Route
+        path="/plan-aquaculture-growth/:id/workflow"
+        component={PlanAquacultureGrowthWorkflowPage}
+      />
+      <Route
+        path="/plan-aquaculture-growth/:id/edit"
+        component={PlanAquacultureGrowthEditPage}
+      />
+      <Route
+        path="/plan-aquaculture-growth/:id"
+        component={PlanAquacultureGrowthDetailPage}
       />
       <Route
         path="/production-cultivation-report"
