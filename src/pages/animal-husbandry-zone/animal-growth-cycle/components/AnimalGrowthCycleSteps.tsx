@@ -1,0 +1,105 @@
+import { StepperForm, type Step } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useMemo } from "react";
+import { useFormContext } from "react-hook-form";
+import type { z } from "zod";
+import { AnimalGrowthCycleBasicInfoStep } from "./steps/AnimalGrowthCycleBasicInfoStep";
+import { AnimalGrowthCycleConfirmStep } from "./steps/AnimalGrowthCycleConfirmStep";
+import { AnimalGrowthCycleStagesStep } from "./steps/AnimalGrowthCycleStagesStep";
+import type { AnimalGrowthCycleFormValues } from "../schemas/animalGrowthCycleSchema";
+import type {
+  FoundationCropResponse,
+  FoundationCropVarietyResponse,
+} from "@/features/foundation";
+
+interface AnimalGrowthCycleStepsProps {
+  varieties: FoundationCropVarietyResponse[];
+  crops: FoundationCropResponse[];
+  schema: z.ZodType<any, any, any>;
+  onComplete: () => void;
+  onCancel: () => void;
+  isSubmitting?: boolean;
+}
+
+export function AnimalGrowthCycleSteps({
+  varieties,
+  crops,
+  schema,
+  onComplete,
+  onCancel,
+  isSubmitting = false,
+}: AnimalGrowthCycleStepsProps) {
+  const { watch, handleSubmit } = useFormContext<AnimalGrowthCycleFormValues>();
+  const values = watch();
+  const watchedCropId = values.cropId;
+
+  const filteredVarieties = useMemo(() => {
+    if (!watchedCropId) return [];
+    return varieties.filter((v) => String(v.cropId) === watchedCropId);
+  }, [watchedCropId, varieties]);
+
+  const validationResult = useMemo(
+    () => schema.safeParse(values),
+    [schema, values],
+  );
+
+  const isStep1Valid = useMemo(() => {
+    if (validationResult.success) return true;
+    const step1Keys = ["cycleType", "scope", "cropId", "variety"];
+    const step1Errors = validationResult.error.issues.filter((issue) =>
+      step1Keys.includes(String(issue.path[0])),
+    );
+    return step1Errors.length === 0;
+  }, [validationResult]);
+
+  const isStep2Valid = useMemo(() => {
+    if (validationResult.success) return true;
+    const step2Errors = validationResult.error.issues.filter(
+      (issue) => issue.path[0] === "stages",
+    );
+    return step2Errors.length === 0;
+  }, [validationResult]);
+
+  const steps: Step[] = useMemo(
+    () => [
+      {
+        id: "basic",
+        title: "Bước 1",
+        description: "Thông tin chung",
+        content: (
+          <AnimalGrowthCycleBasicInfoStep
+            filteredVarieties={filteredVarieties}
+            crops={crops}
+          />
+        ),
+        isValid: isStep1Valid,
+      },
+      {
+        id: "stages",
+        title: "Bước 2",
+        description: "Danh sách giai đoạn",
+        content: <AnimalGrowthCycleStagesStep />,
+        isValid: isStep2Valid,
+      },
+      {
+        id: "confirm",
+        title: "Bước 3",
+        description: "Xác nhận",
+        content: (
+          <AnimalGrowthCycleConfirmStep varieties={varieties} crops={crops} />
+        ),
+        isValid: true,
+      },
+    ],
+    [filteredVarieties, isStep1Valid, isStep2Valid, varieties, crops],
+  );
+
+  return (
+    <StepperForm
+      steps={steps}
+      onComplete={handleSubmit(onComplete)}
+      onCancel={onCancel}
+      completeLabel="Hoàn thành"
+      loading={isSubmitting}
+    />
+  );
+}

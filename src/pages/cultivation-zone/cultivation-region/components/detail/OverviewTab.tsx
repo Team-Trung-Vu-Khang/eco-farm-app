@@ -36,8 +36,10 @@ import {
   Polygon,
   useMap,
   Tooltip,
+  Marker,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import { divIcon } from "leaflet";
 import { DISTRICTS, PROVINCES } from "../../../../region-chart/constants";
 import styles from "../../styles.module.css";
 import type { CultivationRegionDetails } from "../../useCultivationRegionDetail";
@@ -68,6 +70,31 @@ const getBoundaryPoints = (item: any): any[] | undefined => {
   if (!item) return undefined;
   return item.boundary || item.coordinates;
 };
+const getCenterPoint = (item: any): [number, number] | null => {
+  if (!item) return null;
+  return getCoordinatePair(item.centerPoint || item.center);
+};
+
+const RedMarker = () =>
+  divIcon({
+    html: `
+      <div style="position: relative; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+        <div style="position: absolute; width: 30px; height: 30px; background-color: #ef4444; border-radius: 50%; opacity: 0.3; transform: scale(1.4); animation: pulse 2s infinite;"></div>
+        <div style="position: absolute; width: 14px; height: 14px; background-color: #ef4444; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>
+      </div>
+      <style>
+        @keyframes pulse {
+          0% { transform: scale(0.95); opacity: 0.5; }
+          50% { transform: scale(1.6); opacity: 0; }
+          100% { transform: scale(0.95); opacity: 0.5; }
+        }
+      </style>
+    `,
+    className: "custom-center-marker",
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+  });
+
 const MapController = ({
   center,
   zoom,
@@ -82,13 +109,58 @@ const MapController = ({
   return null;
 };
 
-const MapBoundsSync = ({ bounds }: { bounds: [number, number][] | null }) => {
+const MapResizeListener = () => {
   const map = useMap();
   useEffect(() => {
+    if (typeof ResizeObserver === "undefined") return;
+
+    const container = map.getContainer();
+    const observer = new ResizeObserver(() => {
+      const timer = setTimeout(() => {
+        map.invalidateSize();
+      }, 100);
+      return () => clearTimeout(timer);
+    });
+
+    observer.observe(container);
+    return () => {
+      observer.disconnect();
+    };
+  }, [map]);
+
+  return null;
+};
+
+const MapBoundsSync = ({
+  bounds,
+  centerPoint,
+}: {
+  bounds: [number, number][] | null;
+  centerPoint: [number, number] | null;
+}) => {
+  const map = useMap();
+  useEffect(() => {
+    // Invalidate Leaflet map size on render/update to ensure correct drawing of layers/markers
+    map.invalidateSize();
+
     if (bounds && bounds.length > 0) {
       map.fitBounds(bounds, { padding: [20, 20] });
+    } else if (centerPoint) {
+      map.setView(centerPoint, 15);
     }
-  }, [bounds, map]);
+
+    // Schedule layout recalculation to run after the CSS transition of Dialog finishes (approx 300ms)
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+      if (bounds && bounds.length > 0) {
+        map.fitBounds(bounds, { padding: [20, 20] });
+      } else if (centerPoint) {
+        map.setView(centerPoint, 15);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [bounds, centerPoint, map]);
   return null;
 };
 
@@ -269,11 +341,32 @@ export const OverviewTab = ({
 
     const bounds = allCoords.length > 0 ? allCoords : null;
 
+    let centerPoint: [number, number] | null = null;
+    if (allCoords.length === 0) {
+      for (const r of regionsToRender) {
+        const cp = getCenterPoint(r.region);
+        if (cp) {
+          centerPoint = cp;
+          break;
+        }
+      }
+      if (!centerPoint) {
+        for (const a of areasToRender) {
+          const cp = getCenterPoint(a.area);
+          if (cp) {
+            centerPoint = cp;
+            break;
+          }
+        }
+      }
+    }
+
     return {
       regions: regionsToRender,
       areas: areasToRender,
       plots: plotsToRender,
       bounds,
+      centerPoint,
       explicitRegionIds,
       explicitAreaIds,
       explicitPlotIds,
@@ -833,8 +926,24 @@ export const OverviewTab = ({
             center={scopeMapView.center}
             zoom={scopeMapView.zoom}
           />
-          <MapBoundsSync bounds={scopeMapData?.bounds ?? []} />
+          <MapResizeListener />
+          <MapBoundsSync
+            bounds={scopeMapData?.bounds ?? null}
+            centerPoint={scopeMapData?.centerPoint ?? null}
+          />
           <ScopeMapPolygons />
+          {scopeMapData?.centerPoint && (
+            <Marker position={scopeMapData.centerPoint} icon={RedMarker()}>
+              <Tooltip sticky direction="top" opacity={0.95}>
+                <div style={{ fontWeight: 600, fontSize: 12 }}>
+                  {details.region?.name || area.name}
+                </div>
+                <div style={{ fontSize: 10, color: "#64748b" }}>
+                  Tọa độ trung tâm
+                </div>
+              </Tooltip>
+            </Marker>
+          )}
         </MapContainer>
 
         <button
@@ -854,7 +963,7 @@ export const OverviewTab = ({
             <DialogTitle>Bản đồ phạm vi vùng canh tác</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col md:flex-row h-full">
-            <div className="flex-1 relative bg-slate-100">
+            <div className="flex-1 h-[50vh] md:h-auto relative bg-slate-100">
               <MapContainer
                 center={[scopeMapView.center.lat, scopeMapView.center.lng]}
                 zoom={scopeMapView.zoom}
@@ -866,21 +975,31 @@ export const OverviewTab = ({
                   center={scopeMapView.center}
                   zoom={scopeMapView.zoom}
                 />
-                <MapBoundsSync bounds={scopeMapData?.bounds} />
+                <MapResizeListener />
+                <MapBoundsSync
+                  bounds={scopeMapData?.bounds ?? null}
+                  centerPoint={scopeMapData?.centerPoint ?? null}
+                />
                 <ScopeMapPolygons />
+                {scopeMapData?.centerPoint && (
+                  <Marker
+                    position={scopeMapData.centerPoint}
+                    icon={RedMarker()}
+                  >
+                    <Tooltip sticky direction="top" opacity={0.95}>
+                      <div style={{ fontWeight: 600, fontSize: 12 }}>
+                        {details.region?.name || area.name}
+                      </div>
+                      <div style={{ fontSize: 10, color: "#64748b" }}>
+                        Tọa độ trung tâm
+                      </div>
+                    </Tooltip>
+                  </Marker>
+                )}
               </MapContainer>
-
-              <button
-                type="button"
-                onClick={() => setIsScopeMapExpanded(false)}
-                className="absolute top-4 right-4 z-[1000] p-3 rounded-2xl bg-white/90 backdrop-blur-md shadow-xl hover:bg-white text-slate-600 transition-all active:scale-95"
-                aria-label="Đóng"
-              >
-                <X size={20} />
-              </button>
             </div>
 
-            <div className="w-full md:w-[360px] h-[300px] md:h-full bg-white border-t md:border-t-0 md:border-l border-slate-100 flex flex-col overflow-hidden shrink-0">
+            <div className="md:w-[360px] h-[300px] md:h-full bg-white border-t md:border-t-0 md:border-l border-slate-100 flex flex-col overflow-hidden shrink-0">
               <div className="px-5 pt-5 pb-4 border-b bg-slate-50/60">
                 <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                   <MapPin size={14} className="text-primary" />

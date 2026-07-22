@@ -22,6 +22,11 @@ export {
   useFarmingMethodCropById,
   farmingMethodCropKeys,
 } from "./hooks/useFarmingMethodCrops";
+export {
+  useLifecycleTemplates,
+  useLifecycleTemplateById,
+  lifecycleTemplateKeys,
+} from "./hooks/useLifecycleTemplates";
 
 // ─── Mutation Hooks ───────────────────────────────────────────────────────────
 export { useCatalogMutations } from "./hooks/useCatalogMutations";
@@ -29,6 +34,7 @@ export { useCropMutations } from "./hooks/useCropMutations";
 export { useCropVarietyMutations } from "./hooks/useCropVarietyMutations";
 export { useGrowthCycleTemplateMutations } from "./hooks/useGrowthCycleTemplateMutations";
 export { useFarmingMethodCropMutations } from "./hooks/useFarmingMethodCropMutations";
+export { useLifecycleTemplateMutations } from "./hooks/useLifecycleTemplateMutations";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 export * from "@/shared/constants/foundation.constants";

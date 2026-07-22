@@ -380,9 +380,94 @@ const PesticideGroupPage = lazy(
 const EquipmentGroupPage = lazy(
   () => import("./pages/equipment-group/EquipmentGroupPage"),
 );
+const AnimalHusbandryRegionPage = lazy(
+  () =>
+    import("./pages/animal-husbandry-zone/animal-husbandry-region/AnimalHusbandryRegionPage"),
+);
+const AnimalHusbandryRegionCreatePage = lazy(
+  () =>
+    import("./pages/animal-husbandry-zone/animal-husbandry-region/AnimalHusbandryRegionCreatePage"),
+);
+const AnimalHusbandryRegionDetailPage = lazy(
+  () =>
+    import("./pages/animal-husbandry-zone/animal-husbandry-region/AnimalHusbandryRegionDetailPage"),
+);
+const AnimalHusbandryRegionEditPage = lazy(
+  () =>
+    import("./pages/animal-husbandry-zone/animal-husbandry-region/AnimalHusbandryRegionEditPage"),
+);
+const AnimalHusbandryRegionWorkflowPage = lazy(
+  () =>
+    import("./pages/animal-husbandry-zone/animal-husbandry-region/AnimalHusbandryRegionWorkflowPage"),
+);
+const AnimalHusbandrySearchZonePage = lazy(
+  () => import("./pages/animal-husbandry-zone/search-zone/SearchZonePage"),
+);
+
 const PlantIdentificationListPage = lazy(
   () =>
     import("./pages/cultivation-zone/cultivation-region/PlantIdentificationListPage"),
+);
+
+const AnimalIdentificationSearchPage = lazy(
+  () =>
+    import("./pages/animal-husbandry-zone/animal-identification/AnimalIdentificationSearchPage"),
+);
+
+const AnimalIdentificationSearchFarmPage = lazy(
+  () =>
+    import("./pages/animal-husbandry-zone/animal-identification/AnimalIdentificationSearchFarmPage"),
+);
+
+const AnimalIdentificationListPage = lazy(
+  () =>
+    import("./pages/animal-husbandry-zone/animal-identification/AnimalIdentificationListPage"),
+);
+const AnimalIdentificationCreatePage = lazy(
+  () =>
+    import("./pages/animal-husbandry-zone/animal-identification/AnimalIdentificationCreatePage"),
+);
+const AnimalIdentificationDetailPage = lazy(
+  () =>
+    import("./pages/animal-husbandry-zone/animal-identification/AnimalIdentificationDetailPage"),
+);
+const AnimalIdentificationEditPage = lazy(
+  () =>
+    import("./pages/animal-husbandry-zone/animal-identification/AnimalIdentificationEditPage"),
+);
+
+const AnimalDistributionListPage = lazy(
+  () =>
+    import("./pages/animal-husbandry-zone/animal-distribution-detail/AnimalDistributionListPage"),
+);
+const AnimalDistributionCreatePage = lazy(
+  () =>
+    import("./pages/animal-husbandry-zone/animal-distribution-detail/AnimalDistributionCreatePage"),
+);
+const AnimalDistributionDetailPage = lazy(
+  () =>
+    import("./pages/animal-husbandry-zone/animal-distribution-detail/AnimalDistributionDetailPage"),
+);
+
+const AnimalGrowthCyclePage = lazy(
+  () =>
+    import("./pages/animal-husbandry-zone/animal-growth-cycle/AnimalGrowthCyclePage"),
+);
+const AnimalGrowthCycleDetailPage = lazy(
+  () =>
+    import("./pages/animal-husbandry-zone/animal-growth-cycle/AnimalGrowthCycleDetailPage"),
+);
+const CreateAnimalGrowthCyclePage = lazy(
+  () =>
+    import("./pages/animal-husbandry-zone/animal-growth-cycle/CreateAnimalGrowthCyclePage"),
+);
+const UpdateAnimalGrowthCyclePage = lazy(
+  () =>
+    import("./pages/animal-husbandry-zone/animal-growth-cycle/UpdateAnimalGrowthCyclePage"),
+);
+const AnimalGrowthCycleWorkflowPage = lazy(
+  () =>
+    import("./pages/animal-husbandry-zone/animal-growth-cycle/AnimalGrowthCycleWorkflowPage"),
 );
 const PlantIdentificationDetailPage = lazy(
   () =>
@@ -597,6 +682,92 @@ function Router() {
         path="/cultivation-region/:id/edit"
         component={CultivationRegionCreatePage}
       />
+
+      {/* Animal Husbandry Zone Sub-Routes */}
+      <Route
+        path="/animal-husbandry-region"
+        component={AnimalHusbandryRegionPage}
+      />
+      <Route
+        path="/animal-husbandry-region/create"
+        component={AnimalHusbandryRegionCreatePage}
+      />
+      <Route
+        path="/animal-husbandry-region/search"
+        component={AnimalHusbandrySearchZonePage}
+      />
+      <Route
+        path="/animal-husbandry-region/:id"
+        component={AnimalHusbandryRegionDetailPage}
+      />
+      <Route
+        path="/animal-husbandry-region/:id/workflow"
+        component={AnimalHusbandryRegionWorkflowPage}
+      />
+      <Route
+        path="/animal-husbandry-region/:id/edit"
+        component={AnimalHusbandryRegionCreatePage}
+      />
+
+      <Route
+        path="/animal-identification"
+        component={AnimalIdentificationListPage}
+      />
+      <Route
+        path="/animal-identification/create"
+        component={AnimalIdentificationCreatePage}
+      />
+      <Route
+        path="/animal-identification/search"
+        component={AnimalIdentificationSearchFarmPage}
+      />
+      <Route
+        path="/animal-identification/search-farm"
+        component={AnimalHusbandrySearchZonePage}
+      />
+      <Route
+        path="/animal-identification/:id"
+        component={AnimalIdentificationDetailPage}
+      />
+      <Route
+        path="/animal-identification/:id/edit"
+        component={AnimalIdentificationEditPage}
+      />
+      <Route
+        path="/animal-distribution-detail"
+        component={AnimalDistributionListPage}
+      />
+      <Route
+        path="/animal-distribution-detail/create"
+        component={AnimalDistributionCreatePage}
+      />
+      <Route
+        path="/animal-distribution-detail/:id"
+        component={AnimalDistributionDetailPage}
+      />
+      <Route
+        path="/animal-distribution-detail/:id/edit"
+        component={AnimalDistributionCreatePage}
+      />
+
+      <Route path="/animal-growth-cycle" component={AnimalGrowthCyclePage} />
+      <Route
+        path="/animal-growth-cycle/create"
+        component={CreateAnimalGrowthCyclePage}
+      />
+      <Route
+        path="/animal-growth-cycle/:id"
+        component={AnimalGrowthCycleDetailPage}
+      />
+      <Route
+        path="/animal-growth-cycle/:id/edit"
+        component={UpdateAnimalGrowthCyclePage}
+      />
+      <Route
+        path="/animal-growth-cycle/:id/workflow"
+        component={AnimalGrowthCycleWorkflowPage}
+      />
+
       <Route
         path="/distribution-detail"
         component={PlantDistributionListPage}

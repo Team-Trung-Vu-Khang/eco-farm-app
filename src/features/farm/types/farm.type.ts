@@ -278,6 +278,13 @@ export interface SeedRef {
   cropName?: string;
 }
 
+export interface SubjectVariantRef {
+  id: number;
+  subjectVariantCode?: string;
+  subjectVariantName?: string;
+  productionSubjectName?: string;
+}
+
 export interface FarmCultivationZoneScopeResponse {
   scopeType: FarmCultivationZoneScopeType;
   region?: RegionRef;
@@ -288,6 +295,7 @@ export interface FarmCultivationZoneScopeResponse {
 export interface FarmCultivationZoneRequest {
   code?: string;
   name?: string;
+  domainCode?: "CROP" | "LIVESTOCK";
   scopes?: FarmCultivationZoneScopeRequest[];
   certificateIds?: number[];
   personnelIds?: number[];
@@ -304,18 +312,25 @@ export interface FarmCultivationZoneResponse {
   id: number;
   code?: string;
   name?: string;
+  domainCode?: "CROP" | "LIVESTOCK";
   scopes?: FarmCultivationZoneScopeResponse[];
   certificates?: CatalogRef[];
   personnel?: PersonnelRef[];
   farmingMethod?: CatalogRef;
+  productionMethod?: CatalogRef;
   irrigationSystem?: CatalogRef;
   seeds?: SeedRef[];
   notes?: string;
+  subjectVariants?: SubjectVariantRef[];
   status?: FarmCultivationZoneStatus;
   displayOrder?: number;
   metadataJson?: Record<string, unknown>;
   createdAt?: string;
   updatedAt?: string;
+  centerPoint?: {
+    latitude: number;
+    longitude: number;
+  };
 }
 
 export interface CultivationZoneQueryParams {
@@ -323,6 +338,7 @@ export interface CultivationZoneQueryParams {
   status?: FarmCultivationZoneStatus;
   farmingMethodId?: number;
   irrigationSystemId?: number;
+  domainCode?: "CROP" | "LIVESTOCK";
   page?: number;
   size?: number;
 }
@@ -333,15 +349,18 @@ export interface FarmPlantIdentificationRequest {
   code?: string;
   location: FarmCultivationZoneScopeRequest;
   cultivationZoneId?: number;
+  productionZoneId?: number;
   height?: number;
   durationDays?: number;
   plantedAt?: string;
+  startedAt?: string;
   latitude: number;
   longitude: number;
   notes?: string;
   status?: "active" | "inactive" | "archived";
   displayOrder?: number;
   metadataJson?: Record<string, unknown>;
+  domainCode?: "CROP" | "LIVESTOCK";
 }
 
 export interface FarmPlantIdentificationResponse {
@@ -349,10 +368,12 @@ export interface FarmPlantIdentificationResponse {
   workspaceId?: number;
   location?: FarmCultivationZoneScopeResponse;
   cultivationZone?: CatalogRef;
+  productionZone?: CatalogRef;
   code?: string;
   height?: number;
   durationDays?: number;
   plantedAt?: string;
+  startedAt?: string;
   latitude?: number;
   longitude?: number;
   notes?: string;
@@ -360,6 +381,7 @@ export interface FarmPlantIdentificationResponse {
   displayOrder?: number;
   metadataJson?: Record<string, unknown>;
   createdAt?: string;
+  domainCode?: "CROP" | "LIVESTOCK";
   updatedAt?: string;
 }
 
@@ -370,7 +392,7 @@ export interface PlantIdentificationQueryParams {
   cultivationZoneId?: number;
   keyword?: string;
   status?: string;
+  domainCode?: "CROP" | "LIVESTOCK";
   page?: number;
   size?: number;
 }
-

@@ -278,3 +278,36 @@ export interface FarmingMethodCropResponse {
 
 export interface FarmingMethodCropQueryParams extends BaseQueryParams {
 }
+
+// ─── Lifecycle Templates (Animal/Crop/Aquaculture Lifecycle) ──────────────────
+export interface LifecycleStage {
+  id?: number;
+  name: string;
+  durationDays: number;
+  description?: string;
+  displayOrder?: number;
+}
+
+export interface LifecycleTemplate {
+  id?: number;
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  code?: string;
+  name: string;
+  subjectId?: number;
+  subjectVariantId?: number;
+  subjectGroupId?: number;
+  expectedDays?: number;
+  description?: string;
+  stages?: LifecycleStage[];
+  displayOrder?: number;
+  status?: FoundationStatus;
+  metadataJson?: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface LifecycleTemplateQueryParams extends BaseQueryParams {
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  subjectId?: number;
+  subjectGroupId?: number;
+}

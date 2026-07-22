@@ -20,6 +20,8 @@ import type {
   FarmingMethodCropResponse,
   FarmingMethodCropQueryParams,
   PageResponse,
+  LifecycleTemplate,
+  LifecycleTemplateQueryParams,
 } from "../types/foundation.type";
 import { apiClient } from "@/shared/lib/axios";
 
@@ -198,4 +200,31 @@ export const farmingMethodCropApi = {
 
   delete: (id: number) =>
     apiClient.delete(`${FOUNDATION_ENDPOINTS.farmingMethodCrops}/${id}`),
+};
+
+// ─── Lifecycle Template API ───────────────────────────────────────────────────
+
+export const lifecycleTemplateApi = {
+  list: (params?: LifecycleTemplateQueryParams) =>
+    apiClient
+      .get<PageResponse<LifecycleTemplate>>(FOUNDATION_ENDPOINTS.lifecycleTemplates, { params })
+      .then((r) => r.data),
+
+  getById: (id: number) =>
+    apiClient
+      .get<LifecycleTemplate>(`${FOUNDATION_ENDPOINTS.lifecycleTemplates}/${id}`)
+      .then((r) => r.data),
+
+  create: (data: LifecycleTemplate) =>
+    apiClient
+      .post<LifecycleTemplate>(FOUNDATION_ENDPOINTS.lifecycleTemplates, data)
+      .then((r) => r.data),
+
+  update: (id: number, data: LifecycleTemplate) =>
+    apiClient
+      .put<LifecycleTemplate>(`${FOUNDATION_ENDPOINTS.lifecycleTemplates}/${id}`, data)
+      .then((r) => r.data),
+
+  delete: (id: number) =>
+    apiClient.delete(`${FOUNDATION_ENDPOINTS.lifecycleTemplates}/${id}`),
 };

@@ -171,22 +171,32 @@ export const useCultivationRegionDetail = (id?: string | null) => {
       irrigationMethodId: String(areaData.irrigationSystem?.id ?? ""),
       selectedCrops: Array.from(
         new Set(
-          (areaData.seeds ?? [])
+          (areaData.seeds ?? areaData.subjectVariants ?? [])
             .map((seed) => {
               const fullSeed = allSeeds.find((fs) => fs.id === seed.id);
-              return fullSeed?.cropVariety?.id
-                ? String(fullSeed.cropVariety.id)
-                : "";
+              if (fullSeed?.cropVariety?.id) {
+                return String(fullSeed.cropVariety.id);
+              }
+              if (seed.id) {
+                return String(seed.id);
+              }
+              return "";
             })
             .filter(Boolean),
         ),
       ),
       seedSelections: (() => {
         const selectionsMap: Record<string, string[]> = {};
-        (areaData.seeds ?? []).forEach((seed) => {
+        (areaData.seeds ?? areaData.subjectVariants ?? []).forEach((seed) => {
           const fullSeed = allSeeds.find((fs) => fs.id === seed.id);
           if (fullSeed?.cropVariety?.id) {
             const cropVarietyId = String(fullSeed.cropVariety.id);
+            if (!selectionsMap[cropVarietyId]) {
+              selectionsMap[cropVarietyId] = [];
+            }
+            selectionsMap[cropVarietyId].push(String(seed.id));
+          } else if (seed.id) {
+            const cropVarietyId = String(seed.id);
             if (!selectionsMap[cropVarietyId]) {
               selectionsMap[cropVarietyId] = [];
             }
@@ -201,6 +211,7 @@ export const useCultivationRegionDetail = (id?: string | null) => {
           : ("inactive" as const),
       createdAt: areaData.createdAt ?? "",
       selections,
+      centerPoint: areaData.centerPoint,
     };
   }, [areaData, allSeeds]);
 
@@ -265,12 +276,13 @@ export const useCultivationRegionDetail = (id?: string | null) => {
       .filter((e): e is any => e !== null);
 
     const firstEntity = selectedEntities[0];
-    const region =
-      firstEntity
-        ? (regions.find(
-            (r) => r.id.toString() === String(firstEntity.regionId ?? ""),
-          ) ?? firstEntity._regionData ?? null)
-        : null;
+    const region = firstEntity
+      ? (regions.find(
+          (r) => r.id.toString() === String(firstEntity.regionId ?? ""),
+        ) ??
+        firstEntity._regionData ??
+        null)
+      : null;
 
     const totalAreaValue = selectedEntities.reduce(
       (sum, e) => sum + (e.area || 0),
@@ -285,8 +297,7 @@ export const useCultivationRegionDetail = (id?: string | null) => {
       const aId = entity.areaId != null ? String(entity.areaId) : "none";
 
       if (!acc[rId]) {
-        const regionData =
-          entity._regionData ??
+        const regionData = entity._regionData ??
           regions.find((r) => r.id.toString() === rId) ?? {
             id: parseInt(rId, 10),
             name: rId,
@@ -307,6 +318,7 @@ export const useCultivationRegionDetail = (id?: string | null) => {
 
     // Resolve unified configuration from backend response first, fallback to mock store if unavailable
     const farmingMethod =
+      areaData.productionMethod ||
       areaData.farmingMethod ||
       farmingMethods.find((m) => String(m.id) === area.farmingMethodId);
     const irrigationMethod =
@@ -314,46 +326,63 @@ export const useCultivationRegionDetail = (id?: string | null) => {
       irrigationSystems.find((m) => String(m.id) === area.irrigationMethodId);
 
     // Group selected seeds by their crop variety to build the technicalConfig crops list
-    const commonCrops = Array.from(
-      new Map(
-        (areaData.seeds ?? [])
-          .map((s) => allSeeds.find((fs) => fs.id === s.id))
-          .filter(
-            (fs): fs is NonNullable<typeof fs> => !!fs && !!fs.cropVariety?.id,
-          )
-          .map((fs) => {
-            const cropVarietyId = String(fs.cropVariety.id);
-            // Get all seeds in this variety
-            const selectedSeedsForVariety = (areaData.seeds ?? [])
-              .map((seed) => allSeeds.find((fsSeed) => fsSeed.id === seed.id))
-              .filter(
-                (fsSeed): fsSeed is NonNullable<typeof fsSeed> =>
-                  !!fsSeed && fsSeed.cropVariety?.id === fs.cropVariety.id,
-              )
-              .map((fsSeed) => ({
-                id: String(fsSeed.id),
-                varietyName:
-                  fsSeed.cropVariety?.name ??
-                  fsSeed.supplier?.name ??
-                  "Hạt giống",
-                origin: fsSeed.origin || "Việt Nam",
-              }));
+    const commonCrops =
+      areaData.subjectVariants && areaData.subjectVariants.length > 0
+        ? areaData.subjectVariants.map((sv: any) => {
+            return {
+              id: String(sv.id),
+              varietyName: sv.subjectVariantName ?? "",
+              varietyCode: sv.subjectVariantCode ?? "",
+              crop: sv.productionSubjectName ?? "Khác",
+              illustration: "", // we don't have illustration url from subjectVariants, but we can display a default or leave empty
+              seedType: "Hạt giống",
+              selectedSeeds: [],
+            };
+          })
+        : Array.from(
+            new Map(
+              (areaData.seeds ?? [])
+                .map((s) => allSeeds.find((fs) => fs.id === s.id))
+                .filter(
+                  (fs): fs is NonNullable<typeof fs> =>
+                    !!fs && !!fs.cropVariety?.id,
+                )
+                .map((fs) => {
+                  const cropVarietyId = String(fs.cropVariety.id);
+                  // Get all seeds in this variety
+                  const selectedSeedsForVariety = (areaData.seeds ?? [])
+                    .map((seed) =>
+                      allSeeds.find((fsSeed) => fsSeed.id === seed.id),
+                    )
+                    .filter(
+                      (fsSeed): fsSeed is NonNullable<typeof fsSeed> =>
+                        !!fsSeed &&
+                        fsSeed.cropVariety?.id === fs.cropVariety.id,
+                    )
+                    .map((fsSeed) => ({
+                      id: String(fsSeed.id),
+                      varietyName:
+                        fsSeed.cropVariety?.name ??
+                        fsSeed.supplier?.name ??
+                        "Hạt giống",
+                      origin: fsSeed.origin || "Việt Nam",
+                    }));
 
-            return [
-              cropVarietyId,
-              {
-                id: cropVarietyId,
-                varietyName: fs.cropVariety.name ?? "",
-                varietyCode: fs.cropVariety.code ?? "",
-                crop: fs.crop?.name ?? "Khác",
-                illustration: fs.imageUrl || "",
-                seedType: "Hạt giống lai", // Fallback description
-                selectedSeeds: selectedSeedsForVariety,
-              },
-            ];
-          }),
-      ).values(),
-    );
+                  return [
+                    cropVarietyId,
+                    {
+                      id: cropVarietyId,
+                      varietyName: fs.cropVariety.name ?? "",
+                      varietyCode: fs.cropVariety.code ?? "",
+                      crop: fs.crop?.name ?? "Khác",
+                      illustration: fs.imageUrl || "",
+                      seedType: "Hạt giống lai", // Fallback description
+                      selectedSeeds: selectedSeedsForVariety,
+                    },
+                  ];
+                }),
+            ).values(),
+          );
 
     // Mock region-level stats
     const regionStats = {

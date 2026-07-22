@@ -10,6 +10,7 @@ export const FOUNDATION_ENDPOINTS = {
   cropVarieties: `${FOUNDATION_BASE_PATH}/crop-varieties`,
   growthCycleTemplates: `${FOUNDATION_BASE_PATH}/growth-cycle-templates`,
   farmingMethodCrops: `${FOUNDATION_BASE_PATH}/farming-method-crops`,
+  lifecycleTemplates: `${FOUNDATION_BASE_PATH}/production/lifecycle-templates`,
 } as const;
 
 export const FOUNDATION_CATALOGS = [
