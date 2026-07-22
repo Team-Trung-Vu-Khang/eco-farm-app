@@ -16,7 +16,7 @@ import {
 import { Search, Sprout, Calendar, FilterX } from "lucide-react";
 import useGrowthCycleStore from "../../../stores/useGrowthCycleStore";
 import { CROP_OPTIONS } from "../../../constants/crops";
-import { animalCycleOptions } from "../../growth-cycle/data/cycleSelectionData";
+import { animalCycleOptions } from "../data/cycleSelectionData";
 import type { GrowthCycle } from "../../growth-cycle/types/types";
 
 interface GrowthCycleSelectDialogProps {

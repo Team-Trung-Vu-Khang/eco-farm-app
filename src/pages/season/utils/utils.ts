@@ -1,5 +1,5 @@
 import { CROP_OPTIONS } from "@/constants/crops";
-import { animalCycleOptions } from "@/pages/growth-cycle/data/cycleSelectionData";
+import { animalCycleOptions } from "../data/cycleSelectionData";
 import type {
   CreateSeasonForm,
   SeasonDocument,

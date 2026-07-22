@@ -2,8 +2,11 @@ import useVarietyStore from "@/stores/useVarietyStore";
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Calendar, FileText, Hash, Layers } from "lucide-react";
 import { Link } from "wouter";
-import { animalBreedOptions, animalCycleOptions } from "@/pages/growth-cycle/data/cycleSelectionData";
 import { CROP_OPTIONS } from "@/constants/crops";
+import {
+  animalBreedOptions,
+  animalCycleOptions,
+} from "./cycleSelectionData";
 import type { Season } from "../types/types";
 
 function resolveSeasonType(season: Season) {
