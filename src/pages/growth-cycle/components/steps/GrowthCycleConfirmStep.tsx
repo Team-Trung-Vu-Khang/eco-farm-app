@@ -2,10 +2,9 @@ import { Badge, Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Calendar,
   ChevronRight,
-  Fish,
   Layers,
   Layout,
-  Sprout,
+  TreeDeciduous,
 } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 import type { GrowthCycleFormValues } from "../../schemas/growthCycleSchema";
@@ -32,7 +31,6 @@ export function GrowthCycleConfirmStep({
   const varietyName =
     varieties.find((variety) => String(variety.id) === formData.variety)
       ?.name || formData.variety;
-  const isPlant = (formData.cycleType ?? "plant") === "plant";
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 py-4">
@@ -49,18 +47,11 @@ export function GrowthCycleConfirmStep({
           </div>
           <div className="flex justify-between items-center py-2 border-b border-muted">
             <span className="text-sm text-muted-foreground">Nhóm chu kỳ:</span>
-            <Badge variant={isPlant ? "default" : "secondary"}>
-              {isPlant ? (
-                <span className="flex items-center gap-2">
-                  <Sprout className="w-3.5 h-3.5" />
-                  Thực vật
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Fish className="w-3.5 h-3.5" />
-                  Vật nuôi / Thủy sản
-                </span>
-              )}
+            <Badge variant="default">
+              <span className="flex items-center gap-2">
+                <TreeDeciduous className="w-3.5 h-3.5" />
+                Chu kỳ
+              </span>
             </Badge>
           </div>
           <div className="flex justify-between items-center py-2 border-b border-muted">
@@ -73,17 +64,17 @@ export function GrowthCycleConfirmStep({
           </div>
           <div className="flex justify-between items-center py-2 border-b border-muted">
             <span className="text-sm text-muted-foreground">
-              {isPlant ? "Loại cây trồng:" : "Đối tượng nuôi:"}
+              Loại cây trồng:
             </span>
             <span className="font-bold">{cropName}</span>
           </div>
           {formData.scope === "variety" && (
             <div className="flex justify-between items-center py-2 border-b border-muted">
               <span className="text-sm text-muted-foreground">
-                {isPlant ? "Giống cây trồng:" : "Giống / dòng:"}
+                Giống cây trồng:
               </span>
               <div className="flex items-center gap-2">
-                <Sprout className="w-4 h-4 text-green-600" />
+                <TreeDeciduous className="w-4 h-4 text-green-600" />
                 <span className="font-bold">{varietyName}</span>
               </div>
             </div>

@@ -3,31 +3,18 @@ import {
   FormField,
   FormItem,
   FormMessage,
+  Input,
   Label,
   RadioGroup,
   RadioGroupItem,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  Input,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  ChevronDown,
-  Fish,
-  Flower2,
-  PawPrint,
-  TreeDeciduous,
-} from "lucide-react";
+import { ChevronDown, Flower2, TreeDeciduous } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useFormContext } from "react-hook-form";
 import type {
   FoundationCropResponse,
   FoundationCropVarietyResponse,
 } from "../../../../features/foundation/types/foundation.type";
-import {
-  animalBreedOptions,
-  animalCycleOptions,
-} from "../../data/cycleSelectionData";
 import type { GrowthCycleFormValues } from "../../schemas/growthCycleSchema";
 import {
   GrowthCycleHierarchyDialog,
@@ -218,46 +205,39 @@ export function GrowthCycleBasicInfoStep({
   const { watch, setValue, control } = useFormContext<GrowthCycleFormValues>();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const watchedCycleType = watch("cycleType") ?? "plant";
   const watchedScope = watch("scope");
   const watchedCropId = watch("cropId");
   const watchedVariety = watch("variety");
 
-  const isPlant = watchedCycleType === "plant";
-  const primaryOptions = isPlant
-    ? crops.map((c) => ({
-        id: String(c.id),
-        name: c.name,
-        group: c.cropGroupName,
-        image: c.imageUrl ?? "",
-        description: c.description ?? "",
-      }))
-    : animalCycleOptions;
+  const primaryOptions = crops.map((c) => ({
+    id: String(c.id),
+    name: c.name,
+    group: c.cropGroupName,
+    image: c.imageUrl ?? "",
+    description: c.description ?? "",
+  }));
 
   const primaryMap = new Map<string, GrowthCycleHierarchyPrimaryOption>(
     primaryOptions.map((item) => [item.id, item]),
   );
 
-  const childOptions: GrowthCycleHierarchyChildOption[] = isPlant
-    ? filteredVarieties.map((variety) => {
-        const metadata: Record<string, unknown> = variety.metadataJson || {};
-        return {
-          id: String(variety.id),
-          primaryId: String(variety.cropId),
-          name: variety.name,
-          group: String(metadata.scientificName || variety.cropName),
-          image:
-            typeof metadata.illustrationUrl === "string"
-              ? metadata.illustrationUrl
-              : "",
-          description: variety.description || "",
-          code: variety.code,
-        };
-      })
-    : animalBreedOptions.map((breed) => ({
-        ...breed,
-        group: primaryMap.get(breed.primaryId)?.group || "",
-      }));
+  const childOptions: GrowthCycleHierarchyChildOption[] = filteredVarieties.map(
+    (variety) => {
+      const metadata: Record<string, unknown> = variety.metadataJson || {};
+      return {
+        id: String(variety.id),
+        primaryId: String(variety.cropId),
+        name: variety.name,
+        group: String(metadata.scientificName || variety.cropName),
+        image:
+          typeof metadata.illustrationUrl === "string"
+            ? metadata.illustrationUrl
+            : "",
+        description: variety.description || "",
+        code: variety.code,
+      };
+    },
+  );
 
   const selectedPrimary = primaryOptions.find(
     (item) => item.id === watchedCropId,
@@ -266,115 +246,42 @@ export function GrowthCycleBasicInfoStep({
 
   const selectionTitle = selectedPrimary
     ? selectedPrimary.name
-    : isPlant
-      ? "Chọn loại cây"
-      : "Chọn đối tượng nuôi";
+    : "Chọn loại cây";
 
   const selectionSubtitle = selectedPrimary
     ? selectedPrimary.group
-    : isPlant
-      ? "Mở dialog để chọn loại cây"
-      : "Mở dialog để chọn đối tượng nuôi";
+    : "Mở dialog để chọn loại cây";
 
   const selectionDetail = selectedPrimary?.description;
 
-  const varietyTitle = selectedChild
-    ? selectedChild.name
-    : isPlant
-      ? "Chọn giống cây"
-      : "Chọn giống / dòng";
+  const varietyTitle = selectedChild ? selectedChild.name : "Chọn giống cây";
 
   const varietySubtitle = !selectedPrimary
-    ? isPlant
-      ? "Chọn loại cây trước"
-      : "Chọn đối tượng nuôi trước"
+    ? "Chọn loại cây trước"
     : selectedChild
       ? selectedChild.group
-      : isPlant
-        ? "Mở dialog để chọn giống cây"
-        : "Mở dialog để chọn giống / dòng";
+      : "Mở dialog để chọn giống cây";
 
   const varietyDetail = !selectedPrimary
-    ? isPlant
-      ? "Vùng chọn này sẽ bật sau khi chọn loại cây."
-      : "Vùng chọn này sẽ bật sau khi chọn đối tượng nuôi."
+    ? "Vùng chọn này sẽ bật sau khi chọn loại cây."
     : watchedScope === "variety"
       ? selectedChild
         ? selectedChild.description || ""
-        : isPlant
-          ? "Bấm vào đây để chọn giống trong cùng dialog."
-          : "Bấm vào đây để chọn giống / dòng trong cùng dialog."
-      : isPlant
-        ? "Phạm vi đang là theo loại cây nên không cần chọn giống riêng."
-        : "Phạm vi đang là theo đối tượng nuôi nên không cần chọn giống riêng.";
+        : "Bấm vào đây để chọn giống trong cùng dialog."
+      : "Phạm vi đang là theo loại cây nên không cần chọn giống riêng.";
 
-  const scopeCropTitle = isPlant ? "Theo loại cây trồng" : "Theo loại vật nuôi";
-  const scopeCropDescription = isPlant
-    ? "Áp dụng cho tất cả các giống thuộc loại cây trồng này."
-    : "Áp dụng cho tất cả các giống thuộc đối tượng nuôi này.";
-  const scopeVarietyDescription = isPlant
-    ? "Chọn loại và giống trong cùng một dialog."
-    : "Chọn đối tượng và giống / dòng trong cùng một dialog.";
+  const scopeCropTitle = "Theo loại cây trồng";
+  const scopeCropDescription =
+    "Áp dụng cho tất cả các giống thuộc loại cây trồng này.";
+  const scopeVarietyDescription = "Chọn loại và giống trong cùng một dialog.";
 
-  const scopeCropIcon = isPlant ? (
-    <TreeDeciduous className="w-6 h-6" />
-  ) : (
-    <PawPrint className="w-6 h-6" />
-  );
-
-  const scopeVarietyIcon = isPlant ? (
-    <Flower2 className="w-6 h-6" />
-  ) : (
-    <Fish className="w-6 h-6" />
-  );
-
-  const primaryFallbackIcon = isPlant ? (
-    <TreeDeciduous className="h-5 w-5" />
-  ) : (
-    <Fish className="h-5 w-5" />
-  );
+  const scopeCropIcon = <TreeDeciduous className="w-6 h-6" />;
+  const scopeVarietyIcon = <Flower2 className="w-6 h-6" />;
+  const primaryFallbackIcon = <TreeDeciduous className="h-5 w-5" />;
 
   return (
     <div className="mx-auto max-w-4xl space-y-8 py-4">
       <div className="space-y-6">
-        <FormField
-          control={control}
-          name="cycleType"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Tabs
-                  value={field.value ?? "plant"}
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    setValue("cropId", "");
-                    setValue("variety", "");
-                  }}
-                  className="w-full"
-                >
-                  <TabsList className="grid w-full grid-cols-2 bg-slate-100 p-1 border border-slate-200 rounded-xl h-auto">
-                    <TabsTrigger
-                      value="plant"
-                      className="flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
-                    >
-                      <TreeDeciduous className="w-4 h-4" />
-                      Vụ mùa
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="animal"
-                      className="flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
-                    >
-                      <Fish className="w-4 h-4" />
-                      Vụ nuôi
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <FormField
           control={control}
           name="name"
@@ -443,9 +350,7 @@ export function GrowthCycleBasicInfoStep({
         </div>
 
         <div className="space-y-2">
-          <Label className="text-sm font-semibold">
-            {isPlant ? "Loại cây trồng" : "Đối tượng nuôi"}
-          </Label>
+          <Label className="text-sm font-semibold">Loại cây trồng</Label>
           <FormField
             control={control}
             name="cropId"
@@ -459,19 +364,11 @@ export function GrowthCycleBasicInfoStep({
                     fallbackIcon={primaryFallbackIcon}
                     group={selectedPrimary?.group}
                     detail={selectionDetail}
-                    placeholder={
-                      isPlant
-                        ? "Chọn loại cây trong dialog"
-                        : "Chọn đối tượng nuôi trong dialog"
-                    }
+                    placeholder="Chọn loại cây trong dialog"
                     showSecondary={watchedScope === "variety"}
                     secondaryTitle={varietyTitle}
                     secondarySubtitle={varietySubtitle}
-                    secondaryPlaceholder={
-                      isPlant
-                        ? "Chọn giống cây trong dialog"
-                        : "Chọn giống / dòng trong dialog"
-                    }
+                    secondaryPlaceholder="Chọn giống cây trong dialog"
                     secondaryDetail={varietyDetail}
                     secondaryGroup={
                       watchedScope === "variety" && selectedChild?.group
@@ -496,27 +393,15 @@ export function GrowthCycleBasicInfoStep({
       <GrowthCycleHierarchyDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        title={
-          isPlant
-            ? "Chọn loại và giống cây"
-            : "Chọn đối tượng nuôi và giống / dòng"
-        }
-        description={
-          isPlant
-            ? "Chọn loại cây ở trên, sau đó chọn giống ở bên dưới nếu cần."
-            : "Chọn đối tượng nuôi ở trên, sau đó chọn giống / dòng ở bên dưới nếu cần."
-        }
-        searchPlaceholder={
-          isPlant
-            ? "Tìm loại cây hoặc giống..."
-            : "Tìm đối tượng nuôi hoặc giống..."
-        }
+        title="Chọn loại và giống cây"
+        description="Chọn loại cây ở trên, sau đó chọn giống ở bên dưới nếu cần."
+        searchPlaceholder="Tìm loại cây hoặc giống..."
         selectedPrimaryId={watchedCropId}
         selectedChildId={watchedVariety || ""}
         primaryOptions={primaryOptions}
         childOptions={childOptions}
-        primaryLabel={isPlant ? "Loại cây trồng" : "Đối tượng nuôi"}
-        childLabel={isPlant ? "Giống cây trồng" : "Giống / dòng"}
+        primaryLabel="Loại cây trồng"
+        childLabel="Giống cây trồng"
         showChildSection={watchedScope === "variety"}
         onConfirm={({ primary, child }) => {
           setValue("cropId", primary.id, { shouldValidate: true });
