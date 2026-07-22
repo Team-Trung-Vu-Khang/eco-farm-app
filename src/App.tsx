@@ -242,6 +242,17 @@ const SeedPage = lazy(() => import("./pages/seed/SeedPage"));
 const GrowthCyclePage = lazy(
   () => import("./pages/growth-cycle/GrowthCyclePage"),
 );
+const AquacultureGrowthCyclePage = lazy(
+  () => import("./pages/aquaculture-growth-cycle/AquacultureGrowthCyclePage"),
+);
+const CreateAquacultureGrowthCyclePage = lazy(
+  () =>
+    import("./pages/aquaculture-growth-cycle/CreateAquacultureGrowthCyclePage"),
+);
+const AquacultureGrowthCycleEditPage = lazy(
+  () =>
+    import("./pages/aquaculture-growth-cycle/AquacultureGrowthCycleEditPage"),
+);
 const CreateGrowthCyclePage = lazy(
   () => import("./pages/growth-cycle/CreateGrowthCyclePage"),
 );
@@ -808,6 +819,18 @@ function Router() {
       <Route path="/seed/:id/edit" component={UpdateSeedPage} />
       <Route path="/seed/:id" component={SeedDetailPage} />
       <Route path="/growth-cycle" component={GrowthCyclePage} />
+      <Route
+        path="/aquaculture-growth-cycle"
+        component={AquacultureGrowthCyclePage}
+      />
+      <Route
+        path="/aquaculture-growth-cycle/create"
+        component={CreateAquacultureGrowthCyclePage}
+      />
+      <Route
+        path="/aquaculture-growth-cycle/:id/edit"
+        component={AquacultureGrowthCycleEditPage}
+      />
       <Route path="/growth-cycle/create" component={CreateGrowthCyclePage} />
       <Route
         path="/growth-cycle/:id/workflow"
