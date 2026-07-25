@@ -42,8 +42,8 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { EnterpriseSelector } from "../cultivation-zone/cultivation-region/components";
 import GeographicalSelector from "./components/GeographicalSelector";
+import { PersonnelMultiSelectCard } from "./components/PersonnelMultiSelectCard";
 import { RegimenSelector } from "./components/RegimenSelector";
 import { StageAllocation } from "./components/StageAllocation";
 import { StageItem } from "./components/StageItem";
@@ -63,8 +63,8 @@ export default function PlanGrowthEditPage({
     selections,
     setSelections,
     selectedEnterpriseId,
-    setSelectedEnterpriseId,
     seasons,
+    personnel,
     regions,
     regimens,
     growthCycles,
@@ -215,8 +215,8 @@ export default function PlanGrowthEditPage({
     },
     {
       id: "scope",
-      title: "Phạm vi & Cây trồng",
-      description: "Chọn đất và giống cây",
+      title: "Phạm vi canh tác & sản xuất",
+      description: "Chọn vùng và nhân sự",
       content: (
         <div className="max-w-4xl mx-auto space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -226,32 +226,17 @@ export default function PlanGrowthEditPage({
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 text-xs font-bold">
                     1
                   </span>
-                  Chọn vùng canh tác
+                  Phạm vi canh tác & sản xuất
                 </h3>
-                <Label className="text-sm font-medium text-slate-700">
-                  Đơn vị sở hữu <span className="text-red-500">*</span>
-                </Label>
-                <EnterpriseSelector
-                  selectedId={selectedEnterpriseId}
-                  onSelect={(val) => {
-                    setSelectedEnterpriseId(val);
-                    setSelections([]);
-                  }}
-                />
                 <div className="p-5 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm space-y-4">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                        Vùng canh tác <span className="text-red-500">*</span>
+                        Vùng sản xuất <span className="text-red-500">*</span>
                       </label>
-                      {!selectedEnterpriseId && (
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] bg-amber-50"
-                        >
-                          Chọn đơn vị sở hữu trước
-                        </Badge>
-                      )}
+                      <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
+                        Chọn 1-n khu vực/lô từ sơ đồ ban đầu
+                      </span>
                     </div>
                     <GeographicalSelector
                       regions={regions || []}
@@ -259,7 +244,95 @@ export default function PlanGrowthEditPage({
                       existingSelections={selections}
                       onConfirm={handleGeographicalConfirm}
                     />
+
+                    {selectionSummary.length > 0 && (
+                      <div className="mt-4 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
+                        <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest flex items-center gap-2">
+                          <Layers className="w-3 h-3" />
+                          Phạm vi đã chọn ({selections.length} mục)
+                        </div>
+                        <div className="space-y-3">
+                          {selectionSummary.map((group) => (
+                            <div key={group.regionId} className="space-y-2">
+                              <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
+                                <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                                {group.regionName}
+                              </div>
+                              <div className="flex flex-wrap gap-1.5 pl-2.5">
+                                {group.items.map((item, idx) => (
+                                  <Badge
+                                    key={idx}
+                                    variant="outline"
+                                    className={cn(
+                                      "text-[10px] py-0 px-2 h-5 font-medium border-emerald-100 shadow-sm",
+                                      item.type === "region"
+                                        ? "bg-emerald-100 text-emerald-800"
+                                        : item.type === "area"
+                                          ? "bg-blue-50 text-blue-700 border-blue-100"
+                                          : "bg-white text-slate-600 border-slate-200",
+                                    )}
+                                  >
+                                    <span className="opacity-70 mr-1 uppercase text-[8px] font-black">
+                                      {item.type === "region"
+                                        ? "Vùng"
+                                        : item.type === "area"
+                                          ? "Khu"
+                                          : "Lô"}
+                                    </span>
+                                    {item.name}
+                                    {item.parentName && (
+                                      <span className="ml-1 opacity-50 font-normal italic">
+                                        ({item.parentName})
+                                      </span>
+                                    )}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-bold">
+                    2
+                  </span>
+                  Nhân sự phụ trách
+                </h3>
+                <div className="grid gap-4">
+                  <PersonnelMultiSelectCard
+                    title="Nhân sự quản lý"
+                    description="Người phụ trách theo dõi và điều phối kế hoạch"
+                    selectedIds={formData.managementPersonnelIds}
+                    personnel={personnel}
+                    onChange={(ids) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        managementPersonnelIds: ids,
+                      }))
+                    }
+                    tone="blue"
+                    emptyText="Chưa chọn nhân sự quản lý"
+                  />
+                  <PersonnelMultiSelectCard
+                    title="Nhân sự kiểm định chất lượng"
+                    description="Người chịu trách nhiệm kiểm tra và xác nhận chất lượng"
+                    selectedIds={formData.qualityInspectorPersonnelIds}
+                    personnel={personnel}
+                    onChange={(ids) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        qualityInspectorPersonnelIds: ids,
+                      }))
+                    }
+                    tone="violet"
+                    emptyText="Chưa chọn nhân sự kiểm định"
+                  />
                 </div>
               </div>
 
@@ -310,6 +383,60 @@ export default function PlanGrowthEditPage({
                         <Badge className="bg-white/20 text-white font-bold h-5">
                           {calculateArea()} HA
                         </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-sm">
+                      <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider mb-2">
+                        Nhân sự quản lý
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {formData.managementPersonnelIds.length > 0 ? (
+                          formData.managementPersonnelIds.map((id) => {
+                            const person = personnel.find(
+                              (item) => String(item.id) === String(id),
+                            );
+                            return person ? (
+                              <Badge
+                                key={id}
+                                variant="secondary"
+                                className="bg-white/20 text-white border-transparent text-[10px] h-5"
+                              >
+                                {person.fullName}
+                              </Badge>
+                            ) : null;
+                          })
+                        ) : (
+                          <span className="text-xs text-white/60">---</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-sm">
+                      <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider mb-2">
+                        Kiểm định chất lượng
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {formData.qualityInspectorPersonnelIds.length > 0 ? (
+                          formData.qualityInspectorPersonnelIds.map((id) => {
+                            const person = personnel.find(
+                              (item) => String(item.id) === String(id),
+                            );
+                            return person ? (
+                              <Badge
+                                key={id}
+                                variant="secondary"
+                                className="bg-white/20 text-white border-transparent text-[10px] h-5"
+                              >
+                                {person.fullName}
+                              </Badge>
+                            ) : null;
+                          })
+                        ) : (
+                          <span className="text-xs text-white/60">---</span>
+                        )}
                       </div>
                     </div>
                   </div>

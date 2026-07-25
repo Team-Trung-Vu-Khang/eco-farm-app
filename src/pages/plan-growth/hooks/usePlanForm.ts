@@ -4,6 +4,7 @@ import { useToast, type Step } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import useRegionStore from "@/stores/useRegionStore";
 import useSeasonStore from "@/stores/useSeasonStore";
+import usePersonnelStore from "@/stores/usePersonnelStore";
 import usePlanStore from "../../../stores/usePlanStore";
 import { useTreatmentStore } from "../../../stores/useTreatmentStore";
 import { useAmendmentRegimenStore } from "../../../stores/useAmendmentRegimenStore";
@@ -126,6 +127,8 @@ function createEmptyFormData(): PlanFormData {
     plannedDurationYears: "",
     plannedDurationMonths: "",
     plannedDurationDays: "",
+    managementPersonnelIds: [],
+    qualityInspectorPersonnelIds: [],
     selectedRegionIds: [],
     selectedZoneIds: [],
     selectedPlotIds: [],
@@ -152,6 +155,7 @@ export function usePlanForm(mode: "create" | "edit", basePath = "/plan-growth") 
   const updatePlan = usePlanStore((state) => state.updatePlan);
   const getPlanById = usePlanStore((state) => state.getPlanById);
   const seasons = useSeasonStore((state) => state.seasons);
+  const personnel = usePersonnelStore((state) => state.personnel);
   const { regions } = useRegionStore();
   const { growthCycles } = useGrowthCycleStore();
   const treatments = useTreatmentStore((state) => state.treatments);
@@ -224,6 +228,10 @@ export function usePlanForm(mode: "create" | "edit", basePath = "/plan-growth") 
           startDate: plan.startDate || "",
           endDate: plan.endDate || "",
           ...inferDurationFromDates(plan.startDate, plan.endDate),
+          managementPersonnelIds:
+            (plan as any).managementPersonnelIds || [],
+          qualityInspectorPersonnelIds:
+            (plan as any).qualityInspectorPersonnelIds || [],
           selectedRegionIds: plan.selectedRegionIds || [],
           selectedZoneIds: plan.selectedZoneIds || [],
           selectedPlotIds: plan.selectedPlotIds || [],
@@ -253,6 +261,9 @@ export function usePlanForm(mode: "create" | "edit", basePath = "/plan-growth") 
       startDate: plan.startDate || "",
       endDate: plan.endDate || "",
       ...inferDurationFromDates(plan.startDate, plan.endDate),
+      managementPersonnelIds: (plan as any).managementPersonnelIds || [],
+      qualityInspectorPersonnelIds:
+        (plan as any).qualityInspectorPersonnelIds || [],
       selectedRegionIds: plan.selectedRegionIds || [],
       selectedZoneIds: plan.selectedZoneIds || [],
       selectedPlotIds: plan.selectedPlotIds || [],
@@ -297,6 +308,12 @@ export function usePlanForm(mode: "create" | "edit", basePath = "/plan-growth") 
       ...prev,
       ...nextSelectionState,
     }));
+
+    const firstRegionId = nextSelectionState.selectedRegionIds[0];
+    const firstRegion = regions.find(
+      (region) => String(region.id) === String(firstRegionId),
+    );
+    setSelectedEnterpriseId(firstRegion?.enterpriseId || "");
   };
 
   const handleSeasonChange = (seasonId: string) => {
@@ -437,6 +454,7 @@ export function usePlanForm(mode: "create" | "edit", basePath = "/plan-growth") 
     calculateArea,
     summarizeTaskSelections: (taskSelections: any[] | undefined) =>
       summarizeTaskSelections(taskSelections as any, regions),
+    personnel,
     handleSeasonChange,
     handleDurationPartChange,
     handleStartDateChange,

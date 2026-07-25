@@ -39,6 +39,8 @@ export interface PlanFormData {
   plannedDurationYears: string;
   plannedDurationMonths: string;
   plannedDurationDays: string;
+  managementPersonnelIds: string[];
+  qualityInspectorPersonnelIds: string[];
   selectedRegionIds: string[];
   selectedZoneIds: string[];
   selectedPlotIds: string[];
