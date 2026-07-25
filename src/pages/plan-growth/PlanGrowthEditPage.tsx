@@ -72,6 +72,7 @@ export default function PlanGrowthEditPage({
     calculateArea,
     summarizeTaskSelections: getTaskSelectionSummary,
     handleSeasonChange,
+    handleDurationPartChange,
     handleGeographicalConfirm,
     handleAddMaterial,
     handleRemoveMaterial,
@@ -100,16 +101,15 @@ export default function PlanGrowthEditPage({
             <div>
               <h3 className="font-semibold">Chỉnh sửa kế hoạch</h3>
               <p className="text-sm text-blue-700">
-                Điều chỉnh thông tin mùa vụ và thời gian thực hiện.
+                Chọn mùa vụ, nhập thời gian dự kiến và đặt tên cho kế hoạch của
+                bạn.
               </p>
             </div>
           </div>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>
-                Mùa vụ <span className="text-red-500">*</span>
-              </Label>
+              <Label required>Mùa vụ</Label>
               <Select
                 value={formData.seasonId}
                 onValueChange={handleSeasonChange}
@@ -126,50 +126,68 @@ export default function PlanGrowthEditPage({
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Ngày bắt đầu</Label>
-                <Input
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, startDate: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Ngày kết thúc</Label>
-                <Input
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, endDate: e.target.value })
-                  }
-                />
-              </div>
+            <div className="space-y-2">
+              <Label required>Tên kế hoạch</Label>
+              <Input
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                placeholder="VD: Kế hoạch Đông Xuân"
+              />
             </div>
+            <div className="space-y-2">
+              <Label required>Thời gian dự kiến</Label>
+              <div className="flex items-center gap-4 rounded-lg border px-4 shadow-sm">
+                <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Mã kế hoạch *</Label>
-                <Input
-                  value={formData.code}
-                  onChange={(e) =>
-                    setFormData({ ...formData, code: e.target.value })
-                  }
-                  placeholder="VD: 2024-KH-DX"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Tên kế hoạch *</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  placeholder="VD: Kế hoạch canh tác Đông Xuân"
-                />
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    value={formData.plannedDurationYears}
+                    onChange={(e) =>
+                      handleDurationPartChange("years", e.target.value)
+                    }
+                    placeholder="0"
+                    className="w-16 h-9 border-0 bg-transparent px-0 text-center text-base shadow-none focus-visible:ring-0"
+                  />
+                  <span className="text-sm text-slate-500 whitespace-nowrap">
+                    năm
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    value={formData.plannedDurationMonths}
+                    onChange={(e) =>
+                      handleDurationPartChange("months", e.target.value)
+                    }
+                    placeholder="0"
+                    className="w-16 h-9 border-0 bg-transparent px-0 text-center text-base shadow-none focus-visible:ring-0"
+                  />
+                  <span className="text-sm text-slate-500 whitespace-nowrap">
+                    tháng
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    value={formData.plannedDurationDays}
+                    onChange={(e) =>
+                      handleDurationPartChange("days", e.target.value)
+                    }
+                    placeholder="0"
+                    className="w-16 h-9 border-0 bg-transparent px-0 text-center text-base shadow-none focus-visible:ring-0"
+                  />
+                  <span className="text-sm text-slate-500 whitespace-nowrap">
+                    ngày
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -186,7 +204,14 @@ export default function PlanGrowthEditPage({
           </div>
         </div>
       ),
-      isValid: !!formData.seasonId && !!formData.code && !!formData.name,
+      isValid:
+        !!formData.seasonId &&
+        !!formData.name &&
+        Boolean(
+          formData.plannedDurationYears ||
+          formData.plannedDurationMonths ||
+          formData.plannedDurationDays,
+        ),
     },
     {
       id: "scope",

@@ -36,6 +36,9 @@ export interface PlanFormData {
   seasonName: string;
   startDate: string;
   endDate: string;
+  plannedDurationYears: string;
+  plannedDurationMonths: string;
+  plannedDurationDays: string;
   selectedRegionIds: string[];
   selectedZoneIds: string[];
   selectedPlotIds: string[];
