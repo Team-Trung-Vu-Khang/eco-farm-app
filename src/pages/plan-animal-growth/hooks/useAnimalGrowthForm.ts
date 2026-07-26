@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { useToast, type Step } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import useRegionStore from "@/stores/useRegionStore";
 import usePersonnelStore from "@/stores/usePersonnelStore";
