@@ -56,7 +56,9 @@ function OptionCard({
   selected,
   onClick,
 }: {
-  option: AquacultureGrowthCycleHierarchyPrimaryOption | AquacultureGrowthCycleHierarchyChildOption;
+  option:
+    | AquacultureGrowthCycleHierarchyPrimaryOption
+    | AquacultureGrowthCycleHierarchyChildOption;
   selected: boolean;
   onClick: () => void;
 }) {
@@ -66,12 +68,17 @@ function OptionCard({
       onClick={onClick}
       className={cn(
         "group flex items-start gap-4 rounded-2xl border bg-white p-4 text-left transition-all hover:border-primary/30 hover:shadow-md",
-        selected ? "border-primary/40 bg-primary/5 shadow-sm" : "border-slate-200",
+        selected
+          ? "border-primary/40 bg-primary/5 shadow-sm"
+          : "border-slate-200",
       )}
     >
       <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-100 bg-white p-2 shadow-sm">
         <img
-          src={option.image || "https://images.unsplash.com/photo-1534080391025-09795d197a5b?w=200&auto=format&fit=crop"}
+          src={
+            option.image ||
+            "https://images.unsplash.com/photo-1534080391025-09795d197a5b?w=200&auto=format&fit=crop"
+          }
           alt={option.name}
           className="h-full w-full rounded-xl object-cover"
         />
@@ -90,7 +97,9 @@ function OptionCard({
           <div
             className={cn(
               "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
-              selected ? "border-primary bg-primary text-white" : "border-slate-300 bg-white",
+              selected
+                ? "border-primary bg-primary text-white"
+                : "border-slate-300 bg-white",
             )}
           >
             {selected && <Check className="h-3 w-3" />}
@@ -104,7 +113,10 @@ function OptionCard({
             </Badge>
           )}
           {option.code && (
-            <Badge variant="outline" className="border-slate-200 text-slate-600">
+            <Badge
+              variant="outline"
+              className="border-slate-200 text-slate-600"
+            >
               {option.code}
             </Badge>
           )}
@@ -171,7 +183,9 @@ export function AquacultureGrowthCycleHierarchyDialog({
     });
   }, [childOptions, searchTerm, tempPrimaryId]);
 
-  const selectedPrimary = primaryOptions.find((item) => item.id === tempPrimaryId);
+  const selectedPrimary = primaryOptions.find(
+    (item) => item.id === tempPrimaryId,
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -225,7 +239,8 @@ export function AquacultureGrowthCycleHierarchyDialog({
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
             <span>
-              {filteredPrimaryOptions.length} mục cha, {filteredChildOptions.length} mục con
+              {filteredPrimaryOptions.length} mục cha,{" "}
+              {filteredChildOptions.length} mục con
             </span>
             {selectedPrimary && (
               <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-primary">
@@ -281,7 +296,8 @@ export function AquacultureGrowthCycleHierarchyDialog({
                     })
                   ) : (
                     <div className="col-span-full flex min-h-[120px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 text-center text-sm text-muted-foreground">
-                      Chọn {primaryLabel.toLowerCase()} để xem {childLabel.toLowerCase()} tương ứng
+                      Chọn {primaryLabel.toLowerCase()} để xem{" "}
+                      {childLabel.toLowerCase()} tương ứng
                     </div>
                   )}
                 </div>
@@ -297,7 +313,9 @@ export function AquacultureGrowthCycleHierarchyDialog({
           <Button
             onClick={() => {
               if (!selectedPrimary) return;
-              const child = childOptions.find((item) => item.id === tempChildId);
+              const child = childOptions.find(
+                (item) => item.id === tempChildId,
+              );
               onConfirm({ primary: selectedPrimary, child });
               onOpenChange(false);
             }}

@@ -149,7 +149,10 @@ interface AquacultureBasicInfoStepProps {
   varieties: ProductionSubjectVariantResponse[];
 }
 
-function AquacultureBasicInfoStep({ crops, varieties }: AquacultureBasicInfoStepProps) {
+function AquacultureBasicInfoStep({
+  crops,
+  varieties,
+}: AquacultureBasicInfoStepProps) {
   const {
     watch,
     control,
@@ -165,13 +168,10 @@ function AquacultureBasicInfoStep({ crops, varieties }: AquacultureBasicInfoStep
   const variety = watch("variety");
   const name = watch("name");
 
-  const filteredVarieties = useMemo(
-    () =>
-      varieties.filter(
-        (item) => String(item.subject?.id) === cropId,
-      ),
-    [cropId, varieties],
-  );
+  // const filteredVarieties = useMemo(
+  //   () => varieties.filter((item) => String(item.subject?.id) === cropId),
+  //   [cropId, varieties],
+  // );
 
   const primaryOptions = crops.map((c) => ({
     id: String(c.id),
@@ -181,7 +181,7 @@ function AquacultureBasicInfoStep({ crops, varieties }: AquacultureBasicInfoStep
     description: c.scientificName || "",
   }));
 
-  const childOptions = filteredVarieties.map((item) => {
+  const childOptions = varieties.map((item) => {
     return {
       id: String(item.id),
       primaryId: String(item.subject?.id),
@@ -193,16 +193,20 @@ function AquacultureBasicInfoStep({ crops, varieties }: AquacultureBasicInfoStep
     };
   });
 
-  const selectedPrimary = primaryOptions.find(
-    (item) => item.id === cropId,
-  );
+  const selectedPrimary = primaryOptions.find((item) => item.id === cropId);
   const selectedChild = childOptions.find((item) => item.id === variety);
 
-  const selectionTitle = selectedPrimary ? selectedPrimary.name : "Chọn loài nuôi";
-  const selectionSubtitle = selectedPrimary ? selectedPrimary.group : "Mở dialog để chọn loài nuôi";
+  const selectionTitle = selectedPrimary
+    ? selectedPrimary.name
+    : "Chọn loài nuôi";
+  const selectionSubtitle = selectedPrimary
+    ? selectedPrimary.group
+    : "Mở dialog để chọn loài nuôi";
   const selectionDetail = selectedPrimary?.description;
 
-  const varietyTitle = selectedChild ? selectedChild.name : "Chọn giống loài nuôi";
+  const varietyTitle = selectedChild
+    ? selectedChild.name
+    : "Chọn giống loài nuôi";
   const varietySubtitle = !selectedPrimary
     ? "Vui lòng chọn loài nuôi trước khi chọn giống."
     : selectedChild
@@ -290,11 +294,11 @@ function AquacultureBasicInfoStep({ crops, varieties }: AquacultureBasicInfoStep
                         >
                           <div className="flex items-center gap-2">
                             <div
-                               className={`flex h-9 w-9 items-center justify-center rounded-xl ${
-                                 isActive
-                                   ? "bg-cyan-500 text-white"
-                                   : "bg-slate-100 text-slate-500"
-                               }`}
+                              className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                                isActive
+                                  ? "bg-cyan-500 text-white"
+                                  : "bg-slate-100 text-slate-500"
+                              }`}
                             >
                               <Waves className="h-4 w-4" />
                             </div>
@@ -436,7 +440,10 @@ interface AquacultureConfirmStepProps {
   varieties: ProductionSubjectVariantResponse[];
 }
 
-function AquacultureConfirmStep({ crops, varieties }: AquacultureConfirmStepProps) {
+function AquacultureConfirmStep({
+  crops,
+  varieties,
+}: AquacultureConfirmStepProps) {
   const { watch } = useFormContext<AnimalGrowthCycleFormValues>();
   const formData = watch();
 
@@ -573,8 +580,12 @@ export function AquacultureGrowthCycleSteps({
   const { watch, handleSubmit } = useFormContext<AnimalGrowthCycleFormValues>();
   const values = watch();
 
-  const { items: crops } = useProductionSubjects({ params: { domainCode: "AQUACULTURE", size: 100 } });
-  const { items: varieties } = useProductionSubjectVariants({ params: { domainCode: "AQUACULTURE", size: 100 } });
+  const { items: crops } = useProductionSubjects({
+    params: { domainCode: "AQUACULTURE", size: 100 },
+  });
+  const { items: varieties } = useProductionSubjectVariants({
+    params: { domainCode: "AQUACULTURE", size: 100 },
+  });
 
   const validationResult = useMemo(
     () => schema.safeParse(values),
@@ -604,7 +615,9 @@ export function AquacultureGrowthCycleSteps({
         id: "info",
         title: "Bước 1",
         description: "Thông tin thủy hải sản",
-        content: <AquacultureBasicInfoStep crops={crops} varieties={varieties} />,
+        content: (
+          <AquacultureBasicInfoStep crops={crops} varieties={varieties} />
+        ),
         isValid: isStep1Valid,
       },
       {

@@ -9,7 +9,7 @@ import {
   RadioGroupItem,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronDown, Fish, PawPrint } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useState, useMemo, type ReactNode } from "react";
 import { useFormContext } from "react-hook-form";
 import type {
   ProductionSubjectResponse,
@@ -22,7 +22,7 @@ import {
 } from "../AnimalGrowthCycleHierarchyDialog";
 
 interface AnimalGrowthCycleBasicInfoStepProps {
-  filteredVarieties: ProductionSubjectVariantResponse[];
+  varieties: ProductionSubjectVariantResponse[];
   crops: ProductionSubjectResponse[];
 }
 
@@ -198,7 +198,7 @@ function SelectionCard({
 }
 
 export function AnimalGrowthCycleBasicInfoStep({
-  filteredVarieties,
+  varieties,
   crops,
 }: AnimalGrowthCycleBasicInfoStepProps) {
   const { watch, setValue, control } =
@@ -209,6 +209,11 @@ export function AnimalGrowthCycleBasicInfoStep({
   const watchedCropId = watch("cropId");
   const watchedVariety = watch("variety");
 
+  const filteredVarieties = useMemo(
+    () => varieties.filter((v) => String(v.subject?.id) === watchedCropId),
+    [watchedCropId, varieties],
+  );
+
   const primaryOptions = crops.map((c) => ({
     id: String(c.id),
     name: c.name,
@@ -218,7 +223,7 @@ export function AnimalGrowthCycleBasicInfoStep({
   }));
 
   const childOptions: AnimalGrowthCycleHierarchyChildOption[] =
-    filteredVarieties.map((variety) => {
+    varieties.map((variety) => {
       return {
         id: String(variety.id),
         primaryId: String(variety.subject?.id),

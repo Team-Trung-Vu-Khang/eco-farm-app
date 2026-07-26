@@ -9,7 +9,7 @@ import {
   RadioGroupItem,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronDown, Flower2, TreeDeciduous } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useState, useMemo, type ReactNode } from "react";
 import { useFormContext } from "react-hook-form";
 import type {
   ProductionSubjectResponse,
@@ -23,7 +23,7 @@ import {
 } from "../GrowthCycleHierarchyDialog";
 
 interface GrowthCycleBasicInfoStepProps {
-  filteredVarieties: ProductionSubjectVariantResponse[];
+  varieties: ProductionSubjectVariantResponse[];
   crops: ProductionSubjectResponse[];
 }
 
@@ -199,7 +199,7 @@ function SelectionCard({
 }
 
 export function GrowthCycleBasicInfoStep({
-  filteredVarieties,
+  varieties,
   crops,
 }: GrowthCycleBasicInfoStepProps) {
   const { watch, setValue, control } = useFormContext<GrowthCycleFormValues>();
@@ -208,6 +208,11 @@ export function GrowthCycleBasicInfoStep({
   const watchedScope = watch("scope");
   const watchedCropId = watch("cropId");
   const watchedVariety = watch("variety");
+
+  const filteredVarieties = useMemo(
+    () => varieties.filter((v) => String(v.subject?.id) === watchedCropId),
+    [watchedCropId, varieties],
+  );
 
   const primaryOptions = crops.map((c) => ({
     id: String(c.id),
@@ -221,7 +226,7 @@ export function GrowthCycleBasicInfoStep({
     primaryOptions.map((item) => [item.id, item]),
   );
 
-  const childOptions: GrowthCycleHierarchyChildOption[] = filteredVarieties.map(
+  const childOptions: GrowthCycleHierarchyChildOption[] = varieties.map(
     (variety) => {
       return {
         id: String(variety.id),

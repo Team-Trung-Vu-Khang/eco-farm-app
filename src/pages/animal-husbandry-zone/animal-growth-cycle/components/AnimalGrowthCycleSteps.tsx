@@ -67,7 +67,7 @@ export function AnimalGrowthCycleSteps({
         description: "Thông tin chung",
         content: (
           <AnimalGrowthCycleBasicInfoStep
-            filteredVarieties={filteredVarieties}
+            varieties={varieties}
             crops={crops}
           />
         ),

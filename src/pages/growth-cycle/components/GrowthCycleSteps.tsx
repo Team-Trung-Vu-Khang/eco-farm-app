@@ -67,7 +67,7 @@ export function GrowthCycleSteps({
         description: "Thông tin chung",
         content: (
           <GrowthCycleBasicInfoStep
-            filteredVarieties={filteredVarieties}
+            varieties={varieties}
             crops={crops}
           />
         ),
