@@ -6,7 +6,6 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft, Plus } from "lucide-react";
 import { TaskCalendarView } from "./components/TaskCalendarView";
-import TaskDetailDialog from "./components/TaskDetailDialog";
 import { TaskPlanContextCard } from "./components/TaskPlanContextCard";
 import { TaskStatsGrid } from "./components/TaskStatsGrid";
 import { TaskViewToggle } from "./components/TaskViewToggle";
@@ -28,9 +27,6 @@ export default function TaskPage() {
     setCurrentDate,
     deleteOpen,
     setDeleteOpen,
-    detailOpen,
-    setDetailOpen,
-    selectedTask,
     plan,
     isPlanScoped,
     planNotFound,
@@ -125,12 +121,6 @@ export default function TaskPage() {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
-      />
-
-      <TaskDetailDialog
-        open={detailOpen}
-        onOpenChange={setDetailOpen}
-        task={selectedTask}
       />
     </AdminLayout>
   );

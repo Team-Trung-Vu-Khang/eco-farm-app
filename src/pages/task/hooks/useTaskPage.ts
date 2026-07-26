@@ -15,8 +15,6 @@ export function useTaskPage() {
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Task | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -48,8 +46,7 @@ export function useTaskPage() {
   };
 
   const handleView = (task: Task) => {
-    setSelectedTask(task);
-    setDetailOpen(true);
+    setLocation(planId ? `/task/${task.id}?planId=${planId}` : `/task/${task.id}`);
   };
 
   const handleDelete = (task: Task) => {
@@ -90,9 +87,6 @@ export function useTaskPage() {
     setCurrentDate,
     deleteOpen,
     setDeleteOpen,
-    detailOpen,
-    setDetailOpen,
-    selectedTask,
     handleAdd,
     handleEdit,
     handleView,
