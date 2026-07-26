@@ -7,13 +7,13 @@ import { AnimalGrowthCycleConfirmStep } from "./steps/AnimalGrowthCycleConfirmSt
 import { AnimalGrowthCycleStagesStep } from "./steps/AnimalGrowthCycleStagesStep";
 import type { AnimalGrowthCycleFormValues } from "../schemas/animalGrowthCycleSchema";
 import type {
-  FoundationCropResponse,
-  FoundationCropVarietyResponse,
+  ProductionSubjectResponse,
+  ProductionSubjectVariantResponse,
 } from "@/features/foundation";
 
 interface AnimalGrowthCycleStepsProps {
-  varieties: FoundationCropVarietyResponse[];
-  crops: FoundationCropResponse[];
+  varieties: ProductionSubjectVariantResponse[];
+  crops: ProductionSubjectResponse[];
   schema: z.ZodType<any, any, any>;
   onComplete: () => void;
   onCancel: () => void;
@@ -34,7 +34,7 @@ export function AnimalGrowthCycleSteps({
 
   const filteredVarieties = useMemo(() => {
     if (!watchedCropId) return [];
-    return varieties.filter((v) => String(v.cropId) === watchedCropId);
+    return varieties.filter((v) => String(v.subject?.id) === watchedCropId);
   }, [watchedCropId, varieties]);
 
   const validationResult = useMemo(
@@ -44,7 +44,7 @@ export function AnimalGrowthCycleSteps({
 
   const isStep1Valid = useMemo(() => {
     if (validationResult.success) return true;
-    const step1Keys = ["cycleType", "scope", "cropId", "variety"];
+    const step1Keys = ["cycleType", "scope", "cropId", "variety", "name"];
     const step1Errors = validationResult.error.issues.filter((issue) =>
       step1Keys.includes(String(issue.path[0])),
     );

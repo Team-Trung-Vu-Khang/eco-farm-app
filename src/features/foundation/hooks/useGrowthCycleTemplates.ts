@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { growthCycleTemplateApi } from "../api/foundation.api";
+import { farmGrowthCycleSeasonApi, systemGrowthCycleSeasonApi } from "../../farm/api/growth-cycle-season.api";
 import type {
   GrowthCycleTemplateQueryParams,
   FoundationGrowthCycleTemplateResponse,
   PageResponse,
 } from "../types/foundation.type";
 
-// ─── Query Key Factory ────────────────────────────────────────────────────────
+// ─── Legacy/Admin Foundation Growth Cycle Templates ────────────────────────────
 
 export const growthCycleTemplateKeys = {
   all: () => ["foundation", "growth-cycle-templates"] as const,
@@ -16,30 +17,11 @@ export const growthCycleTemplateKeys = {
     ["foundation", "growth-cycle-templates", "detail", id] as const,
 };
 
-// ─── useGrowthCycleTemplates ──────────────────────────────────────────────────
-
-interface UseGrowthCycleTemplatesOptions {
-  params?: GrowthCycleTemplateQueryParams;
-  enabled?: boolean;
-}
-
-type UseGrowthCycleTemplatesResult = ReturnType<
-  typeof useQuery<PageResponse<FoundationGrowthCycleTemplateResponse>, Error>
->;
-
-/**
- * Hook để query danh sách template chu kỳ sinh trưởng.
- * Có thể filter theo `cropId`.
- *
- * @example
- * const { items } = useGrowthCycleTemplates();
- * const { items } = useGrowthCycleTemplates({ params: { cropId: 1, status: "active" } });
- */
 export function useGrowthCycleTemplates({
   params,
   enabled = true,
 }: UseGrowthCycleTemplatesOptions = {}) {
-  const queryResult: UseGrowthCycleTemplatesResult = useQuery<
+  const queryResult = useQuery<
     PageResponse<FoundationGrowthCycleTemplateResponse>,
     Error
   >({
@@ -57,25 +39,80 @@ export function useGrowthCycleTemplates({
   };
 }
 
-// ─── useGrowthCycleTemplateById ───────────────────────────────────────────────
-
-interface UseGrowthCycleTemplateByIdOptions {
+interface UseGrowthCycleTemplatesOptions {
+  params?: GrowthCycleTemplateQueryParams;
   enabled?: boolean;
 }
 
-/**
- * Hook để lấy chi tiết 1 template chu kỳ sinh trưởng (bao gồm cả stages).
- *
- * @example
- * const { data } = useGrowthCycleTemplateById(7);
- */
 export function useGrowthCycleTemplateById(
   id: number,
-  { enabled = true }: UseGrowthCycleTemplateByIdOptions = {},
+  { enabled = true }: { enabled?: boolean } = {},
 ) {
   return useQuery<FoundationGrowthCycleTemplateResponse, Error>({
     queryKey: growthCycleTemplateKeys.detail(id),
     queryFn: () => growthCycleTemplateApi.getById(id),
+    enabled: enabled && !!id,
+  });
+}
+
+// ─── New User & System Seasons (Growth Cycles) ──────────────────────────────────
+
+export const userGrowthCycleTemplateKeys = {
+  all: () => ["user-growth-cycles"] as const,
+  list: (params?: any) => ["user-growth-cycles", "list", params ?? {}] as const,
+  detail: (id: number) => ["user-growth-cycles", "detail", id] as const,
+};
+
+export const systemGrowthCycleTemplateKeys = {
+  all: () => ["system-growth-cycles"] as const,
+  list: (params?: any) => ["system-growth-cycles", "list", params ?? {}] as const,
+  detail: (id: number) => ["system-growth-cycles", "detail", id] as const,
+};
+
+export function useUserGrowthCycleTemplates({ params, enabled = true }: { params?: any; enabled?: boolean } = {}) {
+  const queryResult = useQuery<PageResponse<any>, Error>({
+    queryKey: userGrowthCycleTemplateKeys.list(params),
+    queryFn: () => farmGrowthCycleSeasonApi.list(params),
+    enabled,
+  });
+
+  return {
+    ...queryResult,
+    items: queryResult.data?.content ?? [],
+    response: queryResult.data ?? null,
+    loading: queryResult.isLoading,
+    error: queryResult.error?.message ?? null,
+  };
+}
+
+export function useSystemGrowthCycleTemplates({ params, enabled = true }: { params?: any; enabled?: boolean } = {}) {
+  const queryResult = useQuery<PageResponse<any>, Error>({
+    queryKey: systemGrowthCycleTemplateKeys.list(params),
+    queryFn: () => systemGrowthCycleSeasonApi.list(params),
+    enabled,
+  });
+
+  return {
+    ...queryResult,
+    items: queryResult.data?.content ?? [],
+    response: queryResult.data ?? null,
+    loading: queryResult.isLoading,
+    error: queryResult.error?.message ?? null,
+  };
+}
+
+export function useUserGrowthCycleTemplateById(id: number, { enabled = true }: { enabled?: boolean } = {}) {
+  return useQuery<any, Error>({
+    queryKey: userGrowthCycleTemplateKeys.detail(id),
+    queryFn: () => farmGrowthCycleSeasonApi.getById(id),
+    enabled: enabled && !!id,
+  });
+}
+
+export function useSystemGrowthCycleTemplateById(id: number, { enabled = true }: { enabled?: boolean } = {}) {
+  return useQuery<any, Error>({
+    queryKey: systemGrowthCycleTemplateKeys.detail(id),
+    queryFn: () => systemGrowthCycleSeasonApi.getById(id),
     enabled: enabled && !!id,
   });
 }

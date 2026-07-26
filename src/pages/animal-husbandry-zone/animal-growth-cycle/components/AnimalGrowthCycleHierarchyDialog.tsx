@@ -98,9 +98,11 @@ function OptionCard({
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Badge variant="secondary" className="bg-slate-100 text-slate-700">
-            {option.group}
-          </Badge>
+          {option.group && (
+            <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+              {option.group}
+            </Badge>
+          )}
           {option.code && (
             <Badge variant="outline" className="border-slate-200 text-slate-600">
               {option.code}

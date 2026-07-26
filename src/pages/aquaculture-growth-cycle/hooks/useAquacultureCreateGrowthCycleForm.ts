@@ -1,83 +1,93 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useGrowthCycleTemplateMutations } from "@/features/foundation";
+import {
+  useUserGrowthCycleTemplateMutations,
+  useProductionSubjects,
+  useProductionSubjectVariants,
+} from "@/features/foundation";
 import { useFileUpload } from "@/features/storage";
 import { safeConvertLexicalToHtml } from "@/utils/commons";
 import { parseDurationToDays } from "@/pages/growth-cycle/utils/duration";
-import type { GrowthCycleFormValues } from "@/pages/growth-cycle/schemas/growthCycleSchema";
+import type { AnimalGrowthCycleFormValues } from "@/pages/animal-husbandry-zone/animal-growth-cycle/schemas/animalGrowthCycleSchema";
 
 export function useAquacultureCreateGrowthCycleForm() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { createTemplate } = useGrowthCycleTemplateMutations();
+  const { createTemplate } = useUserGrowthCycleTemplateMutations();
+  const { items: crops } = useProductionSubjects({
+    params: { domainCode: "AQUACULTURE", size: 100 },
+  });
+  const { items: cropVarieties } = useProductionSubjectVariants({
+    params: { domainCode: "AQUACULTURE", size: 100 },
+  });
   const { uploadFile } = useFileUpload();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleComplete = async (values: GrowthCycleFormValues) => {
+  const handleComplete = async (values: AnimalGrowthCycleFormValues) => {
     setIsSubmitting(true);
     try {
       const preparedStages = await Promise.all(
         values.stages.map(async (stage, index) => {
-          let documentData: any = undefined;
+          let documents: any[] = [];
+          let description = "";
 
           if (stage.usePdf && stage.pdfFile instanceof File) {
             const res = await uploadFile.mutateAsync({
               file: stage.pdfFile,
-              folder: "growth-cycle-stages",
+              folder: "aquaculture-growth-cycle-stages",
             });
             if (res.fileUrl) {
-              documentData = {
-                type: "pdf",
-                name: "Tài liệu kỹ thuật",
-                fileUrl: res.fileUrl,
-                fileName: res.fileName || stage.pdfFile.name,
-              };
+              documents = [
+                {
+                  documentType: "pdf",
+                  name: stage.pdfFile.name,
+                  fileUrl: res.fileUrl,
+                  fileName: res.fileName || stage.pdfFile.name,
+                  mimeType: "application/pdf",
+                  sizeBytes: stage.pdfFile.size,
+                  displayOrder: 1,
+                },
+              ];
             }
           } else {
-            const html = (await safeConvertLexicalToHtml(stage.content)) || "";
-            if (html && html !== "<p><br></p>") {
-              documentData = {
-                type: "editor",
-                name: "Tài liệu kỹ thuật",
-                content: html,
-              };
-            }
+            description = (await safeConvertLexicalToHtml(stage.content)) || "";
           }
 
           return {
             name: stage.name,
             durationDays: parseDurationToDays(String(stage.duration)),
-            description: stage.name,
-            document: documentData,
+            description: description,
+            documents: documents,
             displayOrder: index + 1,
           };
         }),
       );
 
+      const metadataJson = { cycleType: values.cycleType };
+
+      const cropIdVal = Number(values.cropId);
+      const varietyIdVal =
+        values.scope === "variety" && values.variety
+          ? Number(values.variety)
+          : undefined;
+
       await createTemplate.mutateAsync({
+        domainCode: "AQUACULTURE",
         name: values.name.trim(),
-        cropId: Number(values.cropId),
-        cropVarietyId:
-          values.scope === "variety" && values.variety
-            ? Number(values.variety)
-            : undefined,
-        cropGroupId: 1,
-        expectedDays: values.stages.reduce(
-          (sum, s) => sum + parseDurationToDays(String(s.duration)),
-          0,
-        ),
-        description: "Chu kỳ thủy hải sản",
+        productionSubjectId: cropIdVal,
+        productionSubjectVariantId: varietyIdVal ?? null,
+        description: "Chu kỳ nuôi thủy sản",
         stages: preparedStages,
         displayOrder: 1,
         status: "active",
-        metadataJson: { cycleType: values.cycleType },
+        metadataJson: metadataJson,
       });
 
       toast({
         title: "Thành công",
-        description: "Đã tạo chu kỳ thủy hải sản mới",
+        description: "Đã tạo chu kỳ nuôi thủy sản mới",
       });
       setLocation("/aquaculture-growth-cycle");
     } catch (err: unknown) {
@@ -95,6 +105,8 @@ export function useAquacultureCreateGrowthCycleForm() {
   };
 
   return {
+    crops,
+    varieties: cropVarieties,
     handleComplete,
     setLocation,
     isSubmitting,

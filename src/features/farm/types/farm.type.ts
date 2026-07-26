@@ -82,6 +82,7 @@ export interface SeedQueryParams {
   page?: number;
   size?: number;
   farmingMethodId?: number;
+  domainCode?: string;
 }
 
 export interface CoordinatePoint {
@@ -125,6 +126,7 @@ export interface FarmRegionRequest {
   metadataJson?: Record<string, unknown>;
   crops?: { cropId: number; role: "MAIN" | "SUB" }[];
   areas?: FarmAreaRequest[];
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
 }
 
 export interface FarmRegionResponse {
@@ -154,6 +156,7 @@ export interface FarmRegionResponse {
     role?: string;
   }[];
   areas?: FarmAreaResponse[];
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   createdAt?: string;
   updatedAt?: string;
 }
@@ -163,6 +166,7 @@ export interface RegionQueryParams {
   status?: FoundationStatus;
   page?: number;
   size?: number;
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
 }
 
 export interface FarmAreaRequest {

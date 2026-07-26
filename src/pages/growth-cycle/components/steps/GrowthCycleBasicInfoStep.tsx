@@ -12,8 +12,8 @@ import { ChevronDown, Flower2, TreeDeciduous } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useFormContext } from "react-hook-form";
 import type {
-  FoundationCropResponse,
-  FoundationCropVarietyResponse,
+  ProductionSubjectResponse,
+  ProductionSubjectVariantResponse,
 } from "../../../../features/foundation/types/foundation.type";
 import type { GrowthCycleFormValues } from "../../schemas/growthCycleSchema";
 import {
@@ -23,8 +23,8 @@ import {
 } from "../GrowthCycleHierarchyDialog";
 
 interface GrowthCycleBasicInfoStepProps {
-  filteredVarieties: FoundationCropVarietyResponse[];
-  crops: FoundationCropResponse[];
+  filteredVarieties: ProductionSubjectVariantResponse[];
+  crops: ProductionSubjectResponse[];
 }
 
 function ScopeOption({
@@ -212,9 +212,9 @@ export function GrowthCycleBasicInfoStep({
   const primaryOptions = crops.map((c) => ({
     id: String(c.id),
     name: c.name,
-    group: c.cropGroupName,
+    group: c.scientificName || ("Nhóm " + (c.subjectGroupId || "")),
     image: c.imageUrl ?? "",
-    description: c.description ?? "",
+    description: c.scientificName || "",
   }));
 
   const primaryMap = new Map<string, GrowthCycleHierarchyPrimaryOption>(
@@ -223,16 +223,12 @@ export function GrowthCycleBasicInfoStep({
 
   const childOptions: GrowthCycleHierarchyChildOption[] = filteredVarieties.map(
     (variety) => {
-      const metadata: Record<string, unknown> = variety.metadataJson || {};
       return {
         id: String(variety.id),
-        primaryId: String(variety.cropId),
+        primaryId: String(variety.subject?.id),
         name: variety.name,
-        group: String(metadata.scientificName || variety.cropName),
-        image:
-          typeof metadata.illustrationUrl === "string"
-            ? metadata.illustrationUrl
-            : "",
+        group: variety.origin || "",
+        image: variety.imageUrl || "",
         description: variety.description || "",
         code: variety.code,
       };

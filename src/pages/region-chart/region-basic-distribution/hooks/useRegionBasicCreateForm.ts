@@ -13,7 +13,7 @@ export function useRegionBasicCreateForm(
 ) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [match, params] = useRoute("/region-basic-distribution/edit/:id");
+  const [match, params] = useRoute("/cultivation-region-identification/crop/edit/:id");
   const isEditMode = match && !!params?.id;
   const regionId = parseInt(params?.id || "0", 10);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,14 +34,10 @@ export function useRegionBasicCreateForm(
           id: regionDataResponse.id,
           code: regionDataResponse.code,
           name: regionDataResponse.name || "",
-          cropId:
+          cropIds:
             regionDataResponse.crops
-              ?.find((crop) => crop.role === "MAIN")
-              ?.cropId?.toString() ||
-            regionDataResponse.crops
-              ?.find((crop) => crop.role === "MAIN")
-              ?.crop?.id?.toString() ||
-            "",
+              ?.map((c) => (c.cropId || c.crop?.id || 0).toString())
+              .filter((id) => id !== "0") || [],
           area: regionDataResponse.acreage || undefined,
           provinceId: regionDataResponse.province || "",
           wardId: regionDataResponse.ward || regionDataResponse.district || "",
@@ -71,7 +67,7 @@ export function useRegionBasicCreateForm(
       reset({
         code: "",
         name: "",
-        cropId: "",
+        cropIds: [],
         area: undefined,
         provinceId: "",
         wardId: "",
@@ -111,9 +107,10 @@ export function useRegionBasicCreateForm(
         metadataJson: {
           address: data.metadataJson?.address,
         },
-        crops: data.cropId
-          ? [{ cropId: parseInt(data.cropId, 10), role: "MAIN" }]
+        crops: data.cropIds?.length
+          ? data.cropIds.map((id) => ({ cropId: parseInt(id, 10), role: "MAIN" }))
           : undefined,
+        domainCode: "CROP",
       };
 
       if (isEditMode && regionId > 0) {
@@ -129,7 +126,7 @@ export function useRegionBasicCreateForm(
           description: "Đã tạo mới vùng trồng thành công",
         });
       }
-      setLocation("/region-basic-distribution");
+      setLocation("/cultivation-region-identification/crop");
     } catch (error) {
       console.error("Error saving basic region:", error);
       toast({
@@ -143,7 +140,7 @@ export function useRegionBasicCreateForm(
   };
 
   const handleCancel = () => {
-    setLocation("/region-basic-distribution");
+    setLocation("/cultivation-region-identification/crop");
   };
 
   return {

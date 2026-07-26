@@ -4,7 +4,7 @@ export const regionBasicFormSchema = z.object({
   id: z.number().optional(),
   code: z.string().optional(),
   name: z.string().min(1, "Vui lòng nhập tên vùng"),
-  cropId: z.string().optional(),
+  cropIds: z.array(z.string()).optional(),
   area: z.coerce.number().optional(),
   provinceId: z.string().optional(),
   wardId: z.string().optional(),

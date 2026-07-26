@@ -66,12 +66,24 @@ export function createGrowthCycleColumns({
     {
       key: "id",
       label: "Mã mẫu",
-      render: (value) => (
-        <div className="flex w-fit items-center gap-1.5 rounded-md border bg-muted/50 px-2 py-1 font-mono text-xs font-bold text-muted-foreground">
-          <Hash className="h-3 w-3 opacity-60" />
-          {value}
-        </div>
-      ),
+      render: (_, row: GrowthCycle) => {
+        const numericId = String(row.id).replace(/^(foundation-|user-)/, "");
+        return (
+          <div className="flex flex-col gap-1 items-start">
+            <div className="flex w-fit items-center gap-1 px-2 py-0.5 rounded-md border bg-slate-50 font-mono text-xs font-semibold text-slate-600">
+              <Hash className="h-3 w-3 opacity-60" />
+              {numericId}
+            </div>
+            <span className={`text-[9px] px-1 py-0.2 rounded-sm font-bold uppercase tracking-wider ${
+              row.isFoundation 
+                ? "bg-blue-50 text-blue-600 border border-blue-100" 
+                : "bg-purple-50 text-purple-600 border border-purple-100"
+            }`}>
+              {row.isFoundation ? "Hệ thống" : "Cá nhân"}
+            </span>
+          </div>
+        );
+      },
     },
     {
       key: "name",
@@ -204,17 +216,21 @@ export function createGrowthCycleColumns({
               <Workflow className="mr-2 h-4 w-4" />
               Mở workflow
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEdit(item)}>
-              <PencilLine className="mr-2 h-4 w-4" />
-              Chỉnh sửa
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              onClick={() => onDelete(item)}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Xóa
-            </DropdownMenuItem>
+            {!item.isFoundation && (
+              <>
+                <DropdownMenuItem onClick={() => onEdit(item)}>
+                  <PencilLine className="mr-2 h-4 w-4" />
+                  Chỉnh sửa
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => onDelete(item)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Xóa
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ),

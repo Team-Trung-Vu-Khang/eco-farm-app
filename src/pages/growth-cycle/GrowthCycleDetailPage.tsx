@@ -6,10 +6,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ArrowLeft, Calendar, Edit, FileText, Fish, Layers, Leaf, Sprout } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  Edit,
+  FileText,
+  Fish,
+  Layers,
+  Leaf,
+  Sprout,
+} from "lucide-react";
 import { formatDaysToDuration } from "./utils/duration";
 import { Link, useParams } from "wouter";
-import { useGrowthCycleTemplateById } from "../../features/foundation";
+import {
+  useSystemGrowthCycleTemplateById,
+  useUserGrowthCycleTemplateById,
+} from "../../features/foundation";
 
 interface GrowthCycleDetailPageProps {
   id?: string;
@@ -20,9 +32,22 @@ export default function GrowthCycleDetailPage({
 }: GrowthCycleDetailPageProps) {
   const params = useParams<{ id: string }>();
   const id = propId ?? params?.id;
-  const { data: cycle, isLoading } = useGrowthCycleTemplateById(Number(id), {
-    enabled: !!id,
-  });
+
+  const isFoundation = String(id).startsWith("foundation-");
+  const numericId = Number(String(id).replace(/^(foundation-|user-)/, ""));
+
+  const { data: foundationCycle, isLoading: fLoading } =
+    useSystemGrowthCycleTemplateById(numericId, {
+      enabled: !!numericId && isFoundation,
+    });
+
+  const { data: userCycle, isLoading: uLoading } =
+    useUserGrowthCycleTemplateById(numericId, {
+      enabled: !!numericId && !isFoundation,
+    });
+
+  const cycle = isFoundation ? foundationCycle : userCycle;
+  const isLoading = isFoundation ? fLoading : uLoading;
 
   if (isLoading) {
     return (
@@ -45,9 +70,18 @@ export default function GrowthCycleDetailPage({
   }
 
   const metadata = cycle.metadataJson || {};
-
-  const varietyName = cycle.cropVarietyName || null;
   const isPlant = (metadata.cycleType ?? "plant") === "plant";
+
+  const cropIdVal = cycle.productionSubject?.id;
+  const varietyIdVal = cycle.productionSubjectVariant?.id;
+  const expectedDaysVal =
+    cycle.stages?.reduce(
+      (sum: number, s: any) => sum + (s.durationDays || 0),
+      0,
+    ) ?? 0;
+
+  const cropName = cycle.productionSubject?.name || String(cropIdVal || "");
+  const varietyName = cycle.productionSubjectVariant?.name || "";
 
   return (
     <div className="space-y-6">
@@ -74,12 +108,14 @@ export default function GrowthCycleDetailPage({
             </div>
           </div>
 
-          <Link href={`/growth-cycle/${cycle.id}/edit`}>
-            <Button>
-              <Edit className="w-4 h-4 mr-2" />
-              Chỉnh sửa
-            </Button>
-          </Link>
+          {!isFoundation && (
+            <Link href={`/growth-cycle/${id}/edit`}>
+              <Button>
+                <Edit className="w-4 h-4 mr-2" />
+                Chỉnh sửa
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -91,8 +127,8 @@ export default function GrowthCycleDetailPage({
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Phạm vi</span>
-              <Badge variant={cycle.cropVarietyId ? "secondary" : "default"}>
-                {!cycle.cropVarietyId ? "Theo loại cây" : "Theo giống"}
+              <Badge variant={varietyIdVal ? "secondary" : "default"}>
+                {!varietyIdVal ? "Theo loại cây" : "Theo giống"}
               </Badge>
             </div>
             <div className="flex items-center justify-between">
@@ -105,10 +141,10 @@ export default function GrowthCycleDetailPage({
                 ) : (
                   <Fish className="w-4 h-4 text-blue-600" />
                 )}
-                {cycle.cropName}
+                {cropName}
               </span>
             </div>
-            {varietyName && (
+            {varietyIdVal && (
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
                   {isPlant ? "Giống cây" : "Giống / dòng"}
@@ -123,7 +159,7 @@ export default function GrowthCycleDetailPage({
               <span className="text-sm text-muted-foreground">
                 Tổng thời gian
               </span>
-              <Badge variant="secondary">{cycle.expectedDays || 0} ngày</Badge>
+              <Badge variant="secondary">{expectedDaysVal} ngày</Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
@@ -144,13 +180,17 @@ export default function GrowthCycleDetailPage({
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Tạo lúc</span>
               <span className="font-medium">
-                {new Date(cycle.createdAt).toLocaleString("vi-VN")}
+                {cycle.createdAt
+                  ? new Date(cycle.createdAt).toLocaleString("vi-VN")
+                  : "---"}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Cập nhật</span>
               <span className="font-medium">
-                {new Date(cycle.updatedAt).toLocaleString("vi-VN")}
+                {cycle.updatedAt
+                  ? new Date(cycle.updatedAt).toLocaleString("vi-VN")
+                  : "---"}
               </span>
             </div>
           </CardContent>
@@ -165,7 +205,7 @@ export default function GrowthCycleDetailPage({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {cycle.stages?.map((stage, index) => (
+          {cycle.stages?.map((stage: any, index: number) => (
             <div key={stage.id} className="rounded-lg border p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
@@ -177,7 +217,7 @@ export default function GrowthCycleDetailPage({
                     {formatDaysToDuration(stage.durationDays)}
                   </p>
                 </div>
-                {stage.document?.type === "pdf" ? (
+                {stage.documents?.[0] ? (
                   <Badge variant="outline" className="flex items-center gap-1">
                     <FileText className="w-3 h-3 text-blue-500" />
                     Tài liệu đính kèm
@@ -191,30 +231,28 @@ export default function GrowthCycleDetailPage({
               </div>
 
               {/* Document Content */}
-              {stage.document?.type === "pdf" && stage.document.fileUrl && (
+              {stage.documents?.[0]?.fileUrl && (
                 <div className="mt-2 flex items-center gap-2 rounded-md bg-slate-50 p-3 text-sm border border-slate-100">
                   <FileText className="w-5 h-5 text-blue-500 shrink-0" />
                   <a
-                    href={stage.document.fileUrl}
+                    href={stage.documents[0].fileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:underline font-medium line-clamp-1"
-                    title={stage.document.fileName || "Tài liệu đính kèm"}
+                    title={
+                      stage.documents[0].fileName ||
+                      stage.documents[0].name ||
+                      "Tài liệu đính kèm"
+                    }
                   >
-                    {stage.document.fileName || "Tài liệu đính kèm"}
+                    {stage.documents[0].fileName ||
+                      stage.documents[0].name ||
+                      "Tài liệu đính kèm"}
                   </a>
                 </div>
               )}
-              {stage.document?.type === "editor" && stage.document.content && (
-                <div
-                  className="prose prose-sm max-w-none mt-2 text-slate-700 border-t pt-3"
-                  dangerouslySetInnerHTML={{ __html: stage.document.content }}
-                />
-              )}
-              {/* Fallback for older data that still uses description for HTML */}
-              {!stage.document &&
-                stage.description &&
-                stage.description !== stage.name && (
+              {(!stage.documents || stage.documents.length === 0) &&
+                stage.description && (
                   <div
                     className="prose prose-sm max-w-none mt-2 text-slate-700 border-t pt-3"
                     dangerouslySetInnerHTML={{ __html: stage.description }}

@@ -66,12 +66,29 @@ export function createAnimalGrowthCycleColumns({
     {
       key: "id",
       label: "Mã mẫu",
-      render: (value: any) => (
-        <div className="flex w-fit items-center gap-1.5 rounded-md border bg-muted/50 px-2 py-1 font-mono text-xs font-bold text-muted-foreground">
-          <Hash className="h-3 w-3 opacity-60" />
-          {value}
-        </div>
-      ),
+      render: (value: any, item: AnimalGrowthCycle) => {
+        const cleanId = String(value).replace(/^(foundation-|user-)/, "");
+        const isFoundation = item.isFoundation ?? String(value).startsWith("foundation-");
+
+        return (
+          <div className="flex flex-col gap-1">
+            <div className="flex w-fit items-center gap-1.5 rounded-md border bg-muted/50 px-2 py-1 font-mono text-xs font-bold text-muted-foreground">
+              <Hash className="h-3 w-3 opacity-60" />
+              {cleanId}
+            </div>
+            <Badge
+              variant={isFoundation ? "secondary" : "outline"}
+              className={
+                isFoundation
+                  ? "border-blue-200 bg-blue-50 text-[10px] font-bold text-blue-700 w-fit"
+                  : "border-green-200 bg-green-50 text-[10px] font-bold text-green-700 w-fit"
+              }
+            >
+              {isFoundation ? "Hệ thống" : "Cá nhân"}
+            </Badge>
+          </div>
+        );
+      },
     },
     {
       key: "name",
@@ -204,17 +221,21 @@ export function createAnimalGrowthCycleColumns({
               <Workflow className="mr-2 h-4 w-4" />
               Mở workflow
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEdit(item)}>
-              <PencilLine className="mr-2 h-4 w-4" />
-              Chỉnh sửa
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              onClick={() => onDelete(item)}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Xóa
-            </DropdownMenuItem>
+            {!item.isFoundation && (
+              <>
+                <DropdownMenuItem onClick={() => onEdit(item)}>
+                  <PencilLine className="mr-2 h-4 w-4" />
+                  Chỉnh sửa
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => onDelete(item)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Xóa
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ),

@@ -1,9 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  AdminLayout,
-  Button,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { ChevronLeft } from "lucide-react";
+import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { ChevronLeft, Loader2 } from "lucide-react";
 import { FormProvider, useForm } from "react-hook-form";
 
 import { RegionInfoStep } from "../region-distribution/components/RegionInfoStep";
@@ -20,7 +17,7 @@ const RegionBasicDistributionCreateEditPage = () => {
     defaultValues: {
       code: "",
       name: "",
-      cropId: "",
+      cropIds: [],
       area: undefined,
       provinceId: "",
       wardId: "",
@@ -50,7 +47,11 @@ const RegionBasicDistributionCreateEditPage = () => {
       title={isEditMode ? "Cập nhật vùng trồng" : "Thêm mới vùng trồng"}
       description="Quản lý vùng trồng với giao diện cơ bản"
       actions={
-        <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
+        <Button
+          variant="outline"
+          onClick={handleCancel}
+          disabled={isSubmitting}
+        >
           <ChevronLeft className="mr-2 h-4 w-4" />
           Quay lại
         </Button>
@@ -72,9 +73,11 @@ const RegionBasicDistributionCreateEditPage = () => {
               <Button
                 type="button"
                 onClick={handleSubmit(handleComplete)}
-                loading={isSubmitting}
                 disabled={isSubmitting || !formState.isValid}
               >
+                {isSubmitting && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 {isEditMode ? "Lưu thay đổi" : "Tạo vùng trồng"}
               </Button>
             </div>

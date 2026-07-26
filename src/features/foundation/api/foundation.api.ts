@@ -22,6 +22,10 @@ import type {
   PageResponse,
   LifecycleTemplate,
   LifecycleTemplateQueryParams,
+  ProductionSubjectQueryParams,
+  ProductionSubjectResponse,
+  ProductionSubjectVariantQueryParams,
+  ProductionSubjectVariantResponse,
 } from "../types/foundation.type";
 import { apiClient } from "@/shared/lib/axios";
 
@@ -228,3 +232,65 @@ export const lifecycleTemplateApi = {
   delete: (id: number) =>
     apiClient.delete(`${FOUNDATION_ENDPOINTS.lifecycleTemplates}/${id}`),
 };
+
+export const userLifecycleTemplateApi = {
+  list: (params?: LifecycleTemplateQueryParams) =>
+    apiClient
+      .get<PageResponse<LifecycleTemplate>>("/api/foundation/production/lifecycle-templates", { params })
+      .then((r) => r.data),
+
+  getById: (id: number) =>
+    apiClient
+      .get<LifecycleTemplate>(`/api/foundation/production/lifecycle-templates/${id}`)
+      .then((r) => r.data),
+
+  create: (data: LifecycleTemplate) =>
+    apiClient
+      .post<LifecycleTemplate>("/api/foundation/production/lifecycle-templates", data)
+      .then((r) => r.data),
+
+  update: (id: number, data: LifecycleTemplate) =>
+    apiClient
+      .put<LifecycleTemplate>(`/api/foundation/production/lifecycle-templates/${id}`, data)
+      .then((r) => r.data),
+
+  delete: (id: number) =>
+    apiClient.delete(`/api/foundation/production/lifecycle-templates/${id}`),
+};
+
+// ─── Production Subjects & Variants API ───────────────────────────────────────
+export const productionSubjectApi = {
+  list: (params?: ProductionSubjectQueryParams) =>
+    apiClient
+      .get<PageResponse<ProductionSubjectResponse>>(
+        "/api/admin/foundation/production/subjects",
+        { params },
+      )
+      .then((r) => r.data),
+
+  getById: (id: number) =>
+    apiClient
+      .get<ProductionSubjectResponse>(
+        `/api/admin/foundation/production/subjects/${id}`,
+      )
+      .then((r) => r.data),
+};
+
+export const productionSubjectVariantApi = {
+  list: (params?: ProductionSubjectVariantQueryParams) =>
+    apiClient
+      .get<PageResponse<ProductionSubjectVariantResponse>>(
+        "/api/admin/foundation/production/subject-variants",
+        { params },
+      )
+      .then((r) => r.data),
+
+  getById: (id: number) =>
+    apiClient
+      .get<ProductionSubjectVariantResponse>(
+        `/api/admin/foundation/production/subject-variants/${id}`,
+      )
+      .then((r) => r.data),
+};
+
+

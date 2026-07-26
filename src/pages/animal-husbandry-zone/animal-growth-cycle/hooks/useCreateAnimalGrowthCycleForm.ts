@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  useLifecycleTemplateMutations,
-  useCrops,
-  useCropVarieties,
+  useUserGrowthCycleTemplateMutations,
+  useProductionSubjects,
+  useProductionSubjectVariants,
 } from "../../../../features/foundation";
 import { useFileUpload } from "../../../../features/storage";
 import { safeConvertLexicalToHtml } from "@/utils/commons";
@@ -14,9 +14,9 @@ import type { AnimalGrowthCycleFormValues } from "../schemas/animalGrowthCycleSc
 export function useCreateAnimalGrowthCycleForm() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { createTemplate } = useLifecycleTemplateMutations();
-  const { items: crops } = useCrops();
-  const { items: cropVarieties } = useCropVarieties();
+  const { createTemplate } = useUserGrowthCycleTemplateMutations();
+  const { items: crops } = useProductionSubjects({ params: { domainCode: "LIVESTOCK", size: 100 } });
+  const { items: cropVarieties } = useProductionSubjectVariants({ params: { domainCode: "LIVESTOCK", size: 100 } });
   const { uploadFile } = useFileUpload();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,11 +24,11 @@ export function useCreateAnimalGrowthCycleForm() {
   const handleComplete = async (values: AnimalGrowthCycleFormValues) => {
     setIsSubmitting(true);
     try {
-
       // Upload PDFs and prepare stages
       const preparedStages = await Promise.all(
         values.stages.map(async (stage, index) => {
-          let documentData: any = undefined;
+          let documents: any[] = [];
+          let description = "";
 
           if (stage.usePdf && stage.pdfFile instanceof File) {
             const res = await uploadFile.mutateAsync({
@@ -36,29 +36,27 @@ export function useCreateAnimalGrowthCycleForm() {
               folder: "animal-growth-cycle-stages",
             });
             if (res.fileUrl) {
-              documentData = {
-                type: "pdf",
-                name: "Tài liệu kỹ thuật",
-                fileUrl: res.fileUrl,
-                fileName: res.fileName || stage.pdfFile.name,
-              };
+              documents = [
+                {
+                  documentType: "pdf",
+                  name: stage.pdfFile.name,
+                  fileUrl: res.fileUrl,
+                  fileName: res.fileName || stage.pdfFile.name,
+                  mimeType: "application/pdf",
+                  sizeBytes: stage.pdfFile.size,
+                  displayOrder: 1,
+                },
+              ];
             }
           } else {
-            const html = (await safeConvertLexicalToHtml(stage.content)) || "";
-            if (html && html !== "<p><br></p>") {
-              documentData = {
-                type: "editor",
-                name: "Tài liệu kỹ thuật",
-                content: html,
-              };
-            }
+            description = (await safeConvertLexicalToHtml(stage.content)) || "";
           }
 
           return {
             name: stage.name,
             durationDays: parseDurationToDays(String(stage.duration)),
-            description: stage.name, // Sending name as description or keep it brief
-            document: documentData,
+            description: description,
+            documents: documents,
             displayOrder: index + 1,
           };
         }),
@@ -66,20 +64,17 @@ export function useCreateAnimalGrowthCycleForm() {
 
       const metadataJson = { cycleType: values.cycleType };
 
+      const cropIdVal = Number(values.cropId);
+      const varietyIdVal =
+        values.scope === "variety" && values.variety
+          ? Number(values.variety)
+          : undefined;
+
       await createTemplate.mutateAsync({
         domainCode: "LIVESTOCK",
         name: values.name.trim(),
-        subjectId: Number(values.cropId),
-        subjectVariantId:
-          values.scope === "variety" && values.variety
-            ? Number(values.variety)
-            : undefined,
-        subjectGroupId:
-          crops.find((c) => String(c.id) === values.cropId)?.cropGroupId || 1, // Fallback
-        expectedDays: values.stages.reduce(
-          (sum, s) => sum + parseDurationToDays(String(s.duration)),
-          0,
-        ),
+        productionSubjectId: cropIdVal,
+        productionSubjectVariantId: varietyIdVal ?? null,
         description: "Chu kỳ sinh trưởng",
         stages: preparedStages,
         displayOrder: 1,

@@ -4,40 +4,161 @@ import {
   CardContent,
   Input,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   StepperForm,
+  FormField,
+  FormItem,
+  FormControl,
+  FormMessage,
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { CalendarDays, Fish, Layers3, Waves } from "lucide-react";
-import { useMemo } from "react";
+import { CalendarDays, Fish, Layers3, Waves, ChevronDown } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import type { z } from "zod";
 import { GrowthCycleStagesStep } from "@/pages/growth-cycle/components/steps/GrowthCycleStagesStep";
-import type { GrowthCycleFormValues } from "@/pages/growth-cycle/schemas/growthCycleSchema";
+import type { AnimalGrowthCycleFormValues } from "@/pages/animal-husbandry-zone/animal-growth-cycle/schemas/animalGrowthCycleSchema";
 import { parseDurationToDays } from "@/pages/growth-cycle/utils/duration";
 import {
-  AQUACULTURE_GROWTH_CYCLE_SPECIES,
-  AQUACULTURE_GROWTH_CYCLE_VARIETIES,
-} from "../data/aquacultureGrowthCycleData";
+  useProductionSubjects,
+  useProductionSubjectVariants,
+  type ProductionSubjectResponse,
+  type ProductionSubjectVariantResponse,
+} from "@/features/foundation";
+import { AquacultureGrowthCycleHierarchyDialog } from "./AquacultureGrowthCycleHierarchyDialog";
 
-interface AquacultureGrowthCycleStepsProps {
-  schema: z.ZodTypeAny;
-  onComplete: () => void;
-  onCancel: () => void;
-  isSubmitting?: boolean;
+function SelectionCard({
+  title,
+  subtitle,
+  image,
+  fallbackIcon,
+  group,
+  detail,
+  placeholder,
+  showSecondary,
+  secondaryTitle,
+  secondarySubtitle,
+  secondaryPlaceholder,
+  secondaryDetail,
+  secondaryGroup,
+  secondaryDisabled,
+  onPrimaryClick,
+  onSecondaryClick,
+}: {
+  title: string;
+  subtitle?: string;
+  image?: string;
+  fallbackIcon: ReactNode;
+  group?: string;
+  detail?: string;
+  placeholder: string;
+  showSecondary: boolean;
+  secondaryTitle: string;
+  secondarySubtitle?: string;
+  secondaryPlaceholder: string;
+  secondaryDetail?: string;
+  secondaryGroup?: string;
+  secondaryDisabled: boolean;
+  onPrimaryClick: () => void;
+  onSecondaryClick: () => void;
+}) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:border-primary/30 hover:shadow-md">
+      <button
+        type="button"
+        onClick={onPrimaryClick}
+        className="flex min-h-[112px] w-full items-center justify-between gap-4 px-4 py-4 text-left transition-colors hover:bg-slate-50/70"
+      >
+        <div className="flex min-w-0 items-center gap-4">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 shadow-sm">
+            {image ? (
+              <img
+                src={image}
+                alt={title}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="text-muted-foreground">{fallbackIcon}</span>
+            )}
+          </div>
+          <div className="min-w-0 space-y-1">
+            <p className="truncate text-base font-semibold text-slate-900">
+              {title}
+            </p>
+            <p className="truncate text-sm text-muted-foreground">
+              {subtitle || placeholder}
+            </p>
+            {detail && (
+              <p className="line-clamp-2 text-xs leading-snug text-slate-500">
+                {detail}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          {group && (
+            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+              {group}
+            </span>
+          )}
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        </div>
+      </button>
+
+      {showSecondary ? (
+        <div className="border-t border-slate-100 bg-slate-50/60 px-4 py-3">
+          <button
+            type="button"
+            onClick={onSecondaryClick}
+            disabled={secondaryDisabled}
+            className={`flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-3 text-left transition-all ${
+              secondaryDisabled
+                ? "cursor-not-allowed border-dashed border-slate-200 bg-white/70 opacity-70"
+                : "border-slate-200 bg-white hover:border-primary/40 hover:shadow-sm"
+            }`}
+          >
+            <div className="min-w-0 space-y-1">
+              <p className="text-sm font-semibold text-slate-900">
+                {secondaryTitle}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {secondarySubtitle || secondaryPlaceholder}
+              </p>
+              {secondaryDetail && (
+                <p className="line-clamp-1 text-[11px] text-slate-500">
+                  {secondaryDetail}
+                </p>
+              )}
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              {secondaryGroup && (
+                <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                  {secondaryGroup}
+                </span>
+              )}
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
-function AquacultureBasicInfoStep() {
+interface AquacultureBasicInfoStepProps {
+  crops: ProductionSubjectResponse[];
+  varieties: ProductionSubjectVariantResponse[];
+}
+
+function AquacultureBasicInfoStep({ crops, varieties }: AquacultureBasicInfoStepProps) {
   const {
     watch,
     control,
     register,
+    setValue,
     formState: { errors },
-  } = useFormContext<GrowthCycleFormValues>();
+  } = useFormContext<AnimalGrowthCycleFormValues>();
+
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const scope = watch("scope");
   const cropId = watch("cropId");
@@ -46,18 +167,50 @@ function AquacultureBasicInfoStep() {
 
   const filteredVarieties = useMemo(
     () =>
-      AQUACULTURE_GROWTH_CYCLE_VARIETIES.filter(
-        (item) => item.cropId === cropId,
+      varieties.filter(
+        (item) => String(item.subject?.id) === cropId,
       ),
-    [cropId],
+    [cropId, varieties],
   );
 
-  const selectedSpecies = AQUACULTURE_GROWTH_CYCLE_SPECIES.find(
+  const primaryOptions = crops.map((c) => ({
+    id: String(c.id),
+    name: c.name,
+    group: c.scientificName || "Nhóm " + (c.subjectGroupId || ""),
+    image: c.imageUrl ?? "",
+    description: c.scientificName || "",
+  }));
+
+  const childOptions = filteredVarieties.map((item) => {
+    return {
+      id: String(item.id),
+      primaryId: String(item.subject?.id),
+      name: item.name,
+      group: item.origin || "",
+      image: item.imageUrl || "",
+      description: item.description || "",
+      code: item.code,
+    };
+  });
+
+  const selectedPrimary = primaryOptions.find(
     (item) => item.id === cropId,
   );
-  const selectedVariety = AQUACULTURE_GROWTH_CYCLE_VARIETIES.find(
-    (item) => item.id === variety,
-  );
+  const selectedChild = childOptions.find((item) => item.id === variety);
+
+  const selectionTitle = selectedPrimary ? selectedPrimary.name : "Chọn loài nuôi";
+  const selectionSubtitle = selectedPrimary ? selectedPrimary.group : "Mở dialog để chọn loài nuôi";
+  const selectionDetail = selectedPrimary?.description;
+
+  const varietyTitle = selectedChild ? selectedChild.name : "Chọn giống loài nuôi";
+  const varietySubtitle = !selectedPrimary
+    ? "Vui lòng chọn loài nuôi trước khi chọn giống."
+    : selectedChild
+      ? selectedChild.group
+      : "Nhấp để chọn giống";
+  const varietyDetail = selectedChild?.description;
+
+  const primaryFallbackIcon = <Fish className="w-8 h-8" />;
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -137,11 +290,11 @@ function AquacultureBasicInfoStep() {
                         >
                           <div className="flex items-center gap-2">
                             <div
-                              className={`flex h-9 w-9 items-center justify-center rounded-xl ${
-                                isActive
-                                  ? "bg-cyan-500 text-white"
-                                  : "bg-slate-100 text-slate-500"
-                              }`}
+                               className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                                 isActive
+                                   ? "bg-cyan-500 text-white"
+                                   : "bg-slate-100 text-slate-500"
+                               }`}
                             >
                               <Waves className="h-4 w-4" />
                             </div>
@@ -163,83 +316,44 @@ function AquacultureBasicInfoStep() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium">
-                Loài nuôi <span className="text-red-500">*</span>
-              </Label>
-              <Controller
-                control={control}
+              <Label className="text-sm font-semibold">Loài nuôi</Label>
+              <FormField
+                control={control as any}
                 name="cropId"
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="h-11 bg-white">
-                      <SelectValue placeholder="Chọn loài nuôi..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AQUACULTURE_GROWTH_CYCLE_SPECIES.map((species) => (
-                        <SelectItem key={species.id} value={species.id}>
-                          <div className="space-y-0.5">
-                            <div className="font-medium">{species.name}</div>
-                            <div className="text-[11px] text-muted-foreground">
-                              {species.group}
-                            </div>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                render={() => (
+                  <FormItem>
+                    <FormControl>
+                      <SelectionCard
+                        title={selectionTitle}
+                        subtitle={selectionSubtitle}
+                        image={selectedPrimary?.image}
+                        fallbackIcon={primaryFallbackIcon}
+                        group={selectedPrimary?.group}
+                        detail={selectionDetail}
+                        placeholder="Chọn loài nuôi trong dialog"
+                        showSecondary={scope === "variety"}
+                        secondaryTitle={varietyTitle}
+                        secondarySubtitle={varietySubtitle}
+                        secondaryPlaceholder="Chọn giống thủy sản trong dialog"
+                        secondaryDetail={varietyDetail}
+                        secondaryGroup={
+                          scope === "variety" && selectedChild?.group
+                            ? selectedChild.group
+                            : undefined
+                        }
+                        secondaryDisabled={!selectedPrimary}
+                        onPrimaryClick={() => setDialogOpen(true)}
+                        onSecondaryClick={() => {
+                          if (!selectedPrimary) return;
+                          setDialogOpen(true);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
               />
-              {errors.cropId && (
-                <p className="text-xs font-medium text-red-500">
-                  {errors.cropId.message}
-                </p>
-              )}
             </div>
-
-            {scope === "variety" && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  Giống / dòng <span className="text-red-500">*</span>
-                </Label>
-                <Controller
-                  control={control}
-                  name="variety"
-                  render={({ field }) => (
-                    <Select
-                      value={field.value || ""}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger className="h-11 bg-white">
-                        <SelectValue placeholder="Chọn giống / dòng..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {filteredVarieties.length > 0 ? (
-                          filteredVarieties.map((item) => (
-                            <SelectItem key={item.id} value={item.id}>
-                              <div className="space-y-0.5">
-                                <div className="font-medium">{item.name}</div>
-                                <div className="text-[11px] text-muted-foreground">
-                                  {item.description}
-                                </div>
-                              </div>
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="__empty" disabled>
-                            Chưa có giống phù hợp
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.variety && (
-                  <p className="text-xs font-medium text-red-500">
-                    {errors.variety.message}
-                  </p>
-                )}
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -269,7 +383,7 @@ function AquacultureBasicInfoStep() {
               <div className="flex items-center justify-between gap-3">
                 <span className="text-muted-foreground">Loài nuôi</span>
                 <span className="font-medium text-slate-900">
-                  {selectedSpecies?.name || "Chưa chọn"}
+                  {selectedPrimary?.name || "Chưa chọn"}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-3">
@@ -282,7 +396,7 @@ function AquacultureBasicInfoStep() {
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-muted-foreground">Giống / dòng</span>
                   <span className="max-w-[180px] truncate font-medium text-slate-900">
-                    {selectedVariety?.name || "Chưa chọn"}
+                    {selectedChild?.name || "Chưa chọn"}
                   </span>
                 </div>
               )}
@@ -290,19 +404,47 @@ function AquacultureBasicInfoStep() {
           </CardContent>
         </Card>
       </div>
+
+      <AquacultureGrowthCycleHierarchyDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        title="Chọn loài nuôi và giống"
+        description="Chọn loài nuôi ở trên, sau đó chọn giống ở bên dưới nếu cần."
+        searchPlaceholder="Tìm loài nuôi hoặc giống..."
+        selectedPrimaryId={cropId}
+        selectedChildId={variety || ""}
+        primaryOptions={primaryOptions}
+        childOptions={childOptions}
+        primaryLabel="Loài nuôi"
+        childLabel="Giống thủy sản"
+        showChildSection={scope === "variety"}
+        onConfirm={({ primary, child }) => {
+          setValue("cropId", primary.id, { shouldValidate: true });
+          if (scope === "variety") {
+            setValue("variety", child?.id || "", { shouldValidate: true });
+          } else {
+            setValue("variety", "", { shouldValidate: true });
+          }
+        }}
+      />
     </div>
   );
 }
 
-function AquacultureConfirmStep() {
-  const { watch } = useFormContext<GrowthCycleFormValues>();
+interface AquacultureConfirmStepProps {
+  crops: ProductionSubjectResponse[];
+  varieties: ProductionSubjectVariantResponse[];
+}
+
+function AquacultureConfirmStep({ crops, varieties }: AquacultureConfirmStepProps) {
+  const { watch } = useFormContext<AnimalGrowthCycleFormValues>();
   const formData = watch();
 
-  const selectedSpecies = AQUACULTURE_GROWTH_CYCLE_SPECIES.find(
-    (item) => item.id === formData.cropId,
+  const selectedSpecies = crops.find(
+    (item) => String(item.id) === formData.cropId,
   );
-  const selectedVariety = AQUACULTURE_GROWTH_CYCLE_VARIETIES.find(
-    (item) => item.id === formData.variety,
+  const selectedVariety = varieties.find(
+    (item) => String(item.id) === formData.variety,
   );
   const totalDays = formData.stages.reduce(
     (sum, stage) => sum + parseDurationToDays(String(stage.duration)),
@@ -370,7 +512,7 @@ function AquacultureConfirmStep() {
             </p>
           </div>
           <div className="rounded-2xl bg-slate-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-900">
               Số giai đoạn
             </p>
             <p className="mt-2 text-base font-medium text-slate-900">
@@ -428,8 +570,11 @@ export function AquacultureGrowthCycleSteps({
   onCancel,
   isSubmitting = false,
 }: AquacultureGrowthCycleStepsProps) {
-  const { watch, handleSubmit } = useFormContext<GrowthCycleFormValues>();
+  const { watch, handleSubmit } = useFormContext<AnimalGrowthCycleFormValues>();
   const values = watch();
+
+  const { items: crops } = useProductionSubjects({ params: { domainCode: "AQUACULTURE", size: 100 } });
+  const { items: varieties } = useProductionSubjectVariants({ params: { domainCode: "AQUACULTURE", size: 100 } });
 
   const validationResult = useMemo(
     () => schema.safeParse(values),
@@ -459,7 +604,7 @@ export function AquacultureGrowthCycleSteps({
         id: "info",
         title: "Bước 1",
         description: "Thông tin thủy hải sản",
-        content: <AquacultureBasicInfoStep />,
+        content: <AquacultureBasicInfoStep crops={crops} varieties={varieties} />,
         isValid: isStep1Valid,
       },
       {
@@ -473,11 +618,11 @@ export function AquacultureGrowthCycleSteps({
         id: "confirm",
         title: "Bước 3",
         description: "Xác nhận",
-        content: <AquacultureConfirmStep />,
+        content: <AquacultureConfirmStep crops={crops} varieties={varieties} />,
         isValid: true,
       },
     ],
-    [isStep1Valid, isStep2Valid],
+    [isStep1Valid, isStep2Valid, crops, varieties],
   );
 
   return (

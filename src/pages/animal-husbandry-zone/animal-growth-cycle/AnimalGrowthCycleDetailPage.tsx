@@ -9,7 +9,10 @@ import {
 import { ArrowLeft, Calendar, Edit, FileText, Fish, Layers, Leaf, Sprout } from "lucide-react";
 import { formatDaysToDuration } from "./utils/duration";
 import { Link, useParams } from "wouter";
-import { useLifecycleTemplateById, useCrops, useCropVarieties } from "../../../features/foundation";
+import {
+  useSystemGrowthCycleTemplateById,
+  useUserGrowthCycleTemplateById,
+} from "../../../features/foundation";
 
 interface AnimalGrowthCycleDetailPageProps {
   id?: string;
@@ -20,13 +23,22 @@ export default function AnimalGrowthCycleDetailPage({
 }: AnimalGrowthCycleDetailPageProps) {
   const params = useParams<{ id: string }>();
   const id = propId ?? params?.id;
-  const { data: cycle, isLoading: isCycleLoading } = useLifecycleTemplateById(Number(id), {
-    enabled: !!id,
-  });
-  const { items: crops, isLoading: isCropsLoading } = useCrops({ enabled: !!cycle });
-  const { items: varieties, isLoading: isVarietiesLoading } = useCropVarieties({ enabled: !!cycle });
 
-  const isLoading = isCycleLoading || isCropsLoading || isVarietiesLoading;
+  const isFoundation = String(id).startsWith("foundation-");
+  const numericId = Number(String(id).replace(/^(foundation-|user-)/, ""));
+
+  const { data: foundationCycle, isLoading: fLoading } =
+    useSystemGrowthCycleTemplateById(numericId, {
+      enabled: !!numericId && isFoundation,
+    });
+
+  const { data: userCycle, isLoading: uLoading } =
+    useUserGrowthCycleTemplateById(numericId, {
+      enabled: !!numericId && !isFoundation,
+    });
+
+  const cycle = isFoundation ? foundationCycle : userCycle;
+  const isLoading = isFoundation ? fLoading : uLoading;
 
   if (isLoading) {
     return (
@@ -49,13 +61,18 @@ export default function AnimalGrowthCycleDetailPage({
   }
 
   const metadata = cycle.metadataJson || {};
-
-  const matchedCrop = crops.find((c) => String(c.id) === String(cycle.subjectId));
-  const matchedVariety = varieties.find((v) => String(v.id) === String(cycle.subjectVariantId));
-
-  const cropName = matchedCrop?.name || "";
-  const varietyName = matchedVariety?.name || null;
   const isAnimal = (metadata.cycleType ?? "animal") === "animal";
+
+  const cropIdVal = cycle.productionSubject?.id;
+  const varietyIdVal = cycle.productionSubjectVariant?.id;
+  const expectedDaysVal =
+    cycle.stages?.reduce(
+      (sum: number, s: any) => sum + (s.durationDays || 0),
+      0,
+    ) ?? 0;
+
+  const cropName = cycle.productionSubject?.name || String(cropIdVal || "");
+  const varietyName = cycle.productionSubjectVariant?.name || "";
 
   return (
     <div className="space-y-6">
@@ -82,12 +99,14 @@ export default function AnimalGrowthCycleDetailPage({
             </div>
           </div>
 
-          <Link href={`/animal-growth-cycle/${cycle.id}/edit`}>
-            <Button>
-              <Edit className="w-4 h-4 mr-2" />
-              Chỉnh sửa
-            </Button>
-          </Link>
+          {!isFoundation && (
+            <Link href={`/animal-growth-cycle/${id}/edit`}>
+              <Button>
+                <Edit className="w-4 h-4 mr-2" />
+                Chỉnh sửa
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -99,8 +118,8 @@ export default function AnimalGrowthCycleDetailPage({
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Phạm vi</span>
-              <Badge variant={cycle.subjectVariantId ? "secondary" : "default"}>
-                {!cycle.subjectVariantId ? "Theo loại cây" : "Theo giống"}
+              <Badge variant={varietyIdVal ? "secondary" : "default"}>
+                {!varietyIdVal ? "Theo loại" : "Theo giống"}
               </Badge>
             </div>
             <div className="flex items-center justify-between">
@@ -116,7 +135,7 @@ export default function AnimalGrowthCycleDetailPage({
                 {cropName}
               </span>
             </div>
-            {varietyName && (
+            {varietyIdVal && (
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
                   {isAnimal ? "Giống vật nuôi" : "Giống / dòng"}
@@ -131,7 +150,7 @@ export default function AnimalGrowthCycleDetailPage({
               <span className="text-sm text-muted-foreground">
                 Tổng thời gian
               </span>
-              <Badge variant="secondary">{cycle.expectedDays || 0} ngày</Badge>
+              <Badge variant="secondary">{expectedDaysVal} ngày</Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
@@ -152,13 +171,17 @@ export default function AnimalGrowthCycleDetailPage({
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Tạo lúc</span>
               <span className="font-medium">
-                {new Date(cycle.createdAt).toLocaleString("vi-VN")}
+                {cycle.createdAt
+                  ? new Date(cycle.createdAt).toLocaleString("vi-VN")
+                  : "---"}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Cập nhật</span>
               <span className="font-medium">
-                {new Date(cycle.updatedAt).toLocaleString("vi-VN")}
+                {cycle.updatedAt
+                  ? new Date(cycle.updatedAt).toLocaleString("vi-VN")
+                  : "---"}
               </span>
             </div>
           </CardContent>
@@ -173,7 +196,7 @@ export default function AnimalGrowthCycleDetailPage({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {cycle.stages?.map((stage, index) => (
+          {cycle.stages?.map((stage: any, index: number) => (
             <div key={stage.id} className="rounded-lg border p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
@@ -185,7 +208,7 @@ export default function AnimalGrowthCycleDetailPage({
                     {formatDaysToDuration(stage.durationDays)}
                   </p>
                 </div>
-                {stage.document?.type === "pdf" ? (
+                {stage.documents?.[0] ? (
                   <Badge variant="outline" className="flex items-center gap-1">
                     <FileText className="w-3 h-3 text-blue-500" />
                     Tài liệu đính kèm
@@ -199,30 +222,28 @@ export default function AnimalGrowthCycleDetailPage({
               </div>
 
               {/* Document Content */}
-              {stage.document?.type === "pdf" && stage.document.fileUrl && (
+              {stage.documents?.[0]?.fileUrl && (
                 <div className="mt-2 flex items-center gap-2 rounded-md bg-slate-50 p-3 text-sm border border-slate-100">
                   <FileText className="w-5 h-5 text-blue-500 shrink-0" />
                   <a
-                    href={stage.document.fileUrl}
+                    href={stage.documents[0].fileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:underline font-medium line-clamp-1"
-                    title={stage.document.fileName || "Tài liệu đính kèm"}
+                    title={
+                      stage.documents[0].fileName ||
+                      stage.documents[0].name ||
+                      "Tài liệu đính kèm"
+                    }
                   >
-                    {stage.document.fileName || "Tài liệu đính kèm"}
+                    {stage.documents[0].fileName ||
+                      stage.documents[0].name ||
+                      "Tài liệu đính kèm"}
                   </a>
                 </div>
               )}
-              {stage.document?.type === "editor" && stage.document.content && (
-                <div
-                  className="prose prose-sm max-w-none mt-2 text-slate-700 border-t pt-3"
-                  dangerouslySetInnerHTML={{ __html: stage.document.content }}
-                />
-              )}
-              {/* Fallback for older data that still uses description for HTML */}
-              {!stage.document &&
-                stage.description &&
-                stage.description !== stage.name && (
+              {(!stage.documents || stage.documents.length === 0) &&
+                stage.description && (
                   <div
                     className="prose prose-sm max-w-none mt-2 text-slate-700 border-t pt-3"
                     dangerouslySetInnerHTML={{ __html: stage.description }}

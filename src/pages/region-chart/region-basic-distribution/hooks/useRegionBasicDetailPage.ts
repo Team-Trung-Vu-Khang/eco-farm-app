@@ -8,7 +8,7 @@ import { RegionChartStatusBadge } from "../../components/RegionChartStatusBadge"
 
 export function useRegionBasicDetailPage() {
   const [, setLocation] = useLocation();
-  const [match, params] = useRoute("/region-basic-distribution/detail/:id");
+  const [match, params] = useRoute("/cultivation-region-identification/crop/detail/:id");
   const regionId = match && params?.id ? parseInt(params.id, 10) : null;
 
   const { data: regionDataResponse, isLoading } = useRegionById(regionId || 0, {

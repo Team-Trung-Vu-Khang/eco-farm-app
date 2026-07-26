@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { lifecycleTemplateApi } from "../api/foundation.api";
+import { lifecycleTemplateApi, userLifecycleTemplateApi } from "../api/foundation.api";
 import type {
   LifecycleTemplateQueryParams,
   LifecycleTemplate,
@@ -59,3 +59,44 @@ export function useLifecycleTemplateById(
     enabled: enabled && !!id,
   });
 }
+
+// ─── User-Specific Lifecycle Templates ────────────────────────────────────────
+
+export const userLifecycleTemplateKeys = {
+  all: () => ["user-lifecycle-templates"] as const,
+  list: (params?: LifecycleTemplateQueryParams) =>
+    ["user-lifecycle-templates", "list", params ?? {}] as const,
+  detail: (id: number) =>
+    ["user-lifecycle-templates", "detail", id] as const,
+};
+
+export function useUserLifecycleTemplates({
+  params,
+  enabled = true,
+}: UseLifecycleTemplatesOptions = {}) {
+  const queryResult = useQuery<PageResponse<LifecycleTemplate>, Error>({
+    queryKey: userLifecycleTemplateKeys.list(params),
+    queryFn: () => userLifecycleTemplateApi.list(params),
+    enabled,
+  });
+
+  return {
+    ...queryResult,
+    items: queryResult.data?.content ?? [],
+    response: queryResult.data ?? null,
+    loading: queryResult.isLoading,
+    error: queryResult.error?.message ?? null,
+  };
+}
+
+export function useUserLifecycleTemplateById(
+  id: number,
+  { enabled = true }: UseLifecycleTemplateByIdOptions = {},
+) {
+  return useQuery<LifecycleTemplate, Error>({
+    queryKey: userLifecycleTemplateKeys.detail(id),
+    queryFn: () => userLifecycleTemplateApi.getById(id),
+    enabled: enabled && !!id,
+  });
+}
+

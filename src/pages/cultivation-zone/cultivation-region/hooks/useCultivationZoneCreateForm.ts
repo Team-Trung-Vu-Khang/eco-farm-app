@@ -71,9 +71,12 @@ export function useCultivationZoneCreateForm(
             areaName: s.plot?.area?.name ?? "",
           };
         }),
-        farmingMethodId: zoneData.farmingMethod?.id ?? 0,
+        farmingMethodId:
+          zoneData.farmingMethod?.id ?? zoneData?.productionMethod?.id ?? 0,
         irrigationSystemId: zoneData.irrigationSystem?.id ?? 0,
-        seedIds: (zoneData.seeds ?? []).map((s) => s.id),
+        seedIds: (zoneData.seeds ?? zoneData.subjectVariants ?? []).map(
+          (s) => s.id,
+        ),
         certificateIds: (zoneData.certificates ?? []).map((c) => c.id),
         personnelIds: (zoneData.personnel ?? []).map((p) => p.id),
         notes: zoneData.notes ?? "",

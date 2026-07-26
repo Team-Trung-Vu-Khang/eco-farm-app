@@ -53,7 +53,9 @@ const AnimalGrowthCyclePage = () => {
 
   const animalCycles = useMemo(
     () =>
-      animalGrowthCycles.filter((cycle) => (cycle.cycleType ?? "animal") === "animal"),
+      animalGrowthCycles.filter(
+        (cycle) => (cycle.cycleType ?? "animal") === "animal",
+      ),
     [animalGrowthCycles],
   );
 

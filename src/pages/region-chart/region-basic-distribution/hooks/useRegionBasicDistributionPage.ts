@@ -22,11 +22,16 @@ export function useRegionBasicDistributionPage() {
     setCurrentIndex(1);
   };
 
-  const { items: apiRegions, response, isLoading } = useRegions({
+  const {
+    items: apiRegions,
+    response,
+    isLoading,
+  } = useRegions({
     params: {
       keyword: debouncedSearch.trim() || undefined,
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
+      domainCode: "CROP",
     },
   });
   const { deleteRegion } = useRegionMutations();
@@ -35,7 +40,7 @@ export function useRegionBasicDistributionPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const openDetail = (id: number) => {
-    setLocation(`/region-basic-distribution/detail/${id}`);
+    setLocation(`/cultivation-region-identification/crop/detail/${id}`);
   };
 
   const columns = useMemo(
@@ -83,11 +88,11 @@ export function useRegionBasicDistributionPage() {
   }, [apiRegions]);
 
   const handleAdd = () => {
-    setLocation("/region-basic-distribution/create");
+    setLocation("/cultivation-region-identification/crop/create");
   };
 
   const handleEdit = (id: number) => {
-    setLocation(`/region-basic-distribution/edit/${id}`);
+    setLocation(`/cultivation-region-identification/crop/edit/${id}`);
   };
 
   const handleDelete = (id: number) => {

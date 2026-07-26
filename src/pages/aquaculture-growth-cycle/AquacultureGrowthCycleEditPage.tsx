@@ -1,3 +1,4 @@
+import { safeConvertLexicalToHtml } from "@/utils/commons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AdminLayout,
@@ -7,100 +8,193 @@ import {
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useLocation, useRoute } from "wouter";
 import {
-  growthCycleFormSchema,
-  type GrowthCycleFormValues,
-} from "@/pages/growth-cycle/schemas/growthCycleSchema";
+  useUserGrowthCycleTemplateById,
+  useUserGrowthCycleTemplateMutations,
+} from "@/features/foundation";
+import { useFileUpload } from "@/features/storage";
 import { AquacultureGrowthCycleSteps } from "./components/AquacultureGrowthCycleSteps";
-import { aquacultureGrowthCycles } from "./data/mocks";
+import {
+  animalGrowthCycleFormSchema,
+  type AnimalGrowthCycleFormValues,
+} from "@/pages/animal-husbandry-zone/animal-growth-cycle/schemas/animalGrowthCycleSchema";
+import { formatDaysToDuration, parseDurationToDays } from "@/pages/growth-cycle/utils/duration";
 
 export default function AquacultureGrowthCycleEditPage() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/aquaculture-growth-cycle/:id/edit");
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  const currentCycle = useMemo(
-    () => aquacultureGrowthCycles.find((item) => item.id === params?.id) ?? null,
-    [params?.id],
+  const numericId = Number(String(params?.id).replace(/^(foundation-|user-)/, ""));
+
+  const { data: currentCycle, isLoading } = useUserGrowthCycleTemplateById(
+    numericId,
+    { enabled: !!numericId },
   );
+  const { updateTemplate } = useUserGrowthCycleTemplateMutations();
+  const { uploadFile } = useFileUpload();
 
-  const form = useForm<GrowthCycleFormValues>({
-    resolver: zodResolver(growthCycleFormSchema),
+  const form = useForm<AnimalGrowthCycleFormValues>({
+    resolver: zodResolver(animalGrowthCycleFormSchema),
     mode: "onChange",
-    defaultValues: currentCycle
-      ? {
-          name: currentCycle.name,
-          cropId: currentCycle.cropId || "",
-          variety: currentCycle.variety || "",
-          totalDays: currentCycle.totalDays || 0,
-          scope: currentCycle.scope || "crop",
-          cycleType: "animal",
-          stages: currentCycle.stages.map((stage, index) => ({
-            id: stage.id || String(index + 1),
-            name: stage.name,
-            duration: stage.duration || "",
-            usePdf: stage.usePdf ?? false,
-            content: stage.content || "",
-          })),
-        }
-      : {
-          name: "",
-          cropId: "",
-          variety: "",
-          totalDays: 0,
-          scope: "crop",
-          cycleType: "animal",
-          stages: [
-            {
-              id: "1",
-              content: "",
-              duration: "",
-              usePdf: false,
-              name: "Giai đoạn 1",
-            },
-          ],
-        },
   });
 
-  const watchedStages = form.watch("stages") || [];
+  const { reset } = form;
 
-  const handleSubmit = async (values: GrowthCycleFormValues) => {
+  useEffect(() => {
+    if (currentCycle && !isLoaded) {
+      const metadata: Record<string, unknown> = currentCycle.metadataJson || {};
+      const cropIdVal = currentCycle.productionSubject?.id;
+      const varietyIdVal = currentCycle.productionSubjectVariant?.id;
+      const totalDaysVal = currentCycle.stages?.reduce((sum: number, s: any) => sum + (s.durationDays || 0), 0) ?? 0;
+
+      reset({
+        name: currentCycle.name ?? "",
+        cycleType: String(metadata.cycleType || "aquaculture") as "plant" | "animal",
+        scope: varietyIdVal ? "variety" : "crop",
+        cropId: cropIdVal ? String(cropIdVal) : "",
+        variety: varietyIdVal ? String(varietyIdVal) : "",
+        totalDays: totalDaysVal,
+        stages: (currentCycle.stages || []).map((s: any) => {
+          let usePdf = false;
+          let content = "";
+          let pdfFile = null;
+
+          const doc = s.documents?.[0];
+          if (doc) {
+            usePdf = true;
+            pdfFile = {
+              name: doc.name || "document.pdf",
+              size: doc.sizeBytes || 0,
+              url: doc.fileUrl,
+            };
+          } else {
+            content = s.description || "";
+          }
+
+          return {
+            id: String(s.id),
+            name: s.name,
+            duration: formatDaysToDuration(s.durationDays || 0),
+            usePdf: usePdf,
+            content: content,
+            pdfFile: pdfFile as any,
+          };
+        }),
+      });
+      setIsLoaded(true);
+    }
+  }, [currentCycle, reset, isLoaded]);
+
+  const handleSubmit = async (values: AnimalGrowthCycleFormValues) => {
+    if (!numericId) return;
+
     setIsSubmitting(true);
     try {
-      // Demo page: keep the edit flow local and return to list after success.
-      void values;
+      const preparedStages = await Promise.all(
+        values.stages.map(async (stage, index) => {
+          let documents: any[] = [];
+          let description = "";
+
+          if (stage.usePdf) {
+            if (stage.pdfFile instanceof File) {
+              const res = await uploadFile.mutateAsync({
+                file: stage.pdfFile,
+                folder: "aquaculture-growth-cycle-stages",
+              });
+              if (res.fileUrl) {
+                documents = [
+                  {
+                    documentType: "pdf",
+                    name: stage.pdfFile.name,
+                    fileUrl: res.fileUrl,
+                    fileName: res.fileName || stage.pdfFile.name,
+                    mimeType: "application/pdf",
+                    sizeBytes: stage.pdfFile.size,
+                    displayOrder: 1,
+                  },
+                ];
+              }
+            } else if (stage.pdfFile && "url" in stage.pdfFile) {
+              documents = [
+                {
+                  documentType: "pdf",
+                  name: stage.pdfFile.name,
+                  fileUrl: stage.pdfFile.url,
+                  fileName: stage.pdfFile.name,
+                  mimeType: "application/pdf",
+                  sizeBytes: stage.pdfFile.size || 0,
+                  displayOrder: 1,
+                },
+              ];
+            }
+          } else {
+            description = (await safeConvertLexicalToHtml(stage.content)) || "";
+          }
+
+          return {
+            id: isNaN(Number(stage.id)) ? undefined : Number(stage.id),
+            name: stage.name,
+            durationDays: parseDurationToDays(String(stage.duration)),
+            description: description,
+            documents: documents,
+            displayOrder: index + 1,
+          };
+        }),
+      );
+
+      const cropIdVal = Number(values.cropId);
+      const varietyIdVal =
+        values.scope === "variety" && values.variety
+          ? Number(values.variety)
+          : undefined;
+
+      await updateTemplate.mutateAsync({
+        id: numericId,
+        data: {
+          domainCode: "AQUACULTURE",
+          code: currentCycle?.code || undefined,
+          name: values.name.trim(),
+          productionSubjectId: cropIdVal,
+          productionSubjectVariantId: varietyIdVal ?? null,
+          description: currentCycle?.description || "Chu kỳ nuôi thủy sản",
+          stages: preparedStages,
+          displayOrder: currentCycle?.displayOrder || 1,
+          status: "active",
+          metadataJson: { cycleType: values.cycleType },
+        },
+      });
+
       toast({
         title: "Thành công",
         description: "Đã lưu thay đổi chu kỳ thủy hải sản",
       });
       setLocation("/aquaculture-growth-cycle");
+    } catch (err: unknown) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description:
+          err instanceof Error
+            ? err.message
+            : "Đã xảy ra lỗi trong quá trình tải tệp hoặc lưu dữ liệu",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (!currentCycle) {
+  if (isLoading || !isLoaded) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Không tìm thấy chu kỳ"
-        description="Chu kỳ thủy hải sản bạn chọn không tồn tại."
-        actions={
-          <Button variant="outline" onClick={() => setLocation("/aquaculture-growth-cycle")}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Quay lại
-          </Button>
-        }
-      >
-        <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">
-            Không có dữ liệu phù hợp để chỉnh sửa.
-          </CardContent>
-        </Card>
+      <AdminLayout isDev={true} title="Đang tải..." description="Vui lòng chờ">
+        <div className="flex justify-center py-20">
+          <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+        </div>
       </AdminLayout>
     );
   }
@@ -110,18 +204,18 @@ export default function AquacultureGrowthCycleEditPage() {
       isDev={true}
       title="Chỉnh sửa chu kỳ thủy hải sản"
       description={`Cập nhật lại thông tin cho ${currentCycle.name}`}
-      actions={
+      actions={[
         <Button variant="outline" onClick={() => setLocation("/aquaculture-growth-cycle")}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Quay lại
         </Button>
-      }
+      ]}
     >
       <Card>
         <CardContent className="p-6">
           <FormProvider {...form}>
             <AquacultureGrowthCycleSteps
-              schema={growthCycleFormSchema}
+              schema={animalGrowthCycleFormSchema}
               onComplete={form.handleSubmit(handleSubmit)}
               onCancel={() => setLocation("/aquaculture-growth-cycle")}
               isSubmitting={isSubmitting}

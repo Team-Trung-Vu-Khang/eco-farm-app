@@ -38,7 +38,10 @@ import {
   type NodeDragHandler,
 } from "reactflow";
 import { Link, useLocation, useParams } from "wouter";
-import { useLifecycleTemplateById, useCrops, useCropVarieties } from "../../../features/foundation";
+import {
+  useSystemGrowthCycleTemplateById,
+  useUserGrowthCycleTemplateById,
+} from "../../../features/foundation";
 import usePlanStore from "../../../stores/usePlanStore";
 import type { Plan } from "../../../stores/usePlanStore";
 import useRegionStore from "../../../stores/useRegionStore";
@@ -506,19 +509,27 @@ export default function AnimalGrowthCycleWorkflowPage() {
   const [planSearch, setPlanSearch] = useState("");
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
 
-  const { data: cycle, isLoading: isCycleLoading } = useLifecycleTemplateById(Number(id), {
-    enabled: !!id,
-  });
-  const { items: crops, isLoading: isCropsLoading } = useCrops({ enabled: !!cycle });
-  const { items: varieties, isLoading: isVarietiesLoading } = useCropVarieties({ enabled: !!cycle });
+  const isFoundation = String(id).startsWith("foundation-");
+  const numericId = Number(String(id).replace(/^(foundation-|user-)/, ""));
 
-  const isLoading = isCycleLoading || isCropsLoading || isVarietiesLoading;
+  const { data: foundationCycle, isLoading: fLoading } =
+    useSystemGrowthCycleTemplateById(numericId, {
+      enabled: !!numericId && isFoundation,
+    });
+
+  const { data: userCycle, isLoading: uLoading } =
+    useUserGrowthCycleTemplateById(numericId, {
+      enabled: !!numericId && !isFoundation,
+    });
+
+  const cycle = isFoundation ? foundationCycle : userCycle;
+  const isLoading = isFoundation ? fLoading : uLoading;
 
   const stages = cycle?.stages ?? [];
-  const matchedCrop = crops.find((c) => String(c.id) === String(cycle?.subjectId));
-  const matchedVariety = varieties.find((v) => String(v.id) === String(cycle?.subjectVariantId));
   const fallbackRegionLabel =
-    matchedVariety?.name || matchedCrop?.name || "Vùng chăn nuôi";
+    cycle?.productionSubjectVariant?.name ||
+    cycle?.productionSubject?.name ||
+    "Vùng chăn nuôi";
 
   const openNodeDialog = (
     mode: NodeDialogMode,

@@ -40,7 +40,7 @@ const RegionBasicDistributionDetailPage = () => {
       <AdminLayout isDev={true} title="Không tìm thấy">
         <div className="flex flex-col items-center justify-center p-8">
           <p className="mb-4 text-xl">Vùng trồng không tồn tại</p>
-          <Button onClick={() => setLocation("/region-basic-distribution")}>
+          <Button onClick={() => setLocation("/cultivation-region-identification/crop")}>
             Quay lại danh sách
           </Button>
         </div>
@@ -57,12 +57,12 @@ const RegionBasicDistributionDetailPage = () => {
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={() => setLocation("/region-basic-distribution")}
+            onClick={() => setLocation("/cultivation-region-identification/crop")}
           >
             <ChevronLeft className="mr-2 h-4 w-4" />
             Quay lại
           </Button>
-          <Button onClick={() => setLocation(`/region-basic-distribution/edit/${region.id}`)}>
+          <Button onClick={() => setLocation(`/cultivation-region-identification/crop/edit/${region.id}`)}>
             <Edit className="mr-2 h-4 w-4" />
             Chỉnh sửa
           </Button>

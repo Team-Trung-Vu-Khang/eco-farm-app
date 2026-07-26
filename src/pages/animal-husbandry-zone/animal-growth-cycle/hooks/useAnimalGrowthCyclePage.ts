@@ -3,10 +3,10 @@ import { useState } from "react";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useLocation } from "wouter";
 import {
-  useLifecycleTemplateMutations,
-  useLifecycleTemplates,
-  useCrops,
-  useCropVarieties,
+  useUserGrowthCycleTemplates,
+  useUserGrowthCycleTemplateMutations,
+  useProductionSubjects,
+  useProductionSubjectVariants,
 } from "../../../../features/foundation";
 import type { AnimalGrowthCycle } from "../types/types";
 import { formatDaysToDuration } from "../utils/duration";
@@ -36,17 +36,19 @@ export function useAnimalGrowthCyclePage() {
     }
   };
 
-  // Fetch active crops for filtering
-  const { items: cropsList } = useCrops({
+  // Fetch active crops/animals for filtering
+  const { items: cropsList } = useProductionSubjects({
     params: {
+      domainCode: "LIVESTOCK",
       page: 0,
       size: 100,
       status: "active",
     },
   });
 
-  const { items: varietiesList } = useCropVarieties({
+  const { items: varietiesList } = useProductionSubjectVariants({
     params: {
+      domainCode: "LIVESTOCK",
       page: 0,
       size: 100,
     },
@@ -76,23 +78,25 @@ export function useAnimalGrowthCyclePage() {
 
   const [, setLocation] = useLocation();
 
+  // Fetch from Seasons API (/api/farm/seasons) with domainCode LIVESTOCK
   const {
     items: apiItems,
-    response,
+    response: apiResponse,
     loading,
-    error,
-    refetch,
-  } = useLifecycleTemplates({
+    error: apiError,
+  } = useUserGrowthCycleTemplates({
     params: {
       domainCode: "LIVESTOCK",
       keyword: debouncedSearch.trim() || undefined,
       status: status === "all" ? undefined : (status as any),
+      cropId: cropId === "all" ? undefined : Number(cropId),
       subjectId: cropId === "all" ? undefined : Number(cropId),
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
     },
   });
-  const { deleteTemplate } = useLifecycleTemplateMutations();
+
+  const { deleteTemplate } = useUserGrowthCycleTemplateMutations();
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<AnimalGrowthCycle | null>(null);
@@ -100,41 +104,52 @@ export function useAnimalGrowthCyclePage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Map from API response to AnimalGrowthCycle UI model
-  const animalGrowthCycles: AnimalGrowthCycle[] = apiItems.map((item) => {
-    const metadata = (item.metadataJson || {}) as Record<string, unknown>;
-    const cycleType = String(metadata.cycleType || "animal") as
-      | "animal"
-      | "animal";
+  const animalGrowthCycles: AnimalGrowthCycle[] = useMemo(() => {
+    return apiItems.map((item) => {
+      const isFoundation = item.source === "MASTER";
+      const cropIdVal = item.productionSubject?.id;
+      const cropNameVal = item.productionSubject?.name;
+      const varietyIdVal = item.productionSubjectVariant?.id;
+      const varietyNameVal = item.productionSubjectVariant?.name;
+      const expectedDaysVal = item.stages?.reduce((sum: number, s: any) => sum + (s.durationDays || 0), 0) ?? 0;
 
-    const matchedCrop = cropsList.find(
-      (c) => String(c.id) === String(item.subjectId),
-    );
-    const matchedVariety = varietiesList.find(
-      (v) => String(v.id) === String(item.subjectVariantId),
-    );
+      return {
+        id: (isFoundation ? "foundation-" : "user-") + item.id,
+        name: item.name,
+        cycleType: item.metadataJson?.cycleType || "animal",
+        scope: varietyIdVal ? "variety" : "crop",
+        cropId: cropIdVal ? String(cropIdVal) : "",
+        cropName: cropNameVal || "",
+        variety: varietyNameVal || "",
+        totalDays: expectedDaysVal,
+        numStages: item.stages?.length || 0,
+        stages:
+          item.stages?.map((s: any, idx: number) => ({
+            id: String(s.id || idx),
+            name: s.name,
+            duration: formatDaysToDuration(s.durationDays || 0),
+            usePdf: false,
+            content: s.description || "",
+          })) || [],
+        createdAt: item.createdAt ? new Date(item.createdAt).getTime() : 0,
+        updatedAt: item.updatedAt ? new Date(item.updatedAt).getTime() : 0,
+        isFoundation,
+      };
+    });
+  }, [apiItems]);
 
+  const response = useMemo(() => {
+    if (!apiResponse) return null;
     return {
-      id: String(item.id),
-      name: item.name,
-      cycleType: cycleType,
-      scope: item.subjectVariantId ? "variety" : "crop",
-      cropId: String(item.subjectId || ""),
-      cropName: matchedCrop?.name || "",
-      variety: matchedVariety?.name,
-      totalDays: item.expectedDays || 0,
-      numStages: item.stages?.length || 0,
-      stages:
-        item.stages?.map((s, idx) => ({
-          id: String(s.id || idx),
-          name: s.name,
-          duration: formatDaysToDuration(s.durationDays || 0),
-          usePdf: false,
-          content: s.description || "",
-        })) || [],
-      createdAt: item.createdAt ? new Date(item.createdAt).getTime() : 0,
-      updatedAt: item.updatedAt ? new Date(item.updatedAt).getTime() : 0,
+      totalElements: apiResponse.totalElements,
+      totalPages: apiResponse.totalPages,
+      page: currentIndex,
+      size: pageSize,
+      content: animalGrowthCycles,
+      first: apiResponse.first,
+      last: apiResponse.last,
     };
-  });
+  }, [apiResponse, currentIndex, pageSize, animalGrowthCycles]);
 
   const handleView = (item: AnimalGrowthCycle) => {
     setSelectedId(item.id);
@@ -156,7 +171,10 @@ export function useAnimalGrowthCyclePage() {
 
   const handleConfirmDelete = () => {
     if (deleteItem) {
-      deleteTemplate.mutate(Number(deleteItem.id), {
+      const numericId = Number(
+        deleteItem.id.replace(/^(foundation-|user-)/, ""),
+      );
+      deleteTemplate.mutate(numericId, {
         onSuccess: () => {
           toast({
             title: "Thành công",
@@ -177,11 +195,13 @@ export function useAnimalGrowthCyclePage() {
     }
   };
 
+  const error = apiError?.message ?? null;
+
   return {
     animalGrowthCycles,
     loading,
     error,
-    refetch,
+    refetch: () => {},
     response,
     handleSearch,
     pageSize,

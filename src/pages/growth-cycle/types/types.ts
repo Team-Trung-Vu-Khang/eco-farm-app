@@ -20,6 +20,7 @@ export interface GrowthCycle {
   stages: GrowthStage[];
   createdAt: number;
   updatedAt: number;
+  isFoundation?: boolean;
 }
 
 export interface CreateGrowthCycleForm {

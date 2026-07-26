@@ -3,41 +3,27 @@ import {
   FormField,
   FormItem,
   FormMessage,
+  Input,
   Label,
   RadioGroup,
   RadioGroupItem,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  Input,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  ChevronDown,
-  Fish,
-  Flower2,
-  PawPrint,
-  TreeDeciduous,
-} from "lucide-react";
+import { ChevronDown, Fish, PawPrint } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useFormContext } from "react-hook-form";
 import type {
-  FoundationCropResponse,
-  FoundationCropVarietyResponse,
+  ProductionSubjectResponse,
+  ProductionSubjectVariantResponse,
 } from "../../../../../features/foundation/types/foundation.type";
-import {
-  animalBreedOptions,
-  animalCycleOptions,
-} from "../../data/cycleSelectionData";
 import type { AnimalGrowthCycleFormValues } from "../../schemas/animalGrowthCycleSchema";
 import {
   AnimalGrowthCycleHierarchyDialog,
   type AnimalGrowthCycleHierarchyChildOption,
-  type AnimalGrowthCycleHierarchyPrimaryOption,
 } from "../AnimalGrowthCycleHierarchyDialog";
 
 interface AnimalGrowthCycleBasicInfoStepProps {
-  filteredVarieties: FoundationCropVarietyResponse[];
-  crops: FoundationCropResponse[];
+  filteredVarieties: ProductionSubjectVariantResponse[];
+  crops: ProductionSubjectResponse[];
 }
 
 function ScopeOption({
@@ -215,7 +201,8 @@ export function AnimalGrowthCycleBasicInfoStep({
   filteredVarieties,
   crops,
 }: AnimalGrowthCycleBasicInfoStepProps) {
-  const { watch, setValue, control } = useFormContext<AnimalGrowthCycleFormValues>();
+  const { watch, setValue, control } =
+    useFormContext<AnimalGrowthCycleFormValues>();
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const watchedScope = watch("scope");
@@ -225,26 +212,23 @@ export function AnimalGrowthCycleBasicInfoStep({
   const primaryOptions = crops.map((c) => ({
     id: String(c.id),
     name: c.name,
-    group: c.cropGroupName,
+    group: c.scientificName || "Nhóm " + (c.subjectGroupId || ""),
     image: c.imageUrl ?? "",
-    description: c.description ?? "",
+    description: c.scientificName || "",
   }));
 
-  const childOptions: AnimalGrowthCycleHierarchyChildOption[] = filteredVarieties.map((variety) => {
-    const metadata: Record<string, unknown> = variety.metadataJson || {};
-    return {
-      id: String(variety.id),
-      primaryId: String(variety.cropId),
-      name: variety.name,
-      group: String(metadata.scientificName || variety.cropName),
-      image:
-        typeof metadata.illustrationUrl === "string"
-          ? metadata.illustrationUrl
-          : "",
-      description: variety.description || "",
-      code: variety.code,
-    };
-  });
+  const childOptions: AnimalGrowthCycleHierarchyChildOption[] =
+    filteredVarieties.map((variety) => {
+      return {
+        id: String(variety.id),
+        primaryId: String(variety.subject?.id),
+        name: variety.name,
+        group: variety.origin || "",
+        image: variety.imageUrl || "",
+        description: variety.description || "",
+        code: variety.code,
+      };
+    });
 
   const selectedPrimary = primaryOptions.find(
     (item) => item.id === watchedCropId,
@@ -280,8 +264,10 @@ export function AnimalGrowthCycleBasicInfoStep({
       : "Phạm vi đang là theo vật nuôi nên không cần chọn giống riêng.";
 
   const scopeCropTitle = "Theo vật nuôi";
-  const scopeCropDescription = "Áp dụng cho tất cả các giống thuộc vật nuôi này.";
-  const scopeVarietyDescription = "Chọn vật nuôi và giống vật nuôi trong cùng một dialog.";
+  const scopeCropDescription =
+    "Áp dụng cho tất cả các giống thuộc vật nuôi này.";
+  const scopeVarietyDescription =
+    "Chọn vật nuôi và giống vật nuôi trong cùng một dialog.";
 
   const scopeCropIcon = <PawPrint className="w-6 h-6" />;
   const scopeVarietyIcon = <Fish className="w-6 h-6" />;
@@ -358,9 +344,7 @@ export function AnimalGrowthCycleBasicInfoStep({
         </div>
 
         <div className="space-y-2">
-          <Label className="text-sm font-semibold">
-            Vật nuôi
-          </Label>
+          <Label className="text-sm font-semibold">Vật nuôi</Label>
           <FormField
             control={control as any}
             name="cropId"

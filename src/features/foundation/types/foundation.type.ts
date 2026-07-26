@@ -311,3 +311,48 @@ export interface LifecycleTemplateQueryParams extends BaseQueryParams {
   subjectId?: number;
   subjectGroupId?: number;
 }
+
+// ─── Production Subjects & Subject Variants ───────────────────────────────────
+export interface ProductionSubjectQueryParams extends BaseQueryParams {
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+}
+
+export interface ProductionSubjectResponse {
+  id: number;
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  code: string;
+  name: string;
+  subjectGroupId?: number;
+  scientificName?: string;
+  family?: string;
+  origin?: string;
+  imageUrl?: string;
+  status: FoundationStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProductionSubjectVariantQueryParams extends BaseQueryParams {
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  subjectId?: number;
+}
+
+export interface ProductionSubjectVariantResponse {
+  id: number;
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  code: string;
+  name: string;
+  subject?: {
+    id: number;
+    code?: string;
+    name?: string;
+  };
+  imageUrl?: string;
+  origin?: string;
+  description?: string;
+  growthDurationDays?: number;
+  status: FoundationStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+

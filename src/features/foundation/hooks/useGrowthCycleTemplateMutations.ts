@@ -1,22 +1,17 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { growthCycleTemplateApi } from "../api/foundation.api";
-import { growthCycleTemplateKeys } from "./useGrowthCycleTemplates";
+import { farmGrowthCycleSeasonApi } from "../../farm/api/growth-cycle-season.api";
+import {
+  growthCycleTemplateKeys,
+  userGrowthCycleTemplateKeys,
+} from "./useGrowthCycleTemplates";
 import type {
   FoundationGrowthCycleTemplateRequest,
   FoundationGrowthCycleTemplateResponse,
 } from "../types/foundation.type";
 
-/**
- * Mutation hooks cho Foundation Growth Cycle Templates.
- * Sau mỗi mutation thành công → tự động invalidate list templates.
- *
- * @example
- * const { createTemplate, updateTemplate, deleteTemplate } = useGrowthCycleTemplateMutations();
- *
- * createTemplate.mutate({ name: "Chu kỳ lúa vụ đông", cropId: 1, expectedDays: 90, stages: [...] });
- * updateTemplate.mutate({ id: 2, data: { expectedDays: 95 } });
- * deleteTemplate.mutate(2);
- */
+// ─── Legacy/Admin Foundation Growth Cycle Templates ────────────────────────────
+
 export function useGrowthCycleTemplateMutations() {
   const queryClient = useQueryClient();
 
@@ -39,7 +34,9 @@ export function useGrowthCycleTemplateMutations() {
   >({
     mutationFn: ({ id, data }) => growthCycleTemplateApi.update(id, data),
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: growthCycleTemplateKeys.all() });
+      queryClient.invalidateQueries({
+        queryKey: growthCycleTemplateKeys.all(),
+      });
       queryClient.invalidateQueries({
         queryKey: growthCycleTemplateKeys.detail(id),
       });
@@ -47,8 +44,44 @@ export function useGrowthCycleTemplateMutations() {
   });
 
   const deleteTemplate = useMutation<void, Error, number>({
+    mutationFn: (id) => growthCycleTemplateApi.delete(id).then(() => undefined),
+    onSuccess: invalidateList,
+  });
+
+  return { createTemplate, updateTemplate, deleteTemplate };
+}
+
+// ─── New User Seasons (Growth Cycles) ──────────────────────────────────────────
+
+export function useUserGrowthCycleTemplateMutations() {
+  const queryClient = useQueryClient();
+
+  const invalidateList = () => {
+    queryClient.invalidateQueries({
+      queryKey: userGrowthCycleTemplateKeys.all(),
+    });
+  };
+
+  const createTemplate = useMutation<any, Error, any>({
+    mutationFn: (data) => farmGrowthCycleSeasonApi.create(data),
+    onSuccess: invalidateList,
+  });
+
+  const updateTemplate = useMutation<any, Error, { id: number; data: any }>({
+    mutationFn: ({ id, data }) => farmGrowthCycleSeasonApi.update(id, data),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({
+        queryKey: userGrowthCycleTemplateKeys.all(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: userGrowthCycleTemplateKeys.detail(id),
+      });
+    },
+  });
+
+  const deleteTemplate = useMutation<void, Error, number>({
     mutationFn: (id) =>
-      growthCycleTemplateApi.delete(id).then(() => undefined),
+      farmGrowthCycleSeasonApi.delete(id).then(() => undefined),
     onSuccess: invalidateList,
   });
 

@@ -1,4 +1,3 @@
-import type { GrowthCycle } from "@/pages/growth-cycle/types/types";
 import { useDialogBugWorkaround } from "@/shared/hooks/useDialogBugWorkaround";
 import {
   AdminLayout,
@@ -10,64 +9,74 @@ import {
   DialogContent,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CalendarDays, Layers3, Plus } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Link, useLocation } from "wouter";
+import { useMemo } from "react";
+import { Link } from "wouter";
 import { createAquacultureGrowthCycleColumns } from "./data/columns";
-import { aquacultureGrowthCycles } from "./data/mocks";
+import { useAquacultureGrowthCyclePage } from "./hooks/useAquacultureGrowthCyclePage";
 
 const AquacultureGrowthCyclePage = () => {
-  const [search, setSearch] = useState("");
-  const [, setLocation] = useLocation();
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<GrowthCycle | null>(null);
-  const [deleteItem, setDeleteItem] = useState<GrowthCycle | null>(null);
-  const [cycles, setCycles] = useState(() => aquacultureGrowthCycles);
+  const {
+    growthCycles,
+    loading,
+    error,
+    response,
+    handleSearch,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
+    detailOpen,
+    setDetailOpen,
+    selectedId,
+    setSelectedId,
+    deleteOpen,
+    setDeleteOpen,
+    deleteItem,
+    setDeleteItem,
+    handleConfirmDelete,
+    filters,
+    handleFilterChange,
+  } = useAquacultureGrowthCyclePage();
 
   useDialogBugWorkaround([detailOpen, deleteOpen]);
-
-  const aquacultureCycles = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
-
-    return cycles.filter((cycle) => {
-      if (!keyword) return true;
-
-      return [
-        cycle.id,
-        cycle.name,
-        cycle.cropName,
-        cycle.cropId,
-        cycle.variety || "",
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(keyword);
-    });
-  }, [cycles, search]);
 
   const columns = useMemo(
     () =>
       createAquacultureGrowthCycleColumns({
         onView: (item) => {
-          setSelectedItem(item);
+          setSelectedId(item.id);
           setDetailOpen(true);
         },
-        onEdit: (item) =>
-          setLocation(`/aquaculture-growth-cycle/${item.id}/edit`),
+        onEdit: (item) => {
+          // handled by Link actions or location navigation
+        },
         onDelete: (item) => {
           setDeleteItem(item);
           setDeleteOpen(true);
         },
       }),
-    [setLocation],
+    [setSelectedId, setDetailOpen, setDeleteItem, setDeleteOpen],
   );
 
-  const handleConfirmDelete = () => {
-    if (!deleteItem) return;
-    setCycles((current) => current.filter((item) => item.id !== deleteItem.id));
-    setDeleteOpen(false);
-    setDeleteItem(null);
-  };
+  const selectedItem = useMemo(() => {
+    if (!selectedId) return null;
+    return growthCycles.find((item) => item.id === selectedId) || null;
+  }, [selectedId, growthCycles]);
+
+  if (error) {
+    return (
+      <AdminLayout
+        isDev={true}
+        title="Chu kỳ nuôi thủy sản"
+        description="Quản lý các chu kỳ phát triển cho vật nuôi và thủy sản"
+      >
+        <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-6 text-center text-destructive">
+          <p className="font-semibold">Lỗi tải dữ liệu</p>
+          <p className="text-sm mt-1">{error}</p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout
@@ -86,24 +95,25 @@ const AquacultureGrowthCyclePage = () => {
         </Link>
       }
     >
-      {aquacultureCycles.length === 0 ? (
-        <div className="rounded-2xl border border-dashed bg-muted/30 p-10 text-center">
-          <h3 className="text-lg font-semibold">Chưa có chu kỳ thủy sản</h3>
-          <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
-            Bạn có thể tạo thêm các chu kỳ thủy sản để quản lý riêng nhóm dữ
-            liệu này.
-          </p>
-        </div>
-      ) : (
+      <div className="w-full">
         <DataTable
-          data={aquacultureCycles as GrowthCycle[]}
+          data={growthCycles}
           selectable={false}
           columns={columns}
           searchPlaceholder="Tìm kiếm chu kỳ thủy sản..."
           searchable
-          onSearch={setSearch}
+          onSearch={handleSearch}
+          pageSize={pageSize}
+          currentIndex={currentIndex}
+          totalElements={response?.totalElements}
+          totalPages={response?.totalPages}
+          onPageSize={setPageSize}
+          onIndexChange={setCurrentIndex}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          loading={loading}
         />
-      )}
+      </div>
 
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
@@ -144,7 +154,9 @@ const AquacultureGrowthCyclePage = () => {
                   <div className="mt-4 space-y-3 text-sm">
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-muted-foreground">Mã chu kỳ</span>
-                      <span className="font-medium">{selectedItem.id}</span>
+                      <span className="font-medium">
+                        {selectedItem.id.replace(/^(foundation-|user-)/, "")}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-muted-foreground">Loài nuôi</span>
@@ -189,17 +201,21 @@ const AquacultureGrowthCyclePage = () => {
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-muted-foreground">Tạo lúc</span>
                       <span className="font-medium">
-                        {new Date(selectedItem.createdAt).toLocaleString(
-                          "vi-VN",
-                        )}
+                        {selectedItem.createdAt
+                          ? new Date(selectedItem.createdAt).toLocaleString(
+                              "vi-VN",
+                            )
+                          : "---"}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-muted-foreground">Cập nhật</span>
                       <span className="font-medium">
-                        {new Date(selectedItem.updatedAt).toLocaleString(
-                          "vi-VN",
-                        )}
+                        {selectedItem.updatedAt
+                          ? new Date(selectedItem.updatedAt).toLocaleString(
+                              "vi-VN",
+                            )
+                          : "---"}
                       </span>
                     </div>
                   </div>
@@ -215,24 +231,46 @@ const AquacultureGrowthCyclePage = () => {
                   {selectedItem.stages.map((stage, index) => (
                     <div
                       key={stage.id}
-                      className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm"
+                      className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-3"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700">
-                          <CalendarDays className="h-4 w-4" />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700">
+                            <CalendarDays className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900">
+                              Giai đoạn {index + 1}: {stage.name}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold text-slate-900">
-                            Giai đoạn {index + 1}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {stage.name}
-                          </p>
-                        </div>
+                        <Badge variant="outline" className="font-semibold">
+                          {stage.duration}
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className="font-semibold">
-                        {stage.duration}
-                      </Badge>
+
+                      {stage.usePdf && stage.pdfFile?.url && (
+                        <div className="mt-2 rounded-xl bg-slate-50 p-3 text-xs border">
+                          <span className="text-muted-foreground">
+                            Tài liệu kỹ thuật:{" "}
+                          </span>
+                          <a
+                            href={stage.pdfFile.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline font-medium"
+                          >
+                            {stage.pdfFile.name}
+                          </a>
+                        </div>
+                      )}
+
+                      {!stage.usePdf && stage.content && (
+                        <div
+                          className="prose prose-sm max-w-none mt-2 text-slate-700 border-t pt-3"
+                          dangerouslySetInnerHTML={{ __html: stage.content }}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>

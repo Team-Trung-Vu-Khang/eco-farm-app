@@ -200,6 +200,42 @@ const RegionBasicDistributionDetailPage = lazy(
   () =>
     import("./pages/region-chart/region-basic-distribution/RegionBasicDistributionDetailPage"),
 );
+const RegionBasicDistributionLivestockPage = lazy(
+  () =>
+    import(
+      "./pages/region-chart/region-basic-distribution-livestock/RegionBasicDistributionLivestockPage"
+    ),
+);
+const RegionBasicDistributionLivestockCreateEditPage = lazy(
+  () =>
+    import(
+      "./pages/region-chart/region-basic-distribution-livestock/RegionBasicDistributionLivestockCreateEditPage"
+    ),
+);
+const RegionBasicDistributionLivestockDetailPage = lazy(
+  () =>
+    import(
+      "./pages/region-chart/region-basic-distribution-livestock/RegionBasicDistributionLivestockDetailPage"
+    ),
+);
+const RegionBasicDistributionAquaculturePage = lazy(
+  () =>
+    import(
+      "./pages/region-chart/region-basic-distribution-aquaculture/RegionBasicDistributionAquaculturePage"
+    ),
+);
+const RegionBasicDistributionAquacultureCreateEditPage = lazy(
+  () =>
+    import(
+      "./pages/region-chart/region-basic-distribution-aquaculture/RegionBasicDistributionAquacultureCreateEditPage"
+    ),
+);
+const RegionBasicDistributionAquacultureDetailPage = lazy(
+  () =>
+    import(
+      "./pages/region-chart/region-basic-distribution-aquaculture/RegionBasicDistributionAquacultureDetailPage"
+    ),
+);
 const LegalIdentificationPage = lazy(
   () => import("./pages/legal-identification/LegalIdentificationPage"),
 );
@@ -748,6 +784,40 @@ function Router() {
       <Route
         path="/cultivation-region-identification/crop/detail/:id"
         component={RegionBasicDistributionDetailPage}
+      />
+      {/* Livestock (Animal) Basic Identification Routes */}
+      <Route
+        path="/cultivation-region-identification/animal"
+        component={RegionBasicDistributionLivestockPage}
+      />
+      <Route
+        path="/cultivation-region-identification/animal/create"
+        component={RegionBasicDistributionLivestockCreateEditPage}
+      />
+      <Route
+        path="/cultivation-region-identification/animal/edit/:id"
+        component={RegionBasicDistributionLivestockCreateEditPage}
+      />
+      <Route
+        path="/cultivation-region-identification/animal/detail/:id"
+        component={RegionBasicDistributionLivestockDetailPage}
+      />
+      {/* Aquaculture Basic Identification Routes */}
+      <Route
+        path="/cultivation-region-identification/aquaculture"
+        component={RegionBasicDistributionAquaculturePage}
+      />
+      <Route
+        path="/cultivation-region-identification/aquaculture/create"
+        component={RegionBasicDistributionAquacultureCreateEditPage}
+      />
+      <Route
+        path="/cultivation-region-identification/aquaculture/edit/:id"
+        component={RegionBasicDistributionAquacultureCreateEditPage}
+      />
+      <Route
+        path="/cultivation-region-identification/aquaculture/detail/:id"
+        component={RegionBasicDistributionAquacultureDetailPage}
       />
       <Route path="/soil-amendment-map" component={SoilAmendmentMapPage} />
       <Route

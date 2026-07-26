@@ -17,21 +17,17 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { AquacultureGrowthCycleSteps } from "./components/AquacultureGrowthCycleSteps";
-import {
-  AQUACULTURE_GROWTH_CYCLE_SPECIES,
-  AQUACULTURE_GROWTH_CYCLE_VARIETIES,
-} from "./data/aquacultureGrowthCycleData";
 import { useAquacultureCreateGrowthCycleForm } from "./hooks/useAquacultureCreateGrowthCycleForm";
 import {
-  growthCycleFormSchema,
-  type GrowthCycleFormValues,
-} from "../growth-cycle/schemas/growthCycleSchema";
+  animalGrowthCycleFormSchema,
+  type AnimalGrowthCycleFormValues,
+} from "../animal-husbandry-zone/animal-growth-cycle/schemas/animalGrowthCycleSchema";
 import { parseDurationToDays } from "../growth-cycle/utils/duration";
 
 export default function CreateAquacultureGrowthCyclePage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const form = useForm<GrowthCycleFormValues>({
-    resolver: zodResolver(growthCycleFormSchema),
+  const form = useForm<AnimalGrowthCycleFormValues>({
+    resolver: zodResolver(animalGrowthCycleFormSchema),
     mode: "onChange",
     defaultValues: {
       name: "",
@@ -67,15 +63,15 @@ export default function CreateAquacultureGrowthCyclePage() {
     [watchedStages],
   );
 
-  const selectedSpecies = AQUACULTURE_GROWTH_CYCLE_SPECIES.find(
-    (item) => item.id === watchedCropId,
-  );
-  const selectedVariety = AQUACULTURE_GROWTH_CYCLE_VARIETIES.find(
-    (item) => item.id === watchedVariety,
-  );
-
-  const { handleComplete, setLocation, isSubmitting } =
+  const { crops, varieties, handleComplete, setLocation, isSubmitting } =
     useAquacultureCreateGrowthCycleForm();
+
+  const selectedSpecies = crops.find(
+    (item) => String(item.id) === watchedCropId,
+  );
+  const selectedVariety = varieties.find(
+    (item) => String(item.id) === watchedVariety,
+  );
 
   return (
     <AdminLayout
@@ -98,7 +94,7 @@ export default function CreateAquacultureGrowthCyclePage() {
         <CardContent className="p-6">
           <FormProvider {...form}>
             <AquacultureGrowthCycleSteps
-              schema={growthCycleFormSchema}
+              schema={animalGrowthCycleFormSchema}
               onComplete={() => setConfirmOpen(true)}
               onCancel={() => setLocation("/aquaculture-growth-cycle")}
               isSubmitting={isSubmitting}
@@ -113,7 +109,9 @@ export default function CreateAquacultureGrowthCyclePage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận tạo chu kỳ thủy hải sản</AlertDialogTitle>
+            <AlertDialogTitle>
+              Xác nhận tạo chu kỳ thủy hải sản
+            </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3" asChild>
               <div>
                 <p>Bạn có chắc chắn muốn thêm chu kỳ thủy hải sản mới này?</p>
@@ -134,7 +132,9 @@ export default function CreateAquacultureGrowthCyclePage() {
                   </div>
                   {watchedScope === "variety" && (
                     <div className="flex justify-between gap-4">
-                      <span className="text-muted-foreground">Giống / dòng:</span>
+                      <span className="text-muted-foreground">
+                        Giống / dòng:
+                      </span>
                       <span className="font-medium">
                         {selectedVariety?.name || watchedVariety || "-"}
                       </span>
@@ -145,7 +145,9 @@ export default function CreateAquacultureGrowthCyclePage() {
                     <span className="font-medium">{watchedStages.length}</span>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <span className="text-muted-foreground">Tổng thời gian:</span>
+                    <span className="text-muted-foreground">
+                      Tổng thời gian:
+                    </span>
                     <span className="font-medium">{totalDays}</span>
                   </div>
                 </div>
@@ -161,7 +163,9 @@ export default function CreateAquacultureGrowthCyclePage() {
                 handleComplete(form.getValues());
               }}
             >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Xác nhận tạo mới
             </AlertDialogAction>
           </AlertDialogFooter>
