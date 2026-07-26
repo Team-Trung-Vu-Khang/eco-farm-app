@@ -292,7 +292,6 @@ import usePlanStore, { type Plan } from "../../stores/usePlanStore";
 import useRegionStore from "../../stores/useRegionStore";
 import useTaskStore from "../../stores/useTaskStore";
 import { useTreatmentStore } from "../../stores/useTreatmentStore";
-import { EnterpriseSelector } from "../cultivation-zone/cultivation-region/components";
 import GeographicalSelector from "../plan/components/GeographicalSelector";
 import { RegimenSelector } from "../plan/components/RegimenSelector";
 import type { Regimen, RegimenStep } from "../../stores/useRegimenStore";
@@ -321,6 +320,76 @@ const PURPOSE_TO_OBJECTIVE_TYPE: Partial<
   harvest: "thu-hoach",
   treatment: "tri-benh",
   amendment: "cai-tao-dat",
+};
+
+
+/**
+ * "Mục tiêu" options. Plan-backed entries are only offered when at least one
+ * matching plan exists; "phat-sinh" is always available.
+ */
+const OBJECTIVE_TYPES = [
+  {
+    id: "theo-ke-hoach",
+    label: "Canh tác",
+    icon: Layers,
+    color: "blue",
+    borderColor: "border-blue-500",
+    bgColor: "bg-blue-50/50",
+    activeColor: "bg-blue-500",
+    textColor: "text-blue-700",
+    description: "Từ vùng trồng",
+  },
+  {
+    id: "thu-hoach",
+    label: "Thu hoạch",
+    icon: Apple,
+    color: "orange",
+    borderColor: "border-orange-500",
+    bgColor: "bg-orange-50/50",
+    activeColor: "bg-orange-500",
+    textColor: "text-orange-700",
+    description: "Kế hoạch thu",
+  },
+  {
+    id: "cai-tao-dat",
+    label: "Cải tạo đất",
+    icon: Sprout,
+    color: "green",
+    borderColor: "border-green-500",
+    bgColor: "bg-green-50/50",
+    activeColor: "bg-green-500",
+    textColor: "text-green-700",
+    description: "Theo phác đồ",
+  },
+  {
+    id: "tri-benh",
+    label: "Điều trị bệnh",
+    icon: Bug,
+    color: "red",
+    borderColor: "border-red-500",
+    bgColor: "bg-red-50/50",
+    activeColor: "bg-red-500",
+    textColor: "text-red-700",
+    description: "Xử lý dịch hại",
+  },
+  {
+    id: "phat-sinh",
+    label: "Phát sinh",
+    icon: Info,
+    color: "amber",
+    borderColor: "border-amber-500",
+    bgColor: "bg-amber-50/50",
+    activeColor: "bg-amber-500",
+    textColor: "text-amber-700",
+    description: "Ngoài kế hoạch",
+  },
+] as const;
+
+const OBJECTIVE_PURPOSES: Record<string, string[]> = {
+  "theo-ke-hoach": ["cultivation", "facility-upgrade"],
+  "thu-hoach": ["harvest"],
+  "cai-tao-dat": ["amendment"],
+  "tri-benh": ["treatment"],
 };
 
 export default function TaskCreatePage() {
@@ -395,6 +464,7 @@ export default function TaskCreatePage() {
       : "phat-sinh") as TaskObjectiveType,
     planId: presetPlan ? String(presetPlan.id) : "",
     planName: presetPlan?.name || "",
+    mainTaskId: "",
     selectedStages: [] as string[],
     selectedPlotIds: [] as string[],
     regimenId: "",
@@ -414,7 +484,7 @@ export default function TaskCreatePage() {
   const [searchSupervisor, setSearchSupervisor] = useState("");
   const [isInspectorDialogOpen, setIsInspectorDialogOpen] = useState(false);
   const [searchInspector, setSearchInspector] = useState("");
-  const [selectedEnterpriseId, setSelectedEnterpriseId] = useState<string>("");
+  const [selectedEnterpriseId] = useState<string>("");
   const [selections, setSelections] = useState<GeographicalSelection[]>([]);
 
   const [newMaterial, setNewMaterial] = useState({
@@ -423,6 +493,21 @@ export default function TaskCreatePage() {
     quantity: "",
     unit: "kg",
   });
+
+  // Only offer objectives that actually have plans behind them; "Phát sinh"
+  // needs no plan so it is always present.
+  const availableObjectiveTypes = useMemo(() => {
+    return OBJECTIVE_TYPES.filter((type) => {
+      if (type.id === "phat-sinh") return true;
+      const purposes = OBJECTIVE_PURPOSES[type.id] || [];
+      if (
+        type.id === "cai-tao-dat" &&
+        (amendmentPlans as any[])?.length > 0
+      )
+        return true;
+      return plans.some((p) => purposes.includes(p.purpose));
+    });
+  }, [plans, amendmentPlans]);
 
   const activePlans = useMemo(() => {
     const basePlans = plans.filter((p) => {
@@ -811,11 +896,47 @@ export default function TaskCreatePage() {
     </div>
   );
 
+  // Plan personnel are stored as ids; the task form works with display names.
+  const resolvePersonnelNames = (ids?: string[]) =>
+    (ids || [])
+      .map(
+        (id) =>
+          personnel.find((p) => String(p.id) === String(id))?.fullName || "",
+      )
+      .filter(Boolean);
+
+  // For plan-based tasks the production zone must stay inside the plan's own
+  // scope, so narrow the region tree to what the plan actually covers.
+  const planScopedRegions = useMemo(() => {
+    if (!selectedPlan) return regions;
+    const regionIds = ((selectedPlan as any).selectedRegionIds || []).map(String);
+    const zoneIds = ((selectedPlan as any).selectedZoneIds || []).map(String);
+    const plotIds = ((selectedPlan as any).selectedPlotIds || []).map(String);
+    if (!regionIds.length && !zoneIds.length && !plotIds.length) return regions;
+
+    return regions
+      .map((region: any) => {
+        const inRegion = regionIds.includes(String(region.id));
+        const subAreas = (region.subAreas || [])
+          .map((area: any) => {
+            const inArea = zoneIds.includes(String(area.id));
+            const plots = (area.plots || []).filter(
+              (plot: any) => inArea || plotIds.includes(String(plot.id)),
+            );
+            return plots.length > 0 ? { ...area, plots } : null;
+          })
+          .filter(Boolean);
+        if (!inRegion && subAreas.length === 0) return null;
+        return { ...region, subAreas };
+      })
+      .filter(Boolean) as any[];
+  }, [regions, selectedPlan]);
+
   const steps: Step[] = [
     {
       id: "objective",
-      title: "Mục tiêu công việc",
-      description: "Xác định loại và nội dung công việc",
+      title: "Công việc triển khai",
+      description: "Thông tin mô tả công việc",
       content: (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
@@ -827,96 +948,25 @@ export default function TaskCreatePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-bold text-slate-700">
-                      Mã công việc *
-                    </Label>
-                    <Input
-                      value={formData.code}
-                      onChange={(e) =>
-                        setFormData({ ...formData, code: e.target.value })
-                      }
-                      placeholder="VD: NV001"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-bold text-slate-700">
-                      Tên công việc *
-                    </Label>
-                    <Input
-                      value={formData.name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
-                      placeholder="VD: Bón phân thúc đợt 1"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-slate-700">
+                    Đầu việc triển khai *
+                  </Label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    placeholder="VD: Bón phân thúc đợt 1"
+                  />
                 </div>
 
                 <div className="space-y-3">
                   <Label className="text-sm font-bold text-slate-700">
-                    Hạng mục *
+                    Mục tiêu *
                   </Label>
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    {[
-                      {
-                        id: "theo-ke-hoach",
-                        label: "Canh tác",
-                        icon: Layers,
-                        color: "blue",
-                        borderColor: "border-blue-500",
-                        bgColor: "bg-blue-50/50",
-                        activeColor: "bg-blue-500",
-                        textColor: "text-blue-700",
-                        description: "Từ vùng trồng",
-                      },
-
-                      {
-                        id: "thu-hoach",
-                        label: "Thu hoạch",
-                        icon: Apple,
-                        color: "orange",
-                        borderColor: "border-orange-500",
-                        bgColor: "bg-orange-50/50",
-                        activeColor: "bg-orange-500",
-                        textColor: "text-orange-700",
-                        description: "Kế hoạch thu",
-                      },
-                      {
-                        id: "cai-tao-dat",
-                        label: "Cải tạo đất",
-                        icon: Sprout,
-                        color: "green",
-                        borderColor: "border-green-500",
-                        bgColor: "bg-green-50/50",
-                        activeColor: "bg-green-500",
-                        textColor: "text-green-700",
-                        description: "Theo phác đồ",
-                      },
-                      {
-                        id: "tri-benh",
-                        label: "Điều trị bệnh",
-                        icon: Bug,
-                        color: "red",
-                        borderColor: "border-red-500",
-                        bgColor: "bg-red-50/50",
-                        activeColor: "bg-red-500",
-                        textColor: "text-red-700",
-                        description: "Xử lý dịch hại",
-                      },
-                      {
-                        id: "phat-sinh",
-                        label: "Phát sinh",
-                        icon: Info,
-                        color: "amber",
-                        borderColor: "border-amber-500",
-                        bgColor: "bg-amber-50/50",
-                        activeColor: "bg-amber-500",
-                        textColor: "text-amber-700",
-                        description: "Ngoài kế hoạch",
-                      },
-                    ].map((type) => (
+                    {availableObjectiveTypes.map((type) => (
                       <div
                         key={type.id}
                         onClick={() =>
@@ -994,6 +1044,14 @@ export default function TaskCreatePage() {
                                 stages = reg.steps.map((s) => s.title);
                               }
                             }
+                            // Carry the plan's personnel across as a starting
+                            // point; they stay removable below.
+                            const planSupervisors = resolvePersonnelNames(
+                              (p as any)?.managementPersonnelIds,
+                            );
+                            const planInspectors = resolvePersonnelNames(
+                              (p as any)?.qualityInspectorPersonnelIds,
+                            );
                             setFormData({
                               ...formData,
                               planId: val,
@@ -1002,6 +1060,9 @@ export default function TaskCreatePage() {
                               selectedPlotIds:
                                 (p?.selectedPlotIds as string[]) || [],
                               regimenId: p?.regimenId || "",
+                              mainTaskId: "",
+                              supervisors: planSupervisors,
+                              qualityInspectors: planInspectors,
                             });
                           }}
                         >
@@ -1021,6 +1082,50 @@ export default function TaskCreatePage() {
                             )}
                           </SelectContent>
                         </Select>
+
+                        {formData.planId &&
+                          (selectedPlan?.taskAllocations || []).length > 0 && (
+                            <div className="space-y-2">
+                              <Label className="text-sm font-bold text-slate-700">
+                                Công việc chính
+                                <span className="ml-2 text-[10px] font-medium text-slate-400 normal-case">
+                                  Chọn từ công việc dự kiến của kế hoạch
+                                </span>
+                              </Label>
+                              <Select
+                                value={formData.mainTaskId}
+                                onValueChange={(val) => {
+                                  const picked = (
+                                    selectedPlan?.taskAllocations || []
+                                  ).find((t: any) => String(t.id) === val);
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    mainTaskId: val,
+                                    // Only seed the name while it is still empty
+                                    // so a typed-in name is never overwritten.
+                                    name: prev.name || picked?.name || "",
+                                  }));
+                                }}
+                              >
+                                <SelectTrigger className="h-12">
+                                  <SelectValue placeholder="Chọn công việc dự kiến..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(selectedPlan?.taskAllocations || []).map(
+                                    (t: any) => (
+                                      <SelectItem
+                                        key={t.id}
+                                        value={String(t.id)}
+                                      >
+                                        {t.name}
+                                        {t.stageId ? ` — ${t.stageId}` : ""}
+                                      </SelectItem>
+                                    ),
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
 
                         {/* Thông tin kế hoạch chi tiết */}
                         {formData.planId && selectedPlan && (
@@ -1430,38 +1535,22 @@ export default function TaskCreatePage() {
                   </div>
                 )}
 
-                {formData.objectiveType === "phat-sinh" && (
+                {(formData.objectiveType === "phat-sinh" || !!formData.planId) && (
                   <div className="animation-fade-in border-t pt-2 border-slate-100">
-                    <Label className="text-sm font-bold text-slate-700">
-                      Đơn vị sở hữu <span className="text-red-500">*</span>
-                    </Label>
-                    <div className="pt-2 pb-4">
-                      <EnterpriseSelector
-                        selectedId={selectedEnterpriseId}
-                        onSelect={(val) => {
-                          setSelectedEnterpriseId(val);
-                          setSelections([]);
-                        }}
-                      />
-                    </div>
                     <div className="space-y-4 relative">
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <label className="text-sm font-bold text-slate-700">
-                            Phạm vi địa lý{" "}
+                            Vùng sản xuất{" "}
                             <span className="text-red-500">*</span>
                           </label>
-                          {!selectedEnterpriseId && (
-                            <Badge
-                              variant="outline"
-                              className="text-[10px] text-amber-600 border-amber-200 bg-amber-50"
-                            >
-                              Chọn đơn vị sở hữu trước
-                            </Badge>
-                          )}
                         </div>
                         <GeographicalSelector
-                          regions={regions}
+                          regions={
+                            formData.objectiveType === "phat-sinh"
+                              ? regions
+                              : planScopedRegions
+                          }
                           enterpriseId={selectedEnterpriseId}
                           existingSelections={selections}
                           onConfirm={handleGeographicalConfirm}
@@ -1854,7 +1943,7 @@ export default function TaskCreatePage() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <CalendarIcon className="w-5 h-5 text-primary" />
-                  Thời gian & Ưu tiên
+                  Thời gian triển khai
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
