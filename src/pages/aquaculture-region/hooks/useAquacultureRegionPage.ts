@@ -1,74 +1,25 @@
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import type { FarmCultivationZoneResponse } from "@/features/farm/types/farm.type";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useDebounce } from "@/shared/hooks/useDebounce";
+import { useProductionMethods } from "@/features/foundation";
+import { useIrrigationSystems } from "@/features/master-data";
+import { useCultivationZones } from "@/features/farm/hooks/useCultivationZones";
+import { useCultivationZoneMutations } from "@/features/farm/hooks/useCultivationZoneMutations";
 import { getAquacultureRegionColumns } from "../data/columns";
-
-const DUMMY_AQUACULTURE_REGIONS: FarmCultivationZoneResponse[] = [
-  {
-    id: 101,
-    code: "AQ-101",
-    name: "Vung nuoi bien Dong",
-    scopes: [{ scopeType: "REGION" }],
-    farmingMethod: { id: 1, name: "Bac thang" },
-    irrigationSystem: { id: 1, name: "Tuoi nho giot" },
-    status: "active",
-    createdAt: "2026-07-10T08:00:00.000Z",
-  },
-  {
-    id: 102,
-    code: "AQ-102",
-    name: "Vung nuoi tom Can Gio",
-    scopes: [{ scopeType: "AREA" }],
-    farmingMethod: { id: 2, name: "Ao lot bat" },
-    irrigationSystem: { id: 2, name: "Tuoi phun" },
-    status: "active",
-    createdAt: "2026-07-08T08:00:00.000Z",
-  },
-  {
-    id: 103,
-    code: "AQ-103",
-    name: "Lo nuoi ca Tra Vinh",
-    scopes: [{ scopeType: "PLOT" }],
-    farmingMethod: { id: 1, name: "Bac thang" },
-    irrigationSystem: { id: 3, name: "Tuoi truyen thong" },
-    status: "inactive",
-    createdAt: "2026-06-29T08:00:00.000Z",
-  },
-  {
-    id: 104,
-    code: "AQ-104",
-    name: "Vung nuoi ngao Ben Tre",
-    scopes: [{ scopeType: "REGION" }],
-    farmingMethod: { id: 3, name: "Long be" },
-    irrigationSystem: { id: 2, name: "Tuoi phun" },
-    status: "archived",
-    createdAt: "2026-05-16T08:00:00.000Z",
-  },
-  {
-    id: 105,
-    code: "AQ-105",
-    name: "Khu nuoi rong Phu Yen",
-    scopes: [{ scopeType: "AREA" }],
-    farmingMethod: { id: 2, name: "Ao lot bat" },
-    irrigationSystem: { id: 1, name: "Tuoi nho giot" },
-    status: "active",
-    createdAt: "2026-06-21T08:00:00.000Z",
-  },
-];
 
 export const useAquacultureRegionPage = () => {
   const basePath = "/aquaculture-region";
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
   const [pageSize, setPageSize] = useState(10);
   const [currentIndex, setCurrentIndex] = useState(1);
   const [status, setStatus] = useState<string>("all");
   const [farmingMethodId, setFarmingMethodId] = useState<string>("all");
   const [irrigationSystemId, setIrrigationSystemId] = useState<string>("all");
-  const [areas, setAreas] = useState<FarmCultivationZoneResponse[]>(
-    DUMMY_AQUACULTURE_REGIONS,
-  );
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -91,8 +42,32 @@ export const useAquacultureRegionPage = () => {
     }
   };
 
-  const filters = useMemo(
-    () => [
+  // Fetch real farming methods for filtering
+  const { items: farmingMethods } = useProductionMethods({
+    params: { domainCode: "AQUACULTURE", status: "active", page: 0, size: 100 },
+  });
+
+  const farmingMethodOptions = useMemo(() => {
+    return farmingMethods.map((m) => ({
+      label: m.name,
+      value: String(m.id),
+    }));
+  }, [farmingMethods]);
+
+  // Fetch real irrigation systems for filtering
+  const { items: irrigationSystems } = useIrrigationSystems({
+    params: { status: "active", page: 0, size: 100 },
+  });
+
+  const irrigationSystemOptions = useMemo(() => {
+    return irrigationSystems.map((s) => ({
+      label: s.name,
+      value: String(s.id),
+    }));
+  }, [irrigationSystems]);
+
+  const filters = useMemo(() => {
+    return [
       {
         key: "status",
         label: "Trạng thái",
@@ -104,70 +79,40 @@ export const useAquacultureRegionPage = () => {
       },
       {
         key: "farmingMethod",
-        label: "Phương pháp canh tác",
-        options: [
-          { label: "Bậc thang", value: "1" },
-          { label: "Ao lót bạt", value: "2" },
-          { label: "Lồng bè", value: "3" },
-        ],
+        label: "Phương pháp nuôi trồng",
+        options: farmingMethodOptions,
       },
       {
         key: "irrigationSystem",
-        label: "Hệ thống tưới tiêu",
-        options: [
-          { label: "Tưới nhỏ giọt", value: "1" },
-          { label: "Tưới phun", value: "2" },
-          { label: "Tưới truyền thống", value: "3" },
-        ],
+        label: "Hệ thống cấp thoát nước",
+        options: irrigationSystemOptions,
       },
-    ],
-    [],
-  );
+    ];
+  }, [farmingMethodOptions, irrigationSystemOptions]);
 
-  const filteredAreas = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
+  const { items: areas, response, isLoading } = useCultivationZones({
+    params: {
+      keyword: debouncedSearch.trim() || undefined,
+      status: status === "all" ? undefined : (status as any),
+      farmingMethodId: farmingMethodId === "all" ? undefined : Number(farmingMethodId),
+      irrigationSystemId: irrigationSystemId === "all" ? undefined : Number(irrigationSystemId),
+      domainCode: "AQUACULTURE",
+      page: Math.max(currentIndex - 1, 0),
+      size: pageSize,
+    },
+  });
 
-    return areas.filter((area) => {
-      const matchesKeyword =
-        !keyword ||
-        [area.code, area.name, area.notes]
-          .filter((value): value is string => Boolean(value))
-          .some((value) => value.toLowerCase().includes(keyword));
-      const matchesStatus = status === "all" || area.status === status;
-      const matchesFarmingMethod =
-        farmingMethodId === "all" ||
-        String(area.farmingMethod?.id ?? "") === farmingMethodId;
-      const matchesIrrigationSystem =
-        irrigationSystemId === "all" ||
-        String(area.irrigationSystem?.id ?? "") === irrigationSystemId;
-
-      return (
-        matchesKeyword &&
-        matchesStatus &&
-        matchesFarmingMethod &&
-        matchesIrrigationSystem
-      );
-    });
-  }, [areas, farmingMethodId, irrigationSystemId, search, status]);
-
-  const pagedAreas = useMemo(() => {
-    const start = (currentIndex - 1) * pageSize;
-    return filteredAreas.slice(start, start + pageSize);
-  }, [currentIndex, filteredAreas, pageSize]);
-
-  const response = useMemo(
-    () => ({
-      totalElements: filteredAreas.length,
-      totalPages: Math.max(1, Math.ceil(filteredAreas.length / pageSize)),
-    }),
-    [filteredAreas.length, pageSize],
-  );
+  const { deleteCultivationZone } = useCultivationZoneMutations();
 
   const handleAdd = () => setLocation(`${basePath}/create`);
+
   const handleView = (id: number) => setLocation(`${basePath}/${id}`);
+
   const handleWorkflow = (id: number) =>
     setLocation(`${basePath}/${id}/workflow`);
-  const handleEdit = (id: number) => setLocation(`${basePath}/${id}/edit`);
+
+  const handleEdit = (id: number) =>
+    setLocation(`${basePath}/${id}/edit`);
 
   const handleDelete = (id: number) => {
     setDeletingId(id);
@@ -178,15 +123,25 @@ export const useAquacultureRegionPage = () => {
 
   const handleConfirmDelete = async () => {
     if (!deletingId) return;
-    setAreas((current) => current.filter((area) => area.id !== deletingId));
-    setDeleteOpen(false);
-    setDeletingId(null);
+    try {
+      await deleteCultivationZone.mutateAsync(deletingId);
+      toast({ title: "Thành công", description: "Đã xóa vùng nuôi trồng" });
+    } catch {
+      toast({
+        title: "Lỗi",
+        description: "Không thể xóa vùng nuôi trồng",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteOpen(false);
+      setDeletingId(null);
+    }
   };
 
   return {
-    areas: pagedAreas,
+    areas,
     columns,
-    isLoading: false,
+    isLoading,
     response,
     deleteOpen,
     setDeleteOpen,

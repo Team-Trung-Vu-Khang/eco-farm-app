@@ -28,22 +28,52 @@ export const seedApi = {
   list: (params?: SeedQueryParams) =>
     apiClient
       .get<PageResponse<FarmSeedResponse>>(FARM_ENDPOINTS.seeds, { params })
-      .then((r) => r.data),
+      .then((r) => {
+        if (r.data?.content) {
+          r.data.content = r.data.content.map((item) => ({
+            ...item,
+            cropVariety: item.cropVariety || item.subjectVariant,
+            crop: item.crop || item.productionSubject,
+          }));
+        }
+        return r.data;
+      }),
 
   getById: (id: number) =>
     apiClient
       .get<FarmSeedResponse>(`${FARM_ENDPOINTS.seeds}/${id}`)
-      .then((r) => r.data),
+      .then((r) => {
+        const item = r.data;
+        if (item) {
+          item.cropVariety = item.cropVariety || item.subjectVariant;
+          item.crop = item.crop || item.productionSubject;
+        }
+        return item;
+      }),
 
   create: (data: FarmSeedRequest) =>
     apiClient
       .post<FarmSeedResponse>(FARM_ENDPOINTS.seeds, data)
-      .then((r) => r.data),
+      .then((r) => {
+        const item = r.data;
+        if (item) {
+          item.cropVariety = item.cropVariety || item.subjectVariant;
+          item.crop = item.crop || item.productionSubject;
+        }
+        return item;
+      }),
 
   update: (id: number, data: FarmSeedRequest) =>
     apiClient
       .put<FarmSeedResponse>(`${FARM_ENDPOINTS.seeds}/${id}`, data)
-      .then((r) => r.data),
+      .then((r) => {
+        const item = r.data;
+        if (item) {
+          item.cropVariety = item.cropVariety || item.subjectVariant;
+          item.crop = item.crop || item.productionSubject;
+        }
+        return item;
+      }),
 
   delete: (id: number) => apiClient.delete(`${FARM_ENDPOINTS.seeds}/${id}`),
 };

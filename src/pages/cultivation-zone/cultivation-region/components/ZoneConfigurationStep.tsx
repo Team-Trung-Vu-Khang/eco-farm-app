@@ -30,14 +30,12 @@ import {
   Loader2,
 } from "lucide-react";
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useCatalog } from "@/features/foundation/hooks/useCatalog";
+import { useProductionMethods, useProductionSubjectVariants, type ProductionSubjectVariantResponse } from "@/features/foundation";
 import { useIrrigationSystems } from "@/features/master-data/hooks/useIrrigationSystems";
 import { useSeeds } from "@/features/farm/hooks/useSeeds";
-import { useCropVarieties } from "@/features/foundation/hooks/useCropVarieties";
 import { useFarmingMethodCrops } from "@/features/foundation/hooks/useFarmingMethodCrops";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import type { CultivationZoneFormValues } from "../data/cultivation-zone-form.schema";
-import type { FoundationCropVarietyResponse } from "@/features/foundation/types/foundation.type";
 import type { FarmSeedResponse } from "@/features/farm/types/farm.type";
 
 interface SeedSelectorDialogProps {
@@ -78,8 +76,9 @@ export const SeedSelectorDialog = ({
     loading,
   } = useSeeds({
     params: {
-      cropVarietyId,
-      farmingMethodId,
+      foundationSubjectVariantId: cropVarietyId,
+      productionMethodId: farmingMethodId,
+      domainCode: "CROP",
       keyword: debouncedSearch.trim() || undefined,
       page,
       size: 20,
@@ -302,10 +301,9 @@ export const ZoneConfigurationStep = () => {
   const debouncedVarietySearch = useDebounce(varietySearch, 500);
 
   // ─── Reference data ────────────────────────────────────────────────────
-  const { items: farmingMethods, loading: fmLoading } = useCatalog(
-    "farming-methods",
-    { params: { size: 100, status: "active" } },
-  );
+  const { items: farmingMethods, loading: fmLoading } = useProductionMethods({
+    params: { domainCode: "CROP", size: 100, status: "active" },
+  });
   const { items: irrigationSystems, loading: irLoading } = useIrrigationSystems(
     { params: { size: 100 } },
   );
@@ -315,8 +313,9 @@ export const ZoneConfigurationStep = () => {
 
   // Fetch crop varieties and farming method crop assignments
   const { items: allCropVarieties, loading: varietiesLoading } =
-    useCropVarieties({
+    useProductionSubjectVariants({
       params: {
+        domainCode: "CROP",
         size: 100,
         keyword: debouncedVarietySearch.trim() || undefined,
         status: "active",
@@ -336,6 +335,7 @@ export const ZoneConfigurationStep = () => {
   // Fetch all seeds (first 100 on load) to resolve seed names
   const { items: allSeeds } = useSeeds({
     params: {
+      domainCode: "CROP",
       size: 100,
     },
     enabled: !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
@@ -343,7 +343,7 @@ export const ZoneConfigurationStep = () => {
 
   // Dialog State
   const [activeVariety, setActiveVariety] =
-    useState<FoundationCropVarietyResponse | null>(null);
+    useState<ProductionSubjectVariantResponse | null>(null);
 
   // Cache selected seeds' details locally to display outside the dialog
   const [selectedSeedsMap, setSelectedSeedsMap] = useState<
@@ -570,9 +570,9 @@ export const ZoneConfigurationStep = () => {
                           >
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
-                                {variety.documents?.[0]?.fileUrl ? (
+                                {variety.imageUrl ? (
                                   <img
-                                    src={variety.documents[0].fileUrl}
+                                    src={variety.imageUrl}
                                     alt={variety.name}
                                     className="w-full h-full object-cover"
                                   />

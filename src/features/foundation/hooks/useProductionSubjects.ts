@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { productionSubjectApi, productionSubjectVariantApi } from "../api/foundation.api";
+import { productionSubjectApi, productionSubjectVariantApi, productionMethodApi } from "../api/foundation.api";
 import type {
   ProductionSubjectQueryParams,
   ProductionSubjectResponse,
   ProductionSubjectVariantQueryParams,
   ProductionSubjectVariantResponse,
+  ProductionMethodQueryParams,
+  ProductionMethodResponse,
   PageResponse,
 } from "../types/foundation.type";
 
@@ -89,6 +91,50 @@ export function useProductionSubjectVariantById(
   return useQuery<ProductionSubjectVariantResponse, Error>({
     queryKey: productionSubjectVariantKeys.detail(id),
     queryFn: () => productionSubjectVariantApi.getById(id),
+    enabled: enabled && !!id,
+  });
+}
+
+export const productionMethodKeys = {
+  all: () => ["foundation", "production-methods"] as const,
+  list: (params?: ProductionMethodQueryParams) =>
+    ["foundation", "production-methods", "list", params ?? {}] as const,
+  detail: (id: number) =>
+    ["foundation", "production-methods", "detail", id] as const,
+};
+
+export function useProductionMethods({
+  params,
+  enabled = true,
+}: {
+  params?: ProductionMethodQueryParams;
+  enabled?: boolean;
+} = {}) {
+  const queryResult = useQuery<
+    PageResponse<ProductionMethodResponse>,
+    Error
+  >({
+    queryKey: productionMethodKeys.list(params),
+    queryFn: () => productionMethodApi.list(params),
+    enabled,
+  });
+
+  return {
+    ...queryResult,
+    items: queryResult.data?.content ?? [],
+    response: queryResult.data ?? null,
+    loading: queryResult.isLoading,
+    error: queryResult.error?.message ?? null,
+  };
+}
+
+export function useProductionMethodById(
+  id: number,
+  { enabled = true }: { enabled?: boolean } = {},
+) {
+  return useQuery<ProductionMethodResponse, Error>({
+    queryKey: productionMethodKeys.detail(id),
+    queryFn: () => productionMethodApi.getById(id),
     enabled: enabled && !!id,
   });
 }

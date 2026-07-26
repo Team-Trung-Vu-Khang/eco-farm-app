@@ -10,7 +10,7 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CalendarDays, Layers3, Plus } from "lucide-react";
 import { useMemo } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { createAquacultureGrowthCycleColumns } from "./data/columns";
 import { useAquacultureGrowthCyclePage } from "./hooks/useAquacultureGrowthCyclePage";
 
@@ -38,6 +38,8 @@ const AquacultureGrowthCyclePage = () => {
     handleFilterChange,
   } = useAquacultureGrowthCyclePage();
 
+  const [, setLocation] = useLocation();
+
   useDialogBugWorkaround([detailOpen, deleteOpen]);
 
   const columns = useMemo(
@@ -48,14 +50,14 @@ const AquacultureGrowthCyclePage = () => {
           setDetailOpen(true);
         },
         onEdit: (item) => {
-          // handled by Link actions or location navigation
+          setLocation(`/aquaculture-growth-cycle/${item.id}/edit`);
         },
         onDelete: (item) => {
           setDeleteItem(item);
           setDeleteOpen(true);
         },
       }),
-    [setSelectedId, setDetailOpen, setDeleteItem, setDeleteOpen],
+    [setSelectedId, setDetailOpen, setDeleteItem, setDeleteOpen, setLocation],
   );
 
   const selectedItem = useMemo(() => {

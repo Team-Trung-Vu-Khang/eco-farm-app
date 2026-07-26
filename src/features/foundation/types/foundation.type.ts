@@ -356,3 +356,18 @@ export interface ProductionSubjectVariantResponse {
   updatedAt: string;
 }
 
+export interface ProductionMethodQueryParams extends BaseQueryParams {
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+}
+
+export interface ProductionMethodResponse {
+  id: number;
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  code: string;
+  name: string;
+  description?: string;
+  displayOrder?: number;
+  status: FoundationStatus;
+  metadataJson?: Record<string, unknown>;
+}
+

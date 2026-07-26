@@ -26,6 +26,8 @@ import type {
   ProductionSubjectResponse,
   ProductionSubjectVariantQueryParams,
   ProductionSubjectVariantResponse,
+  ProductionMethodQueryParams,
+  ProductionMethodResponse,
 } from "../types/foundation.type";
 import { apiClient } from "@/shared/lib/axios";
 
@@ -289,6 +291,23 @@ export const productionSubjectVariantApi = {
     apiClient
       .get<ProductionSubjectVariantResponse>(
         `/api/admin/foundation/production/subject-variants/${id}`,
+      )
+      .then((r) => r.data),
+};
+
+export const productionMethodApi = {
+  list: (params?: ProductionMethodQueryParams) =>
+    apiClient
+      .get<PageResponse<ProductionMethodResponse>>(
+        "/api/admin/foundation/production/methods",
+        { params },
+      )
+      .then((r) => r.data),
+
+  getById: (id: number) =>
+    apiClient
+      .get<ProductionMethodResponse>(
+        `/api/admin/foundation/production/methods/${id}`,
       )
       .then((r) => r.data),
 };

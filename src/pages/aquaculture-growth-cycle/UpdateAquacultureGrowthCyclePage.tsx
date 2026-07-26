@@ -31,23 +31,32 @@ import {
   animalGrowthCycleFormSchema,
   type AnimalGrowthCycleFormValues,
 } from "@/pages/animal-husbandry-zone/animal-growth-cycle/schemas/animalGrowthCycleSchema";
-import { formatDaysToDuration, parseDurationToDays } from "@/pages/growth-cycle/utils/duration";
+import {
+  formatDaysToDuration,
+  parseDurationToDays,
+} from "@/pages/growth-cycle/utils/duration";
 
-export default function AquacultureGrowthCycleEditPage() {
+export default function UpdateAquacultureGrowthCyclePage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/aquaculture-growth-cycle/:id/edit");
   const { toast } = useToast();
 
-  const numericId = Number(String(params?.id).replace(/^(foundation-|user-)/, ""));
+  const numericId = Number(
+    String(params?.id).replace(/^(foundation-|user-)/, ""),
+  );
 
   const { data: currentCycle, isLoading } = useUserGrowthCycleTemplateById(
     numericId,
     { enabled: !!numericId },
   );
   const { updateTemplate } = useUserGrowthCycleTemplateMutations();
-  const { items: crops } = useProductionSubjects({ params: { domainCode: "AQUACULTURE", size: 100 } });
-  const { items: cropVarieties } = useProductionSubjectVariants({ params: { domainCode: "AQUACULTURE", size: 100 } });
+  const { items: crops } = useProductionSubjects({
+    params: { domainCode: "AQUACULTURE", size: 100 },
+  });
+  const { items: cropVarieties } = useProductionSubjectVariants({
+    params: { domainCode: "AQUACULTURE", size: 100 },
+  });
   const { uploadFile } = useFileUpload();
 
   const form = useForm<AnimalGrowthCycleFormValues>({
@@ -69,7 +78,11 @@ export default function AquacultureGrowthCycleEditPage() {
       const metadata: Record<string, unknown> = currentCycle.metadataJson || {};
       const cropIdVal = currentCycle.productionSubject?.id;
       const varietyIdVal = currentCycle.productionSubjectVariant?.id;
-      const totalDaysVal = currentCycle.stages?.reduce((sum: number, s: any) => sum + (s.durationDays || 0), 0) ?? 0;
+      const totalDaysVal =
+        currentCycle.stages?.reduce(
+          (sum: number, s: any) => sum + (s.durationDays || 0),
+          0,
+        ) ?? 0;
 
       reset({
         name: currentCycle.name ?? "",
@@ -284,7 +297,9 @@ export default function AquacultureGrowthCycleEditPage() {
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Phạm vi:</span>
                     <span className="font-medium">
-                      {watchedScope === "crop" ? "Theo loài nuôi" : "Theo giống"}
+                      {watchedScope === "crop"
+                        ? "Theo loài nuôi"
+                        : "Theo giống"}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">

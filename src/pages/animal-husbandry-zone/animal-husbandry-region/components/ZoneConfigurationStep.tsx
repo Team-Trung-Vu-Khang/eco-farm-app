@@ -30,15 +30,16 @@ import {
   Loader2,
 } from "lucide-react";
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useCatalog } from "@/features/foundation/hooks/useCatalog";
+import {
+  useProductionMethods,
+  useProductionSubjectVariants,
+  type ProductionSubjectVariantResponse,
+} from "@/features/foundation";
 import { useIrrigationSystems } from "@/features/master-data/hooks/useIrrigationSystems";
 import { useSeeds } from "@/features/farm/hooks/useSeeds";
-import { useCropVarieties } from "@/features/foundation/hooks/useCropVarieties";
-import { useFarmingMethodCrops } from "@/features/foundation/hooks/useFarmingMethodCrops";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import type { CultivationZoneFormValues } from "../data/cultivation-zone-form.schema";
 import { mapSeedToBreed } from "../constants";
-import type { FoundationCropVarietyResponse } from "@/features/foundation/types/foundation.type";
 import type { FarmSeedResponse } from "@/features/farm/types/farm.type";
 
 const MOCK_BREEDS = [
@@ -101,8 +102,8 @@ export const BreedSelectorDialog = ({
     loading,
   } = useSeeds({
     params: {
-      cropVarietyId,
-      farmingMethodId,
+      foundationSubjectVariantId: cropVarietyId,
+      productionMethodId: farmingMethodId,
       keyword: debouncedSearch.trim() || undefined,
       page,
       size: 20,
@@ -327,32 +328,23 @@ export const ZoneConfigurationStep = () => {
   const debouncedVarietySearch = useDebounce(varietySearch, 500);
 
   // ─── Reference data ────────────────────────────────────────────────────
-  const { items: farmingMethods, loading: fmLoading } = useCatalog(
-    "farming-methods",
-    { params: { size: 100, status: "active" } },
-  );
-  const { items: irrigationSystems, loading: irLoading } = useIrrigationSystems(
-    { params: { size: 100 } },
-  );
+  const { items: farmingMethods, loading: fmLoading } = useProductionMethods({
+    params: { domainCode: "LIVESTOCK", size: 100, status: "active" },
+  });
+  // const { items: irrigationSystems, loading: irLoading } = useIrrigationSystems(
+  //   { params: { size: 100 } },
+  // );
 
   const selectedFarmingMethodId = watch("farmingMethodId");
   const selectedSeedIds = watch("seedIds") ?? [];
 
-  // Fetch crop varieties and farming method crop assignments
+  // Fetch livestock breeds/variants
   const { items: allCropVarieties, loading: varietiesLoading } =
-    useCropVarieties({
+    useProductionSubjectVariants({
       params: {
+        domainCode: "LIVESTOCK",
         size: 100,
         keyword: debouncedVarietySearch.trim() || undefined,
-        status: "active",
-      },
-      enabled: !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
-    });
-
-  const { items: farmingMethodCrops, loading: fmcLoading } =
-    useFarmingMethodCrops({
-      params: {
-        size: 100,
         status: "active",
       },
       enabled: !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
@@ -370,7 +362,7 @@ export const ZoneConfigurationStep = () => {
 
   // Dialog State
   const [activeVariety, setActiveVariety] =
-    useState<FoundationCropVarietyResponse | null>(null);
+    useState<ProductionSubjectVariantResponse | null>(null);
 
   // Cache selected seeds' details locally to display outside the dialog
   const [selectedSeedsMap, setSelectedSeedsMap] = useState<
@@ -390,29 +382,11 @@ export const ZoneConfigurationStep = () => {
     }
   }, [allSeeds]);
 
-  // Client-side filter crop varieties based on selected farming method
+  // Map varieties to breed models
   const filteredCropVarieties = useMemo(() => {
     if (!selectedFarmingMethodId || selectedFarmingMethodId <= 0) return [];
-
-    const activeMethodCrop = farmingMethodCrops.find(
-      (item) => item.farmingMethodId === selectedFarmingMethodId,
-    );
-
-    if (!activeMethodCrop) return [];
-
-    const allowedVarietyIds = new Set<number>();
-    activeMethodCrop.crops?.forEach((crop) => {
-      crop.varieties?.forEach((v) => {
-        allowedVarietyIds.add(v.id);
-      });
-    });
-
-    const mappedVarieties = allCropVarieties.map(mapVarietyToBreed);
-
-    return mappedVarieties.filter((variety) =>
-      allowedVarietyIds.has(variety.id),
-    );
-  }, [allCropVarieties, farmingMethodCrops, selectedFarmingMethodId]);
+    return allCropVarieties.map(mapVarietyToBreed);
+  }, [allCropVarieties, selectedFarmingMethodId]);
 
   const handleConfirmSeeds = (
     selectedIds: number[],
@@ -572,7 +546,7 @@ export const ZoneConfigurationStep = () => {
                   />
                 </div>
                 <ScrollArea className="flex-1 h-80">
-                  {varietiesLoading || fmcLoading ? (
+                  {varietiesLoading ? (
                     <div className="flex items-center justify-center text-muted-foreground text-sm py-10">
                       Đang tải...
                     </div>
@@ -600,9 +574,9 @@ export const ZoneConfigurationStep = () => {
                           >
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
-                                {variety.documents?.[0]?.fileUrl ? (
+                                {variety.imageUrl ? (
                                   <img
-                                    src={variety.documents[0].fileUrl}
+                                    src={variety.imageUrl}
                                     alt={variety.name}
                                     className="w-full h-full object-cover"
                                   />

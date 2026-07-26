@@ -45,14 +45,24 @@ export interface FarmSeedRequest {
 
 export interface FarmSeedResponse {
   id: number;
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   code?: string;
   name?: string;
-  cropVariety: {
+  subjectVariant?: {
     id: number;
     code?: string;
     name?: string;
   };
-  crop: {
+  productionSubject?: {
+    id: number;
+    name?: string;
+  };
+  cropVariety?: {
+    id: number;
+    code?: string;
+    name?: string;
+  };
+  crop?: {
     id: number;
     name?: string;
   };
@@ -81,8 +91,10 @@ export interface SeedQueryParams {
   status?: FoundationStatus;
   page?: number;
   size?: number;
-  farmingMethodId?: number;
+  productionMethodId?: number;
   domainCode?: string;
+  foundationSubjectVariantId?: number;
+  productionSubjectId?: number;
 }
 
 export interface CoordinatePoint {

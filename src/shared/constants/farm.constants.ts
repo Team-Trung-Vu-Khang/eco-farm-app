@@ -1,7 +1,7 @@
 export const FARM_BASE_PATH = "/api/farm";
 
 export const FARM_ENDPOINTS = {
-  seeds: `${FARM_BASE_PATH}/seeds`,
+  seeds: `${FARM_BASE_PATH}/subject-variants`,
   regions: `${FARM_BASE_PATH}/regions`,
   areas: `${FARM_BASE_PATH}/areas`,
   plots: `${FARM_BASE_PATH}/plots`,

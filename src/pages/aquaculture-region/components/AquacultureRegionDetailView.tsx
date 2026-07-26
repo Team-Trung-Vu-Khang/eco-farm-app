@@ -38,7 +38,7 @@ export const AquacultureRegionDetailView = ({
     const areaById = new Map<string, { area: any; region: any }>();
     const plotById = new Map<string, { plot: any; area: any; region: any }>();
 
-    const region = details.region;
+    const region = details?.region;
     if (region) {
       regionById.set(String(region.id), region);
       for (const a of region.subAreas || []) {
