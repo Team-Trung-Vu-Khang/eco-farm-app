@@ -3,6 +3,7 @@ import { useLocation, useParams } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import useRegionStore from "@/stores/useRegionStore";
+import usePersonnelStore from "@/stores/usePersonnelStore";
 import useSeasonStore from "@/stores/useSeasonStore";
 import usePlanStore from "../../../stores/usePlanStore";
 import { useTreatmentStore } from "../../../stores/useTreatmentStore";
@@ -21,6 +22,99 @@ import {
   summarizeTaskSelections,
 } from "../utils/location";
 
+type DurationParts = {
+  years: string;
+  months: string;
+  days: string;
+};
+
+function formatDateInput(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function addDurationPartsToDate(startDate: string, parts: DurationParts) {
+  const years = Number(parts.years || 0);
+  const months = Number(parts.months || 0);
+  const days = Number(parts.days || 0);
+
+  if (
+    !startDate ||
+    [years, months, days].every((value) => !Number.isFinite(value) || value <= 0)
+  ) {
+    return "";
+  }
+
+  const next = new Date(`${startDate}T00:00:00`);
+  if (Number.isNaN(next.getTime())) return "";
+
+  if (Number.isFinite(years) && years > 0) next.setFullYear(next.getFullYear() + years);
+  if (Number.isFinite(months) && months > 0) next.setMonth(next.getMonth() + months);
+  if (Number.isFinite(days) && days > 0) next.setDate(next.getDate() + days);
+
+  return formatDateInput(next);
+}
+
+function parseDaysToParts(totalDays?: number): DurationParts {
+  const value = Number(totalDays || 0);
+  if (!Number.isFinite(value) || value <= 0) {
+    return { years: "", months: "", days: "" };
+  }
+
+  let remaining = Math.floor(value);
+  const years = Math.floor(remaining / 365);
+  remaining -= years * 365;
+  const months = Math.floor(remaining / 30);
+  remaining -= months * 30;
+
+  return {
+    years: years > 0 ? String(years) : "",
+    months: months > 0 ? String(months) : "",
+    days: remaining > 0 ? String(remaining) : "",
+  };
+}
+
+function inferDurationFromDates(startDate?: string, endDate?: string) {
+  if (!startDate || !endDate) {
+    return { plannedDurationYears: "", plannedDurationMonths: "", plannedDurationDays: "" };
+  }
+
+  const start = new Date(`${startDate}T00:00:00`).getTime();
+  const end = new Date(`${endDate}T00:00:00`).getTime();
+  if (Number.isNaN(start) || Number.isNaN(end) || end < start) {
+    return { plannedDurationYears: "", plannedDurationMonths: "", plannedDurationDays: "" };
+  }
+
+  const diffDays = Math.max(0, Math.round((end - start) / 86400000));
+  const parts = parseDaysToParts(diffDays);
+  return {
+    plannedDurationYears: parts.years,
+    plannedDurationMonths: parts.months,
+    plannedDurationDays: parts.days,
+  };
+}
+
+function buildAutoPlanCode(seasonId: string, seasonName: string) {
+  const seasonToken = (seasonId || seasonName || "PLAN")
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .toUpperCase()
+    .slice(0, 12) || "PLAN";
+
+  const now = new Date();
+  const timestamp = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+    String(now.getHours()).padStart(2, "0"),
+    String(now.getMinutes()).padStart(2, "0"),
+    String(now.getSeconds()).padStart(2, "0"),
+  ].join("");
+
+  return `KH-${seasonToken}-${timestamp}`;
+}
+
 function createEmptyFormData(): PlanFormData {
   return {
     code: "",
@@ -30,6 +124,11 @@ function createEmptyFormData(): PlanFormData {
     seasonName: "",
     startDate: "",
     endDate: "",
+    plannedDurationYears: "",
+    plannedDurationMonths: "",
+    plannedDurationDays: "",
+    managementPersonnelIds: [],
+    qualityInspectorPersonnelIds: [],
     selectedRegionIds: [],
     selectedZoneIds: [],
     selectedPlotIds: [],
@@ -56,6 +155,7 @@ export function useAquacultureGrowthForm(mode: "create" | "edit", basePath = "/p
   const updatePlan = usePlanStore((state) => state.updatePlan);
   const getPlanById = usePlanStore((state) => state.getPlanById);
   const seasons = useSeasonStore((state) => state.seasons);
+  const personnel = usePersonnelStore((state) => state.personnel);
   const { regions } = useRegionStore();
   const { growthCycles } = useGrowthCycleStore();
   const treatments = useTreatmentStore((state) => state.treatments);
@@ -119,6 +219,11 @@ export function useAquacultureGrowthForm(mode: "create" | "edit", basePath = "/p
           seasonName: plan.seasonName || "",
           startDate: plan.startDate || "",
           endDate: plan.endDate || "",
+          ...inferDurationFromDates(plan.startDate, plan.endDate),
+          managementPersonnelIds:
+            (plan as any).managementPersonnelIds || [],
+          qualityInspectorPersonnelIds:
+            (plan as any).qualityInspectorPersonnelIds || [],
           selectedRegionIds: plan.selectedRegionIds || [],
           selectedZoneIds: plan.selectedZoneIds || [],
           selectedPlotIds: plan.selectedPlotIds || [],
@@ -147,6 +252,10 @@ export function useAquacultureGrowthForm(mode: "create" | "edit", basePath = "/p
       seasonName: plan.seasonName || "",
       startDate: plan.startDate || "",
       endDate: plan.endDate || "",
+      ...inferDurationFromDates(plan.startDate, plan.endDate),
+      managementPersonnelIds: (plan as any).managementPersonnelIds || [],
+      qualityInspectorPersonnelIds:
+        (plan as any).qualityInspectorPersonnelIds || [],
       selectedRegionIds: plan.selectedRegionIds || [],
       selectedZoneIds: plan.selectedZoneIds || [],
       selectedPlotIds: plan.selectedPlotIds || [],
@@ -201,8 +310,37 @@ export function useAquacultureGrowthForm(mode: "create" | "edit", basePath = "/p
       ...prev,
       seasonId: season.id,
       seasonName: season.name,
+      code: prev.code || buildAutoPlanCode(season.id, season.name),
     }));
     setDateWarning(null);
+  };
+
+  const handleDurationPartChange = (
+    part: "years" | "months" | "days",
+    value: string,
+  ) => {
+    setFormData((prev) => {
+      const next = {
+        ...prev,
+        plannedDurationYears:
+          part === "years" ? value.replace(/[^0-9]/g, "") : prev.plannedDurationYears,
+        plannedDurationMonths:
+          part === "months" ? value.replace(/[^0-9]/g, "") : prev.plannedDurationMonths,
+        plannedDurationDays:
+          part === "days" ? value.replace(/[^0-9]/g, "") : prev.plannedDurationDays,
+      };
+
+      const endDate = addDurationPartsToDate(prev.startDate, {
+        years: next.plannedDurationYears,
+        months: next.plannedDurationMonths,
+        days: next.plannedDurationDays,
+      });
+
+      return {
+        ...next,
+        endDate: endDate || prev.endDate,
+      };
+    });
   };
 
   const handleAddMaterial = useCallback(
@@ -277,6 +415,7 @@ export function useAquacultureGrowthForm(mode: "create" | "edit", basePath = "/p
     selectedEnterpriseId,
     setSelectedEnterpriseId,
     seasons,
+    personnel,
     regions,
     regimens,
     growthCycles,
@@ -286,6 +425,7 @@ export function useAquacultureGrowthForm(mode: "create" | "edit", basePath = "/p
     summarizeTaskSelections: (taskSelections: any[] | undefined) =>
       summarizeTaskSelections(taskSelections as any, regions),
     handleSeasonChange,
+    handleDurationPartChange,
     handleGeographicalConfirm,
     handleAddMaterial,
     handleRemoveMaterial,

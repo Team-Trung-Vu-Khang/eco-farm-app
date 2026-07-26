@@ -36,6 +36,11 @@ export interface PlanFormData {
   seasonName: string;
   startDate: string;
   endDate: string;
+  plannedDurationYears: string;
+  plannedDurationMonths: string;
+  plannedDurationDays: string;
+  managementPersonnelIds: string[];
+  qualityInspectorPersonnelIds: string[];
   selectedRegionIds: string[];
   selectedZoneIds: string[];
   selectedPlotIds: string[];
