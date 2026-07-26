@@ -1,24 +1,44 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
+import { useMemo, useState } from "react";
+import { useLocation, useSearch } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import usePlanStore from "../../../stores/usePlanStore";
 import useTaskStore, { type Task } from "../../../stores/useTaskStore";
 
 export function useTaskPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const search = useSearch();
 
-  const tasks = useTaskStore((state) => state.tasks);
+  const allTasks = useTaskStore((state) => state.tasks);
   const deleteTask = useTaskStore((state) => state.deleteTask);
+  const plans = usePlanStore((state) => state.plans);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<Task | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  // `?planId=` scopes the page to a single plan ("Phân bổ công việc" from a plan).
+  const planId = new URLSearchParams(search).get("planId") || "";
+  const plan = useMemo(
+    () => (planId ? plans.find((p) => String(p.id) === planId) : undefined),
+    [planId, plans],
+  );
+
+  // Tasks created before `planId` existed only carry the plan name, so fall back to it.
+  const tasks = useMemo(() => {
+    if (!planId) return allTasks;
+    return allTasks.filter(
+      (task) =>
+        task.planId === planId || (!!plan?.name && task.plan === plan.name),
+    );
+  }, [allTasks, plan?.name, planId]);
+
+  const isPlanScoped = !!planId;
+  const planNotFound = isPlanScoped && !plan;
+
   const handleAdd = () => {
-    setLocation("/task/create");
+    setLocation(planId ? `/task/create?planId=${planId}` : "/task/create");
   };
 
   const handleEdit = (task: Task) => {
@@ -26,8 +46,7 @@ export function useTaskPage() {
   };
 
   const handleView = (task: Task) => {
-    setSelectedTask(task);
-    setDetailOpen(true);
+    setLocation(planId ? `/task/${task.id}?planId=${planId}` : `/task/${task.id}`);
   };
 
   const handleDelete = (task: Task) => {
@@ -45,6 +64,8 @@ export function useTaskPage() {
     setDeleteItem(null);
   };
 
+  const clearPlanScope = () => setLocation("/task");
+
   const stats = {
     pending: tasks.filter((task) => task.status === "pending").length,
     inProgress: tasks.filter((task) => task.status === "in-progress").length,
@@ -55,15 +76,17 @@ export function useTaskPage() {
   return {
     tasks,
     stats,
+    plan,
+    planId,
+    isPlanScoped,
+    planNotFound,
+    clearPlanScope,
     viewMode,
     setViewMode,
     currentDate,
     setCurrentDate,
     deleteOpen,
     setDeleteOpen,
-    detailOpen,
-    setDetailOpen,
-    selectedTask,
     handleAdd,
     handleEdit,
     handleView,

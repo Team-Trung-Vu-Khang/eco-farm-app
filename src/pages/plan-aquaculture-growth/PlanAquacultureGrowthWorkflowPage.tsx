@@ -124,23 +124,11 @@ function getDurationLabel(
   })} tháng`;
 }
 
-function getWorkflowTitle(plan: Plan) {
-  const text = `${plan.crop} ${plan.variety ?? ""} ${plan.seasonName ?? ""}`.toLowerCase();
+/** Fixed per module: this page only ever renders this plan type. */
+const WORKFLOW_TITLE = "Sơ đồ quy trình nuôi trồng thủy sản";
 
-  if (/(tôm|cá|thủy sản|nuôi trồng)/.test(text)) {
-    return "Sơ đồ quy trình nuôi trồng thủy sản";
-  }
-
-  if (/(heo|bò|gà|vịt|chăn nuôi|gia súc|gia cầm)/.test(text)) {
-    return "Sơ đồ quy trình chăn nuôi";
-  }
-
-  return "Sơ đồ quy trình nuôi trồng thủy sản";
-}
-
-function getWorkflowDescription() {
-  return "Quy trình triển khai các kế hoạch được liên kết với nhau trên sơ đồ.";
-}
+const WORKFLOW_DESCRIPTION =
+  "Quy trình triển khai các kế hoạch được liên kết với nhau trên sơ đồ.";
 
 function countWorkers(tasks: Plan["taskAllocations"]) {
   const total = tasks.reduce((sum, task) => {
@@ -472,17 +460,6 @@ export default function PlanAquacultureGrowthWorkflowPage({
   });
   const plan = usePlanStore((state) => state.getPlanById(Number(params.id)));
   const deletePlan = usePlanStore((state) => state.deletePlan);
-  const workflowTitle = useMemo(
-    () => (plan ? getWorkflowTitle(plan) : "Sơ đồ quy trình"),
-    [plan],
-  );
-  const workflowDescription = useMemo(
-    () =>
-      plan
-        ? getWorkflowDescription()
-        : "Quy trình triển khai các kế hoạch được liên kết với nhau trên sơ đồ.",
-    [plan],
-  );
   const primaryRegionLabels = useMemo(
     () => (plan ? getRegionLabels(plan, regions || []) : []),
     [plan, regions],
@@ -602,7 +579,7 @@ export default function PlanAquacultureGrowthWorkflowPage({
             slot.plan,
             slot.label,
             () => openEditDialog(),
-            () => setLocation(`${basePath}/${slot.plan.id}/edit#task-allocation`),
+            () => setLocation(`/task?planId=${slot.plan.id}`),
             () => {
               if (slot.isPrimary) {
                 setDeleteOpen(true);
@@ -690,7 +667,7 @@ export default function PlanAquacultureGrowthWorkflowPage({
     return (
       <AdminLayout
         isDev
-        title="Workflow kế hoạch"
+        title={WORKFLOW_TITLE}
         description="Không tìm thấy kế hoạch"
       >
         <div className="flex h-[60vh] items-center justify-center">
@@ -714,8 +691,8 @@ export default function PlanAquacultureGrowthWorkflowPage({
   return (
     <AdminLayout
       isDev
-      title={workflowTitle}
-      description={workflowDescription}
+      title={WORKFLOW_TITLE}
+      description={WORKFLOW_DESCRIPTION}
       actions={
         <div className="flex flex-wrap gap-2">
           <Button

@@ -67,6 +67,13 @@ const PLAN_PURPOSE_CONFIG: Record<
     icon: Layers,
     description: "Áp dụng quy trình sản xuất chuẩn",
   },
+  "facility-upgrade": {
+    label: "Cải tạo CSVC",
+    activeClassName: "data-[state=active]:bg-slate-700",
+    cardClassName: "border-slate-500 bg-slate-50/50 ring-slate-500/5",
+    icon: Wrench,
+    description: "Cải tạo, nâng cấp cơ sở vật chất",
+  },
   treatment: {
     label: "Điều trị",
     activeClassName: "data-[state=active]:bg-red-600",
@@ -275,15 +282,19 @@ const IncurredTasksOverview = ({
                 {
                   key: "geographicalSelections",
                   label: "Phạm vi",
-                  render: (value: CropDetailPlanSelection[]) =>
-                    renderSelectionBadges(value || [], regions, "Chưa xác định"),
+                  render: (_value: unknown, row: Task) =>
+                    renderSelectionBadges(
+                      row.geographicalSelections || [],
+                      regions,
+                      "Chưa xác định",
+                    ),
                 },
                 { key: "plan", label: "Kế hoạch" },
                 { key: "stage", label: "Giai đoạn" },
                 {
                   key: "assignedTo",
                   label: "Phân công",
-                  render: (value: string | string[], row: Task) => (
+                  render: (_value: unknown, row: Task) => (
                     <div className="flex items-center gap-2.5">
                       <div
                         className={cn(
@@ -296,7 +307,9 @@ const IncurredTasksOverview = ({
                         <Users className="h-3.5 w-3.5" />
                       </div>
                       <span className="max-w-[150px] truncate text-[11px] font-bold text-slate-600">
-                        {Array.isArray(value) ? value.join(", ") : value}
+                        {Array.isArray(row.assignedTo)
+                          ? row.assignedTo.join(", ")
+                          : row.assignedTo}
                       </span>
                     </div>
                   ),
@@ -304,20 +317,20 @@ const IncurredTasksOverview = ({
                 {
                   key: "priority",
                   label: "Ưu tiên",
-                  render: (value: string) => (
+                  render: (_value: unknown, row: Task) => (
                     <Badge
                       variant={
-                        value === "high"
+                        row.priority === "high"
                           ? "destructive"
-                          : value === "medium"
+                          : row.priority === "medium"
                             ? "default"
                             : "outline"
                       }
                       className="border-none px-2.5 py-0.5 text-[10px] font-black tracking-wider shadow-sm"
                     >
-                      {value === "high"
+                      {row.priority === "high"
                         ? "CAO"
-                        : value === "medium"
+                        : row.priority === "medium"
                           ? "TRUNG BÌNH"
                           : "THẤP"}
                     </Badge>
@@ -326,7 +339,7 @@ const IncurredTasksOverview = ({
                 {
                   key: "status",
                   label: "Trạng thái",
-                  render: (value: string) => {
+                  render: (_value: unknown, row: Task) => {
                     const statusConfig: Record<
                       string,
                       { label: string; variant: "secondary" | "default" | "destructive" | "outline" }
@@ -336,7 +349,8 @@ const IncurredTasksOverview = ({
                       overdue: { label: "QUÁ HẠN", variant: "destructive" },
                       pending: { label: "CHỜ DUYỆT", variant: "outline" },
                     };
-                    const config = statusConfig[value] || statusConfig.pending;
+                    const config =
+                      statusConfig[row.status] || statusConfig.pending;
                     return (
                       <Badge
                         variant={config.variant}
@@ -637,13 +651,17 @@ const IncurredPlanDetails = ({
                 {
                   key: "geographicalSelections",
                   label: "Phạm vi",
-                  render: (value: CropDetailPlanSelection[]) =>
-                    renderSelectionBadges(value || [], regions, "Toàn bộ kế hoạch"),
+                  render: (_value: unknown, row: any) =>
+                    renderSelectionBadges(
+                      row.geographicalSelections || [],
+                      regions,
+                      "Toàn bộ kế hoạch",
+                    ),
                 },
                 {
                   key: "assignedTo",
                   label: "Phân công",
-                  render: (value: string | string[], row: any) => (
+                  render: (_value: unknown, row: any) => (
                     <div className="flex items-center gap-2.5">
                       <div
                         className={cn(
@@ -656,7 +674,9 @@ const IncurredPlanDetails = ({
                         <Users className="h-3.5 w-3.5" />
                       </div>
                       <span className="max-w-[120px] truncate text-[11px] font-bold text-slate-600">
-                        {Array.isArray(value) ? value.join(", ") : value}
+                        {Array.isArray(row.assignedTo)
+                          ? row.assignedTo.join(", ")
+                          : row.assignedTo}
                       </span>
                     </div>
                   ),
@@ -937,6 +957,9 @@ export const CropDetailPlansTab = ({
   const planCounts = {
     cultivation: baseRelevantPlans.filter((plan) => plan.purpose === "cultivation")
       .length,
+    "facility-upgrade": baseRelevantPlans.filter(
+      (plan) => plan.purpose === "facility-upgrade",
+    ).length,
     treatment: baseRelevantPlans.filter((plan) => plan.purpose === "treatment").length,
     amendment: baseRelevantPlans.filter((plan) => plan.purpose === "amendment").length,
     harvest: baseRelevantPlans.filter((plan) => plan.purpose === "harvest").length,

@@ -33,6 +33,7 @@ const numberFormatter = new Intl.NumberFormat("vi-VN", {
 
 const planPurposeLabels: Record<Plan["purpose"], string> = {
   cultivation: "Canh tác",
+  "facility-upgrade": "Cải tạo cơ sở vật chất",
   treatment: "Điều trị",
   amendment: "Cải tạo",
   harvest: "Thu hoạch",
