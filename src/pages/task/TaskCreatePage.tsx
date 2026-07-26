@@ -39,11 +39,9 @@ import {
   ClipboardList,
   Clock,
   FileCheck,
-  FlaskConical,
   Info,
   Layers,
   MapPin,
-  Package,
   Plus,
   RefreshCw,
   Search,
@@ -54,11 +52,10 @@ import {
   Trash2,
   User,
   Users,
-  Wrench,
   X,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 
 const SelectionCard = ({
   regionId,
@@ -291,14 +288,14 @@ const SelectionCard = ({
 import useAmendmentPlanStore from "../../stores/useAmendmentPlanStore";
 import { useAmendmentRegimenStore } from "../../stores/useAmendmentRegimenStore";
 import usePersonnelStore from "../../stores/usePersonnelStore";
-import usePlanStore from "../../stores/usePlanStore";
+import usePlanStore, { type Plan } from "../../stores/usePlanStore";
 import useRegionStore from "../../stores/useRegionStore";
 import useTaskStore from "../../stores/useTaskStore";
-import useTeamStore from "../../stores/useTeamStore";
 import { useTreatmentStore } from "../../stores/useTreatmentStore";
 import { EnterpriseSelector } from "../cultivation-zone/cultivation-region/components";
 import GeographicalSelector from "../plan/components/GeographicalSelector";
 import { RegimenSelector } from "../plan/components/RegimenSelector";
+import type { Regimen, RegimenStep } from "../../stores/useRegimenStore";
 import { TaskStageAllocation } from "../plan/components/TaskStageAllocation";
 import type {
   GeographicalSelection,
@@ -307,97 +304,41 @@ import type {
 } from "../plan/types";
 import { getFrequencyText } from "../plan/utils/task";
 
-// Danh mục vật tư mẫu
+type TaskObjectiveType =
+  | "phat-sinh"
+  | "theo-ke-hoach"
+  | "thu-hoach"
+  | "cai-tao-dat"
+  | "tri-benh";
 
-const MATERIAL_TYPES = [
-  {
-    id: "pesticide",
-    label: "Thuốc BVTV",
-    icon: Bug,
-    color: "text-red-500",
-    bg: "bg-red-50",
-    border: "border-red-200",
-  },
-  {
-    id: "fertilizer",
-    label: "Phân bón",
-    icon: FlaskConical,
-    color: "text-green-500",
-    bg: "bg-green-50",
-    border: "border-green-200",
-  },
-  {
-    id: "tool",
-    label: "Dụng cụ - Máy móc",
-    icon: Wrench,
-    color: "text-orange-500",
-    bg: "bg-orange-50",
-    border: "border-orange-200",
-  },
-  {
-    id: "other",
-    label: "Vật tư khác",
-    icon: Package,
-    color: "text-blue-500",
-    bg: "bg-blue-50",
-    border: "border-blue-200",
-  },
-] as const;
-
-const MATERIAL_OPTIONS = {
-  pesticide: [
-    { value: "Anvil 5SC", label: "Anvil 5SC (Trừ nấm)", unit: "lít" },
-    { value: "Confidor", label: "Confidor (Trừ sâu)", unit: "lít" },
-    { value: "Radiant", label: "Radiant (Trừ sâu)", unit: "lít" },
-    { value: "Trichoderma", label: "Trichoderma (Nấm đối kháng)", unit: "lít" },
-  ],
-  fertilizer: [
-    { value: "Vôi bột", label: "Vôi bột (Xử lý pH)", unit: "kg" },
-    { value: "Lân nung chảy", label: "Lân nung chảy (Khử phèn)", unit: "kg" },
-    {
-      value: "Phân chuồng hoai mục",
-      label: "Phân chuồng hoai mục",
-      unit: "kg",
-    },
-    { value: "Humic Acid", label: "Humic Acid (Kích rễ)", unit: "lít" },
-    { value: "Kali Humate", label: "Kali Humate (Giảm mặn)", unit: "lít" },
-    { value: "NPK 20-20-15", label: "NPK 20-20-15", unit: "kg" },
-    { value: "Ure", label: "Phân Ure", unit: "kg" },
-  ],
-  tool: [
-    { value: "Máy cắt cỏ", label: "Máy cắt cỏ", unit: "cái" },
-    { value: "Bình xịt điện", label: "Bình xịt điện 20L", unit: "cái" },
-    { value: "Kéo cắt cành", label: "Kéo cắt cành", unit: "cái" },
-    { value: "Cuốc", label: "Cuốc", unit: "cái" },
-    { value: "Xẻng", label: "Xẻng", unit: "cái" },
-  ],
-  other: [
-    { value: "Túi bao trái", label: "Túi bao trái sầu riêng", unit: "cái" },
-    { value: "Dây cột", label: "Dây nilon đen", unit: "kg" },
-    { value: "Bạt phủ", label: "Bạt phủ đất", unit: "m2" },
-  ],
-};
-
-const MATERIAL_UNITS = {
-  pesticide: ["lít", "ml", "chai", "gói", "can"],
-  fertilizer: ["kg", "tấn", "bao", "lít", "can"],
-  tool: ["cái", "bộ", "hộp"],
-  other: ["kg", "cái", "cuộn", "m", "m2", "thùng"],
+// Inverse of the purpose filter in `activePlans`. Partial on purpose: an
+// "incurred" plan has no objective type and falls back to "phat-sinh".
+const PURPOSE_TO_OBJECTIVE_TYPE: Partial<
+  Record<Plan["purpose"], TaskObjectiveType>
+> = {
+  cultivation: "theo-ke-hoach",
+  "facility-upgrade": "theo-ke-hoach",
+  harvest: "thu-hoach",
+  treatment: "tri-benh",
+  amendment: "cai-tao-dat",
 };
 
 export default function TaskCreatePage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const search = useSearch();
   const addTask = useTaskStore((state) => state.addTask);
   const plans = usePlanStore((state) => state.plans);
   const amendmentPlans = useAmendmentPlanStore((state) => state.plans);
   const personnel = usePersonnelStore((state) => state.personnel);
-  const teams = useTeamStore((state) => state.teams);
   const treatments = useTreatmentStore((state) => state.treatments);
   const amendmentRegimensRaw = useAmendmentRegimenStore(
     (state) => state.regimens,
   );
-  const regimens = useMemo(() => {
+  // Explicitly typed: the treatment/amendment stores are loosely typed, so
+  // without this the whole array degrades to `any[]` and every `regimen.steps`
+  // consumer silently loses inference.
+  const regimens = useMemo<Regimen[]>(() => {
     const mappedTreatments = treatments.map((t) => ({
       id: String(t.id),
       name: t.name,
@@ -407,12 +348,14 @@ export default function TaskCreatePage() {
       category: t.disease || "Điều trị",
       crop: t.crop || "Tất cả",
       steps:
-        t.procedures?.map((p: any) => ({
-          id: String(p.id),
-          day: p.startDay ? `Ngày ${p.startDay}` : `Ngày ${p.stepNumber}`,
-          title: p.name,
-          description: p.description,
-        })) || [],
+        t.procedures?.map(
+          (p: any): RegimenStep => ({
+            id: String(p.id),
+            day: p.startDay ? `Ngày ${p.startDay}` : `Ngày ${p.stepNumber}`,
+            title: p.name,
+            description: p.description,
+          }),
+        ) ?? ([] as RegimenStep[]),
     }));
 
     const mappedAmendments = amendmentRegimensRaw.map((t) => ({
@@ -424,28 +367,34 @@ export default function TaskCreatePage() {
       category: t.soilIssue || "Cải tạo",
       crop: t.cropType || "Tất cả",
       steps:
-        t.procedures?.map((p: any) => ({
-          id: String(p.id),
-          day: p.timing || `Ngày ${p.stepNumber}`,
-          title: p.name,
-          description: p.description,
-        })) || [],
+        t.procedures?.map(
+          (p: any): RegimenStep => ({
+            id: String(p.id),
+            day: p.timing || `Ngày ${p.stepNumber}`,
+            title: p.name,
+            description: p.description,
+          }),
+        ) ?? ([] as RegimenStep[]),
     }));
 
     return [...mappedTreatments, ...mappedAmendments];
   }, [treatments, amendmentRegimensRaw]);
 
+  // Arriving from a plan's "Phân bổ công việc" pre-selects that plan.
+  const presetPlan = useMemo(() => {
+    const presetId = new URLSearchParams(search).get("planId");
+    if (!presetId) return undefined;
+    return plans.find((p) => String(p.id) === presetId);
+  }, [plans, search]);
+
   const [formData, setFormData] = useState({
     code: "CV-" + Math.floor(1000 + Math.random() * 9000),
     name: "",
-    objectiveType: "phat-sinh" as
-      | "phat-sinh"
-      | "theo-ke-hoach"
-      | "thu-hoach"
-      | "cai-tao-dat"
-      | "tri-benh",
-    planId: "",
-    planName: "",
+    objectiveType: (presetPlan
+      ? PURPOSE_TO_OBJECTIVE_TYPE[presetPlan.purpose] ?? "phat-sinh"
+      : "phat-sinh") as TaskObjectiveType,
+    planId: presetPlan ? String(presetPlan.id) : "",
+    planName: presetPlan?.name || "",
     selectedStages: [] as string[],
     selectedPlotIds: [] as string[],
     regimenId: "",
@@ -461,8 +410,6 @@ export default function TaskCreatePage() {
     tasks: [] as TaskAllocation[],
   });
 
-  const [isAssigneeDialogOpen, setIsAssigneeDialogOpen] = useState(false);
-  const [searchAssignee, setSearchAssignee] = useState("");
   const [isSupervisorDialogOpen, setIsSupervisorDialogOpen] = useState(false);
   const [searchSupervisor, setSearchSupervisor] = useState("");
   const [isInspectorDialogOpen, setIsInspectorDialogOpen] = useState(false);
@@ -500,63 +447,8 @@ export default function TaskCreatePage() {
     (p) => String(p.id) === formData.planId,
   );
 
-  const { regions, getPlotById, getAreaById, getRegionById } = useRegionStore();
+  const { regions, getPlotById, getRegionById } = useRegionStore();
 
-  const resolvedLocationNames = useMemo(() => {
-    if (!selectedPlan) return "Toàn vùng";
-
-    const names: string[] = [];
-
-    // Resolve Plots
-    if (
-      selectedPlan.selectedPlotIds &&
-      selectedPlan.selectedPlotIds.length > 0
-    ) {
-      selectedPlan.selectedPlotIds.forEach((id: string) => {
-        const plotData = getPlotById(id);
-        if (plotData?.plot) {
-          names.push(plotData.plot.name);
-        } else {
-          names.push(id);
-        }
-      });
-    }
-
-    // Resolve Zones/Areas if plots are not provided or not resolved
-    if (
-      names.length === 0 &&
-      selectedPlan.selectedZoneIds &&
-      selectedPlan.selectedZoneIds.length > 0
-    ) {
-      selectedPlan.selectedZoneIds.forEach((id: string) => {
-        const areaData = getAreaById(id);
-        if (areaData?.area) {
-          names.push(areaData.area.name);
-        } else {
-          names.push(id);
-        }
-      });
-    }
-
-    // Resolve Regions if still nothing
-    if (
-      names.length === 0 &&
-      selectedPlan.selectedRegionIds &&
-      selectedPlan.selectedRegionIds.length > 0
-    ) {
-      selectedPlan.selectedRegionIds.forEach((id: string) => {
-        const region = getRegionById(Number(id));
-        if (region) {
-          names.push(region.name);
-        } else {
-          names.push(id);
-        }
-      });
-    }
-
-    if (names.length > 0) return names.join("; ");
-    return selectedPlan.zone || "Toàn vùng";
-  }, [selectedPlan, getPlotById, getAreaById, getRegionById]);
 
   const availableStages = useMemo((): string[] => {
     // Priority 1: If plan has its own selectedStages, use them (task/material allocations reference these)
@@ -639,22 +531,6 @@ export default function TaskCreatePage() {
       })
       .filter(Boolean) as any[];
   }, [regions, selections, formData.objectiveType]);
-
-  const availableAssignees =
-    formData.assignedType === "team"
-      ? teams.map((t) => ({ id: t.id, name: t.name, code: t.code, avatar: "" }))
-      : personnel.map((p) => ({
-          id: p.id,
-          name: p.fullName,
-          code: p.taxCode || `NV${String(p.id).padStart(3, "0")}`,
-          avatar: p.avatar,
-        }));
-
-  const filteredAssignees = availableAssignees.filter(
-    (a) =>
-      a.name.toLowerCase().includes(searchAssignee.toLowerCase()) ||
-      a.code.toLowerCase().includes(searchAssignee.toLowerCase()),
-  );
 
   const getSelectionSummary = (targetSelections: GeographicalSelection[]) => {
     if (!targetSelections || targetSelections.length === 0) return [];
@@ -824,6 +700,7 @@ export default function TaskCreatePage() {
           code: `${formData.code}-${index + 1}`,
           name: `${formData.name} - ${stageName}`,
           plan: formData.planName || "Công việc theo kế hoạch",
+          planId: formData.planId || undefined,
           stage: stageName,
           assignedTo: formData.assignedTo,
           assignedType: formData.assignedType,
@@ -851,6 +728,10 @@ export default function TaskCreatePage() {
           formData.objectiveType !== "phat-sinh"
             ? formData.planName || "Công việc theo kế hoạch"
             : "Công việc phát sinh",
+        planId:
+          formData.objectiveType !== "phat-sinh"
+            ? formData.planId || undefined
+            : undefined,
         stage: formData.selectedStages.join("; ") || "N/A",
         assignedTo: formData.assignedTo,
         assignedType: formData.assignedType,
@@ -1191,18 +1072,6 @@ export default function TaskCreatePage() {
                             </div>
 
                             <div className="grid grid-cols-2 gap-x-6 gap-y-5 text-sm relative z-10">
-                              {/* <div className="space-y-1.5">
-                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                                  Vùng canh tác / Vùng địa lý
-                                </span>
-                                <div className="flex items-center gap-2.5 text-slate-700 bg-slate-50/80 p-2 rounded-xl border border-slate-100/50">
-                                  <MapPin className="w-4 h-4 text-blue-500 shrink-0" />
-                                  <span className="font-bold truncate">
-                                    {resolvedLocationNames}
-                                  </span>
-                                </div>
-                              </div> */}
-
                               <div className="space-y-1.5">
                                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                                   Thời hạn thực hiện

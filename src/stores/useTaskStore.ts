@@ -19,6 +19,8 @@ export interface Task {
   code: string;
   name: string;
   plan: string;
+  /** Id of the plan this task belongs to. Optional: seeded tasks only carry `plan` (the name). */
+  planId?: string;
   stage: string;
   assignedTo: string[];
   assignedToIds?: string[];

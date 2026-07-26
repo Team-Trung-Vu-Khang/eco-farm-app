@@ -43,7 +43,13 @@ export interface Plan {
   selectedPlotIds: string[];
   crop: string;
   variety: string;
-  purpose: "cultivation" | "treatment" | "amendment" | "harvest" | "incurred";
+  purpose:
+    | "cultivation"
+    | "facility-upgrade"
+    | "treatment"
+    | "amendment"
+    | "harvest"
+    | "incurred";
 
   // Additional display fields
   zone?: string;

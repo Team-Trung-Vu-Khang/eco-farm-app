@@ -602,7 +602,7 @@ export default function PlanAquacultureGrowthWorkflowPage({
             slot.plan,
             slot.label,
             () => openEditDialog(),
-            () => setLocation(`${basePath}/${slot.plan.id}/edit#task-allocation`),
+            () => setLocation(`/task?planId=${slot.plan.id}`),
             () => {
               if (slot.isPrimary) {
                 setDeleteOpen(true);
