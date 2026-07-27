@@ -4,7 +4,6 @@ import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useCultivationZoneMutations } from "@/features/farm/hooks/useCultivationZoneMutations";
 import { useCultivationZoneById } from "@/features/farm/hooks/useCultivationZones";
 import type { FarmCultivationZoneRequest } from "@/features/farm/types/farm.type";
-import { useSelectedWorkspaceId } from "@/features/workspace";
 import type { CultivationZoneFormValues } from "../data/cultivation-zone-form.schema";
 
 export function useAquacultureZoneCreateForm(
@@ -15,7 +14,6 @@ export function useAquacultureZoneCreateForm(
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
-  const workspaceId = useSelectedWorkspaceId();
 
   // ─── Edit mode detection ───────────────────────────────────────────────
   const [matchEdit, paramsEdit] = useRoute<{ id: string }>(
@@ -82,9 +80,6 @@ export function useAquacultureZoneCreateForm(
         notes: zoneData.notes ?? "",
         status:
           (zoneData.status as "active" | "inactive" | "archived") ?? "active",
-        enterpriseId:
-          (zoneData.metadataJson?.enterpriseId as string) ||
-          String(workspaceId || ""),
       });
       setHasInitialized(true);
     } else {
@@ -98,11 +93,10 @@ export function useAquacultureZoneCreateForm(
         personnelIds: [],
         notes: "",
         status: "active",
-        enterpriseId: "",
       });
       setHasInitialized(true);
     }
-  }, [isEditMode, zoneData, reset, hasInitialized, workspaceId]);
+  }, [isEditMode, zoneData, reset, hasInitialized]);
 
   // ─── Submit ────────────────────────────────────────────────────────────
   const handleComplete = async (data: CultivationZoneFormValues) => {
@@ -144,10 +138,7 @@ export function useAquacultureZoneCreateForm(
         notes: data.notes || undefined,
         status: data.status,
         displayOrder: zoneData?.displayOrder,
-        metadataJson: {
-          ...(zoneData?.metadataJson ?? {}),
-          enterpriseId: data.enterpriseId,
-        },
+        metadataJson: zoneData?.metadataJson,
       };
 
       if (isEditMode && zoneId > 0) {

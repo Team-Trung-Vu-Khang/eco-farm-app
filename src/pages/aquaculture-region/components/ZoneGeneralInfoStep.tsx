@@ -10,19 +10,12 @@ import type { CultivationZoneFormValues } from "../data/cultivation-zone-form.sc
 import { AQUACULTURE_REGION_TREE } from "../data/create-dummy";
 import type { GeographicalSelection } from "./types";
 import {
-  AquacultureEnterpriseSelector,
   AquacultureGeographicalSelector,
   AquacultureManagerSelector,
 } from "./AquacultureCreateDialogSelectors";
 import { SelectionCard } from "./SharedSelectors";
 
-interface ZoneGeneralInfoStepProps {
-  showEnterprise?: boolean;
-}
-
-export const ZoneGeneralInfoStep = ({
-  showEnterprise = true,
-}: ZoneGeneralInfoStepProps = {}) => {
+export const ZoneGeneralInfoStep = () => {
   const {
     control,
     watch,
@@ -73,34 +66,6 @@ export const ZoneGeneralInfoStep = ({
                 </div>
               )}
             />
-
-            {showEnterprise && (
-              <Controller
-                control={control}
-                name="enterpriseId"
-                render={({ field }) => (
-                  <div className="space-y-1.5">
-                    <Label className="text-sm font-medium">
-                      Đơn vị quản lý <span className="text-red-500">*</span>
-                    </Label>
-                    <AquacultureEnterpriseSelector
-                      selectedId={field.value ?? ""}
-                      onSelect={(id) => {
-                        if (id !== field.value) {
-                          field.onChange(id);
-                          setValue("selections", [], { shouldValidate: true });
-                        }
-                      }}
-                    />
-                    {errors.enterpriseId && (
-                      <p className="text-xs font-medium text-red-500 mt-1">
-                        {errors.enterpriseId.message}
-                      </p>
-                    )}
-                  </div>
-                )}
-              />
-            )}
 
             <div className="space-y-4 pt-2">
               <div className="flex items-center justify-between">

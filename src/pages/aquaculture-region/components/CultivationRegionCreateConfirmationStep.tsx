@@ -15,7 +15,6 @@ type Props = {
   name: string;
   note: string;
   entities: CultivationRegionTargetEntity[];
-  selectedEnterpriseName?: string;
   selectedManagers: Array<{
     id: string | number;
     fullName: string;
@@ -38,7 +37,6 @@ export const CultivationRegionCreateConfirmationStep = ({
   name,
   note,
   entities,
-  selectedEnterpriseName,
   selectedManagers,
   selectedCerts,
   commonConfig,
@@ -114,16 +112,6 @@ export const CultivationRegionCreateConfirmationStep = ({
                           </div>
                         ))}
                       </div>
-                    </td>
-                  </tr>
-                )}
-                {selectedEnterpriseName && (
-                  <tr className="border-b border-slate-100">
-                    <td className="py-3 px-4 text-muted-foreground">
-                      Đơn vị quản lý
-                    </td>
-                    <td className="py-3 px-4 font-medium text-slate-900">
-                      {selectedEnterpriseName}
                     </td>
                   </tr>
                 )}

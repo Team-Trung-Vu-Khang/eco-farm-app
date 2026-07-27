@@ -26,7 +26,6 @@ const AquacultureRegionCreatePage = () => {
     defaultValues: {
       name: "",
       code: "",
-      enterpriseId: "",
       selections: [],
       farmingMethodId: 0,
       irrigationSystemId: 0,
@@ -51,7 +50,7 @@ const AquacultureRegionCreatePage = () => {
     {
       id: "info",
       title: "Thông tin vùng",
-      description: "Tên, phạm vi và đơn vị quản lý",
+      description: "Tên, phạm vi và cấu hình cơ bản",
       isValid:
         !formState.errors.name &&
         !formState.errors.selections &&

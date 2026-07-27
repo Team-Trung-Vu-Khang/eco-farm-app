@@ -16,9 +16,6 @@ export const cultivationZoneFormSchema = z.object({
   /** Mã vùng canh tác — tuỳ chọn, tự sinh nếu bỏ trống */
   code: z.string().optional(),
 
-  /** Đơn vị sở hữu — tuỳ chọn */
-  enterpriseId: z.string().optional(),
-
   /** Phạm vi địa lý — ít nhất 1 đơn vị */
   selections: z.array(z.any()).min(1, "Vui lòng chọn ít nhất 1 phạm vi địa lý"),
 
