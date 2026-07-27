@@ -29,6 +29,11 @@ export {
   farmingMethodCropKeys,
 } from "./hooks/useFarmingMethodCrops";
 export {
+  useMethodApplications,
+  useMethodApplicationById,
+  methodApplicationKeys,
+} from "./hooks/useMethodApplications";
+export {
   useLifecycleTemplates,
   useLifecycleTemplateById,
   lifecycleTemplateKeys,

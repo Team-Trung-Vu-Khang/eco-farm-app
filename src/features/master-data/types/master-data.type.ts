@@ -26,6 +26,7 @@ export interface MasterDataQueryParams {
   level?: number;
   parentId?: number;
   parentCode?: string;
+  domainCode?: string;
 }
 
 export interface ProvinceWardQueryParams extends MasterDataQueryParams {
@@ -61,6 +62,7 @@ export interface MasterDataAttributesMap {
   "equipment-tool-groups": Record<string, unknown>;
   "fertilizer-groups": Record<string, unknown>;
   "irrigation-systems": Record<string, unknown>;
+  "rearing-methods": Record<string, unknown>;
   "iot-device-groups": Record<string, unknown>;
   "material-groups": Record<string, unknown>;
   "pesticide-groups": Record<string, unknown>;
@@ -103,6 +105,9 @@ export interface MasterDataRequestExtraFieldsMap {
   "equipment-tool-groups": Record<string, never>;
   "fertilizer-groups": Record<string, never>;
   "irrigation-systems": Record<string, never>;
+  "rearing-methods": {
+    domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  };
   "material-groups": Record<string, never>;
   "pesticide-groups": Record<string, never>;
   "pesticide-origins": Record<string, never>;
@@ -147,6 +152,9 @@ export interface MasterDataRecordExtraFieldsMap {
   "equipment-tool-groups": Record<string, never>;
   "fertilizer-groups": Record<string, never>;
   "irrigation-systems": Record<string, never>;
+  "rearing-methods": {
+    domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  };
   "material-groups": Record<string, never>;
   "pesticide-groups": Record<string, never>;
   "pesticide-origins": Record<string, never>;
@@ -335,6 +343,7 @@ export type EquipmentToolGroupRecord =
 export type IoTDeviceGroupRecord = MasterDataRecord<"iot-device-groups">;
 export type FertilizerGroupRecord = MasterDataRecord<"fertilizer-groups">;
 export type IrrigationSystemRecord = MasterDataRecord<"irrigation-systems">;
+export type RearingMethodRecord = MasterDataRecord<"rearing-methods">;
 export type MaterialGroupRecord = MasterDataRecord<"material-groups">;
 export type MaterialGroupPageResponse =
   MasterDataPageResponse<MaterialGroupRecord>;
@@ -355,6 +364,10 @@ export type IrrigationSystemCreateRequest =
   MasterDataCreateRequest<"irrigation-systems">;
 export type IrrigationSystemUpdateRequest =
   MasterDataUpdateRequest<"irrigation-systems">;
+export type RearingMethodCreateRequest =
+  MasterDataCreateRequest<"rearing-methods">;
+export type RearingMethodUpdateRequest =
+  MasterDataUpdateRequest<"rearing-methods">;
 export type MaterialGroupCreateRequest =
   MasterDataCreateRequest<"material-groups">;
 export type MaterialGroupUpdateRequest =

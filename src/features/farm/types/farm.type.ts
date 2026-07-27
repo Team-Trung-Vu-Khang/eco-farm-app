@@ -311,12 +311,12 @@ export interface FarmCultivationZoneScopeResponse {
 export interface FarmCultivationZoneRequest {
   code?: string;
   name?: string;
-  domainCode?: "CROP" | "LIVESTOCK";
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   scopes?: FarmCultivationZoneScopeRequest[];
   certificateIds?: number[];
   personnelIds?: number[];
   farmingMethodId: number;
-  irrigationSystemId: number;
+  rearingMethodId?: number;
   seedIds?: number[];
   notes?: string;
   status?: FarmCultivationZoneStatus;
@@ -328,13 +328,13 @@ export interface FarmCultivationZoneResponse {
   id: number;
   code?: string;
   name?: string;
-  domainCode?: "CROP" | "LIVESTOCK";
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   scopes?: FarmCultivationZoneScopeResponse[];
   certificates?: CatalogRef[];
   personnel?: PersonnelRef[];
   farmingMethod?: CatalogRef;
   productionMethod?: CatalogRef;
-  irrigationSystem?: CatalogRef;
+  rearingMethod?: CatalogRef;
   seeds?: SeedRef[];
   notes?: string;
   subjectVariants?: SubjectVariantRef[];
@@ -353,8 +353,8 @@ export interface CultivationZoneQueryParams {
   keyword?: string;
   status?: FarmCultivationZoneStatus;
   farmingMethodId?: number;
-  irrigationSystemId?: number;
-  domainCode?: "CROP" | "LIVESTOCK";
+  rearingMethodId?: number;
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   page?: number;
   size?: number;
 }

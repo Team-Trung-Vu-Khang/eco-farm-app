@@ -20,166 +20,52 @@ import {
   Button,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import {
-  CheckCircle2,
-  Droplets,
-  Leaf,
-  Search,
-  Sprout,
-  ChevronRight,
-  Loader2,
-} from "lucide-react";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { CheckCircle2, Leaf, Search, Sprout, ChevronRight } from "lucide-react";
+import { useState, useMemo } from "react";
 import {
   useProductionMethods,
-  useProductionSubjectVariants,
-  type ProductionSubjectVariantResponse,
+  useMethodApplications,
+  type MethodApplicationSubject,
 } from "@/features/foundation";
-import { useIrrigationSystems } from "@/features/master-data/hooks/useIrrigationSystems";
-import { useSeeds } from "@/features/farm/hooks/useSeeds";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import type { CultivationZoneFormValues } from "../data/cultivation-zone-form.schema";
-import { mapSeedToBreed } from "../constants";
-import type { FarmSeedResponse } from "@/features/farm/types/farm.type";
 
-const MOCK_BREEDS = [
-  { name: "Heo Yorkshire", cropName: "Heo", origin: "Đan Mạch" },
-  { name: "Heo Landrace", cropName: "Heo", origin: "Hà Lan" },
-  { name: "Bò Holstein Friesian", cropName: "Bò", origin: "Mỹ" },
-  { name: "Bò Brahman", cropName: "Bò", origin: "Ấn Độ" },
-  { name: "Gà Ta thả vườn", cropName: "Gà", origin: "Việt Nam" },
-  { name: "Gà Ri", cropName: "Gà", origin: "Việt Nam" },
-  { name: "Vịt Bầu", cropName: "Vịt", origin: "Việt Nam" },
-];
-
-const mapVarietyToBreed = (variety: any): any => {
-  if (!variety) return variety;
-  const index = variety.id % MOCK_BREEDS.length;
-  const breed = MOCK_BREEDS[index];
-  return {
-    ...variety,
-    name: breed.name,
-    origin: variety.origin || breed.origin,
-    cropName: breed.cropName,
-  };
-};
-
-interface BreedSelectorDialogProps {
+interface VariantSelectorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  cropVarietyId: number;
-  cropVarietyName: string;
-  farmingMethodId?: number;
-  selectedSeedIds: number[];
-  onConfirm: (
-    selectedIds: number[],
-    selectedSeedObjects: FarmSeedResponse[],
-  ) => void;
+  subjectName: string;
+  variants: Array<{ id: number; code?: string; name?: string }>;
+  selectedVariantIds: number[];
+  onConfirm: (selectedIds: number[]) => void;
 }
 
-export const BreedSelectorDialog = ({
+export const VariantSelectorDialog = ({
   open,
   onOpenChange,
-  cropVarietyId,
-  cropVarietyName,
-  farmingMethodId,
-  selectedSeedIds,
+  subjectName,
+  variants = [],
+  selectedVariantIds = [],
   onConfirm,
-}: BreedSelectorDialogProps) => {
+}: VariantSelectorDialogProps) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const debouncedSearch = useDebounce(searchTerm, 500);
-  const [page, setPage] = useState(0);
-  const [loadedSeeds, setLoadedSeeds] = useState<FarmSeedResponse[]>([]);
-  const [tempSelectedIds, setTempSelectedIds] = useState<number[]>([]);
-  const [tempSelectedObjects, setTempSelectedObjects] = useState<
-    Record<number, FarmSeedResponse>
-  >({});
+  const debouncedSearch = useDebounce(searchTerm, 300);
+  const [tempSelectedIds, setTempSelectedIds] =
+    useState<number[]>(selectedVariantIds);
 
-  // Call API useSeeds with domainCode LIVESTOCK
-  const {
-    items: newSeeds,
-    response,
-    loading,
-  } = useSeeds({
-    params: {
-      foundationSubjectVariantId: cropVarietyId,
-      productionMethodId: farmingMethodId,
-      keyword: debouncedSearch.trim() || undefined,
-      page,
-      size: 20,
-      status: "active" as any,
-      domainCode: "LIVESTOCK",
-    },
-    enabled: open && !!cropVarietyId,
-  });
-
-  // Reset page and loaded items when search keyword or variety changes
-  useEffect(() => {
-    setPage(0);
-    setLoadedSeeds([]);
-  }, [debouncedSearch, cropVarietyId]);
-
-  // Sync tempSelectedIds when dialog opens
-  useEffect(() => {
-    if (open) {
-      setTempSelectedIds(selectedSeedIds);
-    }
-  }, [open, selectedSeedIds]);
-
-  // Append new items to loadedSeeds list when they arrive
-  useEffect(() => {
-    if (newSeeds && newSeeds.length > 0) {
-      const mapped = newSeeds.map(mapSeedToBreed);
-      setLoadedSeeds((prev) => {
-        const existingIds = new Set(prev.map((item) => item.id));
-        const filtered = mapped.filter((item) => !existingIds.has(item.id));
-        return [...prev, ...filtered];
-      });
-
-      // Also cache newly loaded seeds in tempSelectedObjects mapping so we can retrieve full objects on confirm
-      setTempSelectedObjects((prev) => {
-        const next = { ...prev };
-        mapped.forEach((seed) => {
-          next[seed.id] = seed;
-        });
-        return next;
-      });
-    }
-  }, [newSeeds]);
-
-  // IntersectionObserver for infinite scroll trigger
-  const observerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!observerRef.current || !response || response.last || loading) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setPage((prev) => prev + 1);
-        }
-      },
-      { threshold: 0.1 },
+  const filteredVariants = useMemo(() => {
+    const keyword = debouncedSearch.toLowerCase().trim();
+    if (!keyword) return variants;
+    return variants.filter(
+      (v) =>
+        v.name?.toLowerCase().includes(keyword) ||
+        v.code?.toLowerCase().includes(keyword),
     );
+  }, [variants, debouncedSearch]);
 
-    observer.observe(observerRef.current);
-    return () => observer.disconnect();
-  }, [response, loading]);
-
-  const toggleSeed = (seed: FarmSeedResponse) => {
-    setTempSelectedIds((prev) => {
-      const isSelected = prev.includes(seed.id);
-      if (isSelected) {
-        return prev.filter((id) => id !== seed.id);
-      } else {
-        // Cache the full object to pass back on confirm
-        setTempSelectedObjects((prevObjs) => ({
-          ...prevObjs,
-          [seed.id]: seed,
-        }));
-        return [...prev, seed.id];
-      }
-    });
+  const toggleVariant = (id: number) => {
+    setTempSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
   };
 
   return (
@@ -196,11 +82,11 @@ export const BreedSelectorDialog = ({
         <DialogHeader className="p-6 bg-slate-50 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2 text-slate-800">
             <Sprout className="w-5 h-5 text-green-600" />
-            <span>Chọn con giống cho {cropVarietyName}</span>
+            <span>Chọn giống vật nuôi cho {subjectName}</span>
           </DialogTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Chọn các con giống/vật nuôi phù hợp để đưa vào phương án sản xuất
-            của vùng chăn nuôi này.
+            Chọn các giống vật nuôi phù hợp để đưa vào phương án sản xuất của
+            vùng chăn nuôi này.
           </p>
         </DialogHeader>
 
@@ -208,7 +94,7 @@ export const BreedSelectorDialog = ({
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
             <Input
-              placeholder="Tìm kiếm con giống/vật nuôi..."
+              placeholder="Tìm kiếm giống..."
               className="pl-10 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-lg"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -218,12 +104,12 @@ export const BreedSelectorDialog = ({
 
         <ScrollArea className="flex-1 overflow-y-auto min-h-0 h-80">
           <div className="p-6 space-y-2">
-            {loadedSeeds.map((seed) => {
-              const isSelected = tempSelectedIds.includes(seed.id);
+            {filteredVariants.map((variant) => {
+              const isSelected = tempSelectedIds.includes(variant.id);
               return (
                 <div
-                  key={seed.id}
-                  onClick={() => toggleSeed(seed)}
+                  key={variant.id}
+                  onClick={() => toggleVariant(variant.id)}
                   className={cn(
                     "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all bg-white",
                     isSelected
@@ -232,15 +118,7 @@ export const BreedSelectorDialog = ({
                   )}
                 >
                   <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
-                    {seed.imageUrl ? (
-                      <img
-                        src={seed.imageUrl}
-                        alt={seed.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Leaf className="w-4 h-4 text-slate-400" />
-                    )}
+                    <Leaf className="w-4 h-4 text-slate-400" />
                   </div>
                   <div className="flex flex-col flex-1 min-w-0">
                     <div
@@ -249,10 +127,10 @@ export const BreedSelectorDialog = ({
                         isSelected ? "text-green-900" : "text-slate-700",
                       )}
                     >
-                      {seed.name}
+                      {variant.name}
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      {seed.supplier?.name} {seed.origin && `• ${seed.origin}`}
+                      Mã: {variant.code || "---"}
                     </div>
                   </div>
                   <div
@@ -270,19 +148,9 @@ export const BreedSelectorDialog = ({
                 </div>
               );
             })}
-
-            {/* Anchor for IntersectionObserver */}
-            <div ref={observerRef} className="h-2 w-full bg-transparent" />
-
-            {loading && (
-              <div className="flex justify-center py-4">
-                <Loader2 className="h-5 w-5 animate-spin text-green-600" />
-              </div>
-            )}
-
-            {loadedSeeds.length === 0 && !loading && (
+            {filteredVariants.length === 0 && (
               <div className="text-center py-10 text-muted-foreground text-sm italic">
-                Không tìm thấy con giống phù hợp
+                Không tìm thấy giống phù hợp
               </div>
             )}
           </div>
@@ -299,11 +167,7 @@ export const BreedSelectorDialog = ({
           <Button
             type="button"
             onClick={() => {
-              // Extract the selected seed objects
-              const selectedSeedObjs = tempSelectedIds
-                .map((id) => tempSelectedObjects[id])
-                .filter(Boolean);
-              onConfirm(tempSelectedIds, selectedSeedObjs);
+              onConfirm(tempSelectedIds);
               onOpenChange(false);
             }}
             className="bg-green-600 hover:bg-green-700 text-white font-semibold"
@@ -327,83 +191,64 @@ export const ZoneConfigurationStep = () => {
   const [varietySearch, setVarietySearch] = useState("");
   const debouncedVarietySearch = useDebounce(varietySearch, 500);
 
+  // Dialog State
+  const [activeSubject, setActiveSubject] =
+    useState<MethodApplicationSubject | null>(null);
+
   // ─── Reference data ────────────────────────────────────────────────────
   const { items: farmingMethods, loading: fmLoading } = useProductionMethods({
     params: { domainCode: "LIVESTOCK", size: 100, status: "active" },
   });
-  // const { items: irrigationSystems, loading: irLoading } = useIrrigationSystems(
-  //   { params: { size: 100 } },
-  // );
 
   const selectedFarmingMethodId = watch("farmingMethodId");
   const selectedSeedIds = watch("seedIds") ?? [];
 
-  // Fetch livestock breeds/variants
-  const { items: allCropVarieties, loading: varietiesLoading } =
-    useProductionSubjectVariants({
+  const { items: methodApplications, loading: fmcLoading } =
+    useMethodApplications({
       params: {
         domainCode: "LIVESTOCK",
         size: 100,
-        keyword: debouncedVarietySearch.trim() || undefined,
         status: "active",
       },
       enabled: !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
     });
 
-  // Fetch all seeds (first 100 on load) to resolve seed names
-  const { items: rawSeeds } = useSeeds({
-    params: {
-      size: 100,
-      domainCode: "LIVESTOCK",
-    },
-    enabled: !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
-  });
-  const allSeeds = useMemo(() => rawSeeds.map(mapSeedToBreed), [rawSeeds]);
+  const activeMethodApp = useMemo(() => {
+    if (!selectedFarmingMethodId || selectedFarmingMethodId <= 0) return null;
+    return methodApplications.find(
+      (item) => item.productionMethod?.id === selectedFarmingMethodId,
+    );
+  }, [methodApplications, selectedFarmingMethodId]);
 
-  // Dialog State
-  const [activeVariety, setActiveVariety] =
-    useState<ProductionSubjectVariantResponse | null>(null);
+  const subjects = useMemo(() => {
+    return activeMethodApp?.subjects ?? [];
+  }, [activeMethodApp]);
 
-  // Cache selected seeds' details locally to display outside the dialog
-  const [selectedSeedsMap, setSelectedSeedsMap] = useState<
-    Record<number, FarmSeedResponse>
-  >({});
+  const filteredSubjects = useMemo(() => {
+    const keyword = debouncedVarietySearch.toLowerCase().trim();
+    if (!keyword) return subjects;
+    return subjects.filter(
+      (s) =>
+        s.subjectName?.toLowerCase().includes(keyword) ||
+        s.subjectCode?.toLowerCase().includes(keyword),
+    );
+  }, [subjects, debouncedVarietySearch]);
 
-  // Merge loaded seeds from hook into state cache
-  useEffect(() => {
-    if (allSeeds && allSeeds.length > 0) {
-      setSelectedSeedsMap((prev) => {
-        const next = { ...prev };
-        allSeeds.forEach((seed) => {
-          next[seed.id] = seed;
-        });
-        return next;
-      });
-    }
-  }, [allSeeds]);
+  const handleConfirmVariants = (selectedIds: number[]) => {
+    if (!activeSubject) return;
+    const currentSubjectVariantIds =
+      activeSubject.variants?.map((v) => v.id) ?? [];
 
-  // Map varieties to breed models
-  const filteredCropVarieties = useMemo(() => {
-    if (!selectedFarmingMethodId || selectedFarmingMethodId <= 0) return [];
-    return allCropVarieties.map(mapVarietyToBreed);
-  }, [allCropVarieties, selectedFarmingMethodId]);
+    // Filter out variants of the CURRENT subject, then add back the newly selected ones
+    const otherSubjectVariantIds = selectedSeedIds.filter(
+      (id) => !currentSubjectVariantIds.includes(id),
+    );
 
-  const handleConfirmSeeds = (
-    selectedIds: number[],
-    selectedSeedObjects: FarmSeedResponse[],
-  ) => {
-    setValue("seedIds", selectedIds, {
+    const nextIds = [...otherSubjectVariantIds, ...selectedIds];
+
+    setValue("seedIds", nextIds, {
       shouldValidate: true,
       shouldDirty: true,
-    });
-
-    // Add confirmed seeds to our details map
-    setSelectedSeedsMap((prev) => {
-      const next = { ...prev };
-      selectedSeedObjects.forEach((seed) => {
-        next[seed.id] = seed;
-      });
-      return next;
     });
   };
 
@@ -465,53 +310,10 @@ export const ZoneConfigurationStep = () => {
                 </div>
               )}
             />
-
-            {/* Irrigation System */}
-            {/* <Controller
-              control={control}
-              name="irrigationSystemId"
-              render={({ field }) => (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">
-                    Phương pháp tưới tiêu{" "}
-                    <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    disabled={irLoading}
-                    value={field.value > 0 ? field.value.toString() : ""}
-                    onValueChange={(val) => {
-                      field.onChange(parseInt(val, 10));
-                    }}
-                  >
-                    <SelectTrigger className="h-11 bg-white">
-                      <SelectValue placeholder="Chọn phương pháp tưới..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {irrigationSystems.map((system) => (
-                        <SelectItem
-                          key={system.id}
-                          value={system.id.toString()}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Droplets className="w-4 h-4 text-blue-500" />
-                            <span>{system.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.irrigationSystemId && (
-                    <p className="text-xs font-medium text-red-500 mt-1">
-                      {errors.irrigationSystemId.message}
-                    </p>
-                  )}
-                </div>
-              )}
-            /> */}
           </CardContent>
         </Card>
 
-        {/* ── Seed Selection ── */}
+        {/* ── Breed Selection ── */}
         <Card className="border-none shadow-md bg-white flex flex-col">
           <CardHeader className="pb-3 border-b bg-linear-to-r from-green-50/50 to-white">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -540,32 +342,29 @@ export const ZoneConfigurationStep = () => {
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
                   <Input
                     value={varietySearch}
-                    placeholder="Tìm kiếm giống vật nuôi..."
+                    placeholder="Tìm kiếm vật nuôi..."
                     onChange={(e) => setVarietySearch(e.target.value)}
                     className="pl-10 bg-slate-50/50 border-slate-200 focus:bg-white transition-all rounded-lg"
                   />
                 </div>
                 <ScrollArea className="flex-1 h-80">
-                  {varietiesLoading ? (
+                  {fmcLoading ? (
                     <div className="flex items-center justify-center text-muted-foreground text-sm py-10">
                       Đang tải...
                     </div>
-                  ) : filteredCropVarieties.length > 0 ? (
+                  ) : filteredSubjects.length > 0 ? (
                     <div className="w-full space-y-2">
-                      {filteredCropVarieties.map((variety) => {
-                        const varietySeeds = selectedSeedIds
-                          .map((id) => selectedSeedsMap[id])
-                          .filter(Boolean)
-                          .filter(
-                            (seed) => seed.cropVariety?.id === variety.id,
-                          );
-
-                        const hasSelected = varietySeeds.length > 0;
+                      {filteredSubjects.map((subject) => {
+                        const subjectSelectedVariants =
+                          subject.variants?.filter((v) =>
+                            selectedSeedIds.includes(v.id),
+                          ) ?? [];
+                        const hasSelected = subjectSelectedVariants.length > 0;
 
                         return (
                           <div
-                            key={variety.id}
-                            onClick={() => setActiveVariety(variety)}
+                            key={subject.subjectId}
+                            onClick={() => setActiveSubject(subject)}
                             className={`flex flex-col p-4 rounded-xl border cursor-pointer transition-all ${
                               hasSelected
                                 ? "bg-green-50/30 border-green-300 shadow-sm"
@@ -574,24 +373,16 @@ export const ZoneConfigurationStep = () => {
                           >
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
-                                {variety.imageUrl ? (
-                                  <img
-                                    src={variety.imageUrl}
-                                    alt={variety.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <Leaf className="w-4 h-4 text-slate-400" />
-                                )}
+                                <Leaf className="w-4 h-4 text-slate-400" />
                               </div>
                               <div className="flex flex-col flex-1 min-w-0">
                                 <div className="text-sm font-semibold truncate text-slate-700">
-                                  {variety.name}
+                                  {subject.subjectName}
                                 </div>
                                 <div className="text-xs text-muted-foreground mt-0.5">
-                                  Mã: {variety.code || "---"}{" "}
-                                  {variety.origin &&
-                                    `• Nguồn gốc: ${variety.origin}`}
+                                  Mã: {subject.subjectCode || "---"}{" "}
+                                  {subject.subjectGroupName &&
+                                    `• Nhóm: ${subject.subjectGroupName}`}
                                 </div>
                               </div>
                               <div className="shrink-0 flex items-center gap-2">
@@ -600,7 +391,8 @@ export const ZoneConfigurationStep = () => {
                                     variant="secondary"
                                     className="bg-green-100 text-green-800 border-none font-semibold text-xs animate-in scale-in duration-200"
                                   >
-                                    {varietySeeds.length} con giống
+                                    {subjectSelectedVariants.length} giống vật
+                                    nuôi
                                   </Badge>
                                 )}
                                 <ChevronRight className="w-4 h-4 text-slate-400" />
@@ -609,19 +401,14 @@ export const ZoneConfigurationStep = () => {
 
                             {hasSelected && (
                               <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-2">
-                                {varietySeeds.map((seed) => (
+                                {subjectSelectedVariants.map((variant) => (
                                   <Badge
-                                    key={seed.id}
+                                    key={variant.id}
                                     variant="outline"
                                     className="bg-white border-slate-200 text-slate-600 text-[11px] py-1 px-2.5 rounded-md flex items-center gap-1.5 shadow-xs"
                                   >
                                     <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                    <span>{seed.name}</span>
-                                    {seed.origin && (
-                                      <span className="text-[10px] text-slate-400">
-                                        ({seed.origin})
-                                      </span>
-                                    )}
+                                    <span>{variant.name}</span>
                                   </Badge>
                                 ))}
                               </div>
@@ -632,7 +419,7 @@ export const ZoneConfigurationStep = () => {
                     </div>
                   ) : (
                     <div className="flex items-center justify-center text-muted-foreground text-sm italic py-10">
-                      Không có giống vật nuôi phù hợp
+                      Không có vật nuôi phù hợp
                     </div>
                   )}
                 </ScrollArea>
@@ -642,17 +429,19 @@ export const ZoneConfigurationStep = () => {
         </Card>
       </div>
 
-      {activeVariety && (
-        <BreedSelectorDialog
-          open={!!activeVariety}
+      {activeSubject && (
+        <VariantSelectorDialog
+          key={activeSubject.subjectId}
+          open={!!activeSubject}
           onOpenChange={(open) => {
-            if (!open) setActiveVariety(null);
+            if (!open) setActiveSubject(null);
           }}
-          cropVarietyId={activeVariety.id}
-          cropVarietyName={activeVariety.name}
-          farmingMethodId={selectedFarmingMethodId}
-          selectedSeedIds={selectedSeedIds}
-          onConfirm={(ids, seedObjects) => handleConfirmSeeds(ids, seedObjects)}
+          subjectName={activeSubject.subjectName || ""}
+          variants={activeSubject.variants || []}
+          selectedVariantIds={selectedSeedIds.filter((id) =>
+            activeSubject.variants?.some((v) => v.id === id),
+          )}
+          onConfirm={handleConfirmVariants}
         />
       )}
     </div>

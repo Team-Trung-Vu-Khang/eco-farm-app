@@ -28,6 +28,8 @@ import type {
   ProductionSubjectVariantResponse,
   ProductionMethodQueryParams,
   ProductionMethodResponse,
+  MethodApplication,
+  MethodApplicationQueryParams,
 } from "../types/foundation.type";
 import { apiClient } from "@/shared/lib/axios";
 
@@ -310,6 +312,42 @@ export const productionMethodApi = {
         `/api/admin/foundation/production/methods/${id}`,
       )
       .then((r) => r.data),
+};
+
+export const methodApplicationApi = {
+  list: (params?: MethodApplicationQueryParams) =>
+    apiClient
+      .get<PageResponse<MethodApplication>>(
+        `${FOUNDATION_BASE_PATH}/production/method-applications`,
+        { params },
+      )
+      .then((r) => r.data),
+
+  getById: (id: number) =>
+    apiClient
+      .get<MethodApplication>(
+        `${FOUNDATION_BASE_PATH}/production/method-applications/${id}`,
+      )
+      .then((r) => r.data),
+
+  create: (data: MethodApplication) =>
+    apiClient
+      .post<MethodApplication>(
+        `${FOUNDATION_BASE_PATH}/production/method-applications`,
+        data,
+      )
+      .then((r) => r.data),
+
+  update: (id: number, data: MethodApplication) =>
+    apiClient
+      .put<MethodApplication>(
+        `${FOUNDATION_BASE_PATH}/production/method-applications/${id}`,
+        data,
+      )
+      .then((r) => r.data),
+
+  delete: (id: number) =>
+    apiClient.delete(`${FOUNDATION_BASE_PATH}/production/method-applications/${id}`),
 };
 
 

@@ -28,7 +28,7 @@ const CultivationRegionCreatePage = () => {
       code: "",
       selections: [],
       farmingMethodId: 0,
-      irrigationSystemId: 0,
+      rearingMethodId: 0,
       seedIds: [],
       certificateIds: [],
       personnelIds: [],
@@ -44,7 +44,6 @@ const CultivationRegionCreatePage = () => {
 
   const selections = watch("selections") ?? [];
   const farmingMethodId = watch("farmingMethodId");
-  const irrigationSystemId = watch("irrigationSystemId");
 
   const steps: Step[] = [
     {
@@ -64,9 +63,8 @@ const CultivationRegionCreatePage = () => {
       description: "Phương pháp, tưới tiêu, hạt giống",
       isValid:
         !formState.errors.farmingMethodId &&
-        !formState.errors.irrigationSystemId &&
-        farmingMethodId > 0 &&
-        irrigationSystemId > 0,
+        !formState.errors.rearingMethodId &&
+        farmingMethodId > 0,
       content: <ZoneConfigurationStep />,
     },
     {

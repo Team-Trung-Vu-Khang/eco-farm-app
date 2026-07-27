@@ -1,4 +1,4 @@
-import { Controller, useFormContext } from "react-hook-form";
+import { useFormContext, Controller } from "react-hook-form";
 import { Award, MapPin, ScrollText } from "lucide-react";
 import {
   Badge,
@@ -7,15 +7,32 @@ import {
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { CultivationZoneFormValues } from "../data/cultivation-zone-form.schema";
-import { AQUACULTURE_REGION_TREE } from "../data/create-dummy";
+import { GeographicalSelector, ManagerSelector, SelectionCard } from "./index";
+import { useRegions } from "@/features/farm/hooks/useRegions";
 import type { GeographicalSelection } from "./types";
-import {
-  AquacultureGeographicalSelector,
-  AquacultureManagerSelector,
-} from "./AquacultureCreateDialogSelectors";
-import { SelectionCard } from "./SharedSelectors";
+import type { FarmRegionResponse } from "@/features/farm/types/farm.type";
 
-export const ZoneGeneralInfoStep = () => {
+// Convert API regions to the shape GeographicalSelector expects
+function toRegionOptions(apiRegions: FarmRegionResponse[]) {
+  return apiRegions.map((r) => ({
+    id: r.id,
+    name: r.name ?? "",
+    enterpriseId: (r.metadataJson?.enterpriseId as string) ?? "",
+    subAreas: (r.areas ?? []).map((a) => ({
+      id: a.id,
+      name: a.name ?? "",
+      plots: [],
+    })),
+  }));
+}
+
+interface ZoneGeneralInfoStepProps {
+  showEnterprise?: boolean;
+}
+
+export const ZoneGeneralInfoStep = ({
+  showEnterprise = false,
+}: ZoneGeneralInfoStepProps = {}) => {
   const {
     control,
     watch,
@@ -23,20 +40,31 @@ export const ZoneGeneralInfoStep = () => {
     formState: { errors },
   } = useFormContext<CultivationZoneFormValues>();
 
-  const geoSelections = watch("selections") ?? [];
+  const selections = watch("selections") ?? [];
+  const enterpriseId = watch("enterpriseId") ?? "";
+
+  const { items: apiRegions } = useRegions({ params: { size: 100 } });
+  const regionOptions = toRegionOptions(apiRegions);
+
+  const geoSelections: GeographicalSelection[] = selections;
+
+  const handleConfirmSelections = (newSelections: GeographicalSelection[]) => {
+    setValue("selections", newSelections, { shouldValidate: true });
+  };
 
   const groupedSelections = geoSelections.reduce<
     Record<string, GeographicalSelection[]>
-  >((acc, selection) => {
-    const key = selection.areaId || selection.regionId;
+  >((acc, sel) => {
+    const key = sel.areaId || sel.regionId;
     if (!acc[key]) acc[key] = [];
-    acc[key].push(selection);
+    acc[key].push(sel);
     return acc;
   }, {});
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-2">
+        {/* Left column */}
         <div className="space-y-5">
           <div className="flex items-center gap-2 pb-2 border-b">
             <ScrollText className="w-5 h-5 text-primary" />
@@ -44,6 +72,7 @@ export const ZoneGeneralInfoStep = () => {
           </div>
 
           <div className="space-y-4">
+            {/* Name */}
             <Controller
               control={control}
               name="name"
@@ -67,10 +96,11 @@ export const ZoneGeneralInfoStep = () => {
               )}
             />
 
+            {/* Geographical scope */}
             <div className="space-y-4 pt-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-semibold text-slate-700">
-                  Phạm vi nuôi trồng <span className="text-red-500">*</span>
+                  Phạm vi địa lý <span className="text-red-500">*</span>
                 </Label>
                 {geoSelections.length > 0 && (
                   <Badge
@@ -82,11 +112,12 @@ export const ZoneGeneralInfoStep = () => {
                 )}
               </div>
 
-              <AquacultureGeographicalSelector
-                selectedSelections={geoSelections as GeographicalSelection[]}
-                onSelect={(nextSelections) =>
-                  setValue("selections", nextSelections, { shouldValidate: true })
-                }
+              <GeographicalSelector
+                regions={regionOptions}
+                showEnterprise={showEnterprise}
+                enterpriseId={enterpriseId}
+                existingSelections={geoSelections}
+                onConfirm={handleConfirmSelections}
               />
 
               <div className="grid grid-cols-1 gap-4 mt-2">
@@ -98,12 +129,10 @@ export const ZoneGeneralInfoStep = () => {
                       regionId={first.regionId}
                       areaId={first.areaId}
                       items={items}
-                      regions={AQUACULTURE_REGION_TREE as any}
+                      regions={regionOptions}
                       onRemove={(ids) =>
-                        setValue(
-                          "selections",
-                          geoSelections.filter((selection) => !ids.includes(selection.id)),
-                          { shouldValidate: true },
+                        handleConfirmSelections(
+                          geoSelections.filter((s) => !ids.includes(s.id)),
                         )
                       }
                     />
@@ -112,9 +141,7 @@ export const ZoneGeneralInfoStep = () => {
 
                 {geoSelections.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-12 px-6 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50 text-center gap-2 animate-in fade-in duration-500">
-                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm text-slate-300">
-                      <MapPin className="w-6 h-6" />
-                    </div>
+                    <MapPin className="w-6 h-6 text-slate-300" />
                     <div>
                       <div className="text-sm font-bold text-slate-600">
                         Chưa có lựa chọn nào
@@ -126,16 +153,16 @@ export const ZoneGeneralInfoStep = () => {
                   </div>
                 )}
               </div>
-
               {errors.selections && (
                 <p className="text-xs font-medium text-red-500 mt-1">
                   {errors.selections.message ??
                     errors.selections.root?.message ??
-                    "Vui lòng chọn ít nhất 1 phạm vi nuôi trồng"}
+                    "Vui lòng chọn ít nhất 1 phạm vi địa lý"}
                 </p>
               )}
             </div>
 
+            {/* Notes */}
             <Controller
               control={control}
               name="notes"
@@ -154,15 +181,15 @@ export const ZoneGeneralInfoStep = () => {
           </div>
         </div>
 
+        {/* Right column — personnel */}
         <div className="space-y-5">
           <div className="flex items-center gap-2 pb-2 border-b">
             <Award className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-slate-800">
-              Nhân sự phụ trách
-            </h3>
+            <h3 className="font-semibold text-slate-800">Nhân sự phụ trách</h3>
           </div>
 
           <div className="space-y-6">
+            {/* Manager selector */}
             <Controller
               control={control}
               name="personnelIds"
@@ -173,12 +200,12 @@ export const ZoneGeneralInfoStep = () => {
                     <Label className="text-sm font-medium">
                       Nhân viên chịu trách nhiệm
                     </Label>
-                    <AquacultureManagerSelector
+                    <ManagerSelector
                       selectedIds={ids}
                       onSelect={(selectedIds) =>
                         field.onChange(
                           selectedIds
-                            .map((v) => Number(v))
+                            .map((v) => parseInt(v, 10))
                             .filter((n) => !isNaN(n)),
                         )
                       }

@@ -5,6 +5,7 @@ export * from "./hooks/useAddressOptions";
 export * from "./hooks/useMasterData";
 export * from "./hooks/useMasterDataMutations";
 export * from "./hooks/useIrrigationSystems";
+export * from "./hooks/useRearingMethods";
 export * from "./hooks/useFarmDepartments";
 export * from "./hooks/useFarmDepartmentMutations";
 export * from "./hooks/useFarmPositions";

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useCultivationZoneMutations } from "@/features/farm/hooks/useCultivationZoneMutations";
@@ -13,7 +13,7 @@ export function useAquacultureZoneCreateForm(
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasInitialized, setHasInitialized] = useState(false);
+  const hasInitializedRef = useRef(false);
 
   // ─── Edit mode detection ───────────────────────────────────────────────
   const [matchEdit, paramsEdit] = useRoute<{ id: string }>(
@@ -31,7 +31,7 @@ export function useAquacultureZoneCreateForm(
 
   // ─── Initialise form defaults ──────────────────────────────────────────
   useEffect(() => {
-    if (hasInitialized) return;
+    if (hasInitializedRef.current) return;
 
     if (isEditMode) {
       if (!zoneData) return; // wait for data
@@ -71,7 +71,7 @@ export function useAquacultureZoneCreateForm(
           };
         }),
         farmingMethodId: zoneData.productionMethod?.id ?? 0,
-        irrigationSystemId: zoneData.irrigationSystem?.id ?? 0,
+        rearingMethodId: zoneData.rearingMethod?.id ?? 0,
         seedIds: (zoneData.seeds ?? zoneData?.subjectVariants ?? []).map(
           (s) => s.id,
         ),
@@ -81,22 +81,22 @@ export function useAquacultureZoneCreateForm(
         status:
           (zoneData.status as "active" | "inactive" | "archived") ?? "active",
       });
-      setHasInitialized(true);
+      hasInitializedRef.current = true;
     } else {
       reset({
         name: "",
         selections: [],
         farmingMethodId: 0,
-        irrigationSystemId: 0,
+        rearingMethodId: 0,
         seedIds: [],
         certificateIds: [],
         personnelIds: [],
         notes: "",
         status: "active",
       });
-      setHasInitialized(true);
+      hasInitializedRef.current = true;
     }
-  }, [isEditMode, zoneData, reset, hasInitialized]);
+  }, [isEditMode, zoneData, reset]);
 
   // ─── Submit ────────────────────────────────────────────────────────────
   const handleComplete = async (data: CultivationZoneFormValues) => {
@@ -127,7 +127,7 @@ export function useAquacultureZoneCreateForm(
           })
           .filter((s) => !isNaN(s.scopeId)),
         farmingMethodId: Number(data.farmingMethodId),
-        irrigationSystemId: Number(data.irrigationSystemId),
+        rearingMethodId: data.rearingMethodId ? Number(data.rearingMethodId) : undefined,
         seedIds: (data.seedIds ?? []).map(Number).filter((id) => !isNaN(id)),
         certificateIds: isEditMode
           ? (data.certificateIds ?? []).map(Number).filter((id) => !isNaN(id))

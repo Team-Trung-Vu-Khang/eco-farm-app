@@ -276,8 +276,8 @@ export interface FarmingMethodCropResponse {
   crops?: CropAssignmentView[];
 }
 
-export interface FarmingMethodCropQueryParams extends BaseQueryParams {
-}
+export type FarmingMethodCropQueryParams = BaseQueryParams;
+
 
 // ─── Lifecycle Templates (Animal/Crop/Aquaculture Lifecycle) ──────────────────
 export interface LifecycleStage {
@@ -370,4 +370,46 @@ export interface ProductionMethodResponse {
   status: FoundationStatus;
   metadataJson?: Record<string, unknown>;
 }
+
+// ─── Production Method Applications ───────────────────────────────────────────
+
+export interface MethodApplicationSubject {
+  subjectId: number;
+  subjectCode?: string;
+  subjectName?: string;
+  subjectGroupId?: number;
+  subjectGroupCode?: string;
+  subjectGroupName?: string;
+  variants?: {
+    id: number;
+    code?: string;
+    name?: string;
+  }[];
+}
+
+export interface MethodApplication {
+  id?: number;
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  code?: string;
+  productionMethod?: {
+    id: number;
+    code?: string;
+    name?: string;
+  };
+  description?: string;
+  displayOrder?: number | null;
+  status?: "active" | "inactive" | "archived";
+  subjectCount?: number;
+  subjects?: MethodApplicationSubject[];
+  metadataJson?: Record<string, unknown> | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MethodApplicationQueryParams extends BaseQueryParams {
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  keyword?: string;
+  status?: string;
+}
+
 

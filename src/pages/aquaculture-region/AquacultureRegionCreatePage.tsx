@@ -28,7 +28,7 @@ const AquacultureRegionCreatePage = () => {
       code: "",
       selections: [],
       farmingMethodId: 0,
-      irrigationSystemId: 0,
+      rearingMethodId: 0,
       seedIds: [],
       certificateIds: [],
       personnelIds: [],
@@ -44,7 +44,6 @@ const AquacultureRegionCreatePage = () => {
 
   const selections = watch("selections") ?? [];
   const farmingMethodId = watch("farmingMethodId");
-  const irrigationSystemId = watch("irrigationSystemId");
 
   const steps: Step[] = [
     {
@@ -64,9 +63,8 @@ const AquacultureRegionCreatePage = () => {
       description: "Loại hình nuôi, hệ thống nước, loài nuôi",
       isValid:
         !formState.errors.farmingMethodId &&
-        !formState.errors.irrigationSystemId &&
-        farmingMethodId > 0 &&
-        irrigationSystemId > 0,
+        !formState.errors.rearingMethodId &&
+        farmingMethodId > 0,
       content: <ZoneConfigurationStep />,
     },
     {
@@ -82,9 +80,7 @@ const AquacultureRegionCreatePage = () => {
     <AdminLayout
       isDev={true}
       title={
-        isEditMode
-          ? "Cập nhật vùng nuôi trồng"
-          : "Thiết lập vùng nuôi trồng"
+        isEditMode ? "Cập nhật vùng nuôi trồng" : "Thiết lập vùng nuôi trồng"
       }
       description={
         isEditMode

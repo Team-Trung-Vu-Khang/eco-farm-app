@@ -168,7 +168,7 @@ export const useCultivationRegionDetail = (id?: string | null) => {
       managerIds: (areaData.personnel ?? []).map((p) => String(p.id)),
       note: areaData.notes ?? "",
       farmingMethodId: String(areaData.farmingMethod?.id ?? ""),
-      irrigationMethodId: String(areaData.irrigationSystem?.id ?? ""),
+      irrigationMethodId: String(areaData.rearingMethod?.id ?? ""),
       selectedCrops: Array.from(
         new Set(
           (areaData.seeds ?? areaData.subjectVariants ?? [])
@@ -322,7 +322,7 @@ export const useCultivationRegionDetail = (id?: string | null) => {
       areaData.farmingMethod ||
       farmingMethods.find((m) => String(m.id) === area.farmingMethodId);
     const irrigationMethod =
-      areaData.irrigationSystem ||
+      areaData.rearingMethod ||
       irrigationSystems.find((m) => String(m.id) === area.irrigationMethodId);
 
     // Group selected seeds by their crop variety to build the technicalConfig crops list
@@ -348,7 +348,7 @@ export const useCultivationRegionDetail = (id?: string | null) => {
                     !!fs && !!fs.cropVariety?.id,
                 )
                 .map((fs) => {
-                  const cropVarietyId = String(fs.cropVariety.id);
+                  const cropVarietyId = String(fs.cropVariety!.id);
                   // Get all seeds in this variety
                   const selectedSeedsForVariety = (areaData.seeds ?? [])
                     .map((seed) =>
@@ -357,7 +357,7 @@ export const useCultivationRegionDetail = (id?: string | null) => {
                     .filter(
                       (fsSeed): fsSeed is NonNullable<typeof fsSeed> =>
                         !!fsSeed &&
-                        fsSeed.cropVariety?.id === fs.cropVariety.id,
+                        fsSeed.cropVariety?.id === fs.cropVariety!.id,
                     )
                     .map((fsSeed) => ({
                       id: String(fsSeed.id),
@@ -372,8 +372,8 @@ export const useCultivationRegionDetail = (id?: string | null) => {
                     cropVarietyId,
                     {
                       id: cropVarietyId,
-                      varietyName: fs.cropVariety.name ?? "",
-                      varietyCode: fs.cropVariety.code ?? "",
+                      varietyName: fs.cropVariety!.name ?? "",
+                      varietyCode: fs.cropVariety!.code ?? "",
                       crop: fs.crop?.name ?? "Khác",
                       illustration: fs.imageUrl || "",
                       seedType: "Hạt giống lai", // Fallback description

@@ -27,186 +27,53 @@ import {
   Search,
   Waves,
   ChevronRight,
-  Loader2,
-  Leaf,
-  Sprout,
 } from "lucide-react";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo } from "react";
 import {
   useProductionMethods,
-  useProductionSubjectVariants,
-  type ProductionSubjectVariantResponse,
+  useMethodApplications,
+  type MethodApplicationSubject,
 } from "@/features/foundation";
-import { useSeeds } from "@/features/farm/hooks/useSeeds";
+import { useRearingMethods } from "@/features/master-data/hooks/useRearingMethods";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import type { CultivationZoneFormValues } from "../data/cultivation-zone-form.schema";
-import { AQUACULTURE_IRRIGATION_SYSTEMS } from "../data/create-dummy";
-import type { FarmSeedResponse } from "@/features/farm/types/farm.type";
 
-const MOCK_AQUACULTURE_BREEDS = [
-  { name: "Tôm thẻ chân trắng giống CP", cropName: "Tôm thẻ", origin: "Thái Lan" },
-  { name: "Tôm sú giống Moana", cropName: "Tôm sú", origin: "Mỹ" },
-  { name: "Cá tra giống Mekong", cropName: "Cá tra", origin: "Việt Nam" },
-  { name: "Nghêu giống Bến Tre", cropName: "Nghêu", origin: "Việt Nam" },
-  { name: "Cá mú trân châu giống", cropName: "Cá mú", origin: "Đài Loan" },
-  { name: "Cá rô phi giống Việt-Đức", cropName: "Cá rô phi", origin: "Đức" },
-];
-
-const mapVarietyToBreed = (variety: any): any => {
-  if (!variety) return variety;
-  const index = variety.id % MOCK_AQUACULTURE_BREEDS.length;
-  const breed = MOCK_AQUACULTURE_BREEDS[index];
-  return {
-    ...variety,
-    name: breed.name,
-    origin: variety.origin || breed.origin,
-    cropName: breed.cropName,
-  };
-};
-
-const mapSeedToBreed = (seed: any): any => {
-  if (!seed) return seed;
-  const index = seed.id % MOCK_AQUACULTURE_BREEDS.length;
-  const breed = MOCK_AQUACULTURE_BREEDS[index];
-  return {
-    ...seed,
-    origin: seed.origin || breed.origin,
-    cropVariety: {
-      id: seed.cropVariety?.id || seed.id,
-      varietyName: breed.name,
-      varietyCode: seed.cropVariety?.varietyCode || `BR-${seed.id}`,
-      status: seed.cropVariety?.status || "active",
-      ...seed.cropVariety,
-      name: breed.name,
-    },
-    crop: {
-      id: seed.crop?.id || seed.id,
-      name: breed.cropName,
-      code: seed.crop?.code || `CROP-${seed.id}`,
-      ...seed.crop,
-    },
-    // For direct mappings when used as crop
-    varietyName: breed.name,
-    cropName: breed.cropName,
-  };
-};
-
-interface BreedSelectorDialogProps {
+interface VariantSelectorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  cropVarietyId: number;
-  cropVarietyName: string;
-  farmingMethodId?: number;
-  selectedSeedIds: number[];
-  onConfirm: (
-    selectedIds: number[],
-    selectedSeedObjects: FarmSeedResponse[],
-  ) => void;
+  subjectName: string;
+  variants: Array<{ id: number; code?: string; name?: string }>;
+  selectedVariantIds: number[];
+  onConfirm: (selectedIds: number[]) => void;
 }
 
-export const BreedSelectorDialog = ({
+export const VariantSelectorDialog = ({
   open,
   onOpenChange,
-  cropVarietyId,
-  cropVarietyName,
-  farmingMethodId,
-  selectedSeedIds,
+  subjectName,
+  variants = [],
+  selectedVariantIds = [],
   onConfirm,
-}: BreedSelectorDialogProps) => {
+}: VariantSelectorDialogProps) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const debouncedSearch = useDebounce(searchTerm, 500);
-  const [page, setPage] = useState(0);
-  const [loadedSeeds, setLoadedSeeds] = useState<FarmSeedResponse[]>([]);
-  const [tempSelectedIds, setTempSelectedIds] = useState<number[]>([]);
-  const [tempSelectedObjects, setTempSelectedObjects] = useState<
-    Record<number, FarmSeedResponse>
-  >({});
+  const debouncedSearch = useDebounce(searchTerm, 300);
+  const [tempSelectedIds, setTempSelectedIds] =
+    useState<number[]>(selectedVariantIds);
 
-  // Call API useSeeds with domainCode AQUACULTURE
-  const {
-    items: newSeeds,
-    response,
-    loading,
-  } = useSeeds({
-    params: {
-      foundationSubjectVariantId: cropVarietyId,
-      productionMethodId: farmingMethodId,
-      keyword: debouncedSearch.trim() || undefined,
-      page,
-      size: 20,
-      status: "active" as any,
-      domainCode: "AQUACULTURE",
-    },
-    enabled: open && !!cropVarietyId,
-  });
-
-  // Reset page and loaded items when search keyword or variety changes
-  useEffect(() => {
-    setPage(0);
-    setLoadedSeeds([]);
-  }, [debouncedSearch, cropVarietyId]);
-
-  // Sync tempSelectedIds when dialog opens
-  useEffect(() => {
-    if (open) {
-      setTempSelectedIds(selectedSeedIds);
-    }
-  }, [open, selectedSeedIds]);
-
-  // Append new items to loadedSeeds list when they arrive
-  useEffect(() => {
-    if (newSeeds && newSeeds.length > 0) {
-      const mapped = newSeeds.map(mapSeedToBreed);
-      setLoadedSeeds((prev) => {
-        const existingIds = new Set(prev.map((item) => item.id));
-        const filtered = mapped.filter((item) => !existingIds.has(item.id));
-        return [...prev, ...filtered];
-      });
-
-      // Also cache newly loaded seeds in tempSelectedObjects mapping so we can retrieve full objects on confirm
-      setTempSelectedObjects((prev) => {
-        const next = { ...prev };
-        mapped.forEach((seed) => {
-          next[seed.id] = seed;
-        });
-        return next;
-      });
-    }
-  }, [newSeeds]);
-
-  // IntersectionObserver for infinite scroll trigger
-  const observerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!observerRef.current || !response || response.last || loading) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setPage((prev) => prev + 1);
-        }
-      },
-      { threshold: 0.1 },
+  const filteredVariants = useMemo(() => {
+    const keyword = debouncedSearch.toLowerCase().trim();
+    if (!keyword) return variants;
+    return variants.filter(
+      (v) =>
+        v.name?.toLowerCase().includes(keyword) ||
+        v.code?.toLowerCase().includes(keyword),
     );
+  }, [variants, debouncedSearch]);
 
-    observer.observe(observerRef.current);
-    return () => observer.disconnect();
-  }, [response, loading]);
-
-  const toggleSeed = (seed: FarmSeedResponse) => {
-    setTempSelectedIds((prev) => {
-      const isSelected = prev.includes(seed.id);
-      if (isSelected) {
-        return prev.filter((id) => id !== seed.id);
-      } else {
-        // Cache the full object to pass back on confirm
-        setTempSelectedObjects((prevObjs) => ({
-          ...prevObjs,
-          [seed.id]: seed,
-        }));
-        return [...prev, seed.id];
-      }
-    });
+  const toggleVariant = (id: number) => {
+    setTempSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
   };
 
   return (
@@ -222,128 +89,99 @@ export const BreedSelectorDialog = ({
       <DialogContent className="max-w-xl p-0 overflow-hidden rounded-2xl border-none shadow-2xl flex flex-col max-h-[90vh]">
         <DialogHeader className="p-6 bg-slate-50 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2 text-slate-800">
-            <Sprout className="w-5 h-5 text-cyan-600" />
-            <span>Chọn con giống cho {cropVarietyName}</span>
+            <Fish className="w-5 h-5 text-cyan-600" />
+            <span>Chọn giống thủy sản cho {subjectName}</span>
           </DialogTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Chọn các giống thủy sản phù hợp để đưa vào phương án sản xuất của
+            vùng nuôi trồng này.
+          </p>
         </DialogHeader>
 
-        {/* Search Input */}
-        <div className="p-4 border-b bg-white shrink-0">
+        <div className="px-6 pb-4 pt-4 border-b shrink-0 bg-white">
           <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
             <Input
+              placeholder="Tìm kiếm giống..."
+              className="pl-10 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-lg"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Tìm kiếm con giống..."
-              className="pl-9 h-10 bg-slate-50/50 border-slate-200 focus:bg-white transition-all rounded-lg"
             />
           </div>
         </div>
 
-        {/* Scrollable list */}
-        <div className="flex-1 overflow-y-auto p-4 bg-slate-50/30">
-          {loadedSeeds.length > 0 ? (
-            <div className="space-y-2">
-              {loadedSeeds.map((seed) => {
-                const isSelected = tempSelectedIds.includes(seed.id);
-                return (
-                  <div
-                    key={seed.id}
-                    onClick={() => toggleSeed(seed)}
-                    className={cn(
-                      "flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all bg-white",
-                      isSelected
-                        ? "border-cyan-500 bg-cyan-50/30 shadow-sm"
-                        : "border-slate-100 hover:border-slate-200 hover:shadow-xs",
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
-                        {seed.imageUrl ? (
-                          <img
-                            src={seed.imageUrl}
-                            alt={seed.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Fish className="w-4 h-4 text-slate-400" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="text-sm font-semibold text-slate-700">
-                          {seed.name}
-                        </div>
-                        <div className="text-xs text-slate-400 mt-0.5">
-                          {seed.code && `Mã: ${seed.code}`}
-                          {seed.origin && ` • Nguồn gốc: ${seed.origin}`}
-                        </div>
-                      </div>
-                    </div>
-
+        <ScrollArea className="flex-1 overflow-y-auto min-h-0 h-80">
+          <div className="p-6 space-y-2">
+            {filteredVariants.map((variant) => {
+              const isSelected = tempSelectedIds.includes(variant.id);
+              return (
+                <div
+                  key={variant.id}
+                  onClick={() => toggleVariant(variant.id)}
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all bg-white",
+                    isSelected
+                      ? "border-cyan-300 bg-cyan-50/20 shadow-sm"
+                      : "border-slate-200 hover:border-cyan-200 hover:shadow-sm",
+                  )}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
+                    <Fish className="w-4 h-4 text-slate-400" />
+                  </div>
+                  <div className="flex flex-col flex-1 min-w-0">
                     <div
                       className={cn(
-                        "w-5 h-5 rounded-full border flex items-center justify-center transition-all",
-                        isSelected
-                          ? "border-cyan-500 bg-cyan-500 text-white"
-                          : "border-slate-200 bg-white",
+                        "text-sm font-semibold truncate",
+                        isSelected ? "text-cyan-900" : "text-slate-700",
                       )}
                     >
-                      {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
+                      {variant.name}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      Mã: {variant.code || "---"}
                     </div>
                   </div>
-                );
-              })}
-
-              {/* Loader trigger / Spacing at end */}
-              {!response?.last && (
-                <div
-                  ref={observerRef}
-                  className="py-4 flex justify-center text-slate-400 text-xs gap-2 items-center"
-                >
-                  <Loader2 className="w-4 h-4 animate-spin text-cyan-600" />
-                  <span>Đang tải thêm...</span>
+                  <div
+                    className={cn(
+                      "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
+                      isSelected
+                        ? "bg-cyan-500 border-cyan-500"
+                        : "border-slate-300",
+                    )}
+                  >
+                    {isSelected && (
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
-          ) : loading ? (
-            <div className="flex flex-col items-center justify-center py-12 text-slate-400 gap-2">
-              <Loader2 className="w-6 h-6 animate-spin text-cyan-600" />
-              <span className="text-sm">Đang tìm kiếm...</span>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-              <span className="text-sm italic">Không tìm thấy con giống phù hợp</span>
-            </div>
-          )}
-        </div>
-
-        {/* Dialog Action buttons */}
-        <div className="p-4 border-t bg-slate-50 flex items-center justify-between shrink-0">
-          <span className="text-xs font-medium text-slate-500">
-            Đang chọn: {tempSelectedIds.length} con giống
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-            >
-              Hủy
-            </Button>
-            <Button
-              size="sm"
-              className="bg-cyan-600 hover:bg-cyan-700 text-white"
-              onClick={() => {
-                const selectedObjs = tempSelectedIds
-                  .map((id) => tempSelectedObjects[id])
-                  .filter(Boolean);
-                onConfirm(tempSelectedIds, selectedObjs);
-                onOpenChange(false);
-              }}
-            >
-              Xác nhận
-            </Button>
+              );
+            })}
+            {filteredVariants.length === 0 && (
+              <div className="text-center py-10 text-muted-foreground text-sm italic">
+                Không tìm thấy giống phù hợp
+              </div>
+            )}
           </div>
+        </ScrollArea>
+
+        <div className="p-4 bg-slate-50 border-t flex justify-end gap-3 shrink-0">
+          <Button
+            variant="outline"
+            type="button"
+            onClick={() => onOpenChange(false)}
+          >
+            Hủy
+          </Button>
+          <Button
+            type="button"
+            onClick={() => {
+              onConfirm(tempSelectedIds);
+              onOpenChange(false);
+            }}
+            className="bg-cyan-600 hover:bg-cyan-700 text-white font-semibold"
+          >
+            Xong
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -361,87 +199,77 @@ export const ZoneConfigurationStep = () => {
   const [varietySearch, setVarietySearch] = useState("");
   const debouncedVarietySearch = useDebounce(varietySearch, 500);
 
+  // Dialog State
+  const [activeSubject, setActiveSubject] =
+    useState<MethodApplicationSubject | null>(null);
+
   // ─── Reference data ────────────────────────────────────────────────────
   const { items: farmingMethods, loading: fmLoading } = useProductionMethods({
     params: { domainCode: "AQUACULTURE", size: 100, status: "active" },
   });
+  const { items: rearingMethods, loading: irLoading } = useRearingMethods({
+    params: { domainCode: "AQUACULTURE", size: 100 },
+  });
+  const filteredRearingMethods = useMemo(() => {
+    return rearingMethods.filter((item) => item.domainCode === "AQUACULTURE");
+  }, [rearingMethods]);
 
   const selectedFarmingMethodId = watch("farmingMethodId");
   const selectedSeedIds = watch("seedIds") ?? [];
 
-  // Fetch aquaculture breeds/variants
-  const { items: allCropVarieties, loading: varietiesLoading } =
-    useProductionSubjectVariants({
+  const { items: methodApplications, loading: fmcLoading } =
+    useMethodApplications({
       params: {
         domainCode: "AQUACULTURE",
         size: 100,
-        keyword: debouncedVarietySearch.trim() || undefined,
         status: "active",
       },
       enabled: !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
     });
 
-  // Fetch all seeds (first 100 on load) to resolve seed names
-  const { items: rawSeeds } = useSeeds({
-    params: {
-      size: 100,
-      domainCode: "AQUACULTURE",
-    },
-    enabled: !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
-  });
-  const allSeeds = useMemo(() => rawSeeds.map(mapSeedToBreed), [rawSeeds]);
+  const activeMethodApp = useMemo(() => {
+    if (!selectedFarmingMethodId || selectedFarmingMethodId <= 0) return null;
+    return methodApplications.find(
+      (item) => item.productionMethod?.id === selectedFarmingMethodId,
+    );
+  }, [methodApplications, selectedFarmingMethodId]);
 
-  // Dialog State
-  const [activeVariety, setActiveVariety] =
-    useState<ProductionSubjectVariantResponse | null>(null);
+  const subjects = useMemo(() => {
+    return activeMethodApp?.subjects ?? [];
+  }, [activeMethodApp]);
 
-  // Cache selected seeds' details locally to display outside the dialog
-  const [selectedSeedsMap, setSelectedSeedsMap] = useState<
-    Record<number, FarmSeedResponse>
-  >({});
+  const filteredSubjects = useMemo(() => {
+    const keyword = debouncedVarietySearch.toLowerCase().trim();
+    if (!keyword) return subjects;
+    return subjects.filter(
+      (s) =>
+        s.subjectName?.toLowerCase().includes(keyword) ||
+        s.subjectCode?.toLowerCase().includes(keyword),
+    );
+  }, [subjects, debouncedVarietySearch]);
 
-  // Merge loaded seeds from hook into state cache
-  useEffect(() => {
-    if (allSeeds && allSeeds.length > 0) {
-      setSelectedSeedsMap((prev) => {
-        const next = { ...prev };
-        allSeeds.forEach((seed) => {
-          next[seed.id] = seed;
-        });
-        return next;
-      });
-    }
-  }, [allSeeds]);
+  const handleConfirmVariants = (selectedIds: number[]) => {
+    if (!activeSubject) return;
+    const currentSubjectVariantIds =
+      activeSubject.variants?.map((v) => v.id) ?? [];
 
-  // Map varieties to breed models
-  const filteredCropVarieties = useMemo(() => {
-    if (!selectedFarmingMethodId || selectedFarmingMethodId <= 0) return [];
-    return allCropVarieties.map(mapVarietyToBreed);
-  }, [allCropVarieties, selectedFarmingMethodId]);
+    // Filter out variants of the CURRENT subject, then add back the newly selected ones
+    const otherSubjectVariantIds = selectedSeedIds.filter(
+      (id) => !currentSubjectVariantIds.includes(id),
+    );
 
-  const handleConfirmSeeds = (
-    selectedIds: number[],
-    selectedSeedObjects: FarmSeedResponse[],
-  ) => {
-    setValue("seedIds", selectedIds, {
+    const nextIds = [...otherSubjectVariantIds, ...selectedIds];
+
+    setValue("seedIds", nextIds, {
       shouldValidate: true,
       shouldDirty: true,
-    });
-
-    // Add confirmed seeds to our details map
-    setSelectedSeedsMap((prev) => {
-      const next = { ...prev };
-      selectedSeedObjects.forEach((seed) => {
-        next[seed.id] = seed;
-      });
-      return next;
     });
   };
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* ── Farming Method & Irrigation System ── */}
+        {/* ── Farming Method & Water System ── */}
         <Card className="border-none shadow-md bg-white">
           <CardHeader className="pb-3 border-b bg-linear-to-r from-cyan-50/50 to-white">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -493,17 +321,22 @@ export const ZoneConfigurationStep = () => {
               )}
             />
 
-            {/* Irrigation System */}
+            {/* Water System */}
             <Controller
               control={control}
-              name="irrigationSystemId"
+              name="rearingMethodId"
               render={({ field }) => (
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">
-                    Hệ thống cấp thoát nước <span className="text-red-500">*</span>
+                    Hình thức nuôi thả
                   </Label>
                   <Select
-                    value={field.value > 0 ? field.value.toString() : ""}
+                    disabled={irLoading}
+                    value={
+                      field.value && field.value > 0
+                        ? field.value.toString()
+                        : ""
+                    }
                     onValueChange={(val) => {
                       field.onChange(parseInt(val, 10));
                     }}
@@ -512,7 +345,7 @@ export const ZoneConfigurationStep = () => {
                       <SelectValue placeholder="Chọn hệ thống..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {AQUACULTURE_IRRIGATION_SYSTEMS.map((system) => (
+                      {filteredRearingMethods.map((system) => (
                         <SelectItem
                           key={system.id}
                           value={system.id.toString()}
@@ -525,9 +358,9 @@ export const ZoneConfigurationStep = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.irrigationSystemId && (
+                  {errors.rearingMethodId && (
                     <p className="text-xs font-medium text-red-500 mt-1">
-                      {errors.irrigationSystemId.message}
+                      {errors.rearingMethodId.message}
                     </p>
                   )}
                 </div>
@@ -565,32 +398,29 @@ export const ZoneConfigurationStep = () => {
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
                   <Input
                     value={varietySearch}
-                    placeholder="Tìm kiếm giống vật nuôi..."
+                    placeholder="Tìm kiếm giống thủy sản..."
                     onChange={(e) => setVarietySearch(e.target.value)}
                     className="pl-10 bg-slate-50/50 border-slate-200 focus:bg-white transition-all rounded-lg"
                   />
                 </div>
                 <ScrollArea className="flex-1 h-80">
-                  {varietiesLoading ? (
+                  {fmcLoading ? (
                     <div className="flex items-center justify-center text-muted-foreground text-sm py-10">
                       Đang tải...
                     </div>
-                  ) : filteredCropVarieties.length > 0 ? (
+                  ) : filteredSubjects.length > 0 ? (
                     <div className="w-full space-y-2">
-                      {filteredCropVarieties.map((variety) => {
-                        const varietySeeds = selectedSeedIds
-                          .map((id) => selectedSeedsMap[id])
-                          .filter(Boolean)
-                          .filter(
-                            (seed) => seed.cropVariety?.id === variety.id,
-                          );
-
-                        const hasSelected = varietySeeds.length > 0;
+                      {filteredSubjects.map((subject) => {
+                        const subjectSelectedVariants =
+                          subject.variants?.filter((v) =>
+                            selectedSeedIds.includes(v.id),
+                          ) ?? [];
+                        const hasSelected = subjectSelectedVariants.length > 0;
 
                         return (
                           <div
-                            key={variety.id}
-                            onClick={() => setActiveVariety(variety)}
+                            key={subject.subjectId}
+                            onClick={() => setActiveSubject(subject)}
                             className={`flex flex-col p-4 rounded-xl border cursor-pointer transition-all ${
                               hasSelected
                                 ? "border-cyan-300 bg-cyan-50/20 shadow-sm"
@@ -599,24 +429,16 @@ export const ZoneConfigurationStep = () => {
                           >
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
-                                {variety.imageUrl ? (
-                                  <img
-                                    src={variety.imageUrl}
-                                    alt={variety.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <Fish className="w-4 h-4 text-slate-400" />
-                                )}
+                                <Fish className="w-4 h-4 text-slate-400" />
                               </div>
                               <div className="flex flex-col flex-1 min-w-0">
                                 <div className="text-sm font-semibold truncate text-slate-700">
-                                  {variety.name}
+                                  {subject.subjectName}
                                 </div>
                                 <div className="text-xs text-muted-foreground mt-0.5">
-                                  Mã: {variety.code || "---"}{" "}
-                                  {variety.origin &&
-                                    `• Nguồn gốc: ${variety.origin}`}
+                                  Mã: {subject.subjectCode || "---"}{" "}
+                                  {subject.subjectGroupName &&
+                                    `• Nhóm: ${subject.subjectGroupName}`}
                                 </div>
                               </div>
                               <div className="shrink-0 flex items-center gap-2">
@@ -625,7 +447,8 @@ export const ZoneConfigurationStep = () => {
                                     variant="secondary"
                                     className="bg-cyan-100 text-cyan-800 border-none font-semibold text-xs animate-in scale-in duration-200"
                                   >
-                                    {varietySeeds.length} con giống
+                                    {subjectSelectedVariants.length} giống thủy
+                                    sản
                                   </Badge>
                                 )}
                                 <ChevronRight className="w-4 h-4 text-slate-400" />
@@ -634,19 +457,14 @@ export const ZoneConfigurationStep = () => {
 
                             {hasSelected && (
                               <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-2">
-                                {varietySeeds.map((seed) => (
+                                {subjectSelectedVariants.map((variant) => (
                                   <Badge
-                                    key={seed.id}
+                                    key={variant.id}
                                     variant="outline"
                                     className="bg-white border-slate-200 text-slate-600 text-[11px] py-1 px-2.5 rounded-md flex items-center gap-1.5 shadow-xs"
                                   >
                                     <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
-                                    <span>{seed.name}</span>
-                                    {seed.origin && (
-                                      <span className="text-[10px] text-slate-400">
-                                        ({seed.origin})
-                                      </span>
-                                    )}
+                                    <span>{variant.name}</span>
                                   </Badge>
                                 ))}
                               </div>
@@ -657,7 +475,7 @@ export const ZoneConfigurationStep = () => {
                     </div>
                   ) : (
                     <div className="flex items-center justify-center text-muted-foreground text-sm italic py-10">
-                      Không có giống thủy sản phù hợp
+                      Không có thủy sản phù hợp
                     </div>
                   )}
                 </ScrollArea>
@@ -667,17 +485,19 @@ export const ZoneConfigurationStep = () => {
         </Card>
       </div>
 
-      {activeVariety && (
-        <BreedSelectorDialog
-          open={!!activeVariety}
+      {activeSubject && (
+        <VariantSelectorDialog
+          key={activeSubject.subjectId}
+          open={!!activeSubject}
           onOpenChange={(open) => {
-            if (!open) setActiveVariety(null);
+            if (!open) setActiveSubject(null);
           }}
-          cropVarietyId={activeVariety.id}
-          cropVarietyName={activeVariety.name}
-          farmingMethodId={selectedFarmingMethodId}
-          selectedSeedIds={selectedSeedIds}
-          onConfirm={(ids, seedObjects) => handleConfirmSeeds(ids, seedObjects)}
+          subjectName={activeSubject.subjectName || ""}
+          variants={activeSubject.variants || []}
+          selectedVariantIds={selectedSeedIds.filter((id) =>
+            activeSubject.variants?.some((v) => v.id === id),
+          )}
+          onConfirm={handleConfirmVariants}
         />
       )}
     </div>

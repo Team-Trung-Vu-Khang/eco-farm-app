@@ -1,13 +1,12 @@
-import { useMemo } from "react";
 import { useFormContext } from "react-hook-form";
 import type { CultivationZoneFormValues } from "../data/cultivation-zone-form.schema";
 import { useCatalog } from "@/features/foundation/hooks/useCatalog";
 import { useIrrigationSystems } from "@/features/master-data/hooks/useIrrigationSystems";
-import { useSeeds } from "@/features/farm/hooks/useSeeds";
 import { useMasterData, useFarmPersonnel } from "@/features/master-data";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import { CultivationRegionCreateConfirmationStep } from "./CultivationRegionCreateConfirmationStep";
-import { mapSeedToBreed } from "../constants";
+import { useMethodApplications } from "@/features/foundation";
+import { useMemo } from "react";
 
 export const ZoneReviewStep = () => {
   const { watch } = useFormContext<CultivationZoneFormValues>();
@@ -20,14 +19,51 @@ export const ZoneReviewStep = () => {
   const { items: irrigationSystems } = useIrrigationSystems({
     params: { size: 100 },
   });
-  const { items: rawSeeds } = useSeeds({ params: { size: 100 } });
-  const allSeeds = useMemo(() => rawSeeds.map(mapSeedToBreed), [rawSeeds]);
   const { items: certificateStandards } = useMasterData(
     "certificate-standards",
     {
       params: { size: 100 },
     },
   );
+
+  const selectedFarmingMethodId = Number(formValues.farmingMethodId);
+
+  const { items: methodApplications } = useMethodApplications({
+    params: { domainCode: "LIVESTOCK", size: 100 },
+    enabled: !!selectedFarmingMethodId && selectedFarmingMethodId > 0,
+  });
+
+  const activeMethodApp = useMemo(() => {
+    return methodApplications.find(
+      (item) => item.productionMethod?.id === selectedFarmingMethodId,
+    );
+  }, [methodApplications, selectedFarmingMethodId]);
+
+  // Extract selected variants
+  const selectedVariants = useMemo(() => {
+    if (!activeMethodApp) return [];
+    const list: Array<{
+      id: number;
+      name: string;
+      code: string;
+      subjectName: string;
+    }> = [];
+    activeMethodApp.subjects?.forEach((subject) => {
+      subject.variants?.forEach((variant) => {
+        if (
+          (formValues.seedIds ?? []).map(Number).includes(Number(variant.id))
+        ) {
+          list.push({
+            id: variant.id,
+            name: variant.name || "",
+            code: variant.code || "",
+            subjectName: subject.subjectName || "",
+          });
+        }
+      });
+    });
+    return list;
+  }, [activeMethodApp, formValues.seedIds]);
 
   const workspaceId = useSelectedWorkspaceId();
   const numericWorkspaceId = workspaceId ? Number(workspaceId) : undefined;
@@ -36,10 +72,6 @@ export const ZoneReviewStep = () => {
     workspaceId: numericWorkspaceId,
   });
 
-  // Resolve selections using Number conversion to avoid any string/number type mismatch
-  const selectedSeeds = allSeeds.filter((s) =>
-    (formValues.seedIds ?? []).map(Number).includes(Number(s.id)),
-  );
   const selectedCerts = certificateStandards.filter((c) =>
     (formValues.certificateIds ?? []).map(Number).includes(Number(c.id)),
   );
@@ -72,26 +104,16 @@ export const ZoneReviewStep = () => {
     typeCode: sel.type,
   }));
 
+  const selectedCrops = (formValues.seedIds ?? []).map(String);
+
   const commonConfig = {
     farmingMethodId: String(formValues.farmingMethodId),
     irrigationMethodId: String(formValues.irrigationSystemId),
-    selectedCrops: Array.from(
-      new Set(
-        selectedSeeds
-          .map((s) => s.cropVariety?.id)
-          .filter(Boolean)
-          .map(String),
-      ),
-    ),
+    selectedCrops,
     seedSelections: (() => {
       const selections: Record<string, string[]> = {};
-      selectedSeeds.forEach((seed) => {
-        if (!seed.cropVariety?.id) return;
-        const cropVarietyId = String(seed.cropVariety.id);
-        if (!selections[cropVarietyId]) {
-          selections[cropVarietyId] = [];
-        }
-        selections[cropVarietyId].push(String(seed.id));
+      selectedCrops.forEach((cropId) => {
+        selections[cropId] = [cropId];
       });
       return selections;
     })(),
@@ -107,23 +129,14 @@ export const ZoneReviewStep = () => {
     name: s.name ?? "",
   }));
 
-  const mappedVarieties = Array.from(
-    new Map(
-      selectedSeeds
-        .filter((s) => s.cropVariety?.id)
-        .map((s) => [
-          String(s.cropVariety?.id),
-          {
-            id: String(s.cropVariety?.id),
-            varietyName: s.cropVariety?.name ?? "",
-          },
-        ]),
-    ).values(),
-  );
+  const mappedVarieties = selectedVariants.map((v) => ({
+    id: String(v.id),
+    varietyName: v.name,
+  }));
 
-  const mappedSeeds = selectedSeeds.map((s) => ({
-    id: String(s.id),
-    varietyName: s.cropVariety?.name ?? "",
+  const mappedSeeds = selectedVariants.map((v) => ({
+    id: String(v.id),
+    varietyName: v.name,
   }));
 
   const isEdit = !!formValues.id;

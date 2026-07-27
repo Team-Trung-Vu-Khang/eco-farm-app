@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useCatalog } from "@/features/foundation";
-import { useIrrigationSystems } from "@/features/master-data";
+import { useRearingMethods } from "@/features/master-data";
 import { useCultivationZones } from "@/features/farm/hooks/useCultivationZones";
 import { useCultivationZoneMutations } from "@/features/farm/hooks/useCultivationZoneMutations";
 import { getCultivationRegionColumns } from "../data/columns";
@@ -53,17 +53,17 @@ export const useCultivationRegionPage = () => {
     }));
   }, [farmingMethods]);
 
-  // Fetch real irrigation systems for filtering
-  const { items: irrigationSystems } = useIrrigationSystems({
-    params: { status: "active", page: 0, size: 100 },
+  // Fetch real rearing methods for filtering
+  const { items: rearingMethods } = useRearingMethods({
+    params: { domainCode: "CROP", status: "active", page: 0, size: 100 },
   });
 
   const irrigationSystemOptions = useMemo(() => {
-    return irrigationSystems.map((s) => ({
+    return rearingMethods.map((s) => ({
       label: s.name,
       value: String(s.id),
     }));
-  }, [irrigationSystems]);
+  }, [rearingMethods]);
 
   const filters = useMemo(() => {
     return [
@@ -94,7 +94,7 @@ export const useCultivationRegionPage = () => {
       keyword: debouncedSearch.trim() || undefined,
       status: status === "all" ? undefined : (status as any),
       farmingMethodId: farmingMethodId === "all" ? undefined : Number(farmingMethodId),
-      irrigationSystemId: irrigationSystemId === "all" ? undefined : Number(irrigationSystemId),
+      rearingMethodId: irrigationSystemId === "all" ? undefined : Number(irrigationSystemId),
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
     },
