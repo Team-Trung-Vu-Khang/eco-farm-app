@@ -26,11 +26,6 @@ const PlantIdentificationForm = ({
   const {
     isImportOpen,
     setIsImportOpen,
-    isMapExpanded,
-    setIsMapExpanded,
-    effectiveActiveId,
-    suggestedCorrection,
-    setSuggestedCorrection,
     cultivationRegionId,
     selectedScopeIds,
     plants,
@@ -40,12 +35,8 @@ const PlantIdentificationForm = ({
     addPlant,
     removePlant,
     updatePlant,
-    handleSetActiveEntry,
-    validateAndSnapToUnit,
-    handleAutoAssign,
     handleComplete,
     handleImport,
-    mapCenter,
     selectedCultivationRegion,
     geographicalUnits,
     scopedGeographicalUnits,
@@ -54,6 +45,8 @@ const PlantIdentificationForm = ({
     irrigationMethod,
     selectedCropsData,
     filteredCultivationRegions,
+    areasByRegion,
+    plotsByArea,
   } = usePlantIdentificationForm({ initialData, initialList, onSubmit });
 
   const steps: Step[] = [
@@ -76,6 +69,8 @@ const PlantIdentificationForm = ({
           irrigationMethod={irrigationMethod}
           selectedCropsData={selectedCropsData}
           setPlants={setPlants}
+          areasByRegion={areasByRegion}
+          plotsByArea={plotsByArea}
         />
       ),
     },

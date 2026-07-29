@@ -12,8 +12,19 @@ const AnimalIdentificationListPage = () => {
   const {
     animals,
     columns,
+    isLoading,
+    response,
     deleteOpen,
     setDeleteOpen,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
+    filters,
+    handleFilterChange,
+    handleSearch,
+    handleView,
+    handleEdit,
     handleDelete,
     handleConfirmDelete,
   } = useAnimalIdentificationListPage();
@@ -34,7 +45,21 @@ const AnimalIdentificationListPage = () => {
       <DataTable
         data={animals as any}
         columns={columns as any}
+        loading={isLoading}
         selectable={false}
+        searchable={true}
+        searchPlaceholder="Tìm kiếm mã định danh..."
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onSearch={handleSearch}
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalElements={response?.totalElements}
+        totalPages={response?.totalPages}
+        onPageSize={setPageSize}
+        onIndexChange={setCurrentIndex}
+        onView={(item) => handleView(item.id)}
+        onEdit={(item) => handleEdit(item.id)}
         onDelete={handleDelete}
       />
 

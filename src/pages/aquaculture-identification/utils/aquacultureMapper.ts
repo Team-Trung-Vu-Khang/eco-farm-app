@@ -4,12 +4,11 @@ import type {
   FarmPlantIdentificationResponse,
 } from "@/features/farm";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnimalPlant = Plant & Record<string, any>;
+type AquaculturePlant = Plant & Record<string, any>;
 
 export const mapApiPlantToFrontend = (
   p: FarmPlantIdentificationResponse,
-): AnimalPlant => {
+): AquaculturePlant => {
   let ageValue = "";
   let ageUnit: "days" | "months" | "years" = "years";
 
@@ -31,7 +30,7 @@ export const mapApiPlantToFrontend = (
     id: String(p.id),
     code: p.code || "",
     name: p.code || String(p.id),
-    type: "Cá thể",
+    type: "Mẫu nuôi trồng",
     status: p.status as any,
     height: p.height !== undefined && p.height !== null ? String(p.height) : "",
     ageValue,
@@ -52,8 +51,6 @@ export const mapApiPlantToFrontend = (
     areaName: p.location?.area?.name || "",
     plotName: p.location?.plot?.name || "",
     scopeType: p.location?.scopeType || "",
-    // productionZone dạng object để column có thể đọc .name
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     productionZone: (p.productionZone || null) as any,
     cultivationZoneName:
       p.productionZone?.name || p.cultivationZone?.name || "",
@@ -64,7 +61,6 @@ export const mapApiPlantToFrontend = (
   };
 };
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export const mapFrontendPlantToApiRequest = (
   p: Plant,
   regionStore?: any,
@@ -72,7 +68,6 @@ export const mapFrontendPlantToApiRequest = (
 ): FarmPlantIdentificationRequest => {
   let scopeType: "REGION" | "AREA" | "PLOT" = "REGION";
 
-  // Use scopeType passed from frontend if present, otherwise fallback to store checks
   if ((p as any).scopeType) {
     scopeType = (p as any).scopeType;
   } else if (regionStore) {
@@ -117,11 +112,12 @@ export const mapFrontendPlantToApiRequest = (
     productionZoneId: zoneId,
     height: p.height ? Number(p.height) : undefined,
     durationDays: durationDays || undefined,
+    plantedAt: p.plantedDate || undefined,
     startedAt: p.plantedDate || undefined,
     latitude: p.coordinate.lat,
     longitude: p.coordinate.lng,
     notes: p.note || undefined,
     status: "active",
-    domainCode: "LIVESTOCK",
+    domainCode: "AQUACULTURE",
   };
 };

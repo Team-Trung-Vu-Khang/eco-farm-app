@@ -52,16 +52,14 @@ export const seedApi = {
       }),
 
   create: (data: FarmSeedRequest) =>
-    apiClient
-      .post<FarmSeedResponse>(FARM_ENDPOINTS.seeds, data)
-      .then((r) => {
-        const item = r.data;
-        if (item) {
-          item.cropVariety = item.cropVariety || item.subjectVariant;
-          item.crop = item.crop || item.productionSubject;
-        }
-        return item;
-      }),
+    apiClient.post<FarmSeedResponse>(FARM_ENDPOINTS.seeds, data).then((r) => {
+      const item = r.data;
+      if (item) {
+        item.cropVariety = item.cropVariety || item.subjectVariant;
+        item.crop = item.crop || item.productionSubject;
+      }
+      return item;
+    }),
 
   update: (id: number, data: FarmSeedRequest) =>
     apiClient
@@ -83,13 +81,47 @@ export const seedApi = {
 export const regionApi = {
   list: (params?: RegionQueryParams) =>
     apiClient
-      .get<PageResponse<FarmRegionResponse>>(FARM_ENDPOINTS.regions, { params })
-      .then((r) => r.data),
+      .get<PageResponse<any>>(FARM_ENDPOINTS.regions, { params })
+      .then((r) => {
+        if (r.data?.content) {
+          r.data.content = r.data.content.map((item: any) => ({
+            ...item,
+            provinceId: item.provinceId || item.province,
+            districtId: item.districtId || item.district,
+            note: item.note || item.description,
+            areas: item.areas || item.productionAreas?.map((area: any) => ({
+              ...area,
+              region: area.region || area.productionRegion,
+              plots: area.plots || area.productionUnits?.map((unit: any) => ({
+                ...unit,
+                area: unit.area || unit.productionArea
+              }))
+            }))
+          }));
+        }
+        return r.data as PageResponse<FarmRegionResponse>;
+      }),
 
   getById: (id: number) =>
-    apiClient
-      .get<FarmRegionResponse>(`${FARM_ENDPOINTS.regions}/${id}`)
-      .then((r) => r.data),
+    apiClient.get<any>(`${FARM_ENDPOINTS.regions}/${id}`).then((r) => {
+      const item = r.data;
+      if (item) {
+        item.provinceId = item.provinceId || item.province;
+        item.districtId = item.districtId || item.district;
+        item.note = item.note || item.description;
+        if (item.productionAreas) {
+          item.areas = item.productionAreas.map((area: any) => ({
+            ...area,
+            region: area.region || area.productionRegion,
+            plots: area.plots || area.productionUnits?.map((unit: any) => ({
+              ...unit,
+              area: unit.area || unit.productionArea
+            }))
+          }));
+        }
+      }
+      return item as FarmRegionResponse;
+    }),
 
   create: (data: FarmRegionRequest) =>
     apiClient
@@ -106,9 +138,18 @@ export const regionApi = {
   getAreasByRegionId: (regionId: number, params?: AreaQueryParams) =>
     apiClient
       .get<
-        PageResponse<FarmAreaResponse>
-      >(`${FARM_ENDPOINTS.regions}/${regionId}/areas`, { params })
-      .then((r) => r.data),
+        PageResponse<any>
+      >(`${FARM_ENDPOINTS.regions}/${regionId}/production-areas`, { params })
+      .then((r) => {
+        if (r.data?.content) {
+          r.data.content = r.data.content.map((item: any) => ({
+            ...item,
+            region: item.region || item.productionRegion,
+            plots: item.plots || item.productionUnits,
+          }));
+        }
+        return r.data as PageResponse<FarmAreaResponse>;
+      }),
 };
 
 // ─── Area API ─────────────────────────────────────────────────────────────────
@@ -116,18 +157,32 @@ export const regionApi = {
 export const areaApi = {
   list: (params?: AreaQueryParams) =>
     apiClient
-      .get<PageResponse<FarmAreaResponse>>(FARM_ENDPOINTS.areas, { params })
-      .then((r) => r.data),
+      .get<PageResponse<any>>(FARM_ENDPOINTS.areas, { params })
+      .then((r) => {
+        if (r.data?.content) {
+          r.data.content = r.data.content.map((item: any) => ({
+            ...item,
+            region: item.region || item.productionRegion,
+            plots: item.plots || item.productionUnits,
+          }));
+        }
+        return r.data as PageResponse<FarmAreaResponse>;
+      }),
 
   getById: (id: number) =>
-    apiClient
-      .get<FarmAreaResponse>(`${FARM_ENDPOINTS.areas}/${id}`)
-      .then((r) => r.data),
+    apiClient.get<any>(`${FARM_ENDPOINTS.areas}/${id}`).then((r) => {
+      const item = r.data;
+      if (item) {
+        item.region = item.region || item.productionRegion;
+        item.plots = item.plots || item.productionUnits;
+      }
+      return item as FarmAreaResponse;
+    }),
 
   create: (regionId: number, data: FarmAreaRequest) =>
     apiClient
       .post<FarmAreaResponse>(
-        `${FARM_ENDPOINTS.regions}/${regionId}/areas`,
+        `${FARM_ENDPOINTS.regions}/${regionId}/production-areas`,
         data,
       )
       .then((r) => r.data),
@@ -142,9 +197,17 @@ export const areaApi = {
   getPlotsByAreaId: (areaId: number, params?: PlotQueryParams) =>
     apiClient
       .get<
-        PageResponse<FarmPlotResponse>
-      >(`${FARM_ENDPOINTS.areas}/${areaId}/plots`, { params })
-      .then((r) => r.data),
+        PageResponse<any>
+      >(`${FARM_ENDPOINTS.areas}/${areaId}/production-units`, { params })
+      .then((r) => {
+        if (r.data?.content) {
+          r.data.content = r.data.content.map((item: any) => ({
+            ...item,
+            area: item.area || item.productionArea,
+          }));
+        }
+        return r.data as PageResponse<FarmPlotResponse>;
+      }),
 };
 
 // ─── Plot API ─────────────────────────────────────────────────────────────────
@@ -152,17 +215,32 @@ export const areaApi = {
 export const plotApi = {
   list: (params?: PlotQueryParams) =>
     apiClient
-      .get<PageResponse<FarmPlotResponse>>(FARM_ENDPOINTS.plots, { params })
-      .then((r) => r.data),
+      .get<PageResponse<any>>(FARM_ENDPOINTS.plots, { params })
+      .then((r) => {
+        if (r.data?.content) {
+          r.data.content = r.data.content.map((item: any) => ({
+            ...item,
+            area: item.area || item.productionArea,
+          }));
+        }
+        return r.data as PageResponse<FarmPlotResponse>;
+      }),
 
   getById: (id: number) =>
-    apiClient
-      .get<FarmPlotResponse>(`${FARM_ENDPOINTS.plots}/${id}`)
-      .then((r) => r.data),
+    apiClient.get<any>(`${FARM_ENDPOINTS.plots}/${id}`).then((r) => {
+      const item = r.data;
+      if (item) {
+        item.area = item.area || item.productionArea;
+      }
+      return item as FarmPlotResponse;
+    }),
 
   create: (areaId: number, data: FarmPlotRequest) =>
     apiClient
-      .post<FarmPlotResponse>(`${FARM_ENDPOINTS.areas}/${areaId}/plots`, data)
+      .post<FarmPlotResponse>(
+        `${FARM_ENDPOINTS.areas}/${areaId}/production-units`,
+        data,
+      )
       .then((r) => r.data),
 
   update: (id: number, data: FarmPlotRequest) =>
@@ -178,12 +256,16 @@ export const plotApi = {
 export const cultivationZoneApi = {
   list: (params?: CultivationZoneQueryParams) =>
     apiClient
-      .get<PageResponse<FarmCultivationZoneResponse>>(FARM_ENDPOINTS.cultivationZones, { params })
+      .get<
+        PageResponse<FarmCultivationZoneResponse>
+      >(FARM_ENDPOINTS.cultivationZones, { params })
       .then((r) => r.data),
 
   getById: (id: number) =>
     apiClient
-      .get<FarmCultivationZoneResponse>(`${FARM_ENDPOINTS.cultivationZones}/${id}`)
+      .get<FarmCultivationZoneResponse>(
+        `${FARM_ENDPOINTS.cultivationZones}/${id}`,
+      )
       .then((r) => r.data),
 
   create: (data: FarmCultivationZoneRequest) =>
@@ -193,7 +275,10 @@ export const cultivationZoneApi = {
 
   update: (id: number, data: FarmCultivationZoneRequest) =>
     apiClient
-      .put<FarmCultivationZoneResponse>(`${FARM_ENDPOINTS.cultivationZones}/${id}`, data)
+      .put<FarmCultivationZoneResponse>(
+        `${FARM_ENDPOINTS.cultivationZones}/${id}`,
+        data,
+      )
       .then((r) => r.data),
 
   delete: (id: number) =>
@@ -205,25 +290,34 @@ export const cultivationZoneApi = {
 export const plantIdentificationApi = {
   list: (params?: PlantIdentificationQueryParams) =>
     apiClient
-      .get<PageResponse<FarmPlantIdentificationResponse>>(FARM_ENDPOINTS.plantIdentifications, { params })
+      .get<
+        PageResponse<FarmPlantIdentificationResponse>
+      >(FARM_ENDPOINTS.plantIdentifications, { params })
       .then((r) => r.data),
 
   getById: (id: number) =>
     apiClient
-      .get<FarmPlantIdentificationResponse>(`${FARM_ENDPOINTS.plantIdentifications}/${id}`)
+      .get<FarmPlantIdentificationResponse>(
+        `${FARM_ENDPOINTS.plantIdentifications}/${id}`,
+      )
       .then((r) => r.data),
 
   create: (data: FarmPlantIdentificationRequest) =>
     apiClient
-      .post<FarmPlantIdentificationResponse>(FARM_ENDPOINTS.plantIdentifications, data)
+      .post<FarmPlantIdentificationResponse>(
+        FARM_ENDPOINTS.plantIdentifications,
+        data,
+      )
       .then((r) => r.data),
 
   update: (id: number, data: FarmPlantIdentificationRequest) =>
     apiClient
-      .put<FarmPlantIdentificationResponse>(`${FARM_ENDPOINTS.plantIdentifications}/${id}`, data)
+      .put<FarmPlantIdentificationResponse>(
+        `${FARM_ENDPOINTS.plantIdentifications}/${id}`,
+        data,
+      )
       .then((r) => r.data),
 
   delete: (id: number) =>
     apiClient.delete(`${FARM_ENDPOINTS.plantIdentifications}/${id}`),
 };
-

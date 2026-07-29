@@ -376,7 +376,7 @@ export interface FarmPlantIdentificationRequest {
   status?: "active" | "inactive" | "archived";
   displayOrder?: number;
   metadataJson?: Record<string, unknown>;
-  domainCode?: "CROP" | "LIVESTOCK";
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
 }
 
 export interface FarmPlantIdentificationResponse {
@@ -397,7 +397,7 @@ export interface FarmPlantIdentificationResponse {
   displayOrder?: number;
   metadataJson?: Record<string, unknown>;
   createdAt?: string;
-  domainCode?: "CROP" | "LIVESTOCK";
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   updatedAt?: string;
 }
 
@@ -408,7 +408,7 @@ export interface PlantIdentificationQueryParams {
   cultivationZoneId?: number;
   keyword?: string;
   status?: string;
-  domainCode?: "CROP" | "LIVESTOCK";
+  domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
   page?: number;
   size?: number;
 }

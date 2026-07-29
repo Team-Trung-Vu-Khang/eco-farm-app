@@ -24,6 +24,8 @@ interface Step1GeographicalSelectionProps {
   irrigationMethod: any;
   selectedCropsData: any[];
   setPlants: React.Dispatch<React.SetStateAction<any[]>>;
+  areasByRegion?: Record<string, any[]>;
+  plotsByArea?: Record<string, any[]>;
 }
 
 export const Step1GeographicalSelection: React.FC<
@@ -41,6 +43,8 @@ export const Step1GeographicalSelection: React.FC<
   irrigationMethod,
   selectedCropsData,
   setPlants,
+  areasByRegion,
+  plotsByArea,
 }) => {
   const handleCultivationRegionSelect = (val: string) => {
     setCultivationRegionId(val);
@@ -113,6 +117,8 @@ export const Step1GeographicalSelection: React.FC<
             geographicalUnits={geographicalUnits}
             selectedScopeIds={selectedScopeIds}
             onScopeChange={handleScopeChange}
+            areasByRegion={areasByRegion}
+            plotsByArea={plotsByArea}
           />
         </div>
 

@@ -89,12 +89,19 @@ export const useCultivationRegionPage = () => {
     ];
   }, [farmingMethodOptions, irrigationSystemOptions]);
 
-  const { items: areas, response, isLoading } = useCultivationZones({
+  const {
+    items: areas,
+    response,
+    isLoading,
+  } = useCultivationZones({
     params: {
+      domainCode: "CROP",
       keyword: debouncedSearch.trim() || undefined,
       status: status === "all" ? undefined : (status as any),
-      farmingMethodId: farmingMethodId === "all" ? undefined : Number(farmingMethodId),
-      rearingMethodId: irrigationSystemId === "all" ? undefined : Number(irrigationSystemId),
+      farmingMethodId:
+        farmingMethodId === "all" ? undefined : Number(farmingMethodId),
+      rearingMethodId:
+        irrigationSystemId === "all" ? undefined : Number(irrigationSystemId),
       page: Math.max(currentIndex - 1, 0),
       size: pageSize,
     },

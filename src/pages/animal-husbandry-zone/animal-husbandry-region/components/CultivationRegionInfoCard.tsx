@@ -86,7 +86,7 @@ export const CultivationRegionInfoCard = ({
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">
-                  Kỹ thuật &amp; Chuồng trại
+                  Phương pháp chăn nuôi
                 </div>
                 <div className="text-base font-semibold text-slate-900">
                   {farmingMethod?.name || "Chưa thiết lập"}

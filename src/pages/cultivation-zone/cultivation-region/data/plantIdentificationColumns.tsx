@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { MapPin, Layers } from "lucide-react";
+import { MapPin } from "lucide-react";
 import type { Plant } from "@/pages/region-chart/constants";
 
 export const plantIdentificationColumns = [
@@ -16,11 +16,11 @@ export const plantIdentificationColumns = [
     ),
   },
   {
-    key: "cultivationZoneName",
+    key: "productionZone",
     label: "Vùng canh tác",
     render: (_: unknown, row: any) => (
       <span className="font-semibold text-slate-800">
-        {row.cultivationZoneName || "—"}
+        {row.productionZone?.name || row.cultivationZoneName || "—"}
       </span>
     ),
   },
@@ -38,29 +38,33 @@ export const plantIdentificationColumns = [
         </span>
       ),
   },
-  // {
-  //   key: "areaName",
-  //   label: "Vị trí canh tác",
-  //   render: (_: unknown, row: any) => {
-  //     let label = "";
-  //     if (row.scopeType === "PLOT" && row.plotName) {
-  //       label = row.areaName ? `${row.areaName} / ${row.plotName}` : row.plotName;
-  //     } else if (row.scopeType === "AREA" && row.areaName) {
-  //       label = row.areaName;
-  //     } else if (row.scopeType === "REGION") {
-  //       label = "Cả vùng trồng";
-  //     }
+  {
+    key: "areaName",
+    label: "Vị trí cụ thể",
+    render: (_: unknown, row: any) => {
+      let label = "";
+      if (row.scopeType === "PLOT" && row.plotName) {
+        label = row.areaName
+          ? `${row.areaName} / ${row.plotName}`
+          : row.plotName;
+      } else if (row.scopeType === "AREA" && row.areaName) {
+        label = row.areaName;
+      } else if (row.scopeType === "REGION") {
+        label = "Cả vùng trồng";
+      }
 
-  //     return label ? (
-  //       <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-medium">
-  //         <MapPin className="w-2.5 h-2.5 text-green-600" />
-  //         {label}
-  //       </span>
-  //     ) : (
-  //       <span className="text-muted-foreground italic text-xs">Chưa xác định</span>
-  //     );
-  //   },
-  // },
+      return label ? (
+        <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-medium">
+          <MapPin className="w-2.5 h-2.5 text-green-600" />
+          {label}
+        </span>
+      ) : (
+        <span className="text-muted-foreground italic text-xs">
+          Chưa xác định
+        </span>
+      );
+    },
+  },
   {
     key: "height",
     label: "C.Cao (m)",

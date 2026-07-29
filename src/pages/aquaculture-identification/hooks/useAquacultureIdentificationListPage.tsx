@@ -1,14 +1,69 @@
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { AQUACULTURE_IDENTIFICATION_PLANTS } from "../data/dummy";
+import { useDebounce } from "@/shared/hooks/useDebounce";
+import {
+  usePlantIdentifications,
+  usePlantIdentificationMutations,
+} from "@/features/farm";
+import { mapApiPlantToFrontend } from "../utils/aquacultureMapper";
 
 export const useAquacultureIdentificationListPage = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [plants, setPlants] = useState(AQUACULTURE_IDENTIFICATION_PLANTS);
+
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
+  const [pageSize, setPageSize] = useState(10);
+  const [currentIndex, setCurrentIndex] = useState(1);
+  const [status, setStatus] = useState<string>("all");
+
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [deleteItem, setDeleteItem] = useState<any | null>(null);
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setCurrentIndex(1);
+  };
+
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "status") {
+      setStatus(value);
+      setCurrentIndex(1);
+    }
+  };
+
+  const filters = useMemo(() => {
+    return [
+      {
+        key: "status",
+        label: "Trạng thái",
+        options: [
+          { label: "Hoạt động", value: "active" },
+          { label: "Ngừng hoạt động", value: "inactive" },
+          { label: "Đã lưu trữ", value: "archived" },
+        ],
+      },
+    ];
+  }, []);
+
+  const {
+    items,
+    response,
+    loading: isLoading,
+  } = usePlantIdentifications({
+    params: {
+      domainCode: "AQUACULTURE",
+      keyword: debouncedSearch.trim() || undefined,
+      status: status === "all" ? undefined : (status as any),
+      page: Math.max(currentIndex - 1, 0),
+      size: pageSize,
+    },
+  });
+
+  const { deletePlant } = usePlantIdentificationMutations();
+
+  const plants = useMemo(() => items.map(mapApiPlantToFrontend), [items]);
 
   const columns = useMemo(
     () => [
@@ -89,29 +144,54 @@ export const useAquacultureIdentificationListPage = () => {
     [setLocation],
   );
 
-  const handleDelete = (row: { id: string }) => {
-    setSelectedId(row.id);
+  const handleDelete = (row: any) => {
+    setDeleteItem(row);
     setDeleteOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (!selectedId) return;
-    setPlants((prev) => prev.filter((item) => item.id !== selectedId));
-    toast({
-      title: "Thành công",
-      description: "Đã xóa dữ liệu định danh mẫu",
-    });
-    setDeleteOpen(false);
-    setSelectedId(null);
+  const handleConfirmDelete = async () => {
+    if (!deleteItem) return;
+    try {
+      await deletePlant.mutateAsync(Number(deleteItem.id));
+      toast({
+        title: "Thành công",
+        description: "Đã xóa dữ liệu định danh mẫu",
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      toast({
+        title: "Lỗi",
+        description: error?.message || "Không thể xóa dữ liệu định danh",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteOpen(false);
+      setDeleteItem(null);
+    }
   };
+
+  const handleView = (id: string | number) =>
+    setLocation(`/aquaculture-identification/${id}`);
+  const handleEdit = (id: string | number) =>
+    setLocation(`/aquaculture-identification/${id}/edit`);
 
   return {
     plants,
     columns,
+    isLoading,
+    response,
     deleteOpen,
     setDeleteOpen,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
+    filters,
+    handleFilterChange,
+    handleSearch,
+    handleView,
+    handleEdit,
     handleDelete,
     handleConfirmDelete,
   };
 };
-

@@ -168,7 +168,9 @@ export const usePlantIdentificationForm = ({
   };
 
   // ---- Fetch Cultivation Zones from API ----
-  const { items: apiCultivationRegions } = useCultivationZones();
+  const { items: apiCultivationRegions } = useCultivationZones({
+    params: { domainCode: "CROP" },
+  });
   const filteredCultivationRegions = apiCultivationRegions;
 
   const selectedCultivationRegion = useMemo(() => {
@@ -239,18 +241,40 @@ export const usePlantIdentificationForm = ({
     const regions: Record<string, any> = {};
     const areas: Record<string, any> = {};
     const plots: Record<string, any> = {};
+
+    // 1. Populate from region detail responses (including nested areas and plots)
     scopeEntityIds.regionIds.forEach((id, i) => {
-      if (regionDetailQueries[i]?.data)
-        regions[String(id)] = regionDetailQueries[i].data;
+      const reg = regionDetailQueries[i]?.data;
+      if (reg) {
+        regions[String(id)] = reg;
+        (reg.areas || []).forEach((sa: any) => {
+          areas[String(sa.id)] = sa;
+          (sa.plots || []).forEach((p: any) => {
+            plots[String(p.id)] = p;
+          });
+        });
+      }
     });
+
+    // 2. Populate from area detail responses (including nested plots)
     scopeEntityIds.areaIds.forEach((id, i) => {
-      if (areaDetailQueries[i]?.data)
-        areas[String(id)] = areaDetailQueries[i].data;
+      const area = areaDetailQueries[i]?.data;
+      if (area) {
+        areas[String(id)] = area;
+        (area.plots || []).forEach((p: any) => {
+          plots[String(p.id)] = p;
+        });
+      }
     });
+
+    // 3. Populate from plot detail responses
     scopeEntityIds.plotIds.forEach((id, i) => {
-      if (plotDetailQueries[i]?.data)
-        plots[String(id)] = plotDetailQueries[i].data;
+      const plot = plotDetailQueries[i]?.data;
+      if (plot) {
+        plots[String(id)] = plot;
+      }
     });
+
     return { regions, areas, plots };
   }, [
     scopeEntityIds,
@@ -390,6 +414,86 @@ export const usePlantIdentificationForm = ({
     return result;
   }, [selectedCultivationRegion, geoDetailMap]);
 
+  const { areasByRegion, plotsByArea } = useMemo(() => {
+    const scopes: any[] = selectedCultivationRegion?.scopes ?? [];
+    const abr: Record<string, any[]> = {};
+    const pba: Record<string, any[]> = {};
+
+    scopes.forEach((scope: any) => {
+      if (scope.scopeType === "AREA" && scope.area) {
+        const rId = String(scope.area.region?.id ?? "");
+        if (rId) {
+          if (!abr[rId]) abr[rId] = [];
+          if (!abr[rId].some((a) => a.id === String(scope.area.id))) {
+            abr[rId].push({
+              id: String(scope.area.id),
+              name: scope.area.name,
+              level: 2,
+              type: "Khu vực",
+            });
+          }
+        }
+      } else if (scope.scopeType === "PLOT" && scope.plot) {
+        const area = scope.plot.area;
+        if (area) {
+          const aId = String(area.id);
+          const rId = String(area.region?.id ?? "");
+          if (!pba[aId]) pba[aId] = [];
+          if (!pba[aId].some((p) => p.id === String(scope.plot.id))) {
+            pba[aId].push({
+              id: String(scope.plot.id),
+              name: scope.plot.name,
+              level: 1,
+              type: "Lô trồng",
+            });
+          }
+          if (rId) {
+            if (!abr[rId]) abr[rId] = [];
+            if (!abr[rId].some((a) => a.id === aId)) {
+              abr[rId].push({
+                id: aId,
+                name: area.name,
+                level: 2,
+                type: "Khu vực",
+              });
+            }
+          }
+        }
+      } else if (scope.scopeType === "REGION" && scope.region) {
+        const rId = String(scope.region.id);
+        const regionData = geoDetailMap.regions[rId];
+        if (regionData) {
+          (regionData.areas ?? []).forEach((sa: any) => {
+            const aId = String(sa.id);
+            if (!abr[rId]) abr[rId] = [];
+            if (!abr[rId].some((a) => a.id === aId)) {
+              abr[rId].push({
+                id: aId,
+                name: sa.name,
+                level: 2,
+                type: "Khu vực",
+              });
+            }
+            (sa.plots ?? []).forEach((p: any) => {
+              const pId = String(p.id);
+              if (!pba[aId]) pba[aId] = [];
+              if (!pba[aId].some((item) => item.id === pId)) {
+                pba[aId].push({
+                  id: pId,
+                  name: p.name,
+                  level: 1,
+                  type: "Lô trồng",
+                });
+              }
+            });
+          });
+        }
+      }
+    });
+
+    return { areasByRegion: abr, plotsByArea: pba };
+  }, [selectedCultivationRegion, geoDetailMap]);
+
   const scopedGeographicalUnits = useMemo(() => {
     if (!selectedScopeIds || selectedScopeIds.length === 0)
       return geographicalUnits;
@@ -522,19 +626,31 @@ export const usePlantIdentificationForm = ({
   );
 
   const farmingMethod = useMemo(
-    () => cultivationRegionDetail?.farmingMethod,
+    () =>
+      cultivationRegionDetail?.productionMethod ||
+      cultivationRegionDetail?.farmingMethod,
     [cultivationRegionDetail],
   );
 
   const irrigationMethod = useMemo(
-    () => cultivationRegionDetail?.irrigationSystem,
+    () => cultivationRegionDetail?.rearingMethod,
     [cultivationRegionDetail],
   );
 
-  const selectedCropsData: any[] = useMemo(
-    () => cultivationRegionDetail?.seeds ?? [],
-    [cultivationRegionDetail],
-  );
+  const selectedCropsData: any[] = useMemo(() => {
+    const list =
+      cultivationRegionDetail?.subjectVariants ||
+      cultivationRegionDetail?.seeds ||
+      [];
+    return list.map((item: any) => ({
+      ...item,
+      cropVarietyCode:
+        item.cropVarietyCode || item.subjectVariantCode || item.varietyCode,
+      cropVarietyName:
+        item.cropVarietyName || item.subjectVariantName || item.varietyName,
+      cropName: item.cropName || item.productionSubjectName || item.crop,
+    }));
+  }, [cultivationRegionDetail]);
 
   const handleSetActiveEntry = (id: string) => {
     setActiveEntryId(id);
@@ -833,7 +949,9 @@ export const usePlantIdentificationForm = ({
           }
         }
       } else {
-        const unitExists = geographicalUnits.some((u) => u.id === autoPlotId && selectedScopeIds.includes(u.id));
+        const unitExists = geographicalUnits.some(
+          (u) => u.id === autoPlotId && selectedScopeIds.includes(u.id),
+        );
         invalid = !unitExists;
       }
 
@@ -842,8 +960,7 @@ export const usePlantIdentificationForm = ({
         height: item.height?.toString() || "",
         ageValue: item.ageValue?.toString() || "",
         ageUnit: item.ageUnit || "years",
-        plantedDate:
-          item.plantedDate || new Date().toISOString().split("T")[0],
+        plantedDate: item.plantedDate || new Date().toISOString().split("T")[0],
         note: item.note || "",
         plotId: autoPlotId,
         coordinate: coord,
@@ -896,5 +1013,7 @@ export const usePlantIdentificationForm = ({
     selectedCropsData,
     filteredCultivationRegions,
     findGeographicalUnit,
+    areasByRegion,
+    plotsByArea,
   };
 };

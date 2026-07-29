@@ -136,7 +136,7 @@ export const Step3Confirmation: React.FC<Step3ConfirmationProps> = ({
                 </div>
                 <div className="min-w-0">
                   <div className="text-[10px] text-slate-500 font-medium leading-none mb-1">
-                    Kỹ thuật chăn nuôi
+                    Phương pháp chăn nuôi
                   </div>
                   <div className="text-sm font-semibold text-slate-900 truncate">
                     {farmingMethod?.name || "Chưa thiết lập"}

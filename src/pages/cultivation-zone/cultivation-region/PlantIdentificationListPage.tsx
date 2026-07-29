@@ -12,8 +12,19 @@ const PlantIdentificationListPage = () => {
   const {
     plants,
     columns,
+    isLoading,
+    response,
     deleteOpen,
     setDeleteOpen,
+    pageSize,
+    setPageSize,
+    currentIndex,
+    setCurrentIndex,
+    filters,
+    handleFilterChange,
+    handleSearch,
+    handleView,
+    handleEdit,
     handleDelete,
     handleConfirmDelete,
   } = usePlantIdentificationListPage();
@@ -34,7 +45,21 @@ const PlantIdentificationListPage = () => {
       <DataTable
         data={plants}
         columns={columns}
+        loading={isLoading}
         selectable={false}
+        searchable={true}
+        searchPlaceholder="Tìm kiếm mã định danh..."
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onSearch={handleSearch}
+        pageSize={pageSize}
+        currentIndex={currentIndex}
+        totalElements={response?.totalElements}
+        totalPages={response?.totalPages}
+        onPageSize={setPageSize}
+        onIndexChange={setCurrentIndex}
+        onView={(item) => handleView(item.id)}
+        onEdit={(item) => handleEdit(item.id)}
         onDelete={handleDelete}
       />
 

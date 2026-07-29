@@ -1,7 +1,14 @@
 import type { Plant } from "@/pages/region-chart/constants";
-import type { FarmPlantIdentificationRequest, FarmPlantIdentificationResponse } from "@/features/farm";
+import type {
+  FarmPlantIdentificationRequest,
+  FarmPlantIdentificationResponse,
+} from "@/features/farm";
 
-export const mapApiPlantToFrontend = (p: FarmPlantIdentificationResponse): Plant => {
+type CultivationPlant = Plant & Record<string, any>;
+
+export const mapApiPlantToFrontend = (
+  p: FarmPlantIdentificationResponse,
+): CultivationPlant => {
   let ageValue = "";
   let ageUnit: "days" | "months" | "years" = "years";
 
@@ -28,21 +35,38 @@ export const mapApiPlantToFrontend = (p: FarmPlantIdentificationResponse): Plant
     height: p.height !== undefined && p.height !== null ? String(p.height) : "",
     ageValue,
     ageUnit,
-    plantedDate: p.plantedAt || "",
+    plantedDate: p.startedAt || p.plantedAt || "",
     note: p.notes || "",
-    plotId: p.location?.plot?.id?.toString() || p.location?.area?.id?.toString() || p.location?.region?.id?.toString() || "",
+    plotId:
+      p.location?.plot?.id?.toString() ||
+      p.location?.area?.id?.toString() ||
+      p.location?.region?.id?.toString() ||
+      "",
     coordinate: { lat: p.latitude || 0, lng: p.longitude || 0 },
-    regionName: p.location?.region?.name || "",
+    regionName:
+      p.location?.region?.name ||
+      p.location?.area?.name ||
+      p.location?.plot?.name ||
+      "",
     areaName: p.location?.area?.name || "",
     plotName: p.location?.plot?.name || "",
-    cultivationZoneName: p.cultivationZone?.name || "",
+    productionZone: (p.productionZone || null) as any,
+    cultivationZoneName:
+      p.productionZone?.name || p.cultivationZone?.name || "",
     scopeType: p.location?.scopeType || "",
-    cultivationRegionId: p.cultivationZone?.id?.toString() || "",
+    cultivationRegionId:
+      p.productionZone?.id?.toString() ||
+      p.cultivationZone?.id?.toString() ||
+      "",
   };
 };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export const mapFrontendPlantToApiRequest = (p: Plant, regionStore?: any): FarmPlantIdentificationRequest => {
+export const mapFrontendPlantToApiRequest = (
+  p: Plant,
+  regionStore?: any,
+  isUpdate?: boolean,
+): FarmPlantIdentificationRequest => {
   let scopeType: "REGION" | "AREA" | "PLOT" = "REGION";
 
   // Use scopeType passed from frontend if present, otherwise fallback to store checks
@@ -50,11 +74,20 @@ export const mapFrontendPlantToApiRequest = (p: Plant, regionStore?: any): FarmP
     scopeType = (p as any).scopeType;
   } else if (regionStore) {
     const idStr = String(p.plotId);
-    if (typeof regionStore.getPlotById === "function" && regionStore.getPlotById(idStr)) {
+    if (
+      typeof regionStore.getPlotById === "function" &&
+      regionStore.getPlotById(idStr)
+    ) {
       scopeType = "PLOT";
-    } else if (typeof regionStore.getAreaById === "function" && regionStore.getAreaById(idStr)) {
+    } else if (
+      typeof regionStore.getAreaById === "function" &&
+      regionStore.getAreaById(idStr)
+    ) {
       scopeType = "AREA";
-    } else if (Array.isArray(regionStore.regions) && regionStore.regions.some((r: any) => String(r.id) === idStr)) {
+    } else if (
+      Array.isArray(regionStore.regions) &&
+      regionStore.regions.some((r: any) => String(r.id) === idStr)
+    ) {
       scopeType = "REGION";
     }
   }
@@ -67,19 +100,26 @@ export const mapFrontendPlantToApiRequest = (p: Plant, regionStore?: any): FarmP
     else if (p.ageUnit === "years") durationDays = val * 365;
   }
 
+  const zoneId = (p as any).cultivationRegionId
+    ? Number((p as any).cultivationRegionId)
+    : undefined;
+
   return {
-    // code is intentionally omitted when submitting to the server ("không gửi kèm code")
+    ...(isUpdate ? { code: p.code || undefined } : {}),
     location: {
       scopeType,
       scopeId: Number(p.plotId),
     },
-    cultivationZoneId: (p as any).cultivationRegionId ? Number((p as any).cultivationRegionId) : undefined,
+    cultivationZoneId: zoneId,
+    productionZoneId: zoneId,
     height: p.height ? Number(p.height) : undefined,
     durationDays: durationDays || undefined,
     plantedAt: p.plantedDate || undefined,
+    startedAt: p.plantedDate || undefined,
     latitude: p.coordinate.lat,
     longitude: p.coordinate.lng,
     notes: p.note || undefined,
     status: "active",
+    domainCode: "CROP",
   };
 };

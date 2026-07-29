@@ -72,20 +72,20 @@ export const AnimalIdentificationSidebar = ({
               </div>
               <div className="p-4 flex flex-col gap-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Loại hình chăn nuôi
+                  Phương pháp chăn nuôi
                 </span>
                 <span className="font-semibold text-slate-900">
                   {farmingMethod?.name || "N/A"}
                 </span>
               </div>
-              <div className="p-4 flex flex-col gap-1">
+              {/* <div className="p-4 flex flex-col gap-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   Hệ thống cấp nước/chuồng trại
                 </span>
                 <span className="font-semibold text-slate-900">
                   {irrigationMethod?.name || "N/A"}
                 </span>
-              </div>
+              </div> */}
             </div>
           </CardContent>
         </Card>

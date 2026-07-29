@@ -39,6 +39,12 @@ const AquacultureIdentificationForm = ({
     selectedCultivationRegion,
     geographicalUnits,
     filteredCultivationRegions,
+    managers,
+    farmingMethod,
+    irrigationMethod,
+    selectedCropsData,
+    areasByRegion,
+    plotsByArea,
   } = useAquacultureIdentificationForm({
     initialData,
     initialList,
@@ -60,6 +66,12 @@ const AquacultureIdentificationForm = ({
           geographicalUnits={geographicalUnits}
           selectedScopeIds={selectedScopeIds}
           onScopeChange={setSelectedScopeIds}
+          manager={managers}
+          farmingMethod={farmingMethod}
+          irrigationMethod={irrigationMethod}
+          selectedCropsData={selectedCropsData}
+          areasByRegion={areasByRegion}
+          plotsByArea={plotsByArea}
         />
       ),
     },
@@ -92,6 +104,10 @@ const AquacultureIdentificationForm = ({
           selectedCultivationRegion={selectedCultivationRegion}
           selectedScopeIds={selectedScopeIds}
           geographicalUnits={geographicalUnits}
+          manager={managers}
+          farmingMethod={farmingMethod}
+          irrigationMethod={irrigationMethod}
+          selectedCropsData={selectedCropsData}
         />
       ),
     },

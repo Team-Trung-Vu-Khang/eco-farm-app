@@ -19,6 +19,12 @@ interface Step1GeographicalSelectionProps {
   geographicalUnits: any[];
   selectedScopeIds: string[];
   onScopeChange: (ids: string[]) => void;
+  manager?: any[];
+  farmingMethod?: any;
+  irrigationMethod?: any;
+  selectedCropsData?: any[];
+  areasByRegion?: Record<string, any[]>;
+  plotsByArea?: Record<string, any[]>;
 }
 
 export const Step1GeographicalSelection: React.FC<
@@ -31,6 +37,12 @@ export const Step1GeographicalSelection: React.FC<
   geographicalUnits,
   selectedScopeIds,
   onScopeChange,
+  manager,
+  farmingMethod,
+  irrigationMethod,
+  selectedCropsData,
+  areasByRegion,
+  plotsByArea,
 }) => {
   const handleCultivationRegionSelect = (val: string) => {
     setCultivationRegionId(val);
@@ -84,11 +96,13 @@ export const Step1GeographicalSelection: React.FC<
           </Card>
 
           {/* Geographical scope card — shown only when a region is selected */}
-              <GeographicalScopeCard
+          <GeographicalScopeCard
             selectedCultivationRegion={selectedCultivationRegion}
             geographicalUnits={geographicalUnits}
             selectedScopeIds={selectedScopeIds}
             onScopeChange={handleScopeChange}
+            areasByRegion={areasByRegion}
+            plotsByArea={plotsByArea}
           />
         </div>
 
@@ -96,6 +110,10 @@ export const Step1GeographicalSelection: React.FC<
         <div className="min-w-0">
           <CultivationRegionInfoCard
             selectedCultivationRegion={selectedCultivationRegion}
+            manager={manager}
+            farmingMethod={farmingMethod}
+            irrigationMethod={irrigationMethod}
+            selectedCropsData={selectedCropsData}
           />
         </div>
       </div>

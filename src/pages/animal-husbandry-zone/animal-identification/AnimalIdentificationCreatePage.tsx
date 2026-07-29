@@ -14,7 +14,7 @@ const AnimalIdentificationCreatePage = () => {
     try {
       await Promise.all(
         data.map((p) => {
-          const payload = mapFrontendPlantToApiRequest(p, null, false);
+          const payload = mapFrontendPlantToApiRequest(p);
           return createPlant.mutateAsync(payload);
         }),
       );

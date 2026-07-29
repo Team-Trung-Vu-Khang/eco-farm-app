@@ -167,11 +167,11 @@ export const useAnimalIdentificationDetailPage = () => {
   }, [cultivationRegionDetail]);
 
   const farmingMethod = useMemo(() => {
-    return cultivationRegionDetail?.farmingMethod || null;
+    return cultivationRegionDetail?.productionMethod || cultivationRegionDetail?.farmingMethod || null;
   }, [cultivationRegionDetail]);
 
   const irrigationMethod = useMemo(() => {
-    return cultivationRegionDetail?.irrigationSystem || null;
+    return cultivationRegionDetail?.rearingMethod || cultivationRegionDetail?.irrigationSystem || null;
   }, [cultivationRegionDetail]);
 
   const handleConfirmDelete = async () => {
