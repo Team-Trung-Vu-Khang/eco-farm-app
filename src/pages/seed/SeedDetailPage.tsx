@@ -1,8 +1,8 @@
+import PageWrapper from "@/components/PageWrapper";
 import { useSeedById } from "@/features/farm";
 import { useOrganizationById } from "@/features/organization/hooks/useOrganizationById";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -64,8 +64,7 @@ export default function SeedDetailPage() {
 
   if (isLoading) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Chi tiết hạt giống"
         description="Đang tải thông tin..."
       >
@@ -77,14 +76,13 @@ export default function SeedDetailPage() {
             Đang tải dữ liệu...
           </p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (!seed) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Chi tiết hạt giống"
         description="Thông tin chi tiết về hạt giống"
       >
@@ -101,13 +99,12 @@ export default function SeedDetailPage() {
             </Button>
           </Link>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chi tiết hạt giống"
       description={`Thông tin chi tiết về ${seed.name || seed.cropVariety?.name || "Hạt giống"}`}
       actions={
@@ -178,11 +175,14 @@ export default function SeedDetailPage() {
                     <Leaf className="w-3.5 h-3.5" />
                     {seed.crop?.name || "N/A"}
                   </span>
-                  {seed.name && seed.cropVariety?.name && seed.name !== seed.cropVariety?.name && (
-                    <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
-                      Giống gốc: {seed.cropVariety.name} ({seed.cropVariety.code})
-                    </span>
-                  )}
+                  {seed.name &&
+                    seed.cropVariety?.name &&
+                    seed.name !== seed.cropVariety?.name && (
+                      <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
+                        Giống gốc: {seed.cropVariety.name} (
+                        {seed.cropVariety.code})
+                      </span>
+                    )}
                 </div>
                 <h1 className="text-4xl md:text-5xl font-black text-slate-800 tracking-tight leading-tight mb-4">
                   {seed.name || seed.cropVariety?.name || "Hạt giống"}
@@ -494,6 +494,6 @@ export default function SeedDetailPage() {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

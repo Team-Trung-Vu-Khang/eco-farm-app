@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   CardContent,
   DataTable,
@@ -49,8 +49,7 @@ const AmendmentCyclePage = () => {
   } = useAmendmentCyclePage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chu kỳ cải tạo đất"
       description="Quản lý các quy trình và thời gian phục hồi đất canh tác"
       actions={
@@ -167,7 +166,7 @@ const AmendmentCyclePage = () => {
         onOpenChange={setDetailOpen}
         open={detailOpen}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   Card,
   CardContent,
@@ -135,8 +135,7 @@ export default function CropFoundationCreatePage() {
   });
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Thêm mới cây trồng"
       description="Khởi tạo cây trồng mới với đầy đủ thông tin sinh trưởng và tài liệu"
       actions={[
@@ -154,6 +153,6 @@ export default function CropFoundationCreatePage() {
           isSubmitting={isSubmitting}
         />
       </FormProvider>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

@@ -1,4 +1,5 @@
-import { AdminLayout, cn, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { cn, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useState, type FC } from "react";
 import { AdvancedFilterPanel } from "./components/AdvancedFilterPanel";
 import { CategorySidebar } from "./components/CategorySidebar";
@@ -67,7 +68,7 @@ const MaterialLookupPage: FC = () => {
     : null;
 
   return (
-    <AdminLayout isDev={true} title="Hệ thống tra cứu vật tư">
+    <PageWrapper title="Hệ thống tra cứu vật tư">
       <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-slate-50 font-sans">
         <CategorySidebar
           isCollapsed={isSidebarCollapsed}
@@ -158,7 +159,7 @@ const MaterialLookupPage: FC = () => {
           />
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

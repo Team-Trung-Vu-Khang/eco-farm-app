@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -28,8 +28,7 @@ const PlotDistributionPage = () => {
   } = usePlotDistributionPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Phân bố lô"
       description="Quản lý danh sách và bản đồ phân bố các lô trồng"
       actions={
@@ -69,7 +68,7 @@ const PlotDistributionPage = () => {
             : "Bạn có chắc chắn muốn xóa lô này?"
         }
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 export default PlotDistributionPage;

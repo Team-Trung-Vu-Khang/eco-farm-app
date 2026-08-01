@@ -1,8 +1,5 @@
-import {
-  AdminLayout,
-  Button,
-  useToast,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Save, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
@@ -82,8 +79,7 @@ const DocumentCategoryEditPage = () => {
   };
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Cập nhật danh mục hồ sơ"
       description={`Chỉnh sửa cấu hình cho tài liệu: ${formData.name}`}
       actions={
@@ -110,7 +106,7 @@ const DocumentCategoryEditPage = () => {
         onChange={(data) => setFormData((prev) => ({ ...prev, ...data }))}
         isEdit
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

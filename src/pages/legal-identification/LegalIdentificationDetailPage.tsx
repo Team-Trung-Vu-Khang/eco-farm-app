@@ -1,12 +1,6 @@
-import {
-  useLegalIdentificationById,
-} from "@/features/legal-identification";
-import {
-  AdminLayout,
-  Button,
-  Card,
-  CardContent,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { useLegalIdentificationById } from "@/features/legal-identification";
+import { Button, Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft, Edit } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useLocation, useRoute } from "wouter";
@@ -24,7 +18,10 @@ export default function LegalIdentificationDetailPage() {
   });
 
   const record = useMemo(
-    () => (recordQuery.item ? mapLegalIdentificationResponseToRecord(recordQuery.item) : undefined),
+    () =>
+      recordQuery.item
+        ? mapLegalIdentificationResponseToRecord(recordQuery.item)
+        : undefined,
     [recordQuery.item],
   );
 
@@ -36,8 +33,7 @@ export default function LegalIdentificationDetailPage() {
 
   if (recordQuery.loading) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Đang tải hồ sơ pháp lý"
         description="Vui lòng chờ trong giây lát"
       >
@@ -46,14 +42,13 @@ export default function LegalIdentificationDetailPage() {
             Đang tải dữ liệu hồ sơ pháp lý...
           </div>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (!record) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Không tìm thấy hồ sơ"
         description="Hồ sơ pháp lý không tồn tại hoặc đã bị xóa."
       >
@@ -69,7 +64,7 @@ export default function LegalIdentificationDetailPage() {
             Quay lại danh sách
           </Button>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
@@ -78,8 +73,7 @@ export default function LegalIdentificationDetailPage() {
     .filter(Boolean);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Hồ sơ định danh pháp lý"
       description="Xem toàn bộ hồ sơ, tài liệu đính kèm và trạng thái rà soát."
       actions={
@@ -193,6 +187,6 @@ export default function LegalIdentificationDetailPage() {
           ))}
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

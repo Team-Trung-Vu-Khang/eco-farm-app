@@ -1,7 +1,22 @@
+import PageWrapper from "@/components/PageWrapper";
+import {
+  useProductionSubjects,
+  useProductionSubjectVariants,
+  useUserGrowthCycleTemplateById,
+  useUserGrowthCycleTemplateMutations,
+} from "@/features/foundation";
+import { useFileUpload } from "@/features/storage";
+import {
+  animalGrowthCycleFormSchema,
+  type AnimalGrowthCycleFormValues,
+} from "@/pages/animal-husbandry-zone/animal-growth-cycle/schemas/animalGrowthCycleSchema";
+import {
+  formatDaysToDuration,
+  parseDurationToDays,
+} from "@/pages/growth-cycle/utils/duration";
 import { safeConvertLexicalToHtml } from "@/utils/commons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  AdminLayout,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -19,19 +34,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useLocation, useRoute } from "wouter";
-import {
-  useUserGrowthCycleTemplateById,
-  useUserGrowthCycleTemplateMutations,
-  useProductionSubjects,
-  useProductionSubjectVariants,
-} from "@/features/foundation";
-import { useFileUpload } from "@/features/storage";
 import { AquacultureGrowthCycleSteps } from "./components/AquacultureGrowthCycleSteps";
-import {
-  animalGrowthCycleFormSchema,
-  type AnimalGrowthCycleFormValues,
-} from "@/pages/animal-husbandry-zone/animal-growth-cycle/schemas/animalGrowthCycleSchema";
-import { formatDaysToDuration, parseDurationToDays } from "@/pages/growth-cycle/utils/duration";
 
 export default function AquacultureGrowthCycleEditPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -39,15 +42,21 @@ export default function AquacultureGrowthCycleEditPage() {
   const [, params] = useRoute("/aquaculture-growth-cycle/:id/edit");
   const { toast } = useToast();
 
-  const numericId = Number(String(params?.id).replace(/^(foundation-|user-)/, ""));
+  const numericId = Number(
+    String(params?.id).replace(/^(foundation-|user-)/, ""),
+  );
 
   const { data: currentCycle, isLoading } = useUserGrowthCycleTemplateById(
     numericId,
     { enabled: !!numericId },
   );
   const { updateTemplate } = useUserGrowthCycleTemplateMutations();
-  const { items: crops } = useProductionSubjects({ params: { domainCode: "AQUACULTURE", size: 100 } });
-  const { items: cropVarieties } = useProductionSubjectVariants({ params: { domainCode: "AQUACULTURE", size: 100 } });
+  const { items: crops } = useProductionSubjects({
+    params: { domainCode: "AQUACULTURE", size: 100 },
+  });
+  const { items: cropVarieties } = useProductionSubjectVariants({
+    params: { domainCode: "AQUACULTURE", size: 100 },
+  });
   const { uploadFile } = useFileUpload();
 
   const form = useForm<AnimalGrowthCycleFormValues>({
@@ -69,7 +78,11 @@ export default function AquacultureGrowthCycleEditPage() {
       const metadata: Record<string, unknown> = currentCycle.metadataJson || {};
       const cropIdVal = currentCycle.productionSubject?.id;
       const varietyIdVal = currentCycle.productionSubjectVariant?.id;
-      const totalDaysVal = currentCycle.stages?.reduce((sum: number, s: any) => sum + (s.durationDays || 0), 0) ?? 0;
+      const totalDaysVal =
+        currentCycle.stages?.reduce(
+          (sum: number, s: any) => sum + (s.durationDays || 0),
+          0,
+        ) ?? 0;
 
       reset({
         name: currentCycle.name ?? "",
@@ -225,16 +238,15 @@ export default function AquacultureGrowthCycleEditPage() {
 
   if (isLoading || !isLoaded)
     return (
-      <AdminLayout isDev={true} title="Đang tải..." description="Vui lòng chờ">
+      <PageWrapper title="Đang tải..." description="Vui lòng chờ">
         <div className="flex justify-center py-20">
           <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Cập nhật chu kỳ nuôi trồng thủy sản"
       description={`Chỉnh sửa thông tin cho ${varietyName || watchedCropId}`}
       actions={[
@@ -284,7 +296,9 @@ export default function AquacultureGrowthCycleEditPage() {
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Phạm vi:</span>
                     <span className="font-medium">
-                      {watchedScope === "crop" ? "Theo loài nuôi" : "Theo giống"}
+                      {watchedScope === "crop"
+                        ? "Theo loài nuôi"
+                        : "Theo giống"}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
@@ -318,6 +332,6 @@ export default function AquacultureGrowthCycleEditPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

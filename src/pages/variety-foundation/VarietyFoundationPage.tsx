@@ -1,6 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
 import { useDialogBugWorkaround } from "@/shared/hooks/useDialogBugWorkaround";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -89,8 +89,7 @@ const VarietyFoundationPage = () => {
   useDialogBugWorkaround([deleteOpen]);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý giống cây (nền tảng)"
       description="Xem và quản lý danh sách các loại giống cây trồng (nền tảng)"
       actions={
@@ -136,7 +135,7 @@ const VarietyFoundationPage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa giống cây (nền tảng) này?"
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

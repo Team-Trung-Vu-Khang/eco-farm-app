@@ -1,7 +1,7 @@
+import PageWrapper from "@/components/PageWrapper";
 import { useOrganizationById } from "@/features/organization";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import {
-  AdminLayout,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -94,22 +94,20 @@ export default function CooperativeEditPage() {
 
   if (cooperativeQuery.loading) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Cập nhật Hợp tác xã"
         description="Đang tải thông tin..."
       >
         <div className="flex items-center justify-center p-12">
           <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (cooperativeQuery.error) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Cập nhật Hợp tác xã"
         description="Không thể tải dữ liệu hợp tác xã"
         actions={
@@ -127,7 +125,7 @@ export default function CooperativeEditPage() {
         <div className="flex items-center justify-center p-12 text-muted-foreground">
           {cooperativeQuery.error}
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
@@ -240,8 +238,7 @@ export default function CooperativeEditPage() {
 
   if (!initialData) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Cập nhật Hợp tác xã"
         description="Không tìm thấy dữ liệu hợp tác xã"
         actions={
@@ -259,13 +256,12 @@ export default function CooperativeEditPage() {
         <div className="flex items-center justify-center p-12 text-muted-foreground">
           Không tìm thấy hợp tác xã cần chỉnh sửa
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={`Cập nhật Hợp tác xã`}
       description="Cập nhật thông tin chi tiết"
       actions={
@@ -306,6 +302,6 @@ export default function CooperativeEditPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

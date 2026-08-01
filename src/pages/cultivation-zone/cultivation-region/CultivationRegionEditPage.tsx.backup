@@ -1236,7 +1236,7 @@ const CultivationRegionCreatePage = () => {
   ];
 
   return (
-    <AdminLayout isDev={true} 
+    <PageWrapper 
       title="Thiết lập vùng canh tác"
       description="Quy trình khởi tạo và cấu hình tiêu chuẩn cho đơn vị canh tác"
     >
@@ -1279,8 +1279,7 @@ const CultivationRegionCreatePage = () => {
           </div>
         </CardContent>
       </Card>
-    </AdminLayout>
-  );
+    </PageWrapper>  );
 };
 
 export default CultivationRegionCreatePage;

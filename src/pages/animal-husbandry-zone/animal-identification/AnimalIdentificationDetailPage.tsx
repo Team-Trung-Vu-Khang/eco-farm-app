@@ -1,17 +1,18 @@
-import { AdminLayout, DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { MapPin } from "lucide-react";
+import { useMemo } from "react";
 import { AnimalIdentificationIdentityCard } from "../animal-husbandry-region/components/animal-detail/AnimalIdentificationIdentityCard";
 import { AnimalIdentificationNotFoundState } from "../animal-husbandry-region/components/animal-detail/AnimalIdentificationNotFoundState";
 import { AnimalIdentificationPageActions } from "../animal-husbandry-region/components/animal-detail/AnimalIdentificationPageActions";
 import { AnimalIdentificationSidebar } from "../animal-husbandry-region/components/animal-detail/AnimalIdentificationSidebar";
-import { useAnimalIdentificationDetailPage } from "./hooks/useAnimalIdentificationDetailPage";
 import { GeographicalHierarchyDisplay } from "../animal-husbandry-region/components/GeographicalHierarchyDisplay";
-import { MapPin } from "lucide-react";
-import { useMemo } from "react";
 import type {
-  RegionNode,
   AreaNode,
   PlotNode,
+  RegionNode,
 } from "../animal-husbandry-region/components/GeographicalTree";
+import { useAnimalIdentificationDetailPage } from "./hooks/useAnimalIdentificationDetailPage";
 
 const AnimalIdentificationDetailPage = () => {
   const {
@@ -71,15 +72,14 @@ const AnimalIdentificationDetailPage = () => {
 
   if (isLoading) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Đang tải..."
         description="Đang tải chi tiết định danh và vị trí địa lý của cá thể"
       >
         <div className="p-12 text-center text-slate-400">
           <p>Đang tải thông tin cá thể...</p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
@@ -90,8 +90,7 @@ const AnimalIdentificationDetailPage = () => {
   const { plant } = data;
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={`Thông tin cá thể: ${plant.code || plant.id}`}
       description="Chi tiết định danh và vị trí địa lý của cá thể"
       actions={
@@ -135,7 +134,7 @@ const AnimalIdentificationDetailPage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa thông tin định danh của cá thể này? Hành động này không thể hoàn tác."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

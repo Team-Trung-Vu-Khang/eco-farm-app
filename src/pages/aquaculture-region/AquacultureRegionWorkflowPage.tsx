@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -924,8 +924,7 @@ export default function AquacultureRegionWorkflowPage({
     : { regions: 0, areas: 0, plots: 0 };
 
   return (
-    <AdminLayout
-      isDev
+    <PageWrapper
       title={title}
       description={
         description ||
@@ -1183,6 +1182,6 @@ export default function AquacultureRegionWorkflowPage({
           </div>
         </DialogContent>
       </Dialog>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

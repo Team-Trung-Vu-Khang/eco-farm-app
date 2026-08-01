@@ -1,6 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  AdminLayout,
   Button,
   Card,
   CardContent,
@@ -77,8 +77,7 @@ const CultivationRegionCreatePage = () => {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={isEditMode ? "Cập nhật vùng canh tác" : "Thiết lập vùng canh tác"}
       description={
         isEditMode
@@ -112,7 +111,7 @@ const CultivationRegionCreatePage = () => {
           </div>
         </CardContent>
       </Card>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -415,8 +415,7 @@ export default function PlanWorkflowPage() {
 
   if (!plan) {
     return (
-      <AdminLayout
-        isDev
+      <PageWrapper
         title="Workflow kế hoạch"
         description="Không tìm thấy kế hoạch"
       >
@@ -434,13 +433,12 @@ export default function PlanWorkflowPage() {
             </div>
           </div>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev
+    <PageWrapper
       title="Workflow kế hoạch"
       description="Chỉ hiển thị các node kế hoạch theo kiểu chuỗi và nhánh"
       actions={
@@ -534,6 +532,6 @@ export default function PlanWorkflowPage() {
           </div>
         </CardContent>
       </Card>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Card,
   CardContent,
   StepperForm,
@@ -108,8 +108,7 @@ export default function CropCreatePage() {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Thêm mới cây trồng"
       description="Khởi tạo cây trồng mới với đầy đủ thông tin sinh trưởng và tài liệu"
     >
@@ -123,6 +122,6 @@ export default function CropCreatePage() {
           />
         </CardContent>
       </Card>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

@@ -1,7 +1,7 @@
+import PageWrapper from "@/components/PageWrapper";
 import { safeConvertLexicalToHtml } from "@/utils/commons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  AdminLayout,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -20,10 +20,10 @@ import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useLocation, useRoute } from "wouter";
 import {
-  useUserGrowthCycleTemplateById,
-  useUserGrowthCycleTemplateMutations,
   useProductionSubjects,
   useProductionSubjectVariants,
+  useUserGrowthCycleTemplateById,
+  useUserGrowthCycleTemplateMutations,
 } from "../../features/foundation";
 import { useFileUpload } from "../../features/storage";
 import { GrowthCycleSteps } from "./components/GrowthCycleSteps";
@@ -235,16 +235,15 @@ export default function UpdateGrowthCyclePage() {
 
   if (isLoading || !isLoaded)
     return (
-      <AdminLayout isDev={true} title="Đang tải..." description="Vui lòng chờ">
+      <PageWrapper title="Đang tải..." description="Vui lòng chờ">
         <div className="flex justify-center py-20">
           <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Cập nhật chu kỳ sinh trưởng"
       description={`Chỉnh sửa thông tin cho ${varietyName || watchedCropId}`}
       actions={[
@@ -330,6 +329,6 @@ export default function UpdateGrowthCyclePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

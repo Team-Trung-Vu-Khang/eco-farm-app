@@ -1,4 +1,5 @@
-import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft, Download, Edit, Trash2 } from "lucide-react";
 import { ContractDetailCommodities } from "./components/ContractDetailCommodities";
 import { ContractDetailContent } from "./components/ContractDetailContent";
@@ -13,8 +14,7 @@ const ContractDetailPage = () => {
   if (!contract) return null;
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chi tiết hợp đồng"
       description="Xem thông tin chi tiết hợp đồng"
     >
@@ -55,7 +55,7 @@ const ContractDetailPage = () => {
         {/* Parties Information */}
         <ContractDetailParties contract={contract} />
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

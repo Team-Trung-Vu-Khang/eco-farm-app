@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -36,7 +36,7 @@ const PesticideDetailPage = () => {
 
   if (!item) {
     return (
-      <AdminLayout isDev={true} title="Chi tiết thuốc BVTV">
+      <PageWrapper title="Chi tiết thuốc BVTV">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin thuốc BVTV.
@@ -45,13 +45,12 @@ const PesticideDetailPage = () => {
             Quay lại danh sách
           </Button>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chi tiết thuốc BVTV"
       description={`Thông tin chi tiết cho sản phẩm ${item.name}`}
       actions={
@@ -294,7 +293,7 @@ const PesticideDetailPage = () => {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

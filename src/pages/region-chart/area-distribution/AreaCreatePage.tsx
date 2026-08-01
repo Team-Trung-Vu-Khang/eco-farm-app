@@ -1,12 +1,12 @@
+import PageWrapper from "@/components/PageWrapper";
 import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  AdminLayout,
   Button,
-  StepperForm,
-  type Step,
-  Switch,
   Label,
+  StepperForm,
+  Switch,
+  type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import "leaflet/dist/leaflet.css";
 import { ChevronLeft } from "lucide-react";
@@ -65,14 +65,20 @@ const AreaCreatePage = () => {
           });
         }
       } else {
-        if (data.centerPoint?.lat === undefined || isNaN(data.centerPoint.lat)) {
+        if (
+          data.centerPoint?.lat === undefined ||
+          isNaN(data.centerPoint.lat)
+        ) {
           ctx.addIssue({
             code: "custom",
             path: ["centerPoint", "lat"],
             message: "Vui lòng nhập vĩ độ",
           });
         }
-        if (data.centerPoint?.lng === undefined || isNaN(data.centerPoint.lng)) {
+        if (
+          data.centerPoint?.lng === undefined ||
+          isNaN(data.centerPoint.lng)
+        ) {
           ctx.addIssue({
             code: "custom",
             path: ["centerPoint", "lng"],
@@ -139,8 +145,7 @@ const AreaCreatePage = () => {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={isEditMode ? "Cập nhật khu vực" : "Thêm mới khu vực"}
       description={
         isEditMode
@@ -209,7 +214,7 @@ const AreaCreatePage = () => {
           )}
         </FormProvider>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

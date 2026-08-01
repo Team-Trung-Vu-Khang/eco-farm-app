@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   Tabs,
   TabsContent,
@@ -28,7 +28,7 @@ const EquipmentDetailPage = () => {
 
   if (!item) {
     return (
-      <AdminLayout isDev={true} title="Chi tiết thiết bị">
+      <PageWrapper title="Chi tiết thiết bị">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin thiết bị.
@@ -37,13 +37,12 @@ const EquipmentDetailPage = () => {
             Quay lại danh sách
           </Button>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chi tiết thiết bị"
       description={`Thông tin và lịch sử bảo dưỡng của ${item.name}`}
       actions={
@@ -99,7 +98,7 @@ const EquipmentDetailPage = () => {
           <EquipmentDetailSidebar />
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

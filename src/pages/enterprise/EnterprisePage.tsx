@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -31,8 +31,7 @@ export default function EnterprisePage() {
   } = useEnterprisePage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý doanh nghiệp"
       description="Quản lý thông tin các doanh nghiệp trong hệ thống"
       actions={
@@ -77,6 +76,6 @@ export default function EnterprisePage() {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa doanh nghiệp này? Chỉ có thể xóa khi chưa có dữ liệu gắn kết."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

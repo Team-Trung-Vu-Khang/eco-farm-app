@@ -1,4 +1,5 @@
-import { AdminLayout, Button, Form } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button, Form } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Loader2, Save, X } from "lucide-react";
 import { PersonnelFormTabs } from "./components/PersonnelFormTabs";
 import { usePersonnelForm } from "./hooks/usePersonnelForm";
@@ -8,8 +9,7 @@ export default function PersonnelCreatePage() {
     usePersonnelForm();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Thêm mới nhân sự"
       description="Thêm hồ sơ nhân sự mới vào hệ thống"
       actions={
@@ -38,6 +38,6 @@ export default function PersonnelCreatePage() {
           <PersonnelFormTabs />
         </Form>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

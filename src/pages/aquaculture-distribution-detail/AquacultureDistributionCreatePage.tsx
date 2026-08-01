@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -16,16 +16,16 @@ import {
   type Step,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  ChevronLeft,
   CheckCircle2,
+  ChevronLeft,
   Fish,
+  Gauge,
   Layers,
   MapPin,
   Plus,
   Target,
   Trash2,
   Waves,
-  Gauge,
 } from "lucide-react";
 import { useAquacultureDistributionCreatePage } from "./hooks/useAquacultureDistributionCreatePage";
 
@@ -121,7 +121,9 @@ const AquacultureDistributionCreatePage = () => {
                   )}
                   <div
                     className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${
-                      isSelected ? "bg-primary text-white" : "bg-slate-100 text-slate-500"
+                      isSelected
+                        ? "bg-primary text-white"
+                        : "bg-slate-100 text-slate-500"
                     }`}
                   >
                     <item.icon className="w-5 h-5" />
@@ -144,7 +146,10 @@ const AquacultureDistributionCreatePage = () => {
               <Label className="text-xs text-muted-foreground">
                 Vùng nuôi <span className="text-red-500">*</span>
               </Label>
-              <Select value={selectedRegionId} onValueChange={setSelectedRegionId}>
+              <Select
+                value={selectedRegionId}
+                onValueChange={setSelectedRegionId}
+              >
                 <SelectTrigger className="bg-white">
                   <SelectValue placeholder="Chọn vùng..." />
                 </SelectTrigger>
@@ -207,23 +212,25 @@ const AquacultureDistributionCreatePage = () => {
                 </Label>
                 <ScrollArea className="max-h-[200px] border rounded-lg p-2 bg-white">
                   <div className="space-y-1">
-                    {selectedAreas.flatMap((area) => area.plots).map((plot) => (
-                      <button
-                        key={plot.id}
-                        type="button"
-                        onClick={() => togglePlot(plot.id)}
-                        className={`w-full flex items-center justify-between p-2 rounded transition-all text-left ${
-                          selectedPlotIds.includes(plot.id)
-                            ? "bg-primary/10 border border-primary/30"
-                            : "hover:bg-slate-50"
-                        }`}
-                      >
-                        <span className="text-sm">{plot.name}</span>
-                        {selectedPlotIds.includes(plot.id) && (
-                          <CheckCircle2 className="w-4 h-4 text-primary" />
-                        )}
-                      </button>
-                    ))}
+                    {selectedAreas
+                      .flatMap((area) => area.plots)
+                      .map((plot) => (
+                        <button
+                          key={plot.id}
+                          type="button"
+                          onClick={() => togglePlot(plot.id)}
+                          className={`w-full flex items-center justify-between p-2 rounded transition-all text-left ${
+                            selectedPlotIds.includes(plot.id)
+                              ? "bg-primary/10 border border-primary/30"
+                              : "hover:bg-slate-50"
+                          }`}
+                        >
+                          <span className="text-sm">{plot.name}</span>
+                          {selectedPlotIds.includes(plot.id) && (
+                            <CheckCircle2 className="w-4 h-4 text-primary" />
+                          )}
+                        </button>
+                      ))}
                   </div>
                 </ScrollArea>
               </div>
@@ -278,8 +285,8 @@ const AquacultureDistributionCreatePage = () => {
                   Nhóm giống
                 </Label>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Mỗi thẻ là một nhóm nuôi, có thể chỉnh tên ao, loài, số lượng và
-                  trọng lượng trung bình.
+                  Mỗi thẻ là một nhóm nuôi, có thể chỉnh tên ao, loài, số lượng
+                  và trọng lượng trung bình.
                 </p>
               </div>
               <Badge variant="outline" className="text-xs shrink-0">
@@ -297,7 +304,12 @@ const AquacultureDistributionCreatePage = () => {
                     <div className="flex items-start justify-between gap-4 mb-5">
                       <div>
                         <div className="text-[10px] uppercase tracking-[0.28em] text-slate-400 font-bold">
-                          Nhóm giống {String(unitEntries.findIndex((item) => item.id === entry.id) + 1).padStart(2, "0")}
+                          Nhóm giống{" "}
+                          {String(
+                            unitEntries.findIndex(
+                              (item) => item.id === entry.id,
+                            ) + 1,
+                          ).padStart(2, "0")}
                         </div>
                         <div className="text-sm font-semibold text-slate-800 mt-1">
                           {entry.name || "Chưa đặt tên"}
@@ -488,7 +500,9 @@ const AquacultureDistributionCreatePage = () => {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Vùng nuôi</span>
-                <span className="font-medium">{selectedRegion?.name || "Chưa xác định"}</span>
+                <span className="font-medium">
+                  {selectedRegion?.name || "Chưa xác định"}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Khu vực đã chọn</span>
@@ -513,20 +527,20 @@ const AquacultureDistributionCreatePage = () => {
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Trọng lượng TB</span>
                 <span className="font-medium">
-                  {averageWeight ? `${averageWeight.toFixed(1)} g` : "Chưa xác định"}
+                  {averageWeight
+                    ? `${averageWeight.toFixed(1)} g`
+                    : "Chưa xác định"}
                 </span>
               </div>
             </CardContent>
           </Card>
-
         </div>
       ),
     },
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Tạo phân bổ thủy sản"
       description="Thiết lập phân bổ nuôi trồng thủy sản mới"
       actions={
@@ -541,7 +555,7 @@ const AquacultureDistributionCreatePage = () => {
         onComplete={handleComplete}
         onCancel={handleCancel}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

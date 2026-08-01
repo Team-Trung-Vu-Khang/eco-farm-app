@@ -1,6 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
 import { useDialogBugWorkaround } from "@/shared/hooks/useDialogBugWorkaround";
 import {
-  AdminLayout,
   Badge,
   Button,
   DataTable,
@@ -67,8 +67,7 @@ const AquacultureGrowthCyclePage = () => {
 
   if (error) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Chu kỳ nuôi thủy sản"
         description="Quản lý các chu kỳ phát triển cho vật nuôi và thủy sản"
       >
@@ -76,13 +75,12 @@ const AquacultureGrowthCyclePage = () => {
           <p className="font-semibold">Lỗi tải dữ liệu</p>
           <p className="text-sm mt-1">{error}</p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chu kỳ nuôi thủy sản"
       description="Quản lý các chu kỳ phát triển cho vật nuôi và thủy sản"
       actions={
@@ -287,7 +285,7 @@ const AquacultureGrowthCyclePage = () => {
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

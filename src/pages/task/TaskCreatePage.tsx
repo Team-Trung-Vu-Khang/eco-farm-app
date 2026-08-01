@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -289,12 +289,12 @@ import useAmendmentPlanStore from "../../stores/useAmendmentPlanStore";
 import { useAmendmentRegimenStore } from "../../stores/useAmendmentRegimenStore";
 import usePersonnelStore from "../../stores/usePersonnelStore";
 import usePlanStore, { type Plan } from "../../stores/usePlanStore";
+import type { Regimen, RegimenStep } from "../../stores/useRegimenStore";
 import useRegionStore from "../../stores/useRegionStore";
 import useTaskStore from "../../stores/useTaskStore";
 import { useTreatmentStore } from "../../stores/useTreatmentStore";
 import GeographicalSelector from "../plan/components/GeographicalSelector";
 import { RegimenSelector } from "../plan/components/RegimenSelector";
-import type { Regimen, RegimenStep } from "../../stores/useRegimenStore";
 import { TaskStageAllocation } from "../plan/components/TaskStageAllocation";
 import type {
   GeographicalSelection,
@@ -321,7 +321,6 @@ const PURPOSE_TO_OBJECTIVE_TYPE: Partial<
   treatment: "tri-benh",
   amendment: "cai-tao-dat",
 };
-
 
 /**
  * "Mục tiêu" options. Plan-backed entries are only offered when at least one
@@ -460,7 +459,7 @@ export default function TaskCreatePage() {
     code: "CV-" + Math.floor(1000 + Math.random() * 9000),
     name: "",
     objectiveType: (presetPlan
-      ? PURPOSE_TO_OBJECTIVE_TYPE[presetPlan.purpose] ?? "phat-sinh"
+      ? (PURPOSE_TO_OBJECTIVE_TYPE[presetPlan.purpose] ?? "phat-sinh")
       : "phat-sinh") as TaskObjectiveType,
     planId: presetPlan ? String(presetPlan.id) : "",
     planName: presetPlan?.name || "",
@@ -500,10 +499,7 @@ export default function TaskCreatePage() {
     return OBJECTIVE_TYPES.filter((type) => {
       if (type.id === "phat-sinh") return true;
       const purposes = OBJECTIVE_PURPOSES[type.id] || [];
-      if (
-        type.id === "cai-tao-dat" &&
-        (amendmentPlans as any[])?.length > 0
-      )
+      if (type.id === "cai-tao-dat" && (amendmentPlans as any[])?.length > 0)
         return true;
       return plans.some((p) => purposes.includes(p.purpose));
     });
@@ -533,7 +529,6 @@ export default function TaskCreatePage() {
   );
 
   const { regions, getPlotById, getRegionById } = useRegionStore();
-
 
   const availableStages = useMemo((): string[] => {
     // Priority 1: If plan has its own selectedStages, use them (task/material allocations reference these)
@@ -909,7 +904,9 @@ export default function TaskCreatePage() {
   // scope, so narrow the region tree to what the plan actually covers.
   const planScopedRegions = useMemo(() => {
     if (!selectedPlan) return regions;
-    const regionIds = ((selectedPlan as any).selectedRegionIds || []).map(String);
+    const regionIds = ((selectedPlan as any).selectedRegionIds || []).map(
+      String,
+    );
     const zoneIds = ((selectedPlan as any).selectedZoneIds || []).map(String);
     const plotIds = ((selectedPlan as any).selectedPlotIds || []).map(String);
     if (!regionIds.length && !zoneIds.length && !plotIds.length) return regions;
@@ -1535,7 +1532,8 @@ export default function TaskCreatePage() {
                   </div>
                 )}
 
-                {(formData.objectiveType === "phat-sinh" || !!formData.planId) && (
+                {(formData.objectiveType === "phat-sinh" ||
+                  !!formData.planId) && (
                   <div className="animation-fade-in border-t pt-2 border-slate-100">
                     <div className="space-y-4 relative">
                       <div className="space-y-2">
@@ -2665,8 +2663,7 @@ export default function TaskCreatePage() {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Phân bổ công việc"
       description="Quy trình 3 bước lập lịch và quản lý nguồn lực"
       actions={
@@ -2684,6 +2681,6 @@ export default function TaskCreatePage() {
           completeLabel="Hoàn tất & Khởi tạo"
         />
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

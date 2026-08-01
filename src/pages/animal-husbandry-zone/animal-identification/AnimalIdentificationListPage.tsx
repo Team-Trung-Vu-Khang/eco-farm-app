@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -30,8 +30,7 @@ const AnimalIdentificationListPage = () => {
   } = useAnimalIdentificationListPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Định danh cá thể/vật nuôi"
       description="Danh sách thông tin định danh và thông số sinh trưởng của vật nuôi"
       actions={
@@ -69,7 +68,7 @@ const AnimalIdentificationListPage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa thông tin định danh của vật nuôi này? Hành động này không thể hoàn tác."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

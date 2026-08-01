@@ -1,8 +1,5 @@
-import {
-  AdminLayout,
-  Button,
-  DeleteDialog,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button, DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { CooperativeTable } from "./components/CooperativeTable";
@@ -40,8 +37,7 @@ export default function CooperativePage() {
   );
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý hợp tác xã"
       description="Quản lý thông tin các hợp tác xã trong hệ thống"
       actions={headerActions}
@@ -77,6 +73,6 @@ export default function CooperativePage() {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa hợp tác xã này? Chỉ có thể xóa khi chưa có dữ liệu gắn kết."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

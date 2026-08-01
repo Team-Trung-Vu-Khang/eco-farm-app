@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -30,8 +30,7 @@ const PlantIdentificationListPage = () => {
   } = usePlantIdentificationListPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Định danh cây trồng"
       description="Danh sách thông tin định danh và thông số sinh trưởng của cây trồng"
       actions={
@@ -69,7 +68,7 @@ const PlantIdentificationListPage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa thông tin định danh của cây này? Hành động này không thể hoàn tác."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

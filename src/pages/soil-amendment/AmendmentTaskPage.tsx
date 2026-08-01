@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -164,8 +164,7 @@ export default function AmendmentTaskPage() {
   const stats = getStatistics();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Công việc cải tạo đất"
       description="Quản lý và theo dõi các công việc cải tạo đất theo kế hoạch"
       actions={
@@ -239,6 +238,6 @@ export default function AmendmentTaskPage() {
         open={detailOpen}
         selectedItem={selectedItem}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

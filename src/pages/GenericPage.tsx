@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   DataTable,
@@ -265,8 +265,7 @@ export function GenericPage({
   useDialogBugWorkaround([formOpen, deleteOpen]);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={title}
       description={description}
       actions={
@@ -316,7 +315,12 @@ export function GenericPage({
                 onChange={(e) =>
                   setFormData({ ...formData, code: e.target.value })
                 }
-                placeholder={editItem ? formData.code : (fieldConfig.code?.placeholder ?? "Tự động sinh nếu để trống")}
+                placeholder={
+                  editItem
+                    ? formData.code
+                    : (fieldConfig.code?.placeholder ??
+                      "Tự động sinh nếu để trống")
+                }
                 disabled={!!editItem}
                 clearable={!editItem}
                 data-testid="input-code"
@@ -441,7 +445,7 @@ export function GenericPage({
         onConfirm={handleConfirmDelete}
         description={`Bạn có chắc chắn muốn xóa ${entityName} này? Chỉ có thể xóa khi chưa có dữ liệu gắn kết.`}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }
 export default GenericPage;

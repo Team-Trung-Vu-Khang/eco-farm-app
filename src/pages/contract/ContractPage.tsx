@@ -1,4 +1,5 @@
-import { AdminLayout, DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ContractStats } from "./components/ContractStats";
 import { ContractTable } from "./components/ContractTable";
 import { useContract } from "./hooks/useContract";
@@ -17,8 +18,7 @@ const ContractPage = () => {
   } = useContract();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý hợp đồng"
       description="Quản lý hợp đồng theo đơn vị sở hữu"
     >
@@ -45,7 +45,7 @@ const ContractPage = () => {
             : ""
         }
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

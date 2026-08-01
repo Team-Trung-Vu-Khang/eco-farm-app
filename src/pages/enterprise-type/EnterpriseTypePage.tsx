@@ -1,6 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
 import type { VsicIndustryTreeRecord } from "@/features/master-data/types/master-data.type";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -149,8 +149,7 @@ const EnterpriseTypePage = () => {
     }, 0) ?? 0;
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Thông tin ngành nghề"
       description="Quản lý danh mục ngành nghề VSIC"
       actions={
@@ -255,7 +254,7 @@ const EnterpriseTypePage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa ngành nghề này? Hành động này không thể hoàn tác."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

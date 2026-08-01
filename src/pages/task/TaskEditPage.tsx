@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -307,7 +307,6 @@ const SelectionCard = ({
   );
 };
 
-
 /**
  * "Mục tiêu" options. Plan-backed entries are only offered when at least one
  * matching plan exists; "phat-sinh" is always available.
@@ -595,10 +594,7 @@ export default function TaskEditPage() {
     return OBJECTIVE_TYPES.filter((type) => {
       if (type.id === "phat-sinh") return true;
       const purposes = OBJECTIVE_PURPOSES[type.id] || [];
-      if (
-        type.id === "cai-tao-dat" &&
-        (amendmentPlans as any[])?.length > 0
-      )
+      if (type.id === "cai-tao-dat" && (amendmentPlans as any[])?.length > 0)
         return true;
       return plans.some((p) => purposes.includes(p.purpose));
     });
@@ -912,7 +908,9 @@ export default function TaskEditPage() {
   // scope, so narrow the region tree to what the plan actually covers.
   const planScopedRegions = useMemo(() => {
     if (!selectedPlan) return regions;
-    const regionIds = ((selectedPlan as any).selectedRegionIds || []).map(String);
+    const regionIds = ((selectedPlan as any).selectedRegionIds || []).map(
+      String,
+    );
     const zoneIds = ((selectedPlan as any).selectedZoneIds || []).map(String);
     const plotIds = ((selectedPlan as any).selectedPlotIds || []).map(String);
     if (!regionIds.length && !zoneIds.length && !plotIds.length) return regions;
@@ -961,7 +959,7 @@ export default function TaskEditPage() {
                       setFormData({ ...formData, name: e.target.value })
                     }
                     placeholder="VD: Bón phân thúc đợt 1"
-                      className="border-slate-200"
+                    className="border-slate-200"
                   />
                 </div>
 
@@ -1010,7 +1008,8 @@ export default function TaskEditPage() {
                   </div>
                 </div>
 
-                {(formData.objectiveType === "phat-sinh" || !!formData.planId) && (
+                {(formData.objectiveType === "phat-sinh" ||
+                  !!formData.planId) && (
                   <div className="space-y-4 pt-2 border-t border-slate-100 animate-in fade-in slide-in-from-top-2">
                     <div className="space-y-4 relative">
                       <div className="space-y-2">
@@ -2653,8 +2652,7 @@ export default function TaskEditPage() {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chỉnh sửa công việc"
       description={`Cập nhật thông tin cho mã: ${task.code}`}
       actions={
@@ -2769,6 +2767,6 @@ export default function TaskEditPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

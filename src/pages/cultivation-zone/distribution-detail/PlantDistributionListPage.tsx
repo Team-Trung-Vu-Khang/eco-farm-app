@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -20,8 +20,7 @@ const PlantDistributionListPage = () => {
   } = usePlantDistributionListPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Phân bổ cây trồng"
       description="Quản lý phân bổ và định vị GPS cho cây trồng"
       actions={
@@ -44,7 +43,7 @@ const PlantDistributionListPage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa phân bổ cây trồng này? Tất cả dữ liệu định vị GPS sẽ bị xóa."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

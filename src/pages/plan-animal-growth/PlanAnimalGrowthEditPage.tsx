@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -1701,8 +1701,7 @@ export default function PlanAnimalGrowthEditPage({
   if (!plan) return null;
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={pageTitle}
       description={pageDescription}
       actions={
@@ -1720,6 +1719,6 @@ export default function PlanAnimalGrowthEditPage({
           completeLabel={completeLabel}
         />
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

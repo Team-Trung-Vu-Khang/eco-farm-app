@@ -1,4 +1,5 @@
-import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft, PencilLine } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import { RoleResponsibilityContent } from "./components/RoleResponsibilityContent";
@@ -20,8 +21,7 @@ export default function RoleResponsibilityDetailPage() {
 
   if (!selectedRole) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Không tìm thấy vai trò"
         description="Vai trò bạn đang xem không còn tồn tại trong hệ thống."
       >
@@ -32,13 +32,12 @@ export default function RoleResponsibilityDetailPage() {
           <ChevronLeft className="mr-2 h-4 w-4" />
           Quay lại danh sách
         </Button>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chi tiết vai trò và trách nhiệm"
       description="Theo dõi cấu hình nghiệp vụ, người dùng phụ trách và tình trạng kiểm tra điều kiện."
       actions={
@@ -71,6 +70,6 @@ export default function RoleResponsibilityDetailPage() {
         standardOptions={standardOptions}
         validationSummary={getValidationSummary(selectedRole, selectedRole.id)}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

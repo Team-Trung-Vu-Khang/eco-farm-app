@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   Card,
   CardContent,
@@ -12,11 +12,11 @@ import { ChevronLeft, Edit } from "lucide-react";
 import { useEffect } from "react";
 import {
   MapContainer,
+  Marker,
   Polygon,
   TileLayer,
   Tooltip,
   useMap,
-  Marker,
 } from "react-leaflet";
 
 import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
@@ -85,33 +85,32 @@ const RegionDetailPage = () => {
 
   if (isLoading) {
     return (
-      <AdminLayout isDev={true} title="Đang tải...">
+      <PageWrapper title="Đang tải...">
         <div className="flex flex-col items-center justify-center p-12">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
           <p className="mt-4 text-muted-foreground">
             Đang tải thông tin vùng trồng...
           </p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (!region) {
     return (
-      <AdminLayout isDev={true} title="Không tìm thấy">
+      <PageWrapper title="Không tìm thấy">
         <div className="flex flex-col items-center justify-center p-8">
           <p className="text-xl mb-4">Vùng trồng không tồn tại</p>
           <Button onClick={() => setLocation("/region-distribution")}>
             Quay lại danh sách
           </Button>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={`Chi tiết: ${region.name}`}
       description={`Mã vùng: ${region.code}`}
       actions={
@@ -318,7 +317,7 @@ const RegionDetailPage = () => {
           </Card>
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

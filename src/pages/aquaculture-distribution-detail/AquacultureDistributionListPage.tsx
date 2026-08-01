@@ -1,5 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
+import useAquacultureDistributionStore from "@/stores/useAquacultureDistributionStore";
 import {
-  AdminLayout,
   Badge,
   Button,
   DataTable,
@@ -9,10 +10,12 @@ import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import type { AquacultureDistribution } from "./AquacultureDistributionDetailPage";
-import useAquacultureDistributionStore from "@/stores/useAquacultureDistributionStore";
 
 const SCOPE_MAP: Record<string, { label: string; color: string }> = {
-  "Vùng nuôi tôm Cần Giờ": { label: "Vùng nuôi", color: "bg-blue-100 text-blue-700" },
+  "Vùng nuôi tôm Cần Giờ": {
+    label: "Vùng nuôi",
+    color: "bg-blue-100 text-blue-700",
+  },
   "Khu nuôi thủy sản Long Sơn": {
     label: "Khu nuôi",
     color: "bg-purple-100 text-purple-700",
@@ -134,8 +137,7 @@ const AquacultureDistributionListPage = () => {
   };
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Phân bổ thủy sản"
       description="Quản lý danh sách phân bổ và định vị GPS cho thủy sản"
       actions={
@@ -151,7 +153,9 @@ const AquacultureDistributionListPage = () => {
         data={records}
         columns={columns}
         selectable={false}
-        onEdit={(item) => setLocation(`/aquaculture-distribution-detail/${item.id}`)}
+        onEdit={(item) =>
+          setLocation(`/aquaculture-distribution-detail/${item.id}`)
+        }
         onDelete={handleDelete}
       />
 
@@ -161,7 +165,7 @@ const AquacultureDistributionListPage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa phân bổ thủy sản này? Hành động này không thể hoàn tác."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

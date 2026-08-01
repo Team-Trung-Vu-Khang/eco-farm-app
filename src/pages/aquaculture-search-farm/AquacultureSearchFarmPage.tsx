@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   cn,
@@ -628,8 +628,7 @@ const AquacultureSearchFarmPage = () => {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Tìm kiếm vùng nuôi trồng"
       description="Tra cứu nhanh vùng nuôi trồng, khu vực quản lý và thông tin mẫu."
     >
@@ -1257,7 +1256,7 @@ const AquacultureSearchFarmPage = () => {
           record={activeFarm}
         />
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

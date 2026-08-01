@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -75,8 +75,7 @@ const VarietyPage = () => {
   } = useVarietyPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý giống cây"
       description="Xem và quản lý danh sách các loại giống cây trồng"
       actions={
@@ -112,7 +111,7 @@ const VarietyPage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa giống cây này?"
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

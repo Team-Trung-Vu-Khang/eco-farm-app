@@ -1,6 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
 import { EnterpriseSelector } from "@/pages/cultivation-zone/cultivation-region/components/EnterpriseSelector";
 import {
-  AdminLayout,
   AutoCompleteSelect,
   Badge,
   Button,
@@ -1689,8 +1689,7 @@ export default function CreateTreatmentPage() {
   );
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={isEdit ? `Cập nhật phác đồ: ${formData.code}` : "Tạo phác đồ mới"}
       description={
         isEdit
@@ -1739,6 +1738,6 @@ export default function CreateTreatmentPage() {
           />
         </CardContent>
       </Card>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

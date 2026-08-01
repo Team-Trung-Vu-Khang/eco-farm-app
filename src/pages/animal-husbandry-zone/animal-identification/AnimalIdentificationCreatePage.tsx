@@ -1,9 +1,10 @@
-import type { Plant } from "@/pages/region-chart/constants";
-import { AdminLayout, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useLocation } from "wouter";
+import PageWrapper from "@/components/PageWrapper";
 import { usePlantIdentificationMutations } from "@/features/farm";
-import { mapFrontendPlantToApiRequest } from "./utils/animalMapper";
+import type { Plant } from "@/pages/region-chart/constants";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useLocation } from "wouter";
 import PlantIdentificationForm from "../animal-husbandry-region/components/PlantIdentificationForm";
+import { mapFrontendPlantToApiRequest } from "./utils/animalMapper";
 
 const AnimalIdentificationCreatePage = () => {
   const [, setLocation] = useLocation();
@@ -34,8 +35,7 @@ const AnimalIdentificationCreatePage = () => {
   };
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Thêm mới cá thể"
       description="Định danh và thiết lập vị trí cho cá thể mới"
     >
@@ -43,7 +43,7 @@ const AnimalIdentificationCreatePage = () => {
         onSubmit={handleSubmit}
         loading={createPlant.isPending}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -32,8 +32,7 @@ const AmendmentMethodPage = () => {
   } = useAmendmentMethodPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Phương pháp cải tạo đất"
       description="Quản lý thư viện các biện pháp kỹ thuật xử lý đất"
       actions={
@@ -83,7 +82,7 @@ const AmendmentMethodPage = () => {
         open={detailOpen}
         selectedItem={selectedItem}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

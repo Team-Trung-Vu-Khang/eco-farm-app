@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -102,7 +102,9 @@ export default function PlanAquacultureGrowthCreatePage({
               <Sprout className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h3 className="font-semibold">Thiết lập kế hoạch nuôi trồng thủy sản</h3>
+              <h3 className="font-semibold">
+                Thiết lập kế hoạch nuôi trồng thủy sản
+              </h3>
               <p className="text-sm text-blue-700">
                 Bắt đầu bằng việc chọn vụ nuôi và đặt tên cho kế hoạch của bạn.
               </p>
@@ -339,7 +341,8 @@ export default function PlanAquacultureGrowthCreatePage({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                        Vùng nuôi trồng thủy sản <span className="text-red-500">*</span>
+                        Vùng nuôi trồng thủy sản{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                     </div>
                     <GeographicalSelector
@@ -583,8 +586,8 @@ export default function PlanAquacultureGrowthCreatePage({
                       </span>
                     </div>
                     <p className="text-xs text-emerald-50/80 leading-relaxed italic text-justify">
-                      Quy trình nuôi trồng thủy sản sẽ được áp dụng đồng bộ cho tất cả
-                      các lô nuôi đã chọn trong danh sách trên.
+                      Quy trình nuôi trồng thủy sản sẽ được áp dụng đồng bộ cho
+                      tất cả các lô nuôi đã chọn trong danh sách trên.
                     </p>
                   </div>
                 </div>
@@ -1697,8 +1700,7 @@ export default function PlanAquacultureGrowthCreatePage({
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={pageTitle}
       description={pageDescription}
       actions={
@@ -1716,6 +1718,6 @@ export default function PlanAquacultureGrowthCreatePage({
           completeLabel={completeLabel}
         />
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

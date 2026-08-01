@@ -1,4 +1,5 @@
-import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft, Save } from "lucide-react";
 import { UnitBasicInfoCard } from "./components/UnitBasicInfoCard";
 import { UnitConfirmDialog } from "./components/UnitConfirmDialog";
@@ -23,8 +24,7 @@ const UnitCreatePage = () => {
   } = useUnitFormPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={isEdit ? "Cập nhật đơn vị tính" : "Thêm mới đơn vị tính"}
       description={
         isEdit
@@ -81,7 +81,7 @@ const UnitCreatePage = () => {
         selectedStandardLabel={selectedStandardLabel}
         onConfirm={handleConfirmSubmit}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

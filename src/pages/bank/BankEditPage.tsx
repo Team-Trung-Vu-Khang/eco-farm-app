@@ -1,8 +1,5 @@
-import {
-  AdminLayout,
-  Button,
-  DeleteDialog,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button, DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Loader2, Save, Trash2, X } from "lucide-react";
 import { BankFormCard } from "./components/BankFormCard";
 import { useBankFormPage } from "./hooks/useBankFormPage";
@@ -27,8 +24,7 @@ export default function BankEditPage() {
 
   if (loading) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Cập nhật tài khoản ngân hàng"
         description="Đang tải dữ liệu chi tiết..."
       >
@@ -38,29 +34,27 @@ export default function BankEditPage() {
             Đang tải dữ liệu chi tiết...
           </div>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (error) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Cập nhật tài khoản ngân hàng"
         description="Không thể tải dữ liệu chi tiết"
       >
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           ⚠️ {error}
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   // Show not found if bank account doesn't exist
   if (notFound) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Không tìm thấy"
         description="Tài khoản ngân hàng không tồn tại"
       >
@@ -73,13 +67,12 @@ export default function BankEditPage() {
             Quay lại danh sách
           </Button>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Cập nhật tài khoản ngân hàng"
       description="Chỉnh sửa thông tin tài khoản ngân hàng"
       actions={
@@ -101,10 +94,7 @@ export default function BankEditPage() {
             <X className="w-4 h-4 mr-2" />
             Hủy bỏ
           </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={isSubmitting || isDeleting}
-          >
+          <Button onClick={handleSubmit} disabled={isSubmitting || isDeleting}>
             {isSubmitting ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -132,6 +122,6 @@ export default function BankEditPage() {
         description={`Bạn có chắc chắn muốn xóa tài khoản ${formData.bankName} - ${formData.accountNumber}?`}
         loading={isDeleting}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

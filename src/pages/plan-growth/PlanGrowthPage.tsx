@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -68,8 +68,7 @@ export default function PlanGrowthPage({
   }, [plans, search]);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý canh tác"
       description="Lập và quản lý kế hoạch theo mùa vụ"
       actions={
@@ -104,6 +103,6 @@ export default function PlanGrowthPage({
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

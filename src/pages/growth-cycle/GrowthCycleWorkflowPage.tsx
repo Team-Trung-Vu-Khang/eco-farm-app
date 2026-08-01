@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Dialog,
@@ -1355,11 +1355,7 @@ export default function GrowthCycleWorkflowPage() {
 
   if (isLoading) {
     return (
-      <AdminLayout
-        isDev
-        title="Workflow chu kì"
-        description="Đang tải dữ liệu..."
-      >
+      <PageWrapper title="Workflow chu kì" description="Đang tải dữ liệu...">
         <div className="flex h-[60vh] items-center justify-center">
           <div className="rounded-2xl border bg-background px-6 py-5 shadow-sm">
             <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -1368,17 +1364,13 @@ export default function GrowthCycleWorkflowPage() {
             </p>
           </div>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (!cycle) {
     return (
-      <AdminLayout
-        isDev
-        title="Workflow chu kì"
-        description="Không tìm thấy dữ liệu"
-      >
+      <PageWrapper title="Workflow chu kì" description="Không tìm thấy dữ liệu">
         <div className="flex h-[60vh] items-center justify-center">
           <div className="max-w-md rounded-2xl border bg-background p-6 text-center shadow-sm">
             <p className="text-lg font-semibold">
@@ -1397,7 +1389,7 @@ export default function GrowthCycleWorkflowPage() {
             </div>
           </div>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
@@ -1422,8 +1414,7 @@ export default function GrowthCycleWorkflowPage() {
           : "Tìm và chọn một kế hoạch có sẵn để đưa vào workflow.";
 
   return (
-    <AdminLayout
-      isDev
+    <PageWrapper
       title="Workflow chu kì"
       description="Trực quan hoá chu kì sinh trưởng, giai đoạn và kế hoạch bằng React Flow"
       actions={
@@ -1765,6 +1756,6 @@ export default function GrowthCycleWorkflowPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

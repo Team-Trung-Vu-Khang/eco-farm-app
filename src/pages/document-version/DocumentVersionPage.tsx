@@ -1,4 +1,5 @@
-import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   CheckCircle2,
   CopyPlus,
@@ -36,8 +37,7 @@ export default function DocumentVersionPage() {
   } = useDocumentVersionPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý phiên bản tài liệu"
       description="Quản trị phiên bản cho SOP, hồ sơ truy xuất, nhật ký mùa vụ và tài liệu chứng nhận với kiểm tra hiệu lực theo thời gian."
       actions={
@@ -129,6 +129,6 @@ export default function DocumentVersionPage() {
         onSubmit={handleSubmit}
         setFormData={setFormData}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

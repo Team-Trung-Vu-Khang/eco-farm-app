@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Tabs,
   TabsContent,
   TabsList,
@@ -16,8 +16,7 @@ const PesticideGroupPage = () => {
   const [activeTab, setActiveTab] = useState<PesticideGroupTab>("purpose");
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Danh mục thuốc BVTV"
       description="Quản lý phân loại thuốc bảo vệ thực vật theo công dụng, độ độc tính và nguồn gốc"
     >
@@ -53,7 +52,7 @@ const PesticideGroupPage = () => {
           <PesticideOriginPage />
         </TabsContent>
       </Tabs>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -32,8 +32,7 @@ const EnterpriseCertificatePage = () => {
   const filterConfig = getFilterConfig(standards);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chứng nhận - Chứng chỉ"
       description="Quản lý chứng nhận cho đơn vị - tổ chức và vùng canh tác"
       actions={
@@ -73,7 +72,7 @@ const EnterpriseCertificatePage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa chứng nhận này?"
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

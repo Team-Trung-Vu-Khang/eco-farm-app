@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   Card,
   CardContent,
@@ -24,45 +24,56 @@ const RegionBasicDistributionLivestockDetailPage = () => {
 
   if (isLoading) {
     return (
-      <AdminLayout isDev={true} title="Đang tải...">
+      <PageWrapper title="Đang tải...">
         <div className="flex flex-col items-center justify-center p-12">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           <p className="mt-4 text-muted-foreground">
             Đang tải thông tin vùng chăn nuôi...
           </p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (!region) {
     return (
-      <AdminLayout isDev={true} title="Không tìm thấy">
+      <PageWrapper title="Không tìm thấy">
         <div className="flex flex-col items-center justify-center p-8">
           <p className="mb-4 text-xl">Vùng chăn nuôi không tồn tại</p>
-          <Button onClick={() => setLocation("/cultivation-region-identification/animal")}>
+          <Button
+            onClick={() =>
+              setLocation("/cultivation-region-identification/animal")
+            }
+          >
             Quay lại danh sách
           </Button>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={`Chi tiết: ${region.name}`}
       description={`Mã vùng: ${region.code || "-"}`}
       actions={
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={() => setLocation("/cultivation-region-identification/animal")}
+            onClick={() =>
+              setLocation("/cultivation-region-identification/animal")
+            }
           >
             <ChevronLeft className="mr-2 h-4 w-4" />
             Quay lại
           </Button>
-          <Button onClick={() => setLocation(`/cultivation-region-identification/animal/edit/${region.id}`)}>
+          <Button
+            onClick={() =>
+              setLocation(
+                `/cultivation-region-identification/animal/edit/${region.id}`,
+              )
+            }
+          >
             <Edit className="mr-2 h-4 w-4" />
             Chỉnh sửa
           </Button>
@@ -140,7 +151,7 @@ const RegionBasicDistributionLivestockDetailPage = () => {
           </CardContent>
         </Card>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

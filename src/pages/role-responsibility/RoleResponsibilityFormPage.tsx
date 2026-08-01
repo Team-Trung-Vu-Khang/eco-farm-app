@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   StepperForm,
   useToast,
@@ -105,8 +105,7 @@ export default function RoleResponsibilityFormPage() {
 
   if (isEdit && !editingRole) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Không tìm thấy vai trò"
         description="Vai trò bạn muốn chỉnh sửa không còn tồn tại trong hệ thống."
       >
@@ -117,13 +116,12 @@ export default function RoleResponsibilityFormPage() {
           <ChevronLeft className="mr-2 h-4 w-4" />
           Quay lại danh sách
         </Button>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={
         isEdit
           ? "Cập nhật vai trò và trách nhiệm"
@@ -156,6 +154,6 @@ export default function RoleResponsibilityFormPage() {
           onCancel={handleBack}
         />
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

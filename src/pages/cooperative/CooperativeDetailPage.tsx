@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   Tabs,
   TabsContent,
@@ -29,22 +29,17 @@ export default function CooperativeDetailPage() {
 
   if (loading) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Chi tiết đơn vị"
-        description="Đang tải thông tin..."
-      >
+      <PageWrapper title="Chi tiết đơn vị" description="Đang tải thông tin...">
         <div className="flex items-center justify-center p-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (error) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Chi tiết đơn vị"
         description="Không thể tải thông tin hợp tác xã"
         actions={
@@ -57,14 +52,13 @@ export default function CooperativeDetailPage() {
         <div className="flex items-center justify-center p-12 text-muted-foreground">
           {error}
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (!data) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Chi tiết đơn vị"
         description="Không tìm thấy hợp tác xã"
         actions={
@@ -77,13 +71,12 @@ export default function CooperativeDetailPage() {
         <div className="flex items-center justify-center p-12 text-muted-foreground">
           Không tìm thấy hợp tác xã
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={data.name}
       description="Chi tiết thông tin hợp tác xã"
       actions={
@@ -157,6 +150,6 @@ export default function CooperativeDetailPage() {
           </Tabs>
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

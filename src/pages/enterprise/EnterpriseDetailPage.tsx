@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   Tabs,
   TabsContent,
@@ -29,28 +29,20 @@ export default function EnterpriseDetailPage() {
 
   if (loading && !data) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Chi tiết đơn vị"
-        description="Đang tải thông tin..."
-      >
+      <PageWrapper title="Chi tiết đơn vị" description="Đang tải thông tin...">
         <div className="flex flex-col items-center justify-center gap-4 p-12">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
           <div className="text-muted-foreground">
             Đang tải thông tin doanh nghiệp...
           </div>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (error) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Chi tiết đơn vị"
-        description="Đang tải thông tin..."
-      >
+      <PageWrapper title="Chi tiết đơn vị" description="Đang tải thông tin...">
         <div className="flex flex-col items-center justify-center gap-4 p-12">
           <div className="font-medium text-destructive">
             Không thể tải thông tin doanh nghiệp
@@ -61,17 +53,13 @@ export default function EnterpriseDetailPage() {
             Quay lại danh sách
           </Button>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (!data) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Chi tiết đơn vị"
-        description="Đang tải thông tin..."
-      >
+      <PageWrapper title="Chi tiết đơn vị" description="Đang tải thông tin...">
         <div className="flex flex-col items-center justify-center gap-4 p-12">
           <div className="text-muted-foreground">
             Không tìm thấy thông tin doanh nghiệp
@@ -81,13 +69,12 @@ export default function EnterpriseDetailPage() {
             Quay lại danh sách
           </Button>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={data.name}
       description={`Chi tiết thông tin ${
         data.type === "enterprise"
@@ -176,6 +163,6 @@ export default function EnterpriseDetailPage() {
           </Tabs>
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

@@ -1,4 +1,5 @@
-import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Target } from "lucide-react";
 
 type Props = {
@@ -7,8 +8,7 @@ type Props = {
 
 export const CultivationRegionNotFoundState = ({ onBack }: Props) => {
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Không tìm thấy"
       description="Vùng chăn nuôi không tồn tại"
     >
@@ -21,6 +21,6 @@ export const CultivationRegionNotFoundState = ({ onBack }: Props) => {
           Quay lại danh sách
         </Button>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };

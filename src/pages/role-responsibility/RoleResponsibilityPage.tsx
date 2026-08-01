@@ -1,8 +1,5 @@
-import {
-  AdminLayout,
-  Button,
-  DeleteDialog,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button, DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { UserCog } from "lucide-react";
 import { RoleLibrarySection } from "./components/RoleLibrarySection";
 import { useRoleResponsibilityPage } from "./hooks/useRoleResponsibilityPage";
@@ -22,8 +19,7 @@ export default function RoleResponsibilityPage() {
   } = useRoleResponsibilityPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý vai trò và trách nhiệm"
       description="Quản trị vai trò theo chức năng nông nghiệp, gắn trách nhiệm, người dùng phụ trách và kiểm tra điều kiện nghiệp vụ phục vụ audit."
       actions={
@@ -47,6 +43,6 @@ export default function RoleResponsibilityPage() {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa vai trò này? Thao tác này sẽ gỡ vai trò khỏi thư viện cấu hình."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

@@ -1,6 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
 import { useDialogBugWorkaround } from "@/shared/hooks/useDialogBugWorkaround";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -52,8 +52,7 @@ const GrowthCyclePage = () => {
   );
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý chu kỳ sinh trưởng"
       description="Quản lý chu kỳ sinh trưởng cho cây trồng"
       actions={
@@ -63,12 +62,12 @@ const GrowthCyclePage = () => {
             className="h-9 px-3 shadow-sm hover:shadow-md transition-all active:scale-95"
           >
             <Plus className="w-4 h-4 mr-2" />
-          Thêm mới
+            Thêm mới
           </Button>
         </Link>
       }
     >
-        <DataTable
+      <DataTable
         data={growthCycles}
         selectable={false}
         columns={growthCycleColumns}
@@ -97,7 +96,7 @@ const GrowthCyclePage = () => {
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

@@ -1,3 +1,4 @@
+import PageWrapper from "@/components/PageWrapper";
 import useCultivationRegionStore from "@/stores/useCultivationRegionStore";
 import usePlanStore from "@/stores/usePlanStore";
 import useProductionCultivationReportStore from "@/stores/useProductionCultivationReportStore";
@@ -5,11 +6,7 @@ import useRegionStore from "@/stores/useRegionStore";
 import useSeasonStore from "@/stores/useSeasonStore";
 import useTaskStore from "@/stores/useTaskStore";
 import { useTreatmentStore } from "@/stores/useTreatmentStore";
-import {
-  AdminLayout,
-  Button,
-  useToast,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Button, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { FileText } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ReportHistoryPanel } from "./components/ReportHistoryPanel";
@@ -244,8 +241,7 @@ export default function ProductionCultivationReportPage() {
   };
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Báo cáo sản xuất/canh tác"
       description="Tổng hợp chỉ tiêu điều hành từ kế hoạch, công việc, mùa vụ và vùng canh tác"
       actions={
@@ -306,6 +302,6 @@ export default function ProductionCultivationReportPage() {
           <EmptyReportState />
         )}
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

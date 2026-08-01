@@ -1,3 +1,4 @@
+import PageWrapper from "@/components/PageWrapper";
 // import {
 //   AdminLayout,
 //   Button,
@@ -28,7 +29,7 @@
 
 //   if (!area) {
 //     return (
-//       <AdminLayout isDev={true}
+//       <PageWrapper
 //
 //         title="Chi tiết khu vực"
 //         description="Không tìm thấy thông tin khu vực"
@@ -44,12 +45,11 @@
 //         <div className="flex items-center justify-center h-64">
 //           <p className="text-muted-foreground">Khu vực không tồn tại</p>
 //         </div>
-//       </AdminLayout>
-//     );
+//       </PageWrapper>//     );
 //   }
 
 //   return (
-//     <AdminLayout isDev={true}
+//     <PageWrapper
 //
 //       description={`Mã khu vực: ${area.id}`}
 //       title={`Chi tiết khu vực: ${area.name}`}
@@ -211,8 +211,7 @@
 //           </Card>
 //         </div>
 //       </div>
-//     </AdminLayout>
-//   );
+//     </PageWrapper>//   );
 // };
 
 // export default AreaDetailPage;

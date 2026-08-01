@@ -1,16 +1,17 @@
-import { AdminLayout, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Trees } from "lucide-react";
-import { useLocation, useParams } from "wouter";
-import PlantIdentificationForm from "./components/PlantIdentificationForm";
+import PageWrapper from "@/components/PageWrapper";
 import {
   usePlantIdentificationById,
   usePlantIdentificationMutations,
 } from "@/features/farm";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Trees } from "lucide-react";
+import { useMemo } from "react";
+import { useLocation, useParams } from "wouter";
+import PlantIdentificationForm from "./components/PlantIdentificationForm";
 import {
   mapApiPlantToFrontend,
   mapFrontendPlantToApiRequest,
 } from "./utils/plantMapper";
-import { useMemo } from "react";
 
 const PlantIdentificationEditPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -47,36 +48,30 @@ const PlantIdentificationEditPage = () => {
 
   if (isLoading) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Đang tải..."
         description="Đang tải thông tin cây trồng"
       >
         <div className="p-12 text-center text-slate-400">
           <p>Đang tải thông tin cây trồng...</p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (!plant) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Không tìm thấy"
-        description="Cây không tồn tại"
-      >
+      <PageWrapper title="Không tìm thấy" description="Cây không tồn tại">
         <div className="p-12 text-center text-slate-400">
           <Trees className="w-16 h-16 mx-auto mb-4 opacity-20" />
           <p>Không tìm thấy thông tin cây trồng để chỉnh sửa.</p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={`Chỉnh sửa: ${plant.code}`}
       description="Cập nhật thông tin định danh và thông số sinh trưởng"
     >
@@ -85,7 +80,7 @@ const PlantIdentificationEditPage = () => {
         onSubmit={handleSubmit}
         loading={updatePlant.isPending}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

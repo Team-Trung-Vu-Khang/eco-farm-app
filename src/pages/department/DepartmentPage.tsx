@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -40,8 +40,7 @@ const DepartmentPage = () => {
   } = useDepartment();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý phòng ban"
       description="Quản lý phòng ban theo đơn vị sở hữu"
       actions={
@@ -95,7 +94,7 @@ const DepartmentPage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa phòng ban này?"
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

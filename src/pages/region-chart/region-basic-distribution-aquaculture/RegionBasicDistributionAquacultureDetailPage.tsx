@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   Card,
   CardContent,
@@ -24,20 +24,20 @@ const RegionBasicDistributionAquacultureDetailPage = () => {
 
   if (isLoading) {
     return (
-      <AdminLayout isDev={true} title="Đang tải...">
+      <PageWrapper title="Đang tải...">
         <div className="flex flex-col items-center justify-center p-12">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           <p className="mt-4 text-muted-foreground">
             Đang tải thông tin vùng nuôi trồng thuỷ sản...
           </p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (!region) {
     return (
-      <AdminLayout isDev={true} title="Không tìm thấy">
+      <PageWrapper title="Không tìm thấy">
         <div className="flex flex-col items-center justify-center p-8">
           <p className="mb-4 text-xl">Vùng nuôi trồng thuỷ sản không tồn tại</p>
           <Button
@@ -48,13 +48,12 @@ const RegionBasicDistributionAquacultureDetailPage = () => {
             Quay lại danh sách
           </Button>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={`Chi tiết: ${region.name}`}
       description={`Mã vùng: ${region.code || "-"}`}
       actions={
@@ -152,7 +151,7 @@ const RegionBasicDistributionAquacultureDetailPage = () => {
           </CardContent>
         </Card>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

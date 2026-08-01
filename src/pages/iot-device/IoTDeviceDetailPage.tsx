@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -102,8 +102,7 @@ export default function IoTDeviceDetailPage() {
   };
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={device.name}
       description={`Chi tiết thiết bị ${device.type} - ${device.imei}`}
       actions={
@@ -525,6 +524,6 @@ export default function IoTDeviceDetailPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

@@ -1,7 +1,7 @@
+import PageWrapper from "@/components/PageWrapper";
 import treeMarkerIcon from "@/assets/tree.webp";
 import useGroupCropStore from "@/stores/useGroupCropStore";
 import {
-  AdminLayout,
   Badge,
   Button,
   Combobox,
@@ -14,6 +14,8 @@ import {
   useToast,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import {
   Award,
   Building2,
@@ -28,10 +30,14 @@ import {
   PanelLeftOpen,
   Search,
 } from "lucide-react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { useEffect, useMemo, useState } from "react";
-import { MapContainer, Marker, Polygon, TileLayer, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  Marker,
+  Polygon,
+  TileLayer,
+  useMap,
+} from "react-leaflet";
 import useCropDetailStore from "../../../stores/useCropDetailStore";
 import useEnterpriseStore from "../../../stores/useEnterpriseStore";
 import useRegionStore from "../../../stores/useRegionStore";
@@ -79,21 +85,20 @@ const MapContent = ({
   zoom: number;
 }) => {
   const toClosedPath = useMemo(
-    () =>
-      (coordinates?: Array<{ lat: number; lng: number }>) => {
-        if (!coordinates || coordinates.length < 3) return [];
+    () => (coordinates?: Array<{ lat: number; lng: number }>) => {
+      if (!coordinates || coordinates.length < 3) return [];
 
-        const path = coordinates.map(
-          (coord) => [coord.lat, coord.lng] as LatLngTuple,
-        );
-        const [firstLat, firstLng] = path[0];
-        const [lastLat, lastLng] = path[path.length - 1];
-        if (firstLat !== lastLat || firstLng !== lastLng) {
-          path.push([firstLat, firstLng]);
-        }
+      const path = coordinates.map(
+        (coord) => [coord.lat, coord.lng] as LatLngTuple,
+      );
+      const [firstLat, firstLng] = path[0];
+      const [lastLat, lastLng] = path[path.length - 1];
+      if (firstLat !== lastLat || firstLng !== lastLng) {
+        path.push([firstLat, firstLng]);
+      }
 
-        return path;
-      },
+      return path;
+    },
     [],
   );
 
@@ -502,13 +507,16 @@ const SearchCropPage = () => {
     }
 
     return {
-      center: [firstCrop.coordinate.lat, firstCrop.coordinate.lng] as LatLngTuple,
+      center: [
+        firstCrop.coordinate.lat,
+        firstCrop.coordinate.lng,
+      ] as LatLngTuple,
       zoom: 15,
     };
   })();
 
   return (
-    <AdminLayout isDev={true} title="Tìm kiếm & Truy xuất nguồn gốc">
+    <PageWrapper title="Tìm kiếm & Truy xuất nguồn gốc">
       <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
         {/* TOP HEADER: Search & Advanced Search */}
         <div className="bg-white border-b rounded-md p-4 z-40 shadow-sm">
@@ -1269,7 +1277,7 @@ const SearchCropPage = () => {
           }
         `}</style>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

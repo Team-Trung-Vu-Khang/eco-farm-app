@@ -1,4 +1,5 @@
-import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft } from "lucide-react";
 import type { GrowthCycle } from "../../growth-cycle/types/types";
 import type { SeasonFormData } from "../types/types";
@@ -48,7 +49,7 @@ export function SeasonFormPage({
   );
 
   return (
-    <AdminLayout isDev={true} title={title} description={description}>
+    <PageWrapper title={title} description={description}>
       <div className="mb-6">
         <Button
           variant="ghost"
@@ -102,6 +103,6 @@ export function SeasonFormPage({
         selectedStages={formData.selectedStages}
         onConfirm={onCycleConfirm}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

@@ -1,8 +1,9 @@
+import PageWrapper from "@/components/PageWrapper";
+import { usePlantIdentificationMutations } from "@/features/farm";
 import type { Plant } from "@/pages/region-chart/constants";
-import { AdminLayout, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useLocation } from "wouter";
 import PlantIdentificationForm from "./components/PlantIdentificationForm";
-import { usePlantIdentificationMutations } from "@/features/farm";
 import { mapFrontendPlantToApiRequest } from "./utils/plantMapper";
 
 const PlantIdentificationCreatePage = () => {
@@ -34,13 +35,15 @@ const PlantIdentificationCreatePage = () => {
   };
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Thêm mới cây trồng"
       description="Định danh và thiết lập vị trí cho cây trồng mới"
     >
-      <PlantIdentificationForm onSubmit={handleSubmit} loading={createPlant.isPending} />
-    </AdminLayout>
+      <PlantIdentificationForm
+        onSubmit={handleSubmit}
+        loading={createPlant.isPending}
+      />
+    </PageWrapper>
   );
 };
 

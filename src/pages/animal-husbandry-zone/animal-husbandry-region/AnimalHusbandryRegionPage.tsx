@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -31,8 +31,7 @@ const AnimalHusbandryRegionPage = () => {
   } = useAnimalHusbandryRegionPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Vùng chăn nuôi"
       description="Quản lý các thiết lập chăn nuôi cho Vùng, Khu vực hoặc Lô"
       actions={
@@ -69,7 +68,7 @@ const AnimalHusbandryRegionPage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa vùng chăn nuôi này? Hành động này không thể hoàn tác."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

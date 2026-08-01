@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -32,8 +32,7 @@ export default function EnterpriseEditPage() {
 
   return (
     <EnterpriseFormContext.Provider value={formState}>
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title={`Cập nhật ${
           formData.type === "enterprise"
             ? "Doanh nghiệp"
@@ -98,7 +97,7 @@ export default function EnterpriseEditPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </AdminLayout>
+      </PageWrapper>{" "}
     </EnterpriseFormContext.Provider>
   );
 }

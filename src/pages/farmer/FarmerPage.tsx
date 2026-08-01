@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -32,8 +32,7 @@ export default function FarmerPage() {
   } = useFarmerPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý nông hộ"
       description="Quản lý thông tin các nông hộ trong hệ thống"
       actions={
@@ -78,6 +77,6 @@ export default function FarmerPage() {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa nông hộ này? Chỉ có thể xóa khi chưa có dữ liệu gắn kết."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

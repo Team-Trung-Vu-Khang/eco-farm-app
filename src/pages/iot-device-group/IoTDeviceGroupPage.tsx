@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -40,8 +40,7 @@ export default function IoTDeviceGroupPage() {
   } = useIoTDeviceGroupPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Nhóm thiết bị IoT"
       description="Quản lý danh sách các nhóm thiết bị IoT"
       actions={
@@ -95,6 +94,6 @@ export default function IoTDeviceGroupPage() {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa nhóm thiết bị IoT này?"
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

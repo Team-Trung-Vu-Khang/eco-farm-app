@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -49,8 +49,7 @@ export default function BankDirectoryPage() {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Danh mục ngân hàng"
       description="Tra cứu thông tin thanh toán quốc tế: SWIFT/BIC code, địa chỉ và mã routing ngân hàng"
       actions={
@@ -119,6 +118,6 @@ export default function BankDirectoryPage() {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa ngân hàng này khỏi danh sách?"
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

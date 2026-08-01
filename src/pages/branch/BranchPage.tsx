@@ -1,7 +1,7 @@
+import PageWrapper from "@/components/PageWrapper";
 import { useBranches, type BranchRecord } from "@/features/branch";
 import { useSelectedWorkspaceId } from "@/features/workspace";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -69,8 +69,7 @@ export default function BranchPage() {
   } = useBranchTable();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý chi nhánh"
       description="Quản lý danh sách chi nhánh của các đơn vị"
       actions={
@@ -126,6 +125,6 @@ export default function BranchPage() {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa chi nhánh này? Dữ liệu liên quan có thể bị ảnh hưởng."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

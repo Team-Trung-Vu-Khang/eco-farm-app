@@ -1,3 +1,4 @@
+import PageWrapper from "@/components/PageWrapper";
 // import {
 //   AdminLayout,
 //   Button,
@@ -37,19 +38,18 @@
 
 //   if (!region) {
 //     return (
-//       <AdminLayout isDev={true}  title="Không tìm thấy">
+//       <PageWrapper  title="Không tìm thấy">
 //         <div className="flex flex-col items-center justify-center p-8">
 //           <p className="text-xl mb-4">Vùng trồng không tồn tại</p>
 //           <Button onClick={() => setLocation("/region-distribution")}>
 //             Quay lại danh sách
 //           </Button>
 //         </div>
-//       </AdminLayout>
-//     );
+//       </PageWrapper>//     );
 //   }
 
 //   return (
-//     <AdminLayout isDev={true}
+//     <PageWrapper
 //
 //       title={`Chi tiết: ${region.name}`}
 //       description={`Mã vùng: ${region.code}`}
@@ -197,8 +197,7 @@
 //           </Card>
 //         </div>
 //       </div>
-//     </AdminLayout>
-//   );
+//     </PageWrapper>//   );
 // };
 
 // export default RegionDetailPage;

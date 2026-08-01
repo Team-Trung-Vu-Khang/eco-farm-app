@@ -1,8 +1,5 @@
-import {
-  AdminLayout,
-  Tabs,
-  TabsContent,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Tabs, TabsContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { GeneralSettingsTab } from "./components/GeneralSettingsTab";
 import { NotificationSettingsTab } from "./components/NotificationSettingsTab";
 import { ProfileSettingsTab } from "./components/ProfileSettingsTab";
@@ -14,8 +11,7 @@ export default function SettingsPage() {
   const { handleSave, loading } = useSettingsPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Cài đặt hệ thống"
       description="Quản lý cấu hình chung, bảo mật và thông báo"
     >
@@ -40,6 +36,6 @@ export default function SettingsPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

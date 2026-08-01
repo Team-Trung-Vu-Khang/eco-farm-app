@@ -1,4 +1,5 @@
-import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Sprout } from "lucide-react";
 import { Link, useParams } from "wouter";
 import useVarietyStore from "../../stores/useVarietyStore";
@@ -36,13 +37,12 @@ export default function VarietyDetailPage({
     );
 
     return isStandalone ? (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Chi tiết giống cây"
         description="Không tìm thấy thông tin"
       >
         {errorContent}
-      </AdminLayout>
+      </PageWrapper>
     ) : (
       errorContent
     );
@@ -53,13 +53,12 @@ export default function VarietyDetailPage({
   );
 
   return isStandalone ? (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chi tiết giống cây"
       description={`Thông tin chi tiết về ${variety.varietyName}`}
     >
       {content}
-    </AdminLayout>
+    </PageWrapper>
   ) : (
     content
   );

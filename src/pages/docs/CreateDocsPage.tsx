@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Card,
   CardContent,
   StepperForm,
@@ -69,8 +69,7 @@ export default function CreateDocsPage() {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Tạo mới tài liệu kỹ thuât"
       description="Thêm tài liệu kỹ thuật vào danh mục hệ thống"
     >
@@ -84,6 +83,6 @@ export default function CreateDocsPage() {
           />
         </CardContent>
       </Card>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

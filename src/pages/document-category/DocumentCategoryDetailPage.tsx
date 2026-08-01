@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -46,8 +46,7 @@ const DocumentCategoryDetailPage = () => {
   if (!category) return null;
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chi tiết danh mục hồ sơ"
       description={`Thông tin thiết lập cho loại tài liệu: ${category.name}`}
       actions={
@@ -246,7 +245,7 @@ const DocumentCategoryDetailPage = () => {
           </Card>
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

@@ -1,6 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  AdminLayout,
   Button,
   Card,
   CardContent,
@@ -175,7 +175,7 @@ export default function VarietyFoundationEditPage() {
 
   if (!isLoadingVariety && !initialValues) {
     return (
-      <AdminLayout isDev={true} title="Không tìm thấy">
+      <PageWrapper title="Không tìm thấy">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin giống cây (nền tảng) này.
@@ -184,13 +184,12 @@ export default function VarietyFoundationEditPage() {
             Quay lại danh sách
           </Button>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chỉnh sửa giống cây (nền tảng)"
       description="Cập nhật thông tin giống cây (nền tảng), đặc tính nông học và tài liệu kỹ thuật"
       actions={
@@ -217,6 +216,6 @@ export default function VarietyFoundationEditPage() {
           />
         </Form>
       </FormProvider>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

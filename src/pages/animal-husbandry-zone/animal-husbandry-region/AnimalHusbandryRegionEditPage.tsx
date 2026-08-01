@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   Card,
   CardContent,
@@ -129,8 +129,7 @@ const CultivationRegionEditPage = () => {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Cập nhật vùng chăn nuôi"
       description="Quy trình khởi tạo và cấu hình tiêu chuẩn cho đơn vị chăn nuôi"
     >
@@ -158,7 +157,7 @@ const CultivationRegionEditPage = () => {
           </div>
         </CardContent>
       </Card>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

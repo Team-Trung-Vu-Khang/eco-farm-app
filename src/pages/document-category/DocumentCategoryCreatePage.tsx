@@ -1,8 +1,5 @@
-import {
-  AdminLayout,
-  Button,
-  useToast,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Save, X } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -57,8 +54,7 @@ const DocumentCategoryCreatePage = () => {
   };
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Tạo danh mục hồ sơ"
       description="Thiết lập các yêu cầu tệp tin cho các đơn vị trong hệ thống"
       actions={
@@ -84,7 +80,7 @@ const DocumentCategoryCreatePage = () => {
         formData={formData}
         onChange={(data) => setFormData((prev) => ({ ...prev, ...data }))}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

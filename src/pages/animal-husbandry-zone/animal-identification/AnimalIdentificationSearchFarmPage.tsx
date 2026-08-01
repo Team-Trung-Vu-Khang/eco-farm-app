@@ -1,7 +1,7 @@
-import useRegionStore from "@/stores/useRegionStore";
+import PageWrapper from "@/components/PageWrapper";
 import useEnterpriseStore from "@/stores/useEnterpriseStore";
+import useRegionStore from "@/stores/useRegionStore";
 import {
-  AdminLayout,
   Badge,
   Button,
   Combobox,
@@ -16,6 +16,7 @@ import {
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
+  Activity,
   Award,
   Building2,
   ChevronRight,
@@ -26,7 +27,6 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Search,
-  Activity,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
@@ -462,7 +462,7 @@ const AnimalIdentificationSearchFarmPage = () => {
   }).length;
 
   return (
-    <AdminLayout isDev={true} title="Tìm kiếm & Truy xuất nguồn gốc chăn nuôi">
+    <PageWrapper title="Tìm kiếm & Truy xuất nguồn gốc chăn nuôi">
       <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
         {/* TOP HEADER: Search & Advanced Search */}
         <div className="bg-white border-b rounded-md p-4 z-40 shadow-sm">
@@ -1046,7 +1046,7 @@ const AnimalIdentificationSearchFarmPage = () => {
           }}
         />
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

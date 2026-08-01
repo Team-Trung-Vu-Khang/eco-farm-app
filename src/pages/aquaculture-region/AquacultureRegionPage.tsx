@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -31,8 +31,7 @@ const AquacultureRegionPage = () => {
   } = useAquacultureRegionPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Vùng nuôi trồng"
       description="Quản lý các thiết lập nuôi trồng cho Vùng, Khu vực hoặc Lô"
       actions={
@@ -69,7 +68,7 @@ const AquacultureRegionPage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa vùng nuôi trồng này? Hành động này không thể hoàn tác."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

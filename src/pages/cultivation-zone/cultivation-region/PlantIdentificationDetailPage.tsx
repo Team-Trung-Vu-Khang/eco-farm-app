@@ -1,5 +1,5 @@
-import { AdminLayout, DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { PlantIdentificationHistoryTabs } from "./components/plant-detail/PlantIdentificationHistoryTabs";
+import PageWrapper from "@/components/PageWrapper";
+import { DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { PlantIdentificationIdentityCard } from "./components/plant-detail/PlantIdentificationIdentityCard";
 import { PlantIdentificationMapSection } from "./components/plant-detail/PlantIdentificationMapSection";
 import { PlantIdentificationNotFoundState } from "./components/plant-detail/PlantIdentificationNotFoundState";
@@ -27,15 +27,14 @@ const PlantIdentificationDetailPage = () => {
 
   if (isLoading) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Đang tải..."
         description="Đang tải chi tiết định danh và vị trí địa lý của cây trồng"
       >
         <div className="p-12 text-center text-slate-400">
           <p>Đang tải thông tin cây trồng...</p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
@@ -46,8 +45,7 @@ const PlantIdentificationDetailPage = () => {
   const { plant, plot, area, region } = data;
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={`Thông tin cây: ${plant.id}`}
       description="Chi tiết định danh và vị trí địa lý của cây trồng"
       actions={
@@ -97,7 +95,7 @@ const PlantIdentificationDetailPage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa thông tin định danh của cây này? Hành động này không thể hoàn tác."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

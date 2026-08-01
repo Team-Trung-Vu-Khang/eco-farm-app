@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -8,8 +8,8 @@ import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import {
-  createPlanAquacultureGrowthColumns,
   aquacultureGrowthFilters,
+  createPlanAquacultureGrowthColumns,
   PlanAquacultureGrowthStatisticsCards,
 } from "./data/aquacultureGrowthTable";
 import { useAquacultureGrowthPage } from "./hooks/useAquacultureGrowthPage";
@@ -68,8 +68,7 @@ export default function PlanAquacultureGrowthPage({
   }, [plans, search]);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý nuôi trồng thủy sản"
       description="Lập và quản lý kế hoạch nuôi trồng thủy sản theo vụ nuôi"
       actions={
@@ -104,6 +103,6 @@ export default function PlanAquacultureGrowthPage({
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

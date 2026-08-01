@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   StepperForm,
   type Step,
@@ -130,8 +130,7 @@ const AnimalDistributionCreatePage = () => {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Tạo phân bổ vật nuôi"
       description="Thiết lập phân bổ vật nuôi cho vùng, khu vực hoặc lô đất"
       actions={
@@ -146,7 +145,7 @@ const AnimalDistributionCreatePage = () => {
         onComplete={handleComplete}
         onCancel={handleCancel}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

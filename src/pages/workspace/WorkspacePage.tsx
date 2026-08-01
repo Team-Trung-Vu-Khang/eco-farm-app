@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -37,8 +37,7 @@ export default function WorkspacePage() {
   } = useWorkspacePage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Danh sách workspace"
       description="Quản lý danh sách workspace"
       actions={
@@ -87,6 +86,6 @@ export default function WorkspacePage() {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa workspace này không?"
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

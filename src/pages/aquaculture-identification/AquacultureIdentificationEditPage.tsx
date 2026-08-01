@@ -1,6 +1,6 @@
-import { AdminLayout, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useParams } from "wouter";
-import { useLocation } from "wouter";
+import PageWrapper from "@/components/PageWrapper";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useLocation, useParams } from "wouter";
 import AquacultureIdentificationForm from "./components/AquacultureIdentificationForm";
 import { AQUACULTURE_IDENTIFICATION_PLANTS } from "./data/dummy";
 
@@ -9,25 +9,25 @@ const AquacultureIdentificationEditPage = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const plant = AQUACULTURE_IDENTIFICATION_PLANTS.find((item) => item.id === id);
+  const plant = AQUACULTURE_IDENTIFICATION_PLANTS.find(
+    (item) => item.id === id,
+  );
 
   if (!plant) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Không tìm thấy"
         description="Dữ liệu định danh mẫu không tồn tại"
       >
         <div className="p-12 text-center text-slate-400">
           <p>Không tìm thấy thông tin để chỉnh sửa.</p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={`Chỉnh sửa: ${plant.code}`}
       description="Cập nhật thông tin định danh và thông số mẫu"
     >
@@ -42,7 +42,7 @@ const AquacultureIdentificationEditPage = () => {
         }}
         loading={false}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

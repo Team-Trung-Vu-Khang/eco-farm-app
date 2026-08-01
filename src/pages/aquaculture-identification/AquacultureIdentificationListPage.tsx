@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -30,8 +30,7 @@ const AquacultureIdentificationListPage = () => {
   } = useAquacultureIdentificationListPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Định danh vùng nuôi trồng"
       description="Danh sách thông tin định danh và thông số mẫu cho vùng nuôi trồng"
       actions={
@@ -69,9 +68,8 @@ const AquacultureIdentificationListPage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa thông tin định danh mẫu này? Hành động này không thể hoàn tác."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 
 export default AquacultureIdentificationListPage;
-

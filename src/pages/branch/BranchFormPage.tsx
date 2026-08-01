@@ -1,5 +1,4 @@
 import {
-  AdminLayout,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -17,6 +16,7 @@ import {
 import { ArrowLeft } from "lucide-react";
 import { FormProvider } from "react-hook-form";
 
+import PageWrapper from "@/components/PageWrapper";
 import { BankingStep } from "./components/steps/BankingStep";
 import { BasicInfoStep } from "./components/steps/BasicInfoStep";
 import { ConfirmStep } from "./components/steps/ConfirmStep";
@@ -91,8 +91,7 @@ export default function BranchFormPage() {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={isEdit ? "Chỉnh sửa Chi nhánh" : "Tạo mới Chi nhánh"}
       description="Điền thông tin theo từng bước để tạo hoặc cập nhật chi nhánh"
       actions={[
@@ -141,6 +140,6 @@ export default function BranchFormPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

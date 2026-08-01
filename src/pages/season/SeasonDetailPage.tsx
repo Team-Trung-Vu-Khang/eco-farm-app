@@ -1,6 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
 import { CROP_OPTIONS } from "@/constants/crops";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -136,8 +136,7 @@ export default function SeasonDetailPage() {
   const seasonType = resolveSeasonType(season);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={`Chi tiết ${season.name}`}
       description="Thông tin chi tiết và tiến độ mùa vụ"
       actions={
@@ -403,6 +402,6 @@ export default function SeasonDetailPage() {
           </Card>
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

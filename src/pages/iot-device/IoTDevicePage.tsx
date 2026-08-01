@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   useToast,
@@ -35,8 +35,7 @@ export default function IoTDevicePage() {
   };
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý thiết bị IoT"
       description="Giám sát trạng thái và dữ liệu từ hệ thống cảm biến, bộ điều khiển"
       actions={
@@ -57,6 +56,6 @@ export default function IoTDevicePage() {
           onEdit={(item) => setLocation(`/iot-device/${item.id}/edit`)}
         />
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

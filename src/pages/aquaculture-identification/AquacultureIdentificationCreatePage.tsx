@@ -1,9 +1,10 @@
-import type { Plant } from "@/pages/region-chart/constants";
-import { AdminLayout, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { useLocation } from "wouter";
+import PageWrapper from "@/components/PageWrapper";
 import { usePlantIdentificationMutations } from "@/features/farm";
-import { mapFrontendPlantToApiRequest } from "./utils/aquacultureMapper";
+import type { Plant } from "@/pages/region-chart/constants";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useLocation } from "wouter";
 import AquacultureIdentificationForm from "./components/AquacultureIdentificationForm";
+import { mapFrontendPlantToApiRequest } from "./utils/aquacultureMapper";
 
 const AquacultureIdentificationCreatePage = () => {
   const [, setLocation] = useLocation();
@@ -35,8 +36,7 @@ const AquacultureIdentificationCreatePage = () => {
   };
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Thêm mới nuôi trồng thủy sản"
       description="Định danh và thiết lập vị trí cho vùng nuôi trồng thủy sản mới"
     >
@@ -44,7 +44,7 @@ const AquacultureIdentificationCreatePage = () => {
         onSubmit={handleSubmit}
         loading={createPlant.isPending}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

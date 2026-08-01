@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   Tabs,
   TabsContent,
@@ -24,8 +24,7 @@ export default function CropFoundationDetailPage() {
 
   if (loading) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Chi tiết cây trồng"
         description="Đang tải thông tin chi tiết về cây trồng"
       >
@@ -35,14 +34,13 @@ export default function CropFoundationDetailPage() {
             Đang tải thông tin cây trồng...
           </span>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (!cropFoundation) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Chi tiết cây trồng"
         description="Thông tin chi tiết về cây trồng"
       >
@@ -52,13 +50,12 @@ export default function CropFoundationDetailPage() {
             Không tìm thấy thông tin cây trồng này.
           </p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chi tiết cây trồng"
       description={`Quản lý và theo dõi thông tin chi tiết về ${cropFoundation.name}`}
       actions={
@@ -107,6 +104,6 @@ export default function CropFoundationDetailPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

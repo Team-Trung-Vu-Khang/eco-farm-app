@@ -1,10 +1,10 @@
-import { AdminLayout, Badge } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Badge } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Loader2, Sparkles } from "lucide-react";
+import PageWrapper from "./PageWrapper";
 
 export function AppLoadingState() {
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Đang tải ứng dụng"
       description="Vui lòng chờ vài giây, hệ thống đang nạp giao diện."
     >
@@ -46,6 +46,6 @@ export function AppLoadingState() {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

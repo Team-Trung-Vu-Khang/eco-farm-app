@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Dialog,
@@ -42,8 +42,8 @@ import {
   useSystemGrowthCycleTemplateById,
   useUserGrowthCycleTemplateById,
 } from "../../../features/foundation";
-import usePlanStore from "../../../stores/usePlanStore";
 import type { Plan } from "../../../stores/usePlanStore";
+import usePlanStore from "../../../stores/usePlanStore";
 import useRegionStore from "../../../stores/useRegionStore";
 import { summarizePlanSelections } from "../../plan/utils/location";
 import type {
@@ -232,9 +232,7 @@ function getPlanRegionLabels(plan: Plan, regions: any[]) {
 
   return summaries.map((group) => {
     const itemLabel = group.items.map((item) => item.name).join(", ");
-    return itemLabel
-      ? `${group.regionName} (${itemLabel})`
-      : group.regionName;
+    return itemLabel ? `${group.regionName} (${itemLabel})` : group.regionName;
   });
 }
 
@@ -342,24 +340,28 @@ function getPlanWorkerSummary(plan: Plan) {
   }, 0);
 
   if (totalWorkers > 0) return `${totalWorkers} nhân lực`;
-  if (plan.taskAllocations.length > 0) return `${plan.taskAllocations.length} nhóm nhân lực`;
+  if (plan.taskAllocations.length > 0)
+    return `${plan.taskAllocations.length} nhóm nhân lực`;
   return "Chưa phân bổ";
 }
 
 function getPlanMaterialSummary(plan: Plan) {
-  const categoryCounts = plan.materialAllocations.reduce<Record<string, number>>(
-    (acc, allocation) => {
-      const normalized = allocation.materialCategory?.trim() || "Vật tư khác";
-      acc[normalized] = (acc[normalized] || 0) + 1;
-      return acc;
-    },
-    {},
-  );
+  const categoryCounts = plan.materialAllocations.reduce<
+    Record<string, number>
+  >((acc, allocation) => {
+    const normalized = allocation.materialCategory?.trim() || "Vật tư khác";
+    acc[normalized] = (acc[normalized] || 0) + 1;
+    return acc;
+  }, {});
 
   const preferredOrder = ["Máy móc", "Thuốc BTVT", "Phân bón"];
   const orderedEntries = [
-    ...preferredOrder.filter((key) => categoryCounts[key]).map((key) => [key, categoryCounts[key]] as const),
-    ...Object.entries(categoryCounts).filter(([key]) => !preferredOrder.includes(key)),
+    ...preferredOrder
+      .filter((key) => categoryCounts[key])
+      .map((key) => [key, categoryCounts[key]] as const),
+    ...Object.entries(categoryCounts).filter(
+      ([key]) => !preferredOrder.includes(key),
+    ),
   ];
 
   if (!orderedEntries.length) return "Chưa phân bổ";
@@ -531,10 +533,7 @@ export default function AnimalGrowthCycleWorkflowPage() {
     cycle?.productionSubject?.name ||
     "Vùng chăn nuôi";
 
-  const openNodeDialog = (
-    mode: NodeDialogMode,
-    context: NodeDialogContext,
-  ) => {
+  const openNodeDialog = (mode: NodeDialogMode, context: NodeDialogContext) => {
     setNodeDialogContext(context);
     setNodeDialogMode(mode);
     setNodeDialogOpen(true);
@@ -700,7 +699,8 @@ export default function AnimalGrowthCycleWorkflowPage() {
             {
               label: "Chỉnh sửa",
               icon: PencilLine,
-              onClick: () => setLocation(`/animal-growth-cycle/${cycle.id}/edit`),
+              onClick: () =>
+                setLocation(`/animal-growth-cycle/${cycle.id}/edit`),
             },
             {
               label: "Thêm node",
@@ -740,7 +740,10 @@ export default function AnimalGrowthCycleWorkflowPage() {
             },
             {
               label: "Mô tả",
-              value: stage.document?.type === "pdf" ? "Đính kèm tài liệu" : "Nội dung mô tả",
+              value:
+                stage.document?.type === "pdf"
+                  ? "Đính kèm tài liệu"
+                  : "Nội dung mô tả",
             },
           ],
           description:
@@ -1160,8 +1163,7 @@ export default function AnimalGrowthCycleWorkflowPage() {
     if (!cycle || !nodeDialogContext) return;
 
     const nodeId = createNodeId("stage");
-    const title =
-      stageDraft.name.trim() || `Giai đoạn ${stages.length + 1}`;
+    const title = stageDraft.name.trim() || `Giai đoạn ${stages.length + 1}`;
     const duration = stageDraft.duration.trim() || "Chưa xác định";
     const description =
       stageDraft.description.trim() || "Chưa có mô tả cho giai đoạn này.";
@@ -1369,11 +1371,7 @@ export default function AnimalGrowthCycleWorkflowPage() {
 
   if (isLoading) {
     return (
-      <AdminLayout
-        isDev
-        title="Workflow chu kì"
-        description="Đang tải dữ liệu..."
-      >
+      <PageWrapper title="Workflow chu kì" description="Đang tải dữ liệu...">
         <div className="flex h-[60vh] items-center justify-center">
           <div className="rounded-2xl border bg-background px-6 py-5 shadow-sm">
             <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -1382,17 +1380,13 @@ export default function AnimalGrowthCycleWorkflowPage() {
             </p>
           </div>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (!cycle) {
     return (
-      <AdminLayout
-        isDev
-        title="Workflow chu kì"
-        description="Không tìm thấy dữ liệu"
-      >
+      <PageWrapper title="Workflow chu kì" description="Không tìm thấy dữ liệu">
         <div className="flex h-[60vh] items-center justify-center">
           <div className="max-w-md rounded-2xl border bg-background p-6 text-center shadow-sm">
             <p className="text-lg font-semibold">
@@ -1411,7 +1405,7 @@ export default function AnimalGrowthCycleWorkflowPage() {
             </div>
           </div>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
@@ -1436,8 +1430,7 @@ export default function AnimalGrowthCycleWorkflowPage() {
           : "Tìm và chọn một kế hoạch có sẵn để đưa vào workflow.";
 
   return (
-    <AdminLayout
-      isDev
+    <PageWrapper
       title="Workflow chu kì"
       description="Trực quan hoá chu kì sinh trưởng, giai đoạn và kế hoạch bằng React Flow"
       actions={
@@ -1673,48 +1666,60 @@ export default function AnimalGrowthCycleWorkflowPage() {
                                 ? "border-primary bg-primary/5 shadow-sm"
                                 : "border-slate-200 bg-white hover:border-primary/30 hover:bg-slate-50",
                             ].join(" ")}
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <h3 className="truncate font-semibold text-slate-900">
-                                      {plan.name}
-                                    </h3>
-                                    {isSelected && (
-                                      <Check className="h-4 w-4 text-primary" />
-                                    )}
-                                  </div>
-                                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
-                                    {plan.description || "Không có mô tả"}
-                                  </p>
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="truncate font-semibold text-slate-900">
+                                    {plan.name}
+                                  </h3>
+                                  {isSelected && (
+                                    <Check className="h-4 w-4 text-primary" />
+                                  )}
                                 </div>
-                                <div className="flex shrink-0 flex-col items-end gap-2">
-                                  <Badge variant="secondary">{plan.code}</Badge>
-                                  <Badge variant="outline">{statusLabel}</Badge>
-                                </div>
+                                <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                                  {plan.description || "Không có mô tả"}
+                                </p>
                               </div>
+                              <div className="flex shrink-0 flex-col items-end gap-2">
+                                <Badge variant="secondary">{plan.code}</Badge>
+                                <Badge variant="outline">{statusLabel}</Badge>
+                              </div>
+                            </div>
 
-                              <div className="mt-3 text-xs text-slate-600">
-                                {getPlanStageLabel(plan)}
-                              </div>
+                            <div className="mt-3 text-xs text-slate-600">
+                              {getPlanStageLabel(plan)}
+                            </div>
 
-                              <div className="mt-3 grid grid-cols-2 gap-2">
-                                <Badge variant="outline" className="justify-center">
-                                  {getDurationLabel(plan.startDate, plan.endDate)}
-                                </Badge>
-                                <Badge variant="outline" className="justify-center">
-                                  {`${plan.selectedStages.length} giai đoạn`}
-                                </Badge>
-                                <Badge variant="outline" className="justify-center">
-                                  {getPlanWorkerSummary(plan)}
-                                </Badge>
-                                <Badge variant="outline" className="justify-center">
-                                  {getPlanMaterialSummary(plan)}
-                                </Badge>
-                              </div>
-                            </button>
-                          );
-                        })
+                            <div className="mt-3 grid grid-cols-2 gap-2">
+                              <Badge
+                                variant="outline"
+                                className="justify-center"
+                              >
+                                {getDurationLabel(plan.startDate, plan.endDate)}
+                              </Badge>
+                              <Badge
+                                variant="outline"
+                                className="justify-center"
+                              >
+                                {`${plan.selectedStages.length} giai đoạn`}
+                              </Badge>
+                              <Badge
+                                variant="outline"
+                                className="justify-center"
+                              >
+                                {getPlanWorkerSummary(plan)}
+                              </Badge>
+                              <Badge
+                                variant="outline"
+                                className="justify-center"
+                              >
+                                {getPlanMaterialSummary(plan)}
+                              </Badge>
+                            </div>
+                          </button>
+                        );
+                      })
                     )}
                   </div>
                 </ScrollArea>
@@ -1765,6 +1770,6 @@ export default function AnimalGrowthCycleWorkflowPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

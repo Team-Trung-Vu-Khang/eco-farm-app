@@ -1,6 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  AdminLayout,
   Button,
   Card,
   CardContent,
@@ -77,8 +77,7 @@ const AquacultureRegionCreatePage = () => {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={
         isEditMode ? "Cập nhật vùng nuôi trồng" : "Thiết lập vùng nuôi trồng"
       }
@@ -114,7 +113,7 @@ const AquacultureRegionCreatePage = () => {
           </div>
         </CardContent>
       </Card>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

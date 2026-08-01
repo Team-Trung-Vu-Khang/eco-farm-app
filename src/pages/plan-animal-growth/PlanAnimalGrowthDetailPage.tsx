@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -29,8 +29,8 @@ import {
   Sprout,
   Trash2,
   Users,
-  Wrench,
   Workflow,
+  Wrench,
 } from "lucide-react";
 import { useMemo } from "react";
 import { useAnimalGrowthDetailPage } from "./hooks/useAnimalGrowthDetailPage";
@@ -109,8 +109,7 @@ export default function PlanAnimalGrowthDetailPage({
   }, [plan, regions]);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chi tiết kế hoạch chăn nuôi"
       description={`Xem thông tin chi tiết kế hoạch ${plan.code}`}
     >
@@ -724,6 +723,6 @@ export default function PlanAnimalGrowthDetailPage({
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

@@ -1,6 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  AdminLayout,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -67,8 +67,7 @@ export default function CreateAnimalGrowthCyclePage() {
     useCreateAnimalGrowthCycleForm();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Thêm mới chu kỳ sinh trưởng"
       description="Thiết lập các giai đoạn phát triển cho vật nuôi"
       actions={[
@@ -165,6 +164,6 @@ export default function CreateAnimalGrowthCyclePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

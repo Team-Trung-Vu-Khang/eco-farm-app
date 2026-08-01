@@ -1,11 +1,12 @@
-import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft, PencilLine } from "lucide-react";
 import { useLocation, useRoute, useSearch } from "wouter";
+import useTaskStore from "../../stores/useTaskStore";
 import {
   TaskDetailBody,
   TaskDetailHeader,
 } from "./components/TaskDetailContent";
-import useTaskStore from "../../stores/useTaskStore";
 
 export default function TaskDetailPage() {
   const [, setLocation] = useLocation();
@@ -21,8 +22,7 @@ export default function TaskDetailPage() {
 
   if (!task) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Không tìm thấy công việc"
         description="Công việc bạn đang xem không còn tồn tại trong hệ thống."
       >
@@ -30,13 +30,12 @@ export default function TaskDetailPage() {
           <ChevronLeft className="mr-2 h-4 w-4" />
           Quay lại danh sách
         </Button>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chi tiết công việc"
       description={`Mã công việc: ${task.code}`}
       actions={
@@ -56,6 +55,6 @@ export default function TaskDetailPage() {
         <TaskDetailHeader task={task} />
         <TaskDetailBody task={task} />
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

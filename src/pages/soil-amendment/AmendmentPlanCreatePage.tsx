@@ -1,7 +1,7 @@
+import PageWrapper from "@/components/PageWrapper";
 import useRegionStore from "@/stores/useRegionStore";
 import useSeasonStore from "@/stores/useSeasonStore";
 import {
-  AdminLayout,
   StepperForm,
   useToast,
   type Step,
@@ -308,8 +308,7 @@ export default function AmendmentPlanCreatePage() {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={isEdit ? "Cập nhật kế hoạch cải tạo" : "Lập kế hoạch cải tạo mới"}
       description="Xây dựng phương án xử lý đất, phân bổ nguồn lực và giám sát thực hiện"
     >
@@ -330,6 +329,6 @@ export default function AmendmentPlanCreatePage() {
         open={personnelDialogOpen}
         selectedName={formData.technician}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

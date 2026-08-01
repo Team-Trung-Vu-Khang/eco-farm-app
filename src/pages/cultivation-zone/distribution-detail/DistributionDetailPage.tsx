@@ -1,7 +1,6 @@
-import treeMarkerIcon from "@/assets/tree.webp";
+import PageWrapper from "@/components/PageWrapper";
 import usePlantDistributionStore from "@/stores/usePlantDistributionStore";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -15,6 +14,8 @@ import {
   TabsTrigger,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import {
   Download,
   Edit,
@@ -25,15 +26,13 @@ import {
   Target,
   Trees,
 } from "lucide-react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { useEffect, useMemo, useState } from "react";
-import { MapContainer, Marker, Polygon, TileLayer, useMap } from "react-leaflet";
+import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import { useLocation, useRoute } from "wouter";
 import { MOCK_SEEDS } from "./constants";
 
-import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
 import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
+import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
 import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 // --- Mock Data ---
@@ -196,22 +195,17 @@ const DistributionDetailPage = () => {
 
   if (!detailData) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Không tìm thấy"
-        description="Bản ghi không tồn tại"
-      >
+      <PageWrapper title="Không tìm thấy" description="Bản ghi không tồn tại">
         <div className="text-sm text-muted-foreground">
           Không có dữ liệu phân bổ.
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
-  const mapCenter =
-    (plants[0]?.coordinate
-      ? ([plants[0].coordinate.lat, plants[0].coordinate.lng] as LatLngTuple)
-      : ([11.558, 107.134] as LatLngTuple));
+  const mapCenter = plants[0]?.coordinate
+    ? ([plants[0].coordinate.lat, plants[0].coordinate.lng] as LatLngTuple)
+    : ([11.558, 107.134] as LatLngTuple);
 
   const plantColumns: Column<PlantLocation>[] = [
     {
@@ -252,9 +246,7 @@ const DistributionDetailPage = () => {
     {
       key: "height",
       label: "Chiều cao",
-      render: (v: unknown) => (
-        <span className="text-xs">{String(v)} cm</span>
-      ),
+      render: (v: unknown) => <span className="text-xs">{String(v)} cm</span>,
     },
     {
       key: "coordinate",
@@ -313,8 +305,7 @@ const DistributionDetailPage = () => {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={detailData.name}
       description={`Mã: ${detailData.code} • Tạo ngày ${detailData.createdAt}`}
       actions={
@@ -567,7 +558,7 @@ const DistributionDetailPage = () => {
           <DataTable columns={historyColumns} data={history} />
         </TabsContent>
       </Tabs>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

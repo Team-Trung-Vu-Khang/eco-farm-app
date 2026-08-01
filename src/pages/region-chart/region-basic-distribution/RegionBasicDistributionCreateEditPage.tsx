@@ -1,5 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import { FormProvider, useForm } from "react-hook-form";
 
@@ -42,8 +43,7 @@ const RegionBasicDistributionCreateEditPage = () => {
     useRegionBasicCreateForm(reset);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={isEditMode ? "Cập nhật vùng trồng" : "Thêm mới vùng trồng"}
       description="Quản lý vùng trồng với giao diện cơ bản"
       actions={
@@ -84,7 +84,7 @@ const RegionBasicDistributionCreateEditPage = () => {
           </div>
         </FormProvider>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

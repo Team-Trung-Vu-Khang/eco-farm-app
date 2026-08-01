@@ -1,8 +1,5 @@
-import {
-  AdminLayout,
-  Button,
-  StepperForm,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button, StepperForm } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
 import MaterialSubmitConfirmDialog from "./components/MaterialSubmitConfirmDialog";
 import { useMaterialCreatePage } from "./hooks/useMaterialCreatePage";
@@ -20,8 +17,7 @@ const MaterialCreatePage = () => {
   } = useMaterialCreatePage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={isEdit ? "Cập nhật vật tư" : "Thêm mới vật tư"}
       description={
         isEdit
@@ -57,7 +53,7 @@ const MaterialCreatePage = () => {
         formData={formData}
         onConfirm={handleConfirmSubmit}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -20,8 +20,7 @@ const AnimalDistributionListPage = () => {
   } = useAnimalDistributionListPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Phân bổ vật nuôi"
       description="Quản lý phân bổ và định vị GPS cho vật nuôi"
       actions={
@@ -44,7 +43,7 @@ const AnimalDistributionListPage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa phân bổ vật nuôi này? Tất cả dữ liệu định vị GPS sẽ bị xóa."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

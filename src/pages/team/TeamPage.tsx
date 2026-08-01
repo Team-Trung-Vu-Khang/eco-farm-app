@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -35,8 +35,7 @@ export default function TeamPage() {
   } = useTeamPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý đội nhóm"
       description="Danh sách các đội / nhóm làm việc"
       actions={
@@ -98,6 +97,6 @@ export default function TeamPage() {
         onOpenChange={setImportOpen}
         onImport={handleImportData}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

@@ -1,4 +1,5 @@
-import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Minimize2 } from "lucide-react";
 import areaData from "../../../assets/map/area.json";
 import plotData from "../../../assets/map/plot.json";
@@ -118,8 +119,7 @@ export default function SoilAmendmentMapPage() {
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Bản đồ cải tạo đất"
       description="Phân tích chất lượng đất và kế hoạch cải tạo"
       actions={
@@ -133,6 +133,6 @@ export default function SoilAmendmentMapPage() {
     >
       {content}
       {dialog}
-    </AdminLayout>
+    </PageWrapper>
   );
 }

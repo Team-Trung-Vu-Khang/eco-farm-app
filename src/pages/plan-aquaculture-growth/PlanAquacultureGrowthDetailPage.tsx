@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -29,8 +29,8 @@ import {
   Sprout,
   Trash2,
   Users,
-  Wrench,
   Workflow,
+  Wrench,
 } from "lucide-react";
 import { useMemo } from "react";
 import { useAquacultureGrowthDetailPage } from "./hooks/useAquacultureGrowthDetailPage";
@@ -108,8 +108,7 @@ export default function PlanAquacultureGrowthDetailPage({
   }, [plan, regions]);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chi tiết kế hoạch"
       description={`Xem thông tin chi tiết kế hoạch ${plan.code}`}
     >
@@ -723,6 +722,6 @@ export default function PlanAquacultureGrowthDetailPage({
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

@@ -1,8 +1,5 @@
-import {
-  AdminLayout,
-  Button,
-  DeleteDialog,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button, DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Bug, Plus } from "lucide-react";
 import { useLocation } from "wouter";
 import { MaterialDetailModal } from "./components/MaterialDetailModal";
@@ -36,8 +33,7 @@ export default function TreatmentPage() {
   } = useTreatmentPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Phác đồ điều trị"
       description="Hệ thống quản lý quy trình kỹ thuật & sâu bệnh"
       actions={
@@ -102,6 +98,6 @@ export default function TreatmentPage() {
         open={materialModalOpen}
         onOpenChange={setMaterialModalOpen}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   Card,
   CardContent,
@@ -113,8 +113,7 @@ export default function CropFoundationEditPage() {
   const cropName = methods.watch("name");
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={`Cập nhật thông tin: ${cropName || "Đang tải..."}`}
       description="Chỉnh sửa thông tin kỹ thuật và tài liệu của cây trồng"
       actions={[
@@ -133,6 +132,6 @@ export default function CropFoundationEditPage() {
           isSubmitting={isSubmitting}
         />
       </FormProvider>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

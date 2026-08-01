@@ -1,5 +1,5 @@
+import useAquacultureDistributionStore from "@/stores/useAquacultureDistributionStore";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -13,6 +13,8 @@ import {
   TabsTrigger,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import {
   Download,
   Droplets,
@@ -23,15 +25,19 @@ import {
   Target,
   Waves,
 } from "lucide-react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { useEffect, useMemo, useState } from "react";
-import { MapContainer, Marker, Polygon, TileLayer, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  Marker,
+  Polygon,
+  TileLayer,
+  useMap,
+} from "react-leaflet";
 import { useLocation, useRoute } from "wouter";
-import useAquacultureDistributionStore from "@/stores/useAquacultureDistributionStore";
 
-import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
+import PageWrapper from "@/components/PageWrapper";
 import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
+import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
 import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 type LatLngTuple = [number, number];
@@ -300,15 +306,11 @@ const AquacultureDistributionDetailPage = () => {
 
   if (!detailData) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Không tìm thấy"
-        description="Bản ghi không tồn tại"
-      >
+      <PageWrapper title="Không tìm thấy" description="Bản ghi không tồn tại">
         <div className="text-sm text-muted-foreground">
           Không có dữ liệu phân bổ thủy sản.
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
@@ -331,7 +333,9 @@ const AquacultureDistributionDetailPage = () => {
           <div className="font-semibold text-slate-800 text-sm">
             {String(value)}
           </div>
-          <div className="text-[10px] text-muted-foreground">{item.species}</div>
+          <div className="text-[10px] text-muted-foreground">
+            {item.species}
+          </div>
         </div>
       ),
     },
@@ -371,7 +375,9 @@ const AquacultureDistributionDetailPage = () => {
     {
       key: "weight",
       label: "Cỡ trung bình",
-      render: (value: unknown) => <span className="text-xs">{String(value)} g</span>,
+      render: (value: unknown) => (
+        <span className="text-xs">{String(value)} g</span>
+      ),
     },
     {
       key: "coordinate",
@@ -419,7 +425,9 @@ const AquacultureDistributionDetailPage = () => {
     {
       key: "details",
       label: "Chi tiết",
-      render: (value: unknown) => <span className="text-sm">{String(value)}</span>,
+      render: (value: unknown) => (
+        <span className="text-sm">{String(value)}</span>
+      ),
     },
     {
       key: "performedBy",
@@ -433,8 +441,7 @@ const AquacultureDistributionDetailPage = () => {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={detailData.name}
       description={`Mã: ${detailData.code} • Tạo ngày ${detailData.stockedDate}`}
       actions={
@@ -623,7 +630,10 @@ const AquacultureDistributionDetailPage = () => {
                           <span>{variety.name}</span>
                           <span className="text-muted-foreground">
                             {variety.count.toLocaleString("vi-VN")} con (
-                            {((variety.count / detailData.totalStock) * 100).toFixed(0)}
+                            {(
+                              (variety.count / detailData.totalStock) *
+                              100
+                            ).toFixed(0)}
                             %)
                           </span>
                         </div>
@@ -662,8 +672,12 @@ const AquacultureDistributionDetailPage = () => {
                       </span>
                     </div>
                     <div className="p-3 flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground">Ngày thả giống</span>
-                      <span className="font-medium">{detailData.stockedDate}</span>
+                      <span className="text-muted-foreground">
+                        Ngày thả giống
+                      </span>
+                      <span className="font-medium">
+                        {detailData.stockedDate}
+                      </span>
                     </div>
                     <div className="p-3 flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">
@@ -677,11 +691,15 @@ const AquacultureDistributionDetailPage = () => {
                       <span className="text-muted-foreground">
                         Nhiệt độ nước
                       </span>
-                      <span className="font-medium">{detailData.waterTemp} °C</span>
+                      <span className="font-medium">
+                        {detailData.waterTemp} °C
+                      </span>
                     </div>
                     <div className="p-3 flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Độ mặn</span>
-                      <span className="font-medium">{detailData.salinity} ppt</span>
+                      <span className="font-medium">
+                        {detailData.salinity} ppt
+                      </span>
                     </div>
                   </div>
                 </CardContent>
@@ -698,7 +716,7 @@ const AquacultureDistributionDetailPage = () => {
           <DataTable columns={historyColumns} data={history} />
         </TabsContent>
       </Tabs>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

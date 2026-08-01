@@ -1,4 +1,5 @@
-import { AdminLayout, Button, DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button, DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { LegalIdentificationTable } from "./components/LegalIdentificationTable";
 import { useLegalIdentificationPage } from "./hooks/useLegalIdentificationPage";
@@ -27,8 +28,7 @@ export default function LegalIdentificationPage() {
   } = useLegalIdentificationPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Định danh pháp lý"
       description="Danh sách hồ sơ pháp lý cho vùng trồng, khu vực và giấy tờ đính kèm."
       actions={
@@ -71,6 +71,6 @@ export default function LegalIdentificationPage() {
         title="Xóa hồ sơ pháp lý"
         description="Bạn có chắc chắn muốn xóa hồ sơ pháp lý này? Hành động này không thể hoàn tác."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

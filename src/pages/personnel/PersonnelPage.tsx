@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -33,8 +33,7 @@ export default function PersonnelPage() {
   } = usePersonnel();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý nhân sự"
       description="Danh sách nhân sự của đơn vị"
       actions={
@@ -98,6 +97,6 @@ export default function PersonnelPage() {
         onOpenChange={setImportOpen}
         onImport={handleImportData}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -22,8 +22,7 @@ export default function MaterialPage() {
   } = useMaterialPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý vật liệu"
       description="Quản lý danh mục vật tư, thiết bị, dụng cụ"
       actions={
@@ -47,6 +46,6 @@ export default function MaterialPage() {
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

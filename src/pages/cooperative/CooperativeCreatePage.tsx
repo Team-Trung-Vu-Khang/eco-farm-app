@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -177,8 +177,7 @@ export default function CooperativeCreatePage() {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Tạo mới Hợp tác xã"
       description="Điền thông tin theo từng bước để tạo mới hợp tác xã"
       actions={
@@ -219,6 +218,6 @@ export default function CooperativeCreatePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

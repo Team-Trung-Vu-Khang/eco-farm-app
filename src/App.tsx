@@ -1,6 +1,12 @@
-import { Route, Switch, useLocation } from "wouter";
+import {
+  AdminLayout,
+  RadixToaster,
+  TooltipProvider,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { lazy, Suspense, useEffect } from "react";
+import { Route, Switch, useLocation } from "wouter";
 import { AppLoadingState } from "./components/AppLoadingState";
+import { AuthWrapper } from "./features/auth/components/AuthWrapper";
 const TerrainPage = lazy(() => import("./pages/terrain/TerrainPage"));
 
 const EnterprisePage = lazy(() => import("./pages/enterprise/EnterprisePage"));
@@ -44,9 +50,7 @@ const PlanCreatePage = lazy(() => import("./pages/plan/PlanCreatePage"));
 const PlanDetailPage = lazy(() => import("./pages/plan/PlanDetailPage"));
 const PlanEditPage = lazy(() => import("./pages/plan/PlanEditPage"));
 const PlanWorkflowPage = lazy(() => import("./pages/plan/PlanWorkflowPage"));
-const PlanGrowthPage = lazy(
-  () => import("./pages/plan-growth/PlanGrowthPage"),
-);
+const PlanGrowthPage = lazy(() => import("./pages/plan-growth/PlanGrowthPage"));
 const PlanGrowthCreatePage = lazy(
   () => import("./pages/plan-growth/PlanGrowthCreatePage"),
 );
@@ -86,8 +90,7 @@ const PlanAquacultureGrowthDetailPage = lazy(
     import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthDetailPage"),
 );
 const PlanAquacultureGrowthEditPage = lazy(
-  () =>
-    import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthEditPage"),
+  () => import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthEditPage"),
 );
 const PlanAquacultureGrowthWorkflowPage = lazy(
   () =>
@@ -130,27 +133,27 @@ const IrrigationSystemPage = lazy(
   () => import("./pages/irrigation-system/IrrigationSystemPage"),
 );
 const AquacultureIdentificationListPage = lazy(
-  () => import("./pages/aquaculture-identification/AquacultureIdentificationListPage"),
+  () =>
+    import("./pages/aquaculture-identification/AquacultureIdentificationListPage"),
 );
 const AquacultureIdentificationCreatePage = lazy(
-  () => import("./pages/aquaculture-identification/AquacultureIdentificationCreatePage"),
+  () =>
+    import("./pages/aquaculture-identification/AquacultureIdentificationCreatePage"),
 );
 const AquacultureIdentificationSearchPage = lazy(
-  () => import("./pages/aquaculture-identification/AquacultureIdentificationSearchPage"),
+  () =>
+    import("./pages/aquaculture-identification/AquacultureIdentificationSearchPage"),
 );
 const AquacultureIdentificationDetailPage = lazy(
-  () => import("./pages/aquaculture-identification/AquacultureIdentificationDetailPage"),
+  () =>
+    import("./pages/aquaculture-identification/AquacultureIdentificationDetailPage"),
 );
 const AquacultureIdentificationEditPage = lazy(
-  () => import("./pages/aquaculture-identification/AquacultureIdentificationEditPage"),
+  () =>
+    import("./pages/aquaculture-identification/AquacultureIdentificationEditPage"),
 );
 
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
-import {
-  RadixToaster,
-  TooltipProvider,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { AuthWrapper } from "./features/auth/components/AuthWrapper";
 const BankPage = lazy(() => import("./pages/bank/BankPage"));
 const BankDirectoryPage = lazy(
   () => import("./pages/bank-directory/BankDirectoryPage"),
@@ -202,39 +205,27 @@ const RegionBasicDistributionDetailPage = lazy(
 );
 const RegionBasicDistributionLivestockPage = lazy(
   () =>
-    import(
-      "./pages/region-chart/region-basic-distribution-livestock/RegionBasicDistributionLivestockPage"
-    ),
+    import("./pages/region-chart/region-basic-distribution-livestock/RegionBasicDistributionLivestockPage"),
 );
 const RegionBasicDistributionLivestockCreateEditPage = lazy(
   () =>
-    import(
-      "./pages/region-chart/region-basic-distribution-livestock/RegionBasicDistributionLivestockCreateEditPage"
-    ),
+    import("./pages/region-chart/region-basic-distribution-livestock/RegionBasicDistributionLivestockCreateEditPage"),
 );
 const RegionBasicDistributionLivestockDetailPage = lazy(
   () =>
-    import(
-      "./pages/region-chart/region-basic-distribution-livestock/RegionBasicDistributionLivestockDetailPage"
-    ),
+    import("./pages/region-chart/region-basic-distribution-livestock/RegionBasicDistributionLivestockDetailPage"),
 );
 const RegionBasicDistributionAquaculturePage = lazy(
   () =>
-    import(
-      "./pages/region-chart/region-basic-distribution-aquaculture/RegionBasicDistributionAquaculturePage"
-    ),
+    import("./pages/region-chart/region-basic-distribution-aquaculture/RegionBasicDistributionAquaculturePage"),
 );
 const RegionBasicDistributionAquacultureCreateEditPage = lazy(
   () =>
-    import(
-      "./pages/region-chart/region-basic-distribution-aquaculture/RegionBasicDistributionAquacultureCreateEditPage"
-    ),
+    import("./pages/region-chart/region-basic-distribution-aquaculture/RegionBasicDistributionAquacultureCreateEditPage"),
 );
 const RegionBasicDistributionAquacultureDetailPage = lazy(
   () =>
-    import(
-      "./pages/region-chart/region-basic-distribution-aquaculture/RegionBasicDistributionAquacultureDetailPage"
-    ),
+    import("./pages/region-chart/region-basic-distribution-aquaculture/RegionBasicDistributionAquacultureDetailPage"),
 );
 const LegalIdentificationPage = lazy(
   () => import("./pages/legal-identification/LegalIdentificationPage"),
@@ -1268,9 +1259,11 @@ function App() {
   return (
     <TooltipProvider>
       <AuthWrapper>
-        <Suspense fallback={<AppLoadingState />}>
-          <Router />
-        </Suspense>
+        <AdminLayout isDev>
+          <Suspense fallback={<AppLoadingState />}>
+            <Router />
+          </Suspense>
+        </AdminLayout>
         <RadixToaster />
       </AuthWrapper>
     </TooltipProvider>

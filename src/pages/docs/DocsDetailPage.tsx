@@ -1,4 +1,5 @@
-import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft, Edit, Trash } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -46,8 +47,7 @@ export default function DocsDetailPage() {
   const doc = mockDoc;
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={`Chi tiết tài liệu: ${doc.id}`}
       description="Xem thông tin chi tiết và nội dung tài liệu kỹ thuật"
       actions={
@@ -85,6 +85,6 @@ export default function DocsDetailPage() {
         <DocContent />
         <DocAttachments attachments={doc.attachments} />
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

@@ -1,6 +1,5 @@
 import useAnimalDistributionStore from "@/stores/useAnimalDistributionStore";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -14,6 +13,8 @@ import {
   TabsTrigger,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import {
   Download,
   Edit,
@@ -24,15 +25,14 @@ import {
   Target,
   Trees,
 } from "lucide-react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { useEffect, useMemo, useState } from "react";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import { useLocation, useRoute } from "wouter";
 import { MOCK_SEEDS } from "./constants";
 
-import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
+import PageWrapper from "@/components/PageWrapper";
 import defaultMarkerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
+import defaultMarkerIconUrl from "leaflet/dist/images/marker-icon.png";
 import defaultMarkerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 // --- Mock Data ---
@@ -195,22 +195,17 @@ const AnimalDistributionDetailPage = () => {
 
   if (!detailData) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Không tìm thấy"
-        description="Bản ghi không tồn tại"
-      >
+      <PageWrapper title="Không tìm thấy" description="Bản ghi không tồn tại">
         <div className="text-sm text-muted-foreground">
           Không có dữ liệu phân bổ.
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
-  const mapCenter =
-    (animals[0]?.coordinate
-      ? ([animals[0].coordinate.lat, animals[0].coordinate.lng] as LatLngTuple)
-      : ([11.558, 107.134] as LatLngTuple));
+  const mapCenter = animals[0]?.coordinate
+    ? ([animals[0].coordinate.lat, animals[0].coordinate.lng] as LatLngTuple)
+    : ([11.558, 107.134] as LatLngTuple);
 
   const animalColumns: Column<AnimalLocation>[] = [
     {
@@ -251,9 +246,7 @@ const AnimalDistributionDetailPage = () => {
     {
       key: "height",
       label: "Chiều cao",
-      render: (v: unknown) => (
-        <span className="text-xs">{String(v)} cm</span>
-      ),
+      render: (v: unknown) => <span className="text-xs">{String(v)} cm</span>,
     },
     {
       key: "coordinate",
@@ -312,8 +305,7 @@ const AnimalDistributionDetailPage = () => {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={detailData.name}
       description={`Mã: ${detailData.code} • Tạo ngày ${detailData.createdAt}`}
       actions={
@@ -468,7 +460,10 @@ const AnimalDistributionDetailPage = () => {
                     {animals.map((animal) => (
                       <Marker
                         key={animal.id}
-                        position={[animal.coordinate.lat, animal.coordinate.lng]}
+                        position={[
+                          animal.coordinate.lat,
+                          animal.coordinate.lng,
+                        ]}
                         icon={defaultLeafletIcon}
                         title={`${animal.code} - ${animal.variety}`}
                       />
@@ -495,9 +490,10 @@ const AnimalDistributionDetailPage = () => {
                           <span>{v.name}</span>
                           <span className="text-muted-foreground">
                             {v.count} cây (
-                            {((v.count / detailData.totalAnimals) * 100).toFixed(
-                              0,
-                            )}
+                            {(
+                              (v.count / detailData.totalAnimals) *
+                              100
+                            ).toFixed(0)}
                             %)
                           </span>
                         </div>
@@ -566,7 +562,7 @@ const AnimalDistributionDetailPage = () => {
           <DataTable columns={historyColumns} data={history} />
         </TabsContent>
       </Tabs>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

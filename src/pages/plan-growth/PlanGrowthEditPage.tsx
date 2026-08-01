@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -1917,8 +1917,7 @@ export default function PlanGrowthEditPage({
   if (!plan) return null;
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={pageTitle}
       description={pageDescription}
       actions={
@@ -1936,6 +1935,6 @@ export default function PlanGrowthEditPage({
           completeLabel={completeLabel}
         />
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

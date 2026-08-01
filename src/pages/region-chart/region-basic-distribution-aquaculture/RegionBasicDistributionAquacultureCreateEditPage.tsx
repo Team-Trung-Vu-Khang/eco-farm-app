@@ -1,13 +1,14 @@
+import PageWrapper from "@/components/PageWrapper";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import { FormProvider, useForm } from "react-hook-form";
 
-import { RegionAquacultureInfoStep } from "./components/RegionAquacultureInfoStep";
 import {
   regionBasicFormSchema,
   type RegionBasicFormValues,
 } from "../region-basic-distribution/data/region-basic-form.schema";
+import { RegionAquacultureInfoStep } from "./components/RegionAquacultureInfoStep";
 import { useRegionBasicAquacultureCreateForm } from "./hooks/useRegionBasicAquacultureCreateForm";
 
 const RegionBasicDistributionAquacultureCreateEditPage = () => {
@@ -42,8 +43,7 @@ const RegionBasicDistributionAquacultureCreateEditPage = () => {
     useRegionBasicAquacultureCreateForm(reset);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={
         isEditMode ? "Cập nhật vùng nuôi trồng" : "Thêm mới vùng nuôi trồng"
       }
@@ -86,7 +86,7 @@ const RegionBasicDistributionAquacultureCreateEditPage = () => {
           </div>
         </FormProvider>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

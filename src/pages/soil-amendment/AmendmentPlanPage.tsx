@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   Card,
   CardContent,
@@ -45,8 +45,7 @@ export default function AmendmentPlanPage() {
   });
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Kế hoạch cải tạo đất"
       description="Lập và theo dõi tiến độ các dự án cải tạo đất theo từng khu vực"
       actions={
@@ -181,6 +180,6 @@ export default function AmendmentPlanPage() {
         open={detailOpen}
         selectedItem={selectedItem}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

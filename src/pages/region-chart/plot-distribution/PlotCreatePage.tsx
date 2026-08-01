@@ -1,6 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  AdminLayout,
   Button,
   StepperForm,
   type Step,
@@ -77,8 +77,7 @@ const PlotCreatePage = () => {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={isEditMode ? "Cập nhật lô đất" : "Thêm mới lô đất"}
       description={
         isEditMode
@@ -106,7 +105,7 @@ const PlotCreatePage = () => {
           />
         </FormProvider>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

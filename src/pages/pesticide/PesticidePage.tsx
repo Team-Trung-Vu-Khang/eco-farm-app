@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -22,8 +22,7 @@ export default function PesticidePage() {
   } = usePesticidePage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý thuốc BVTV"
       description="Quản lý danh mục thuốc bảo vệ thực vật"
       actions={
@@ -47,6 +46,6 @@ export default function PesticidePage() {
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

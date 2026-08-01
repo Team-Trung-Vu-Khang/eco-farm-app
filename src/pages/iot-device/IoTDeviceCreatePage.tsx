@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   Card,
   CardContent,
@@ -276,8 +276,7 @@ export default function IoTDeviceCreatePage() {
   };
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={isEdit ? "Cập nhật thiết bị" : "Đăng ký thiết bị"}
       description={
         isEdit
@@ -573,6 +572,6 @@ export default function IoTDeviceCreatePage() {
           </TabsContent>
         </Tabs>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

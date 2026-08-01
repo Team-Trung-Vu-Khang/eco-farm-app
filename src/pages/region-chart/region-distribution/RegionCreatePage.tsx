@@ -1,6 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  AdminLayout,
   Button,
   StepperForm,
   type Step,
@@ -35,10 +35,11 @@ const RegionCreatePage = () => {
   const { isEditMode, handleComplete, handleCancel, isSubmitting } =
     useRegionCreateForm(reset);
 
-  const coordinates = useWatch({
-    control,
-    name: "coordinates",
-  }) || [];
+  const coordinates =
+    useWatch({
+      control,
+      name: "coordinates",
+    }) || [];
 
   const steps: Step[] = [
     {
@@ -78,8 +79,7 @@ const RegionCreatePage = () => {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={isEditMode ? "Cập nhật vùng trồng" : "Thêm mới vùng trồng"}
       description={
         isEditMode
@@ -108,7 +108,7 @@ const RegionCreatePage = () => {
           />
         </FormProvider>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

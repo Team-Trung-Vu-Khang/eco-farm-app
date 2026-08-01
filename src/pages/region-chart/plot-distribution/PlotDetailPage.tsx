@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   Card,
   CardContent,
@@ -18,22 +18,17 @@ const PlotDetailPage = () => {
 
   if (isLoading) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Chi tiết lô"
-        description="Đang tải dữ liệu..."
-      >
+      <PageWrapper title="Chi tiết lô" description="Đang tải dữ liệu...">
         <div className="flex items-center justify-center h-64">
           <p className="text-muted-foreground">Đang tải dữ liệu...</p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (!plot) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Chi tiết lô"
         description="Không tìm thấy thông tin lô"
         actions={
@@ -48,13 +43,12 @@ const PlotDetailPage = () => {
         <div className="flex items-center justify-center h-64">
           <p className="text-muted-foreground">Lô không tồn tại</p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={`Chi tiết lô: ${plot.name}`}
       description={`Mã lô: ${plot.id}`}
       actions={
@@ -164,7 +158,7 @@ const PlotDetailPage = () => {
           </RegionChartMapCard>
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 export default PlotDetailPage;

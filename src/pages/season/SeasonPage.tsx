@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -62,8 +62,7 @@ export default function SeasonPage() {
   );
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý mùa vụ"
       description="Quản lý riêng vụ mùa và vụ nuôi trong cùng một không gian"
       actions={
@@ -115,6 +114,6 @@ export default function SeasonPage() {
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

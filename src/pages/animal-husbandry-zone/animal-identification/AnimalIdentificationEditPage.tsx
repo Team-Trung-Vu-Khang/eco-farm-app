@@ -1,16 +1,17 @@
-import { AdminLayout, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { PawPrint } from "lucide-react";
-import { useLocation, useParams } from "wouter";
-import PlantIdentificationForm from "../animal-husbandry-region/components/PlantIdentificationForm";
+import PageWrapper from "@/components/PageWrapper";
 import {
   usePlantIdentificationById,
   usePlantIdentificationMutations,
 } from "@/features/farm";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { PawPrint } from "lucide-react";
+import { useMemo } from "react";
+import { useLocation, useParams } from "wouter";
+import PlantIdentificationForm from "../animal-husbandry-region/components/PlantIdentificationForm";
 import {
   mapApiPlantToFrontend,
   mapFrontendPlantToApiRequest,
 } from "./utils/animalMapper";
-import { useMemo } from "react";
 
 const AnimalIdentificationEditPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -47,36 +48,27 @@ const AnimalIdentificationEditPage = () => {
 
   if (isLoading) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Đang tải..."
-        description="Đang tải thông tin cá thể"
-      >
+      <PageWrapper title="Đang tải..." description="Đang tải thông tin cá thể">
         <div className="p-12 text-center text-slate-400">
           <p>Đang tải thông tin cá thể...</p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (!plant) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Không tìm thấy"
-        description="Cá thể không tồn tại"
-      >
+      <PageWrapper title="Không tìm thấy" description="Cá thể không tồn tại">
         <div className="p-12 text-center text-slate-400">
           <PawPrint className="w-16 h-16 mx-auto mb-4 opacity-20" />
           <p>Không tìm thấy thông tin cá thể để chỉnh sửa.</p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={`Chỉnh sửa: ${plant.code}`}
       description="Cập nhật thông tin định danh và thông số sinh trưởng"
     >
@@ -85,7 +77,7 @@ const AnimalIdentificationEditPage = () => {
         onSubmit={handleSubmit}
         loading={updatePlant.isPending}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

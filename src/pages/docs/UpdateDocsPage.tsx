@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   Card,
   CardContent,
@@ -619,8 +619,7 @@ export default function UpdateDocsPage() {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Cập nhật tài liệu kỹ thuât"
       description="Cập nhật tài liệu kỹ thuật"
     >
@@ -634,6 +633,6 @@ export default function UpdateDocsPage() {
           />
         </CardContent>
       </Card>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

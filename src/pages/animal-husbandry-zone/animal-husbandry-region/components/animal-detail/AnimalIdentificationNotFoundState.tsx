@@ -1,4 +1,5 @@
-import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { PawPrint } from "lucide-react";
 
 type Props = {
@@ -7,8 +8,7 @@ type Props = {
 
 export const AnimalIdentificationNotFoundState = ({ onBack }: Props) => {
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Không tìm thấy cá thể"
       description="Dữ liệu không tồn tại"
     >
@@ -19,6 +19,6 @@ export const AnimalIdentificationNotFoundState = ({ onBack }: Props) => {
           Quay lại danh sách
         </Button>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };

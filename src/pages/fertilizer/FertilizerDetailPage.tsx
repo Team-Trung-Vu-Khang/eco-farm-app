@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -179,8 +179,7 @@ const FertilizerDetailPage = () => {
 
   if (!item) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Chi tiết phân bón"
         description="Đang tải thông tin..."
       >
@@ -193,15 +192,14 @@ const FertilizerDetailPage = () => {
             Quay lại danh sách
           </Button>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   const extras = getExtras(id);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chi tiết phân bón"
       description={`Thông tin chi tiết sản phẩm ${item.name}`}
       actions={
@@ -621,7 +619,7 @@ const FertilizerDetailPage = () => {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

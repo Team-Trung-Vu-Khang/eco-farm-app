@@ -1,3 +1,4 @@
+import PageWrapper from "@/components/PageWrapper";
 // import treeMarkerIcon from "@/assets/tree.webp";
 // import useGroupCropStore from "@/stores/useGroupCropStore";
 // import {
@@ -474,7 +475,7 @@
 //   })();
 
 //   return (
-//     <AdminLayout isDev={true} title="Tìm kiếm & Truy xuất nguồn gốc">
+//     <PageWrapper title="Tìm kiếm & Truy xuất nguồn gốc">
 //       <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
 //         {/* TOP HEADER: Search & Advanced Search */}
 //         <div className="bg-white border-b rounded-md p-4 z-40 shadow-sm">
@@ -1226,8 +1227,7 @@
 //           crop={activeCropInDialog}
 //         />
 //       </div>
-//     </AdminLayout>
-//   );
+//     </PageWrapper>//   );
 // };
 
 // export default SearchCropPage;

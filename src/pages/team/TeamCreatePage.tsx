@@ -1,4 +1,5 @@
-import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Loader2, Save, X } from "lucide-react";
 import { TeamFormCard } from "./components/TeamFormCard";
 import { useTeamCreatePage } from "./hooks/useTeamCreatePage";
@@ -16,8 +17,7 @@ export default function TeamCreatePage() {
   } = useTeamCreatePage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Thêm mới đội nhóm"
       description="Tạo đội nhóm làm việc mới"
       actions={
@@ -46,6 +46,6 @@ export default function TeamCreatePage() {
           leaderOptions={leaderOptions}
         />
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

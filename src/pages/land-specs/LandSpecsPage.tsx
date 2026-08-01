@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -31,8 +31,7 @@ export default function LandSpecsPage() {
   useDialogBugWorkaround([formOpen, deleteOpen]);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý thông số địa hình"
       description="Quản lý các loại thông số địa hình trong hệ thống"
       actions={
@@ -67,6 +66,6 @@ export default function LandSpecsPage() {
         description="Bạn có chắc chắn muốn xóa thông số địa hình này? Chỉ có thể xóa khi chưa có dữ liệu gắn kết."
         loading={isPending}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

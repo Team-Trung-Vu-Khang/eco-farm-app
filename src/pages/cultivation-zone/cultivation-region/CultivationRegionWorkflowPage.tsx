@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -897,8 +897,7 @@ export default function CultivationRegionWorkflowPage() {
     : { regions: 0, areas: 0, plots: 0 };
 
   return (
-    <AdminLayout
-      isDev
+    <PageWrapper
       title="Workflow vùng canh tác"
       description={`Trực quan hóa ${selectedRegion.name} theo cây Vùng -> Khu vực -> Lô`}
       actions={
@@ -1153,6 +1152,6 @@ export default function CultivationRegionWorkflowPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

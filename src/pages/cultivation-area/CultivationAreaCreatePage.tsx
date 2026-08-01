@@ -1,6 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
 import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -951,8 +951,7 @@ const CultivationAreaCreatePage = () => {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={
         isEdit ? "Chỉnh sửa khu vực canh tác" : "Thiết lập khu vực canh tác"
       }
@@ -996,7 +995,7 @@ const CultivationAreaCreatePage = () => {
         selectedAreaId={selectedArea?.id || ""}
         onRegionChange={() => setSelectedRegion(null)}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

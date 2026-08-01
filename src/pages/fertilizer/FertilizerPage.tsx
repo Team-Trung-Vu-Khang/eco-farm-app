@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -26,8 +26,7 @@ export default function FertilizerPage() {
   );
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý chất bón"
       description="Quản lý danh mục phân bón, chất cải tạo đất"
       actions={
@@ -51,6 +50,6 @@ export default function FertilizerPage() {
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

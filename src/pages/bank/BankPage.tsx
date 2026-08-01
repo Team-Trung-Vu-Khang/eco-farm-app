@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -30,8 +30,7 @@ export default function BankPage() {
   } = useBankTable();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý tài khoản ngân hàng"
       description="Danh sách tài khoản ngân hàng của đơn vị sở hữu"
       actions={
@@ -75,6 +74,6 @@ export default function BankPage() {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa tài khoản này? Hoạt động này không thể hoàn tác."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

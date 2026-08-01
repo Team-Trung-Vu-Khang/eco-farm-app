@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -36,8 +36,7 @@ export default function IrrigationSystemPage() {
   } = useIrrigationSystemPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Hệ thống tưới"
       description="Quản lý danh sách hệ thống tưới"
       actions={
@@ -92,6 +91,6 @@ export default function IrrigationSystemPage() {
         title="Xóa hệ thống tưới"
         description={`Bạn có chắc chắn muốn xóa hệ thống tưới "${deleteItem?.name}"? Hành động này không thể hoàn tác.`}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

@@ -1,4 +1,5 @@
-import { AdminLayout, DataTable } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { DataTable } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ProvinceWardDetailModal } from "./components/ProvinceWardDetailModal";
 import { columns } from "./data/columns";
 import { useProvincePage } from "./hooks/useProvincePage";
@@ -26,8 +27,7 @@ export default function ProvincePage() {
   ] as const;
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Danh sách tỉnh/thành"
       description="Tra cứu danh mục tỉnh/thành và các xã/phường trực thuộc theo dữ liệu hành chính Việt Nam"
     >
@@ -70,6 +70,6 @@ export default function ProvincePage() {
           onClose={() => setSelectedProvince(null)}
         />
       )}
-    </AdminLayout>
+    </PageWrapper>
   );
 }

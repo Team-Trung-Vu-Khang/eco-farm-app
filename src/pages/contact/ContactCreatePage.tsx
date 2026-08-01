@@ -1,13 +1,10 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
   useCreateContact,
   type ContactCreateRequest,
 } from "@/features/contact";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  AdminLayout,
-  Button,
-  useToast,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Button, useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Loader2, Save, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { ContactFormCard } from "./components/ContactFormCard";
@@ -82,8 +79,7 @@ export default function ContactCreatePage() {
   };
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Thêm mới liên hệ"
       description="Thêm thông tin liên hệ mới vào hệ thống"
       actions={
@@ -117,6 +113,6 @@ export default function ContactCreatePage() {
           showStatus={false}
         />
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

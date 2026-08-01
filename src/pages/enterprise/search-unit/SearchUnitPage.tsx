@@ -1,10 +1,5 @@
-import {
-  AdminLayout,
-  Badge,
-  Button,
-  cn,
-  Input,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Badge, Button, cn, Input } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Filter, Layers, Search } from "lucide-react";
 
 import { AdvancedFilterPanel } from "./components/AdvancedFilterPanel";
@@ -43,8 +38,7 @@ const SearchUnitPage = () => {
   } = useEnterpriseSearch();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Tìm kiếm đơn vị"
       description="Tìm kiếm và quản lý thông tin các đơn vị trong hệ thống"
     >
@@ -156,7 +150,7 @@ const SearchUnitPage = () => {
           )}
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

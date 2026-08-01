@@ -1,3 +1,4 @@
+import PageWrapper from "@/components/PageWrapper";
 import { units as materialUnits } from "@/pages/material/data/constants";
 import type { Material } from "@/pages/material/types/types";
 import type { Treatment } from "@/pages/treatment/types/treatment.types";
@@ -9,7 +10,6 @@ import useTaskStore from "@/stores/useTaskStore";
 import useTreatmentReportStore from "@/stores/useTreatmentReportStore";
 import { useTreatmentStore } from "@/stores/useTreatmentStore";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -471,8 +471,7 @@ export default function TreatmentReportPage() {
   };
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Theo dõi thực hiện phác đồ điều trị"
       description="Cập nhật hiện trường, vật tư sử dụng và trạng thái tái đánh giá cho từng đợt điều trị"
       actions={
@@ -910,7 +909,7 @@ export default function TreatmentReportPage() {
           </Card>
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }
 

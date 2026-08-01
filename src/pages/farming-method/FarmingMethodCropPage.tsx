@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -55,8 +55,7 @@ export default function FarmingMethodCropPage() {
   useDialogBugWorkaround([formOpen, deleteOpen, linkDialogOpen]);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Phương thức canh tác theo cây trồng"
       description="Bảng liên kết giữa phương thức canh tác với danh sách cây trồng và giống áp dụng, kèm mô tả ngắn cho từng phương thức."
       actions={
@@ -300,6 +299,6 @@ export default function FarmingMethodCropPage() {
         description="Bạn có chắc chắn muốn xóa phương thức canh tác này không? Thao tác này không thể hoàn tác."
         loading={isPending}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

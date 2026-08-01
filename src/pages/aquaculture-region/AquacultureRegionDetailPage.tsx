@@ -1,4 +1,5 @@
-import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Workflow } from "lucide-react";
 import { useLocation, useParams } from "wouter";
 import { AquacultureRegionDetailView } from "./components/AquacultureRegionDetailView";
@@ -10,8 +11,7 @@ const AquacultureRegionDetailPage = () => {
   const [, setLocation] = useLocation();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={detailMeta.title}
       description={detailMeta.description}
       actions={
@@ -28,7 +28,7 @@ const AquacultureRegionDetailPage = () => {
       }
     >
       <AquacultureRegionDetailView basePath="/aquaculture-region" />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

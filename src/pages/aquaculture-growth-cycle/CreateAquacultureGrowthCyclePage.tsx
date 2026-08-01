@@ -1,6 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  AdminLayout,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -16,13 +16,13 @@ import {
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
-import { AquacultureGrowthCycleSteps } from "./components/AquacultureGrowthCycleSteps";
-import { useAquacultureCreateGrowthCycleForm } from "./hooks/useAquacultureCreateGrowthCycleForm";
 import {
   animalGrowthCycleFormSchema,
   type AnimalGrowthCycleFormValues,
 } from "../animal-husbandry-zone/animal-growth-cycle/schemas/animalGrowthCycleSchema";
 import { parseDurationToDays } from "../growth-cycle/utils/duration";
+import { AquacultureGrowthCycleSteps } from "./components/AquacultureGrowthCycleSteps";
+import { useAquacultureCreateGrowthCycleForm } from "./hooks/useAquacultureCreateGrowthCycleForm";
 
 export default function CreateAquacultureGrowthCyclePage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -74,8 +74,7 @@ export default function CreateAquacultureGrowthCyclePage() {
   );
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Thêm mới chu kỳ thủy hải sản"
       description="Thiết lập chu kỳ nuôi cho tôm, cá, nghêu và các đối tượng thủy sản khác"
       actions={[
@@ -171,6 +170,6 @@ export default function CreateAquacultureGrowthCyclePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

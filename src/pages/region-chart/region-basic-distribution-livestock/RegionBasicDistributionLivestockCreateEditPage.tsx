@@ -1,13 +1,14 @@
+import PageWrapper from "@/components/PageWrapper";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import { FormProvider, useForm } from "react-hook-form";
 
-import { RegionLivestockInfoStep } from "./components/RegionLivestockInfoStep";
 import {
   regionBasicFormSchema,
   type RegionBasicFormValues,
 } from "../region-basic-distribution/data/region-basic-form.schema";
+import { RegionLivestockInfoStep } from "./components/RegionLivestockInfoStep";
 import { useRegionBasicLivestockCreateForm } from "./hooks/useRegionBasicLivestockCreateForm";
 
 const RegionBasicDistributionLivestockCreateEditPage = () => {
@@ -42,8 +43,7 @@ const RegionBasicDistributionLivestockCreateEditPage = () => {
     useRegionBasicLivestockCreateForm(reset);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={isEditMode ? "Cập nhật vùng chăn nuôi" : "Thêm mới vùng chăn nuôi"}
       description="Quản lý vùng chăn nuôi với giao diện cơ bản"
       actions={
@@ -84,7 +84,7 @@ const RegionBasicDistributionLivestockCreateEditPage = () => {
           </div>
         </FormProvider>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -21,8 +21,7 @@ export default function UnitPage() {
   } = useUnitPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý đơn vị"
       description="Quản lý danh sách đơn vị tính và quy tắc quy đổi về đơn vị chuẩn (kg, lít...)"
       actions={
@@ -46,6 +45,6 @@ export default function UnitPage() {
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

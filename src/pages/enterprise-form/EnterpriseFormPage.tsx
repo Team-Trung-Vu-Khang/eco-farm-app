@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -36,8 +36,7 @@ const EnterpriseFormPage = () => {
   const businessForm = useBusinessLinesForm();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Danh mục tổ chức"
       description="Quản lý loại hình tổ chức và lĩnh vực hoạt động"
     >
@@ -192,7 +191,7 @@ const EnterpriseFormPage = () => {
         description="Bạn có chắc chắn muốn xóa lĩnh vực hoạt động này?"
         loading={businessForm.deleteLoading}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

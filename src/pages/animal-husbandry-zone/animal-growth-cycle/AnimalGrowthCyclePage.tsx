@@ -1,6 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
 import { useDialogBugWorkaround } from "@/shared/hooks/useDialogBugWorkaround";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -10,8 +10,8 @@ import {
 import { Plus } from "lucide-react";
 import { useMemo } from "react";
 import { Link } from "wouter";
-import { createAnimalGrowthCycleColumns } from "./data/columns";
 import AnimalGrowthCycleDetailPage from "./AnimalGrowthCycleDetailPage";
+import { createAnimalGrowthCycleColumns } from "./data/columns";
 import { useAnimalGrowthCyclePage } from "./hooks/useAnimalGrowthCyclePage";
 
 const AnimalGrowthCyclePage = () => {
@@ -60,8 +60,7 @@ const AnimalGrowthCyclePage = () => {
   );
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Vụ nuôi"
       description="Quản lý chu kỳ sinh trưởng của vật nuôi / thủy sản"
       actions={
@@ -107,7 +106,7 @@ const AnimalGrowthCyclePage = () => {
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

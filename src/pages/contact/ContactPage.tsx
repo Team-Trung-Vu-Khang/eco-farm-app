@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   DeleteDialog,
   Tabs,
   TabsContent,
@@ -60,8 +60,7 @@ export default function ContactPage() {
   } = useContact();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý thông tin liên hệ"
       description="Quản lý sổ danh bạ và nhóm danh bạ"
     >
@@ -141,6 +140,6 @@ export default function ContactPage() {
           activeTab === "contacts" ? "liên hệ" : "nhóm danh bạ"
         } này? Hoạt động này không thể hoàn tác.`}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

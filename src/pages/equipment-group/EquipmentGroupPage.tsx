@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -40,8 +40,7 @@ const EquipmentGroupPage = () => {
   } = useEquipmentGroupForm();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Danh mục máy móc"
       description="Quản lý danh sách các nhóm máy móc, dụng cụ (Master Data)"
       actions={
@@ -95,7 +94,7 @@ const EquipmentGroupPage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa nhóm máy móc này?"
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

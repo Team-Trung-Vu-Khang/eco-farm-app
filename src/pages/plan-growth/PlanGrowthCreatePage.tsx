@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -26,12 +26,12 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   Apple,
+  ArrowLeft,
   Bug,
   Calendar,
   CheckCircle2,
   ClipboardList,
   Clock,
-  ArrowLeft,
   Info,
   Layers,
   Leaf,
@@ -748,10 +748,7 @@ export default function PlanGrowthCreatePage({
                             ) {
                               setFormData((prev) => ({
                                 ...prev,
-                                selectedStages: [
-                                  ...prev.selectedStages,
-                                  name,
-                                ],
+                                selectedStages: [...prev.selectedStages, name],
                               }));
                               setNewManualStage("");
                             }
@@ -822,7 +819,9 @@ export default function PlanGrowthCreatePage({
             {isCultivationLike && (
               <div className="space-y-6 animation-slide-up">
                 {(() => {
-                  const season = seasons.find((s) => s.id === formData.seasonId);
+                  const season = seasons.find(
+                    (s) => s.id === formData.seasonId,
+                  );
                   const seasonCycles = (season?.growthCycleIds || [])
                     .map((cid) => growthCycles.find((gc) => gc.id === cid))
                     .filter(Boolean);
@@ -1019,7 +1018,10 @@ export default function PlanGrowthCreatePage({
                               ) {
                                 setFormData((prev) => ({
                                   ...prev,
-                                  selectedStages: [...prev.selectedStages, name],
+                                  selectedStages: [
+                                    ...prev.selectedStages,
+                                    name,
+                                  ],
                                 }));
                                 setNewManualStage("");
                               }
@@ -1047,9 +1049,10 @@ export default function PlanGrowthCreatePage({
                                   onClick={() =>
                                     setFormData((prev) => ({
                                       ...prev,
-                                      selectedStages: prev.selectedStages.filter(
-                                        (s) => s !== stage,
-                                      ),
+                                      selectedStages:
+                                        prev.selectedStages.filter(
+                                          (s) => s !== stage,
+                                        ),
                                     }))
                                   }
                                   className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
@@ -1092,9 +1095,11 @@ export default function PlanGrowthCreatePage({
                       variant="outline"
                       className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
                     >
-                      {harvestSuggestions.filter((item) =>
-                        item.toLowerCase().includes(stageSearchTerm),
-                      ).length}{" "}
+                      {
+                        harvestSuggestions.filter((item) =>
+                          item.toLowerCase().includes(stageSearchTerm),
+                        ).length
+                      }{" "}
                       mục
                     </Badge>
                   </div>
@@ -1168,13 +1173,31 @@ export default function PlanGrowthCreatePage({
                     </div>
 
                     <div className="flex gap-2">
-                    <Input
-                      placeholder="Nhập tên hạng mục (VD: Tập kết, Kiểm tra, Bốc dỡ...)"
-                      value={newManualStage}
-                      onChange={(e) => setNewManualStage(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
+                      <Input
+                        placeholder="Nhập tên hạng mục (VD: Tập kết, Kiểm tra, Bốc dỡ...)"
+                        value={newManualStage}
+                        onChange={(e) => setNewManualStage(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            const name = newManualStage.trim();
+                            if (
+                              name &&
+                              !formData.selectedStages.includes(name)
+                            ) {
+                              setFormData((prev) => ({
+                                ...prev,
+                                selectedStages: [...prev.selectedStages, name],
+                              }));
+                              setNewManualStage("");
+                            }
+                          }
+                        }}
+                        className="bg-white border-slate-200 h-11 text-sm rounded-xl"
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => {
                           const name = newManualStage.trim();
                           if (name && !formData.selectedStages.includes(name)) {
                             setFormData((prev) => ({
@@ -1183,56 +1206,41 @@ export default function PlanGrowthCreatePage({
                             }));
                             setNewManualStage("");
                           }
-                        }
-                      }}
-                      className="bg-white border-slate-200 h-11 text-sm rounded-xl"
-                    />
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        const name = newManualStage.trim();
-                        if (name && !formData.selectedStages.includes(name)) {
-                          setFormData((prev) => ({
-                            ...prev,
-                            selectedStages: [...prev.selectedStages, name],
-                          }));
-                          setNewManualStage("");
-                        }
-                      }}
-                      className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
+                        }}
+                        className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
                       >
                         THÊM
                       </Button>
                     </div>
 
-                  {formData.selectedStages.length > 0 && (
-                    <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                      {formData.selectedStages.map((stage) => (
-                        <Badge
-                          key={stage}
-                          variant="secondary"
-                          className="bg-slate-100 text-slate-700 pr-1 py-1 pl-3 h-8 rounded-lg flex items-center gap-2 border-transparent group hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
-                        >
-                          <span className="font-bold text-xs">{stage}</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                selectedStages: prev.selectedStages.filter(
-                                  (s) => s !== stage,
-                                ),
-                              }))
-                            }
-                            className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
+                    {formData.selectedStages.length > 0 && (
+                      <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                        {formData.selectedStages.map((stage) => (
+                          <Badge
+                            key={stage}
+                            variant="secondary"
+                            className="bg-slate-100 text-slate-700 pr-1 py-1 pl-3 h-8 rounded-lg flex items-center gap-2 border-transparent group hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
                           >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
+                            <span className="font-bold text-xs">{stage}</span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  selectedStages: prev.selectedStages.filter(
+                                    (s) => s !== stage,
+                                  ),
+                                }))
+                              }
+                              className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
 
                     <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
                       <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -1248,21 +1256,19 @@ export default function PlanGrowthCreatePage({
           </div>
         </div>
       ),
-      isValid:
-        isTreatmentOrAmendment
-          ? !!formData.regimenId || formData.selectedStages.length > 0
-          : formData.selectedStages.length > 0,
+      isValid: isTreatmentOrAmendment
+        ? !!formData.regimenId || formData.selectedStages.length > 0
+        : formData.selectedStages.length > 0,
     },
     {
       id: "resources",
-      title:
-        isHarvest
-          ? "Vật tư - Nhân sự & cách thức"
-          : isCultivationLike
-            ? "Phân bổ & Công việc"
-            : purpose === "amendment"
-              ? "Vật tư & Nhân lực"
-              : "Vật tư & Phác đồ",
+      title: isHarvest
+        ? "Vật tư - Nhân sự & cách thức"
+        : isCultivationLike
+          ? "Phân bổ & Công việc"
+          : purpose === "amendment"
+            ? "Vật tư & Nhân lực"
+            : "Vật tư & Phác đồ",
       description: "Hoạch định nguồn lực chi tiết",
       content: (
         <div className="max-w-3xl mx-auto space-y-6">
@@ -1930,8 +1936,7 @@ export default function PlanGrowthCreatePage({
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={pageTitle}
       description={pageDescription}
       actions={
@@ -1949,6 +1954,6 @@ export default function PlanGrowthCreatePage({
           completeLabel={completeLabel}
         />
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

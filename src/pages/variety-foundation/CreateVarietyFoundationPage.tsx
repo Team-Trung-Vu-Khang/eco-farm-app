@@ -1,6 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  AdminLayout,
   Button,
   Card,
   CardContent,
@@ -11,13 +11,13 @@ import {
 import { ChevronLeft } from "lucide-react";
 import React, { useRef } from "react";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
+import { useCrops } from "../../features/foundation";
 import { initialEditorValue } from "../docs/mocks";
 import { VarietyFoundationCharacteristicsStep } from "./components/VarietyFoundationCharacteristicsStep";
 import { VarietyFoundationClassificationStep } from "./components/VarietyFoundationClassificationStep";
 import { VarietyFoundationConfirmationStep } from "./components/VarietyFoundationConfirmationStep";
 import { VarietyFoundationDocumentsStep } from "./components/VarietyFoundationDocumentsStep";
 import { useVarietyFoundationForm } from "./hooks/useVarietyFoundationForm";
-import { useCrops } from "../../features/foundation";
 import {
   classificationSchema,
   varietyFoundationSchema,
@@ -147,8 +147,7 @@ export default function CreateVarietyFoundationPage() {
   };
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Tạo mới giống cây (nền tảng)"
       description="Khởi tạo thông tin định danh, đặc tính và tài liệu kỹ thuật cho giống cây (nền tảng)"
       actions={
@@ -172,6 +171,6 @@ export default function CreateVarietyFoundationPage() {
           />
         </Form>
       </FormProvider>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

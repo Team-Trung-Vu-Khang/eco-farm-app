@@ -1,4 +1,5 @@
-import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ArrowLeft } from "lucide-react";
 import { BankAccountCard } from "./components/BankAccountCard";
 import { BasicInfoCard } from "./components/BasicInfoCard";
@@ -27,19 +28,19 @@ export default function BranchDetailPage() {
 
   if (loading && !branch) {
     return (
-      <AdminLayout isDev={true}>
+      <PageWrapper>
         <div className="flex h-96 items-center justify-center rounded-3xl border bg-card">
           <p className="text-sm text-muted-foreground">
             Đang tải thông tin chi nhánh...
           </p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (error) {
     return (
-      <AdminLayout isDev={true}>
+      <PageWrapper>
         <div className="flex h-96 flex-col items-center justify-center rounded-3xl border bg-card text-center">
           <h2 className="text-2xl font-bold">Không thể tải chi nhánh</h2>
           <p className="mt-2 text-sm text-muted-foreground">{error}</p>
@@ -48,14 +49,14 @@ export default function BranchDetailPage() {
             Quay lại danh sách
           </Button>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   // Show not found state if branch doesn't exist
   if (!branch) {
     return (
-      <AdminLayout isDev={true}>
+      <PageWrapper>
         <div className="flex flex-col items-center justify-center h-96">
           <h2 className="text-2xl font-bold mb-4">
             Không tìm thấy thông tin chi nhánh
@@ -65,12 +66,12 @@ export default function BranchDetailPage() {
             Quay lại danh sách
           </Button>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout isDev={true}>
+    <PageWrapper>
       <div className="max-w-6xl mx-auto space-y-6 pb-10">
         <BranchDetailHeader
           branch={branch}
@@ -101,6 +102,6 @@ export default function BranchDetailPage() {
         onConfirm={handleDelete}
         branchName={branch.name || ""}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -40,8 +40,7 @@ const FertilizerGroupPage = () => {
   } = useFertilizerGroupPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Danh mục phân bón"
       description="Quản lý danh sách các nhóm phân bón (Master Data)"
       actions={
@@ -95,7 +94,7 @@ const FertilizerGroupPage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa nhóm phân bón này?"
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

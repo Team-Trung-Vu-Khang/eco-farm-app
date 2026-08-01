@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   DeleteDialog,
   Tabs,
   TabsContent,
@@ -57,8 +57,7 @@ export default function CertificatePage() {
   } = useCertificate();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Danh mục tiêu chuẩn"
       description="Quản lý loại tiêu chuẩn và tổ chức chứng nhận (Master Data)"
     >
@@ -152,6 +151,6 @@ export default function CertificatePage() {
           activeTab === "standards" ? "loại tiêu chuẩn" : "tổ chức"
         } này?`}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -52,20 +52,15 @@ const CultivationPlotDetailPage = () => {
 
   if (!data) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Chi tiết Lô canh tác"
-        description="Đang tải..."
-      >
+      <PageWrapper title="Chi tiết Lô canh tác" description="Đang tải...">
         <div className="p-12 text-center text-slate-500">
           Không tìm thấy thông tin lô canh tác
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={data.name}
       description={`Cấu hình canh tác cho Lô #${data.id}`}
       actions={
@@ -389,7 +384,7 @@ const CultivationPlotDetailPage = () => {
           </Card>
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

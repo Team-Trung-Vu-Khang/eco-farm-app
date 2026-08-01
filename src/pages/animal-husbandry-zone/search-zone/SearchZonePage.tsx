@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -23,6 +23,8 @@ import {
   useToast,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import {
   Activity,
   Building2,
@@ -37,8 +39,6 @@ import {
   Target,
   X,
 } from "lucide-react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   MapContainer,
@@ -733,8 +733,8 @@ const SearchZonePage = () => {
               scope === "region"
                 ? "bg-blue-500"
                 : scope === "area"
-                ? "bg-emerald-500"
-                : "bg-orange-500",
+                  ? "bg-emerald-500"
+                  : "bg-orange-500",
             )}
           >
             {scope === "region"
@@ -867,7 +867,7 @@ const SearchZonePage = () => {
   ]);
 
   return (
-    <AdminLayout isDev={true} title="Tìm kiếm vùng chăn nuôi">
+    <PageWrapper title="Tìm kiếm vùng chăn nuôi">
       <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
         {/* TOP HEADER: Simple Search */}
         <div className="bg-white border-b p-4 z-40 shadow-sm rounded-md">
@@ -951,9 +951,7 @@ const SearchZonePage = () => {
                       <div className="space-y-4">
                         <div className="flex items-center gap-2 text-primary">
                           <Layers className="h-5 w-5" />
-                          <h4 className="font-semibold">
-                            1. Vật nuôi & Giống
-                          </h4>
+                          <h4 className="font-semibold">1. Vật nuôi & Giống</h4>
                         </div>
                         <div className="grid grid-cols-1 gap-4">
                           <MultiSelectField
@@ -1814,8 +1812,8 @@ const SearchZonePage = () => {
                       ) : (
                         <div className="h-full flex flex-col items-center justify-center text-slate-300 italic text-center text-sm px-10">
                           <Layers size={48} className="mb-4 text-slate-100" />
-                          Chọn một vùng chăn nuôi trong danh sách để hiển thị các
-                          đơn vị địa lý trên bản đồ
+                          Chọn một vùng chăn nuôi trong danh sách để hiển thị
+                          các đơn vị địa lý trên bản đồ
                         </div>
                       )}
                     </div>
@@ -1848,7 +1846,7 @@ const SearchZonePage = () => {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

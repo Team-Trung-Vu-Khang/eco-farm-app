@@ -1,3 +1,4 @@
+import PageWrapper from "@/components/PageWrapper";
 import { useRegions } from "@/features/farm/hooks/useRegions";
 import {
   useCreateLegalIdentification,
@@ -9,7 +10,6 @@ import {
   mapLegalIdentificationResponseToRecord,
 } from "@/pages/legal-identification/utils/legal-identification.mapper";
 import {
-  AdminLayout,
   Button,
   StepperForm,
   useToast,
@@ -287,8 +287,7 @@ export default function LegalIdentificationCreateEditPage() {
 
   if (isEditMode && recordQuery.loading) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Đang tải hồ sơ pháp lý"
         description="Vui lòng chờ trong giây lát"
       >
@@ -297,14 +296,13 @@ export default function LegalIdentificationCreateEditPage() {
             Đang tải dữ liệu hồ sơ pháp lý...
           </div>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (isEditMode && !record) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Không tìm thấy hồ sơ"
         description="Hồ sơ pháp lý không tồn tại hoặc đã bị xóa."
       >
@@ -320,13 +318,12 @@ export default function LegalIdentificationCreateEditPage() {
             Quay lại danh sách
           </Button>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={isEditMode ? "Cập nhật hồ sơ pháp lý" : "Khai báo sơ pháp lý"}
       description="Nhập thông tin theo từng bước để hoàn thiện bộ hồ sơ định danh pháp lý cho vùng trồng."
       actions={
@@ -353,6 +350,6 @@ export default function LegalIdentificationCreateEditPage() {
           regions={regionOptions}
         />
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -1542,7 +1542,7 @@ export default function PlanCreatePage() {
   ];
 
   return (
-    <AdminLayout isDev={true} title={pageTitle} description={pageDescription}>
+    <PageWrapper title={pageTitle} description={pageDescription}>
       <div className="max-w-5xl mx-auto">
         <StepperForm
           steps={steps}
@@ -1551,6 +1551,6 @@ export default function PlanCreatePage() {
           completeLabel={completeLabel}
         />
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

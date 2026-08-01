@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -39,8 +39,7 @@ export default function TaskPage() {
   } = useTaskPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={isPlanScoped ? "Danh sách công việc" : "Phân bổ công việc"}
       description={
         isPlanScoped
@@ -122,6 +121,6 @@ export default function TaskPage() {
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

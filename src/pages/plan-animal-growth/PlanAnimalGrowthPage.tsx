@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -8,9 +8,9 @@ import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import {
-  createAnimalGrowthColumns,
   animalGrowthFilters,
   AnimalGrowthStatisticsCards,
+  createAnimalGrowthColumns,
 } from "./data/animalGrowthTable";
 import { useAnimalGrowthPage } from "./hooks/useAnimalGrowthPage";
 
@@ -68,8 +68,7 @@ export default function PlanAnimalGrowthPage({
   }, [plans, search]);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý chăn nuôi"
       description="Lập và quản lý kế hoạch chăn nuôi theo lứa nuôi"
       actions={
@@ -104,6 +103,6 @@ export default function PlanAnimalGrowthPage({
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

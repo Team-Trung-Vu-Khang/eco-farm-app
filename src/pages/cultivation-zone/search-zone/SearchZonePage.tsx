@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -23,6 +23,8 @@ import {
   useToast,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import {
   Activity,
   Building2,
@@ -38,8 +40,6 @@ import {
   Target,
   X,
 } from "lucide-react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   MapContainer,
@@ -719,8 +719,8 @@ const SearchZonePage = () => {
               scope === "region"
                 ? "bg-blue-500"
                 : scope === "area"
-                ? "bg-emerald-500"
-                : "bg-orange-500",
+                  ? "bg-emerald-500"
+                  : "bg-orange-500",
             )}
           >
             {scope === "region"
@@ -853,7 +853,7 @@ const SearchZonePage = () => {
   ]);
 
   return (
-    <AdminLayout isDev={true} title="Tìm kiếm vùng canh tác">
+    <PageWrapper title="Tìm kiếm vùng canh tác">
       <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
         {/* TOP HEADER: Simple Search (Matched to temp.ts) */}
         <div className="bg-white border-b p-4 z-40 shadow-sm rounded-md">
@@ -2029,7 +2029,7 @@ const SearchZonePage = () => {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   Card,
   CardContent,
@@ -12,15 +12,15 @@ import { ChevronLeft, Edit, MapPin } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import {
   MapContainer,
+  Marker,
   Polygon,
   TileLayer,
   Tooltip,
   useMap,
-  Marker,
 } from "react-leaflet";
 
+import type { CoordinatePoint, FarmPlotResponse } from "@/features/farm";
 import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
-import type { FarmPlotResponse, CoordinatePoint } from "@/features/farm";
 import { RegionChartStatusBadge } from "../components/RegionChartStatusBadge";
 import { useAreaDetailPage } from "../hooks/useAreaDetailPage";
 
@@ -108,22 +108,17 @@ const AreaDetailPage = () => {
 
   if (isLoading) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Chi tiết khu vực"
-        description="Đang tải..."
-      >
+      <PageWrapper title="Chi tiết khu vực" description="Đang tải...">
         <div className="flex items-center justify-center h-64">
           <p className="text-muted-foreground">Đang tải dữ liệu...</p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (!area) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Chi tiết khu vực"
         description="Không tìm thấy thông tin khu vực"
         actions={
@@ -138,13 +133,12 @@ const AreaDetailPage = () => {
         <div className="flex items-center justify-center h-64">
           <p className="text-muted-foreground">Khu vực không tồn tại</p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       description={`Mã khu vực: ${area.id}`}
       title={`Chi tiết khu vực: ${area.name}`}
       actions={
@@ -359,7 +353,7 @@ const AreaDetailPage = () => {
           </Card>
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -32,8 +32,7 @@ export default function TerrainPage() {
   useDialogBugWorkaround([formOpen, deleteOpen]);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý địa hình"
       description="Phân loại và quản lý các loại địa hình trong hệ thống"
       actions={
@@ -68,6 +67,6 @@ export default function TerrainPage() {
         description="Bạn có chắc chắn muốn xóa địa hình này? Chỉ có thể xóa khi chưa có dữ liệu gắn kết."
         loading={isPending}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

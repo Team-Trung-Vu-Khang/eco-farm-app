@@ -1,9 +1,9 @@
+import PageWrapper from "@/components/PageWrapper";
 import { useSeedMutations } from "@/features/farm";
 import { useFileUpload } from "@/features/storage";
 import { safeConvertLexicalToHtml } from "@/utils/commons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  AdminLayout,
   Card,
   CardContent,
   Form,
@@ -238,8 +238,7 @@ export default function CreateSeedPage() {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Tạo mới hạt giống"
       description="Thêm mới hạt giống vào danh mục hệ thống"
     >
@@ -260,6 +259,6 @@ export default function CreateSeedPage() {
           </Card>
         </Form>
       </FormProvider>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

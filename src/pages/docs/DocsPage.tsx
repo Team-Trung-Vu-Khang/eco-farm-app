@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -21,8 +21,7 @@ export default function DocsPage() {
   } = useDocs();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý tài liệu kỹ thuật"
       description="Xem và quản lý danh sách các tài liệu quy trình canh tác"
       actions={
@@ -51,6 +50,6 @@ export default function DocsPage() {
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

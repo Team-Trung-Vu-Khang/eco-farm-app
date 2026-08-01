@@ -1,3 +1,4 @@
+import PageWrapper from "@/components/PageWrapper";
 // import {
 //   AdminLayout,
 //   Badge,
@@ -828,7 +829,7 @@
 //   ]);
 
 //   return (
-//     <AdminLayout isDev={true} title="Tìm kiếm vùng canh tác">
+//     <PageWrapper title="Tìm kiếm vùng canh tác">
 //       <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
 //         {/* TOP HEADER: Simple Search (Matched to temp.ts) */}
 //         <div className="bg-white border-b p-4 z-40 shadow-sm rounded-md">
@@ -1998,8 +1999,7 @@
 //           </div>
 //         </div>
 //       </div>
-//     </AdminLayout>
-//   );
+//     </PageWrapper>//   );
 // };
 
 // const GeographyScopeTree = ({

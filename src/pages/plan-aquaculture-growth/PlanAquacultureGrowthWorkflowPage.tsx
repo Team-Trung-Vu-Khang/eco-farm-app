@@ -1,17 +1,18 @@
+import PageWrapper from "@/components/PageWrapper";
+import useRegionStore from "@/stores/useRegionStore";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
   CardContent,
   Checkbox,
+  DeleteDialog,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DeleteDialog,
   Input,
   Label,
   ScrollArea,
@@ -41,15 +42,14 @@ import {
   type Node,
 } from "reactflow";
 import { useLocation, useParams } from "wouter";
-import useRegionStore from "@/stores/useRegionStore";
 import usePlanStore, { type Plan } from "../../stores/usePlanStore";
 import type {
   WorkflowCardNodeData,
   WorkflowNodeStatus,
 } from "./../growth-cycle/components/workflow/WorkflowCardNode";
 import { WorkflowCardNode } from "./../growth-cycle/components/workflow/WorkflowCardNode";
-import { getPlanStatusBadge } from "./utils/status";
 import { summarizePlanSelections } from "./utils/location";
+import { getPlanStatusBadge } from "./utils/status";
 
 type WorkflowViewMode = "workflow" | "milestone";
 
@@ -103,10 +103,7 @@ function getPurposeLabel(plan: Plan) {
   return "Phát sinh";
 }
 
-function getDurationLabel(
-  startDate?: string | null,
-  endDate?: string | null,
-) {
+function getDurationLabel(startDate?: string | null, endDate?: string | null) {
   if (!startDate || !endDate) return "Chưa xác định";
 
   const start = new Date(startDate).getTime();
@@ -118,10 +115,14 @@ function getDurationLabel(
 
   const months = totalDays / 30;
   const roundedMonths = Math.round(months * 10) / 10;
-  return `${Number.isInteger(roundedMonths) ? roundedMonths : roundedMonths.toLocaleString("vi-VN", {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  })} tháng`;
+  return `${
+    Number.isInteger(roundedMonths)
+      ? roundedMonths
+      : roundedMonths.toLocaleString("vi-VN", {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1,
+        })
+  } tháng`;
 }
 
 /** Fixed per module: this page only ever renders this plan type. */
@@ -653,7 +654,15 @@ export default function PlanAquacultureGrowthWorkflowPage({
     connect("Kế hoạch 1.1", "Kế hoạch 1.2", "#2563eb", true);
 
     return { nodes, edges };
-  }, [basePath, plan, primaryRegionLabels, regions, setLocation, viewMode, openEditDialog]);
+  }, [
+    basePath,
+    plan,
+    primaryRegionLabels,
+    regions,
+    setLocation,
+    viewMode,
+    openEditDialog,
+  ]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(flowDefinition.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(flowDefinition.edges);
@@ -665,11 +674,7 @@ export default function PlanAquacultureGrowthWorkflowPage({
 
   if (!plan) {
     return (
-      <AdminLayout
-        isDev
-        title={WORKFLOW_TITLE}
-        description="Không tìm thấy kế hoạch"
-      >
+      <PageWrapper title={WORKFLOW_TITLE} description="Không tìm thấy kế hoạch">
         <div className="flex h-[60vh] items-center justify-center">
           <div className="max-w-md rounded-2xl border bg-background p-6 text-center shadow-sm">
             <p className="text-lg font-semibold">Không tìm thấy kế hoạch</p>
@@ -684,13 +689,12 @@ export default function PlanAquacultureGrowthWorkflowPage({
             </div>
           </div>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev
+    <PageWrapper
       title={WORKFLOW_TITLE}
       description={WORKFLOW_DESCRIPTION}
       actions={
@@ -753,45 +757,45 @@ export default function PlanAquacultureGrowthWorkflowPage({
                 minWidth: viewMode === "milestone" ? "3600px" : "100%",
               }}
             >
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              nodeTypes={nodeTypes}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              fitView={viewMode !== "milestone"}
-              fitViewOptions={{ padding: 0.22 }}
-              minZoom={0.22}
-              maxZoom={1.25}
-              nodesDraggable
-              nodesConnectable={false}
-              elementsSelectable={false}
-              panOnDrag
-              zoomOnScroll
-              snapToGrid
-              snapGrid={[24, 24]}
-              proOptions={{ hideAttribution: true }}
-            >
-              <Background
-                variant={BackgroundVariant.Dots}
-                gap={24}
-                size={1}
-                color="#dbe4ee"
-              />
-              <Controls
-                showInteractive={false}
-                className="!border !border-slate-200 !bg-white/95 !shadow-lg"
-              />
-              <MiniMap
-                nodeColor={(node) => {
-                  const kind = node.data?.kind as string | undefined;
-                  if (kind === "plan") return "#0f172a";
-                  return "#94a3b8";
-                }}
-                maskColor="rgba(248,250,252,0.75)"
-                className="!rounded-xl !border !border-slate-200 !bg-white/95 !shadow-lg"
-              />
-            </ReactFlow>
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                nodeTypes={nodeTypes}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                fitView={viewMode !== "milestone"}
+                fitViewOptions={{ padding: 0.22 }}
+                minZoom={0.22}
+                maxZoom={1.25}
+                nodesDraggable
+                nodesConnectable={false}
+                elementsSelectable={false}
+                panOnDrag
+                zoomOnScroll
+                snapToGrid
+                snapGrid={[24, 24]}
+                proOptions={{ hideAttribution: true }}
+              >
+                <Background
+                  variant={BackgroundVariant.Dots}
+                  gap={24}
+                  size={1}
+                  color="#dbe4ee"
+                />
+                <Controls
+                  showInteractive={false}
+                  className="!border !border-slate-200 !bg-white/95 !shadow-lg"
+                />
+                <MiniMap
+                  nodeColor={(node) => {
+                    const kind = node.data?.kind as string | undefined;
+                    if (kind === "plan") return "#0f172a";
+                    return "#94a3b8";
+                  }}
+                  maskColor="rgba(248,250,252,0.75)"
+                  className="!rounded-xl !border !border-slate-200 !bg-white/95 !shadow-lg"
+                />
+              </ReactFlow>
             </div>
           </div>
         </CardContent>
@@ -874,10 +878,7 @@ export default function PlanAquacultureGrowthWorkflowPage({
                             setEditDraft((current) => ({
                               ...current,
                               regionIds: value
-                                ? [
-                                    ...current.regionIds,
-                                    String(region.id),
-                                  ]
+                                ? [...current.regionIds, String(region.id)]
                                 : current.regionIds.filter(
                                     (item) => item !== String(region.id),
                                   ),
@@ -901,10 +902,7 @@ export default function PlanAquacultureGrowthWorkflowPage({
           </div>
 
           <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setEditOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
               Hủy
             </Button>
             <Button onClick={handleConfirmEdit}>Lưu thay đổi</Button>
@@ -916,6 +914,6 @@ export default function PlanAquacultureGrowthWorkflowPage({
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

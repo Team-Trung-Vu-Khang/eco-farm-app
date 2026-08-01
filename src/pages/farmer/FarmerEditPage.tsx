@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -125,8 +125,7 @@ export default function FarmerEditPage() {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={isEdit ? "Chỉnh sửa Nông hộ" : "Tạo mới Nông hộ"}
       description="Điền thông tin theo từng bước để tạo mới nông hộ"
       actions={[
@@ -183,6 +182,6 @@ export default function FarmerEditPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

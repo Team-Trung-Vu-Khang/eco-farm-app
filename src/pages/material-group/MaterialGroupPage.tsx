@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -40,8 +40,7 @@ const MaterialGroupPage = () => {
   } = useMaterialGroupPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Danh mục vật tư"
       description="Quản lý danh sách các nhóm vật tư (Master Data)"
       actions={
@@ -95,7 +94,7 @@ const MaterialGroupPage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa nhóm vật tư này?"
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

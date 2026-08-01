@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -29,13 +29,13 @@ import {
   Sprout,
   Trash2,
   Users,
-  Wrench,
   Workflow,
+  Wrench,
 } from "lucide-react";
 import { useMemo } from "react";
 import { usePlanDetailPage } from "./hooks/usePlanDetailPage";
 import { getPlanStatusBadge } from "./utils/status";
- 
+
 export default function PlanDetailPage() {
   const {
     params,
@@ -104,8 +104,7 @@ export default function PlanDetailPage() {
   }, [plan, regions]);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chi tiết kế hoạch"
       description={`Xem thông tin chi tiết kế hoạch ${plan.code}`}
     >
@@ -719,6 +718,6 @@ export default function PlanDetailPage() {
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

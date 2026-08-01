@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   Card,
   CardContent,
@@ -97,7 +97,7 @@ export function VarietyFormStepper({
   ];
 
   return (
-    <AdminLayout isDev={true} title={title} description={description}>
+    <PageWrapper title={title} description={description}>
       <div className="mb-4">
         <Button
           variant="ghost"
@@ -120,6 +120,6 @@ export function VarietyFormStepper({
           />
         </CardContent>
       </Card>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

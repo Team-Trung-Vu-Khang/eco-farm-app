@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -27,8 +27,7 @@ const AreaDistributionPage = () => {
   } = useAreaDistributionPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Phân bố khu vực"
       description="Quản lý danh sách và bản đồ phân bố các khu vực trồng"
       actions={
@@ -61,7 +60,7 @@ const AreaDistributionPage = () => {
         onConfirm={confirmDelete}
         description="Bạn có chắc chắn muốn xóa khu vực này?"
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 export default AreaDistributionPage;

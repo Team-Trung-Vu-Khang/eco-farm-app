@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Combobox,
@@ -15,12 +15,13 @@ import {
   useToast,
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import "leaflet/dist/leaflet.css";
 import {
   Award,
   Building2,
   ChevronRight,
-  Fish,
   Filter,
+  Fish,
   Layers,
   MapPin,
   Maximize2,
@@ -30,7 +31,6 @@ import {
   Search,
   ShieldCheck,
 } from "lucide-react";
-import "leaflet/dist/leaflet.css";
 import { useEffect, useMemo, useState } from "react";
 import {
   CircleMarker,
@@ -91,13 +91,7 @@ const makeClosedPath = (coordinates?: Array<{ lat: number; lng: number }>) => {
   return path;
 };
 
-const MapSync = ({
-  center,
-  zoom,
-}: {
-  center: LatLngTuple;
-  zoom: number;
-}) => {
+const MapSync = ({ center, zoom }: { center: LatLngTuple; zoom: number }) => {
   const map = useMap();
 
   useEffect(() => {
@@ -411,19 +405,25 @@ const RecordDetailDialog = ({
                   <div className="text-[10px] font-black uppercase text-slate-400 mb-1">
                     Loại đối tượng
                   </div>
-                  <div className="font-bold text-slate-700">{record.species}</div>
+                  <div className="font-bold text-slate-700">
+                    {record.species}
+                  </div>
                 </div>
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
                   <div className="text-[10px] font-black uppercase text-slate-400 mb-1">
                     Vùng nuôi trồng
                   </div>
-                  <div className="font-bold text-slate-700">{record.regionName}</div>
+                  <div className="font-bold text-slate-700">
+                    {record.regionName}
+                  </div>
                 </div>
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
                   <div className="text-[10px] font-black uppercase text-slate-400 mb-1">
                     Khu vực
                   </div>
-                  <div className="font-bold text-slate-700">{record.areaName}</div>
+                  <div className="font-bold text-slate-700">
+                    {record.areaName}
+                  </div>
                 </div>
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
                   <div className="text-[10px] font-black uppercase text-slate-400 mb-1">
@@ -496,10 +496,7 @@ const SearchCropPage = () => {
   const [activeRecord, setActiveRecord] = useState<SearchRecord | null>(null);
   const [isRecordDialogOpen, setIsRecordDialogOpen] = useState(false);
 
-  const records = useMemo<SearchRecord[]>(
-    () => AQUACULTURE_SEARCH_RECORDS,
-    [],
-  );
+  const records = useMemo<SearchRecord[]>(() => AQUACULTURE_SEARCH_RECORDS, []);
 
   const regionCountMap = useMemo(() => {
     return AQUACULTURE_IDENTIFICATION_REGIONS.reduce<Record<string, number>>(
@@ -513,18 +510,15 @@ const SearchCropPage = () => {
     );
   }, [records]);
 
-  const speciesOptionsMemo = useMemo(
-    () => speciesOptions,
-    [],
-  );
+  const speciesOptionsMemo = useMemo(() => speciesOptions, []);
 
-  const certificationEnabledCount = Object.keys(
-    advancedFilters,
-  ).filter((key) => {
-    const value = advancedFilters[key as keyof AdvancedFilters];
-    if (Array.isArray(value)) return value.length > 0;
-    return value !== undefined && value !== null;
-  }).length;
+  const certificationEnabledCount = Object.keys(advancedFilters).filter(
+    (key) => {
+      const value = advancedFilters[key as keyof AdvancedFilters];
+      if (Array.isArray(value)) return value.length > 0;
+      return value !== undefined && value !== null;
+    },
+  ).length;
 
   const filteredRecords = useMemo(() => {
     return records.filter((record) => {
@@ -599,8 +593,7 @@ const SearchCropPage = () => {
       setSelectedRegionId(filteredRegions[0].id);
       setActiveRecord(
         filteredRecords.find(
-          (record) =>
-            record.cultivationRegionId === filteredRegions[0].id,
+          (record) => record.cultivationRegionId === filteredRegions[0].id,
         ) || null,
       );
     }
@@ -611,7 +604,10 @@ const SearchCropPage = () => {
       const first = filteredRecords.find(
         (record) => record.cultivationRegionId === selectedRegionId,
       );
-      if (!activeRecord || activeRecord.cultivationRegionId !== selectedRegionId) {
+      if (
+        !activeRecord ||
+        activeRecord.cultivationRegionId !== selectedRegionId
+      ) {
         setActiveRecord(first || null);
       }
     }
@@ -653,7 +649,10 @@ const SearchCropPage = () => {
   const mapView = (() => {
     if (activeRecord) {
       return {
-        center: [activeRecord.coordinate.lat, activeRecord.coordinate.lng] as LatLngTuple,
+        center: [
+          activeRecord.coordinate.lat,
+          activeRecord.coordinate.lng,
+        ] as LatLngTuple,
         zoom: 17,
       };
     }
@@ -668,15 +667,17 @@ const SearchCropPage = () => {
     const firstRecord = recordsInRegion[0];
     if (firstRecord) {
       return {
-        center: [firstRecord.coordinate.lat, firstRecord.coordinate.lng] as LatLngTuple,
+        center: [
+          firstRecord.coordinate.lat,
+          firstRecord.coordinate.lng,
+        ] as LatLngTuple,
         zoom: 15,
       };
     }
 
     const geoUnit = AQUACULTURE_IDENTIFICATION_GEO_UNITS.find(
       (unit) =>
-        unit.id ===
-        (selectedRegion.id === "aq-region-1" ? "aq-r-1" : "aq-r-2"),
+        unit.id === (selectedRegion.id === "aq-region-1" ? "aq-r-1" : "aq-r-2"),
     );
     const fallback = geoUnit?.coordinates?.[0] || { lat: 10.43, lng: 106.83 };
     return {
@@ -696,7 +697,9 @@ const SearchCropPage = () => {
 
   const areaPath = makeClosedPath(
     AQUACULTURE_IDENTIFICATION_GEO_UNITS.find(
-      (unit) => unit.id === (selectedRegion?.id === "aq-region-1" ? "aq-a-1" : "aq-a-2"),
+      (unit) =>
+        unit.id ===
+        (selectedRegion?.id === "aq-region-1" ? "aq-a-1" : "aq-a-2"),
     )?.coordinates,
   );
 
@@ -708,7 +711,8 @@ const SearchCropPage = () => {
     )?.coordinates,
   );
 
-  const mapMarkers = recordsInRegion.length > 0 ? recordsInRegion : filteredRecords;
+  const mapMarkers =
+    recordsInRegion.length > 0 ? recordsInRegion : filteredRecords;
 
   const columns = useMemo<Column<SearchRecord>[]>(
     () => [
@@ -770,8 +774,7 @@ const SearchCropPage = () => {
   );
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Tìm kiếm định danh thủy sản"
       description="Tra cứu vùng nuôi trồng, khu vực và đối tượng nuôi bằng dữ liệu mẫu."
     >
@@ -974,8 +977,8 @@ const SearchCropPage = () => {
                           Chọn vùng nuôi trồng
                         </Button>
                         <p className="text-[9px] text-slate-400 italic leading-relaxed text-center px-2">
-                          * Nhấn nút để mở hộp thoại chọn dữ liệu mẫu theo vùng nuôi
-                          trồng
+                          * Nhấn nút để mở hộp thoại chọn dữ liệu mẫu theo vùng
+                          nuôi trồng
                         </p>
                       </div>
                     </div>
@@ -1048,11 +1051,7 @@ const SearchCropPage = () => {
             <div className="p-4 border-b bg-slate-50/50 flex items-center justify-between min-w-60">
               <h3 className="font-black text-xs text-slate-500 uppercase tracking-widest flex items-center gap-2">
                 <MapPin size={14} className="text-primary" />
-                Vùng nuôi trồng (
-                {
-                  filteredRegions.length
-                }
-                )
+                Vùng nuôi trồng ({filteredRegions.length})
               </h3>
               <button
                 onClick={() => setIsSidebarCollapsed(true)}
@@ -1111,11 +1110,15 @@ const SearchCropPage = () => {
                             {selectedRegion.name}
                           </h2>
                           <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
-                            Đang xem: {activeRecord?.name || "Chưa chọn đối tượng"}
+                            Đang xem:{" "}
+                            {activeRecord?.name || "Chưa chọn đối tượng"}
                           </p>
                         </div>
                       </div>
-                      <Badge variant="secondary" className="font-black py-1 px-3">
+                      <Badge
+                        variant="secondary"
+                        className="font-black py-1 px-3"
+                      >
                         {recordsInRegion.length} đối tượng nuôi
                       </Badge>
                     </div>
@@ -1135,7 +1138,10 @@ const SearchCropPage = () => {
                           scrollWheelZoom
                         >
                           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                          <MapSync center={mapView.center} zoom={mapView.zoom} />
+                          <MapSync
+                            center={mapView.center}
+                            zoom={mapView.zoom}
+                          />
                           {regionPath.length > 0 ? (
                             <Polygon
                               positions={regionPath}
@@ -1173,7 +1179,10 @@ const SearchCropPage = () => {
                           {mapMarkers.map((record) => (
                             <CircleMarker
                               key={record.id}
-                              center={[record.coordinate.lat, record.coordinate.lng]}
+                              center={[
+                                record.coordinate.lat,
+                                record.coordinate.lng,
+                              ]}
                               radius={8}
                               pathOptions={{
                                 color:
@@ -1215,7 +1224,9 @@ const SearchCropPage = () => {
                             <div className="w-full h-32 rounded-2xl bg-gradient-to-br from-emerald-50 to-sky-50 border border-slate-100 flex items-center justify-center">
                               <Fish className="w-12 h-12 text-emerald-500" />
                             </div>
-                            <h4 className="font-black text-lg">{activeRecord.name}</h4>
+                            <h4 className="font-black text-lg">
+                              {activeRecord.name}
+                            </h4>
                             <Badge className="bg-primary/10 text-primary uppercase font-black">
                               {activeRecord.code}
                             </Badge>
@@ -1254,7 +1265,11 @@ const SearchCropPage = () => {
                       <div className="flex-1 overflow-hidden p-4">
                         <DataTable
                           columns={columns}
-                          data={recordsInRegion.length > 0 ? recordsInRegion : filteredRecords}
+                          data={
+                            recordsInRegion.length > 0
+                              ? recordsInRegion
+                              : filteredRecords
+                          }
                           onView={(record) => {
                             setActiveRecord(record);
                             setIsRecordDialogOpen(true);
@@ -1438,7 +1453,7 @@ const SearchCropPage = () => {
           }
         `}</style>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

@@ -1,8 +1,5 @@
-import {
-  AdminLayout,
-  Button,
-  StepperForm,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button, StepperForm } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
 import { BasicInfoStep } from "./components/steps/BasicInfoStep";
 import { CommodityStep } from "./components/steps/CommodityStep";
@@ -118,8 +115,7 @@ const ContractCreatePage = () => {
   };
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Tạo hợp đồng mới"
       description="Tạo hợp đồng mua bán, dịch vụ, thuê, hợp tác"
     >
@@ -141,7 +137,7 @@ const ContractCreatePage = () => {
           onCancel={() => setLocation("/contract")}
         />
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

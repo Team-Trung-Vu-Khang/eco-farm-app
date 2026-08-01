@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   Card,
   CardContent,
@@ -66,8 +66,7 @@ export default function SoilAmendmentTreatmentPage() {
   };
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Cải tạo đất"
       description="Hệ thống quản lý phác đồ cải tạo đất với luồng tra cứu, handbook và dữ liệu kỹ thuật theo hiện trạng đất."
       actions={
@@ -167,6 +166,6 @@ export default function SoilAmendmentTreatmentPage() {
         title="Xóa phác đồ"
         description="Bạn có chắc chắn muốn xóa phác đồ master data này?"
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

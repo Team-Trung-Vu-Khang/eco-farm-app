@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   DataTable,
@@ -83,8 +83,7 @@ export default function GroupPositionPage() {
   } = useGroupPositionForm();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Nhóm chức vụ – chức danh"
       description="Quản lý các nhóm phân loại chức vụ và chức danh trong hệ thống"
       actions={
@@ -140,6 +139,6 @@ export default function GroupPositionPage() {
         loading={isPending}
         description="Bạn có chắc chắn muốn xóa nhóm chức vụ này? Hành động này không thể hoàn tác."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

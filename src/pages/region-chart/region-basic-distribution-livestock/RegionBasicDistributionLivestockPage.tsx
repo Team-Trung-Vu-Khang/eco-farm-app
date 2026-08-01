@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -28,8 +28,7 @@ const RegionBasicDistributionLivestockPage = () => {
   } = useRegionBasicDistributionLivestockPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Phân bố vùng cơ bản"
       description="Quản lý danh sách vùng chăn nuôi với thông tin cơ bản"
       actions={
@@ -62,7 +61,7 @@ const RegionBasicDistributionLivestockPage = () => {
         onConfirm={confirmDelete}
         description="Bạn có chắc chắn muốn xóa vùng chăn nuôi này?"
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

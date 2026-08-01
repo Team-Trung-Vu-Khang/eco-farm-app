@@ -1,8 +1,5 @@
-import {
-  AdminLayout,
-  Button,
-  DataTable,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button, DataTable } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { Link } from "wouter";
 
@@ -35,8 +32,7 @@ export default function CropFoundationPage() {
   useDialogBugWorkaround([deleteOpen]);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý cây trồng"
       description="Danh mục các loại cây trồng có trên thị trường"
       actions={
@@ -77,6 +73,6 @@ export default function CropFoundationPage() {
         onConfirm={handleConfirmDelete}
         isPending={isPending}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

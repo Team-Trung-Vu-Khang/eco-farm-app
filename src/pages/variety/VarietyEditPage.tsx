@@ -1,4 +1,5 @@
-import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { VarietyFormStepper } from "./components/VarietyFormStepper";
 import { useVarietyFormPage } from "./hooks/useVarietyFormPage";
 
@@ -7,14 +8,14 @@ export default function VarietyEditPage() {
 
   if (form.notFound) {
     return (
-      <AdminLayout isDev={true} title="Không tìm thấy">
+      <PageWrapper title="Không tìm thấy">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin giống cây này.
           </p>
           <Button onClick={form.goBack}>Quay lại danh sách</Button>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 

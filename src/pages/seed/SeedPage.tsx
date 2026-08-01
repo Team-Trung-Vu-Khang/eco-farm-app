@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -30,8 +30,7 @@ export default function SeedPage() {
   } = useSeedPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý hạt giống cây"
       actions={
         <div className="flex gap-2">
@@ -70,6 +69,6 @@ export default function SeedPage() {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa giống cây này?"
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

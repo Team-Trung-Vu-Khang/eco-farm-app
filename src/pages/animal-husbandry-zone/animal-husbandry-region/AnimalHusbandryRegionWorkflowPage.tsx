@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -897,8 +897,7 @@ export default function CultivationRegionWorkflowPage() {
     : { regions: 0, areas: 0, plots: 0 };
 
   return (
-    <AdminLayout
-      isDev
+    <PageWrapper
       title="Workflow vùng chăn nuôi"
       description={`Trực quan hóa ${selectedRegion.name} theo cây Vùng -> Khu vực -> Chuồng/Lô`}
       actions={
@@ -921,7 +920,9 @@ export default function CultivationRegionWorkflowPage() {
           </Button>
           <Button
             className="h-9 px-3"
-            onClick={() => setLocation(`/animal-husbandry-region/${params.id}/edit`)}
+            onClick={() =>
+              setLocation(`/animal-husbandry-region/${params.id}/edit`)
+            }
           >
             <PencilLine className="mr-2 h-4 w-4" />
             Chỉnh sửa
@@ -1153,6 +1154,6 @@ export default function CultivationRegionWorkflowPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

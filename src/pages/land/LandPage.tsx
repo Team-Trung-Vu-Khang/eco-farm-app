@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -32,8 +32,7 @@ export default function LandPage() {
   useDialogBugWorkaround([formOpen, deleteOpen]);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý đất"
       description="Phân loại và quản lý các loại đất canh tác"
       actions={
@@ -69,6 +68,6 @@ export default function LandPage() {
         description="Bạn có chắc chắn muốn xóa loại đất này? Chỉ có thể xóa khi chưa có dữ liệu gắn kết."
         loading={isSubmitting}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

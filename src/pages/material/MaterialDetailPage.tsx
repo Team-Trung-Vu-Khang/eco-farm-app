@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -33,7 +33,7 @@ const MaterialDetailPage = () => {
 
   if (!item) {
     return (
-      <AdminLayout isDev={true} title="Chi tiết vật tư">
+      <PageWrapper title="Chi tiết vật tư">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin vật tư.
@@ -42,13 +42,12 @@ const MaterialDetailPage = () => {
             Quay lại danh sách
           </Button>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chi tiết vật tư"
       description={`Thông tin chi tiết cho ${item.name}`}
       actions={
@@ -220,7 +219,7 @@ const MaterialDetailPage = () => {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

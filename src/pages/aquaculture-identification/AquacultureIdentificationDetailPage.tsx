@@ -1,9 +1,10 @@
-import { AdminLayout, DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
 import { PlantIdentificationIdentityCard } from "@/pages/aquaculture-region/components/aquaculture-detail/AquacultureIdentificationIdentityCard";
 import { PlantIdentificationMapSection } from "@/pages/aquaculture-region/components/aquaculture-detail/AquacultureIdentificationMapSection";
 import { PlantIdentificationNotFoundState } from "@/pages/aquaculture-region/components/aquaculture-detail/AquacultureIdentificationNotFoundState";
 import { PlantIdentificationPageActions } from "@/pages/aquaculture-region/components/aquaculture-detail/AquacultureIdentificationPageActions";
 import { PlantIdentificationSidebar } from "@/pages/aquaculture-region/components/aquaculture-detail/AquacultureIdentificationSidebar";
+import { DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useAquacultureIdentificationDetailPage } from "./hooks/useAquacultureIdentificationDetailPage";
 
 const AquacultureIdentificationDetailPage = () => {
@@ -24,15 +25,14 @@ const AquacultureIdentificationDetailPage = () => {
 
   if (isLoading) {
     return (
-      <AdminLayout
-        isDev={true}
+      <PageWrapper
         title="Đang tải..."
         description="Đang tải chi tiết định danh vùng nuôi trồng"
       >
         <div className="p-12 text-center text-slate-400">
           <p>Đang tải thông tin...</p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
@@ -43,8 +43,7 @@ const AquacultureIdentificationDetailPage = () => {
   const { plant, plot, area, region } = data;
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={`Thông tin định danh: ${plant.id}`}
       description="Chi tiết định danh và vị trí địa lý của vùng nuôi trồng"
       actions={
@@ -94,7 +93,7 @@ const AquacultureIdentificationDetailPage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa thông tin định danh này? Hành động này không thể hoàn tác."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

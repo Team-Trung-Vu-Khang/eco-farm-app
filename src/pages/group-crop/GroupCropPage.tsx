@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -39,8 +39,7 @@ export default function GroupCropPage() {
   useDialogBugWorkaround([formOpen, deleteOpen]);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý nhóm cây trồng"
       description="Danh mục các nhóm cây trồng có trên thị trường"
       actions={
@@ -87,6 +86,6 @@ export default function GroupCropPage() {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa nhóm cây trồng này? Chỉ có thể xóa khi chưa có dữ liệu gắn kết."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

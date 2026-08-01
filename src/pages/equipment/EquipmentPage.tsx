@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -24,8 +24,7 @@ export default function EquipmentPage() {
   const columns = getEquipmentColumns({ onNameClick: navigateToDetail });
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Quản lý thiết bị"
       description="Quản lý danh mục máy móc, công cụ và lịch bảo dưỡng"
       actions={
@@ -49,6 +48,6 @@ export default function EquipmentPage() {
         onOpenChange={setDeleteOpen}
         onConfirm={handleConfirmDelete}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

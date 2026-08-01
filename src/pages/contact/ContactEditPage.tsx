@@ -1,9 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  AdminLayout,
-  Button,
-  DeleteDialog,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Button, DeleteDialog } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Loader2, Save, X } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -54,27 +51,19 @@ export default function ContactEditPage() {
 
   if (loading) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Đang tải liên hệ"
-        description="Vui lòng chờ một lát"
-      >
+      <PageWrapper title="Đang tải liên hệ" description="Vui lòng chờ một lát">
         <div className="flex min-h-[40vh] items-center justify-center">
           <div className="text-sm text-muted-foreground">
             Đang tải dữ liệu liên hệ...
           </div>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (contactId && !contact) {
     return (
-      <AdminLayout
-        isDev={true}
-        title="Không tìm thấy"
-        description="Liên hệ không tồn tại"
-      >
+      <PageWrapper title="Không tìm thấy" description="Liên hệ không tồn tại">
         <div className="flex flex-col items-center justify-center h-96">
           <h2 className="text-2xl font-bold mb-4">Không tìm thấy liên hệ</h2>
           <Button onClick={goBack}>
@@ -82,18 +71,21 @@ export default function ContactEditPage() {
             Quay lại danh sách
           </Button>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Cập nhật liên hệ"
       description="Chỉnh sửa thông tin liên hệ"
       actions={
         <div className="flex gap-2">
-          <Button variant="outline" onClick={goBack} disabled={isSubmitting || isDeleting}>
+          <Button
+            variant="outline"
+            onClick={goBack}
+            disabled={isSubmitting || isDeleting}
+          >
             <X className="w-4 h-4 mr-2" />
             Hủy bỏ
           </Button>
@@ -130,6 +122,6 @@ export default function ContactEditPage() {
         loading={isDeleting}
         description={`Bạn có chắc chắn muốn xóa liên hệ ${defaultValues.fullName}?`}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

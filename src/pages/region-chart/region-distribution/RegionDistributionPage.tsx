@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -27,8 +27,7 @@ const RegionDistributionPage = () => {
   } = useRegionDistributionPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Phân bố vùng"
       description="Quản lý danh sách và bản đồ phân bố vùng trồng"
       actions={
@@ -61,7 +60,7 @@ const RegionDistributionPage = () => {
         onConfirm={confirmDelete}
         description="Bạn có chắc chắn muốn xóa vùng trồng này?"
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

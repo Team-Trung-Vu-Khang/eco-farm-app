@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -26,33 +26,32 @@ export default function TeamDetailPage() {
 
   if (isTeamLoading) {
     return (
-      <AdminLayout isDev={true} title="Chi tiết đội nhóm">
+      <PageWrapper title="Chi tiết đội nhóm">
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
           <p className="text-muted-foreground">
             Đang tải thông tin đội nhóm...
           </p>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   if (!team) {
     return (
-      <AdminLayout isDev={true} title="Chi tiết đội nhóm">
+      <PageWrapper title="Chi tiết đội nhóm">
         <div className="flex flex-col items-center justify-center py-20">
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin đội nhóm.
           </p>
           <Button onClick={goBack}>Quay lại danh sách</Button>
         </div>
-      </AdminLayout>
+      </PageWrapper>
     );
   }
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Chi tiết đội nhóm"
       description={`Thông tin và danh sách thành viên của ${team.name}`}
       actions={
@@ -105,6 +104,6 @@ export default function TeamDetailPage() {
         description="Bạn có chắc chắn muốn xóa đội nhóm này? Hành động này không thể hoàn tác."
         loading={isDeleting}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

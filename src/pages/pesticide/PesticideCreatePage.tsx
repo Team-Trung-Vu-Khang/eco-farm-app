@@ -1,8 +1,5 @@
-import {
-  AdminLayout,
-  Button,
-  StepperForm,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button, StepperForm } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
 import PesticideSubmitConfirmDialog from "./components/PesticideSubmitConfirmDialog";
 import { usePesticideCreatePage } from "./hooks/usePesticideCreatePage";
@@ -20,8 +17,7 @@ const PesticideCreatePage = () => {
   } = usePesticideCreatePage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={isEdit ? "Cập nhật thuốc BVTV" : "Thêm thuốc bảo vệ thực vật"}
       description={
         isEdit
@@ -57,7 +53,7 @@ const PesticideCreatePage = () => {
         formData={formData}
         onConfirm={handleConfirmSubmit}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

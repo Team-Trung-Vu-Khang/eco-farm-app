@@ -1,6 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  AdminLayout,
   Button,
   Card,
   CardContent,
@@ -33,6 +32,7 @@ import type { MasterDataRecord } from "@/features/master-data";
 import { useMasterData } from "@/features/master-data";
 
 import { OrganizationSelectDialog } from "@/components/organizations/OrganizationSelectDialog";
+import PageWrapper from "@/components/PageWrapper";
 import BankLogo from "./components/BankLogo";
 import {
   bankCreateFormSchema,
@@ -175,8 +175,7 @@ export default function BankCreatePage() {
   };
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Thêm mới tài khoản ngân hàng"
       description="Thêm tài khoản ngân hàng mới vào hệ thống"
       actions={
@@ -424,6 +423,6 @@ export default function BankCreatePage() {
         selectedId={selectedOwnerId}
         onConfirm={handleConfirmOrganization}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 }

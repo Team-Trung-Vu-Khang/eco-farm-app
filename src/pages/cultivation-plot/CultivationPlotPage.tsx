@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -20,8 +20,7 @@ const CultivationPlotPage = () => {
   } = useCultivationPlotPage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Lô canh tác"
       description="Quản lý các thiết lập canh tác theo Khu vực (Lô)"
       actions={
@@ -44,7 +43,7 @@ const CultivationPlotPage = () => {
         onConfirm={handleConfirmDelete}
         description="Bạn có chắc chắn muốn xóa lô này? Hành động này không thể hoàn tác."
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

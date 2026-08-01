@@ -1,6 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
 import { getMarkerIcon } from "@/pages/cultivation-zone/cultivation-region/components/mapUtils";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -853,8 +853,7 @@ const CultivationPlotCreatePage = () => {
   ];
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={isEdit ? "Chỉnh sửa lô" : "Thiết lập lô"}
       description="Quy trình khởi tạo và cấu hình canh tác theo Khu vực (Lô)"
     >
@@ -892,7 +891,7 @@ const CultivationPlotCreatePage = () => {
         selectedPlotId={selectedPlot?.id || ""}
         onRegionChange={setInternalRegionId}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

@@ -1,5 +1,6 @@
+import PageWrapper from "@/components/PageWrapper";
+import type { FarmRegionResponse } from "@/features/farm/types/farm.type";
 import {
-  AdminLayout,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -17,7 +18,6 @@ import {
 import { ArrowLeft } from "lucide-react";
 import { FormProvider, useFormContext } from "react-hook-form";
 import { useLocation } from "wouter";
-import type { FarmRegionResponse } from "@/features/farm/types/farm.type";
 import type {
   Area,
   Standard,
@@ -94,12 +94,7 @@ function EnterpriseCertificateStepperContent({
       id: "review",
       title: "Xác nhận",
       description: "Kiểm tra lại trước khi lưu",
-      content: (
-        <CertificateReviewStep
-          standards={standards}
-          areas={areas}
-        />
-      ),
+      content: <CertificateReviewStep standards={standards} areas={areas} />,
     },
   ];
 
@@ -139,8 +134,7 @@ export default function EnterpriseCertificateFormPage() {
   const watchedName = methods.watch("name");
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={isEdit ? "Chỉnh sửa chứng nhận" : "Tạo mới chứng nhận"}
       description="Điền thông tin theo từng bước để tạo hồ sơ phạm vi chứng nhận: đơn vị - tổ chức hoặc vùng canh tác cụ thể"
       actions={
@@ -193,6 +187,6 @@ export default function EnterpriseCertificateFormPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AdminLayout>
+    </PageWrapper>
   );
 }

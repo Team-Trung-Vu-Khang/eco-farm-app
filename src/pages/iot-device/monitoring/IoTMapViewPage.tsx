@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Badge,
   Button,
   Card,
@@ -235,8 +235,7 @@ const IoTMapViewPage = () => {
   const telemetry = useMemo(() => generateIoTTelemetry(40, 10), []);
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Bản đồ Giám sát IoT"
       description="Theo dõi vị trí và trạng thái thiết bị thời gian thực"
     >
@@ -856,7 +855,7 @@ const IoTMapViewPage = () => {
           )}
         </div>
       </div>
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

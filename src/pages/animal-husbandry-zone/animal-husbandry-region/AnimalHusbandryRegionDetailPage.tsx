@@ -1,4 +1,5 @@
-import { AdminLayout, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import PageWrapper from "@/components/PageWrapper";
+import { Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Workflow } from "lucide-react";
 import { useLocation, useParams } from "wouter";
 import { CultivationRegionDetailView } from "./components/CultivationRegionDetailView";
@@ -10,8 +11,7 @@ const AnimalHusbandryRegionDetailPage = () => {
   const [, setLocation] = useLocation();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title={title}
       description={description}
       actions={
@@ -28,7 +28,7 @@ const AnimalHusbandryRegionDetailPage = () => {
       }
     >
       <CultivationRegionDetailView />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 

@@ -1,5 +1,5 @@
+import PageWrapper from "@/components/PageWrapper";
 import {
-  AdminLayout,
   Button,
   DataTable,
   DeleteDialog,
@@ -39,8 +39,7 @@ const PlanTypePage = () => {
   } = usePlanTypePage();
 
   return (
-    <AdminLayout
-      isDev={true}
+    <PageWrapper
       title="Loại Kế Hoạch"
       description="Quản lý các loại hình kế hoạch sản xuất, kinh doanh trong nông trại"
       actions={
@@ -98,7 +97,7 @@ const PlanTypePage = () => {
         title="Xóa loại kế hoạch"
         description={`Bạn có chắc chắn muốn xóa loại kế hoạch "${deleteItem?.name}"? Hành động này không thể hoàn tác.`}
       />
-    </AdminLayout>
+    </PageWrapper>
   );
 };
 
