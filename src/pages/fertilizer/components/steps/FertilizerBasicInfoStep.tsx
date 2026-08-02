@@ -12,7 +12,13 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Image as ImageIcon, Leaf, Plus, Tags, Upload, X } from "lucide-react";
 import { useState } from "react";
-import { commonHashtags, fertilizerTypes } from "../../data/constants";
+import { 
+  commonHashtags, 
+  nutritionalContentOptions,
+  originOptions,
+  applicationStageOptions,
+  physicalFormOptions 
+} from "../../data/constants";
 import type { FertilizerFormData } from "../../types/types";
 
 interface FertilizerBasicInfoStepProps {
@@ -73,24 +79,81 @@ export const FertilizerBasicInfoStep = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Loại phân bón</Label>
+              <Label>Thành phần dinh dưỡng <span className="text-red-500">*</span></Label>
               <Select
-                value={formData.type}
-                onValueChange={(v) => updateField("type", v)}
+                value={formData.nutritionalContentId}
+                onValueChange={(v) => updateField("nutritionalContentId", v)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Chọn loại phân" />
+                  <SelectValue placeholder="Chọn nhóm thành phần" />
                 </SelectTrigger>
                 <SelectContent>
-                  {fertilizerTypes.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
+                  {nutritionalContentOptions.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
+              <Label>Nguồn gốc <span className="text-red-500">*</span></Label>
+              <Select
+                value={formData.originId}
+                onValueChange={(v) => updateField("originId", v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn nguồn gốc" />
+                </SelectTrigger>
+                <SelectContent>
+                  {originOptions.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Giai đoạn tác động <span className="text-red-500">*</span></Label>
+              <Select
+                value={formData.applicationStageId}
+                onValueChange={(v) => updateField("applicationStageId", v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn giai đoạn bón" />
+                </SelectTrigger>
+                <SelectContent>
+                  {applicationStageOptions.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Hình thái vật lý <span className="text-red-500">*</span></Label>
+              <Select
+                value={formData.physicalFormId}
+                onValueChange={(v) => updateField("physicalFormId", v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn hình thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  {physicalFormOptions.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2 col-span-1 md:col-span-2">
               <Label>Hàm lượng dinh dưỡng</Label>
               <Input
                 value={formData.nutrientContent}

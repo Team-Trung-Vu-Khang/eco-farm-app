@@ -13,6 +13,7 @@ import { Building2, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { suppliers, units } from "../../data/constants";
 import type { FertilizerFormData } from "../../types/types";
+import { SupplierSelectorDialog } from "../SupplierSelectorDialog";
 
 interface FertilizerSuppliersStepProps {
   formData: FertilizerFormData;
@@ -30,6 +31,7 @@ export const FertilizerSuppliersStep = ({
     unit: "",
     packaging: "",
   });
+  const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false);
 
   const addSupplierItem = () => {
     if (
@@ -72,23 +74,16 @@ export const FertilizerSuppliersStep = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Chọn nhà cung cấp</Label>
-              <Select
-                value={tempSupplier.supplierId}
-                onValueChange={(v) =>
-                  setTempSupplier({ ...tempSupplier, supplierId: v })
-                }
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full justify-start bg-white text-left font-normal"
+                onClick={() => setIsSupplierDialogOpen(true)}
               >
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Chọn đối tác..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {suppliers.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name} ({s.type === "enterprise" ? "DN" : "NH"})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {tempSupplier.supplierId
+                  ? suppliers.find(s => s.id === tempSupplier.supplierId)?.name || "Chọn đối tác..."
+                  : "Chọn đối tác..."}
+              </Button>
             </div>
             <div className="space-y-2">
               <Label>Quy cách đóng gói</Label>
@@ -192,6 +187,15 @@ export const FertilizerSuppliersStep = ({
           )}
         </div>
       </div>
+
+      <SupplierSelectorDialog
+        open={isSupplierDialogOpen}
+        onOpenChange={setIsSupplierDialogOpen}
+        selectedId={tempSupplier.supplierId}
+        onSelect={(supplier) => {
+          setTempSupplier({ ...tempSupplier, supplierId: supplier.id });
+        }}
+      />
     </div>
   );
 };

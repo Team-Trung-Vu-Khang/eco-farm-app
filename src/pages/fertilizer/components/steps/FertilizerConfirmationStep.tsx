@@ -1,6 +1,12 @@
 import { Badge, Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { CheckCircle2 } from "lucide-react";
-import { suppliers } from "../../data/constants";
+import { CheckCircle2, FileText } from "lucide-react";
+import {
+  suppliers,
+  nutritionalContentOptions,
+  originOptions,
+  applicationStageOptions,
+  physicalFormOptions,
+} from "../../data/constants";
 import type { FertilizerFormData } from "../../types/types";
 
 interface FertilizerConfirmationStepProps {
@@ -40,8 +46,35 @@ export const FertilizerConfirmationStep = ({
                 <span className="font-medium">{formData.name}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Loại:</span>{" "}
-                <span className="font-medium">{formData.type}</span>
+                <span className="text-muted-foreground">Thành phần:</span>{" "}
+                <span className="font-medium">
+                  {nutritionalContentOptions.find(
+                    (o) => o.id === formData.nutritionalContentId,
+                  )?.label || "N/A"}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Nguồn gốc:</span>{" "}
+                <span className="font-medium">
+                  {originOptions.find((o) => o.id === formData.originId)
+                    ?.label || "N/A"}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Giai đoạn:</span>{" "}
+                <span className="font-medium">
+                  {applicationStageOptions.find(
+                    (o) => o.id === formData.applicationStageId,
+                  )?.label || "N/A"}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Hình thái:</span>{" "}
+                <span className="font-medium">
+                  {physicalFormOptions.find(
+                    (o) => o.id === formData.physicalFormId,
+                  )?.label || "N/A"}
+                </span>
               </div>
               <div>
                 <span className="text-muted-foreground">Dinh dưỡng:</span>{" "}
@@ -63,6 +96,57 @@ export const FertilizerConfirmationStep = ({
                   ))}
                 </div>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <h4 className="font-semibold mb-4 text-slate-800 border-b pb-2">
+              Hướng dẫn sử dụng
+            </h4>
+            <div className="space-y-4 text-sm">
+              <div>
+                <span className="text-muted-foreground block mb-2">
+                  Nội dung hướng dẫn:
+                </span>
+                {formData.usage ? (
+                  <div
+                    className="prose prose-sm max-w-none bg-slate-50 p-4 rounded-lg border border-slate-100 editor-content"
+                    dangerouslySetInnerHTML={{ __html: formData.usage }}
+                  />
+                ) : (
+                  <span className="font-medium bg-slate-50 p-2 block rounded border border-slate-100">
+                    Không có nội dung
+                  </span>
+                )}
+              </div>
+
+              {formData.documents && formData.documents.length > 0 && (
+                <div>
+                  <span className="text-muted-foreground block mb-2">
+                    Tài liệu đính kèm ({formData.documents.length}):
+                  </span>
+                  <div className="space-y-2">
+                    {formData.documents.map((doc, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50"
+                      >
+                        <FileText className="w-5 h-5 text-red-500 shrink-0" />
+                        <div>
+                          <div className="font-medium text-slate-900 line-clamp-1">
+                            {doc.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {(doc.size / (1024 * 1024)).toFixed(2)} MB
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

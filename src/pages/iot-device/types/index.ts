@@ -1,9 +1,9 @@
 export type DeviceStatus = "online" | "offline" | "low_battery" | "error";
 
 export interface DeviceConnectionConfig {
-  protocol: 'MQTT' | 'HTTP' | 'CoAP' | 'LoRaWAN';
+  protocol: "MQTT" | "HTTP" | "CoAP" | "LoRaWAN";
   endpoint: string;
-  authType: 'token' | 'certificate';
+  authType: "token" | "certificate";
   apiKey?: string;
   certificate?: string;
   samplingInterval: number; // seconds
@@ -16,7 +16,8 @@ export interface IoTDevice {
   imei: string;
   mac: string;
   name: string;
-  type: string;
+  perceptionLayerId: string;
+  networkLayerId: string;
   firmwareVersion: string;
   manufacturer: string;
   status: DeviceStatus;

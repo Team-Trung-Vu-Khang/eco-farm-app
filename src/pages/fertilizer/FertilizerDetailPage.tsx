@@ -31,7 +31,13 @@ import {
 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import useFertilizerStore from "../../stores/useFertilizerStore";
-import { suppliers } from "./data/constants";
+import {
+  originOptions,
+  applicationStageOptions,
+  physicalFormOptions,
+  nutritionalContentOptions,
+  suppliers
+} from "./data/constants";
 
 // Auto-generated mock data for detail page (data that doesn't exist in the store)
 const fertilizerDetailExtras: Record<
@@ -222,11 +228,11 @@ const FertilizerDetailPage = () => {
           <Card className="overflow-hidden border-none shadow-md bg-white">
             <div className="bg-linear-to-r from-green-50 to-emerald-50 p-6 flex flex-col md:flex-row gap-6 items-start">
               <div className="w-24 h-24 bg-white rounded-xl shadow-sm border p-2 flex items-center justify-center shrink-0">
-                {item.type === "Phân hữu cơ" ? (
+                {item.originId === "organic" ? (
                   <Leaf className="w-12 h-12 text-green-400" />
-                ) : item.type === "Phân vi sinh" ? (
+                ) : item.originId === "biological" ? (
                   <FlaskConical className="w-12 h-12 text-purple-400" />
-                ) : item.type === "Phân bón lá" ? (
+                ) : item.physicalFormId === "foliar_application" ? (
                   <Droplets className="w-12 h-12 text-blue-400" />
                 ) : (
                   <ImageIcon className="w-12 h-12 text-slate-300" />
@@ -260,7 +266,13 @@ const FertilizerDetailPage = () => {
 
                 <div className="flex flex-wrap gap-2 mt-4">
                   <Badge variant="outline" className="bg-white/50">
-                    {item.type}
+                    {originOptions.find(o => o.id === item.originId)?.label || "N/A"}
+                  </Badge>
+                  <Badge variant="outline" className="bg-white/50">
+                    {applicationStageOptions.find(o => o.id === item.applicationStageId)?.label || "N/A"}
+                  </Badge>
+                  <Badge variant="outline" className="bg-white/50">
+                    {physicalFormOptions.find(o => o.id === item.physicalFormId)?.label || "N/A"}
                   </Badge>
                   <Badge variant="outline" className="bg-white/50">
                     {extras.origin}
@@ -316,11 +328,29 @@ const FertilizerDetailPage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground mb-1">
-                          Loại phân bón
+                          Nguồn gốc
                         </h4>
                         <div className="flex items-center gap-2 font-medium">
                           <Leaf className="w-4 h-4 text-emerald-600" />
-                          {item.type}
+                          {originOptions.find(o => o.id === item.originId)?.label || "N/A"}
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                          Giai đoạn & Hình thái
+                        </h4>
+                        <div className="flex items-center gap-2 font-medium">
+                          <Droplets className="w-4 h-4 text-blue-600" />
+                          {applicationStageOptions.find(o => o.id === item.applicationStageId)?.label} - {physicalFormOptions.find(o => o.id === item.physicalFormId)?.label}
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                          Thành phần dinh dưỡng
+                        </h4>
+                        <div className="flex items-center gap-2 font-medium">
+                          <Info className="w-4 h-4 text-indigo-600" />
+                          {nutritionalContentOptions.find(o => o.id === item.nutritionalContentId)?.label || "N/A"}
                         </div>
                       </div>
                       <div>
@@ -546,8 +576,10 @@ const FertilizerDetailPage = () => {
               </div>
               <Separator />
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Loại</span>
-                <span className="font-medium">{item.type}</span>
+                <span className="text-muted-foreground">Phân loại</span>
+                <span className="font-medium text-right">
+                  {originOptions.find(o => o.id === item.originId)?.label || "N/A"}
+                </span>
               </div>
               <Separator />
               <div className="flex justify-between">

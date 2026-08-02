@@ -9,7 +9,12 @@ import {
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ImageIcon, Upload, Wrench } from "lucide-react";
-import { equipmentTypes, maintenanceIntervals } from "../../data/constants";
+import {
+  maintenanceIntervals,
+  technologyLevelOptions,
+  valueChainOptions,
+  financialManagementOptions,
+} from "../../data/constants";
 import type { EquipmentFormData } from "../../types";
 
 interface EquipmentBasicInfoStepProps {
@@ -54,23 +59,62 @@ export const EquipmentBasicInfoStep = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Loại thiết bị</Label>
+              <Label>Năng lực vận hành (Mức độ công nghệ)</Label>
               <Select
-                value={formData.type}
-                onValueChange={(v) => updateField("type", v)}
+                value={formData.technologyLevelId}
+                onValueChange={(v) => updateField("technologyLevelId", v)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Chọn loại" />
+                  <SelectValue placeholder="Chọn mức độ công nghệ" />
                 </SelectTrigger>
                 <SelectContent>
-                  {equipmentTypes.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
+                  {technologyLevelOptions.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+            
+            <div className="space-y-2">
+              <Label>Chuỗi giá trị sản xuất</Label>
+              <Select
+                value={formData.valueChainId}
+                onValueChange={(v) => updateField("valueChainId", v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn khâu trong chuỗi" />
+                </SelectTrigger>
+                <SelectContent>
+                  {valueChainOptions.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Quản lý tài chính</Label>
+              <Select
+                value={formData.financialManagementId}
+                onValueChange={(v) => updateField("financialManagementId", v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn nhóm tài sản" />
+                </SelectTrigger>
+                <SelectContent>
+                  {financialManagementOptions.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2">
               <Label>Chu kỳ bảo dưỡng</Label>
               <Select

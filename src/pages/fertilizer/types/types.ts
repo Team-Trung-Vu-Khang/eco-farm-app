@@ -8,10 +8,15 @@ export interface SupplierDetail {
 export interface FertilizerFormData {
   code: string;
   name: string;
-  type: string;
+  nutritionalContentId: string;
+  originId: string;
+  applicationStageId: string;
+  physicalFormId: string;
   nutrientContent: string;
   description: string;
   hashtags: string[];
   imageUrl?: string;
   supplierDetails: SupplierDetail[];
+  usage: string;
+  documents: { name: string; size: number; file?: File }[];
 }

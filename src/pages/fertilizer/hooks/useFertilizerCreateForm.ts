@@ -22,11 +22,16 @@ export function useFertilizerCreateForm() {
   const [formData, setFormData] = useState<FertilizerFormData>({
     code: "",
     name: "",
-    type: "",
+    nutritionalContentId: "",
+    originId: "",
+    applicationStageId: "",
+    physicalFormId: "",
     nutrientContent: "",
     description: "",
     hashtags: [],
     supplierDetails: [],
+    usage: "",
+    documents: [],
   });
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -39,7 +44,10 @@ export function useFertilizerCreateForm() {
         setFormData({
           code: item.code,
           name: item.name,
-          type: item.type,
+          nutritionalContentId: item.nutritionalContentId,
+          originId: item.originId,
+          applicationStageId: item.applicationStageId,
+          physicalFormId: item.physicalFormId,
           nutrientContent: item.nutrientContent,
           description: item.description,
           hashtags: ["HieuQuaCao", "TangTruongNhanh"], // Mock data
@@ -51,6 +59,13 @@ export function useFertilizerCreateForm() {
               packaging: "Bao 50kg",
             },
           ],
+          usage: "Bón lót hoặc bón thúc. Liều lượng: 200-300kg/ha tùy loại cây trồng.", // Mock
+          documents: [
+            {
+              name: "Tai_lieu_ky_thuat_PB001.pdf",
+              size: 2400000, // bytes
+            }
+          ]
         });
       }
     }
@@ -65,7 +80,10 @@ export function useFertilizerCreateForm() {
       updateFertilizer(Number(params.id), {
         code: formData.code,
         name: formData.name,
-        type: formData.type,
+        nutritionalContentId: formData.nutritionalContentId,
+        originId: formData.originId,
+        applicationStageId: formData.applicationStageId,
+        physicalFormId: formData.physicalFormId,
         nutrientContent: formData.nutrientContent,
         description: formData.description,
         status: "active",
@@ -78,7 +96,10 @@ export function useFertilizerCreateForm() {
       addFertilizer({
         code: formData.code,
         name: formData.name,
-        type: formData.type,
+        nutritionalContentId: formData.nutritionalContentId,
+        originId: formData.originId,
+        applicationStageId: formData.applicationStageId,
+        physicalFormId: formData.physicalFormId,
         nutrientContent: formData.nutrientContent,
         description: formData.description,
         status: "active",

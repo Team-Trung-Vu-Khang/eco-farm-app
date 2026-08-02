@@ -1,5 +1,6 @@
 import { Badge, cn, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { IoTDevice } from "../types";
+import { perceptionLayerOptions, networkLayerOptions } from "./constants";
 import {
   Wifi,
   WifiOff,
@@ -28,6 +29,20 @@ export const getDeviceColumns = ({
         </span>
       </div>
     ),
+  },
+  {
+    key: "perceptionLayerId",
+    label: "Phân loại",
+    render: (_: any, item: IoTDevice) => {
+      const p = perceptionLayerOptions.find(o => o.id === item.perceptionLayerId)?.label || "N/A";
+      const n = networkLayerOptions.find(o => o.id === item.networkLayerId)?.label || "N/A";
+      return (
+        <div className="flex flex-col gap-1 text-xs">
+          <span className="text-muted-foreground truncate max-w-[200px]" title={p}>• {p}</span>
+          <span className="text-muted-foreground truncate max-w-[200px]" title={n}>• {n}</span>
+        </div>
+      );
+    }
   },
   {
     key: "status",

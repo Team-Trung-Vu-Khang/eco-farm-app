@@ -1,6 +1,11 @@
 import { Card, CardContent } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CheckCircle2 } from "lucide-react";
-import { suppliers } from "../../data/constants";
+import {
+  suppliers,
+  technologyLevelOptions,
+  valueChainOptions,
+  financialManagementOptions,
+} from "../../data/constants";
 import type { EquipmentFormData } from "../../types";
 
 interface EquipmentConfirmationStepProps {
@@ -40,8 +45,29 @@ export const EquipmentConfirmationStep = ({
                 <span className="font-medium">{formData.name}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Loại:</span>{" "}
-                <span className="font-medium">{formData.type}</span>
+                <span className="text-muted-foreground">
+                  Năng lực vận hành:
+                </span>{" "}
+                <span className="font-medium">
+                  {technologyLevelOptions.find(
+                    (o) => o.id === formData.technologyLevelId,
+                  )?.label || "N/A"}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Chuỗi giá trị:</span>{" "}
+                <span className="font-medium">
+                  {valueChainOptions.find((o) => o.id === formData.valueChainId)
+                    ?.label || "N/A"}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Q.lý tài chính:</span>{" "}
+                <span className="font-medium">
+                  {financialManagementOptions.find(
+                    (o) => o.id === formData.financialManagementId,
+                  )?.label || "N/A"}
+                </span>
               </div>
               <div>
                 <span className="text-muted-foreground">Bảo dưỡng:</span>{" "}

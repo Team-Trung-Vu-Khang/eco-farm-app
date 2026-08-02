@@ -1,6 +1,11 @@
 import { Badge, Card } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { CalendarDays, TimerReset, Wrench } from "lucide-react";
 import type { Equipment } from "../../data/constants";
+import {
+  technologyLevelOptions,
+  valueChainOptions,
+  financialManagementOptions,
+} from "../../data/constants";
 
 interface EquipmentDetailHeaderProps {
   item: Equipment;
@@ -50,7 +55,24 @@ export const EquipmentDetailHeader = ({ item }: EquipmentDetailHeaderProps) => {
               variant="outline"
               className="bg-white/50 border-blue-200 text-blue-800"
             >
-              {item.type}
+              {technologyLevelOptions.find(
+                (o) => o.id === item.technologyLevelId,
+              )?.label || "N/A"}
+            </Badge>
+            <Badge
+              variant="outline"
+              className="bg-white/50 border-emerald-200 text-emerald-800"
+            >
+              {valueChainOptions.find((o) => o.id === item.valueChainId)
+                ?.label || "N/A"}
+            </Badge>
+            <Badge
+              variant="outline"
+              className="bg-white/50 border-amber-200 text-amber-800"
+            >
+              {financialManagementOptions.find(
+                (o) => o.id === item.financialManagementId,
+              )?.label || "N/A"}
             </Badge>
             <div className="flex items-center gap-1 text-xs font-medium text-slate-500 bg-white/50 px-2 py-0.5 rounded border border-slate-200">
               <TimerReset className="w-3 h-3" />

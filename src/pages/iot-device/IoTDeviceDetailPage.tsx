@@ -51,6 +51,7 @@ import useIoTDeviceStore from "../../stores/useIoTDeviceStore";
 import { ConnectionConfigModal } from "./components/ConnectionConfigModal";
 import { DeviceInteractiveMap } from "./components/map/DeviceInteractiveMap";
 import { mockDeviceMetrics } from "./data/mockData";
+import { perceptionLayerOptions, networkLayerOptions } from "./data/constants";
 import type { DeviceConnectionConfig } from "./types";
 
 export default function IoTDeviceDetailPage() {
@@ -104,7 +105,7 @@ export default function IoTDeviceDetailPage() {
   return (
     <PageWrapper
       title={device.name}
-      description={`Chi tiết thiết bị ${device.type} - ${device.imei}`}
+      description={`Chi tiết thiết bị ${perceptionLayerOptions.find((o) => o.id === device.perceptionLayerId)?.label || ""} - ${device.imei}`}
       actions={
         <div className="flex items-center gap-2">
           <Button variant="ghost" onClick={() => setLocation("/iot-device")}>

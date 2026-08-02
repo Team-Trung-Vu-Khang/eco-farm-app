@@ -1,5 +1,6 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { Equipment } from "./constants";
+import { technologyLevelOptions, valueChainOptions, financialManagementOptions } from "./constants";
 
 interface ColumnOptions {
   onNameClick: (id: number) => void;
@@ -22,9 +23,21 @@ export const getEquipmentColumns = ({
     ),
   },
   {
-    key: "type",
-    label: "Loại thiết bị",
-    render: (value: any) => <Badge variant="outline">{value}</Badge>,
+    key: "technologyLevelId",
+    label: "Phân loại",
+    render: (_: any, row: Equipment) => {
+      const tech = technologyLevelOptions.find(o => o.id === row.technologyLevelId)?.label || "N/A";
+      const chain = valueChainOptions.find(o => o.id === row.valueChainId)?.label || "N/A";
+      const fin = financialManagementOptions.find(o => o.id === row.financialManagementId)?.label || "N/A";
+      
+      return (
+        <div className="flex flex-col gap-1 text-xs">
+          <span className="text-muted-foreground truncate max-w-[200px]" title={tech}>• {tech}</span>
+          <span className="text-muted-foreground truncate max-w-[200px]" title={chain}>• {chain}</span>
+          <span className="text-muted-foreground truncate max-w-[200px]" title={fin}>• {fin}</span>
+        </div>
+      );
+    },
   },
   { key: "maintainanceInterval", label: "Chu kỳ B.Dưỡng" },
   {

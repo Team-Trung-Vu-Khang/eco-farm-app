@@ -20,6 +20,7 @@ import {
   cn,
   useToast,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { perceptionLayerOptions, networkLayerOptions } from "./data/constants";
 import {
   AlertCircle,
   ArrowLeft,
@@ -40,25 +41,64 @@ export default function IoTDeviceCreatePage() {
   const isEdit = !!id;
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [importData, setImportData] = useState<any[]>([]);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [selectedType, setSelectedType] = useState<string>("");
-
   const { devices, addDevice, updateDevice, addDevices } = useIoTDeviceStore();
 
   const device = useMemo(() => {
     return isEdit ? devices.find((d) => d.id === id) : null;
   }, [isEdit, id, devices]);
 
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [importData, setImportData] = useState<any[]>([]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const [selectedPerceptionLayer, setSelectedPerceptionLayer] =
+    useState<string>(() => {
+      if (
+        device &&
+        device.perceptionLayerId &&
+        perceptionLayerOptions.some((o) => o.id === device.perceptionLayerId)
+      ) {
+        return device.perceptionLayerId;
+      }
+      return perceptionLayerOptions[0].id;
+    });
+
+  const [selectedNetworkLayer, setSelectedNetworkLayer] = useState<string>(
+    () => {
+      if (
+        device &&
+        device.networkLayerId &&
+        networkLayerOptions.some((o) => o.id === device.networkLayerId)
+      ) {
+        return device.networkLayerId;
+      }
+      return networkLayerOptions[0].id;
+    },
+  );
+
   useEffect(() => {
+    let pId = perceptionLayerOptions[0].id;
+    let nId = networkLayerOptions[0].id;
+
     if (device) {
-      setSelectedType(device.type.toLowerCase());
-    } else {
-      setSelectedType("sensor");
+      if (
+        device.perceptionLayerId &&
+        perceptionLayerOptions.some((o) => o.id === device.perceptionLayerId)
+      ) {
+        pId = device.perceptionLayerId;
+      }
+      if (
+        device.networkLayerId &&
+        networkLayerOptions.some((o) => o.id === device.networkLayerId)
+      ) {
+        nId = device.networkLayerId;
+      }
     }
+
+    setSelectedPerceptionLayer(pId);
+    setSelectedNetworkLayer(nId);
   }, [device]);
 
   const handleManualSubmit = (e: React.FormEvent) => {
@@ -67,7 +107,8 @@ export default function IoTDeviceCreatePage() {
 
     const deviceData = {
       name: formData.get("name") as string,
-      type: selectedType,
+      perceptionLayerId: selectedPerceptionLayer,
+      networkLayerId: selectedNetworkLayer,
       imei: formData.get("imei") as string,
       mac: formData.get("mac") as string,
       firmwareVersion: formData.get("firmware") as string,
@@ -325,24 +366,38 @@ export default function IoTDeviceCreatePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="type">Loại thiết bị</Label>
+                    <Label htmlFor="perceptionLayer">Mức độ cảm nhận</Label>
                     <Select
-                      value={selectedType}
-                      onValueChange={setSelectedType}
+                      value={selectedPerceptionLayer}
+                      onValueChange={setSelectedPerceptionLayer}
                     >
-                      <SelectTrigger id="type">
-                        <SelectValue placeholder="Chọn loại" />
+                      <SelectTrigger id="perceptionLayer">
+                        <SelectValue placeholder="Chọn mức độ cảm nhận" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="sensor">
-                          Cảm biến (Sensor)
-                        </SelectItem>
-                        <SelectItem value="actuator">
-                          Bộ điều khiển (Actuator)
-                        </SelectItem>
-                        <SelectItem value="gateway">
-                          Cổng kết nối (Gateway)
-                        </SelectItem>
+                        {perceptionLayerOptions.map((opt) => (
+                          <SelectItem key={opt.id} value={opt.id}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="networkLayer">Công nghệ truyền dẫn</Label>
+                    <Select
+                      value={selectedNetworkLayer}
+                      onValueChange={setSelectedNetworkLayer}
+                    >
+                      <SelectTrigger id="networkLayer">
+                        <SelectValue placeholder="Chọn công nghệ truyền dẫn" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {networkLayerOptions.map((opt) => (
+                          <SelectItem key={opt.id} value={opt.id}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

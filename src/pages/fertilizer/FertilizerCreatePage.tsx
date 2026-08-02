@@ -13,9 +13,11 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
 import { FertilizerBasicInfoStep } from "./components/steps/FertilizerBasicInfoStep";
+import { FertilizerUsageStep } from "./components/steps/FertilizerUsageStep";
 import { FertilizerConfirmationStep } from "./components/steps/FertilizerConfirmationStep";
 import { FertilizerSuppliersStep } from "./components/steps/FertilizerSuppliersStep";
 import { useFertilizerCreateForm } from "./hooks/useFertilizerCreateForm";
+import { originOptions } from "./data/constants";
 
 const FertilizerCreatePage = () => {
   const {
@@ -34,6 +36,16 @@ const FertilizerCreatePage = () => {
       title: "Thông tin cơ bản",
       content: (
         <FertilizerBasicInfoStep
+          formData={formData}
+          updateField={updateField}
+        />
+      ),
+    },
+    {
+      id: "usage",
+      title: "Hướng dẫn sử dụng",
+      content: (
+        <FertilizerUsageStep
           formData={formData}
           updateField={updateField}
         />
@@ -110,8 +122,10 @@ const FertilizerCreatePage = () => {
                     <span className="font-medium">{formData.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Loại:</span>
-                    <span className="font-medium">{formData.type}</span>
+                    <span className="text-muted-foreground">Nguồn gốc:</span>
+                    <span className="font-medium">
+                      {originOptions.find(o => o.id === formData.originId)?.label || "N/A"}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Hàm lượng:</span>

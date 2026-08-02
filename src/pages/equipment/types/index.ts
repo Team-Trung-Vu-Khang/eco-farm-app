@@ -2,7 +2,9 @@ export interface Equipment {
   id: number;
   code: string;
   name: string;
-  type: string;
+  technologyLevelId: string;
+  valueChainId: string;
+  financialManagementId: string;
   status: "active" | "maintenance" | "inactive";
   description: string;
   maintainanceInterval: string;
@@ -22,7 +24,9 @@ export interface SupplierDetail {
 export interface EquipmentFormData {
   code: string;
   name: string;
-  type: string;
+  technologyLevelId: string;
+  valueChainId: string;
+  financialManagementId: string;
   status: string;
   maintainanceInterval: string;
   description: string;

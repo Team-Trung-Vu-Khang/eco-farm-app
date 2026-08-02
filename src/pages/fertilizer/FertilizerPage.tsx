@@ -32,7 +32,7 @@ export default function FertilizerPage() {
       actions={
         <Button onClick={handleAdd}>
           <Plus className="w-4 h-4 mr-2" />
-          Thêm chất bón
+          Thêm phân bón
         </Button>
       }
     >
