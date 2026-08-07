@@ -90,9 +90,7 @@ export function MaterialGroupFormDialog({
       <div className="space-y-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="code" required>
-              Mã nhóm
-            </Label>
+            <Label htmlFor="code">Mã nhóm</Label>
             <Controller
               control={control}
               name="code"
@@ -106,6 +104,8 @@ export function MaterialGroupFormDialog({
                     clearErrors("code");
                     field.onChange(e.target.value.toUpperCase());
                   }}
+                  disabled={!!editItem}
+                  clearable={!editItem}
                   onBlur={field.onBlur}
                   ref={field.ref}
                   name={field.name}
@@ -162,7 +162,8 @@ export function MaterialGroupFormDialog({
                   onChange={(e) => {
                     clearErrors("status");
                     field.onChange(
-                      e.target.value as (typeof MATERIAL_GROUP_FORM_STATUSES)[number],
+                      e.target
+                        .value as (typeof MATERIAL_GROUP_FORM_STATUSES)[number],
                     );
                   }}
                   onBlur={field.onBlur}
@@ -204,9 +205,7 @@ export function MaterialGroupFormDialog({
             )}
           />
           {errors.description ? (
-            <p className="text-xs text-red-600">
-              {errors.description.message}
-            </p>
+            <p className="text-xs text-red-600">{errors.description.message}</p>
           ) : null}
         </div>
       </div>

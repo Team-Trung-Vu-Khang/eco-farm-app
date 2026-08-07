@@ -1,48 +1,49 @@
 import PageWrapper from "@/components/PageWrapper";
 import {
   Button,
-  DataTable,
-  DeleteDialog,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import { Plus } from "lucide-react";
+import { Eye, Network, Plus } from "lucide-react";
+import { useState } from "react";
+import IoTPerceptionLayerPage from "./IoTPerceptionLayerPage";
+import IoTNetworkLayerPage from "./IoTNetworkLayerPage";
 import { IoTDeviceGroupFormDialog } from "./components/IoTDeviceGroupFormDialog";
-import { iotDeviceGroupColumns } from "./data/columns.tsx";
 import { useIoTDeviceGroupPage } from "./hooks/useIoTDeviceGroupPage";
 
-const IOT_DEVICE_GROUP_STATUS_OPTIONS = [
-  { value: "active", label: "Hoạt động" },
-  { value: "inactive", label: "Ngừng hoạt động" },
-  { value: "archived", label: "Đã lưu trữ" },
-] as const;
+type IoTDeviceGroupTab = "perception_layer" | "network_layer";
 
 export default function IoTDeviceGroupPage() {
+  const [activeTab, setActiveTab] =
+    useState<IoTDeviceGroupTab>("perception_layer");
+
   const {
-    data,
-    loading,
-    error,
-    response,
-    pageSize,
-    setPageSize,
-    currentIndex,
-    setCurrentIndex,
     formOpen,
     setFormOpen,
-    deleteOpen,
-    setDeleteOpen,
     editItem,
     handleAdd,
     handleEdit,
-    handleDelete,
     handleSubmit,
-    handleConfirmDelete,
-    handleSearch,
-    handleFilterChange,
   } = useIoTDeviceGroupPage();
+
+  const handleStaticEdit = (item: any) => {
+    handleEdit({
+      id: Math.floor(Math.random() * 1000000), // Fake ID for static item
+      code: item.id || item.code || "",
+      name: item.label || item.name || "",
+      description: item.description || "",
+      status: "active",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as any);
+  };
 
   return (
     <PageWrapper
-      title="Nhóm thiết bị IoT"
-      description="Quản lý danh sách các nhóm thiết bị IoT"
+      title="Nhóm thiết bị IOT"
+      description="Quản lý danh sách các nhóm thiết bị IOT (Master Data) theo từng lớp kiến trúc"
       actions={
         <Button onClick={handleAdd} data-testid="add-iot-device-group">
           <Plus className="w-4 h-4 mr-2" />
@@ -50,49 +51,42 @@ export default function IoTDeviceGroupPage() {
         </Button>
       }
     >
-      {error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
-          ⚠️ {error}
-        </div>
-      ) : (
-        <DataTable
-          columns={iotDeviceGroupColumns}
-          data={data}
-          searchable
-          searchPlaceholder="Tìm kiếm nhóm thiết bị IoT..."
-          pageSize={pageSize}
-          currentIndex={currentIndex}
-          totalElements={response?.totalElements}
-          totalPages={response?.totalPages}
-          onSearch={handleSearch}
-          onPageSize={setPageSize}
-          onIndexChange={setCurrentIndex}
-          onFilterChange={handleFilterChange}
-          filters={[
-            {
-              key: "status",
-              label: "Trạng thái",
-              options: [...IOT_DEVICE_GROUP_STATUS_OPTIONS],
-            },
-          ]}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          loading={loading}
-        />
-      )}
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as IoTDeviceGroupTab)}
+        className="w-full"
+      >
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger
+            value="perception_layer"
+            className="flex items-center gap-2"
+          >
+            <Eye className="w-4 h-4" />
+            Lớp cảm nhận (Perception)
+          </TabsTrigger>
+          <TabsTrigger
+            value="network_layer"
+            className="flex items-center gap-2"
+          >
+            <Network className="w-4 h-4" />
+            Lớp mạng (Network)
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="perception_layer">
+          <IoTPerceptionLayerPage onEdit={handleStaticEdit} />
+        </TabsContent>
+
+        <TabsContent value="network_layer">
+          <IoTNetworkLayerPage onEdit={handleStaticEdit} />
+        </TabsContent>
+      </Tabs>
 
       <IoTDeviceGroupFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
         editItem={editItem}
         onSubmit={handleSubmit}
-      />
-
-      <DeleteDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        onConfirm={handleConfirmDelete}
-        description="Bạn có chắc chắn muốn xóa nhóm thiết bị IoT này?"
       />
     </PageWrapper>
   );

@@ -371,6 +371,16 @@ export interface ProductionMethodResponse {
   metadataJson?: Record<string, unknown>;
 }
 
+export interface ProductionMethodRequest {
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE";
+  code?: string;
+  name: string;
+  description?: string;
+  displayOrder?: number;
+  status?: FoundationStatus;
+  metadataJson?: Record<string, unknown>;
+}
+
 // ─── Production Method Applications ───────────────────────────────────────────
 
 export interface MethodApplicationSubject {

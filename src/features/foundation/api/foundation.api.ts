@@ -28,6 +28,7 @@ import type {
   ProductionSubjectVariantResponse,
   ProductionMethodQueryParams,
   ProductionMethodResponse,
+  ProductionMethodRequest,
   MethodApplication,
   MethodApplicationQueryParams,
 } from "../types/foundation.type";
@@ -312,6 +313,25 @@ export const productionMethodApi = {
         `/api/admin/foundation/production/methods/${id}`,
       )
       .then((r) => r.data),
+
+  create: (data: ProductionMethodRequest) =>
+    apiClient
+      .post<ProductionMethodResponse>(
+        "/api/admin/foundation/production/methods",
+        data,
+      )
+      .then((r) => r.data),
+
+  update: (id: number, data: ProductionMethodRequest) =>
+    apiClient
+      .put<ProductionMethodResponse>(
+        `/api/admin/foundation/production/methods/${id}`,
+        data,
+      )
+      .then((r) => r.data),
+
+  delete: (id: number) =>
+    apiClient.delete(`/api/admin/foundation/production/methods/${id}`),
 };
 
 export const methodApplicationApi = {

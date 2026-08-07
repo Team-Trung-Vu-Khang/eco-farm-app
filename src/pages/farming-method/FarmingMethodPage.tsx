@@ -1,123 +1,70 @@
-import GenericPage from "../GenericPage";
-import { useCatalog } from "../../features/foundation/hooks/useCatalog";
-import { useCatalogMutations } from "../../features/foundation/hooks/useCatalogMutations";
-import React, { useState } from "react";
-import { useDebounce } from "@/shared/hooks/useDebounce";
+import PageWrapper from "@/components/PageWrapper";
 import {
-  convertLexicalToHtml,
-  type EditorState,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Leaf, PawPrint, Waves } from "lucide-react";
+import { useState } from "react";
+import { ProductionMethodTabContent } from "./components/ProductionMethodTabContent";
 
-const columns = [
-  { key: "code", label: "Mã" },
-  { key: "name", label: "Tên" },
-  {
-    key: "description",
-    label: "Mô tả",
-    render(value: unknown) {
-      return (
-        <div
-          className="line-clamp-2"
-          dangerouslySetInnerHTML={{ __html: value as string }}
-        />
-      );
-    },
-  },
-];
-
-const fieldConfig = {
-  name: { required: true },
-  code: { required: false },
-};
+type ProductionDomain = "CROP" | "LIVESTOCK" | "AQUACULTURE";
 
 const FarmingMethodPage = () => {
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounce(search, 500);
-  const [pageSize, setPageSize] = useState(10);
-  const [currentIndex, setCurrentIndex] = useState(1);
-
-  const handleSearch = (value: string) => {
-    setSearch(value);
-    setCurrentIndex(1);
-  };
-
-  const { items, response, loading } = useCatalog("farming-methods", {
-    params: {
-      keyword: debouncedSearch.trim() || undefined,
-      page: Math.max(currentIndex - 1, 0),
-      size: pageSize,
-    },
-  });
-  const { createCatalog, updateCatalog, deleteCatalog } =
-    useCatalogMutations("farming-methods");
-  const formDialogLoading = createCatalog.isPending || updateCatalog.isPending;
-
-  const data = React.useMemo(() => {
-    return items.map((item) => ({
-      id: item.id,
-      code: item.code || undefined,
-      name: item.name || "",
-      description: item.description || "",
-      status: (item.status as "active" | "inactive") || "active",
-      createdAt: item.createdAt ? item.createdAt.split("T")[0] : "",
-    }));
-  }, [items]);
-
-  const handleSubmit = async (
-    formData: {
-      code?: string;
-      name?: string;
-      description?: string | EditorState;
-    },
-    id: number | null,
-  ) => {
-    let textDescription = formData?.description;
-
-    if (typeof textDescription === "object") {
-      textDescription = await convertLexicalToHtml(textDescription.toJSON());
-    }
-
-    const payload: any = {
-      name: formData.name,
-      status: "active" as const,
-      description: textDescription,
-    };
-    if (formData.code) {
-      payload.code = formData.code;
-    }
-    if (id) {
-      await updateCatalog.mutateAsync({ id, data: payload });
-    } else {
-      await createCatalog.mutateAsync(payload);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    await deleteCatalog.mutateAsync(id);
-  };
+  const [activeTab, setActiveTab] = useState<ProductionDomain>("CROP");
 
   return (
-    <GenericPage
-      title="Quản lý phương thức canh tác"
-      description="Các phương thức canh tác áp dụng trong sản xuất"
-      entityName="phương thức"
-      fieldConfig={fieldConfig}
-      withRichTextEditor
-      columns={columns}
-      initialData={data}
-      isLoading={loading}
-      formDialogLoading={formDialogLoading}
-      onSubmit={handleSubmit}
-      onDelete={handleDelete}
-      searchable
-      onSearch={handleSearch}
-      pageSize={pageSize}
-      currentIndex={currentIndex}
-      totalElements={response?.totalElements}
-      totalPages={response?.totalPages}
-      onPageSize={setPageSize}
-      onIndexChange={setCurrentIndex}
-    />
+    <PageWrapper
+      title="Danh mục phương pháp sản xuất"
+      description="Quản lý phương pháp sản xuất theo từng lĩnh vực (Trồng trọt, Chăn nuôi, Thủy sản)"
+    >
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as ProductionDomain)}
+        className="w-full"
+      >
+        <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsTrigger value="CROP" className="gap-2">
+            <Leaf className="w-4 h-4" />
+            Trồng trọt
+          </TabsTrigger>
+          <TabsTrigger value="LIVESTOCK" className="gap-2">
+            <PawPrint className="w-4 h-4" />
+            Chăn nuôi
+          </TabsTrigger>
+          <TabsTrigger value="AQUACULTURE" className="gap-2">
+            <Waves className="w-4 h-4" />
+            Nuôi trồng thủy sản
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="CROP">
+          <ProductionMethodTabContent
+            domainCode="CROP"
+            title="Phương pháp Trồng trọt"
+            description="Quản lý các phương pháp sản xuất áp dụng trong trồng trọt"
+          />
+        </TabsContent>
+
+        <TabsContent value="LIVESTOCK">
+          <ProductionMethodTabContent
+            domainCode="LIVESTOCK"
+            title="Phương pháp Chăn nuôi"
+            description="Quản lý các phương pháp sản xuất áp dụng trong chăn nuôi"
+          />
+        </TabsContent>
+
+        <TabsContent value="AQUACULTURE">
+          <ProductionMethodTabContent
+            domainCode="AQUACULTURE"
+            title="Phương pháp Thủy sản"
+            description="Quản lý các phương pháp sản xuất áp dụng trong nuôi trồng thủy sản"
+          />
+        </TabsContent>
+      </Tabs>
+    </PageWrapper>
   );
 };
+
 export default FarmingMethodPage;

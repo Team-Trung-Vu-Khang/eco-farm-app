@@ -500,6 +500,12 @@ const FertilizerGroupPage = lazy(
 const PesticideGroupPage = lazy(
   () => import("./pages/pesticide-group/PesticideGroupPage"),
 );
+const LivestockMedicineGroupPage = lazy(
+  () => import("./pages/livestock-medicine-group/LivestockMedicineGroupPage"),
+);
+const AquacultureMedicineGroupPage = lazy(
+  () => import("./pages/aquaculture-medicine-group/AquacultureMedicineGroupPage"),
+);
 const EquipmentGroupPage = lazy(
   () => import("./pages/equipment-group/EquipmentGroupPage"),
 );
@@ -1135,6 +1141,8 @@ function Router() {
       <Route path="/season/:id" component={SeasonDetailPage} />
       <Route path="/pesticide" component={PesticidePage} />
       <Route path="/pesticide-group" component={PesticideGroupPage} />
+      <Route path="/livestock-medicine-group" component={LivestockMedicineGroupPage} />
+      <Route path="/aquaculture-medicine-group" component={AquacultureMedicineGroupPage} />
       <Route path="/pesticide/create" component={PesticideCreatePage} />
       <Route path="/pesticide/:id/edit" component={PesticideCreatePage} />
       <Route path="/pesticide/:id" component={PesticideDetailPage} />

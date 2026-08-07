@@ -7,7 +7,7 @@ export const IRRIGATION_SYSTEM_FORM_STATUSES = [
 ] as const;
 
 export const irrigationSystemFormSchema = z.object({
-  code: z.string().trim().min(1, "Vui lòng nhập mã hệ thống."),
+  code: z.string().trim(),
   name: z.string().trim().min(1, "Vui lòng nhập tên hệ thống."),
   description: z.string().trim().default(""),
   status: z.enum(IRRIGATION_SYSTEM_FORM_STATUSES, {

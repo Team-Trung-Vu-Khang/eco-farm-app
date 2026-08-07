@@ -15,8 +15,12 @@ const DEFAULT_PAGE_SIZE = 10;
 
 type IrrigationSystemStatusFilter = MasterDataStatus | typeof ALL_STATUS;
 
-function buildPayload(values: IrrigationSystemFormValues) {
+function buildPayload(
+  values: IrrigationSystemFormValues,
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE",
+) {
   return {
+    domainCode,
     code: values.code.trim().toUpperCase(),
     name: values.name.trim(),
     description: values.description.trim(),
@@ -28,10 +32,13 @@ function buildPayload(values: IrrigationSystemFormValues) {
   };
 }
 
-export function useIrrigationSystemPage() {
+export function useIrrigationSystemPage(
+  domainCode: "CROP" | "LIVESTOCK" | "AQUACULTURE",
+) {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<IrrigationSystemStatusFilter>(ALL_STATUS);
+  const [status, setStatus] =
+    useState<IrrigationSystemStatusFilter>(ALL_STATUS);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [currentIndex, setCurrentIndex] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
@@ -43,6 +50,7 @@ export function useIrrigationSystemPage() {
 
   const query = useIrrigationSystems({
     params: {
+      domainCode,
       keyword: search.trim() || undefined,
       status: status === ALL_STATUS ? undefined : status,
       page: Math.max(currentIndex - 1, 0),
@@ -60,7 +68,9 @@ export function useIrrigationSystemPage() {
 
   const handleFilterChange = (key: string, value: string) => {
     if (key === "status") {
-      setStatus(value === ALL_STATUS ? ALL_STATUS : (value as MasterDataStatus));
+      setStatus(
+        value === ALL_STATUS ? ALL_STATUS : (value as MasterDataStatus),
+      );
       setCurrentIndex(1);
     }
   };
@@ -81,9 +91,9 @@ export function useIrrigationSystemPage() {
   };
 
   const handleSubmit = async (values: IrrigationSystemFormValues) => {
-    const payload = buildPayload(values);
+    const payload = buildPayload(values, domainCode);
 
-    if (!payload.code || !payload.name) {
+    if (!payload.name) {
       toast({
         title: "Thiếu thông tin",
         description: "Vui lòng nhập mã và tên hệ thống tưới.",
@@ -105,8 +115,8 @@ export function useIrrigationSystemPage() {
       toast({
         title: "Thành công",
         description: editItem
-          ? "Đã cập nhật hệ thống tưới."
-          : "Đã thêm hệ thống tưới mới.",
+          ? "Đã cập phương pháp tưới tiêu tưới."
+          : "Đã thêm phương pháp tưới tiêu mới.",
       });
       setFormOpen(false);
     } catch (error) {
@@ -131,7 +141,7 @@ export function useIrrigationSystemPage() {
       await deleteMasterData.mutateAsync(deleteItem.id);
       toast({
         title: "Thành công",
-        description: "Đã xóa hệ thống tưới.",
+        description: "Đã xóa phương pháp tưới tiêu.",
       });
     } catch (error) {
       const message =
@@ -151,6 +161,7 @@ export function useIrrigationSystemPage() {
   return {
     data: query.items,
     loading: query.loading,
+    submitting: createMasterData.isPending || updateMasterData.isPending,
     error: query.error,
     response: query.response,
     pageSize,

@@ -21,6 +21,7 @@ interface IrrigationSystemFormDialogProps {
   onOpenChange: (open: boolean) => void;
   editItem: IrrigationSystemRecord | null;
   onSubmit: (data: IrrigationSystemFormValues) => Promise<void> | void;
+  loading?: boolean;
 }
 
 function normalizeStatus(
@@ -38,6 +39,7 @@ export function IrrigationSystemFormDialog({
   onOpenChange,
   editItem,
   onSubmit,
+  loading,
 }: IrrigationSystemFormDialogProps) {
   const defaultValues = useMemo<IrrigationSystemFormInput>(
     () =>
@@ -71,25 +73,24 @@ export function IrrigationSystemFormDialog({
   }, [clearErrors, defaultValues, open, reset]);
 
   const submitForm: SubmitHandler<IrrigationSystemFormValues> = (values) => {
-      onSubmit({
-        ...values,
-        status: editItem ? values.status : "active",
-      });
+    onSubmit({
+      ...values,
+      status: editItem ? values.status : "active",
+    });
   };
 
   return (
     <FormDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={editItem ? "Chỉnh sửa hệ thống tưới" : "Thêm hệ thống tưới mới"}
+      title={editItem ? "Chỉnh sửa phương pháp" : "Thêm phương pháp mới"}
       onSubmit={handleRHFSubmit(submitForm)}
+      loading={loading}
     >
       <div className="space-y-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="code" required>
-              Mã hệ thống
-            </Label>
+            <Label htmlFor="code">Mã phương pháp</Label>
             <Controller
               control={control}
               name="code"
@@ -103,6 +104,8 @@ export function IrrigationSystemFormDialog({
                     clearErrors("code");
                     field.onChange(e.target.value.toUpperCase());
                   }}
+                  disabled={!!editItem}
+                  clearable={!editItem}
                   onBlur={field.onBlur}
                   ref={field.ref}
                   name={field.name}
@@ -116,7 +119,7 @@ export function IrrigationSystemFormDialog({
 
           <div className="space-y-2">
             <Label htmlFor="name" required>
-              Tên hệ thống
+              Tên phương pháp
             </Label>
             <Controller
               control={control}
@@ -159,7 +162,8 @@ export function IrrigationSystemFormDialog({
                   onChange={(e) => {
                     clearErrors("status");
                     field.onChange(
-                      e.target.value as (typeof IRRIGATION_SYSTEM_FORM_STATUSES)[number],
+                      e.target
+                        .value as (typeof IRRIGATION_SYSTEM_FORM_STATUSES)[number],
                     );
                   }}
                   onBlur={field.onBlur}
@@ -186,7 +190,7 @@ export function IrrigationSystemFormDialog({
             render={({ field }) => (
               <Textarea
                 id="description"
-                placeholder="Mô tả chi tiết về hệ thống tưới..."
+                placeholder="Mô tả chi tiết về hệ phương pháp..."
                 rows={3}
                 aria-invalid={!!errors.description}
                 value={field.value}
@@ -201,9 +205,7 @@ export function IrrigationSystemFormDialog({
             )}
           />
           {errors.description ? (
-            <p className="text-xs text-red-600">
-              {errors.description.message}
-            </p>
+            <p className="text-xs text-red-600">{errors.description.message}</p>
           ) : null}
         </div>
       </div>

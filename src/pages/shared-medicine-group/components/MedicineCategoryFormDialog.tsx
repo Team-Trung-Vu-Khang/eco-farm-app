@@ -7,39 +7,40 @@ import {
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
-import type { IoTDeviceGroupRecord } from "@/features/master-data/types/master-data.type";
 import {
-  IOT_DEVICE_GROUP_FORM_STATUSES,
-  iotDeviceGroupFormSchema,
-  type IoTDeviceGroupFormInput,
-  type IoTDeviceGroupFormValues,
-} from "../data/iot-device-group-form.schema";
-import { emptyIoTDeviceGroupFormData } from "../data/constants";
+  MEDICINE_CATEGORY_STATUSES,
+  medicineCategoryFormSchema,
+  emptyMedicineCategoryFormData,
+  type MedicineCategoryFormInput,
+  type MedicineCategoryFormValues,
+} from "../data/schema";
+import type { MedicineCategoryItem } from "../hooks/useMedicineCategoryPage";
 
-interface IoTDeviceGroupFormDialogProps {
+interface MedicineCategoryFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  editItem: IoTDeviceGroupRecord | null;
-  onSubmit: (data: IoTDeviceGroupFormValues) => Promise<void> | void;
+  editItem: MedicineCategoryItem | null;
+  onSubmit: (data: MedicineCategoryFormValues) => Promise<void> | void;
+  loading?: boolean;
 }
 
 function normalizeStatus(
-  status: IoTDeviceGroupRecord["status"] | null | undefined,
-): IoTDeviceGroupFormValues["status"] {
-  if (IOT_DEVICE_GROUP_FORM_STATUSES.includes(status as never)) {
-    return status as IoTDeviceGroupFormValues["status"];
+  status: MedicineCategoryItem["status"] | null | undefined,
+): MedicineCategoryFormValues["status"] {
+  if (MEDICINE_CATEGORY_STATUSES.includes(status as never)) {
+    return status as MedicineCategoryFormValues["status"];
   }
-
   return "active";
 }
 
-export function IoTDeviceGroupFormDialog({
+export function MedicineCategoryFormDialog({
   open,
   onOpenChange,
   editItem,
   onSubmit,
-}: IoTDeviceGroupFormDialogProps) {
-  const defaultValues = useMemo<IoTDeviceGroupFormInput>(
+  loading,
+}: MedicineCategoryFormDialogProps) {
+  const defaultValues = useMemo<MedicineCategoryFormInput>(
     () =>
       editItem
         ? {
@@ -48,10 +49,7 @@ export function IoTDeviceGroupFormDialog({
             description: editItem.description ?? "",
             status: normalizeStatus(editItem.status),
           }
-        : {
-            ...emptyIoTDeviceGroupFormData,
-            status: "active",
-          },
+        : emptyMedicineCategoryFormData,
     [editItem],
   );
 
@@ -61,9 +59,9 @@ export function IoTDeviceGroupFormDialog({
     clearErrors,
     reset,
     formState: { errors },
-  } = useForm<IoTDeviceGroupFormInput, unknown, IoTDeviceGroupFormValues>({
+  } = useForm<MedicineCategoryFormInput, unknown, MedicineCategoryFormValues>({
     defaultValues,
-    resolver: zodResolver(iotDeviceGroupFormSchema),
+    resolver: zodResolver(medicineCategoryFormSchema),
   });
 
   useEffect(() => {
@@ -73,7 +71,7 @@ export function IoTDeviceGroupFormDialog({
     }
   }, [clearErrors, defaultValues, open, reset]);
 
-  const submitForm: SubmitHandler<IoTDeviceGroupFormValues> = (values) => {
+  const submitForm: SubmitHandler<MedicineCategoryFormValues> = (values) => {
     onSubmit({
       ...values,
       status: editItem ? values.status : "active",
@@ -84,28 +82,29 @@ export function IoTDeviceGroupFormDialog({
     <FormDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={editItem ? "Chỉnh sửa nhóm IoT" : "Thêm nhóm IoT mới"}
+      title={editItem ? "Chỉnh sửa phân loại" : "Thêm phân loại mới"}
       onSubmit={handleRHFSubmit(submitForm)}
+      loading={loading}
     >
       <div className="space-y-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="code">Mã nhóm</Label>
+            <Label htmlFor="code">Mã phân loại</Label>
             <Controller
               control={control}
               name="code"
               render={({ field }) => (
                 <Input
                   id="code"
-                  placeholder="VD: ENV_SENSOR"
+                  placeholder="VD: KHANG_SINH"
                   aria-invalid={!!errors.code}
                   value={field.value}
-                  disabled={!!editItem}
-                  clearable={!editItem}
                   onChange={(e) => {
                     clearErrors("code");
                     field.onChange(e.target.value.toUpperCase());
                   }}
+                  disabled={!!editItem}
+                  clearable={!editItem}
                   onBlur={field.onBlur}
                   ref={field.ref}
                   name={field.name}
@@ -119,7 +118,7 @@ export function IoTDeviceGroupFormDialog({
 
           <div className="space-y-2">
             <Label htmlFor="name" required>
-              Tên nhóm
+              Tên phân loại
             </Label>
             <Controller
               control={control}
@@ -127,7 +126,7 @@ export function IoTDeviceGroupFormDialog({
               render={({ field }) => (
                 <Input
                   id="name"
-                  placeholder="VD: Nhóm cảm biến môi trường"
+                  placeholder="VD: Kháng sinh"
                   aria-invalid={!!errors.name}
                   value={field.value}
                   onChange={(e) => {
@@ -162,8 +161,7 @@ export function IoTDeviceGroupFormDialog({
                   onChange={(e) => {
                     clearErrors("status");
                     field.onChange(
-                      e.target
-                        .value as (typeof IOT_DEVICE_GROUP_FORM_STATUSES)[number],
+                      e.target.value as (typeof MEDICINE_CATEGORY_STATUSES)[number],
                     );
                   }}
                   onBlur={field.onBlur}
@@ -190,7 +188,7 @@ export function IoTDeviceGroupFormDialog({
             render={({ field }) => (
               <Textarea
                 id="description"
-                placeholder="Mô tả chi tiết về nhóm thiết bị IoT..."
+                placeholder="Mô tả chi tiết..."
                 rows={3}
                 aria-invalid={!!errors.description}
                 value={field.value}

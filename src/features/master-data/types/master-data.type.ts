@@ -102,12 +102,12 @@ export interface MasterDataRequestExtraFieldsMap {
     issuerIds?: number[];
     documents?: CertificateStandardDocumentInput[];
   };
+  "rearing-methods": {
+    domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE" | null;
+  };
   "equipment-tool-groups": Record<string, never>;
   "fertilizer-groups": Record<string, never>;
   "irrigation-systems": Record<string, never>;
-  "rearing-methods": {
-    domainCode?: "CROP" | "LIVESTOCK" | "AQUACULTURE";
-  };
   "material-groups": Record<string, never>;
   "pesticide-groups": Record<string, never>;
   "pesticide-origins": Record<string, never>;
@@ -116,6 +116,12 @@ export interface MasterDataRequestExtraFieldsMap {
     bandColor: string;
     ld50Threshold: string;
   };
+  "livestock-medicine-functions": Record<string, never>;
+  "livestock-medicine-administration-routes": Record<string, never>;
+  "livestock-medicine-control-levels": Record<string, never>;
+  "aquaculture-medicine-functions": Record<string, never>;
+  "aquaculture-medicine-target-species": Record<string, never>;
+  "aquaculture-medicine-control-residues": Record<string, never>;
   "plan-types": {
     color: string;
     planGroupId?: number | null;
@@ -163,6 +169,12 @@ export interface MasterDataRecordExtraFieldsMap {
     bandColor?: string | null;
     ld50Threshold?: string | null;
   };
+  "livestock-medicine-functions": Record<string, never>;
+  "livestock-medicine-administration-routes": Record<string, never>;
+  "livestock-medicine-control-levels": Record<string, never>;
+  "aquaculture-medicine-functions": Record<string, never>;
+  "aquaculture-medicine-target-species": Record<string, never>;
+  "aquaculture-medicine-control-residues": Record<string, never>;
   "plan-types": {
     color: string;
     planGroup?: PlanGroupRecord | null;
