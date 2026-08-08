@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@Team-Trung-Vu-Khang/eco-shared-ui@^0.0.6-beta.47":
-  version "0.0.6-beta.47"
-  resolved "https://npm.pkg.github.com/download/@Team-Trung-Vu-Khang/eco-shared-ui/0.0.6-beta.47/f3ef171a3ae7488af3784a93982a7bd854dd9ce7#f3ef171a3ae7488af3784a93982a7bd854dd9ce7"
-  integrity sha512-0263z57HZU4NcMyL166swdA6xMoLlRp8KGPg4UodD2wAcibBwsaW1m7Im7Yd3to2EUNNFyT4WTGrMI+iCnh0/w==
+"@Team-Trung-Vu-Khang/eco-shared-ui@^0.0.6-beta.56":
+  version "0.0.6-beta.56"
+  resolved "https://npm.pkg.github.com/download/@Team-Trung-Vu-Khang/eco-shared-ui/0.0.6-beta.56/257125d29584397ae01992aaac9a03eb2e7ccfb6#257125d29584397ae01992aaac9a03eb2e7ccfb6"
+  integrity sha512-09qKu0qhWcCCd+CLQMEeuL5Ze7XS+SHL4DiIC5abhvOAC/6VXN8D1CG83LlEYq07uvJplJIVZTFuvUpXyV366A==
   dependencies:
     "@lexical/code" "^0.43.0"
     "@lexical/file" "^0.43.0"
@@ -62,6 +62,7 @@
     react-day-picker "^9.13.0"
     react-error-boundary "^6.1.0"
     react-hook-form "^7.70.0"
+    react-is "^19.2.8"
     react-leaflet "^5.0.0"
     react-resizable-panels "^4.3.3"
     recharts "^3.6.0"
@@ -5250,6 +5251,11 @@ react-is@^19.0.0:
   version "19.2.5"
   resolved "https://registry.npmjs.org/react-is/-/react-is-19.2.5.tgz"
   integrity sha512-Dn0t8IQhCmeIT3wu+Apm1/YVsJXsGWi6k4sPdnBIdqMVtHtv0IGi6dcpNpNkNac0zB2uUAqNX3MHzN8c+z2rwQ==
+
+react-is@^19.2.8:
+  version "19.2.8"
+  resolved "https://registry.yarnpkg.com/react-is/-/react-is-19.2.8.tgz#09826f9fbc187bc668e3e5c62edc001f804d5018"
+  integrity sha512-s5un28nYxKJw5gvUHyW5PCC28CvBqLu9r3cWgzHT4Vo/5fqqkFcdRYsGcKf50WMPpjjFZS5d76fn3YCo2njKwQ==
 
 react-leaflet@^5.0.0:
   version "5.0.0"
