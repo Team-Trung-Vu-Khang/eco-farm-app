@@ -30,15 +30,17 @@ export default function PlanGrowthPage({
     handleDelete,
     handleConfirmDelete,
     goToView,
+    goToEdit,
   } = usePlanPage(basePath);
 
   const columns = useMemo(
     () =>
       createPlanGrowthColumns({
         onView: (item) => goToView(item.id),
+        onEdit: (item) => goToEdit(item.id),
         onDelete: handleDelete,
       }),
-    [goToView, handleDelete],
+    [goToView, goToEdit, handleDelete],
   );
 
   const filteredPlans = useMemo(() => {

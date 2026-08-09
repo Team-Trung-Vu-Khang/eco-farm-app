@@ -66,33 +66,25 @@ const LEVEL_HEIGHT = 320;
 const ROOT_GAP = 900;
 const CHILD_GAP = 480;
 
-function applyTreeLayout(nodes: DraftNode[]): DraftNode[] {
-  const positions = new Map<string, { x: number; y: number }>();
-  let cursorX = 0;
-
-  function layout(node: DraftNode, depth: number): number {
-    const children = getDirectChildren(nodes, node.id);
-    let x: number;
-
-    if (!children.length) {
-      x = cursorX;
-      cursorX += depth === 0 ? ROOT_GAP : CHILD_GAP;
-    } else {
-      const childXs = children.map((child) => layout(child, depth + 1));
-      x = (Math.min(...childXs) + Math.max(...childXs)) / 2;
-    }
-
-    positions.set(node.id, { x, y: depth * LEVEL_HEIGHT });
-    return x;
+// Places a newly added node next to its existing siblings (or the last root)
+// without moving any already-positioned node, so the tree only grows outward.
+function placeNewNode(nodes: DraftNode[], parentId: string | undefined) {
+  if (!parentId) {
+    const roots = nodes.filter((node) => !getParentId(node));
+    if (!roots.length) return { x: 0, y: 0 };
+    const maxX = Math.max(...roots.map((node) => node.position.x));
+    return { x: maxX + ROOT_GAP, y: 0 };
   }
 
-  const roots = nodes.filter((node) => !getParentId(node));
-  roots.forEach((root) => layout(root, 0));
+  const parent = nodes.find((node) => node.id === parentId);
+  if (!parent) return { x: 0, y: 0 };
 
-  return nodes.map((node) => {
-    const position = positions.get(node.id);
-    return position ? { ...node, position } : node;
-  });
+  const siblings = getDirectChildren(nodes, parentId);
+  const y = parent.position.y + LEVEL_HEIGHT;
+  if (!siblings.length) return { x: parent.position.x, y };
+
+  const maxSiblingX = Math.max(...siblings.map((node) => node.position.x));
+  return { x: maxSiblingX + CHILD_GAP, y };
 }
 
 interface PlanWorkflowDraftState {
@@ -126,12 +118,20 @@ export const usePlanWorkflowDraftStore = create<PlanWorkflowDraftState>()((set, 
   },
 
   addNode: (node) => {
-    set((state) => ({ nodes: applyTreeLayout([...state.nodes, node]) }));
+    set((state) => ({
+      nodes: [
+        ...state.nodes,
+        { ...node, position: placeNewNode(state.nodes, getParentId(node)) },
+      ],
+    }));
   },
 
   addNodeWithEdge: (node, edge) => {
     set((state) => ({
-      nodes: applyTreeLayout([...state.nodes, node]),
+      nodes: [
+        ...state.nodes,
+        { ...node, position: placeNewNode(state.nodes, getParentId(node)) },
+      ],
       edges: [...state.edges, edge],
     }));
   },
@@ -159,7 +159,7 @@ export const usePlanWorkflowDraftStore = create<PlanWorkflowDraftState>()((set, 
     ]);
 
     set({
-      nodes: applyTreeLayout(nodes.filter((node) => !removable.has(node.id))),
+      nodes: nodes.filter((node) => !removable.has(node.id)),
       edges: edges.filter((edge) => !removable.has(edge.source) && !removable.has(edge.target)),
     });
   },

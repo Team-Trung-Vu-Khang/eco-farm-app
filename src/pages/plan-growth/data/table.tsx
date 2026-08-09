@@ -13,9 +13,10 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
+  Eye,
   Layers,
   MoreHorizontal,
-  Eye,
+  PencilLine,
   Sprout,
   Trash2,
 } from "lucide-react";
@@ -53,14 +54,18 @@ function resolveLocationLabel(plan: Plan) {
 }
 
 function resolveCropLabel(plan: Plan) {
-  return [plan.crop, plan.variety].filter(Boolean).join(" - ") || "Chưa xác định";
+  return (
+    [plan.crop, plan.variety].filter(Boolean).join(" - ") || "Chưa xác định"
+  );
 }
 
 export function createPlanGrowthColumns({
   onView,
+  onEdit,
   onDelete,
 }: {
   onView: (item: Plan) => void;
+  onEdit: (item: Plan) => void;
   onDelete: (item: Plan) => void;
 }): Column<Plan>[] {
   return [
@@ -69,7 +74,7 @@ export function createPlanGrowthColumns({
       label: "Mã",
       render: (value) => (
         <span className="font-mono text-xs font-semibold text-slate-500">
-          {value}
+          {value as string}
         </span>
       ),
     },
@@ -78,8 +83,10 @@ export function createPlanGrowthColumns({
       label: "Kế hoạch",
       render: (value, item) => (
         <div className="space-y-1">
-          <div className="font-semibold text-slate-900">{value}</div>
-          <div className="text-xs text-slate-500">{item.description || "—"}</div>
+          <div className="font-semibold text-slate-900">{value as string}</div>
+          <div className="text-xs text-slate-500">
+            {item.description || "—"}
+          </div>
         </div>
       ),
     },
@@ -97,7 +104,9 @@ export function createPlanGrowthColumns({
       key: "seasonName",
       label: "Mùa vụ",
       render: (value) => (
-        <span className="text-sm font-medium text-slate-700">{value || "—"}</span>
+        <span className="text-sm font-medium text-slate-700">
+          {(value as string) || "—"}
+        </span>
       ),
     },
     {
@@ -128,7 +137,9 @@ export function createPlanGrowthColumns({
       render: (_, item) => (
         <div className="flex items-center gap-2">
           <Layers className="h-3.5 w-3.5 text-emerald-500" />
-          <span className="text-sm text-slate-700">{resolveLocationLabel(item)}</span>
+          <span className="text-sm text-slate-700">
+            {resolveLocationLabel(item)}
+          </span>
         </div>
       ),
     },
@@ -138,7 +149,9 @@ export function createPlanGrowthColumns({
       render: (_, item) => (
         <div className="flex items-center gap-2">
           <Sprout className="h-3.5 w-3.5 text-green-500" />
-          <span className="text-sm text-slate-700">{resolveCropLabel(item)}</span>
+          <span className="text-sm text-slate-700">
+            {resolveCropLabel(item)}
+          </span>
         </div>
       ),
     },
@@ -166,6 +179,10 @@ export function createPlanGrowthColumns({
             <DropdownMenuItem onClick={() => onView(item)}>
               <Eye className="mr-2 h-4 w-4" />
               Xem chi tiết
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEdit(item)}>
+              <PencilLine className="mr-2 h-4 w-4" />
+              Chỉnh sửa
             </DropdownMenuItem>
             {item.status === "draft" && (
               <DropdownMenuItem
@@ -267,7 +284,9 @@ export function PlanGrowthStatisticsCards({
             <CheckCircle2 className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-slate-900">{completedCount}</p>
+            <p className="text-2xl font-bold text-slate-900">
+              {completedCount}
+            </p>
             <p className="text-sm text-muted-foreground">Đã hoàn thành</p>
           </div>
         </CardContent>

@@ -43,6 +43,8 @@ import {
   type WorkflowNodeStatus,
 } from "./../growth-cycle/components/workflow/WorkflowCardNode";
 import {
+  getDirectChildren,
+  getParentId,
   usePlanWorkflowDraftStore,
   type DraftNode,
 } from "./hooks/usePlanWorkflowDraftStore";
@@ -71,23 +73,47 @@ const PLAN_STATUS_META: Record<
 function getDurationLabel(startDate?: string, endDate?: string) {
   if (!startDate || !endDate) return "Chưa xác định";
 
-  const start = new Date(startDate).getTime();
-  const end = new Date(endDate).getTime();
-  if (Number.isNaN(start) || Number.isNaN(end)) return "Chưa xác định";
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()))
+    return "Chưa xác định";
+  if (end < start) return "Chưa xác định";
 
-  const totalDays = Math.max(0, Math.round((end - start) / 86400000));
-  if (totalDays < 30) return `${totalDays} ngày`;
+  let years = end.getFullYear() - start.getFullYear();
+  let months = end.getMonth() - start.getMonth();
+  let days = end.getDate() - start.getDate();
 
-  const months = totalDays / 30;
-  const rounded = Math.round(months * 10) / 10;
-  return `${
-    Number.isInteger(rounded)
-      ? rounded
-      : rounded.toLocaleString("vi-VN", {
-          minimumFractionDigits: 1,
-          maximumFractionDigits: 1,
-        })
-  } tháng`;
+  if (days < 0) {
+    months -= 1;
+    days += new Date(end.getFullYear(), end.getMonth(), 0).getDate();
+  }
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+
+  const parts: string[] = [];
+  if (years > 0) parts.push(`${years} năm`);
+  if (months > 0) parts.push(`${months} tháng`);
+  if (days > 0 || !parts.length) parts.push(`${days} ngày`);
+
+  return parts.join(" ");
+}
+
+// Outline numbering (1, 1.1, 1.2, 1.1.1, ...) derived from each node's
+// position in the tree so chained/nested plans stay easy to tell apart.
+function getPlanOutlineCode(nodeId: string, allNodes: DraftNode[]): string {
+  const node = allNodes.find((item) => item.id === nodeId);
+  if (!node) return "";
+
+  const parentId = getParentId(node);
+  const siblings = parentId
+    ? getDirectChildren(allNodes, parentId)
+    : allNodes.filter((item) => !getParentId(item));
+  const index = siblings.findIndex((item) => item.id === nodeId) + 1;
+
+  if (!parentId) return String(index);
+  return `${getPlanOutlineCode(parentId, allNodes)}.${index}`;
 }
 
 function buildAutoPlanCode() {
@@ -226,18 +252,20 @@ type NodeHandlers = {
 
 function toDisplayNode(
   node: DraftNode,
+  allNodes: DraftNode[],
   handlers: NodeHandlers,
   regions: ReturnType<typeof useRegionStore.getState>["regions"],
   plans: Plan[],
 ): Node<WorkflowCardNodeData> {
   const { id, data } = node;
+  const outlineCode = getPlanOutlineCode(id, allNodes);
 
   if (data.setupKind !== "plan") {
     return {
       ...node,
       data: {
         kind: "plan",
-        eyebrow: "Kế hoạch",
+        eyebrow: `Kế hoạch ${outlineCode}`,
         title: "Kế hoạch không hợp lệ",
         status: "not_started",
         wide: true,
@@ -253,7 +281,7 @@ function toDisplayNode(
       ...node,
       data: {
         kind: "plan",
-        eyebrow: "Kế hoạch",
+        eyebrow: `Kế hoạch ${outlineCode}`,
         title: "Kế hoạch không tồn tại",
         status: "not_started",
         statusLabel: "Đã bị xoá",
@@ -314,7 +342,7 @@ function toDisplayNode(
       variant: "poster",
       posterTheme: "light",
       icon: ClipboardList,
-      eyebrow: "Kế hoạch",
+      eyebrow: `Kế hoạch ${outlineCode}`,
       title: plan.name
         ? `${plan.name} (${duration})`
         : `Kế hoạch mới (${duration})`,
@@ -435,8 +463,21 @@ export default function PlanGrowthCreateWorkflowPage() {
   };
 
   const displayNodes = nodes.map((node) =>
-    toDisplayNode(node, handlers, regions, plans),
+    toDisplayNode(node, nodes, handlers, regions, plans),
   );
+
+  const displayEdges = edges.map((edge) => {
+    const targetDepth = getPlanOutlineCode(edge.target, nodes).split(".").length;
+    const isDeepBranch = targetDepth >= 3;
+
+    return {
+      ...edge,
+      style: {
+        ...edge.style,
+        strokeDasharray: isDeepBranch ? "6 6" : undefined,
+      },
+    };
+  });
 
   const handleConnect = (connection: Connection) => {
     setEdges((current) => addEdge(connection, current));
@@ -514,7 +555,7 @@ export default function PlanGrowthCreateWorkflowPage() {
           <div className="relative h-[calc(100vh-310px)] min-h-[720px]">
             <ReactFlow
               nodes={displayNodes}
-              edges={edges}
+              edges={displayEdges}
               nodeTypes={nodeTypes}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
