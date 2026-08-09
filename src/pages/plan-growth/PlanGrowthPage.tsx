@@ -72,7 +72,7 @@ export default function PlanGrowthPage({
       title="Quản lý canh tác"
       description="Lập và quản lý kế hoạch theo mùa vụ"
       actions={
-        <Link href={`${basePath}/create`}>
+        <Link href={`${basePath}/create/workflow`}>
           <Button data-testid="add-plan">
             <Plus className="w-4 h-4 mr-2" />
             Khởi tạo kế hoạch mới

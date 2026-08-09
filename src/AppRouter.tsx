@@ -47,11 +47,20 @@ const PlanGrowthPage = lazy(() => import("./pages/plan-growth/PlanGrowthPage"));
 const PlanGrowthCreatePage = lazy(
   () => import("./pages/plan-growth/PlanGrowthCreatePage"),
 );
+const PlanGrowthCreateWorkflowPage = lazy(
+  () => import("./pages/plan-growth/PlanGrowthCreateWorkflowPage"),
+);
 const PlanGrowthDetailPage = lazy(
   () => import("./pages/plan-growth/PlanGrowthDetailPage"),
 );
 const PlanGrowthEditPage = lazy(
   () => import("./pages/plan-growth/PlanGrowthEditPage"),
+);
+const PlanGrowthWorkflowStageEditPage = lazy(
+  () => import("./pages/plan-growth/PlanGrowthWorkflowStageEditPage"),
+);
+const PlanGrowthWorkflowDetailEditPage = lazy(
+  () => import("./pages/plan-growth/PlanGrowthWorkflowDetailEditPage"),
 );
 const PlanGrowthWorkflowPage = lazy(
   () => import("./pages/plan-growth/PlanGrowthWorkflowPage"),
@@ -720,6 +729,20 @@ const AnimalGrowthCycleDetailRoute = () => <AnimalGrowthCycleDetailPage />;
 const AquacultureRegionWorkflowRoute = () => <AquacultureRegionWorkflowPage />;
 const PlanGrowthRoute = () => <PlanGrowthPage />;
 const PlanGrowthCreateRoute = () => <PlanGrowthCreatePage />;
+const PlanGrowthCreateWorkflowRoute = () => <PlanGrowthCreateWorkflowPage />;
+const PlanGrowthWorkflowPlanEditRoute = () => {
+  const [, setLocation] = useLocation();
+  const backToWorkflow = () => setLocation("/plan-growth/create/workflow");
+  return (
+    <PlanGrowthEditPage
+      basePath="/plan-growth/create/workflow"
+      onSaved={backToWorkflow}
+      onCancel={backToWorkflow}
+    />
+  );
+};
+const PlanGrowthWorkflowStageEditRoute = () => <PlanGrowthWorkflowStageEditPage />;
+const PlanGrowthWorkflowDetailEditRoute = () => <PlanGrowthWorkflowDetailEditPage />;
 const PlanGrowthWorkflowRoute = () => <PlanGrowthWorkflowPage />;
 const PlanGrowthEditRoute = () => <PlanGrowthEditPage />;
 const PlanGrowthDetailRoute = () => <PlanGrowthDetailPage />;
@@ -1437,6 +1460,22 @@ function Router() {
       <Route path="/plan/:id/edit" component={PlanEditPage} />
       <Route path="/plan/:id" component={PlanDetailPage} />
       <Route path="/plan-growth" component={PlanGrowthRoute} />
+      <Route
+        path="/plan-growth/create/workflow/plan/:id/edit"
+        component={PlanGrowthWorkflowPlanEditRoute}
+      />
+      <Route
+        path="/plan-growth/create/workflow/stage/:nodeId/edit"
+        component={PlanGrowthWorkflowStageEditRoute}
+      />
+      <Route
+        path="/plan-growth/create/workflow/detail/:nodeId/edit"
+        component={PlanGrowthWorkflowDetailEditRoute}
+      />
+      <Route
+        path="/plan-growth/create/workflow"
+        component={PlanGrowthCreateWorkflowRoute}
+      />
       <Route path="/plan-growth/create" component={PlanGrowthCreateRoute} />
       <Route
         path="/plan-growth/:id/workflow"

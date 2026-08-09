@@ -54,10 +54,14 @@ import { usePlanForm } from "./hooks/usePlanForm";
 
 interface PlanGrowthEditPageProps {
   basePath?: string;
+  onSaved?: (planId: number) => void;
+  onCancel?: () => void;
 }
 
 export default function PlanGrowthEditPage({
   basePath = "/plan-growth",
+  onSaved,
+  onCancel,
 }: PlanGrowthEditPageProps) {
   const {
     plan,
@@ -86,7 +90,7 @@ export default function PlanGrowthEditPage({
     pageTitle,
     pageDescription,
     completeLabel,
-  } = usePlanForm("edit", basePath);
+  } = usePlanForm("edit", basePath, { onSaved, onCancel });
 
   const [newManualStage, setNewManualStage] = useState("");
   const [stageSearch, setStageSearch] = useState("");

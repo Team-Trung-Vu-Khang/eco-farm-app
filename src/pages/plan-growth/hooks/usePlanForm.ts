@@ -122,7 +122,7 @@ function createEmptyFormData(): PlanFormData {
     description: "",
     seasonId: "",
     seasonName: "",
-    startDate: "",
+    startDate: formatDateInput(new Date()),
     endDate: "",
     plannedDurationYears: "",
     plannedDurationMonths: "",
@@ -144,7 +144,16 @@ function createEmptyFormData(): PlanFormData {
   };
 }
 
-export function usePlanForm(mode: "create" | "edit", basePath = "/plan-growth") {
+type UsePlanFormOptions = {
+  onSaved?: (planId: number) => void;
+  onCancel?: () => void;
+};
+
+export function usePlanForm(
+  mode: "create" | "edit",
+  basePath = "/plan-growth",
+  options?: UsePlanFormOptions,
+) {
   const [, setLocation] = useLocation();
   const params = useParams();
   const { toast } = useToast();
@@ -225,7 +234,7 @@ export function usePlanForm(mode: "create" | "edit", basePath = "/plan-growth") 
           description: plan.description || "",
           seasonId: plan.seasonId || "",
           seasonName: plan.seasonName || "",
-          startDate: plan.startDate || "",
+          startDate: plan.startDate || formatDateInput(new Date()),
           endDate: plan.endDate || "",
           ...inferDurationFromDates(plan.startDate, plan.endDate),
           managementPersonnelIds:
@@ -258,7 +267,7 @@ export function usePlanForm(mode: "create" | "edit", basePath = "/plan-growth") 
       description: plan.description || "",
       seasonId: plan.seasonId || "",
       seasonName: plan.seasonName || "",
-      startDate: plan.startDate || "",
+      startDate: plan.startDate || formatDateInput(new Date()),
       endDate: plan.endDate || "",
       ...inferDurationFromDates(plan.startDate, plan.endDate),
       managementPersonnelIds: (plan as any).managementPersonnelIds || [],
@@ -410,6 +419,14 @@ export function usePlanForm(mode: "create" | "edit", basePath = "/plan-growth") 
     }));
   }, []);
 
+  const persistDraft = () => {
+    if (mode !== "edit" || !params.id) return;
+    updatePlan(Number(params.id), {
+      ...formData,
+      area: calculateArea(),
+    } as any);
+  };
+
   const handleComplete = () => {
     const payload = {
       ...formData,
@@ -423,6 +440,10 @@ export function usePlanForm(mode: "create" | "edit", basePath = "/plan-growth") 
         title: "Thành công",
         description: `Đã cập nhật kế hoạch ${formData.name}`,
       });
+      if (options?.onSaved) {
+        options.onSaved(Number(params.id));
+        return;
+      }
       setLocation(`${basePath}/${params.id}`);
       return;
     }
@@ -432,6 +453,13 @@ export function usePlanForm(mode: "create" | "edit", basePath = "/plan-growth") 
       title: "Thành công",
       description: `Đã tạo kế hoạch ${formData.name}`,
     });
+    if (options?.onSaved) {
+      const created = usePlanStore.getState().plans.at(-1);
+      if (created) {
+        options.onSaved(created.id);
+        return;
+      }
+    }
     setLocation(basePath);
   };
 
@@ -464,8 +492,12 @@ export function usePlanForm(mode: "create" | "edit", basePath = "/plan-growth") 
     handleAddTask,
     handleRemoveTask,
     handleComplete,
-    goBack:
-    mode === "edit" && params.id
+    goBack: options?.onCancel
+      ? () => {
+          persistDraft();
+          options.onCancel!();
+        }
+      : mode === "edit" && params.id
         ? () => setLocation(`${basePath}/${params.id}`)
         : () => setLocation(basePath),
     pageTitle: mode === "edit" ? "Chỉnh sửa Kế hoạch" : "Lập kế hoạch",

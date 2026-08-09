@@ -32,6 +32,7 @@ export interface WorkflowActionItem {
   label: string;
   icon: LucideIcon;
   tone?: WorkflowActionTone;
+  disabled?: boolean;
   onClick: () => void;
 }
 
@@ -192,10 +193,12 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
   const showStatus =
     data.kind !== "region" && data.kind !== "area" && data.kind !== "plot";
   const status = showStatus && data.status ? statusConfig[data.status] : null;
-  const isPosterPlan = data.kind === "plan" && data.variant === "poster";
+  const isPosterPlan = data.variant === "poster";
   const isDarkPoster = isPosterPlan && data.posterTheme === "dark";
   const widthClass = isPosterPlan
-    ? "w-[820px] max-w-[calc(100vw-32px)]"
+    ? data.kind === "plan"
+      ? "w-[820px] max-w-[calc(100vw-32px)]"
+      : "w-[440px] max-w-[calc(100vw-32px)]"
     : data.kind === "cycle" || data.kind === "stage"
       ? "w-[360px]"
       : data.wide
@@ -365,7 +368,18 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
           )}
 
           {data.summaries?.length ? (
-            <div className="mt-5 grid grid-cols-2 gap-x-5 gap-y-3 lg:grid-cols-4">
+            <div
+              className={[
+                "mt-5 grid gap-x-5 gap-y-3",
+                data.summaries.length >= 4
+                  ? "grid-cols-2 lg:grid-cols-4"
+                  : data.summaries.length === 3
+                    ? "grid-cols-3"
+                    : data.summaries.length === 2
+                      ? "grid-cols-2"
+                      : "grid-cols-1",
+              ].join(" ")}
+            >
               {data.summaries.map((summary) => (
                 <div
                   key={`${data.title}-${summary.label}`}
@@ -410,7 +424,16 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
           ) : null}
 
           {data.actions?.length ? (
-            <div className="mt-5 grid gap-2.5 md:grid-cols-3">
+            <div
+              className={[
+                "mt-5 grid gap-2.5",
+                data.actions.length >= 3
+                  ? "md:grid-cols-3"
+                  : data.actions.length === 2
+                    ? "grid-cols-2"
+                    : "grid-cols-1",
+              ].join(" ")}
+            >
               {data.actions.map((action) => {
                 const ActionIcon = action.icon;
 
@@ -423,6 +446,7 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
                       "nodrag h-10 justify-center gap-2 rounded-xl px-4 text-[12px] font-semibold shadow-none",
                       posterActionClass,
                     ].join(" ")}
+                    disabled={action.disabled}
                     onClick={(event) => {
                       event.stopPropagation();
                       action.onClick();
@@ -606,6 +630,7 @@ export function WorkflowCardNode({ data }: NodeProps<WorkflowCardNodeData>) {
                   size="sm"
                   variant={toneVariant[action.tone ?? "default"]}
                   className="nodrag h-7 gap-1.5 px-2.5 text-[10.5px] shadow-none"
+                  disabled={action.disabled}
                   onClick={(event) => {
                     event.stopPropagation();
                     action.onClick();

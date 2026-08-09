@@ -44,7 +44,7 @@ export function usePlanPage(basePath = "/plan-growth") {
     handleDelete,
     handleConfirmDelete,
     handleDuplicate,
-    goToCreate: () => setLocation(`${basePath}/create`),
+    goToCreate: () => setLocation(`${basePath}/create/workflow`),
     goToView: (id: number) => setLocation(`${basePath}/${id}`),
     goToEdit: (id: number) => setLocation(`${basePath}/${id}/edit`),
   };

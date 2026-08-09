@@ -42,6 +42,7 @@ import {
   type Node,
 } from "reactflow";
 import { useLocation, useParams } from "wouter";
+import type { Region } from "../region-chart/constants";
 import usePlanStore, { type Plan } from "../../stores/usePlanStore";
 import type {
   WorkflowCardNodeData,
@@ -131,17 +132,6 @@ const WORKFLOW_TITLE = "Sơ đồ quy trình canh tác";
 const WORKFLOW_DESCRIPTION =
   "Quy trình triển khai các kế hoạch được liên kết với nhau trên sơ đồ.";
 
-function getSelectedRegionNames(plan: Plan, regions: any[]) {
-  return (plan.selectedRegionIds || [])
-    .map((regionId) => {
-      const region = (regions || []).find(
-        (item) => String(item.id) === String(regionId),
-      );
-      return region?.name || String(regionId);
-    })
-    .filter(Boolean);
-}
-
 function countWorkers(tasks: Plan["taskAllocations"]) {
   const total = tasks.reduce((sum, task) => {
     const match = String(task.labor).match(/\d+/);
@@ -170,7 +160,7 @@ function countMaterialsByCategory(materials: Plan["materialAllocations"]) {
   );
 }
 
-function getRegionLabels(plan: Plan, regions: any[]) {
+function getRegionLabels(plan: Plan, regions: Region[]) {
   const summary = summarizePlanSelections(plan, regions);
 
   if (!summary.length) {
@@ -577,7 +567,7 @@ export default function PlanGrowthWorkflowPage({
         footerAction: {
           label: "Khởi tạo kế hoạch mới",
           icon: Plus,
-          onClick: () => setLocation(`${basePath}/create`),
+          onClick: () => setLocation(`${basePath}/create/workflow`),
         },
       },
     };
@@ -597,7 +587,7 @@ export default function PlanGrowthWorkflowPage({
                 setDeleteOpen(true);
               }
             },
-            () => setLocation(`${basePath}/create`),
+            () => setLocation(`${basePath}/create/workflow`),
             slot.isPrimary
               ? primaryRegionLabels
               : getRegionLabels(slot.plan, regions || []),
