@@ -111,6 +111,8 @@ export interface MasterDataRequestExtraFieldsMap {
   "material-groups": Record<string, never>;
   "pesticide-groups": Record<string, never>;
   "pesticide-origins": Record<string, never>;
+  "pesticide-modes-of-action": Record<string, never>;
+  "pesticide-formulations": Record<string, never>;
   "pesticide-toxicity-classes": {
     whoGroup: string;
     bandColor: string;
@@ -164,6 +166,8 @@ export interface MasterDataRecordExtraFieldsMap {
   "material-groups": Record<string, never>;
   "pesticide-groups": Record<string, never>;
   "pesticide-origins": Record<string, never>;
+  "pesticide-modes-of-action": Record<string, never>;
+  "pesticide-formulations": Record<string, never>;
   "pesticide-toxicity-classes": {
     whoGroup?: string | null;
     bandColor?: string | null;
