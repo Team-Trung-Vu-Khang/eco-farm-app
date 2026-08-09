@@ -6,7 +6,7 @@ import type { EquipmentFormData, SupplierDetail } from "../types";
 
 export function useEquipmentCreateForm() {
   const [, setLocation] = useLocation();
-  const [match, params] = useRoute("/equipment/:id/edit");
+  const [match, params] = useRoute("/cultivation-material/equipment/:id/edit");
   const isEdit = match && !!params?.id;
   const { toast } = useToast();
 
@@ -126,7 +126,7 @@ export function useEquipmentCreateForm() {
       toast({ title: "Thành công", description: "Đã thêm mới thiết bị" });
     }
     setConfirmOpen(false);
-    setLocation("/equipment");
+    setLocation("/cultivation-material/equipment");
   };
 
   return {
@@ -140,6 +140,6 @@ export function useEquipmentCreateForm() {
     confirmOpen,
     setConfirmOpen,
     handleConfirmSubmit,
-    navigateBack: () => setLocation("/equipment"),
+    navigateBack: () => setLocation("/cultivation-material/equipment"),
   };
 }

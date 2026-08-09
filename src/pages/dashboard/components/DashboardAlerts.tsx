@@ -31,7 +31,7 @@ export function DashboardAlerts() {
             </p>
           </Link>
           <Link
-            to="/material"
+            to="/cultivation-material/material"
             className="p-4 rounded-lg bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors group"
           >
             <p className="font-medium text-amber-800 flex items-center gap-1">

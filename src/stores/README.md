@@ -104,7 +104,7 @@ export default function PesticideCreatePage() {
   const handleSubmit = (formData) => {
     addPesticide(formData);
     toast({ title: "Thành công", description: "Đã thêm thuốc BVTV mới" });
-    navigate("/pesticide");
+    navigate("/cultivation-material/pesticide");
   };
 
   return <PesticideForm onSubmit={handleSubmit} />;
@@ -124,7 +124,7 @@ export default function PesticideEditPage({ params }) {
   const handleSubmit = (formData) => {
     updatePesticide(Number(params.id), formData);
     toast({ title: "Thành công", description: "Đã cập nhật thuốc BVTV" });
-    navigate("/pesticide");
+    navigate("/cultivation-material/pesticide");
   };
 
   return <PesticideForm initialData={pesticide} onSubmit={handleSubmit} />;

@@ -14,7 +14,7 @@ import {
 
 export function usePesticideCreatePage() {
   const [, setLocation] = useLocation();
-  const [match, params] = useRoute("/pesticide/:id/edit");
+  const [match, params] = useRoute("/cultivation-material/pesticide/:id/edit");
   const isEdit = match && !!params?.id;
   const { toast } = useToast();
 
@@ -82,7 +82,7 @@ export function usePesticideCreatePage() {
     }
 
     setConfirmOpen(false);
-    setLocation("/pesticide");
+    setLocation("/cultivation-material/pesticide");
   };
 
   const steps = [
@@ -133,7 +133,7 @@ export function usePesticideCreatePage() {
     confirmOpen,
     setConfirmOpen,
     steps,
-    goBack: () => setLocation("/pesticide"),
+    goBack: () => setLocation("/cultivation-material/pesticide"),
     handleComplete: () => setConfirmOpen(true),
     handleConfirmSubmit,
   };

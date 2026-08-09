@@ -18,13 +18,8 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import {
-  actionTypes,
-  commonHashtags,
-  origins,
-  pesticideForms,
-  pesticideGroups,
-} from "../data/constants";
+import { initialPesticidePurposes } from "../../pesticide-group/data/constants";
+import { commonHashtags } from "../data/constants";
 import type { PesticideFormData } from "../types";
 
 interface PesticideBasicInfoStepProps {
@@ -78,84 +73,39 @@ export default function PesticideBasicInfoStep({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Nhóm thuốc</Label>
-              <Select
-                value={formData.group}
-                onValueChange={(value) => onFormFieldChange("group", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn nhóm" />
-                </SelectTrigger>
-                <SelectContent>
-                  {pesticideGroups.map((group) => (
-                    <SelectItem key={group} value={group}>
-                      {group}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Dạng thuốc</Label>
-              <Select
-                value={formData.form}
-                onValueChange={(value) => onFormFieldChange("form", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn dạng" />
-                </SelectTrigger>
-                <SelectContent>
-                  {pesticideForms.map((form) => (
-                    <SelectItem key={form} value={form}>
-                      {form}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Cơ chế tác động</Label>
-              <Select
-                value={formData.actionType}
-                onValueChange={(value) =>
-                  onFormFieldChange("actionType", value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn cơ chế" />
-                </SelectTrigger>
-                <SelectContent>
-                  {actionTypes.map((actionType) => (
-                    <SelectItem key={actionType} value={actionType}>
-                      {actionType}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Nguồn gốc</Label>
-              <Select
-                value={formData.origin}
-                onValueChange={(value) => onFormFieldChange("origin", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn nguồn gốc" />
-                </SelectTrigger>
-                <SelectContent>
-                  {origins.map((origin) => (
-                    <SelectItem key={origin} value={origin}>
-                      {origin}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Single category selector replacing the 4 old dropdowns */}
+          <div className="space-y-2">
+            <Label>
+              Loại thuốc <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={formData.group}
+              onValueChange={(value) => onFormFieldChange("group", value)}
+            >
+              <SelectTrigger className="text-left h-auto py-2">
+                <SelectValue placeholder="Chọn loại thuốc từ danh mục..." />
+              </SelectTrigger>
+              <SelectContent>
+                {initialPesticidePurposes.map((purpose) => (
+                  <SelectItem key={purpose.code} value={purpose.name}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{purpose.name}</span>
+                      {purpose.description && (
+                        <span className="text-xs text-muted-foreground truncate max-w-[300px]">
+                          {purpose.description}
+                        </span>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Loại thuốc được quản lý tập trung tại{" "}
+              <span className="text-primary font-medium">
+                Danh mục → Thuốc BVTV
+              </span>
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -217,7 +167,10 @@ export default function PesticideBasicInfoStep({
                   onClick={() =>
                     formData.hashtags.includes(tag)
                       ? onRemoveHashtag(tag)
-                      : onFormFieldChange("hashtags", [...formData.hashtags, tag])
+                      : onFormFieldChange("hashtags", [
+                          ...formData.hashtags,
+                          tag,
+                        ])
                   }
                 >
                   #{tag}

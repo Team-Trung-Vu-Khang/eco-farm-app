@@ -15,11 +15,11 @@ export function usePesticidePage() {
   const [deleteItem, setDeleteItem] = useState<Pesticide | null>(null);
 
   const handleAdd = () => {
-    setLocation("/pesticide/create");
+    setLocation("/cultivation-material/pesticide/create");
   };
 
   const handleEdit = (item: Pesticide) => {
-    setLocation(`/pesticide/${item.id}/edit`);
+    setLocation(`/cultivation-material/pesticide/${item.id}/edit`);
   };
 
   const handleDelete = (item: Pesticide) => {
@@ -28,7 +28,7 @@ export function usePesticidePage() {
   };
 
   const handleViewDetail = (item: Pesticide) => {
-    setLocation(`/pesticide/${item.id}`);
+    setLocation(`/cultivation-material/pesticide/${item.id}`);
   };
 
   const handleConfirmDelete = () => {
@@ -50,6 +50,6 @@ export function usePesticidePage() {
     handleDelete,
     handleViewDetail,
     handleConfirmDelete,
-    navigateToDetail: (id: number) => setLocation(`/pesticide/${id}`),
+    navigateToDetail: (id: number) => setLocation(`/cultivation-material/pesticide/${id}`),
   };
 }

@@ -14,7 +14,7 @@ import {
 
 export function useMaterialCreatePage() {
   const [, setLocation] = useLocation();
-  const [match, params] = useRoute("/material/:id/edit");
+  const [match, params] = useRoute("/cultivation-material/material/:id/edit");
   const isEdit = match && !!params?.id;
   const { toast } = useToast();
 
@@ -111,7 +111,7 @@ export function useMaterialCreatePage() {
     }
 
     setConfirmOpen(false);
-    setLocation("/material");
+    setLocation("/cultivation-material/material");
   };
 
   const steps = [
@@ -155,7 +155,7 @@ export function useMaterialCreatePage() {
     confirmOpen,
     setConfirmOpen,
     steps,
-    goBack: () => setLocation("/material"),
+    goBack: () => setLocation("/cultivation-material/material"),
     handleComplete: () => setConfirmOpen(true),
     handleConfirmSubmit,
   };

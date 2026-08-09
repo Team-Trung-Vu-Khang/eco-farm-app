@@ -18,15 +18,15 @@ export function useFertilizerPage() {
   const [deleteItem, setDeleteItem] = useState<Fertilizer | null>(null);
 
   const handleAdd = () => {
-    setLocation("/fertilizer/create");
+    setLocation("/cultivation-material/fertilizer/create");
   };
 
   const handleView = (item: Fertilizer) => {
-    setLocation(`/fertilizer/${item.id}`);
+    setLocation(`/cultivation-material/fertilizer/${item.id}`);
   };
 
   const handleEdit = (item: Fertilizer) => {
-    setLocation(`/fertilizer/${item.id}/edit`);
+    setLocation(`/cultivation-material/fertilizer/${item.id}/edit`);
   };
 
   const handleDelete = (item: Fertilizer) => {

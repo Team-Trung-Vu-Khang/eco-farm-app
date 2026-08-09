@@ -26,7 +26,7 @@ import { useLocation, useRoute } from "wouter";
 import usePesticideStore from "../../stores/usePesticideStore";
 
 const PesticideDetailPage = () => {
-  const [, params] = useRoute("/pesticide/:id");
+  const [, params] = useRoute("/cultivation-material/pesticide/:id");
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
 
@@ -41,7 +41,7 @@ const PesticideDetailPage = () => {
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin thuốc BVTV.
           </p>
-          <Button onClick={() => setLocation("/pesticide")}>
+          <Button onClick={() => setLocation("/cultivation-material/pesticide")}>
             Quay lại danh sách
           </Button>
         </div>
@@ -54,7 +54,7 @@ const PesticideDetailPage = () => {
       title="Chi tiết thuốc BVTV"
       description={`Thông tin chi tiết cho sản phẩm ${item.name}`}
       actions={
-        <Button onClick={() => setLocation(`/pesticide/${id}/edit`)}>
+        <Button onClick={() => setLocation(`/cultivation-material/pesticide/${id}/edit`)}>
           <Edit className="w-4 h-4 mr-2" />
           Chỉnh sửa
         </Button>
@@ -64,7 +64,7 @@ const PesticideDetailPage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation("/pesticide")}
+          onClick={() => setLocation("/cultivation-material/pesticide")}
           className="gap-2 pl-0 text-muted-foreground hover:text-primary"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -111,12 +111,16 @@ const PesticideDetailPage = () => {
                   <Badge variant="outline" className="bg-white/50">
                     {item.group}
                   </Badge>
-                  <Badge variant="outline" className="bg-white/50">
-                    {item.form}
-                  </Badge>
-                  <Badge variant="outline" className="bg-white/50">
-                    {item.origin}
-                  </Badge>
+                  {item.form && (
+                    <Badge variant="outline" className="bg-white/50">
+                      {item.form}
+                    </Badge>
+                  )}
+                  {item.origin && (
+                    <Badge variant="outline" className="bg-white/50">
+                      {item.origin}
+                    </Badge>
+                  )}
                 </div>
               </div>
             </div>
@@ -132,26 +136,32 @@ const PesticideDetailPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6 grid gap-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-1">
-                      Cơ chế tác động
-                    </h4>
-                    <div className="flex items-center gap-2 font-medium">
-                      <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                      {item.actionType}
-                    </div>
+                {(item.actionType || item.form) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {item.actionType && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                          Cơ chế tác động
+                        </h4>
+                        <div className="flex items-center gap-2 font-medium">
+                          <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                          {item.actionType}
+                        </div>
+                      </div>
+                    )}
+                    {item.form && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                          Dạng thuốc
+                        </h4>
+                        <div className="flex items-center gap-2 font-medium">
+                          <FlaskConical className="w-4 h-4 text-blue-600" />
+                          {item.form}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-1">
-                      Dạng thuốc
-                    </h4>
-                    <div className="flex items-center gap-2 font-medium">
-                      <FlaskConical className="w-4 h-4 text-blue-600" />
-                      {item.form}
-                    </div>
-                  </div>
-                </div>
+                )}
 
                 <Separator />
 

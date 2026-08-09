@@ -174,7 +174,7 @@ function getExtras(id: number) {
 }
 
 const FertilizerDetailPage = () => {
-  const [, params] = useRoute("/fertilizer/:id");
+  const [, params] = useRoute("/cultivation-material/fertilizer/:id");
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
 
@@ -193,7 +193,7 @@ const FertilizerDetailPage = () => {
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin phân bón.
           </p>
-          <Button onClick={() => setLocation("/fertilizer")}>
+          <Button onClick={() => setLocation("/cultivation-material/fertilizer")}>
             <ChevronLeft className="w-4 h-4 mr-2" />
             Quay lại danh sách
           </Button>
@@ -210,11 +210,11 @@ const FertilizerDetailPage = () => {
       description={`Thông tin chi tiết sản phẩm ${item.name}`}
       actions={
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setLocation("/fertilizer")}>
+          <Button variant="outline" onClick={() => setLocation("/cultivation-material/fertilizer")}>
             <ChevronLeft className="w-4 h-4 mr-2" />
             Quay lại
           </Button>
-          <Button onClick={() => setLocation(`/fertilizer/${id}/edit`)}>
+          <Button onClick={() => setLocation(`/cultivation-material/fertilizer/${id}/edit`)}>
             <Edit className="w-4 h-4 mr-2" />
             Chỉnh sửa
           </Button>
@@ -633,7 +633,7 @@ const FertilizerDetailPage = () => {
             <Button
               variant="outline"
               className="w-full justify-start"
-              onClick={() => setLocation(`/fertilizer/${id}/edit`)}
+              onClick={() => setLocation(`/cultivation-material/fertilizer/${id}/edit`)}
             >
               <Edit className="w-4 h-4 mr-2" />
               Chỉnh sửa thông tin

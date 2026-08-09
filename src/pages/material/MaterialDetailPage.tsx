@@ -23,7 +23,7 @@ import useMaterialStore from "../../stores/useMaterialStore";
 import { mockMaterialSuppliers } from "./data/constants";
 
 const MaterialDetailPage = () => {
-  const [, params] = useRoute("/material/:id");
+  const [, params] = useRoute("/cultivation-material/material/:id");
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
 
@@ -38,7 +38,7 @@ const MaterialDetailPage = () => {
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin vật tư.
           </p>
-          <Button onClick={() => setLocation("/material")}>
+          <Button onClick={() => setLocation("/cultivation-material/material")}>
             Quay lại danh sách
           </Button>
         </div>
@@ -51,7 +51,7 @@ const MaterialDetailPage = () => {
       title="Chi tiết vật tư"
       description={`Thông tin chi tiết cho ${item.name}`}
       actions={
-        <Button onClick={() => setLocation(`/material/${id}/edit`)}>
+        <Button onClick={() => setLocation(`/cultivation-material/material/${id}/edit`)}>
           <Edit className="w-4 h-4 mr-2" />
           Chỉnh sửa
         </Button>
@@ -61,7 +61,7 @@ const MaterialDetailPage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation("/material")}
+          onClick={() => setLocation("/cultivation-material/material")}
           className="gap-2 pl-0 text-muted-foreground hover:text-primary"
         >
           <ChevronLeft className="w-4 h-4" />

@@ -81,7 +81,7 @@ const FertilizerCreatePage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation("/fertilizer")}
+          onClick={() => setLocation("/cultivation-material/fertilizer")}
           className="gap-2 pl-0 text-muted-foreground hover:text-primary"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -94,7 +94,7 @@ const FertilizerCreatePage = () => {
           steps={steps}
           completeLabel={isEdit ? "Lưu thay đổi" : "Hoàn tất & Lưu"}
           onComplete={() => setConfirmOpen(true)}
-          onCancel={() => setLocation("/fertilizer")}
+          onCancel={() => setLocation("/cultivation-material/fertilizer")}
         />
       </div>
 

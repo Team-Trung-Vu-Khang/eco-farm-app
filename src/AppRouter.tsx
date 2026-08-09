@@ -108,6 +108,89 @@ const EquipmentCreatePage = lazy(
 const EquipmentDetailPage = lazy(
   () => import("./pages/equipment/EquipmentDetailPage"),
 );
+
+// Animal Husbandry Material Pages
+const AhPesticidePage = lazy(
+  () => import("./pages/ah-pesticide/AhPesticidePage"),
+);
+const AhPesticideCreatePage = lazy(
+  () => import("./pages/ah-pesticide/AhPesticideCreatePage"),
+);
+const AhPesticideDetailPage = lazy(
+  () => import("./pages/ah-pesticide/AhPesticideDetailPage"),
+);
+const AhMaterialPage = lazy(() => import("./pages/ah-material/AhMaterialPage"));
+const AhMaterialCreatePage = lazy(
+  () => import("./pages/ah-material/AhMaterialCreatePage"),
+);
+const AhMaterialDetailPage = lazy(
+  () => import("./pages/ah-material/AhMaterialDetailPage"),
+);
+const AhEquipmentPage = lazy(
+  () => import("./pages/ah-equipment/AhEquipmentPage"),
+);
+const AhEquipmentCreatePage = lazy(
+  () => import("./pages/ah-equipment/AhEquipmentCreatePage"),
+);
+const AhEquipmentDetailPage = lazy(
+  () => import("./pages/ah-equipment/AhEquipmentDetailPage"),
+);
+
+// Aquaculture Material Pages
+const AqPesticidePage = lazy(
+  () => import("./pages/aq-pesticide/AqPesticidePage"),
+);
+const AqPesticideCreatePage = lazy(
+  () => import("./pages/aq-pesticide/AqPesticideCreatePage"),
+);
+const AqPesticideDetailPage = lazy(
+  () => import("./pages/aq-pesticide/AqPesticideDetailPage"),
+);
+const AqMaterialPage = lazy(() => import("./pages/aq-material/AqMaterialPage"));
+const AqMaterialCreatePage = lazy(
+  () => import("./pages/aq-material/AqMaterialCreatePage"),
+);
+const AqMaterialDetailPage = lazy(
+  () => import("./pages/aq-material/AqMaterialDetailPage"),
+);
+const AqEquipmentPage = lazy(
+  () => import("./pages/aq-equipment/AqEquipmentPage"),
+);
+const AqEquipmentCreatePage = lazy(
+  () => import("./pages/aq-equipment/AqEquipmentCreatePage"),
+);
+const AqEquipmentDetailPage = lazy(
+  () => import("./pages/aq-equipment/AqEquipmentDetailPage"),
+);
+
+// Warehouse Pages
+const InventoryAreaPage = lazy(
+  () => import("./pages/inventory-area/InventoryAreaPage"),
+);
+const InventoryAreaCreatePage = lazy(
+  () => import("./pages/inventory-area/InventoryAreaCreatePage"),
+);
+const CropMaterialInventoryPage = lazy(
+  () => import("./pages/crop-material-inventory/CropMaterialInventoryPage"),
+);
+const LivestockMaterialInventoryPage = lazy(
+  () =>
+    import("./pages/livestock-material-inventory/LivestockMaterialInventoryPage"),
+);
+const AquacultureMaterialInventoryPage = lazy(
+  () =>
+    import("./pages/aquaculture-material-inventory/AquacultureMaterialInventoryPage"),
+);
+const InventoryLookupPage = lazy(
+  () => import("./pages/inventory-lookup/InventoryLookupPage"),
+);
+const InventoryInPage = lazy(
+  () => import("./pages/inventory-in/InventoryInPage"),
+);
+const InventoryOutPage = lazy(
+  () => import("./pages/inventory-out/InventoryOutPage"),
+);
+
 const UnitCreatePage = lazy(() => import("./pages/unit/UnitCreatePage"));
 const IoTDevicePage = lazy(() => import("./pages/iot-device/IoTDevicePage"));
 const IoTDeviceCreatePage = lazy(
@@ -504,7 +587,8 @@ const LivestockMedicineGroupPage = lazy(
   () => import("./pages/livestock-medicine-group/LivestockMedicineGroupPage"),
 );
 const AquacultureMedicineGroupPage = lazy(
-  () => import("./pages/aquaculture-medicine-group/AquacultureMedicineGroupPage"),
+  () =>
+    import("./pages/aquaculture-medicine-group/AquacultureMedicineGroupPage"),
 );
 const EquipmentGroupPage = lazy(
   () => import("./pages/equipment-group/EquipmentGroupPage"),
@@ -651,9 +735,7 @@ const PlanAquacultureGrowthCreateRoute = () => (
 const PlanAquacultureGrowthWorkflowRoute = () => (
   <PlanAquacultureGrowthWorkflowPage />
 );
-const PlanAquacultureGrowthEditRoute = () => (
-  <PlanAquacultureGrowthEditPage />
-);
+const PlanAquacultureGrowthEditRoute = () => <PlanAquacultureGrowthEditPage />;
 const PlanAquacultureGrowthDetailRoute = () => (
   <PlanAquacultureGrowthDetailPage />
 );
@@ -1139,28 +1221,194 @@ function Router() {
       <Route path="/season/create" component={CreateSeasonPage} />
       <Route path="/season/:id/edit" component={UpdateSeasonPage} />
       <Route path="/season/:id" component={SeasonDetailPage} />
-      <Route path="/pesticide" component={PesticidePage} />
+      <Route path="/cultivation-material/pesticide" component={PesticidePage} />
       <Route path="/pesticide-group" component={PesticideGroupPage} />
-      <Route path="/livestock-medicine-group" component={LivestockMedicineGroupPage} />
-      <Route path="/aquaculture-medicine-group" component={AquacultureMedicineGroupPage} />
-      <Route path="/pesticide/create" component={PesticideCreatePage} />
-      <Route path="/pesticide/:id/edit" component={PesticideCreatePage} />
-      <Route path="/pesticide/:id" component={PesticideDetailPage} />
-      <Route path="/fertilizer" component={FertilizerPage} />
-      <Route path="/fertilizer-group" component={FertilizerGroupPage} />
-      <Route path="/fertilizer/create" component={FertilizerCreatePage} />
-      <Route path="/fertilizer/:id/edit" component={FertilizerCreatePage} />
-      <Route path="/fertilizer/:id" component={FertilizerDetailPage} />
-      <Route path="/material" component={MaterialPage} />
-      <Route path="/material-group" component={MaterialGroupPage} />
-      <Route path="/material/create" component={MaterialCreatePage} />
-      <Route path="/material/:id" component={MaterialDetailPage} />
+      <Route
+        path="/livestock-medicine-group"
+        component={LivestockMedicineGroupPage}
+      />
+      <Route
+        path="/aquaculture-medicine-group"
+        component={AquacultureMedicineGroupPage}
+      />
+      <Route
+        path="/cultivation-material/pesticide/create"
+        component={PesticideCreatePage}
+      />
+      <Route
+        path="/cultivation-material/pesticide/:id/edit"
+        component={PesticideCreatePage}
+      />
+      <Route
+        path="/cultivation-material/pesticide/:id"
+        component={PesticideDetailPage}
+      />
+      <Route
+        path="/cultivation-material/fertilizer"
+        component={FertilizerPage}
+      />
+      <Route
+        path="/cultivation-material/fertilizer-group"
+        component={FertilizerGroupPage}
+      />
+      <Route
+        path="/cultivation-material/fertilizer/create"
+        component={FertilizerCreatePage}
+      />
+      <Route
+        path="/cultivation-material/fertilizer/:id/edit"
+        component={FertilizerCreatePage}
+      />
+      <Route
+        path="/cultivation-material/fertilizer/:id"
+        component={FertilizerDetailPage}
+      />
+      <Route path="/cultivation-material/material" component={MaterialPage} />
+      <Route
+        path="/cultivation-material/material-group"
+        component={MaterialGroupPage}
+      />
+      <Route
+        path="/cultivation-material/material/create"
+        component={MaterialCreatePage}
+      />
+      <Route
+        path="/cultivation-material/material/:id"
+        component={MaterialDetailPage}
+      />
 
-      <Route path="/equipment" component={EquipmentPage} />
+      <Route path="/cultivation-material/equipment" component={EquipmentPage} />
       <Route path="/vehicle-group" component={EquipmentGroupPage} />
-      <Route path="/equipment/create" component={EquipmentCreatePage} />
-      <Route path="/equipment/:id/edit" component={EquipmentCreatePage} />
-      <Route path="/equipment/:id" component={EquipmentDetailPage} />
+      <Route
+        path="/cultivation-material/equipment/create"
+        component={EquipmentCreatePage}
+      />
+      <Route
+        path="/cultivation-material/equipment/:id/edit"
+        component={EquipmentCreatePage}
+      />
+      <Route
+        path="/cultivation-material/equipment/:id"
+        component={EquipmentDetailPage}
+      />
+
+      {/* Animal Husbandry Material Routes */}
+      <Route
+        path="/animal-husbandry-material/pesticide"
+        component={AhPesticidePage}
+      />
+      <Route
+        path="/animal-husbandry-material/pesticide/create"
+        component={AhPesticideCreatePage}
+      />
+      <Route
+        path="/animal-husbandry-material/pesticide/:id/edit"
+        component={AhPesticideCreatePage}
+      />
+      <Route
+        path="/animal-husbandry-material/pesticide/:id"
+        component={AhPesticideDetailPage}
+      />
+      <Route
+        path="/animal-husbandry-material/material"
+        component={AhMaterialPage}
+      />
+      <Route
+        path="/animal-husbandry-material/material/create"
+        component={AhMaterialCreatePage}
+      />
+      <Route
+        path="/animal-husbandry-material/material/:id/edit"
+        component={AhMaterialCreatePage}
+      />
+      <Route
+        path="/animal-husbandry-material/material/:id"
+        component={AhMaterialDetailPage}
+      />
+      <Route
+        path="/animal-husbandry-material/equipment"
+        component={AhEquipmentPage}
+      />
+      <Route
+        path="/animal-husbandry-material/equipment/create"
+        component={AhEquipmentCreatePage}
+      />
+      <Route
+        path="/animal-husbandry-material/equipment/:id/edit"
+        component={AhEquipmentCreatePage}
+      />
+      <Route
+        path="/animal-husbandry-material/equipment/:id"
+        component={AhEquipmentDetailPage}
+      />
+
+      {/* Aquaculture Material Routes */}
+      <Route
+        path="/aquaculture-material/pesticide"
+        component={AqPesticidePage}
+      />
+      <Route
+        path="/aquaculture-material/pesticide/create"
+        component={AqPesticideCreatePage}
+      />
+      <Route
+        path="/aquaculture-material/pesticide/:id/edit"
+        component={AqPesticideCreatePage}
+      />
+      <Route
+        path="/aquaculture-material/pesticide/:id"
+        component={AqPesticideDetailPage}
+      />
+      <Route path="/aquaculture-material/material" component={AqMaterialPage} />
+      <Route
+        path="/aquaculture-material/material/create"
+        component={AqMaterialCreatePage}
+      />
+      <Route
+        path="/aquaculture-material/material/:id/edit"
+        component={AqMaterialCreatePage}
+      />
+      <Route
+        path="/aquaculture-material/material/:id"
+        component={AqMaterialDetailPage}
+      />
+      <Route
+        path="/aquaculture-material/equipment"
+        component={AqEquipmentPage}
+      />
+      <Route
+        path="/aquaculture-material/equipment/create"
+        component={AqEquipmentCreatePage}
+      />
+      <Route
+        path="/aquaculture-material/equipment/:id/edit"
+        component={AqEquipmentCreatePage}
+      />
+      <Route
+        path="/aquaculture-material/equipment/:id"
+        component={AqEquipmentDetailPage}
+      />
+
+      {/* Warehouse Routes */}
+      <Route path="/inventory-area" component={InventoryAreaPage} />
+      <Route path="/inventory-area/create" component={InventoryAreaCreatePage} />
+      <Route path="/inventory-area/:id/edit" component={InventoryAreaCreatePage} />
+      <Route
+        path="/crop-material-inventory"
+        component={CropMaterialInventoryPage}
+      />
+      <Route
+        path="/livestock-material-inventory"
+        component={LivestockMaterialInventoryPage}
+      />
+      <Route
+        path="/aquaculture-material-inventory"
+        component={AquacultureMaterialInventoryPage}
+      />
+      <Route path="/inventory-lookup" component={InventoryLookupPage} />
+      <Route path="/inventory-in" component={InventoryInPage} />
+      <Route path="/inventory-out" component={InventoryOutPage} />
+
       <Route path="/contract" component={ContractPage} />
       <Route path="/document-version" component={DocumentVersionPage} />
       <Route path="/role-responsibility" component={RoleResponsibilityPage} />

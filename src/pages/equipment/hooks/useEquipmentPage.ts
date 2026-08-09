@@ -16,11 +16,11 @@ export function useEquipmentPage() {
   const [deleteItem, setDeleteItem] = useState<Equipment | null>(null);
 
   const handleAdd = () => {
-    setLocation("/equipment/create");
+    setLocation("/cultivation-material/equipment/create");
   };
 
   const handleEdit = (item: Equipment) => {
-    setLocation(`/equipment/${item.id}/edit`);
+    setLocation(`/cultivation-material/equipment/${item.id}/edit`);
   };
 
   const handleDelete = (item: Equipment) => {
@@ -41,7 +41,7 @@ export function useEquipmentPage() {
   };
 
   const navigateToDetail = (id: number) => {
-    setLocation(`/equipment/${id}`);
+    setLocation(`/cultivation-material/equipment/${id}`);
   };
 
   return {

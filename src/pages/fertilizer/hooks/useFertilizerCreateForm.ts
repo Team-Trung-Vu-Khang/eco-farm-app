@@ -6,7 +6,7 @@ import type { FertilizerFormData } from "../types/types";
 
 export function useFertilizerCreateForm() {
   const [, setLocation] = useLocation();
-  const [match, params] = useRoute("/fertilizer/:id/edit");
+  const [match, params] = useRoute("/cultivation-material/fertilizer/:id/edit");
   const isEdit = match && !!params?.id;
   const { toast } = useToast();
 
@@ -110,7 +110,7 @@ export function useFertilizerCreateForm() {
       });
     }
     setConfirmOpen(false);
-    setLocation("/fertilizer");
+    setLocation("/cultivation-material/fertilizer");
   };
 
   return {

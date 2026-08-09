@@ -15,11 +15,11 @@ export function useMaterialPage() {
   const [deleteItem, setDeleteItem] = useState<Material | null>(null);
 
   const handleAdd = () => {
-    setLocation("/material/create");
+    setLocation("/cultivation-material/material/create");
   };
 
   const handleEdit = (item: Material) => {
-    setLocation(`/material/${item.id}/edit`);
+    setLocation(`/cultivation-material/material/${item.id}/edit`);
   };
 
   const handleView = (item: Material) => {
@@ -50,6 +50,6 @@ export function useMaterialPage() {
     handleView,
     handleDelete,
     handleConfirmDelete,
-    navigateToDetail: (id: number) => setLocation(`/material/${id}`),
+    navigateToDetail: (id: number) => setLocation(`/cultivation-material/material/${id}`),
   };
 }

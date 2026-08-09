@@ -19,7 +19,7 @@ import {
 } from "./components/detail/EquipmentDetailTabs";
 
 const EquipmentDetailPage = () => {
-  const [, params] = useRoute("/equipment/:id");
+  const [, params] = useRoute("/cultivation-material/equipment/:id");
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
 
@@ -33,7 +33,7 @@ const EquipmentDetailPage = () => {
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin thiết bị.
           </p>
-          <Button onClick={() => setLocation("/equipment")}>
+          <Button onClick={() => setLocation("/cultivation-material/equipment")}>
             Quay lại danh sách
           </Button>
         </div>
@@ -46,7 +46,7 @@ const EquipmentDetailPage = () => {
       title="Chi tiết thiết bị"
       description={`Thông tin và lịch sử bảo dưỡng của ${item.name}`}
       actions={
-        <Button onClick={() => setLocation(`/equipment/${id}/edit`)}>
+        <Button onClick={() => setLocation(`/cultivation-material/equipment/${id}/edit`)}>
           <Edit className="w-4 h-4 mr-2" />
           Chỉnh sửa
         </Button>
@@ -56,7 +56,7 @@ const EquipmentDetailPage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setLocation("/equipment")}
+          onClick={() => setLocation("/cultivation-material/equipment")}
           className="gap-2 pl-0 text-muted-foreground hover:text-primary"
         >
           <ChevronLeft className="w-4 h-4" />

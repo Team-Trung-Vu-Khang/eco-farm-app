@@ -22,7 +22,7 @@ export default function FertilizerPage() {
   } = useFertilizerPage();
 
   const columns = getFertilizerColumns((id) =>
-    setLocation(`/fertilizer/${id}`),
+    setLocation(`/cultivation-material/fertilizer/${id}`),
   );
 
   return (
