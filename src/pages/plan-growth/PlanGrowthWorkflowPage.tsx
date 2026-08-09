@@ -22,11 +22,9 @@ import {
 import {
   ArrowLeft,
   ClipboardList,
-  Milestone,
   PencilLine,
   Plus,
   Trash2,
-  Workflow,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -42,8 +40,8 @@ import {
   type Node,
 } from "reactflow";
 import { useLocation, useParams } from "wouter";
-import type { Region } from "../region-chart/constants";
 import usePlanStore, { type Plan } from "../../stores/usePlanStore";
+import type { Region } from "../region-chart/constants";
 import type {
   WorkflowCardNodeData,
   WorkflowNodeStatus,
@@ -69,19 +67,6 @@ interface PlanGrowthWorkflowPageProps {
   basePath?: string;
 }
 
-function formatDate(value?: string) {
-  if (!value) return "Chưa có";
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return value;
-
-  return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(parsed);
-}
-
 function getStatusNode(status: Plan["status"]): WorkflowNodeStatus {
   if (status === "active") return "in_progress";
   if (status === "completed") return "ended";
@@ -94,14 +79,6 @@ function getStatusLabel(status: Plan["status"]) {
   if (status === "completed") return "Đã kết thúc";
   if (status === "cancelled") return "Đã kết thúc";
   return "Thiếu thông tin";
-}
-
-function getPurposeLabel(plan: Plan) {
-  if (plan.purpose === "cultivation") return "Canh tác";
-  if (plan.purpose === "treatment") return "Điều trị";
-  if (plan.purpose === "amendment") return "Cải tạo";
-  if (plan.purpose === "harvest") return "Thu hoạch";
-  return "Phát sinh";
 }
 
 function getDurationLabel(startDate?: string | null, endDate?: string | null) {
@@ -378,9 +355,10 @@ function buildPlanNode(
   onDelete: () => void,
   onCreate: () => void,
   regionLabels: string[],
-  options?: { interactive?: boolean },
+  options?: { interactive?: boolean; showFooterAction?: boolean },
 ): Node<WorkflowCardNodeData> {
   const interactive = options?.interactive ?? true;
+  const showFooterAction = options?.showFooterAction ?? true;
   const materialGroups = countMaterialsByCategory(plan.materialAllocations);
   const canManage =
     interactive && plan.status !== "completed" && plan.status !== "cancelled";
@@ -429,7 +407,7 @@ function buildPlanNode(
             },
           ]
         : undefined,
-      footerAction: canManage
+      footerAction: canManage && showFooterAction
         ? {
             label: "Khởi tạo kế hoạch mới",
             icon: Plus,
@@ -521,6 +499,8 @@ export default function PlanGrowthWorkflowPage({
     }
 
     const slots = createDemoWorkflowPlans(plan);
+    const rootSlot = slots[0];
+    const childSlots = slots.slice(1);
 
     const planNodePositionMap: Record<string, { x: number; y: number }> =
       viewMode === "milestone"
@@ -539,42 +519,27 @@ export default function PlanGrowthWorkflowPage({
             "Kế hoạch 1.2": { x: 2420, y: 760 },
           };
 
-    const rootNode: Node<WorkflowCardNodeData> = {
-      id: `plan-root-${plan.id}`,
-      type: "workflowCard",
-      position: { x: 0, y: 0 },
-      data: {
-        kind: "cycle",
-        icon: Plus,
-        eyebrow: "Kế hoạch chính",
-        title: "Kế hoạch chính",
-        subtitle: plan.name || plan.seasonName || "Điểm bắt đầu của sơ đồ",
-        status: "not_started",
-        statusLabel: "Kế hoạch chính",
-        wide: true,
-        targetTopHandleId: `plan-root-${plan.id}-target-top`,
-        sourceBottomHandleId: `plan-root-${plan.id}-source-bottom`,
-        summaries: [
-          { label: "Loại", value: getPurposeLabel(plan) },
-          {
-            label: "Vùng",
-            value: primaryRegionLabels[0] || "Chưa xác định",
-          },
-          { label: "Khởi tạo", value: formatDate(plan.createdAt) },
-        ],
-        description:
-          plan.description || "Điểm bắt đầu của sơ đồ kế hoạch liên kết.",
-        footerAction: {
-          label: "Khởi tạo kế hoạch mới",
-          icon: Plus,
-          onClick: () => setLocation(`${basePath}/create/workflow`),
+    const rootNode = {
+      ...buildPlanNode(
+        rootSlot.plan,
+        rootSlot.label,
+        () => openEditDialog(),
+        () => setLocation(`/task?planId=${rootSlot.plan.id}`),
+        () => {
+          if (rootSlot.isPrimary) {
+            setDeleteOpen(true);
+          }
         },
-      },
+        () => setLocation(`${basePath}/create/workflow`),
+        getRegionLabels(rootSlot.plan, regions || []),
+        { interactive: true, showFooterAction: false },
+      ),
+      position: planNodePositionMap[rootSlot.label] ?? rootSlot.position,
     };
 
     const nodes = [
       rootNode,
-      ...slots.map((slot) => {
+      ...childSlots.map((slot) => {
         const position = planNodePositionMap[slot.label] ?? slot.position;
         return {
           ...buildPlanNode(
@@ -598,7 +563,7 @@ export default function PlanGrowthWorkflowPage({
       }),
     ];
 
-    const slotByLabel = new Map(slots.map((slot) => [slot.label, slot]));
+    const slotByLabel = new Map(childSlots.map((slot) => [slot.label, slot]));
     const edges: Edge[] = [];
 
     const connect = (
@@ -632,11 +597,11 @@ export default function PlanGrowthWorkflowPage({
     };
 
     edges.push({
-      id: `edge-root-${plan.id}-plan-1`,
+      id: `edge-root-${plan.id}-plan-2`,
       source: rootNode.id,
-      target: `plan-${slots[0].plan.id}`,
+      target: `plan-${slots[1].plan.id}`,
       sourceHandle: `${rootNode.id}-source-bottom`,
-      targetHandle: `plan-${slots[0].plan.id}-target-top`,
+      targetHandle: `plan-${slots[1].plan.id}-target-top`,
       type: "step",
       markerEnd: {
         type: MarkerType.ArrowClosed,
@@ -649,9 +614,26 @@ export default function PlanGrowthWorkflowPage({
       },
     });
 
-    connect("Kế hoạch 1", "Kế hoạch 2", "#1f2937");
+    edges.push({
+      id: `edge-root-${plan.id}-plan-1.1`,
+      source: rootNode.id,
+      target: `plan-${slots[3].plan.id}`,
+      sourceHandle: `${rootNode.id}-source-bottom`,
+      targetHandle: `plan-${slots[3].plan.id}-target-top`,
+      type: "step",
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 16,
+        height: 16,
+      },
+      style: {
+        strokeWidth: 1.75,
+        stroke: "#2563eb",
+        strokeDasharray: "6 6",
+      },
+    });
+
     connect("Kế hoạch 2", "Kế hoạch 3", "#1f2937");
-    connect("Kế hoạch 1", "Kế hoạch 1.1", "#2563eb", true);
     connect("Kế hoạch 1.1", "Kế hoạch 1.2", "#2563eb", true);
 
     return { nodes, edges };
@@ -719,33 +701,6 @@ export default function PlanGrowthWorkflowPage({
           {plan.variety ? ` - ${plan.variety}` : ""}
         </Badge>
         {getPlanStatusBadge(plan.status)}
-      </div>
-
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-        <div className="flex items-center gap-2 text-sm text-slate-600">
-          <Workflow className="h-4 w-4 text-emerald-600" />
-          <span>Chọn cách hiển thị sơ đồ</span>
-        </div>
-        <div className="flex items-center gap-2 rounded-2xl bg-slate-100 p-1">
-          <Button
-            type="button"
-            variant={viewMode === "workflow" ? "default" : "ghost"}
-            className="h-9 rounded-xl px-4"
-            onClick={() => setViewMode("workflow")}
-          >
-            <Workflow className="mr-2 h-4 w-4" />
-            Workflow
-          </Button>
-          <Button
-            type="button"
-            variant={viewMode === "milestone" ? "default" : "ghost"}
-            className="h-9 rounded-xl px-4"
-            onClick={() => setViewMode("milestone")}
-          >
-            <Milestone className="mr-2 h-4 w-4" />
-            Cột mốc
-          </Button>
-        </div>
       </div>
 
       <Card className="border-slate-200 shadow-sm">

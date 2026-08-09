@@ -20,7 +20,6 @@ import {
   Plus,
   Trash2,
   Workflow,
-  Wrench,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -36,11 +35,7 @@ import {
   type Node,
 } from "reactflow";
 import { useLocation } from "wouter";
-import usePlanStore, {
-  type MaterialAllocation,
-  type Plan,
-  type TaskAllocation,
-} from "../../stores/usePlanStore";
+import usePlanStore, { type Plan } from "../../stores/usePlanStore";
 import {
   WorkflowCardNode,
   type WorkflowActionItem,
@@ -48,13 +43,8 @@ import {
   type WorkflowNodeStatus,
 } from "./../growth-cycle/components/workflow/WorkflowCardNode";
 import {
-  getDetailPayload,
-  getDirectChildren,
-  getStagePayload,
   usePlanWorkflowDraftStore,
-  type DetailPayload,
   type DraftNode,
-  type StagePayload,
 } from "./hooks/usePlanWorkflowDraftStore";
 import { summarizePlanSelections } from "./utils/location";
 
@@ -138,27 +128,6 @@ function createEmptyPlanDraft(): Omit<Plan, "id" | "createdAt"> {
   };
 }
 
-function getInitialStagePayload(index = 1): StagePayload {
-  return {
-    stageName: `Giai đoạn ${index}`,
-    stageDescription: "",
-    duration: "",
-  };
-}
-
-function getInitialDetailPayload(): DetailPayload {
-  return {
-    taskName: "",
-    taskDescription: "",
-    labor: "",
-    materialCategory: "",
-    materialType: "",
-    materialName: "",
-    quantity: "",
-    unit: "",
-  };
-}
-
 function createNodeId(kind: "plan" | "stage" | "detail") {
   return `${kind}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -191,10 +160,7 @@ function isPlanInfoComplete(plan: Plan) {
   );
 }
 
-function getPlanDisplayStatus(
-  plan: Plan,
-  hasWork: boolean,
-): PlanDisplayStatus {
+function getPlanDisplayStatus(plan: Plan, hasWork: boolean): PlanDisplayStatus {
   if (plan.status === "completed" || plan.status === "cancelled")
     return "completed";
   if (!isPlanInfoComplete(plan)) return "missing_info";
@@ -209,7 +175,10 @@ function getPlanActionDisabled(status: PlanDisplayStatus) {
   };
 }
 
-function getMaterialBreakdown(materialNames: string[], materialCategories: string[]) {
+function getMaterialBreakdown(
+  materialNames: string[],
+  materialCategories: string[],
+) {
   const breakdown = { "Thuốc BVTV": 0, "Phân bón": 0, "Vật tư khác": 0 };
 
   materialNames.forEach((materialName, index) => {
@@ -251,221 +220,131 @@ function getRegionLabelsFromPlan(
 type NodeHandlers = {
   onCreatePlan: (sourceNodeId?: string) => void;
   onEditPlan: (planId: number) => void;
-  onAllocateStage: (planNodeId: string) => void;
+  onAllocateWork: (planId: number) => void;
   onRequestDeletePlan: (nodeId: string) => void;
-  onEditStage: (nodeId: string) => void;
-  onAddDetail: (stageNodeId: string) => void;
-  onDeleteStage: (nodeId: string) => void;
-  onEditDetail: (nodeId: string) => void;
-  onDeleteDetail: (nodeId: string) => void;
 };
 
 function toDisplayNode(
   node: DraftNode,
-  allNodes: DraftNode[],
   handlers: NodeHandlers,
   regions: ReturnType<typeof useRegionStore.getState>["regions"],
   plans: Plan[],
 ): Node<WorkflowCardNodeData> {
   const { id, data } = node;
 
-  if (data.setupKind === "plan") {
-    const plan = plans.find((item) => item.id === data.planId);
-    if (!plan) {
-      return {
-        ...node,
-        data: {
-          kind: "plan",
-          eyebrow: "Kế hoạch",
-          title: "Kế hoạch không tồn tại",
-          status: "not_started",
-          statusLabel: "Đã bị xoá",
-          wide: true,
-          targetTopHandleId: `${id}-target-top`,
-          description: "Kế hoạch này đã bị xoá khỏi hệ thống.",
-        },
-      };
-    }
-
-    const stageNodes = getDirectChildren(allNodes, id).filter(
-      (child) => child.data.setupKind === "stage",
-    );
-    const detailNodes = stageNodes.flatMap((stage) =>
-      getDirectChildren(allNodes, stage.id).filter(
-        (child) => child.data.setupKind === "detail",
-      ),
-    );
-    const details = detailNodes.map((detail) => getDetailPayload(detail));
-
-    const stageNames = stageNodes.map((node) => getStagePayload(node).stageName);
-    const laborCount = details.filter((detail) => detail.labor.trim()).length;
-    const materialNames = details.map((detail) => detail.materialName);
-    const materialCategories = details.map((detail) => detail.materialCategory);
-    const materialBreakdown = getMaterialBreakdown(materialNames, materialCategories);
-
-    const status = getPlanDisplayStatus(plan, stageNodes.length > 0);
-    const statusMeta = PLAN_STATUS_META[status];
-    const actionDisabled = getPlanActionDisabled(status);
-    const duration = getDurationLabel(plan.startDate, plan.endDate);
-
-    const actions: WorkflowActionItem[] = [
-      {
-        label: "Điều chỉnh thông tin",
-        icon: PencilLine,
-        disabled: actionDisabled.edit,
-        onClick: () => handlers.onEditPlan(plan.id),
-      },
-      {
-        label: "Phân bổ công việc",
-        icon: Layers,
-        disabled: actionDisabled.allocate,
-        onClick: () => handlers.onAllocateStage(id),
-      },
-      {
-        label: "Xóa kế hoạch",
-        icon: Trash2,
-        tone: "destructive",
-        disabled: actionDisabled.remove,
-        onClick: () => handlers.onRequestDeletePlan(id),
-      },
-    ];
-
+  if (data.setupKind !== "plan") {
     return {
       ...node,
       data: {
         kind: "plan",
-        variant: "poster",
-        posterTheme: "light",
-        icon: ClipboardList,
         eyebrow: "Kế hoạch",
-        title: plan.name
-          ? `${plan.name} (${duration})`
-          : `Kế hoạch mới (${duration})`,
-        subtitle: plan.seasonName || "Chưa chọn mùa vụ",
-        status: statusMeta.nodeStatus,
-        statusLabel: statusMeta.label,
+        title: "Kế hoạch không hợp lệ",
+        status: "not_started",
         wide: true,
         targetTopHandleId: `${id}-target-top`,
-        sourceBottomHandleId: `${id}-source-bottom`,
-        tags: getStageTags(stageNames),
-        regionLabels: getRegionLabelsFromPlan(plan, regions),
-        summaries: [
-          { label: "Nhân lực", value: String(laborCount) },
-          {
-            label: "Thuốc BVTV",
-            value: String(materialBreakdown["Thuốc BVTV"]),
-          },
-          { label: "Phân bón", value: String(materialBreakdown["Phân bón"]) },
-          {
-            label: "Vật tư khác",
-            value: String(materialBreakdown["Vật tư khác"]),
-          },
-        ],
-        description: plan.description || "Chưa có mô tả cho kế hoạch này.",
-        actions,
-        footerAction: {
-          label: "Kế hoạch tiếp theo",
-          icon: Plus,
-          onClick: () => handlers.onCreatePlan(id),
-        },
+        description: "",
       },
     };
   }
 
-  if (data.setupKind === "stage") {
-    const payload = getStagePayload(node);
-    const detailNodes = getDirectChildren(allNodes, id).filter(
-      (child) => child.data.setupKind === "detail",
-    );
-    const detailTags = detailNodes
-      .map((detailNode) => getDetailPayload(detailNode).taskName?.trim())
-      .filter((name): name is string => Boolean(name));
-
-    const actions: WorkflowActionItem[] = [
-      {
-        label: "Sửa",
-        icon: PencilLine,
-        onClick: () => handlers.onEditStage(id),
-      },
-      {
-        label: "Xoá",
-        icon: Trash2,
-        tone: "destructive",
-        onClick: () => handlers.onDeleteStage(id),
-      },
-    ];
-
+  const plan = plans.find((item) => item.id === data.planId);
+  if (!plan) {
     return {
       ...node,
       data: {
-        kind: "stage",
-        variant: "poster",
-        posterTheme: "light",
-        icon: Layers,
-        eyebrow: "Giai đoạn",
-        title: payload.stageName || "Giai đoạn",
-        subtitle: payload.duration || "Chưa có thời lượng",
-        status: detailNodes.length ? "in_progress" : "not_started",
+        kind: "plan",
+        eyebrow: "Kế hoạch",
+        title: "Kế hoạch không tồn tại",
+        status: "not_started",
+        statusLabel: "Đã bị xoá",
         wide: true,
         targetTopHandleId: `${id}-target-top`,
-        sourceBottomHandleId: `${id}-source-bottom`,
-        tags: detailTags.length ? detailTags : ["Chưa có chi tiết"],
-        summaries: [
-          { label: "Chi tiết", value: `${detailNodes.length} mục` },
-          { label: "Thời lượng", value: payload.duration || "Chưa xác định" },
-        ],
-        description:
-          payload.stageDescription ||
-          "Tạo một bước thực thi cụ thể trong kế hoạch.",
-        actions,
-        footerAction: {
-          label: "Thêm chi tiết",
-          icon: Plus,
-          onClick: () => handlers.onAddDetail(id),
-        },
+        description: "Kế hoạch này đã bị xoá khỏi hệ thống.",
       },
     };
   }
 
-  const payload = getDetailPayload(node);
+  const laborCount = plan.taskAllocations.filter((task) =>
+    task.labor.trim(),
+  ).length;
+  const materialNames = plan.materialAllocations.map(
+    (material) => material.materialName,
+  );
+  const materialCategories = plan.materialAllocations.map(
+    (material) => material.materialCategory,
+  );
+  const materialBreakdown = getMaterialBreakdown(
+    materialNames,
+    materialCategories,
+  );
+
+  const hasWork =
+    plan.taskAllocations.length > 0 || plan.materialAllocations.length > 0;
+  const status = getPlanDisplayStatus(plan, hasWork);
+  const statusMeta = PLAN_STATUS_META[status];
+  const actionDisabled = getPlanActionDisabled(status);
+  const duration = getDurationLabel(plan.startDate, plan.endDate);
+
   const actions: WorkflowActionItem[] = [
     {
-      label: "Sửa",
+      label: "Điều chỉnh thông tin",
       icon: PencilLine,
-      onClick: () => handlers.onEditDetail(id),
+      disabled: actionDisabled.edit,
+      onClick: () => handlers.onEditPlan(plan.id),
     },
     {
-      label: "Xoá",
+      label: "Phân bổ công việc",
+      icon: Layers,
+      disabled: actionDisabled.allocate,
+      onClick: () => handlers.onAllocateWork(plan.id),
+    },
+    {
+      label: "Xóa kế hoạch",
       icon: Trash2,
       tone: "destructive",
-      onClick: () => handlers.onDeleteDetail(id),
+      disabled: actionDisabled.remove,
+      onClick: () => handlers.onRequestDeletePlan(id),
     },
   ];
 
   return {
     ...node,
     data: {
-      kind: "task",
+      kind: "plan",
       variant: "poster",
       posterTheme: "light",
-      icon: Wrench,
-      eyebrow: "Chi tiết giai đoạn",
-      title: payload.taskName || payload.materialName || "Chi tiết giai đoạn",
-      subtitle: payload.labor || "Chưa phân bổ nhân lực",
-      status: "not_started",
+      icon: ClipboardList,
+      eyebrow: "Kế hoạch",
+      title: plan.name
+        ? `${plan.name} (${duration})`
+        : `Kế hoạch mới (${duration})`,
+      subtitle: plan.seasonName || "Chưa chọn mùa vụ",
+      status: statusMeta.nodeStatus,
+      statusLabel: statusMeta.label,
       wide: true,
       targetTopHandleId: `${id}-target-top`,
+      sourceBottomHandleId: `${id}-source-bottom`,
+      tags: getStageTags(plan.selectedStages),
+      regionLabels: getRegionLabelsFromPlan(plan, regions),
       summaries: [
-        { label: "Vật tư", value: payload.materialName || "Chưa có" },
+        { label: "Nhân lực", value: String(laborCount) },
         {
-          label: "Số lượng",
-          value: payload.quantity
-            ? `${payload.quantity} ${payload.unit}`.trim()
-            : "Chưa có",
+          label: "Thuốc BVTV",
+          value: String(materialBreakdown["Thuốc BVTV"]),
+        },
+        { label: "Phân bón", value: String(materialBreakdown["Phân bón"]) },
+        {
+          label: "Vật tư khác",
+          value: String(materialBreakdown["Vật tư khác"]),
         },
       ],
-      description: payload.taskDescription || "Chưa có mô tả công việc.",
+      description: plan.description || "Chưa có mô tả cho kế hoạch này.",
       actions,
+      footerAction: {
+        label: "Kế hoạch tiếp theo",
+        icon: Plus,
+        onClick: () => handlers.onCreatePlan(id),
+      },
     },
   };
 }
@@ -537,151 +416,6 @@ export default function PlanGrowthCreateWorkflowPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleCreateStage = (planNodeId: string) => {
-    const stageIndex =
-      getDirectChildren(nodes, planNodeId).filter(
-        (node) => node.data.setupKind === "stage",
-      ).length + 1;
-    const id = createNodeId("stage");
-    addNodeWithEdge(
-      {
-        id,
-        type: "workflowCard",
-        position: PLACEHOLDER_POSITION,
-        data: {
-          setupKind: "stage",
-          payload: getInitialStagePayload(stageIndex),
-          parentId: planNodeId,
-        },
-      },
-      buildChildEdge(planNodeId, id),
-    );
-  };
-
-  const handleCreateDetail = (stageNodeId: string) => {
-    const id = createNodeId("detail");
-    addNodeWithEdge(
-      {
-        id,
-        type: "workflowCard",
-        position: PLACEHOLDER_POSITION,
-        data: {
-          setupKind: "detail",
-          payload: getInitialDetailPayload(),
-          parentId: stageNodeId,
-        },
-      },
-      buildChildEdge(stageNodeId, id),
-    );
-  };
-
-  useEffect(() => {
-    const draftNodes = usePlanWorkflowDraftStore.getState().nodes;
-    const planNodes = draftNodes.filter((node) => node.data.setupKind === "plan");
-
-    planNodes.forEach((planNode) => {
-      const planNodeData = planNode.data;
-      if (planNodeData.setupKind !== "plan") return;
-      const plan = plans.find((item) => item.id === planNodeData.planId);
-      if (!plan) return;
-
-      const stageNames = new Set<string>();
-      plan.selectedStages.forEach((name) => name.trim() && stageNames.add(name.trim()));
-      plan.taskAllocations.forEach(
-        (task) => task.stageId.trim() && stageNames.add(task.stageId.trim()),
-      );
-      plan.materialAllocations.forEach(
-        (material) => material.stageId.trim() && stageNames.add(material.stageId.trim()),
-      );
-
-      stageNames.forEach((stageName) => {
-        const currentNodes = usePlanWorkflowDraftStore.getState().nodes;
-        const alreadySynced = getDirectChildren(currentNodes, planNode.id).some(
-          (child) =>
-            child.data.setupKind === "stage" &&
-            getStagePayload(child).stageName === stageName,
-        );
-        if (alreadySynced) return;
-
-        const stageTasks = plan.taskAllocations.filter((task) => task.stageId === stageName);
-        const stageMaterials = plan.materialAllocations.filter(
-          (material) => material.stageId === stageName,
-        );
-
-        const stageNodeId = createNodeId("stage");
-        addNodeWithEdge(
-          {
-            id: stageNodeId,
-            type: "workflowCard",
-            position: PLACEHOLDER_POSITION,
-            data: {
-              setupKind: "stage",
-              payload: {
-                stageName,
-                stageDescription: stageTasks[0]?.description || "",
-                duration: stageTasks[0]?.duration || "",
-              },
-              parentId: planNode.id,
-            },
-          },
-          buildChildEdge(planNode.id, stageNodeId),
-        );
-
-        stageTasks.forEach((task) => {
-          const detailNodeId = createNodeId("detail");
-          addNodeWithEdge(
-            {
-              id: detailNodeId,
-              type: "workflowCard",
-              position: PLACEHOLDER_POSITION,
-              data: {
-                setupKind: "detail",
-                payload: {
-                  taskName: task.name,
-                  taskDescription: task.description,
-                  labor: task.labor,
-                  materialCategory: "",
-                  materialType: "",
-                  materialName: "",
-                  quantity: "",
-                  unit: "",
-                },
-                parentId: stageNodeId,
-              },
-            },
-            buildChildEdge(stageNodeId, detailNodeId),
-          );
-        });
-
-        stageMaterials.forEach((material) => {
-          const detailNodeId = createNodeId("detail");
-          addNodeWithEdge(
-            {
-              id: detailNodeId,
-              type: "workflowCard",
-              position: PLACEHOLDER_POSITION,
-              data: {
-                setupKind: "detail",
-                payload: {
-                  taskName: "",
-                  taskDescription: "",
-                  labor: "",
-                  materialCategory: material.materialCategory,
-                  materialType: material.materialType,
-                  materialName: material.materialName,
-                  quantity: material.quantity,
-                  unit: material.unit,
-                },
-                parentId: stageNodeId,
-              },
-            },
-            buildChildEdge(stageNodeId, detailNodeId),
-          );
-        });
-      });
-    });
-  }, [plans, addNodeWithEdge]);
-
   const handleConfirmDeletePlan = () => {
     if (!deleteTarget) return;
     const node = nodes.find((item) => item.id === deleteTarget);
@@ -696,19 +430,12 @@ export default function PlanGrowthCreateWorkflowPage() {
     onCreatePlan: (sourceNodeId) => handleCreatePlan(sourceNodeId),
     onEditPlan: (planId) =>
       setLocation(`/plan-growth/create/workflow/plan/${planId}/edit`),
-    onAllocateStage: (planNodeId) => handleCreateStage(planNodeId),
+    onAllocateWork: (planId) => setLocation(`/task?planId=${planId}`),
     onRequestDeletePlan: (nodeId) => setDeleteTarget(nodeId),
-    onEditStage: (nodeId) =>
-      setLocation(`/plan-growth/create/workflow/stage/${nodeId}/edit`),
-    onAddDetail: (stageNodeId) => handleCreateDetail(stageNodeId),
-    onDeleteStage: (nodeId) => removeNodeCascade(nodeId),
-    onEditDetail: (nodeId) =>
-      setLocation(`/plan-growth/create/workflow/detail/${nodeId}/edit`),
-    onDeleteDetail: (nodeId) => removeNodeCascade(nodeId),
   };
 
   const displayNodes = nodes.map((node) =>
-    toDisplayNode(node, nodes, handlers, regions, plans),
+    toDisplayNode(node, handlers, regions, plans),
   );
 
   const handleConnect = (connection: Connection) => {
@@ -742,72 +469,7 @@ export default function PlanGrowthCreateWorkflowPage() {
       return;
     }
 
-    const stageNodes = getDirectChildren(nodes, planNode.id).filter(
-      (node) => node.data.setupKind === "stage",
-    );
-
-    const selectedStages = stageNodes
-      .map((node) => getStagePayload(node).stageName?.trim() || "")
-      .filter(Boolean);
-
-    const taskAllocations: TaskAllocation[] = [];
-    const materialAllocations: MaterialAllocation[] = [];
-
-    stageNodes.forEach((stageNode) => {
-      const stagePayload = getStagePayload(stageNode);
-      const detailNodes = getDirectChildren(nodes, stageNode.id).filter(
-        (node) => node.data.setupKind === "detail",
-      );
-
-      if (!detailNodes.length) {
-        taskAllocations.push({
-          id:
-            Number(stageNode.id.replace(/\D/g, "").slice(0, 12)) || Date.now(),
-          stageId: stagePayload.stageName || "Giai đoạn",
-          name: stagePayload.stageName || "Công việc",
-          description: stagePayload.stageDescription || "",
-          labor: "Chưa phân bổ",
-          duration: stagePayload.duration || "Chưa xác định",
-        });
-        return;
-      }
-
-      detailNodes.forEach((detailNode) => {
-        const detail = getDetailPayload(detailNode);
-        taskAllocations.push({
-          id:
-            Number(detailNode.id.replace(/\D/g, "").slice(0, 12)) || Date.now(),
-          stageId: stagePayload.stageName || "Giai đoạn",
-          name: detail.taskName || stagePayload.stageName || "Công việc",
-          description:
-            detail.taskDescription || stagePayload.stageDescription || "",
-          labor: detail.labor || "Chưa phân bổ",
-          duration: stagePayload.duration || "Chưa xác định",
-        });
-
-        if (detail.materialName.trim()) {
-          materialAllocations.push({
-            id:
-              Number(detailNode.id.replace(/\D/g, "").slice(0, 12)) ||
-              Date.now(),
-            stageId: stagePayload.stageName || "Giai đoạn",
-            materialCategory: detail.materialCategory || "Vật tư",
-            materialType:
-              detail.materialType || detail.materialCategory || "Vật tư",
-            materialName: detail.materialName,
-            quantity: detail.quantity || "1",
-            unit: detail.unit || "đơn vị",
-          });
-        }
-      });
-    });
-
-    updatePlan(plan.id, {
-      selectedStages,
-      taskAllocations,
-      materialAllocations,
-      status: "active",
-    });
+    updatePlan(plan.id, { status: "active" });
 
     toast({
       title: "Thành công",
@@ -827,8 +489,8 @@ export default function PlanGrowthCreateWorkflowPage() {
 
   return (
     <PageWrapper
-      title="Tạo kế hoạch"
-      description="Thiết lập kế hoạch theo từng node"
+      title="Tạo sơ đồ quy trình canh tác"
+      description="Quy trình triển khai các kế hoạch được liên kết với nhau trên sơ đồ."
       actions={
         <div className="flex flex-wrap gap-2">
           <Button
@@ -839,14 +501,7 @@ export default function PlanGrowthCreateWorkflowPage() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Quay lại
           </Button>
-          <Button
-            variant="outline"
-            className="h-9 px-3"
-            onClick={() => handleCreatePlan()}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Thêm kế hoạch
-          </Button>
+
           <Button className="h-9 px-3" onClick={handleSavePlan}>
             <Workflow className="mr-2 h-4 w-4" />
             Tạo kế hoạch
