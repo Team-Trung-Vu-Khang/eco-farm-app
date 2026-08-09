@@ -556,11 +556,10 @@ export default function PlanAnimalGrowthWorkflowPage({
       data: {
         kind: "cycle",
         icon: Plus,
-        eyebrow: "Kế hoạch chính",
-        title: "Kế hoạch chính",
+        eyebrow: "Kế hoạch",
+        title: "Kế hoạch",
         subtitle: plan.name || plan.seasonName || "Điểm bắt đầu của sơ đồ",
         status: "not_started",
-        statusLabel: "Kế hoạch chính",
         wide: true,
         targetTopHandleId: `plan-root-${plan.id}-target-top`,
         sourceBottomHandleId: `plan-root-${plan.id}-source-bottom`,
@@ -577,7 +576,7 @@ export default function PlanAnimalGrowthWorkflowPage({
         footerAction: {
           label: "Khởi tạo kế hoạch mới",
           icon: Plus,
-          onClick: () => setLocation(`${basePath}/create`),
+          onClick: () => setLocation(`${basePath}/create/workflow`),
         },
       },
     };
@@ -597,7 +596,7 @@ export default function PlanAnimalGrowthWorkflowPage({
                 setDeleteOpen(true);
               }
             },
-            () => setLocation(`${basePath}/create`),
+            () => setLocation(`${basePath}/create/workflow`),
             slot.isPrimary
               ? primaryRegionLabels
               : getRegionLabels(slot.plan, regions || []),

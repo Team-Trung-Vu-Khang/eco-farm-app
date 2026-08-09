@@ -16,6 +16,7 @@ import {
   Layers,
   MoreHorizontal,
   Eye,
+  PencilLine,
   Sprout,
   Trash2,
 } from "lucide-react";
@@ -58,9 +59,11 @@ function resolveCropLabel(plan: Plan) {
 
 export function createAnimalGrowthColumns({
   onView,
+  onEdit,
   onDelete,
 }: {
   onView: (item: Plan) => void;
+  onEdit: (item: Plan) => void;
   onDelete: (item: Plan) => void;
 }): Column<Plan>[] {
   return [
@@ -69,7 +72,7 @@ export function createAnimalGrowthColumns({
       label: "Mã",
       render: (value) => (
         <span className="font-mono text-xs font-semibold text-slate-500">
-          {value}
+          {value as string}
         </span>
       ),
     },
@@ -78,7 +81,7 @@ export function createAnimalGrowthColumns({
       label: "Kế hoạch chăn nuôi",
       render: (value, item) => (
         <div className="space-y-1">
-          <div className="font-semibold text-slate-900">{value}</div>
+          <div className="font-semibold text-slate-900">{value as string}</div>
           <div className="text-xs text-slate-500">{item.description || "—"}</div>
         </div>
       ),
@@ -97,7 +100,7 @@ export function createAnimalGrowthColumns({
       key: "seasonName",
       label: "Mùa vụ",
       render: (value) => (
-        <span className="text-sm font-medium text-slate-700">{value || "—"}</span>
+        <span className="text-sm font-medium text-slate-700">{(value as string) || "—"}</span>
       ),
     },
     {
@@ -166,6 +169,10 @@ export function createAnimalGrowthColumns({
             <DropdownMenuItem onClick={() => onView(item)}>
               <Eye className="mr-2 h-4 w-4" />
               Xem chi tiết
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEdit(item)}>
+              <PencilLine className="mr-2 h-4 w-4" />
+              Chỉnh sửa
             </DropdownMenuItem>
             {item.status === "draft" && (
               <DropdownMenuItem

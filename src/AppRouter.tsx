@@ -80,6 +80,15 @@ const PlanAnimalGrowthEditPage = lazy(
 const PlanAnimalGrowthWorkflowPage = lazy(
   () => import("./pages/plan-animal-growth/PlanAnimalGrowthWorkflowPage"),
 );
+const PlanAnimalGrowthCreateWorkflowPage = lazy(
+  () => import("./pages/plan-animal-growth/PlanAnimalGrowthCreateWorkflowPage"),
+);
+const PlanAnimalGrowthWorkflowStageEditPage = lazy(
+  () => import("./pages/plan-animal-growth/PlanAnimalGrowthWorkflowStageEditPage"),
+);
+const PlanAnimalGrowthWorkflowDetailEditPage = lazy(
+  () => import("./pages/plan-animal-growth/PlanAnimalGrowthWorkflowDetailEditPage"),
+);
 const PlanAquacultureGrowthPage = lazy(
   () => import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthPage"),
 );
@@ -748,6 +757,26 @@ const PlanGrowthEditRoute = () => <PlanGrowthEditPage />;
 const PlanGrowthDetailRoute = () => <PlanGrowthDetailPage />;
 const PlanAnimalGrowthRoute = () => <PlanAnimalGrowthPage />;
 const PlanAnimalGrowthCreateRoute = () => <PlanAnimalGrowthCreatePage />;
+const PlanAnimalGrowthCreateWorkflowRoute = () => (
+  <PlanAnimalGrowthCreateWorkflowPage />
+);
+const PlanAnimalGrowthWorkflowPlanEditRoute = () => {
+  const [, setLocation] = useLocation();
+  const backToWorkflow = () => setLocation("/plan-animal-growth/create/workflow");
+  return (
+    <PlanAnimalGrowthEditPage
+      basePath="/plan-animal-growth/create/workflow"
+      onSaved={backToWorkflow}
+      onCancel={backToWorkflow}
+    />
+  );
+};
+const PlanAnimalGrowthWorkflowStageEditRoute = () => (
+  <PlanAnimalGrowthWorkflowStageEditPage />
+);
+const PlanAnimalGrowthWorkflowDetailEditRoute = () => (
+  <PlanAnimalGrowthWorkflowDetailEditPage />
+);
 const PlanAnimalGrowthWorkflowRoute = () => <PlanAnimalGrowthWorkflowPage />;
 const PlanAnimalGrowthEditRoute = () => <PlanAnimalGrowthEditPage />;
 const PlanAnimalGrowthDetailRoute = () => <PlanAnimalGrowthDetailPage />;
@@ -1484,6 +1513,22 @@ function Router() {
       <Route path="/plan-growth/:id/edit" component={PlanGrowthEditRoute} />
       <Route path="/plan-growth/:id" component={PlanGrowthDetailRoute} />
       <Route path="/plan-animal-growth" component={PlanAnimalGrowthRoute} />
+      <Route
+        path="/plan-animal-growth/create/workflow/plan/:id/edit"
+        component={PlanAnimalGrowthWorkflowPlanEditRoute}
+      />
+      <Route
+        path="/plan-animal-growth/create/workflow/stage/:nodeId/edit"
+        component={PlanAnimalGrowthWorkflowStageEditRoute}
+      />
+      <Route
+        path="/plan-animal-growth/create/workflow/detail/:nodeId/edit"
+        component={PlanAnimalGrowthWorkflowDetailEditRoute}
+      />
+      <Route
+        path="/plan-animal-growth/create/workflow"
+        component={PlanAnimalGrowthCreateWorkflowRoute}
+      />
       <Route
         path="/plan-animal-growth/create"
         component={PlanAnimalGrowthCreateRoute}

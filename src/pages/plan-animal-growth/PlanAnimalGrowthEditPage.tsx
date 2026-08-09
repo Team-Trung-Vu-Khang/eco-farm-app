@@ -52,10 +52,14 @@ import { useAnimalGrowthForm } from "./hooks/useAnimalGrowthForm";
 
 interface PlanAnimalGrowthEditPageProps {
   basePath?: string;
+  onSaved?: (planId: number) => void;
+  onCancel?: () => void;
 }
 
 export default function PlanAnimalGrowthEditPage({
   basePath = "/plan-animal-growth",
+  onSaved,
+  onCancel,
 }: PlanAnimalGrowthEditPageProps) {
   const {
     plan,
@@ -82,7 +86,7 @@ export default function PlanAnimalGrowthEditPage({
     pageTitle,
     pageDescription,
     completeLabel,
-  } = useAnimalGrowthForm("edit", basePath);
+  } = useAnimalGrowthForm("edit", basePath, { onSaved, onCancel });
 
   const [newManualStage, setNewManualStage] = useState("");
   const purpose = formData.purpose as string;
