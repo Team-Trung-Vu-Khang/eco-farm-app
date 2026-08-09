@@ -30,15 +30,17 @@ export default function PlanAquacultureGrowthPage({
     handleDelete,
     handleConfirmDelete,
     goToView,
+    goToEdit,
   } = useAquacultureGrowthPage(basePath);
 
   const columns = useMemo(
     () =>
       createPlanAquacultureGrowthColumns({
         onView: (item) => goToView(item.id),
+        onEdit: (item) => goToEdit(item.id),
         onDelete: handleDelete,
       }),
-    [goToView, handleDelete],
+    [goToView, goToEdit, handleDelete],
   );
 
   const filteredPlans = useMemo(() => {
@@ -72,7 +74,7 @@ export default function PlanAquacultureGrowthPage({
       title="Quản lý nuôi trồng thủy sản"
       description="Lập và quản lý kế hoạch nuôi trồng thủy sản theo vụ nuôi"
       actions={
-        <Link href={`${basePath}/create`}>
+        <Link href={`${basePath}/create/workflow`}>
           <Button data-testid="add-plan">
             <Plus className="w-4 h-4 mr-2" />
             Khởi tạo kế hoạch thủy sản mới

@@ -52,10 +52,14 @@ import { useAquacultureGrowthForm } from "./hooks/useAquacultureGrowthForm";
 
 interface PlanAquacultureGrowthEditPageProps {
   basePath?: string;
+  onSaved?: (planId: number) => void;
+  onCancel?: () => void;
 }
 
 export default function PlanAquacultureGrowthEditPage({
   basePath = "/plan-aquaculture-growth",
+  onSaved,
+  onCancel,
 }: PlanAquacultureGrowthEditPageProps) {
   const {
     plan,
@@ -82,7 +86,7 @@ export default function PlanAquacultureGrowthEditPage({
     pageTitle,
     pageDescription,
     completeLabel,
-  } = useAquacultureGrowthForm("edit", basePath);
+  } = useAquacultureGrowthForm("edit", basePath, { onSaved, onCancel });
 
   const [newManualStage, setNewManualStage] = useState("");
   const purpose = formData.purpose as string;

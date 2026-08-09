@@ -107,6 +107,24 @@ const PlanAquacultureGrowthWorkflowPage = lazy(
   () =>
     import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthWorkflowPage"),
 );
+const PlanAquacultureGrowthCreateWorkflowPage = lazy(
+  () =>
+    import(
+      "./pages/plan-aquaculture-growth/PlanAquacultureGrowthCreateWorkflowPage"
+    ),
+);
+const PlanAquacultureGrowthWorkflowStageEditPage = lazy(
+  () =>
+    import(
+      "./pages/plan-aquaculture-growth/PlanAquacultureGrowthWorkflowStageEditPage"
+    ),
+);
+const PlanAquacultureGrowthWorkflowDetailEditPage = lazy(
+  () =>
+    import(
+      "./pages/plan-aquaculture-growth/PlanAquacultureGrowthWorkflowDetailEditPage"
+    ),
+);
 const PlanTypePage = lazy(() => import("./pages/plan-type/PlanTypePage"));
 const FertilizerCreatePage = lazy(
   () => import("./pages/fertilizer/FertilizerCreatePage"),
@@ -783,6 +801,27 @@ const PlanAnimalGrowthDetailRoute = () => <PlanAnimalGrowthDetailPage />;
 const PlanAquacultureGrowthRoute = () => <PlanAquacultureGrowthPage />;
 const PlanAquacultureGrowthCreateRoute = () => (
   <PlanAquacultureGrowthCreatePage />
+);
+const PlanAquacultureGrowthCreateWorkflowRoute = () => (
+  <PlanAquacultureGrowthCreateWorkflowPage />
+);
+const PlanAquacultureGrowthWorkflowPlanEditRoute = () => {
+  const [, setLocation] = useLocation();
+  const backToWorkflow = () =>
+    setLocation("/plan-aquaculture-growth/create/workflow");
+  return (
+    <PlanAquacultureGrowthEditPage
+      basePath="/plan-aquaculture-growth/create/workflow"
+      onSaved={backToWorkflow}
+      onCancel={backToWorkflow}
+    />
+  );
+};
+const PlanAquacultureGrowthWorkflowStageEditRoute = () => (
+  <PlanAquacultureGrowthWorkflowStageEditPage />
+);
+const PlanAquacultureGrowthWorkflowDetailEditRoute = () => (
+  <PlanAquacultureGrowthWorkflowDetailEditPage />
 );
 const PlanAquacultureGrowthWorkflowRoute = () => (
   <PlanAquacultureGrowthWorkflowPage />
@@ -1548,6 +1587,22 @@ function Router() {
       <Route
         path="/plan-aquaculture-growth"
         component={PlanAquacultureGrowthRoute}
+      />
+      <Route
+        path="/plan-aquaculture-growth/create/workflow/plan/:id/edit"
+        component={PlanAquacultureGrowthWorkflowPlanEditRoute}
+      />
+      <Route
+        path="/plan-aquaculture-growth/create/workflow/stage/:nodeId/edit"
+        component={PlanAquacultureGrowthWorkflowStageEditRoute}
+      />
+      <Route
+        path="/plan-aquaculture-growth/create/workflow/detail/:nodeId/edit"
+        component={PlanAquacultureGrowthWorkflowDetailEditRoute}
+      />
+      <Route
+        path="/plan-aquaculture-growth/create/workflow"
+        component={PlanAquacultureGrowthCreateWorkflowRoute}
       />
       <Route
         path="/plan-aquaculture-growth/create"

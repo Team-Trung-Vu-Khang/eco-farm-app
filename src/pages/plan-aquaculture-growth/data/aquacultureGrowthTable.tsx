@@ -16,6 +16,7 @@ import {
   Layers,
   MoreHorizontal,
   Eye,
+  PencilLine,
   Sprout,
   Trash2,
 } from "lucide-react";
@@ -58,9 +59,11 @@ function resolveCropLabel(plan: Plan) {
 
 export function createPlanAquacultureGrowthColumns({
   onView,
+  onEdit,
   onDelete,
 }: {
   onView: (item: Plan) => void;
+  onEdit: (item: Plan) => void;
   onDelete: (item: Plan) => void;
 }): Column<Plan>[] {
   return [
@@ -170,6 +173,10 @@ export function createPlanAquacultureGrowthColumns({
             <DropdownMenuItem onClick={() => onView(item)}>
               <Eye className="mr-2 h-4 w-4" />
               Xem chi tiết
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEdit(item)}>
+              <PencilLine className="mr-2 h-4 w-4" />
+              Chỉnh sửa
             </DropdownMenuItem>
             {item.status === "draft" && (
               <DropdownMenuItem

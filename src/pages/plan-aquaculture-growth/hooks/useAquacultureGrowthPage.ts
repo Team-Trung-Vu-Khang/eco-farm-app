@@ -61,8 +61,8 @@ export function useAquacultureGrowthPage(basePath = "/plan-aquaculture-growth") 
     handleDelete,
     handleConfirmDelete,
     handleDuplicate,
-    goToCreate: () => setLocation(`${basePath}/create`),
+    goToCreate: () => setLocation(`${basePath}/create/workflow`),
     goToView: (id: number) => setLocation(`${basePath}/${id}`),
-    goToEdit: (id: number) => setLocation(`${basePath}/${id}/edit`),
+    goToEdit: (id: number) => setLocation(`${basePath}/${id}/workflow`),
   };
 }

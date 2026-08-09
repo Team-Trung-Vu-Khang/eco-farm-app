@@ -122,7 +122,7 @@ function createEmptyFormData(): PlanFormData {
     description: "",
     seasonId: "",
     seasonName: "",
-    startDate: "",
+    startDate: formatDateInput(new Date()),
     endDate: "",
     plannedDurationYears: "",
     plannedDurationMonths: "",
@@ -144,7 +144,16 @@ function createEmptyFormData(): PlanFormData {
   };
 }
 
-export function useAquacultureGrowthForm(mode: "create" | "edit", basePath = "/plan-aquaculture-growth") {
+type UseAquacultureGrowthFormOptions = {
+  onSaved?: (planId: number) => void;
+  onCancel?: () => void;
+};
+
+export function useAquacultureGrowthForm(
+  mode: "create" | "edit",
+  basePath = "/plan-aquaculture-growth",
+  options?: UseAquacultureGrowthFormOptions,
+) {
   const [, setLocation] = useLocation();
   const params = useParams();
   const { toast } = useToast();
@@ -197,6 +206,17 @@ export function useAquacultureGrowthForm(mode: "create" | "edit", basePath = "/p
     return [...mappedTreatments, ...mappedAmendments];
   }, [treatments, amendmentRegimensRaw]);
 
+  const getSeasonDurationParts = useCallback(
+    (season: { duration?: number } | null | undefined) => {
+      if (!season || typeof season.duration !== "number") {
+        return { years: "", months: "", days: "" };
+      }
+
+      return parseDaysToParts(season.duration);
+    },
+    [],
+  );
+
   const plan = mode === "edit" ? getPlanById(Number(params.id)) : undefined;
   const initialSelectionState = useMemo(
     () =>
@@ -217,7 +237,7 @@ export function useAquacultureGrowthForm(mode: "create" | "edit", basePath = "/p
           description: plan.description || "",
           seasonId: plan.seasonId || "",
           seasonName: plan.seasonName || "",
-          startDate: plan.startDate || "",
+          startDate: plan.startDate || formatDateInput(new Date()),
           endDate: plan.endDate || "",
           ...inferDurationFromDates(plan.startDate, plan.endDate),
           managementPersonnelIds:
@@ -250,7 +270,7 @@ export function useAquacultureGrowthForm(mode: "create" | "edit", basePath = "/p
       description: plan.description || "",
       seasonId: plan.seasonId || "",
       seasonName: plan.seasonName || "",
-      startDate: plan.startDate || "",
+      startDate: plan.startDate || formatDateInput(new Date()),
       endDate: plan.endDate || "",
       ...inferDurationFromDates(plan.startDate, plan.endDate),
       managementPersonnelIds: (plan as any).managementPersonnelIds || [],
@@ -300,17 +320,36 @@ export function useAquacultureGrowthForm(mode: "create" | "edit", basePath = "/p
       ...prev,
       ...nextSelectionState,
     }));
+
+    const firstRegionId = nextSelectionState.selectedRegionIds[0];
+    const firstRegion = regions.find(
+      (region) => String(region.id) === String(firstRegionId),
+    );
+    setSelectedEnterpriseId(firstRegion?.enterpriseId || "");
   };
 
   const handleSeasonChange = (seasonId: string) => {
     const season = seasons.find((item) => item.id === seasonId);
     if (!season) return;
+    const durationParts = getSeasonDurationParts(season);
 
     setFormData((prev) => ({
       ...prev,
       seasonId: season.id,
       seasonName: season.name,
-      code: prev.code || buildAutoPlanCode(season.id, season.name),
+      code:
+        mode === "create"
+          ? buildAutoPlanCode(season.id, season.name)
+          : prev.code,
+      endDate:
+        addDurationPartsToDate(prev.startDate, {
+          years: prev.plannedDurationYears || durationParts.years,
+          months: prev.plannedDurationMonths || durationParts.months,
+          days: prev.plannedDurationDays || durationParts.days,
+        }) || prev.endDate,
+      plannedDurationYears: prev.plannedDurationYears || durationParts.years,
+      plannedDurationMonths: prev.plannedDurationMonths || durationParts.months,
+      plannedDurationDays: prev.plannedDurationDays || durationParts.days,
     }));
     setDateWarning(null);
   };
@@ -320,27 +359,34 @@ export function useAquacultureGrowthForm(mode: "create" | "edit", basePath = "/p
     value: string,
   ) => {
     setFormData((prev) => {
-      const next = {
-        ...prev,
-        plannedDurationYears:
-          part === "years" ? value.replace(/[^0-9]/g, "") : prev.plannedDurationYears,
-        plannedDurationMonths:
-          part === "months" ? value.replace(/[^0-9]/g, "") : prev.plannedDurationMonths,
-        plannedDurationDays:
-          part === "days" ? value.replace(/[^0-9]/g, "") : prev.plannedDurationDays,
+      const nextParts = {
+        years: part === "years" ? value : prev.plannedDurationYears,
+        months: part === "months" ? value : prev.plannedDurationMonths,
+        days: part === "days" ? value : prev.plannedDurationDays,
       };
-
-      const endDate = addDurationPartsToDate(prev.startDate, {
-        years: next.plannedDurationYears,
-        months: next.plannedDurationMonths,
-        days: next.plannedDurationDays,
-      });
 
       return {
-        ...next,
-        endDate: endDate || prev.endDate,
+        ...prev,
+        plannedDurationYears: nextParts.years,
+        plannedDurationMonths: nextParts.months,
+        plannedDurationDays: nextParts.days,
+        endDate:
+          addDurationPartsToDate(prev.startDate, nextParts) || prev.endDate,
       };
     });
+  };
+
+  const handleStartDateChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      startDate: value,
+      endDate:
+        addDurationPartsToDate(value, {
+          years: prev.plannedDurationYears,
+          months: prev.plannedDurationMonths,
+          days: prev.plannedDurationDays,
+        }) || prev.endDate,
+    }));
   };
 
   const handleAddMaterial = useCallback(
@@ -379,6 +425,14 @@ export function useAquacultureGrowthForm(mode: "create" | "edit", basePath = "/p
     }));
   }, []);
 
+  const persistDraft = () => {
+    if (mode !== "edit" || !params.id) return;
+    updatePlan(Number(params.id), {
+      ...formData,
+      area: calculateArea(),
+    } as any);
+  };
+
   const handleComplete = () => {
     const payload = {
       ...formData,
@@ -392,6 +446,10 @@ export function useAquacultureGrowthForm(mode: "create" | "edit", basePath = "/p
         title: "Thành công",
         description: `Đã cập nhật kế hoạch ${formData.name}`,
       });
+      if (options?.onSaved) {
+        options.onSaved(Number(params.id));
+        return;
+      }
       setLocation(`${basePath}/${params.id}`);
       return;
     }
@@ -401,6 +459,13 @@ export function useAquacultureGrowthForm(mode: "create" | "edit", basePath = "/p
       title: "Thành công",
       description: `Đã tạo kế hoạch ${formData.name}`,
     });
+    if (options?.onSaved) {
+      const created = usePlanStore.getState().plans.at(-1);
+      if (created) {
+        options.onSaved(created.id);
+        return;
+      }
+    }
     setLocation(basePath);
   };
 
@@ -426,14 +491,19 @@ export function useAquacultureGrowthForm(mode: "create" | "edit", basePath = "/p
       summarizeTaskSelections(taskSelections as any, regions),
     handleSeasonChange,
     handleDurationPartChange,
+    handleStartDateChange,
     handleGeographicalConfirm,
     handleAddMaterial,
     handleRemoveMaterial,
     handleAddTask,
     handleRemoveTask,
     handleComplete,
-    goBack:
-    mode === "edit" && params.id
+    goBack: options?.onCancel
+      ? () => {
+          persistDraft();
+          options.onCancel!();
+        }
+      : mode === "edit" && params.id
         ? () => setLocation(`${basePath}/${params.id}`)
         : () => setLocation(basePath),
     pageTitle: mode === "edit" ? "Chỉnh sửa Kế hoạch" : "Lập kế hoạch",
