@@ -206,6 +206,14 @@ export function useAnimalGrowthForm(
     return [...mappedTreatments, ...mappedAmendments];
   }, [treatments, amendmentRegimensRaw]);
 
+  const getSeasonDurationParts = useCallback((season: { duration?: number } | null | undefined) => {
+    if (!season || typeof season.duration !== "number") {
+      return { years: "", months: "", days: "" };
+    }
+
+    return parseDaysToParts(season.duration);
+  }, []);
+
   const plan = mode === "edit" ? getPlanById(Number(params.id)) : undefined;
   const initialSelectionState = useMemo(
     () =>
@@ -259,7 +267,7 @@ export function useAnimalGrowthForm(
       description: plan.description || "",
       seasonId: plan.seasonId || "",
       seasonName: plan.seasonName || "",
-      startDate: plan.startDate || "",
+      startDate: plan.startDate || formatDateInput(new Date()),
       endDate: plan.endDate || "",
       ...inferDurationFromDates(plan.startDate, plan.endDate),
       managementPersonnelIds: (plan as any).managementPersonnelIds || [],
@@ -314,12 +322,22 @@ export function useAnimalGrowthForm(
   const handleSeasonChange = (seasonId: string) => {
     const season = seasons.find((item) => item.id === seasonId);
     if (!season) return;
+    const durationParts = getSeasonDurationParts(season as any);
 
     setFormData((prev) => ({
       ...prev,
       seasonId: season.id,
       seasonName: season.name,
       code: prev.code || buildAutoPlanCode(season.id, season.name),
+      endDate:
+        addDurationPartsToDate(prev.startDate, {
+          years: prev.plannedDurationYears || durationParts.years,
+          months: prev.plannedDurationMonths || durationParts.months,
+          days: prev.plannedDurationDays || durationParts.days,
+        }) || prev.endDate,
+      plannedDurationYears: prev.plannedDurationYears || durationParts.years,
+      plannedDurationMonths: prev.plannedDurationMonths || durationParts.months,
+      plannedDurationDays: prev.plannedDurationDays || durationParts.days,
     }));
     setDateWarning(null);
   };
