@@ -1247,10 +1247,7 @@ function Router() {
         path="/cultivation-material/fertilizer"
         component={FertilizerPage}
       />
-      <Route
-        path="/cultivation-material/fertilizer-group"
-        component={FertilizerGroupPage}
-      />
+      <Route path="/fertilizer-group" component={FertilizerGroupPage} />
       <Route
         path="/cultivation-material/fertilizer/create"
         component={FertilizerCreatePage}
@@ -1264,10 +1261,7 @@ function Router() {
         component={FertilizerDetailPage}
       />
       <Route path="/cultivation-material/material" component={MaterialPage} />
-      <Route
-        path="/cultivation-material/material-group"
-        component={MaterialGroupPage}
-      />
+      <Route path="/material-group" component={MaterialGroupPage} />
       <Route
         path="/cultivation-material/material/create"
         component={MaterialCreatePage}
@@ -1391,8 +1385,14 @@ function Router() {
 
       {/* Warehouse Routes */}
       <Route path="/inventory-area" component={InventoryAreaPage} />
-      <Route path="/inventory-area/create" component={InventoryAreaCreatePage} />
-      <Route path="/inventory-area/:id/edit" component={InventoryAreaCreatePage} />
+      <Route
+        path="/inventory-area/create"
+        component={InventoryAreaCreatePage}
+      />
+      <Route
+        path="/inventory-area/:id/edit"
+        component={InventoryAreaCreatePage}
+      />
       <Route
         path="/crop-material-inventory"
         component={CropMaterialInventoryPage}
