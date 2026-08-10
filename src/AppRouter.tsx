@@ -751,6 +751,9 @@ const TreatmentReportPage = lazy(
 );
 const ProvincePage = lazy(() => import("./pages/province/ProvincePage"));
 const LandSpecsPage = lazy(() => import("./pages/land-specs/LandSpecsPage"));
+const TaskCategoryPage = lazy(
+  () => import("./pages/task-category/TaskCategoryPage"),
+);
 
 const AnimalGrowthCycleDetailRoute = () => <AnimalGrowthCycleDetailPage />;
 const AquacultureRegionWorkflowRoute = () => <AquacultureRegionWorkflowPage />;
@@ -847,6 +850,7 @@ function Router() {
       <Route path="/" component={RootRedirect} />
       <Route path="/terrain" component={TerrainPage} />
       <Route path="/land-specs" component={LandSpecsPage} />
+      <Route path="/task-category" component={TaskCategoryPage} />
       <Route path="/province" component={ProvincePage} />
       <Route path="/land" component={LandPage} />
       <Route path="/farming-method" component={FarmingMethodPage} />
