@@ -4,9 +4,19 @@ import {
   emptyTaskCategoryFormData,
   mockTaskCategories,
 } from "../data/constants";
-import type { TaskCategory, TaskCategoryFormData } from "../types/types";
+import type {
+  TaskCategory,
+  TaskCategoryDomain,
+  TaskCategoryFormData,
+} from "../types/types";
 
 let nextId = mockTaskCategories.length + 1;
+
+const domainCodePrefix: Record<TaskCategoryDomain, string> = {
+  crop: "TT",
+  animal: "CN",
+  aquaculture: "TS",
+};
 
 export function useTaskCategoryPage() {
   const { toast } = useToast();
@@ -24,9 +34,9 @@ export function useTaskCategoryPage() {
   );
   const [isPending, setIsPending] = useState(false);
 
-  const handleAdd = () => {
+  const handleAdd = (domain: TaskCategoryDomain = "crop") => {
     setEditItem(null);
-    setFormData(emptyTaskCategoryFormData);
+    setFormData({ ...emptyTaskCategoryFormData, domain });
     setFormOpen(true);
   };
 
@@ -35,6 +45,7 @@ export function useTaskCategoryPage() {
     setFormData({
       name: item.name,
       description: item.description,
+      domain: item.domain,
       status: item.status,
     });
     setFormOpen(true);
@@ -56,6 +67,7 @@ export function useTaskCategoryPage() {
                   ...item,
                   name: values.name,
                   description: values.description || "",
+                  domain: values.domain,
                   status: values.status || item.status,
                 }
               : item,
@@ -66,11 +78,16 @@ export function useTaskCategoryPage() {
           description: "Đã cập nhật công việc",
         });
       } else {
+        const newId = nextId++;
         const newItem: TaskCategory = {
-          id: nextId++,
-          code: `CV${String(nextId).padStart(3, "0")}`,
+          id: newId,
+          code: `${domainCodePrefix[values.domain]}${String(newId).padStart(
+            3,
+            "0",
+          )}`,
           name: values.name,
           description: values.description || "",
+          domain: values.domain,
           status: "active",
           createdAt: new Date().toISOString().split("T")[0],
         };
