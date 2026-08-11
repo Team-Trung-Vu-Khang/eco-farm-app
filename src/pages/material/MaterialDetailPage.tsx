@@ -8,7 +8,6 @@ import {
   CardTitle,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
-  Building2,
   CalendarDays,
   CheckCircle2,
   ChevronLeft,
@@ -17,10 +16,11 @@ import {
   Info,
   Package,
   Tags,
+  Building2,
 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import useMaterialStore from "../../stores/useMaterialStore";
-import { mockMaterialSuppliers } from "./data/constants";
+import { getMaterialGroupLabel } from "./data/constants";
 
 const MaterialDetailPage = () => {
   const [, params] = useRoute("/cultivation-material/material/:id");
@@ -122,11 +122,24 @@ const MaterialDetailPage = () => {
               <CardHeader className="pb-3 border-b">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Info className="w-5 h-5 text-primary" />
-                  Mô tả & Đặc điểm
+                  Mô tả & Phân loại thuộc tính
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-6">
-                <div>
+              <CardContent className="pt-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                  <div>
+                    <span className="text-muted-foreground block text-xs mb-1">Danh mục vật tư:</span>
+                    <span className="font-semibold text-slate-800">{item.type || "N/A"}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-xs mb-1">Nhóm vật tư (Phân loại):</span>
+                    <span className="font-semibold text-slate-850 bg-slate-50 border px-2 py-1 rounded inline-block text-xs mt-1">
+                      {getMaterialGroupLabel(item.materialGroupId)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
                   <h4 className="text-sm font-medium text-muted-foreground mb-2">
                     Mô tả chi tiết
                   </h4>
@@ -142,40 +155,62 @@ const MaterialDetailPage = () => {
               <CardHeader className="pb-3 border-b">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Building2 className="w-5 h-5 text-primary" />
-                  Nhà cung cấp ({mockMaterialSuppliers.length})
+                  Xuất xứ & Đơn vị phân phối
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-6 grid gap-4">
-                {mockMaterialSuppliers.map((sup, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between p-4 border rounded-lg bg-white hover:bg-slate-50 transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 font-bold shrink-0">
-                        {idx + 1}
-                      </div>
-                      <div>
-                        <h5 className="font-semibold text-sm text-slate-900">
-                          {sup.name}
-                        </h5>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                          <span className="bg-slate-100 px-1.5 py-0.5 rounded">
-                            Đơn vị
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium">
-                        {sup.quantity} {sup.unit}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {sup.packaging}
-                      </div>
+              <CardContent className="pt-6 space-y-4 text-sm">
+                {item.manufacturerOrigin && item.manufacturerOrigin.length > 0 && (
+                  <div>
+                    <span className="text-muted-foreground block text-xs mb-1.5">Nhà sản xuất / Xuất xứ:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {item.manufacturerOrigin.map((tag) => (
+                        <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
+                      ))}
                     </div>
                   </div>
-                ))}
+                )}
+
+                {item.importerRegistrant && item.importerRegistrant.length > 0 && (
+                  <div className="border-t pt-4">
+                    <span className="text-muted-foreground block text-xs mb-1.5">Nhà nhập khẩu / Đăng ký:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {item.importerRegistrant.map((tag) => (
+                        <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {item.distributor && item.distributor.length > 0 && (
+                  <div className="border-t pt-4">
+                    <span className="text-muted-foreground block text-xs mb-1.5">Nhà phân phối chính:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {item.distributor.map((tag) => (
+                        <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {item.packagingSpecs && item.packagingSpecs.length > 0 && (
+                  <div className="border-t pt-4">
+                    <span className="text-muted-foreground block text-xs mb-1.5">Quy cách đóng gói vật tư:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {item.packagingSpecs.map((tag) => (
+                        <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {(!item.manufacturerOrigin?.length &&
+                  !item.importerRegistrant?.length &&
+                  !item.distributor?.length &&
+                  !item.packagingSpecs?.length) && (
+                  <div className="text-center py-6 text-xs text-muted-foreground border border-dashed rounded-lg bg-slate-50">
+                    Không cấu hình thông tin xuất xứ & phân phối
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

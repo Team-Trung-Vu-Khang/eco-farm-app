@@ -1,20 +1,39 @@
 import { Card, CardContent, CardHeader, CardTitle, Button } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Building2, AlertTriangle, History, CheckCircle2 } from "lucide-react";
-import { itemSuppliers } from "../../data/mocks";
+import { itemSuppliers, type MockSupplier } from "../../data/mocks";
+import { suppliers as presetSuppliers } from "../../data/constants";
+import type { Equipment } from "../../types";
 
-export const EquipmentDetailSidebar = () => {
+interface EquipmentDetailSidebarProps {
+  item?: Equipment;
+}
+
+export const EquipmentDetailSidebar = ({ item }: EquipmentDetailSidebarProps) => {
+  // Convert item's supplierDetails if available
+  const activeSuppliers: MockSupplier[] = item?.supplierDetails && item.supplierDetails.length > 0
+    ? item.supplierDetails.map(detail => {
+        const found = presetSuppliers.find(s => s.id === detail.supplierId);
+        return {
+          name: found?.name || detail.supplierId,
+          quantity: detail.quantity,
+          unit: detail.unit,
+          warranty: detail.warranty
+        };
+      })
+    : itemSuppliers;
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader className="pb-3 border-b bg-slate-50/50">
           <CardTitle className="text-base flex items-center gap-2">
             <Building2 className="w-4 h-4 text-slate-500" />
-            Nhà cung cấp
+            Nhà cung cấp lưu kho
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-6 grid gap-4">
-          {itemSuppliers.map((sup, idx) => (
-            <div key={idx} className="space-y-2">
+          {activeSuppliers.map((sup, idx) => (
+            <div key={idx} className="space-y-2 border-b pb-3 last:border-b-0 last:pb-0">
               <div className="font-semibold text-sm">{sup.name}</div>
               <div className="text-xs text-muted-foreground grid grid-cols-2 gap-2">
                 <span>Số lượng: {sup.quantity} {sup.unit}</span>
@@ -22,6 +41,11 @@ export const EquipmentDetailSidebar = () => {
               </div>
             </div>
           ))}
+          {activeSuppliers.length === 0 && (
+            <div className="text-center py-4 text-xs text-muted-foreground">
+              Chưa gán nhà cung cấp lưu kho
+            </div>
+          )}
         </CardContent>
       </Card>
 

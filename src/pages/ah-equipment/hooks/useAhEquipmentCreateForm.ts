@@ -28,6 +28,33 @@ export function useAhEquipmentCreateForm() {
     technicalDocType: "file",
     technicalDocContent: "",
     supplierDetails: [],
+
+    // New fields
+    sku: "",
+    machineName: "",
+    model: "",
+    productImage: "",
+    manufacturer: "",
+    countryOfOrigin: "",
+    manufactureYear: "",
+    technologyLevelGroup: "",
+    assetManagementGroup: "",
+    valueChainGroup: [],
+    machineType: [],
+    powerCapacity: "",
+    workingCapacity: "",
+    fuelEnergyType: "Dầu diesel",
+    dimensions: "",
+    weight: "",
+    otherSpecifications: "",
+    fuelConsumptionRate: "",
+    maintenanceSchedule: "",
+    mainAccessories: "",
+    manufacturerOrigin: [],
+    importerRegistrant: [],
+    distributor: [],
+    referencePrice: "",
+    packagingSpecs: [],
   });
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -42,8 +69,7 @@ export function useAhEquipmentCreateForm() {
     if (isEdit && params?.id) {
       const item = getEquipmentById(Number(params.id));
       if (item) {
-        setFormData((prev) => ({
-          ...prev,
+        setFormData({
           code: item.code,
           name: item.name,
           technologyLevelId: item.technologyLevelId,
@@ -55,7 +81,34 @@ export function useAhEquipmentCreateForm() {
           technicalDocType: item.technicalDocType || "file",
           technicalDocContent: item.technicalDocContent || "",
           supplierDetails: item.supplierDetails || [],
-        }));
+
+          // Hydrate new fields
+          sku: item.sku || item.code || "",
+          machineName: item.machineName || item.name || "",
+          model: item.model || "",
+          productImage: item.productImage || "",
+          manufacturer: item.manufacturer || "",
+          countryOfOrigin: item.countryOfOrigin || "",
+          manufactureYear: item.manufactureYear || "",
+          technologyLevelGroup: item.technologyLevelGroup || item.technologyLevelId || "",
+          assetManagementGroup: item.assetManagementGroup || item.financialManagementId || "",
+          valueChainGroup: item.valueChainGroup || (item.valueChainId ? [item.valueChainId] : []),
+          machineType: item.machineType || [],
+          powerCapacity: item.powerCapacity || "",
+          workingCapacity: item.workingCapacity || "",
+          fuelEnergyType: item.fuelEnergyType || "Dầu diesel",
+          dimensions: item.dimensions || "",
+          weight: item.weight || "",
+          otherSpecifications: item.otherSpecifications || "",
+          fuelConsumptionRate: item.fuelConsumptionRate || "",
+          maintenanceSchedule: item.maintenanceSchedule || item.maintainanceInterval || "",
+          mainAccessories: item.mainAccessories || "",
+          manufacturerOrigin: item.manufacturerOrigin || [],
+          importerRegistrant: item.importerRegistrant || [],
+          distributor: item.distributor || [],
+          referencePrice: item.referencePrice || "",
+          packagingSpecs: item.packagingSpecs || [],
+        });
       }
     }
   }, [isEdit, params?.id, getEquipmentById]);
@@ -93,39 +146,57 @@ export function useAhEquipmentCreateForm() {
   };
 
   const handleConfirmSubmit = () => {
+    const payload = {
+      // Sync legacy fields
+      code: formData.sku,
+      name: formData.machineName,
+      technologyLevelId: formData.technologyLevelGroup,
+      financialManagementId: formData.assetManagementGroup,
+      valueChainId: formData.valueChainGroup[0] || "",
+      maintainanceInterval: formData.maintenanceSchedule,
+      status: formData.status as any,
+      description: formData.description,
+      technicalDocType: formData.technicalDocType,
+      technicalDocContent: formData.technicalDocContent,
+      supplierDetails: formData.supplierDetails,
+
+      // New fields
+      sku: formData.sku,
+      machineName: formData.machineName,
+      model: formData.model,
+      productImage: formData.productImage,
+      manufacturer: formData.manufacturer,
+      countryOfOrigin: formData.countryOfOrigin,
+      manufactureYear: formData.manufactureYear === "" ? undefined : Number(formData.manufactureYear),
+      technologyLevelGroup: formData.technologyLevelGroup,
+      assetManagementGroup: formData.assetManagementGroup,
+      valueChainGroup: formData.valueChainGroup,
+      machineType: formData.machineType,
+      powerCapacity: formData.powerCapacity,
+      workingCapacity: formData.workingCapacity,
+      fuelEnergyType: formData.fuelEnergyType,
+      dimensions: formData.dimensions,
+      weight: formData.weight,
+      otherSpecifications: formData.otherSpecifications,
+      fuelConsumptionRate: formData.fuelConsumptionRate,
+      maintenanceSchedule: formData.maintenanceSchedule,
+      mainAccessories: formData.mainAccessories,
+      manufacturerOrigin: formData.manufacturerOrigin,
+      importerRegistrant: formData.importerRegistrant,
+      distributor: formData.distributor,
+      referencePrice: formData.referencePrice,
+      packagingSpecs: formData.packagingSpecs,
+    };
+
     if (isEdit && params?.id) {
-      updateEquipment(Number(params.id), {
-        code: formData.code,
-        name: formData.name,
-        technologyLevelId: formData.technologyLevelId,
-        valueChainId: formData.valueChainId,
-        financialManagementId: formData.financialManagementId,
-        status: formData.status as any,
-        description: formData.description,
-        maintainanceInterval: formData.maintainanceInterval,
-        technicalDocType: formData.technicalDocType,
-        technicalDocContent: formData.technicalDocContent,
-        supplierDetails: formData.supplierDetails,
-      });
+      updateEquipment(Number(params.id), payload);
       toast({
         title: "Thành công",
-        description: "Đã cập nhật thông tin thiết bị",
+        description: "Đã cập nhật thông tin thiết bị chăn nuôi",
       });
     } else {
-      addEquipment({
-        code: formData.code,
-        name: formData.name,
-        technologyLevelId: formData.technologyLevelId,
-        valueChainId: formData.valueChainId,
-        financialManagementId: formData.financialManagementId,
-        status: formData.status as any,
-        description: formData.description,
-        maintainanceInterval: formData.maintainanceInterval,
-        technicalDocType: formData.technicalDocType,
-        technicalDocContent: formData.technicalDocContent,
-        supplierDetails: formData.supplierDetails,
-      });
-      toast({ title: "Thành công", description: "Đã thêm mới thiết bị" });
+      addEquipment(payload);
+      toast({ title: "Thành công", description: "Đã thêm mới thiết bị chăn nuôi" });
     }
     setConfirmOpen(false);
     setLocation("/animal-husbandry-material/equipment");

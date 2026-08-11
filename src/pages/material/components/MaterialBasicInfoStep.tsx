@@ -18,8 +18,13 @@ import {
   Tags,
   Upload,
   X,
+  Cpu,
 } from "lucide-react";
-import { commonHashtags, materialTypes } from "../data/constants";
+import {
+  commonHashtags,
+  materialTypes,
+  materialGroups,
+} from "../data/constants";
 import type { MaterialFormData } from "../types/types";
 
 interface MaterialBasicInfoStepProps {
@@ -50,17 +55,18 @@ export default function MaterialBasicInfoStep({
   };
 
   const toggleCommonHashtag = (tag: string) => {
-    if (formData.hashtags.includes(tag)) {
+    if ((formData.hashtags || []).includes(tag)) {
       onRemoveHashtag(tag);
       return;
     }
 
-    onFormFieldChange("hashtags", [...formData.hashtags, tag]);
+    onFormFieldChange("hashtags", [...(formData.hashtags || []), tag]);
   };
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="space-y-6 lg:col-span-2">
+        {/* Card: Common Info */}
         <div className="space-y-4 rounded-xl border bg-white p-6 shadow-sm">
           <h3 className="flex items-center gap-2 text-lg font-semibold">
             <Hammer className="h-5 w-5 text-primary" />
@@ -93,7 +99,7 @@ export default function MaterialBasicInfoStep({
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>Phân loại</Label>
+              <Label>Phân loại danh mục</Label>
               <Select
                 value={formData.type}
                 onValueChange={(value) => onFormFieldChange("type", value)}
@@ -118,11 +124,49 @@ export default function MaterialBasicInfoStep({
               value={formData.description}
               onChange={(e) => onFormFieldChange("description", e.target.value)}
               placeholder="Mô tả đặc điểm, thông số kỹ thuật..."
-              rows={4}
+              rows={3}
             />
           </div>
         </div>
 
+        {/* Card: Classification Group */}
+        <div className="space-y-4 rounded-xl border bg-white p-6 shadow-sm">
+          <h3 className="flex items-center gap-2 text-lg font-semibold">
+            <Cpu className="h-5 w-5 text-primary" />
+            Định danh nhóm / Phân loại vật tư khác
+          </h3>
+
+          <div className="space-y-2">
+            <Label>Nhóm vật tư khác <span className="text-red-500">*</span></Label>
+            <Select
+              value={formData.materialGroupId || ""}
+              onValueChange={(value) => onFormFieldChange("materialGroupId", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn nhóm phân loại vật tư..." />
+              </SelectTrigger>
+              <SelectContent>
+                {materialGroups.map((group) => (
+                  <div key={group.category}>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-slate-500 bg-slate-50 border-y select-none">
+                      {group.category}
+                    </div>
+                    {group.options.map((opt) => (
+                      <SelectItem key={opt.id} value={opt.id}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </div>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Phân loại vật tư khác theo mức độ công nghệ, khâu chuỗi giá trị, hoặc khía cạnh quản lý tài chính.
+            </p>
+          </div>
+        </div>
+
+        {/* Card: Hashtags */}
         <div className="space-y-4 rounded-xl border bg-white p-6 shadow-sm">
           <h3 className="flex items-center gap-2 text-lg font-semibold">
             <Tags className="h-5 w-5 text-primary" />
@@ -149,7 +193,7 @@ export default function MaterialBasicInfoStep({
                   key={tag}
                   variant="outline"
                   className={`cursor-pointer transition-all ${
-                    formData.hashtags.includes(tag)
+                    (formData.hashtags || []).includes(tag)
                       ? "border-primary bg-primary/10 text-primary"
                       : "hover:bg-slate-100"
                   }`}
@@ -159,7 +203,7 @@ export default function MaterialBasicInfoStep({
                 </Badge>
               ))}
 
-              {formData.hashtags
+              {(formData.hashtags || [])
                 .filter((tag) => !commonHashtags.includes(tag))
                 .map((tag) => (
                   <Badge

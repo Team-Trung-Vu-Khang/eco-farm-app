@@ -1,11 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useRoute } from "wouter";
-import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  convertHtmlToLexical,
+  useToast,
+} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { safeConvertLexicalToHtml, isContaintHtmlTag } from "@/utils/commons";
 import usePesticideStore from "../../../stores/usePesticideStore";
 import PesticideBasicInfoStep from "../../pesticide/components/PesticideBasicInfoStep";
 import PesticideConfirmStep from "../../pesticide/components/PesticideConfirmStep";
+import PesticideSafetyLegalStep from "../../pesticide/components/PesticideSafetyLegalStep";
 import PesticideSuppliersStep from "../../pesticide/components/PesticideSuppliersStep";
-import PesticideTechnicalDocsStep from "../../pesticide/components/PesticideTechnicalDocsStep";
+import PesticideUsageInfoStep from "../../pesticide/components/PesticideUsageInfoStep";
 import type { PesticideFormData } from "../../pesticide/types";
 import {
   createEmptyPesticideFormData,
@@ -41,9 +46,22 @@ export function useAhPesticideCreatePage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  useEffect(() => {
+    const hydrateFirstAid = async () => {
+      if (!formData.firstAid || !isContaintHtmlTag(formData.firstAid)) {
+        return;
+      }
+      const content = await convertHtmlToLexical(formData.firstAid);
+      setFormData((prev) => ({
+        ...prev,
+        firstAid: content as unknown as string,
+      }));
+    };
+    void hydrateFirstAid();
+  }, [initialEditItem]);
+
   const handleAddHashtag = () => {
     const nextHashtag = paramHashtag.trim();
-
     if (nextHashtag && !formData.hashtags.includes(nextHashtag)) {
       updateField("hashtags", [...formData.hashtags, nextHashtag]);
       setParamHashtag("");
@@ -51,36 +69,57 @@ export function useAhPesticideCreatePage() {
   };
 
   const handleRemoveHashtag = (tag: string) => {
-    updateField(
-      "hashtags",
-      formData.hashtags.filter((item) => item !== tag),
-    );
+    updateField("hashtags", formData.hashtags.filter((item) => item !== tag));
   };
 
-  const handleConfirmSubmit = () => {
+  const handleConfirmSubmit = async () => {
+    const firstAidHtml = await safeConvertLexicalToHtml(formData.firstAid);
+
     const payload = {
+      // Bước 1
       code: formData.code,
       name: formData.name,
-      group: formData.group,
-      form: formData.form,
-      actionType: formData.actionType,
-      origin: formData.origin,
+      registrationNumber: formData.registrationNumber || undefined,
       activeIngredient: formData.activeIngredient,
+      concentration: formData.concentration || undefined,
+      form: formData.form,
+      group: formData.group,
+      toxicityLevel: formData.toxicityLevel || undefined,
+      moaGroup: formData.moaGroup || undefined,
+      actionType: formData.actionType,
+      origin: formData.manufacturerOrigin || formData.origin,
+      imageUrl: formData.imageUrl,
+      // Bước 2
+      indications: formData.indications || undefined,
+      targetEntities: formData.targetEntities.length > 0 ? formData.targetEntities : undefined,
+      recommendedDosage: formData.recommendedDosage || undefined,
+      applicationMethod: formData.applicationMethod || undefined,
+      phi: formData.phi ? Number(formData.phi) : undefined,
+      maxUsage: formData.maxUsage ? Number(formData.maxUsage) : undefined,
+      shelfLife: formData.shelfLife || undefined,
+      usageNotes: formData.usageNotes || undefined,
+      // Bước 3
+      toxicityInfo: formData.toxicityInfo || undefined,
+      protectiveMeasures: formData.protectiveMeasures || undefined,
+      firstAid: firstAidHtml || undefined,
+      legalStatus: formData.legalStatus || undefined,
+      standardsCompliance: formData.standardsCompliance || undefined,
+      // Bước 4
+      manufacturerOrigin: formData.manufacturerOrigin || undefined,
+      importerRegistrant: formData.importerRegistrant || undefined,
+      distributor: formData.distributor || undefined,
+      referencePrice: formData.referencePrice || undefined,
+      packagingSpecs: formData.packagingSpecs.length > 0 ? formData.packagingSpecs : undefined,
       status: "active" as const,
+      domain: "animal" as const,
     };
 
     if (isEdit && params?.id) {
       updatePesticide(Number(params.id), payload);
-      toast({
-        title: "Thành công",
-        description: "Đã cập nhật thông tin thành công",
-      });
+      toast({ title: "Thành công", description: "Đã cập nhật thông tin thành công" });
     } else {
       addPesticide(payload);
-      toast({
-        title: "Thành công",
-        description: "Đã thêm mới thuốc",
-      });
+      toast({ title: "Thành công", description: "Đã thêm mới thuốc chăn nuôi" });
     }
 
     setConfirmOpen(false);
@@ -90,7 +129,7 @@ export function useAhPesticideCreatePage() {
   const steps = [
     {
       id: "info",
-      title: "Thông tin cơ bản",
+      title: "Định danh & Phân loại",
       content: (
         <PesticideBasicInfoStep
           formData={formData}
@@ -103,10 +142,21 @@ export function useAhPesticideCreatePage() {
       ),
     },
     {
-      id: "docs",
-      title: "Tài liệu kỹ thuật",
+      id: "usage",
+      title: "Thông tin sử dụng",
       content: (
-        <PesticideTechnicalDocsStep
+        <PesticideUsageInfoStep
+          formData={formData}
+          domain="animal"
+          onFormFieldChange={updateField}
+        />
+      ),
+    },
+    {
+      id: "safety",
+      title: "An toàn & Pháp lý",
+      content: (
+        <PesticideSafetyLegalStep
           formData={formData}
           onFormFieldChange={updateField}
         />
@@ -114,7 +164,7 @@ export function useAhPesticideCreatePage() {
     },
     {
       id: "supply",
-      title: "Nhà cung cấp",
+      title: "Xuất xứ & Cung ứng",
       content: (
         <PesticideSuppliersStep
           formData={formData}
@@ -125,7 +175,7 @@ export function useAhPesticideCreatePage() {
     {
       id: "confirm",
       title: "Xác nhận",
-      content: <PesticideConfirmStep formData={formData} />,
+      content: <PesticideConfirmStep formData={formData} domain="animal" />,
     },
   ];
 

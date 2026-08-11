@@ -12,6 +12,33 @@ export interface Equipment {
   technicalDocType?: "file" | "editor";
   technicalDocContent?: string;
   supplierDetails?: SupplierDetail[];
+
+  // New Fields matching desc-equipment-feature-for-domain.json
+  sku: string;
+  machineName: string;
+  model?: string;
+  productImage?: string;
+  manufacturer?: string;
+  countryOfOrigin?: string;
+  manufactureYear?: number;
+  technologyLevelGroup?: string;
+  assetManagementGroup?: string;
+  valueChainGroup?: string[];
+  machineType?: string[];
+  powerCapacity?: string;
+  workingCapacity?: string;
+  fuelEnergyType?: string;
+  dimensions?: string;
+  weight?: string;
+  otherSpecifications?: string;
+  fuelConsumptionRate?: string;
+  maintenanceSchedule?: string;
+  mainAccessories?: string;
+  manufacturerOrigin?: string[];
+  importerRegistrant?: string[];
+  distributor?: string[];
+  referencePrice?: string;
+  packagingSpecs?: string[];
 }
 
 export interface SupplierDetail {
@@ -34,4 +61,31 @@ export interface EquipmentFormData {
   technicalDocType: "file" | "editor";
   technicalDocContent: string;
   supplierDetails: SupplierDetail[];
+
+  // New Fields matching desc-equipment-feature-for-domain.json
+  sku: string;
+  machineName: string;
+  model: string;
+  productImage: string;
+  manufacturer: string;
+  countryOfOrigin: string;
+  manufactureYear: number | "";
+  technologyLevelGroup: string;
+  assetManagementGroup: string;
+  valueChainGroup: string[];
+  machineType: string[];
+  powerCapacity: string;
+  workingCapacity: string;
+  fuelEnergyType: string;
+  dimensions: string;
+  weight: string;
+  otherSpecifications: string;
+  fuelConsumptionRate: string;
+  maintenanceSchedule: string;
+  mainAccessories: string;
+  manufacturerOrigin: string[];
+  importerRegistrant: string[];
+  distributor: string[];
+  referencePrice: string;
+  packagingSpecs: string[];
 }

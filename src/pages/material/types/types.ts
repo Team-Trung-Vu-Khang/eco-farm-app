@@ -6,13 +6,15 @@ export interface Material {
   description: string;
   status: "active" | "inactive";
   createdAt: string;
-}
 
-export interface MaterialSupplierDetail {
-  supplierId: string;
-  quantity: string;
-  unit: string;
-  packaging: string;
+  // Single classification group
+  materialGroupId?: string;
+
+  // Origin & Supply fields
+  manufacturerOrigin?: string[];
+  importerRegistrant?: string[];
+  distributor?: string[];
+  packagingSpecs?: string[];
 }
 
 export interface MaterialFormData {
@@ -22,5 +24,12 @@ export interface MaterialFormData {
   description: string;
   hashtags: string[];
   imageUrl?: string;
-  supplierDetails: MaterialSupplierDetail[];
+
+  materialGroupId: string;
+
+  // Origin & Supply fields
+  manufacturerOrigin: string[];
+  importerRegistrant: string[];
+  distributor: string[];
+  packagingSpecs: string[];
 }

@@ -12,13 +12,8 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Image as ImageIcon, Leaf, Plus, Tags, Upload, X } from "lucide-react";
 import { useState } from "react";
-import { 
-  commonHashtags, 
-  nutritionalContentOptions,
-  originOptions,
-  applicationStageOptions,
-  physicalFormOptions 
-} from "../../data/constants";
+import { useMasterData } from "@/features/master-data";
+import { commonHashtags, originOptions } from "../../data/constants";
 import type { FertilizerFormData } from "../../types/types";
 
 interface FertilizerBasicInfoStepProps {
@@ -32,9 +27,13 @@ export const FertilizerBasicInfoStep = ({
 }: FertilizerBasicInfoStepProps) => {
   const [paramHashtag, setParamHashtag] = useState("");
 
+  // Fetch groups dynamically from master data (managed in FertilizerGroupPage.tsx)
+  const { items: fertilizerGroups } = useMasterData("fertilizer-groups");
+
   const handleAddHashtag = () => {
-    if (paramHashtag && !formData.hashtags.includes(paramHashtag)) {
-      updateField("hashtags", [...formData.hashtags, paramHashtag]);
+    const nextHashtag = paramHashtag.trim();
+    if (nextHashtag && !formData.hashtags.includes(nextHashtag)) {
+      updateField("hashtags", [...formData.hashtags, nextHashtag]);
       setParamHashtag("");
     }
   };
@@ -47,137 +46,167 @@ export const FertilizerBasicInfoStep = ({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-7xl mx-auto">
       <div className="lg:col-span-2 space-y-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+        {/* Card: Identification & Classification */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border space-y-5">
           <h3 className="font-semibold text-lg flex items-center gap-2">
             <Leaf className="w-5 h-5 text-primary" />
-            Thông tin chung
+            Định danh & Phân loại Phân bón
           </h3>
+
+          {/* SKU & Commercial Name */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>
-                Mã phân bón <span className="text-red-500">*</span>
+              <Label className="flex items-center gap-1">
+                Mã sản phẩm / SKU <span className="text-red-500">*</span>
               </Label>
               <Input
                 value={formData.code}
                 onChange={(e) => updateField("code", e.target.value)}
-                placeholder="VD: PB001"
+                placeholder="VD: PB-NPK-202015"
               />
+              <p className="text-xs text-muted-foreground">
+                Rất quan trọng để truy xuất nguồn gốc
+              </p>
             </div>
             <div className="space-y-2">
-              <Label>
-                Tên phân bón <span className="text-red-500">*</span>
+              <Label className="flex items-center gap-1">
+                Tên thương mại <span className="text-red-500">*</span>
               </Label>
               <Input
                 value={formData.name}
                 onChange={(e) => updateField("name", e.target.value)}
-                placeholder="Nhập tên phân bón..."
+                placeholder="VD: NPK 20-20-15 Đầu Trâu"
               />
+              <p className="text-xs text-muted-foreground">
+                Tên thương mại nhãn hiệu phân bón
+              </p>
             </div>
           </div>
 
+          {/* Registration Number & Scientific/Technical Name */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Thành phần dinh dưỡng <span className="text-red-500">*</span></Label>
-              <Select
-                value={formData.nutritionalContentId}
-                onValueChange={(v) => updateField("nutritionalContentId", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn nhóm thành phần" />
-                </SelectTrigger>
-                <SelectContent>
-                  {nutritionalContentOptions.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Nguồn gốc <span className="text-red-500">*</span></Label>
-              <Select
-                value={formData.originId}
-                onValueChange={(v) => updateField("originId", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn nguồn gốc" />
-                </SelectTrigger>
-                <SelectContent>
-                  {originOptions.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Giai đoạn tác động <span className="text-red-500">*</span></Label>
-              <Select
-                value={formData.applicationStageId}
-                onValueChange={(v) => updateField("applicationStageId", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn giai đoạn bón" />
-                </SelectTrigger>
-                <SelectContent>
-                  {applicationStageOptions.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Hình thái vật lý <span className="text-red-500">*</span></Label>
-              <Select
-                value={formData.physicalFormId}
-                onValueChange={(v) => updateField("physicalFormId", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn hình thái" />
-                </SelectTrigger>
-                <SelectContent>
-                  {physicalFormOptions.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2 col-span-1 md:col-span-2">
-              <Label>Hàm lượng dinh dưỡng</Label>
+              <Label>Số đăng ký quyết định lưu hành</Label>
               <Input
-                value={formData.nutrientContent}
-                onChange={(e) => updateField("nutrientContent", e.target.value)}
-                placeholder="VD: N-P-K (20-20-15)..."
+                value={formData.registrationNumber}
+                onChange={(e) =>
+                  updateField("registrationNumber", e.target.value)
+                }
+                placeholder="VD: LH-5821/GP-PB"
+              />
+              <p className="text-xs text-muted-foreground">
+                Số quyết định công nhận phân bón lưu hành tại VN
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Tên khoa học / Tên kỹ thuật</Label>
+              <Input
+                value={formData.scientificTechnicalName}
+                onChange={(e) =>
+                  updateField("scientificTechnicalName", e.target.value)
+                }
+                placeholder="VD: Inorganic Compound NPK"
               />
             </div>
           </div>
 
+          {/* Single Fertilizer Group Selector (managed in Category page) */}
           <div className="space-y-2">
-            <Label>Mô tả chi tiết</Label>
+            <Label className="flex items-center gap-1">
+              Nhóm phân bón <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={formData.fertilizerOriginGroup}
+              onValueChange={(val) => {
+                updateField("fertilizerOriginGroup", val);
+                // Also set legacy field originId if there is a match or just sync
+                const matchedOption = originOptions.find(
+                  (o) => o.label === val,
+                );
+                if (matchedOption) {
+                  updateField("originId", matchedOption.id);
+                }
+              }}
+            >
+              <SelectTrigger className="text-left h-auto py-2">
+                <SelectValue placeholder="Chọn nhóm phân bón từ danh mục..." />
+              </SelectTrigger>
+              <SelectContent>
+                {fertilizerGroups.map((g) => (
+                  <SelectItem key={g.id} value={g.name}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{g.name}</span>
+                      {g.description && (
+                        <span className="text-xs text-muted-foreground truncate max-w-[400px]">
+                          {g.description}
+                        </span>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {/* <p className="text-xs text-muted-foreground">
+              Danh mục được quản lý tại{" "}
+              <span className="text-primary font-medium">
+                Danh mục → Phân bón
+              </span>
+            </p> */}
+          </div>
+
+          {/* MoA & NPK Ratio */}
+          {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> */}
+          <div className="space-y-2">
+            <Label>Cơ chế tác động (MoA) / Dưỡng chất đặc biệt</Label>
+            <Input
+              value={formData.moaGroup}
+              onChange={(e) => updateField("moaGroup", e.target.value)}
+              placeholder="VD: Tan nhanh, nhả chậm, vi lượng Chelate..."
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Tỷ lệ N-P-K (nếu có)</Label>
+            <Input
+              value={formData.npkRatio}
+              onChange={(e) => updateField("npkRatio", e.target.value)}
+              placeholder="VD: 20-20-15, 16-16-8"
+            />
+            <p className="text-xs text-muted-foreground">
+              Tỷ lệ hàm lượng Nitơ - Phốt pho - Kali
+            </p>
+          </div>
+          {/* </div> */}
+
+          {/* Main Ingredients */}
+          <div className="space-y-2">
+            <Label>Thành phần chính chi tiết</Label>
+            <Textarea
+              value={formData.mainIngredients}
+              onChange={(e) => updateField("mainIngredients", e.target.value)}
+              placeholder="Nhập chi tiết thành phần (VD: Đạm N: 20%, Lân P2O5: 20%, Kali K2O: 15%...)"
+              rows={4}
+            />
+          </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <Label>Mô tả tóm tắt sản phẩm</Label>
             <Textarea
               value={formData.description}
               onChange={(e) => updateField("description", e.target.value)}
-              placeholder="Mô tả công dụng, đặc điểm..."
-              rows={4}
+              placeholder="Mô tả công dụng chung, ưu điểm vượt trội..."
+              rows={3}
             />
           </div>
         </div>
 
+        {/* Card: Hashtags */}
         <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
           <h3 className="font-semibold text-lg flex items-center gap-2">
             <Tags className="w-5 h-5 text-primary" />
-            Phân loại & Hashtags
+            Hashtags Phân loại nhanh
           </h3>
           <div className="space-y-3">
             <Label>Thêm Hashtag</Label>
@@ -225,7 +254,7 @@ export const FertilizerBasicInfoStep = ({
                   >
                     #{tag}
                     <X
-                      className="w-3 h-3 cursor-pointer"
+                      className="w-3.5 h-3.5 cursor-pointer"
                       onClick={() => removeHashtag(tag)}
                     />
                   </Badge>
@@ -235,11 +264,12 @@ export const FertilizerBasicInfoStep = ({
         </div>
       </div>
 
+      {/* Sidebar: Image upload */}
       <div className="space-y-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
           <h3 className="font-semibold text-lg flex items-center gap-2">
             <ImageIcon className="w-5 h-5 text-primary" />
-            Hình ảnh
+            Hình ảnh sản phẩm
           </h3>
           <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer min-h-[200px]">
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary">

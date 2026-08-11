@@ -9,28 +9,60 @@ import {
   Separator,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
+  AlarmClock,
+  AlertTriangle,
+  BookOpen,
   Building2,
   CalendarDays,
   CheckCircle2,
   ChevronLeft,
+  DollarSign,
   Edit,
-  FileText,
   FlaskConical,
+  HeartPulse,
   Image as ImageIcon,
   Info,
+  Leaf,
   Package,
-  ShieldCheck,
+  Shield,
+  ShieldAlert,
   Tags,
 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import usePesticideStore from "../../stores/usePesticideStore";
+import { toxicityLevels } from "./data/constants";
+
+const toxicityColorMap: Record<string, string> = {
+  Ia: "bg-red-100 text-red-700 border-red-300",
+  Ib: "bg-orange-100 text-orange-700 border-orange-300",
+  II: "bg-yellow-100 text-yellow-700 border-yellow-300",
+  III: "bg-blue-100 text-blue-700 border-blue-300",
+  U: "bg-green-100 text-green-700 border-green-300",
+};
+
+function InfoRow({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | number | null;
+}) {
+  if (!value) return null;
+  return (
+    <div>
+      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+        {label}
+      </h4>
+      <p className="text-sm font-medium">{value}</p>
+    </div>
+  );
+}
 
 const PesticideDetailPage = () => {
   const [, params] = useRoute("/cultivation-material/pesticide/:id");
   const [, setLocation] = useLocation();
   const id = params?.id ? Number(params.id) : 0;
 
-  // Zustand store
   const getPesticideById = usePesticideStore((state) => state.getPesticideById);
   const item = getPesticideById(id);
 
@@ -41,7 +73,9 @@ const PesticideDetailPage = () => {
           <p className="text-muted-foreground mb-4">
             Không tìm thấy thông tin thuốc BVTV.
           </p>
-          <Button onClick={() => setLocation("/cultivation-material/pesticide")}>
+          <Button
+            onClick={() => setLocation("/cultivation-material/pesticide")}
+          >
             Quay lại danh sách
           </Button>
         </div>
@@ -49,12 +83,18 @@ const PesticideDetailPage = () => {
     );
   }
 
+  const toxLabel = toxicityLevels.find((t) => t.value === item.toxicityLevel);
+
   return (
     <PageWrapper
       title="Chi tiết thuốc BVTV"
       description={`Thông tin chi tiết cho sản phẩm ${item.name}`}
       actions={
-        <Button onClick={() => setLocation(`/cultivation-material/pesticide/${id}/edit`)}>
+        <Button
+          onClick={() =>
+            setLocation(`/cultivation-material/pesticide/${id}/edit`)
+          }
+        >
           <Edit className="w-4 h-4 mr-2" />
           Chỉnh sửa
         </Button>
@@ -74,7 +114,7 @@ const PesticideDetailPage = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Main Info */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-6">
           {/* Header Card */}
           <Card className="overflow-hidden border-none shadow-md bg-white">
             <div className="bg-linear-to-r from-green-50 to-emerald-50 p-6 flex flex-col md:flex-row gap-6 items-start">
@@ -91,6 +131,11 @@ const PesticideDetailPage = () => {
                       <span className="bg-white px-2 py-0.5 rounded border font-mono text-xs font-semibold">
                         {item.code}
                       </span>
+                      {item.registrationNumber && (
+                        <span className="text-xs text-muted-foreground">
+                          SĐK: {item.registrationNumber}
+                        </span>
+                      )}
                       <span className="flex items-center gap-1">
                         <CalendarDays className="w-3.5 h-3.5" />
                         Ngày tạo: {item.createdAt}
@@ -116,156 +161,254 @@ const PesticideDetailPage = () => {
                       {item.form}
                     </Badge>
                   )}
-                  {item.origin && (
-                    <Badge variant="outline" className="bg-white/50">
-                      {item.origin}
-                    </Badge>
+                  {item.toxicityLevel && (
+                    <span
+                      className={`px-2 py-0.5 rounded text-xs font-semibold border ${toxicityColorMap[item.toxicityLevel] ?? ""}`}
+                    >
+                      WHO {toxLabel?.label ?? item.toxicityLevel}
+                    </span>
                   )}
                 </div>
               </div>
             </div>
           </Card>
 
-          {/* Details Tabs/Sections */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader className="pb-3 border-b">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Info className="w-5 h-5 text-primary" />
-                  Thông tin chi tiết
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6 grid gap-6">
-                {(item.actionType || item.form) && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {item.actionType && (
-                      <div>
-                        <h4 className="text-sm font-medium text-muted-foreground mb-1">
-                          Cơ chế tác động
-                        </h4>
-                        <div className="flex items-center gap-2 font-medium">
-                          <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                          {item.actionType}
-                        </div>
-                      </div>
-                    )}
-                    {item.form && (
-                      <div>
-                        <h4 className="text-sm font-medium text-muted-foreground mb-1">
-                          Dạng thuốc
-                        </h4>
-                        <div className="flex items-center gap-2 font-medium">
-                          <FlaskConical className="w-4 h-4 text-blue-600" />
-                          {item.form}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <Separator />
-
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                    Thành phần hoạt chất
-                  </h4>
-                  <div className="bg-slate-50 p-4 rounded-lg text-sm leading-relaxed border border-slate-100">
-                    {item.activeIngredient}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                    Công dụng & Hướng dẫn sử dụng
-                  </h4>
-                  <div className="prose prose-sm max-w-none text-slate-700">
-                    <p>
-                      Đặc trị các loại sâu bệnh hại trên lúa và rau màu. Hiệu
-                      quả cao, kéo dài.
-                    </p>
-                    <ul className="list-disc pl-5 space-y-1 mt-2">
-                      <li>Pha 10-15ml cho bình 16 lít nước.</li>
-                      <li>Phun ướt đều tán lá cây trồng.</li>
-                      <li>Thời gian cách ly: 7 ngày.</li>
-                    </ul>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3 border-b">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-primary" />
-                  Tài liệu kỹ thuật
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between p-4 border rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer group">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center text-red-600">
-                      <FileText className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="font-medium group-hover:text-primary transition-colors">
-                        Tai_lieu_ky_thuat_{item.code}.pdf
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        PDF • 2.4 MB • Cập nhật 2 ngày trước
-                      </div>
-                    </div>
-                  </div>
-                  <Button variant="ghost" size="sm">
-                    Tải xuống
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Right Column: Sidebar Info */}
-        <div className="space-y-6">
-          {/* Supplier Info */}
+          {/* Bước 1: Thông tin định danh & phân loại */}
           <Card>
-            <CardHeader className="pb-3 border-b bg-slate-50/50">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-slate-500" />
-                Thông tin cung ứng
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Info className="w-5 h-5 text-primary" />
+                Thông tin định danh & phân loại
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4 space-y-4">
-              <div>
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  Nhà cung cấp chính
-                </h4>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
-                    {item.id % 2 === 0 ? "HP" : "VT"}
+            <CardContent className="pt-5 space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <InfoRow label="Tên hoạt chất" value={item.activeIngredient} />
+                <InfoRow
+                  label="Hàm lượng / Nồng độ"
+                  value={item.concentration}
+                />
+                <InfoRow label="Dạng bào chế" value={item.form} />
+                <InfoRow label="Cách xâm nhập" value={item.actionType} />
+                <InfoRow label="Nhóm MoA" value={item.moaGroup} />
+                {item.toxicityLevel && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+                      <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
+                      Nhóm độc WHO
+                    </h4>
+                    <span
+                      className={`px-2 py-1 rounded text-sm font-semibold border ${toxicityColorMap[item.toxicityLevel] ?? ""}`}
+                    >
+                      {toxLabel?.label ?? item.toxicityLevel}
+                    </span>
                   </div>
-                  <div className="text-sm font-medium">
-                    {item.id % 2 === 0
-                      ? "Đại lý VTNN Hòa Phát"
-                      : "Công ty CP BVTV 1"}
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  Quy cách đóng gói
-                </h4>
-                <div className="flex items-center gap-2 text-sm">
-                  <Package className="w-4 h-4 text-amber-600" />
-                  <span>Thùng 24 chai (500ml/chai)</span>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Metadata/Keywords */}
+          {/* Bước 2: Thông tin sử dụng */}
+          <Card>
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Leaf className="w-5 h-5 text-primary" />
+                Thông tin sử dụng
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-5 space-y-5">
+              {item.indications && (
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                    Công dụng / Chỉ định
+                  </h4>
+                  <p className="text-sm bg-slate-50 rounded-lg p-3 border">
+                    {item.indications}
+                  </p>
+                </div>
+              )}
+              {item.targetEntities && item.targetEntities.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                    Đối tượng áp dụng
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {item.targetEntities.map((e) => (
+                      <Badge key={e} variant="outline" className="text-xs">
+                        {e}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <InfoRow
+                  label="Liều lượng khuyến cáo"
+                  value={item.recommendedDosage}
+                />
+                <InfoRow label="Cách dùng" value={item.applicationMethod} />
+                {item.phi != null && (
+                  <InfoRow
+                    label="Thời gian cách ly (PHI)"
+                    value={`${item.phi} ngày`}
+                  />
+                )}
+                {item.maxUsage != null && (
+                  <InfoRow
+                    label="Số lần tối đa / vụ"
+                    value={`${item.maxUsage} lần`}
+                  />
+                )}
+                <InfoRow label="Hạn sử dụng" value={item.shelfLife} />
+              </div>
+              {item.usageNotes && (
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                    Lưu ý khi sử dụng
+                  </h4>
+                  <p className="text-sm bg-amber-50 border border-amber-100 rounded-lg p-3 text-amber-800">
+                    {item.usageNotes}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Bước 3: An toàn & Pháp lý */}
+          <Card>
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                An toàn & Pháp lý
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-5 space-y-5">
+              {item.toxicityInfo && (
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                    Độc tính với người, ĐV, môi trường
+                  </h4>
+                  <p className="text-sm bg-red-50 border border-red-100 rounded-lg p-3 text-red-800">
+                    {item.toxicityInfo}
+                  </p>
+                </div>
+              )}
+              {item.protectiveMeasures && (
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <Shield className="w-3.5 h-3.5 text-blue-500" />
+                    Biện pháp phòng hộ
+                  </h4>
+                  <p className="text-sm bg-blue-50 border border-blue-100 rounded-lg p-3 text-blue-800 whitespace-pre-line">
+                    {item.protectiveMeasures}
+                  </p>
+                </div>
+              )}
+              {item.firstAid && (
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <HeartPulse className="w-3.5 h-3.5 text-red-500" />
+                    Sơ cứu khi ngộ độc
+                  </h4>
+                  <div
+                    className="text-sm bg-slate-50 rounded-lg p-3 border leading-relaxed text-slate-700"
+                    dangerouslySetInnerHTML={{ __html: item.firstAid }}
+                  />
+                </div>
+              )}
+              <Separator />
+              <div className="grid grid-cols-1 gap-4">
+                {item.legalStatus && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
+                      <BookOpen className="w-3.5 h-3.5 text-primary" />
+                      Tình trạng pháp lý
+                    </h4>
+                    <p className="text-sm font-medium">{item.legalStatus}</p>
+                  </div>
+                )}
+                {item.standardsCompliance &&
+                  item.standardsCompliance.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                        Tiêu chuẩn đáp ứng
+                      </h4>
+                      <div className="flex flex-wrap gap-1.5">
+                        {item.standardsCompliance.map((std) => (
+                          <Badge
+                            key={std}
+                            variant="secondary"
+                            className="text-xs"
+                          >
+                            {std}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column: Sidebar */}
+        <div className="space-y-6">
+          {/* Bước 4: Xuất xứ & Cung ứng */}
+          <Card>
+            <CardHeader className="pb-3 border-b bg-slate-50/50">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-slate-500" />
+                Xuất xứ & Cung ứng
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-4">
+              <InfoRow
+                label="Nhà sản xuất / Xuất xứ"
+                value={item.manufacturerOrigin ?? item.origin}
+              />
+              <InfoRow
+                label="Nhà nhập khẩu / Đăng ký"
+                value={item.importerRegistrant}
+              />
+              <InfoRow label="Nhà phân phối" value={item.distributor} />
+              {item.referencePrice && (
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+                    <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+                    Giá tham khảo
+                  </h4>
+                  <p className="text-sm font-semibold text-emerald-700">
+                    {item.referencePrice}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Quy cách */}
+          {item.packagingSpecs && item.packagingSpecs.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3 border-b bg-slate-50/50">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Package className="w-4 h-4 text-slate-500" />
+                  Quy cách đóng gói
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="flex flex-wrap gap-1.5">
+                  {item.packagingSpecs.map((spec) => (
+                    <Badge key={spec} variant="outline" className="text-xs">
+                      <Package className="w-3 h-3 mr-1" />
+                      {spec}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Phân loại / Hashtags */}
           <Card>
             <CardHeader className="pb-3 border-b bg-slate-50/50">
               <CardTitle className="text-base flex items-center gap-2">
@@ -282,7 +425,7 @@ const PesticideDetailPage = () => {
                   #AnToan
                 </Badge>
                 <Badge variant="secondary" className="font-normal">
-                  #PhoRong
+                  #BVTV
                 </Badge>
               </div>
             </CardContent>

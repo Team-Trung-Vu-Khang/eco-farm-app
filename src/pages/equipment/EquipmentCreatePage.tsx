@@ -13,9 +13,10 @@ import {
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ChevronLeft } from "lucide-react";
 import { EquipmentBasicInfoStep } from "./components/steps/EquipmentBasicInfoStep";
-import { EquipmentConfirmationStep } from "./components/steps/EquipmentConfirmationStep";
+import { EquipmentTechnicalStep } from "./components/steps/EquipmentTechnicalStep";
+import { EquipmentOperationStep } from "./components/steps/EquipmentOperationStep";
 import { EquipmentSuppliersStep } from "./components/steps/EquipmentSuppliersStep";
-import { EquipmentTechnicalDocsStep } from "./components/steps/EquipmentTechnicalDocsStep";
+import { EquipmentConfirmationStep } from "./components/steps/EquipmentConfirmationStep";
 import { useEquipmentCreateForm } from "./hooks/useEquipmentCreateForm";
 
 const EquipmentCreatePage = () => {
@@ -36,24 +37,28 @@ const EquipmentCreatePage = () => {
   const steps = [
     {
       id: "info",
-      title: "Thông tin cơ bản",
+      title: "Định danh & Phân loại",
       content: (
         <EquipmentBasicInfoStep formData={formData} updateField={updateField} />
       ),
     },
     {
-      id: "docs",
-      title: "Tài liệu kỹ thuật",
+      id: "technical",
+      title: "Thông số kỹ thuật",
       content: (
-        <EquipmentTechnicalDocsStep
-          formData={formData}
-          updateField={updateField}
-        />
+        <EquipmentTechnicalStep formData={formData} updateField={updateField} />
+      ),
+    },
+    {
+      id: "operation",
+      title: "Vận hành & Bảo dưỡng",
+      content: (
+        <EquipmentOperationStep formData={formData} updateField={updateField} />
       ),
     },
     {
       id: "supply",
-      title: "Nguồn cung & Bảo hành",
+      title: "Xuất xứ & Cung ứng",
       content: (
         <EquipmentSuppliersStep
           formData={formData}
@@ -61,6 +66,7 @@ const EquipmentCreatePage = () => {
           setTempSupplier={setTempSupplier}
           addSupplierItem={addSupplierItem}
           removeSupplierItem={removeSupplierItem}
+          updateField={updateField}
         />
       ),
     },
@@ -76,7 +82,7 @@ const EquipmentCreatePage = () => {
       title={isEdit ? "Cập nhật thiết bị" : "Thêm mới thiết bị"}
       description={
         isEdit
-          ? `Chỉnh sửa thông tin ${formData.name}`
+          ? `Chỉnh sửa thông tin ${formData.machineName || formData.name}`
           : "Quản lý máy móc, công cụ và lịch bảo dưỡng"
       }
     >
@@ -107,30 +113,34 @@ const EquipmentCreatePage = () => {
             <AlertDialogTitle>
               {isEdit ? "Xác nhận cập nhật" : "Xác nhận thêm mới"}
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <p>
-                {isEdit
-                  ? "Bạn có chắc chắn muốn cập nhật thông tin thiết bị này?"
-                  : "Bạn có chắc chắn muốn thêm thiết bị mới vào hệ thống?"}
-              </p>
-              <div className="bg-slate-50 p-4 rounded-lg space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Mã thiết bị:</span>
-                  <span className="font-medium">{formData.code}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tên thiết bị:</span>
-                  <span className="font-medium">{formData.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Loại:</span>
-                  <span className="font-medium">{formData.type}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Bảo dưỡng:</span>
-                  <span className="font-medium">
-                    {formData.maintainanceInterval}
-                  </span>
+            <AlertDialogDescription className="space-y-3" asChild>
+              <div>
+                <p>
+                  {isEdit
+                    ? "Bạn có chắc chắn muốn cập nhật thông tin thiết bị này?"
+                    : "Bạn có chắc chắn muốn thêm thiết bị mới vào hệ thống?"}
+                </p>
+                <div className="bg-slate-50 p-4 rounded-lg space-y-2 text-sm mt-3">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Mã SKU:</span>
+                    <span className="font-medium">
+                      {formData.sku || formData.code}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tên máy móc:</span>
+                    <span className="font-medium">
+                      {formData.machineName || formData.name}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Bảo dưỡng:</span>
+                    <span className="font-medium">
+                      {formData.maintenanceSchedule ||
+                        formData.maintainanceInterval ||
+                        "N/A"}
+                    </span>
+                  </div>
                 </div>
               </div>
             </AlertDialogDescription>

@@ -1,5 +1,6 @@
 import { Badge, type Column } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import type { Material } from "../types/types";
+import { getMaterialGroupLabel } from "./constants";
 
 export const materialColumns = (
   onNavigateDetail: (id: number) => void,
@@ -19,8 +20,18 @@ export const materialColumns = (
   },
   {
     key: "type",
-    label: "Phân loại",
-    render: (value) => <Badge variant="outline">{value}</Badge>,
+    label: "Phân loại & Nhóm",
+    render: (value, row) => {
+      const groupLabel = getMaterialGroupLabel(row.materialGroupId);
+      return (
+        <div className="flex flex-col gap-1 text-xs">
+          <Badge variant="outline" className="w-fit">{value}</Badge>
+          <span className="text-muted-foreground truncate max-w-[200px]" title={groupLabel}>
+            • {groupLabel}
+          </span>
+        </div>
+      );
+    },
   },
   {
     key: "description",

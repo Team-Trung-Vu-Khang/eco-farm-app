@@ -103,7 +103,7 @@ const AhEquipmentDetailPage = () => {
         </div>
 
         <div className="space-y-6">
-          <EquipmentDetailSidebar />
+          <EquipmentDetailSidebar item={item} />
         </div>
       </div>
     </PageWrapper>

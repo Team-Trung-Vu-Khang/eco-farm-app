@@ -1,20 +1,5 @@
-import {
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Textarea,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Input, Label } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { ImageIcon, Upload, Wrench } from "lucide-react";
-import {
-  maintenanceIntervals,
-  technologyLevelOptions,
-  valueChainOptions,
-  financialManagementOptions,
-} from "../../data/constants";
 import type { EquipmentFormData } from "../../types";
 
 interface EquipmentBasicInfoStepProps {
@@ -27,131 +12,100 @@ export const EquipmentBasicInfoStep = ({
   updateField,
 }: EquipmentBasicInfoStepProps) => {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-7xl mx-auto">
       <div className="lg:col-span-2 space-y-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+        {/* Card: Identification & Classification */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border space-y-5">
           <h3 className="font-semibold text-lg flex items-center gap-2">
             <Wrench className="w-5 h-5 text-primary" />
-            Thông tin chung
+            Thông tin định danh & Phân loại
           </h3>
+
+          {/* SKU & Machine Name */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>
-                Mã thiết bị <span className="text-red-500">*</span>
+              <Label className="flex items-center gap-1">
+                Mã sản phẩm / Mã SKU <span className="text-red-500">*</span>
               </Label>
               <Input
-                value={formData.code}
-                onChange={(e) => updateField("code", e.target.value)}
-                placeholder="VD: TB001"
+                value={formData.sku}
+                onChange={(e) => {
+                  updateField("sku", e.target.value);
+                  updateField("code", e.target.value); // Sync with legacy code field
+                }}
+                placeholder="VD: SKU-KUBOTA-L5018"
               />
+              <p className="text-xs text-muted-foreground">Rất quan trọng để truy xuất nguồn gốc</p>
             </div>
             <div className="space-y-2">
-              <Label>
-                Tên thiết bị <span className="text-red-500">*</span>
+              <Label className="flex items-center gap-1">
+                Tên máy móc / thiết bị <span className="text-red-500">*</span>
               </Label>
               <Input
-                value={formData.name}
-                onChange={(e) => updateField("name", e.target.value)}
-                placeholder="Nhập tên thiết bị..."
+                value={formData.machineName}
+                onChange={(e) => {
+                  updateField("machineName", e.target.value);
+                  updateField("name", e.target.value); // Sync with legacy name field
+                }}
+                placeholder="VD: Máy cày Kubota L5018"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Năng lực vận hành (Mức độ công nghệ)</Label>
-              <Select
-                value={formData.technologyLevelId}
-                onValueChange={(v) => updateField("technologyLevelId", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn mức độ công nghệ" />
-                </SelectTrigger>
-                <SelectContent>
-                  {technologyLevelOptions.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Chuỗi giá trị sản xuất</Label>
-              <Select
-                value={formData.valueChainId}
-                onValueChange={(v) => updateField("valueChainId", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn khâu trong chuỗi" />
-                </SelectTrigger>
-                <SelectContent>
-                  {valueChainOptions.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Quản lý tài chính</Label>
-              <Select
-                value={formData.financialManagementId}
-                onValueChange={(v) => updateField("financialManagementId", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn nhóm tài sản" />
-                </SelectTrigger>
-                <SelectContent>
-                  {financialManagementOptions.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Chu kỳ bảo dưỡng</Label>
-              <Select
-                value={formData.maintainanceInterval}
-                onValueChange={(v) => updateField("maintainanceInterval", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn chu kỳ" />
-                </SelectTrigger>
-                <SelectContent>
-                  {maintenanceIntervals.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
+          {/* Model */}
           <div className="space-y-2">
-            <Label>Mô tả kỹ thuật</Label>
-            <Textarea
-              value={formData.description}
-              onChange={(e) => updateField("description", e.target.value)}
-              placeholder="Thông số kỹ thuật, công suất, v.v..."
-              rows={4}
+            <Label>Model / Kiểu máy</Label>
+            <Input
+              value={formData.model}
+              onChange={(e) => updateField("model", e.target.value)}
+              placeholder="VD: L5018VN, Agras T40..."
+            />
+          </div>
+
+          {/* Manufacturer & Country of Origin */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Hãng sản xuất</Label>
+              <Input
+                value={formData.manufacturer}
+                onChange={(e) => updateField("manufacturer", e.target.value)}
+                placeholder="VD: Kubota, DJI, Netafim..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Nước sản xuất</Label>
+              <Input
+                value={formData.countryOfOrigin}
+                onChange={(e) => updateField("countryOfOrigin", e.target.value)}
+                placeholder="VD: Nhật Bản, Trung Quốc, Israel..."
+              />
+            </div>
+          </div>
+
+          {/* Manufacture Year */}
+          <div className="space-y-2">
+            <Label>Năm sản xuất</Label>
+            <Input
+              type="number"
+              value={formData.manufactureYear}
+              onChange={(e) => {
+                const val = e.target.value === "" ? "" : Number(e.target.value);
+                updateField("manufactureYear", val);
+              }}
+              placeholder="VD: 2022, 2023..."
+              min={1900}
+              max={new Date().getFullYear() + 1}
             />
           </div>
         </div>
       </div>
 
+      {/* Sidebar: Image Upload */}
       <div className="space-y-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
           <h3 className="font-semibold text-lg flex items-center gap-2">
             <ImageIcon className="w-5 h-5 text-primary" />
-            Hình ảnh
+            Hình ảnh sản phẩm
           </h3>
           <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer min-h-[200px]">
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary">
@@ -160,6 +114,9 @@ export const EquipmentBasicInfoStep = ({
             <p className="font-medium text-slate-900">Tải lên ảnh thiết bị</p>
             <p className="text-sm text-muted-foreground mt-1">
               Kéo thả hoặc click để chọn file
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Hình ảnh thực tế của máy móc/thiết bị
             </p>
           </div>
         </div>

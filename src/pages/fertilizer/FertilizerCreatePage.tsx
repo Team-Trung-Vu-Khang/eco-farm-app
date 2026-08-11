@@ -14,6 +14,7 @@ import {
 import { ChevronLeft } from "lucide-react";
 import { FertilizerBasicInfoStep } from "./components/steps/FertilizerBasicInfoStep";
 import { FertilizerUsageStep } from "./components/steps/FertilizerUsageStep";
+import FertilizerSafetyLegalStep from "./components/steps/FertilizerSafetyLegalStep";
 import { FertilizerConfirmationStep } from "./components/steps/FertilizerConfirmationStep";
 import { FertilizerSuppliersStep } from "./components/steps/FertilizerSuppliersStep";
 import { useFertilizerCreateForm } from "./hooks/useFertilizerCreateForm";
@@ -33,7 +34,7 @@ const FertilizerCreatePage = () => {
   const steps = [
     {
       id: "info",
-      title: "Thông tin cơ bản",
+      title: "Định danh & Phân loại",
       content: (
         <FertilizerBasicInfoStep
           formData={formData}
@@ -43,7 +44,7 @@ const FertilizerCreatePage = () => {
     },
     {
       id: "usage",
-      title: "Hướng dẫn sử dụng",
+      title: "Thông tin sử dụng",
       content: (
         <FertilizerUsageStep
           formData={formData}
@@ -52,8 +53,18 @@ const FertilizerCreatePage = () => {
       ),
     },
     {
+      id: "safety",
+      title: "An toàn & Pháp lý",
+      content: (
+        <FertilizerSafetyLegalStep
+          formData={formData}
+          updateField={updateField}
+        />
+      ),
+    },
+    {
       id: "supply",
-      title: "Nhà cung cấp",
+      title: "Xuất xứ & Cung ứng",
       content: (
         <FertilizerSuppliersStep
           formData={formData}

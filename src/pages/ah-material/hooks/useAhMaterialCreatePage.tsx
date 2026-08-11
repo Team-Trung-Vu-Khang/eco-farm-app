@@ -5,13 +5,9 @@ import useMaterialStore from "../../../stores/useMaterialStore";
 import MaterialBasicInfoStep from "../../material/components/MaterialBasicInfoStep";
 import MaterialConfirmStep from "../../material/components/MaterialConfirmStep";
 import MaterialSuppliersStep from "../../material/components/MaterialSuppliersStep";
-import type {
-  MaterialFormData,
-  MaterialSupplierDetail,
-} from "../../material/types/types";
+import type { MaterialFormData } from "../../material/types/types";
 import {
   createEmptyMaterialFormData,
-  createEmptyTempSupplier,
   createMaterialFormDataFromItem,
 } from "../../material/utils/form";
 
@@ -36,9 +32,6 @@ export function useAhMaterialCreatePage() {
   );
   const [paramHashtag, setParamHashtag] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [tempSupplier, setTempSupplier] = useState<MaterialSupplierDetail>(() =>
-    createEmptyTempSupplier(),
-  );
 
   const updateField = <K extends keyof MaterialFormData>(
     field: K,
@@ -47,15 +40,11 @@ export function useAhMaterialCreatePage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const updateTempSupplier = (data: Partial<MaterialSupplierDetail>) => {
-    setTempSupplier((prev) => ({ ...prev, ...data }));
-  };
-
   const handleAddHashtag = () => {
     const nextHashtag = paramHashtag.trim();
 
-    if (nextHashtag && !formData.hashtags.includes(nextHashtag)) {
-      updateField("hashtags", [...formData.hashtags, nextHashtag]);
+    if (nextHashtag && !(formData.hashtags || []).includes(nextHashtag)) {
+      updateField("hashtags", [...(formData.hashtags || []), nextHashtag]);
       setParamHashtag("");
     }
   };
@@ -63,32 +52,7 @@ export function useAhMaterialCreatePage() {
   const handleRemoveHashtag = (tag: string) => {
     updateField(
       "hashtags",
-      formData.hashtags.filter((item) => item !== tag),
-    );
-  };
-
-  const handleAddSupplier = () => {
-    if (
-      !tempSupplier.supplierId ||
-      !tempSupplier.quantity ||
-      !tempSupplier.unit
-    ) {
-      toast({
-        title: "Thiếu thông tin",
-        description: "Vui lòng chọn nhà cung cấp, số lượng và đơn vị",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    updateField("supplierDetails", [...formData.supplierDetails, tempSupplier]);
-    setTempSupplier(createEmptyTempSupplier());
-  };
-
-  const handleRemoveSupplier = (index: number) => {
-    updateField(
-      "supplierDetails",
-      formData.supplierDetails.filter((_, itemIndex) => itemIndex !== index),
+      (formData.hashtags || []).filter((item) => item !== tag),
     );
   };
 
@@ -99,19 +63,24 @@ export function useAhMaterialCreatePage() {
       type: formData.type,
       description: formData.description,
       status: "active" as const,
+      materialGroupId: formData.materialGroupId,
+      manufacturerOrigin: formData.manufacturerOrigin,
+      importerRegistrant: formData.importerRegistrant,
+      distributor: formData.distributor,
+      packagingSpecs: formData.packagingSpecs,
     };
 
     if (isEdit && params?.id) {
       updateMaterial(Number(params.id), payload);
       toast({
         title: "Thành công",
-        description: "Đã cập nhật thông tin vật tư",
+        description: "Đã cập nhật thông tin vật tư chăn nuôi",
       });
     } else {
       addMaterial(payload);
       toast({
         title: "Thành công",
-        description: "Đã thêm mới vật tư",
+        description: "Đã thêm mới vật tư chăn nuôi",
       });
     }
 
@@ -140,10 +109,7 @@ export function useAhMaterialCreatePage() {
       content: (
         <MaterialSuppliersStep
           formData={formData}
-          tempSupplier={tempSupplier}
-          onTempSupplierChange={updateTempSupplier}
-          onAddSupplier={handleAddSupplier}
-          onRemoveSupplier={handleRemoveSupplier}
+          onFormFieldChange={updateField}
         />
       ),
     },

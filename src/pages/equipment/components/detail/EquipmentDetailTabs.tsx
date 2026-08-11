@@ -13,25 +13,164 @@ import {
   History,
   Info,
   TimerReset,
+  Cpu,
+  Package,
+  Wrench,
 } from "lucide-react";
-import type { Equipment } from "../../data/constants";
+import type { Equipment } from "../../types";
 import { maintenanceHistory, usageHistory } from "../../data/mocks";
+import { suppliers as presetSuppliers } from "../../data/constants";
 
-export const InfoTab = ({ item }: { item: Equipment }) => (
-  <Card>
-    <CardHeader className="pb-3 border-b">
-      <CardTitle className="text-lg flex items-center gap-2">
-        <Info className="w-5 h-5 text-primary" />
-        Thông số kỹ thuật & Mô tả
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="pt-6">
-      <div className="bg-slate-50 p-4 rounded-lg text-sm leading-relaxed border border-slate-100 min-h-[100px]">
-        {item.description || "Chưa có mô tả chi tiết."}
-      </div>
-    </CardContent>
-  </Card>
-);
+function DetailRow({ label, value }: { label: string; value?: string | number | null }) {
+  if (!value) return null;
+  return (
+    <div>
+      <span className="text-muted-foreground block text-xs">{label}</span>
+      <span className="font-semibold text-slate-800">{value}</span>
+    </div>
+  );
+}
+
+export const InfoTab = ({ item }: { item: Equipment }) => {
+  return (
+    <div className="space-y-6">
+      {/* 1. Technical Specs Card */}
+      <Card>
+        <CardHeader className="pb-3 border-b">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Cpu className="w-5 h-5 text-primary" />
+            Thông số kỹ thuật chi tiết
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
+            <DetailRow label="Model / Kiểu máy" value={item.model} />
+            <DetailRow label="Hãng sản xuất" value={item.manufacturer} />
+            <DetailRow label="Nước sản xuất" value={item.countryOfOrigin} />
+            <DetailRow label="Năm sản xuất" value={item.manufactureYear} />
+            <DetailRow label="Công suất" value={item.powerCapacity} />
+            <DetailRow label="Dung tích / Khả năng làm việc" value={item.workingCapacity} />
+            <DetailRow label="Nhiên liệu / Năng lượng" value={item.fuelEnergyType} />
+            <DetailRow label="Trọng lượng" value={item.weight} />
+            <DetailRow label="Kích thước" value={item.dimensions} />
+          </div>
+
+          {item.machineType && item.machineType.length > 0 && (
+            <div className="mt-6 border-t pt-4">
+              <span className="text-muted-foreground block text-xs mb-2">Loại máy / Công dụng:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {item.machineType.map((tag) => (
+                  <Badge key={tag} variant="secondary" className="text-xs bg-slate-100">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {item.otherSpecifications && (
+            <div className="mt-6 border-t pt-4">
+              <span className="text-muted-foreground block text-xs mb-2">Thông số kỹ thuật đặc thù khác:</span>
+              <p className="text-sm bg-slate-50 p-3 rounded-lg border leading-relaxed text-slate-700 whitespace-pre-wrap">
+                {item.otherSpecifications}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 2. Operations & Maintenance Card */}
+      <Card>
+        <CardHeader className="pb-3 border-b">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Wrench className="w-5 h-5 text-primary" />
+            Vận hành & Phụ tùng bảo dưỡng
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+            <DetailRow label="Định mức tiêu hao nhiên liệu" value={item.fuelConsumptionRate} />
+            <DetailRow label="Chu kỳ bảo dưỡng định kỳ" value={item.maintenanceSchedule || item.maintainanceInterval} />
+          </div>
+
+          {item.mainAccessories && (
+            <div className="border-t pt-4">
+              <span className="text-muted-foreground block text-xs mb-2">Phụ tùng chính kèm theo máy:</span>
+              <p className="text-sm bg-slate-50 p-3 rounded-lg border leading-relaxed text-slate-700 whitespace-pre-wrap">
+                {item.mainAccessories}
+              </p>
+            </div>
+          )}
+
+          <div className="border-t pt-4">
+            <span className="text-muted-foreground block text-xs mb-2">Mô tả tóm tắt:</span>
+            <p className="text-sm bg-slate-50 p-3 rounded-lg border leading-relaxed text-slate-700">
+              {item.description || "Chưa có mô tả tóm tắt cho thiết bị này."}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 3. Market Distribution Card */}
+      <Card>
+        <CardHeader className="pb-3 border-b">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-primary" />
+            Xuất xứ & Phân phối thị trường
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6 space-y-4 text-sm">
+          {item.manufacturerOrigin && item.manufacturerOrigin.length > 0 && (
+            <div>
+              <span className="text-muted-foreground block text-xs mb-1.5">Nhà sản xuất / Xuất xứ:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {item.manufacturerOrigin.map((tag) => (
+                  <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {item.importerRegistrant && item.importerRegistrant.length > 0 && (
+            <div className="border-t pt-4">
+              <span className="text-muted-foreground block text-xs mb-1.5">Nhà nhập khẩu / Đăng ký:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {item.importerRegistrant.map((tag) => (
+                  <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {item.distributor && item.distributor.length > 0 && (
+            <div className="border-t pt-4">
+              <span className="text-muted-foreground block text-xs mb-1.5">Nhà phân phối chính:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {item.distributor.map((tag) => (
+                  <Badge key={tag} variant="outline" className="bg-slate-50">{tag}</Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
+            <DetailRow label="Giá tham khảo trên thị trường" value={item.referencePrice} />
+            {item.packagingSpecs && item.packagingSpecs.length > 0 && (
+              <div>
+                <span className="text-muted-foreground block text-xs mb-1.5">Quy cách bao bì máy:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {item.packagingSpecs.map((tag) => (
+                    <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
 export const UsageTab = () => (
   <Card>

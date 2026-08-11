@@ -1,6 +1,5 @@
 import type {
   MaterialFormData,
-  MaterialSupplierDetail,
   Material,
 } from "../types/types";
 
@@ -10,7 +9,13 @@ export const createEmptyMaterialFormData = (): MaterialFormData => ({
   type: "",
   description: "",
   hashtags: [],
-  supplierDetails: [],
+  materialGroupId: "",
+
+  // Origin & Supply fields
+  manufacturerOrigin: [],
+  importerRegistrant: [],
+  distributor: [],
+  packagingSpecs: [],
 });
 
 export const createMaterialFormDataFromItem = (
@@ -21,19 +26,11 @@ export const createMaterialFormDataFromItem = (
   type: item.type,
   description: item.description,
   hashtags: ["BenBi", "TietKiem"],
-  supplierDetails: [
-    {
-      supplierId: "sup1",
-      quantity: "50",
-      unit: "Cuộn",
-      packaging: "Cuộn 1000m",
-    },
-  ],
-});
+  materialGroupId: item.materialGroupId || "",
 
-export const createEmptyTempSupplier = (): MaterialSupplierDetail => ({
-  supplierId: "",
-  quantity: "",
-  unit: "",
-  packaging: "",
+  // Hydrate origin & supply fields
+  manufacturerOrigin: item.manufacturerOrigin || [],
+  importerRegistrant: item.importerRegistrant || [],
+  distributor: item.distributor || [],
+  packagingSpecs: item.packagingSpecs || [],
 });
