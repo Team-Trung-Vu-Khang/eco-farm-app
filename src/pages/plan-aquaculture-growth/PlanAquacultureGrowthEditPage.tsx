@@ -171,7 +171,6 @@ export default function PlanAquacultureGrowthEditPage({
                     ? prev.regimenId
                     : "",
               }));
-              setStageSearch("");
             }}
             className={cn(
               "cursor-pointer p-4 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-1 group relative overflow-hidden",

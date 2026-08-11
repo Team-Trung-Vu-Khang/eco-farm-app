@@ -16,6 +16,7 @@ import {
   SelectValue,
   Separator,
   StepperForm,
+  Switch,
   Tabs,
   TabsContent,
   TabsList,
@@ -45,6 +46,7 @@ import { useState } from "react";
 import GeographicalSelector from "./components/GeographicalSelector";
 import { PersonnelMultiSelectCard } from "./components/PersonnelMultiSelectCard";
 import { RegimenSelector } from "./components/RegimenSelector";
+import SimplePlanForm from "./components/SimplePlanForm";
 import { StageAllocation } from "./components/StageAllocation";
 import { usePlanForm } from "./hooks/usePlanForm";
 
@@ -91,6 +93,7 @@ export default function PlanGrowthEditPage({
   } = usePlanForm("edit", basePath, { onSaved, onCancel });
 
   const [newManualStage, setNewManualStage] = useState("");
+  const [isSimpleMode, setIsSimpleMode] = useState(false);
   const purpose = formData.purpose as string;
   const isCultivationLike =
     purpose === "cultivation" || purpose === "facility-upgrade";
@@ -171,7 +174,6 @@ export default function PlanGrowthEditPage({
                     ? prev.regimenId
                     : "",
               }));
-              setStageSearch("");
             }}
             className={cn(
               "cursor-pointer p-4 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-1 group relative overflow-hidden",
@@ -1708,19 +1710,45 @@ export default function PlanGrowthEditPage({
       title={pageTitle}
       description={pageDescription}
       actions={
-        <Button variant="outline" onClick={goBack}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Quay lại
-        </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="simple-mode-toggle" className="text-xs font-bold text-slate-600 whitespace-nowrap">
+              Chế độ đơn giản
+            </Label>
+            <Switch
+              id="simple-mode-toggle"
+              checked={isSimpleMode}
+              onCheckedChange={setIsSimpleMode}
+            />
+          </div>
+          <Button variant="outline" onClick={goBack}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Quay lại
+          </Button>
+        </div>
       }
     >
       <div className="max-w-5xl mx-auto">
-        <StepperForm
-          steps={steps}
-          onComplete={handleComplete}
-          onCancel={goBack}
-          completeLabel={completeLabel}
-        />
+        {isSimpleMode ? (
+          <SimplePlanForm
+            formData={formData}
+            setFormData={setFormData}
+            regimens={regimens}
+            handleDurationPartChange={handleDurationPartChange}
+            handleAddMaterial={handleAddMaterial}
+            handleRemoveMaterial={handleRemoveMaterial}
+            handleComplete={handleComplete}
+            goBack={goBack}
+            completeLabel={completeLabel}
+          />
+        ) : (
+          <StepperForm
+            steps={steps}
+            onComplete={handleComplete}
+            onCancel={goBack}
+            completeLabel={completeLabel}
+          />
+        )}
       </div>
     </PageWrapper>
   );
