@@ -85,7 +85,7 @@ function getPurposeLabel(plan: Plan) {
   if (plan.purpose === "cultivation") return "Chăn nuôi";
   if (plan.purpose === "treatment") return "Điều trị";
   if (plan.purpose === "amendment") return "Cải tạo";
-  if (plan.purpose === "harvest") return "Thu hoạch";
+  if (plan.purpose === "harvest") return "Xuất bán";
   return "Phát sinh";
 }
 
@@ -110,7 +110,7 @@ function summarizePlanMaterials(plan: Plan) {
     {},
   );
 
-  const preferred = ["Máy móc", "Thuốc BTVT", "Phân bón"];
+  const preferred = ["Máy móc", "Thuốc thú y", "Thức ăn"];
   const ordered = [
     ...preferred
       .filter((label) => categories[label])
@@ -236,7 +236,7 @@ export function PlanWorkflowCanvas({
         wide: true,
         summaries: [
           { label: "Tổng số", value: `${plans.length} kế hoạch` },
-          { label: "Mùa vụ", value: `${overviewMetrics.seasonCount} mùa vụ` },
+          { label: "Lứa nuôi", value: `${overviewMetrics.seasonCount} lứa nuôi` },
           { label: "Giai đoạn", value: `${overviewMetrics.totalStages} giai đoạn` },
           { label: "Nhân lực", value: `${overviewMetrics.totalTasks} nhóm` },
           { label: "Vật tư", value: `${overviewMetrics.totalMaterials} nhóm` },

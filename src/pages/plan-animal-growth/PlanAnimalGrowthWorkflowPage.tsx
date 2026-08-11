@@ -41,6 +41,7 @@ import {
 } from "reactflow";
 import { useLocation, useParams } from "wouter";
 import usePlanStore, { type Plan } from "../../stores/usePlanStore";
+import { useAnimalGrowthWorkflowDraftStore } from "./hooks/useAnimalGrowthWorkflowDraftStore";
 import type { Region } from "../region-chart/constants";
 import type {
   WorkflowCardNodeData,
@@ -206,7 +207,7 @@ function createDemoWorkflowPlans(base: Plan) {
       {
         id: 20012,
         stageId: "Nuôi trái",
-        materialCategory: "Phân bón",
+        materialCategory: "Thức ăn",
         materialType: "Phân hữu cơ",
         materialName: "Phân hữu cơ hoai mục",
         quantity: "2",
@@ -240,7 +241,7 @@ function createDemoWorkflowPlans(base: Plan) {
       {
         id: 20022,
         stageId: "Phòng ngừa",
-        materialCategory: "Thuốc BTVT",
+        materialCategory: "Thuốc thú y",
         materialType: "Thuốc phòng bệnh",
         materialName: "Thuốc phòng nấm sinh học",
         quantity: "1",
@@ -274,7 +275,7 @@ function createDemoWorkflowPlans(base: Plan) {
       {
         id: 20032,
         stageId: "Cơi lá",
-        materialCategory: "Phân bón lá",
+        materialCategory: "Thức ăn lá",
         materialType: "Dinh dưỡng",
         materialName: "Amino acid",
         quantity: "2",
@@ -308,7 +309,7 @@ function createDemoWorkflowPlans(base: Plan) {
       {
         id: 20042,
         stageId: "Ổn định",
-        materialCategory: "Phân bón",
+        materialCategory: "Thức ăn",
         materialType: "Dinh dưỡng",
         materialName: "Kali Sulphate",
         quantity: "1",
@@ -381,7 +382,7 @@ function buildPlanNode(
       tags: (plan.selectedStages || []).slice(0, 3),
       summaries: [
         { label: "Nhân lực", value: countWorkers(plan.taskAllocations) },
-        { label: "Thuốc BVTV", value: `${materialGroups.pesticide}` },
+        { label: "Thuốc thú y", value: `${materialGroups.pesticide}` },
         { label: "Phân Bón", value: `${materialGroups.fertilizer}` },
         { label: "Vật tư khác", value: `${materialGroups.other}` },
       ],
@@ -426,6 +427,15 @@ export default function PlanAnimalGrowthWorkflowPage({
   const { toast } = useToast();
   const { regions } = useRegionStore();
   const updatePlan = usePlanStore((state) => state.updatePlan);
+  const resetWorkflowDraft = useAnimalGrowthWorkflowDraftStore(
+    (state) => state.resetDraft,
+  );
+  const goToCreateWorkflow = useCallback(() => {
+    // Start a clean canvas — otherwise a workflow opened earlier via
+    // "Mở workflow" would still be sitting in the draft store.
+    resetWorkflowDraft();
+    setLocation(`${basePath}/create/workflow`);
+  }, [basePath, resetWorkflowDraft, setLocation]);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [viewMode, setViewMode] = useState<WorkflowViewMode>("workflow");
@@ -530,7 +540,7 @@ export default function PlanAnimalGrowthWorkflowPage({
             setDeleteOpen(true);
           }
         },
-        () => setLocation(`${basePath}/create/workflow`),
+        goToCreateWorkflow,
         getRegionLabels(rootSlot.plan, regions || []),
         { interactive: true, showFooterAction: false },
       ),
@@ -552,7 +562,7 @@ export default function PlanAnimalGrowthWorkflowPage({
                 setDeleteOpen(true);
               }
             },
-            () => setLocation(`${basePath}/create/workflow`),
+            goToCreateWorkflow,
             slot.isPrimary
               ? primaryRegionLabels
               : getRegionLabels(slot.plan, regions || []),
@@ -638,13 +648,13 @@ export default function PlanAnimalGrowthWorkflowPage({
 
     return { nodes, edges };
   }, [
-    basePath,
     plan,
     primaryRegionLabels,
     regions,
     setLocation,
     viewMode,
     openEditDialog,
+    goToCreateWorkflow,
   ]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(flowDefinition.nodes);
@@ -806,7 +816,7 @@ export default function PlanAnimalGrowthWorkflowPage({
 
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
-                <Label>Vùng canh tác / vùng nuôi trồng</Label>
+                <Label>Vùng chăn nuôi / vùng nuôi trồng</Label>
                 <span className="text-xs text-muted-foreground">
                   Chọn nhiều vùng ở cấp vùng
                 </span>

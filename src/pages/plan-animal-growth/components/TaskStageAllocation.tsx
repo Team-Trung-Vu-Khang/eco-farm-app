@@ -26,7 +26,7 @@ import {
   X,
 } from "lucide-react";
 import { memo, useMemo, useState } from "react";
-import { ANIMAL_MATERIAL_OPTIONS, ANIMAL_TASK_OPTIONS } from "../data/animalGrowthMocks";
+import { MATERIAL_OPTIONS, TASK_OPTIONS } from "../data/mocks";
 import type {
   GeographicalSelection,
   MaterialAllocation,
@@ -273,7 +273,7 @@ const TaskBlock = ({
           }
           return acc;
         }, {})
-      : Object.entries(ANIMAL_MATERIAL_OPTIONS).reduce((acc: any, [cat, opts]) => {
+      : Object.entries(MATERIAL_OPTIONS).reduce((acc: any, [cat, opts]) => {
           acc[cat] = opts.map((o) => ({
             name: o.value,
             unit: o.unit,
@@ -465,7 +465,7 @@ const TaskBlock = ({
                       value: t.name,
                       label: t.name,
                     }))
-                  : (ANIMAL_TASK_OPTIONS as any[])
+                  : (TASK_OPTIONS as any[])
               }
               value={task.name}
               onChange={(val) => {

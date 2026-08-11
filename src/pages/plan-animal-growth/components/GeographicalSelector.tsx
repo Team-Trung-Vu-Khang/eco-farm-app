@@ -206,7 +206,7 @@ const GeographicalSelector = ({
               Chọn phạm vi chăn nuôi
             </DialogTitle>
             <p className="text-xs text-muted-foreground mt-1">
-              Bạn có thể chọn khu chăn nuôi, khu vực hoặc từng ô chuồng cụ thể
+              Bạn có thể chọn Khu chăn nuôi, Khu vực hoặc từng Ô chuồng cụ thể
             </p>
           </DialogHeader>
 

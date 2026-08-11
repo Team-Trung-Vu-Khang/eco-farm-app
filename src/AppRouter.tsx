@@ -1,5 +1,5 @@
 import { lazy, useEffect } from "react";
-import { Route, Switch, useLocation } from "wouter";
+import { Route, Switch, useLocation, useParams } from "wouter";
 const TerrainPage = lazy(() => import("./pages/terrain/TerrainPage"));
 
 const EnterprisePage = lazy(() => import("./pages/enterprise/EnterprisePage"));
@@ -82,6 +82,10 @@ const PlanAnimalGrowthEditPage = lazy(
 );
 const PlanAnimalGrowthWorkflowPage = lazy(
   () => import("./pages/plan-animal-growth/PlanAnimalGrowthWorkflowPage"),
+);
+const PlanAnimalGrowthWorkflowPlansPage = lazy(
+  () =>
+    import("./pages/plan-animal-growth/PlanAnimalGrowthWorkflowPlansPage"),
 );
 const PlanAnimalGrowthCreateWorkflowPage = lazy(
   () => import("./pages/plan-animal-growth/PlanAnimalGrowthCreateWorkflowPage"),
@@ -803,7 +807,23 @@ const PlanAnimalGrowthWorkflowDetailEditRoute = () => (
   <PlanAnimalGrowthWorkflowDetailEditPage />
 );
 const PlanAnimalGrowthWorkflowRoute = () => <PlanAnimalGrowthWorkflowPage />;
-const PlanAnimalGrowthEditRoute = () => <PlanAnimalGrowthEditPage />;
+const PlanAnimalGrowthWorkflowPlansRoute = () => (
+  <PlanAnimalGrowthWorkflowPlansPage />
+);
+const PlanAnimalGrowthEditRoute = () => {
+  const [, setLocation] = useLocation();
+  const params = useParams<{ id: string }>();
+
+  useEffect(() => {
+    if (params.id) {
+      setLocation(
+        `/plan-animal-growth/create/workflow/plan/${params.id}/edit`,
+      );
+    }
+  }, [params.id, setLocation]);
+
+  return null;
+};
 const PlanAnimalGrowthDetailRoute = () => <PlanAnimalGrowthDetailPage />;
 const PlanAquacultureGrowthRoute = () => <PlanAquacultureGrowthPage />;
 const PlanAquacultureGrowthCreateRoute = () => (
@@ -1585,8 +1605,16 @@ function Router() {
         component={PlanAnimalGrowthCreateWorkflowRoute}
       />
       <Route
+        path="/plan-animal-growth/create/workflow/:workflowId"
+        component={PlanAnimalGrowthCreateWorkflowRoute}
+      />
+      <Route
         path="/plan-animal-growth/create"
         component={PlanAnimalGrowthCreateRoute}
+      />
+      <Route
+        path="/plan-animal-growth/workflow/:workflowId"
+        component={PlanAnimalGrowthWorkflowPlansRoute}
       />
       <Route
         path="/plan-animal-growth/:id/workflow"

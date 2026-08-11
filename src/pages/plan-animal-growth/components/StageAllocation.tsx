@@ -39,12 +39,12 @@ import usePersonnelStore from "../../../stores/usePersonnelStore";
 import GeographicalSelector from "./GeographicalSelector";
 import type { GeographicalSelection } from "../types";
 import {
-  ANIMAL_LABOR_OPTIONS,
-  ANIMAL_MATERIAL_OPTIONS,
-  ANIMAL_MATERIAL_TYPES,
-  ANIMAL_MATERIAL_UNITS,
-  ANIMAL_TASK_OPTIONS,
-} from "../data/animalGrowthMocks";
+  LABOR_OPTIONS,
+  MATERIAL_OPTIONS,
+  MATERIAL_TYPES,
+  MATERIAL_UNITS,
+  TASK_OPTIONS,
+} from "../data/mocks";
 import type { MaterialAllocation, TaskAllocation } from "../types";
 
 export const StageAllocation = memo(
@@ -82,7 +82,7 @@ export const StageAllocation = memo(
       name: "",
       qty: "",
       unit: "kg",
-      type: "Thức ăn chăn nuôi",
+      type: "Thức ăn",
     });
 
     const specificPersonnel = isDetail;
@@ -249,7 +249,7 @@ export const StageAllocation = memo(
         quantity: newItem.qty,
         unit: newItem.unit,
       });
-      setNewItem({ name: "", qty: "", unit: "kg", type: "Phân bón" });
+      setNewItem({ name: "", qty: "", unit: "kg", type: "Thức ăn" });
     };
 
     const handleAddTask = () => {
@@ -432,8 +432,8 @@ export const StageAllocation = memo(
                           value={newItem.type}
                           onValueChange={(v) => {
                             const defaultUnit =
-                              ANIMAL_MATERIAL_UNITS[
-                                v as keyof typeof ANIMAL_MATERIAL_UNITS
+                              MATERIAL_UNITS[
+                                v as keyof typeof MATERIAL_UNITS
                               ]?.[0] || "kg";
                             setNewItem({
                               ...newItem,
@@ -447,7 +447,7 @@ export const StageAllocation = memo(
                             <SelectValue placeholder="Loại..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {ANIMAL_MATERIAL_TYPES.map((type) => (
+                            {MATERIAL_TYPES.map((type) => (
                               <SelectItem key={type.value} value={type.value}>
                                 {type.label}
                               </SelectItem>
@@ -461,8 +461,8 @@ export const StageAllocation = memo(
                           value={newItem.name}
                           onValueChange={(v) => {
                             const category =
-                              ANIMAL_MATERIAL_OPTIONS[
-                                newItem.type as keyof typeof ANIMAL_MATERIAL_OPTIONS
+                              MATERIAL_OPTIONS[
+                                newItem.type as keyof typeof MATERIAL_OPTIONS
                               ] || [];
                             const item = category.find((i) => i.value === v);
                             setNewItem({
@@ -477,8 +477,8 @@ export const StageAllocation = memo(
                           </SelectTrigger>
                           <SelectContent>
                             {(
-                              ANIMAL_MATERIAL_OPTIONS[
-                                newItem.type as keyof typeof ANIMAL_MATERIAL_OPTIONS
+                              MATERIAL_OPTIONS[
+                                newItem.type as keyof typeof MATERIAL_OPTIONS
                               ] || []
                             ).map((opt) => (
                               <SelectItem key={opt.value} value={opt.value}>
@@ -515,8 +515,8 @@ export const StageAllocation = memo(
                           </SelectTrigger>
                           <SelectContent>
                             {(
-                              ANIMAL_MATERIAL_UNITS[
-                                newItem.type as keyof typeof ANIMAL_MATERIAL_UNITS
+                              MATERIAL_UNITS[
+                                newItem.type as keyof typeof MATERIAL_UNITS
                               ] || ["kg"]
                             ).map((u) => (
                               <SelectItem key={u} value={u}>
@@ -657,7 +657,7 @@ export const StageAllocation = memo(
                         <SelectValue placeholder="Chọn công việc..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {ANIMAL_TASK_OPTIONS.map((opt) => (
+                        {TASK_OPTIONS.map((opt) => (
                           <SelectItem key={opt.value} value={opt.value}>
                             {opt.label}
                           </SelectItem>

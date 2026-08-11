@@ -46,6 +46,7 @@ export function useAnimalGrowthPage(basePath = "/plan-animal-growth") {
     handleDuplicate,
     goToCreate: () => setLocation(`${basePath}/create/workflow`),
     goToView: (id: number) => setLocation(`${basePath}/${id}`),
-    goToEdit: (id: number) => setLocation(`${basePath}/${id}/workflow`),
+    goToEdit: (id: number) =>
+      setLocation(`${basePath}/create/workflow/plan/${id}/edit`),
   };
 }
