@@ -32,10 +32,10 @@ import { MATERIAL_OPTIONS, MATERIAL_TYPES, MATERIAL_UNITS } from "../data/mocks"
 import type { MaterialAllocation, PlanFormData } from "../types";
 
 const PURPOSE_OPTIONS = [
-  { id: "cultivation", label: "Canh tác", icon: Layers, color: "blue" },
+  { id: "cultivation", label: "Nuôi trồng thủy sản", icon: Layers, color: "blue" },
   { id: "facility-upgrade", label: "Nâng cấp CSVC", icon: Wrench, color: "slate" },
   { id: "treatment", label: "Điều trị", icon: Bug, color: "red" },
-  { id: "amendment", label: "Cải tạo đất", icon: Sprout, color: "green" },
+  { id: "amendment", label: "Cải tạo ao trại", icon: Sprout, color: "green" },
   { id: "harvest", label: "Thu hoạch", icon: Apple, color: "orange" },
 ] as const;
 
@@ -272,7 +272,7 @@ export default function SimplePlanForm({
         <Input
           value={formData.name}
           onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-          placeholder="VD: Bón phân đợt 1"
+          placeholder="VD: Thay nước ao đợt 1"
         />
       </div>
 
@@ -362,7 +362,7 @@ export default function SimplePlanForm({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label required>
-              {formData.purpose === "treatment" ? "Phác đồ điều trị" : "Phác đồ cải tạo đất"}
+              {formData.purpose === "treatment" ? "Phác đồ điều trị" : "Phác đồ cải tạo ao trại"}
             </Label>
             {formData.regimenId && (
               <Button
@@ -425,7 +425,7 @@ export default function SimplePlanForm({
         </div>
         <div className="flex gap-2">
           <Input
-            placeholder="Nhập tên hạng mục (VD: Bón phân, Tưới nước...)"
+            placeholder="Nhập tên hạng mục (VD: Cho ăn, Thay nước ao...)"
             value={newStage}
             onChange={(e) => setNewStage(e.target.value)}
             onKeyDown={(e) => {
@@ -483,7 +483,7 @@ export default function SimplePlanForm({
           <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-800">
             Chế độ đơn giản không phân bổ nhân công/công việc chi tiết. Chuyển sang chế độ chi tiết bất cứ lúc nào để
-            bổ sung phạm vi canh tác, nhân sự phụ trách và công việc cụ thể.
+            bổ sung phạm vi nuôi trồng, nhân sự phụ trách và công việc cụ thể.
           </p>
         </CardContent>
       </Card>
