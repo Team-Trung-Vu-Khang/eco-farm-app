@@ -29,7 +29,6 @@ import {
   Sprout,
   Trash2,
   Users,
-  Workflow,
   Wrench,
 } from "lucide-react";
 import { useMemo } from "react";
@@ -54,7 +53,6 @@ export default function PlanAnimalGrowthDetailPage({
     selectionSummary,
     summarizeTaskSelections: getTaskSelectionSummary,
     handleEdit,
-    goToWorkflow,
     handleDelete,
     handleConfirmDelete,
     goBack,
@@ -110,7 +108,7 @@ export default function PlanAnimalGrowthDetailPage({
 
   return (
     <PageWrapper
-      title="Chi tiết kế hoạch chăn nuôi"
+      title="Chi tiết kế hoạch"
       description={`Xem thông tin chi tiết kế hoạch ${plan.code}`}
     >
       <div className="space-y-6">
@@ -124,10 +122,6 @@ export default function PlanAnimalGrowthDetailPage({
             <Button variant="outline" onClick={handleEdit} className="gap-2">
               <Edit className="w-4 h-4" />
               Chỉnh sửa
-            </Button>
-            <Button variant="outline" onClick={goToWorkflow} className="gap-2">
-              <Workflow className="w-4 h-4" />
-              Workflow
             </Button>
             <Button
               variant="destructive"
@@ -211,7 +205,7 @@ export default function PlanAnimalGrowthDetailPage({
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                    Cây trồng
+                    Vật nuôi
                   </label>
                   <p className="font-medium mt-1 text-slate-800">
                     {plan.crop} - {plan.variety}
@@ -230,7 +224,7 @@ export default function PlanAnimalGrowthDetailPage({
                   <div>
                     <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                       {plan.purpose === "amendment"
-                        ? "Phác đồ cải tạo đất"
+                        ? "Phác đồ cải tạo chuồng trại"
                         : plan.purpose === "harvest"
                           ? "Mục đích"
                           : "Phác đồ điều trị"}
@@ -246,7 +240,7 @@ export default function PlanAnimalGrowthDetailPage({
                       )}
                     >
                       {plan.purpose === "harvest"
-                        ? "Kế hoạch thu hoạch"
+                        ? "Kế hoạch xuất bán"
                         : regimens.find((r) => r.id === plan.regimenId)?.name ||
                           "Chưa chọn phác đồ"}
                     </p>
@@ -404,7 +398,7 @@ export default function PlanAnimalGrowthDetailPage({
                   : plan.purpose === "amendment"
                     ? "Lộ trình cải tạo & Quy trình"
                     : plan.purpose === "harvest"
-                      ? "Lịch trình thu hoạch"
+                      ? "Lịch trình xuất bán"
                       : "Lộ trình triển khai & Giai đoạn"}
               </h3>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5">
@@ -466,9 +460,9 @@ export default function PlanAnimalGrowthDetailPage({
                             )}
                           >
                             {plan.purpose === "amendment"
-                              ? "Hoạt động cải tạo đất"
+                              ? "Hoạt động cải tạo chuồng trại"
                               : plan.purpose === "harvest"
-                                ? "Hoạt động thu hoạch"
+                                ? "Hoạt động xuất bán"
                                 : "Hoạt động điều trị bệnh"}
                           </p>
                         )}

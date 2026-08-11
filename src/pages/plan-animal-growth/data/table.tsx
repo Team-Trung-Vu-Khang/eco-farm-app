@@ -10,17 +10,19 @@ import {
   type Column,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
+  Ban,
   Calendar,
   CheckCircle2,
   Clock,
+  Eye,
   Layers,
   MoreHorizontal,
-  Eye,
   PencilLine,
   Sprout,
   Trash2,
+  Workflow,
 } from "lucide-react";
-import type { Plan } from "../../../stores/usePlanStore";
+import type { Plan } from "../../../stores/useAnimalGrowthPlanStore";
 import { getPlanStatusBadge } from "../utils/status";
 
 function formatDate(value?: string) {
@@ -48,16 +50,18 @@ function resolveLocationLabel(plan: Plan) {
     plan.cultivationRegion ||
     plan.zone ||
     plan.plot ||
-    (regionCount > 0 ? `${regionCount} ao nuôi` : "") ||
+    (regionCount > 0 ? `${regionCount} khu chăn nuôi` : "") ||
     "Chưa xác định"
   );
 }
 
 function resolveCropLabel(plan: Plan) {
-  return [plan.crop, plan.variety].filter(Boolean).join(" - ") || "Chưa xác định";
+  return (
+    [plan.crop, plan.variety].filter(Boolean).join(" - ") || "Chưa xác định"
+  );
 }
 
-export function createPlanAquacultureGrowthColumns({
+export function createPlanAnimalGrowthColumns({
   onView,
   onEdit,
   onDelete,
@@ -72,7 +76,7 @@ export function createPlanAquacultureGrowthColumns({
       label: "Mã",
       render: (value) => (
         <span className="font-mono text-xs font-semibold text-slate-500">
-          {typeof value === "string" ? value : value != null ? String(value) : "—"}
+          {value as string}
         </span>
       ),
     },
@@ -81,10 +85,10 @@ export function createPlanAquacultureGrowthColumns({
       label: "Kế hoạch",
       render: (value, item) => (
         <div className="space-y-1">
-          <div className="font-semibold text-slate-900">
-            {typeof value === "string" ? value : value != null ? String(value) : "—"}
+          <div className="font-semibold text-slate-900">{value as string}</div>
+          <div className="text-xs text-slate-500">
+            {item.description || "—"}
           </div>
-          <div className="text-xs text-slate-500">{item.description || "—"}</div>
         </div>
       ),
     },
@@ -100,10 +104,10 @@ export function createPlanAquacultureGrowthColumns({
     },
     {
       key: "seasonName",
-      label: "Vụ nuôi",
+      label: "Lứa nuôi",
       render: (value) => (
         <span className="text-sm font-medium text-slate-700">
-          {typeof value === "string" ? value : value != null ? String(value) : "—"}
+          {(value as string) || "—"}
         </span>
       ),
     },
@@ -131,21 +135,25 @@ export function createPlanAquacultureGrowthColumns({
     },
     {
       key: "zone",
-      label: "Ao nuôi",
+      label: "Khu chăn nuôi",
       render: (_, item) => (
         <div className="flex items-center gap-2">
           <Layers className="h-3.5 w-3.5 text-emerald-500" />
-          <span className="text-sm text-slate-700">{resolveLocationLabel(item)}</span>
+          <span className="text-sm text-slate-700">
+            {resolveLocationLabel(item)}
+          </span>
         </div>
       ),
     },
     {
       key: "crop",
-      label: "Loài nuôi",
+      label: "Vật nuôi",
       render: (_, item) => (
         <div className="flex items-center gap-2">
           <Sprout className="h-3.5 w-3.5 text-green-500" />
-          <span className="text-sm text-slate-700">{resolveCropLabel(item)}</span>
+          <span className="text-sm text-slate-700">
+            {resolveCropLabel(item)}
+          </span>
         </div>
       ),
     },
@@ -194,7 +202,139 @@ export function createPlanAquacultureGrowthColumns({
   ];
 }
 
-export const aquacultureGrowthFilters = [
+export const UNASSIGNED_WORKFLOW_ID = "__unassigned__";
+
+export interface WorkflowRow {
+  id: string;
+  name: string;
+  description: string;
+  totalCount: number;
+  activeCount: number;
+  draftCount: number;
+  completedCount: number;
+  cancelledCount: number;
+}
+
+export function createWorkflowColumns({
+  onView,
+  onOpenWorkflow,
+}: {
+  onView: (row: WorkflowRow) => void;
+  onOpenWorkflow: (row: WorkflowRow) => void;
+}): Column<WorkflowRow>[] {
+  return [
+    {
+      key: "name",
+      label: "Sơ đồ quy trình",
+      render: (value, item) => (
+        <div className="space-y-1">
+          <div className="font-semibold text-slate-900">{value as string}</div>
+          <div className="text-xs text-slate-500">{item.description || "—"}</div>
+        </div>
+      ),
+    },
+    {
+      key: "totalCount",
+      label: "Số lượng kế hoạch",
+      render: (value) => (
+        <div className="flex items-center gap-2">
+          <Layers className="h-3.5 w-3.5 text-slate-500" />
+          <span className="text-sm font-semibold text-slate-800">
+            {value as number}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: "activeCount",
+      label: "Đang triển khai",
+      render: (value) => (
+        <div className="flex items-center gap-2">
+          <Calendar className="h-3.5 w-3.5 text-blue-500" />
+          <span className="text-sm font-semibold text-blue-700">
+            {value as number}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: "draftCount",
+      label: "Theo trạng thái",
+      render: (_, item) => (
+        <div className="flex flex-wrap gap-1.5">
+          {item.draftCount > 0 && (
+            <Badge
+              variant="outline"
+              className="border-amber-200 bg-amber-50 text-[10px] font-bold text-amber-700"
+            >
+              {item.draftCount} nháp
+            </Badge>
+          )}
+          {item.activeCount > 0 && (
+            <Badge
+              variant="outline"
+              className="border-blue-200 bg-blue-50 text-[10px] font-bold text-blue-700"
+            >
+              {item.activeCount} triển khai
+            </Badge>
+          )}
+          {item.completedCount > 0 && (
+            <Badge
+              variant="outline"
+              className="border-emerald-200 bg-emerald-50 text-[10px] font-bold text-emerald-700"
+            >
+              {item.completedCount} hoàn thành
+            </Badge>
+          )}
+          {item.cancelledCount > 0 && (
+            <Badge
+              variant="outline"
+              className="border-red-200 bg-red-50 text-[10px] font-bold text-red-700"
+            >
+              {item.cancelledCount} hủy
+            </Badge>
+          )}
+          {item.totalCount === 0 && (
+            <span className="text-xs text-slate-400">Chưa có kế hoạch</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "actions",
+      label: "Thao tác",
+      render: (_, item) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-slate-400 hover:text-primary"
+            >
+              <span className="sr-only">Mở menu thao tác</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-44">
+            <DropdownMenuItem onClick={() => onView(item)}>
+              <Eye className="mr-2 h-4 w-4" />
+              Chi tiết
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={item.id === UNASSIGNED_WORKFLOW_ID}
+              onClick={() => onOpenWorkflow(item)}
+            >
+              <Workflow className="mr-2 h-4 w-4" />
+              Workflow
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+}
+
+export const animalGrowthFilters = [
   {
     key: "status",
     label: "Trạng thái",
@@ -207,37 +347,40 @@ export const aquacultureGrowthFilters = [
   },
   {
     key: "seasonName",
-    label: "Vụ nuôi",
+    label: "Lứa nuôi",
     options: [
-      { label: "Vụ nuôi Q2/2025", value: "Vụ nuôi Q2/2025" },
-      { label: "Vụ nuôi Q3/2025", value: "Vụ nuôi Q3/2025" },
-      { label: "Vụ nuôi Q4/2025", value: "Vụ nuôi Q4/2025" },
+      { label: "Vụ Xuân 2025", value: "Vụ Xuân 2025" },
+      { label: "Vụ Hè 2025", value: "Vụ Hè 2025" },
+      { label: "Vụ Thu 2025", value: "Vụ Thu 2025" },
+      { label: "Vụ Đông 2025", value: "Vụ Đông 2025" },
     ],
   },
   {
     key: "crop",
-    label: "Loài nuôi",
+    label: "Vật nuôi",
     options: [
-      { label: "Tôm thẻ chân trắng", value: "Tôm thẻ chân trắng" },
-      { label: "Cá tra", value: "Cá tra" },
-      { label: "Cá rô phi", value: "Cá rô phi" },
+      { label: "Heo thịt", value: "Heo thịt" },
+      { label: "Gà đẻ", value: "Gà đẻ" },
+      { label: "Bò thịt", value: "Bò thịt" },
     ],
   },
 ];
 
-export function PlanAquacultureGrowthStatisticsCards({
+export function PlanAnimalGrowthStatisticsCards({
   totalCount,
   draftCount,
   activeCount,
   completedCount,
+  cancelledCount,
 }: {
   totalCount: number;
   draftCount: number;
   activeCount: number;
   completedCount: number;
+  cancelledCount: number;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
       <Card className="border-slate-200 shadow-sm">
         <CardContent className="flex items-center gap-4 p-4">
           <div className="rounded-xl bg-slate-100 p-3 text-slate-700">
@@ -245,9 +388,7 @@ export function PlanAquacultureGrowthStatisticsCards({
           </div>
           <div>
             <p className="text-2xl font-bold text-slate-900">{totalCount}</p>
-            <p className="text-sm text-muted-foreground">
-              Tổng kế hoạch nuôi trồng thủy sản
-            </p>
+            <p className="text-sm text-muted-foreground">Tổng kế hoạch</p>
           </div>
         </CardContent>
       </Card>
@@ -279,8 +420,23 @@ export function PlanAquacultureGrowthStatisticsCards({
             <CheckCircle2 className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-slate-900">{completedCount}</p>
+            <p className="text-2xl font-bold text-slate-900">
+              {completedCount}
+            </p>
             <p className="text-sm text-muted-foreground">Đã hoàn thành</p>
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="border-slate-200 shadow-sm">
+        <CardContent className="flex items-center gap-4 p-4">
+          <div className="rounded-xl bg-red-100 p-3 text-red-600">
+            <Ban className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-slate-900">
+              {cancelledCount}
+            </p>
+            <p className="text-sm text-muted-foreground">Đã hủy</p>
           </div>
         </CardContent>
       </Card>

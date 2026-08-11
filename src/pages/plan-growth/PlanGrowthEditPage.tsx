@@ -30,14 +30,12 @@ import {
   Bug,
   Calendar,
   CheckCircle2,
-  ClipboardList,
   Clock,
   Info,
   Layers,
   Leaf,
   MapPin,
   Package,
-  Search,
   Sprout,
   Users,
   Wrench,
@@ -48,8 +46,6 @@ import GeographicalSelector from "./components/GeographicalSelector";
 import { PersonnelMultiSelectCard } from "./components/PersonnelMultiSelectCard";
 import { RegimenSelector } from "./components/RegimenSelector";
 import { StageAllocation } from "./components/StageAllocation";
-import { StageItem } from "./components/StageItem";
-import { TASK_OPTIONS } from "./data/mocks";
 import { usePlanForm } from "./hooks/usePlanForm";
 
 interface PlanGrowthEditPageProps {
@@ -75,6 +71,8 @@ export default function PlanGrowthEditPage({
     regions,
     regimens,
     growthCycles,
+    isWorkflowContext,
+    workflowInfo,
     selectionSummary,
     calculateArea,
     summarizeTaskSelections: getTaskSelectionSummary,
@@ -93,14 +91,12 @@ export default function PlanGrowthEditPage({
   } = usePlanForm("edit", basePath, { onSaved, onCancel });
 
   const [newManualStage, setNewManualStage] = useState("");
-  const [stageSearch, setStageSearch] = useState("");
   const purpose = formData.purpose as string;
   const isCultivationLike =
     purpose === "cultivation" || purpose === "facility-upgrade";
   const isTreatmentOrAmendment =
     purpose === "treatment" || purpose === "amendment";
   const isHarvest = purpose === "harvest";
-  const stageSearchTerm = stageSearch.trim().toLowerCase();
 
   const purposeOptions = [
     {
@@ -154,11 +150,6 @@ export default function PlanGrowthEditPage({
       description: "Nhập hạng mục dự kiến",
     },
   ] as const;
-
-  const harvestSuggestions = TASK_OPTIONS.map((item) => item.label).filter(
-    (label) =>
-      /thu hoạch|phân loại|đóng gói|vận chuyển|bốc xếp|kiểm tra/i.test(label),
-  );
 
   const purposeSelector = (
     <div className="space-y-4">
@@ -215,7 +206,7 @@ export default function PlanGrowthEditPage({
     {
       id: "general",
       title: "Thông tin chung",
-      description: "Mùa vụ và thời gian",
+      description: isWorkflowContext ? "Thời gian" : "Mùa vụ và thời gian",
       content: (
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="flex items-center gap-4 p-4 bg-blue-50 text-blue-900 rounded-lg border border-blue-100">
@@ -232,24 +223,26 @@ export default function PlanGrowthEditPage({
           </div>
 
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label required>Mùa vụ</Label>
-              <Select
-                value={formData.seasonId}
-                onValueChange={handleSeasonChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn mùa vụ..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {seasons.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {!isWorkflowContext && (
+              <div className="space-y-2">
+                <Label required>Mùa vụ</Label>
+                <Select
+                  value={formData.seasonId}
+                  onValueChange={handleSeasonChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn mùa vụ..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {seasons.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label required>Tên kế hoạch</Label>
               <Input
@@ -331,7 +324,7 @@ export default function PlanGrowthEditPage({
         </div>
       ),
       isValid:
-        !!formData.seasonId &&
+        (isWorkflowContext || !!formData.seasonId) &&
         !!formData.name &&
         Boolean(
           formData.plannedDurationYears ||
@@ -358,18 +351,25 @@ export default function PlanGrowthEditPage({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                        Vùng sản xuất <span className="text-red-500">*</span>
+                        Vùng sản xuất{" "}
+                        {!isWorkflowContext && (
+                          <span className="text-red-500">*</span>
+                        )}
                       </label>
                       <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
-                        Chọn 1-n khu vực/lô từ sơ đồ ban đầu
+                        {isWorkflowContext
+                          ? `Kế thừa từ quy trình${workflowInfo?.name ? ` "${workflowInfo.name}"` : ""}`
+                          : "Chọn 1-n khu vực/lô từ sơ đồ ban đầu"}
                       </span>
                     </div>
-                    <GeographicalSelector
-                      regions={regions || []}
-                      enterpriseId={selectedEnterpriseId}
-                      existingSelections={selections}
-                      onConfirm={handleGeographicalConfirm}
-                    />
+                    {!isWorkflowContext && (
+                      <GeographicalSelector
+                        regions={regions || []}
+                        enterpriseId={selectedEnterpriseId}
+                        existingSelections={selections}
+                        onConfirm={handleGeographicalConfirm}
+                      />
+                    )}
 
                     {selectionSummary.length > 0 && (
                       <div className="mt-4 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
@@ -638,7 +638,9 @@ export default function PlanGrowthEditPage({
                         setFormData((prev) => ({
                           ...prev,
                           regimenId: "",
-                          selectedStages: [],
+                          selectedStages: prev.selectedStages.filter(
+                            (stage) => !stage.startsWith(`${prev.regimenId}:`),
+                          ),
                         }))
                       }
                       className="h-7 text-[10px] font-bold text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg px-2"
@@ -652,7 +654,7 @@ export default function PlanGrowthEditPage({
                   selectedRegimenId={formData.regimenId}
                   type={formData.purpose as "treatment" | "amendment"}
                   onSelect={(regimen) => {
-                    const stages =
+                    const regimenStages =
                       regimen.steps && regimen.steps.length > 0
                         ? regimen.steps.map(
                             (step) => `${regimen.id}:${step.title}`,
@@ -661,69 +663,109 @@ export default function PlanGrowthEditPage({
                     setFormData((prev) => ({
                       ...prev,
                       regimenId: regimen.id,
-                      selectedStages: stages,
+                      selectedStages: [
+                        ...prev.selectedStages.filter(
+                          (stage) => !stage.includes(":"),
+                        ),
+                        ...regimenStages,
+                      ],
                     }));
                   }}
                 />
 
-                {!formData.regimenId && (
-                  <div className="space-y-4 pt-4 border-t border-dashed border-slate-200">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-[10px] uppercase font-black text-slate-400">
-                        Hoặc Tự nhập các giai đoạn xử lý
-                      </Label>
-                      <Badge
-                        variant="outline"
-                        className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
-                      >
-                        {formData.selectedStages.length} giai đoạn
-                      </Badge>
-                    </div>
+                {formData.regimenId &&
+                  (() => {
+                    const regimenStages = formData.selectedStages.filter(
+                      (stage) => stage.startsWith(`${formData.regimenId}:`),
+                    );
+                    if (!regimenStages.length) return null;
 
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Nhập tên giai đoạn (VD: Bón vôi, Làm đất...)"
-                        value={newManualStage}
-                        onChange={(e) => setNewManualStage(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            const name = newManualStage.trim();
-                            if (
-                              name &&
-                              !formData.selectedStages.includes(name)
-                            ) {
-                              setFormData((prev) => ({
-                                ...prev,
-                                selectedStages: [...prev.selectedStages, name],
-                              }));
-                              setNewManualStage("");
-                            }
-                          }
-                        }}
-                        className="bg-white border-slate-200 h-11 text-sm rounded-xl"
-                      />
-                      <Button
-                        type="button"
-                        onClick={() => {
+                    return (
+                      <div className="space-y-2 pt-4 border-t border-dashed border-slate-200">
+                        <Label className="text-[10px] uppercase font-black text-slate-400">
+                          Hạng mục công việc của phác đồ
+                        </Label>
+                        <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                          {regimenStages.map((stage) => (
+                            <Badge
+                              key={stage}
+                              variant="outline"
+                              className="bg-slate-50 text-slate-700 border-slate-200 text-[10px] font-bold py-1 px-2.5 h-auto"
+                            >
+                              {stage.split(":").slice(1).join(":")}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                <div className="space-y-4 pt-4 border-t border-dashed border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[10px] uppercase font-black text-slate-400">
+                      Hạng mục công việc dự kiến
+                    </Label>
+                    <Badge
+                      variant="outline"
+                      className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
+                    >
+                      {
+                        formData.selectedStages.filter(
+                          (stage) => !stage.includes(":"),
+                        ).length
+                      }{" "}
+                      mục
+                    </Badge>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Nhập tên hạng mục (VD: Bón vôi, Làm đất...)"
+                      value={newManualStage}
+                      onChange={(e) => setNewManualStage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
                           const name = newManualStage.trim();
-                          if (name && !formData.selectedStages.includes(name)) {
+                          if (
+                            name &&
+                            !formData.selectedStages.includes(name)
+                          ) {
                             setFormData((prev) => ({
                               ...prev,
                               selectedStages: [...prev.selectedStages, name],
                             }));
                             setNewManualStage("");
                           }
-                        }}
-                        className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
-                      >
-                        THÊM
-                      </Button>
-                    </div>
+                        }
+                      }}
+                      className="bg-white border-slate-200 h-11 text-sm rounded-xl"
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const name = newManualStage.trim();
+                        if (name && !formData.selectedStages.includes(name)) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            selectedStages: [...prev.selectedStages, name],
+                          }));
+                          setNewManualStage("");
+                        }
+                      }}
+                      className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
+                    >
+                      THÊM
+                    </Button>
+                  </div>
 
-                    {formData.selectedStages.length > 0 && (
-                      <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                        {formData.selectedStages.map((stage) => (
+                  {formData.selectedStages.filter(
+                    (stage) => !stage.includes(":"),
+                  ).length > 0 && (
+                    <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                      {formData.selectedStages
+                        .filter((stage) => !stage.includes(":"))
+                        .map((stage) => (
                           <Badge
                             key={stage}
                             variant="secondary"
@@ -747,287 +789,110 @@ export default function PlanGrowthEditPage({
                             </Button>
                           </Badge>
                         ))}
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
-                      <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                      <p className="text-[10px] text-amber-700 font-medium">
-                        Nhập tên các giai đoạn công việc bạn muốn triển khai.
-                        Bạn sẽ phân bổ vật tư cho từng giai đoạn ở bước tiếp
-                        theo.
-                      </p>
                     </div>
+                  )}
+
+                  <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
+                    <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <p className="text-[10px] text-amber-700 font-medium">
+                      Nhập tên các hạng mục công việc bạn muốn triển khai thêm
+                      ngoài phác đồ. Bạn sẽ phân bổ vật tư cho từng hạng mục ở
+                      bước tiếp theo.
+                    </p>
                   </div>
-                )}
+                </div>
               </div>
             )}
 
             {isCultivationLike && (
-              <div className="space-y-6 animation-slide-up">
-                {(() => {
-                  const season = seasons.find(
-                    (s) => s.id === formData.seasonId,
-                  );
-                  const seasonCycles = (season?.growthCycleIds || [])
-                    .map((cid) => growthCycles.find((gc) => gc.id === cid))
-                    .filter(Boolean);
-                  const filteredSeasonCycles = seasonCycles
-                    .map((cycle) => {
-                      const matchedStages = cycle!.stages.filter((stage) => {
-                        if (!stageSearchTerm) return true;
-                        return (
-                          cycle!.name.toLowerCase().includes(stageSearchTerm) ||
-                          stage.name.toLowerCase().includes(stageSearchTerm)
-                        );
-                      });
+              <div className="space-y-4 animation-slide-up bg-slate-50/30 p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
+                    Hạng mục công việc dự kiến
+                  </Label>
+                  <Badge
+                    variant="outline"
+                    className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
+                  >
+                    {formData.selectedStages.length} mục
+                  </Badge>
+                </div>
 
-                      return { cycle, stages: matchedStages };
-                    })
-                    .filter((group) => group.stages.length > 0);
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Nhập tên hạng mục (VD: Bón phân, Tưới nước...)"
+                    value={newManualStage}
+                    onChange={(e) => setNewManualStage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        const name = newManualStage.trim();
+                        if (name && !formData.selectedStages.includes(name)) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            selectedStages: [...prev.selectedStages, name],
+                          }));
+                          setNewManualStage("");
+                        }
+                      }
+                    }}
+                    className="bg-white border-slate-200 h-11 text-sm rounded-xl"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const name = newManualStage.trim();
+                      if (name && !formData.selectedStages.includes(name)) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          selectedStages: [...prev.selectedStages, name],
+                        }));
+                        setNewManualStage("");
+                      }
+                    }}
+                    className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
+                  >
+                    THÊM
+                  </Button>
+                </div>
 
-                  if (!season) {
-                    return (
-                      <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
-                        <p className="text-slate-400 font-medium">
-                          Vui lòng chọn mùa vụ ở bước 1
-                        </p>
-                      </div>
-                    );
-                  }
+                {formData.selectedStages.length > 0 && (
+                  <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                    {formData.selectedStages.map((stage) => (
+                      <Badge
+                        key={stage}
+                        variant="secondary"
+                        className="bg-slate-100 text-slate-700 pr-1 py-1 pl-3 h-8 rounded-lg flex items-center gap-2 border-transparent group hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
+                      >
+                        <span className="font-bold text-xs">{stage}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              selectedStages: prev.selectedStages.filter(
+                                (s) => s !== stage,
+                              ),
+                            }))
+                          }
+                          className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
 
-                  if (seasonCycles.length === 0) {
-                    return (
-                      <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
-                        <p className="text-slate-400 font-medium italic">
-                          Vùng trồng/Mùa vụ này chưa được gán quy trình mẫu.
-                        </p>
-                        <p className="text-[10px] text-slate-400 mt-2">
-                          Vui lòng kiểm tra lại cấu hình mùa vụ.
-                        </p>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div className="space-y-8">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between px-2">
-                          <Label className="text-[10px] uppercase font-black text-slate-400">
-                            Tìm giai đoạn có sẵn
-                          </Label>
-                          <Badge
-                            variant="outline"
-                            className="bg-slate-50 text-slate-600 border-slate-200 text-[10px] font-bold"
-                          >
-                            {stageSearchTerm ? "Đang lọc" : "Tất cả"}
-                          </Badge>
-                        </div>
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                          <Input
-                            value={stageSearch}
-                            onChange={(e) => setStageSearch(e.target.value)}
-                            placeholder="Tìm theo tên giai đoạn hoặc tên quy trình..."
-                            className="pl-10 h-11 rounded-xl bg-white border-slate-200"
-                          />
-                        </div>
-                      </div>
-
-                      {filteredSeasonCycles.length === 0 ? (
-                        <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
-                          <p className="text-slate-400 font-medium">
-                            Không tìm thấy giai đoạn phù hợp.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-8">
-                          {filteredSeasonCycles.map(({ cycle, stages }) => (
-                            <div
-                              key={cycle!.id}
-                              className="space-y-4 animation-fade-in"
-                            >
-                              <div className="flex items-center justify-between px-2">
-                                <div className="space-y-0.5">
-                                  <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                                    <ClipboardList className="w-4 h-4 text-emerald-500" />
-                                    {cycle!.name}
-                                  </h4>
-                                  <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-                                    {cycle!.totalDays} ngày • {stages.length} /{" "}
-                                    {cycle!.stages.length} giai đoạn
-                                  </p>
-                                </div>
-                                <Badge
-                                  variant="secondary"
-                                  className="bg-emerald-100 text-emerald-700 text-[9px] font-bold border-transparent"
-                                >
-                                  {
-                                    formData.selectedStages.filter((s) =>
-                                      s.startsWith(`${cycle!.id}:`),
-                                    ).length
-                                  }{" "}
-                                  / {cycle!.stages.length}
-                                </Badge>
-                              </div>
-
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
-                                {stages.map((stage, idx) => {
-                                  const stageKey = `${cycle!.id}:${stage.name}`;
-                                  return (
-                                    <StageItem
-                                      key={stage.id}
-                                      index={idx}
-                                      stage={stage.name}
-                                      checked={formData.selectedStages.includes(
-                                        stageKey,
-                                      )}
-                                      onChange={(c) => {
-                                        setFormData((prev) => {
-                                          const current = prev.selectedStages;
-                                          if (c && !current.includes(stageKey))
-                                            return {
-                                              ...prev,
-                                              selectedStages: [
-                                                ...current,
-                                                stageKey,
-                                              ],
-                                            };
-                                          if (!c && current.includes(stageKey))
-                                            return {
-                                              ...prev,
-                                              selectedStages: current.filter(
-                                                (s) => s !== stageKey,
-                                              ),
-                                            };
-                                          return prev;
-                                        });
-                                      }}
-                                    />
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      <div className="space-y-4 pt-4 border-t border-dashed border-slate-200">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-[10px] uppercase font-black text-slate-400">
-                            Hoặc tự nhập hạng mục công việc dự kiến
-                          </Label>
-                          <Badge
-                            variant="outline"
-                            className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
-                          >
-                            {
-                              formData.selectedStages.filter(
-                                (stage) => !stage.includes(":"),
-                              ).length
-                            }{" "}
-                            mục
-                          </Badge>
-                        </div>
-
-                        <div className="flex gap-2">
-                          <Input
-                            placeholder="Nhập tên hạng mục (VD: Bón phân, Tưới nước...)"
-                            value={newManualStage}
-                            onChange={(e) => setNewManualStage(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                const name = newManualStage.trim();
-                                if (
-                                  name &&
-                                  !formData.selectedStages.includes(name)
-                                ) {
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    selectedStages: [
-                                      ...prev.selectedStages,
-                                      name,
-                                    ],
-                                  }));
-                                  setNewManualStage("");
-                                }
-                              }
-                            }}
-                            className="bg-white border-slate-200 h-11 text-sm rounded-xl"
-                          />
-                          <Button
-                            type="button"
-                            onClick={() => {
-                              const name = newManualStage.trim();
-                              if (
-                                name &&
-                                !formData.selectedStages.includes(name)
-                              ) {
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  selectedStages: [
-                                    ...prev.selectedStages,
-                                    name,
-                                  ],
-                                }));
-                                setNewManualStage("");
-                              }
-                            }}
-                            className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
-                          >
-                            THÊM
-                          </Button>
-                        </div>
-
-                        {formData.selectedStages.filter(
-                          (stage) => !stage.includes(":"),
-                        ).length > 0 && (
-                          <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                            {formData.selectedStages
-                              .filter((stage) => !stage.includes(":"))
-                              .map((stage) => (
-                                <Badge
-                                  key={stage}
-                                  variant="secondary"
-                                  className="bg-slate-100 text-slate-700 pr-1 py-1 pl-3 h-8 rounded-lg flex items-center gap-2 border-transparent group hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
-                                >
-                                  <span className="font-bold text-xs">
-                                    {stage}
-                                  </span>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() =>
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        selectedStages:
-                                          prev.selectedStages.filter(
-                                            (s) => s !== stage,
-                                          ),
-                                      }))
-                                    }
-                                    className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </Button>
-                                </Badge>
-                              ))}
-                          </div>
-                        )}
-
-                        <div className="flex gap-3 text-[11px] text-muted-foreground bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                          <Info className="w-4 h-4 text-blue-500 shrink-0" />
-                          <p className="leading-relaxed">
-                            {purpose === "facility-upgrade"
-                              ? "Các giai đoạn được dùng để liệt kê các hạng mục nâng cấp dự kiến. Bạn có thể tìm nhanh mục có sẵn hoặc tự nhập hạng mục riêng."
-                              : "Các giai đoạn được hiển thị dựa trên quy trình mẫu đã gán cho Mùa vụ. Bạn có thể tìm nhanh giai đoạn có sẵn hoặc tự nhập hạng mục riêng."}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
+                <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
+                  <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <p className="text-[10px] text-amber-700 font-medium">
+                    {purpose === "facility-upgrade"
+                      ? "Nhập tên các hạng mục nâng cấp cơ sở vật chất bạn muốn triển khai."
+                      : "Nhập tên các hạng mục công việc dự kiến. Bạn sẽ phân bổ vật tư cho từng hạng mục ở bước tiếp theo."}
+                  </p>
+                </div>
               </div>
             )}
 
@@ -1037,171 +902,87 @@ export default function PlanGrowthEditPage({
                   <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
                     Hạng mục công việc dự kiến
                   </Label>
+                  <Badge
+                    variant="outline"
+                    className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
+                  >
+                    {formData.selectedStages.length} mục
+                  </Badge>
                 </div>
-                <div className="space-y-4 pt-4 border-t border-dashed border-slate-200">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-[10px] uppercase font-black text-slate-400">
-                      Hạng mục có sẵn
-                    </Label>
-                    <Badge
-                      variant="outline"
-                      className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
-                    >
-                      {
-                        harvestSuggestions.filter((item) =>
-                          item.toLowerCase().includes(stageSearchTerm),
-                        ).length
-                      }{" "}
-                      mục
-                    </Badge>
-                  </div>
 
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <Input
-                      value={stageSearch}
-                      onChange={(e) => setStageSearch(e.target.value)}
-                      placeholder="Tìm hạng mục có sẵn..."
-                      className="pl-10 h-11 rounded-xl bg-white border-slate-200"
-                    />
-                  </div>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Nhập tên hạng mục (VD: Tập kết, Kiểm tra, Bốc dỡ...)"
+                    value={newManualStage}
+                    onChange={(e) => setNewManualStage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        const name = newManualStage.trim();
+                        if (name && !formData.selectedStages.includes(name)) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            selectedStages: [...prev.selectedStages, name],
+                          }));
+                          setNewManualStage("");
+                        }
+                      }
+                    }}
+                    className="bg-white border-slate-200 h-11 text-sm rounded-xl"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const name = newManualStage.trim();
+                      if (name && !formData.selectedStages.includes(name)) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          selectedStages: [...prev.selectedStages, name],
+                        }));
+                        setNewManualStage("");
+                      }
+                    }}
+                    className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
+                  >
+                    THÊM
+                  </Button>
+                </div>
 
-                  {harvestSuggestions.filter((item) =>
-                    item.toLowerCase().includes(stageSearchTerm),
-                  ).length === 0 ? (
-                    <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
-                      <p className="text-slate-400 font-medium">
-                        Không tìm thấy hạng mục phù hợp.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
-                      {harvestSuggestions
-                        .filter((item) =>
-                          item.toLowerCase().includes(stageSearchTerm),
-                        )
-                        .map((item, idx) => (
-                          <StageItem
-                            key={item}
-                            index={idx}
-                            stage={item}
-                            checked={formData.selectedStages.includes(item)}
-                            onChange={(checked) => {
-                              setFormData((prev) => {
-                                const current = prev.selectedStages;
-                                if (checked && !current.includes(item)) {
-                                  return {
-                                    ...prev,
-                                    selectedStages: [...current, item],
-                                  };
-                                }
-                                if (!checked && current.includes(item)) {
-                                  return {
-                                    ...prev,
-                                    selectedStages: current.filter(
-                                      (s) => s !== item,
-                                    ),
-                                  };
-                                }
-                                return prev;
-                              });
-                            }}
-                          />
-                        ))}
-                    </div>
-                  )}
-
-                  <div className="space-y-4 pt-4 border-t border-dashed border-slate-200">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-[10px] uppercase font-black text-slate-400">
-                        Hoặc tự nhập hạng mục công việc dự kiến
-                      </Label>
+                {formData.selectedStages.length > 0 && (
+                  <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                    {formData.selectedStages.map((stage) => (
                       <Badge
-                        variant="outline"
-                        className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
+                        key={stage}
+                        variant="secondary"
+                        className="bg-slate-100 text-slate-700 pr-1 py-1 pl-3 h-8 rounded-lg flex items-center gap-2 border-transparent group hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
                       >
-                        {formData.selectedStages.length} hạng mục
-                      </Badge>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Nhập tên hạng mục (VD: Tập kết, Kiểm tra, Bốc dỡ...)"
-                        value={newManualStage}
-                        onChange={(e) => setNewManualStage(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            const name = newManualStage.trim();
-                            if (
-                              name &&
-                              !formData.selectedStages.includes(name)
-                            ) {
-                              setFormData((prev) => ({
-                                ...prev,
-                                selectedStages: [...prev.selectedStages, name],
-                              }));
-                              setNewManualStage("");
-                            }
-                          }
-                        }}
-                        className="bg-white border-slate-200 h-11 text-sm rounded-xl"
-                      />
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          const name = newManualStage.trim();
-                          if (name && !formData.selectedStages.includes(name)) {
+                        <span className="font-bold text-xs">{stage}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
                             setFormData((prev) => ({
                               ...prev,
-                              selectedStages: [...prev.selectedStages, name],
-                            }));
-                            setNewManualStage("");
+                              selectedStages: prev.selectedStages.filter(
+                                (s) => s !== stage,
+                              ),
+                            }))
                           }
-                        }}
-                        className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
-                      >
-                        THÊM
-                      </Button>
-                    </div>
-
-                    {formData.selectedStages.length > 0 && (
-                      <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                        {formData.selectedStages.map((stage) => (
-                          <Badge
-                            key={stage}
-                            variant="secondary"
-                            className="bg-slate-100 text-slate-700 pr-1 py-1 pl-3 h-8 rounded-lg flex items-center gap-2 border-transparent group hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
-                          >
-                            <span className="font-bold text-xs">{stage}</span>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  selectedStages: prev.selectedStages.filter(
-                                    (s) => s !== stage,
-                                  ),
-                                }))
-                              }
-                              className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
-                      <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                      <p className="text-[10px] text-amber-700 font-medium">
-                        Nhập các hạng mục công việc dự kiến để phân bổ vật tư và
-                        nhân sự ở bước tiếp theo.
-                      </p>
-                    </div>
+                          className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </Badge>
+                    ))}
                   </div>
+                )}
+
+                <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
+                  <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <p className="text-[10px] text-amber-700 font-medium">
+                    Nhập các hạng mục công việc dự kiến để phân bổ vật tư và
+                    nhân sự ở bước tiếp theo.
+                  </p>
                 </div>
               </div>
             )}
@@ -1393,14 +1174,16 @@ export default function PlanGrowthEditPage({
               </CardHeader>
               <CardContent className="pt-4 space-y-5">
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                      Mùa vụ
-                    </label>
-                    <p className="font-medium mt-1 text-slate-800">
-                      {formData.seasonName}
-                    </p>
-                  </div>
+                  {!isWorkflowContext && (
+                    <div>
+                      <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                        Mùa vụ
+                      </label>
+                      <p className="font-medium mt-1 text-slate-800">
+                        {formData.seasonName}
+                      </p>
+                    </div>
+                  )}
                   <div>
                     <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                       Cây trồng

@@ -19,7 +19,7 @@ import {
   Plus,
   Search,
 } from "lucide-react";
-import type { GeographicalSelection } from "../aquacultureGrowthTypes";
+import type { GeographicalSelection } from "../types";
 
 const GeographicalSelector = ({
   regions,
@@ -206,7 +206,7 @@ const GeographicalSelector = ({
               Chọn phạm vi nuôi trồng thủy sản
             </DialogTitle>
             <p className="text-xs text-muted-foreground mt-1">
-              Bạn có thể chọn Ao nuôi, Khu vực hoặc từng Lô nuôi cụ thể
+              Bạn có thể chọn Ao nuôi, Khu vực hoặc từng Ô ao cụ thể
             </p>
           </DialogHeader>
 

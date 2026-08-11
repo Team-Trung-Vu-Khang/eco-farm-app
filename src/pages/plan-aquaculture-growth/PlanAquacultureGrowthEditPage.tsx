@@ -30,7 +30,6 @@ import {
   Bug,
   Calendar,
   CheckCircle2,
-  ClipboardList,
   Clock,
   Info,
   Layers,
@@ -43,11 +42,10 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { PersonnelMultiSelectCard } from "../plan-growth/components/PersonnelMultiSelectCard";
 import GeographicalSelector from "./components/GeographicalSelector";
+import { PersonnelMultiSelectCard } from "./components/PersonnelMultiSelectCard";
 import { RegimenSelector } from "./components/RegimenSelector";
 import { StageAllocation } from "./components/StageAllocation";
-import { StageItem } from "./components/StageItem";
 import { useAquacultureGrowthForm } from "./hooks/useAquacultureGrowthForm";
 
 interface PlanAquacultureGrowthEditPageProps {
@@ -66,11 +64,15 @@ export default function PlanAquacultureGrowthEditPage({
     formData,
     setFormData,
     selections,
-    personnel,
+    setSelections,
+    selectedEnterpriseId,
     seasons,
+    personnel,
     regions,
     regimens,
     growthCycles,
+    isWorkflowContext,
+    workflowInfo,
     selectionSummary,
     calculateArea,
     summarizeTaskSelections: getTaskSelectionSummary,
@@ -92,14 +94,119 @@ export default function PlanAquacultureGrowthEditPage({
   const purpose = formData.purpose as string;
   const isCultivationLike =
     purpose === "cultivation" || purpose === "facility-upgrade";
+  const isTreatmentOrAmendment =
+    purpose === "treatment" || purpose === "amendment";
   const isHarvest = purpose === "harvest";
-  const isWorkItemPurpose = isCultivationLike || isHarvest;
+
+  const purposeOptions = [
+    {
+      id: "cultivation",
+      label: "Nuôi trồng thủy sản",
+      icon: Layers,
+      borderColor: "border-blue-500",
+      bgColor: "bg-blue-50/50",
+      activeColor: "bg-blue-500",
+      textColor: "text-blue-700",
+      description: "Sử dụng quy trình chuẩn",
+    },
+    {
+      id: "facility-upgrade",
+      label: "Nâng cấp cơ sở vật chất",
+      icon: Wrench,
+      borderColor: "border-slate-500",
+      bgColor: "bg-slate-50/80",
+      activeColor: "bg-slate-700",
+      textColor: "text-slate-700",
+      description: "Nhập hạng mục công việc dự kiến",
+    },
+    {
+      id: "treatment",
+      label: "Điều trị",
+      icon: Bug,
+      borderColor: "border-red-500",
+      bgColor: "bg-red-50/50",
+      activeColor: "bg-red-500",
+      textColor: "text-red-700",
+      description: "Áp dụng phác đồ xử lý",
+    },
+    {
+      id: "amendment",
+      label: "Cải tạo ao trại",
+      icon: Sprout,
+      borderColor: "border-green-500",
+      bgColor: "bg-green-50/50",
+      activeColor: "bg-green-500",
+      textColor: "text-green-700",
+      description: "Xử lý và phục hồi",
+    },
+    {
+      id: "harvest",
+      label: "Thu hoạch",
+      icon: Apple,
+      borderColor: "border-orange-500",
+      bgColor: "bg-orange-50/50",
+      activeColor: "bg-orange-500",
+      textColor: "text-orange-700",
+      description: "Nhập hạng mục dự kiến",
+    },
+  ] as const;
+
+  const purposeSelector = (
+    <div className="space-y-4">
+      <Label className="text-base font-bold text-slate-800">
+        Mục đích kế hoạch
+      </Label>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {purposeOptions.map((type) => (
+          <button
+            key={type.id}
+            type="button"
+            onClick={() => {
+              setFormData((prev) => ({
+                ...prev,
+                purpose: type.id as any,
+                selectedStages: [],
+                regimenId:
+                  type.id === "treatment" || type.id === "amendment"
+                    ? prev.regimenId
+                    : "",
+              }));
+              setStageSearch("");
+            }}
+            className={cn(
+              "cursor-pointer p-4 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-1 group relative overflow-hidden",
+              formData.purpose === type.id
+                ? `${type.borderColor} ${type.bgColor} ${type.textColor} shadow-md`
+                : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm",
+            )}
+          >
+            <div
+              className={cn(
+                "w-10 h-10 rounded-xl flex items-center justify-center mb-1 group-hover:scale-110 transition-transform",
+                formData.purpose === type.id
+                  ? `${type.activeColor} text-white`
+                  : "bg-slate-50 text-slate-400",
+              )}
+            >
+              <type.icon className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-black uppercase tracking-tight">
+              {type.label}
+            </span>
+            <span className="text-[10px] opacity-60 font-medium">
+              {type.description}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   const steps: Step[] = [
     {
       id: "general",
       title: "Thông tin chung",
-      description: "Vụ nuôi và thời gian",
+      description: isWorkflowContext ? "Thời gian" : "Vụ nuôi và thời gian",
       content: (
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="flex items-center gap-4 p-4 bg-blue-50 text-blue-900 rounded-lg border border-blue-100">
@@ -107,37 +214,35 @@ export default function PlanAquacultureGrowthEditPage({
               <Sprout className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h3 className="font-semibold">
-                Thiết lập kế hoạch nuôi trồng thủy sản
-              </h3>
+              <h3 className="font-semibold">Chỉnh sửa kế hoạch</h3>
               <p className="text-sm text-blue-700">
-                Bắt đầu bằng việc chọn vụ nuôi và đặt tên cho kế hoạch của bạn.
+                Chọn vụ nuôi, nhập thời gian dự kiến và đặt tên cho kế hoạch của
+                bạn.
               </p>
             </div>
           </div>
 
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>
-                Vụ nuôi <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={formData.seasonId}
-                onValueChange={handleSeasonChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn vụ nuôi..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {seasons.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
+            {!isWorkflowContext && (
+              <div className="space-y-2">
+                <Label required>Vụ nuôi</Label>
+                <Select
+                  value={formData.seasonId}
+                  onValueChange={handleSeasonChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn vụ nuôi..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {seasons.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label required>Tên kế hoạch</Label>
               <Input
@@ -148,7 +253,6 @@ export default function PlanAquacultureGrowthEditPage({
                 placeholder="VD: Kế hoạch Đông Xuân"
               />
             </div>
-
             <div className="space-y-2">
               <Label required>Thời gian dự kiến</Label>
               <div className="flex items-center gap-4 rounded-lg border px-4 shadow-sm">
@@ -214,111 +318,13 @@ export default function PlanAquacultureGrowthEditPage({
                 rows={3}
               />
             </div>
-
-            <div className="space-y-4">
-              <Label className="text-base font-bold text-slate-800">
-                Mục đích kế hoạch
-              </Label>
-              <div className="grid grid-cols-5 gap-4">
-                {[
-                  {
-                    id: "cultivation",
-                    label: "Nuôi trồng",
-                    icon: Layers,
-                    borderColor: "border-blue-500",
-                    bgColor: "bg-blue-50/50",
-                    activeColor: "bg-blue-500",
-                    textColor: "text-blue-700",
-                    description: "Áp dụng quy trình chuẩn cho ao nuôi",
-                  },
-                  {
-                    id: "facility-upgrade",
-                    label: "Cải tạo cơ sở vật chất",
-                    icon: Wrench,
-                    borderColor: "border-slate-500",
-                    bgColor: "bg-slate-50/80",
-                    activeColor: "bg-slate-700",
-                    textColor: "text-slate-700",
-                    description: "Nhập hạng mục công việc dự kiến",
-                  },
-                  {
-                    id: "treatment",
-                    label: "Điều trị bệnh",
-                    icon: Bug,
-                    borderColor: "border-red-500",
-                    bgColor: "bg-red-50/50",
-                    activeColor: "bg-red-500",
-                    textColor: "text-red-700",
-                    description: "Xử lý sự cố và phòng bệnh",
-                  },
-                  {
-                    id: "amendment",
-                    label: "Cải tạo ao",
-                    icon: Sprout,
-                    borderColor: "border-green-500",
-                    bgColor: "bg-green-50/50",
-                    activeColor: "bg-green-500",
-                    textColor: "text-green-700",
-                    description: "Cải tạo môi trường và đáy ao",
-                  },
-                  {
-                    id: "harvest",
-                    label: "Thu hoạch",
-                    icon: Apple,
-                    borderColor: "border-orange-500",
-                    bgColor: "bg-orange-50/50",
-                    activeColor: "bg-orange-500",
-                    textColor: "text-orange-700",
-                    description: "Thu hoạch",
-                  },
-                ].map((type) => (
-                  <button
-                    key={type.id}
-                    type="button"
-                    onClick={() =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        purpose: type.id as any,
-                        selectedStages:
-                          type.id === "harvest" ? ["Thu hoạch"] : [],
-                        regimenId:
-                          type.id === "treatment" || type.id === "amendment"
-                            ? prev.regimenId
-                            : "",
-                      }))
-                    }
-                    className={cn(
-                      "cursor-pointer p-4 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-1 group relative overflow-hidden",
-                      formData.purpose === type.id
-                        ? `${type.borderColor} ${type.bgColor} ${type.textColor} shadow-md`
-                        : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm",
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "w-10 h-10 rounded-xl flex items-center justify-center mb-1 group-hover:scale-110 transition-transform",
-                        formData.purpose === type.id
-                          ? `${type.activeColor} text-white`
-                          : "bg-slate-50 text-slate-400",
-                      )}
-                    >
-                      <type.icon className="w-5 h-5" />
-                    </div>
-                    <span className="text-xs font-black uppercase tracking-tight">
-                      {type.label}
-                    </span>
-                    <span className="text-[10px] opacity-60 font-medium">
-                      {type.description}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
+
+          {purposeSelector}
         </div>
       ),
       isValid:
-        !!formData.seasonId &&
+        (isWorkflowContext || !!formData.seasonId) &&
         !!formData.name &&
         Boolean(
           formData.plannedDurationYears ||
@@ -328,34 +334,42 @@ export default function PlanAquacultureGrowthEditPage({
     },
     {
       id: "scope",
-      title: "Phạm vi & Loài nuôi",
-      description: "Chọn ao nuôi và loài nuôi",
+      title: "Phạm vi nuôi trồng thủy sản & sản xuất",
+      description: "Chọn vùng và nhân sự",
       content: (
         <div className="max-w-4xl mx-auto space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-6">
-              {/* Vùng nuôi trồng thủy sản Selection */}
               <div className="space-y-4">
                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 text-xs font-bold">
                     1
                   </span>
-                  Phạm vi nuôi trồng thủy sản
+                  Phạm vi nuôi trồng thủy sản & sản xuất
                 </h3>
-                <div className="p-5 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm space-y-4 relative">
+                <div className="p-5 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm space-y-4">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                        Vùng nuôi trồng thủy sản{" "}
-                        <span className="text-red-500">*</span>
+                        Vùng sản xuất{" "}
+                        {!isWorkflowContext && (
+                          <span className="text-red-500">*</span>
+                        )}
                       </label>
+                      <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
+                        {isWorkflowContext
+                          ? `Kế thừa từ quy trình${workflowInfo?.name ? ` "${workflowInfo.name}"` : ""}`
+                          : "Chọn 1-n khu vực/lô từ sơ đồ ban đầu"}
+                      </span>
                     </div>
-                    <GeographicalSelector
-                      regions={regions || []}
-                      enterpriseId=""
-                      existingSelections={selections}
-                      onConfirm={handleGeographicalConfirm}
-                    />
+                    {!isWorkflowContext && (
+                      <GeographicalSelector
+                        regions={regions || []}
+                        enterpriseId={selectedEnterpriseId}
+                        existingSelections={selections}
+                        onConfirm={handleGeographicalConfirm}
+                      />
+                    )}
 
                     {selectionSummary.length > 0 && (
                       <div className="mt-4 p-4 rounded-xl bg-white/50 border border-emerald-100/50 space-y-3">
@@ -389,7 +403,7 @@ export default function PlanAquacultureGrowthEditPage({
                                         ? "Vùng"
                                         : item.type === "area"
                                           ? "Khu"
-                                          : "Lô nuôi"}
+                                          : "Lô"}
                                     </span>
                                     {item.name}
                                     {item.parentName && (
@@ -408,6 +422,7 @@ export default function PlanAquacultureGrowthEditPage({
                   </div>
                 </div>
               </div>
+
               <div className="space-y-4">
                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-bold">
@@ -446,41 +461,38 @@ export default function PlanAquacultureGrowthEditPage({
                   />
                 </div>
               </div>
-              {/* Ghi chú Section */}
+
               <div className="space-y-2">
-                <Label className="text-slate-700 font-bold">Ghi chú</Label>
+                <Label className="text-slate-700 font-bold">
+                  Ghi chú phạm vi
+                </Label>
                 <Textarea
-                  placeholder="Nhập thông tin ghi chú thêm..."
+                  placeholder="Nhập ghi chú thêm..."
                   value={formData.description}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
-                  className="bg-white border-slate-200 min-h-[100px]"
+                  className="bg-white"
                 />
               </div>
             </div>
 
             <div className="space-y-6">
-              {/* Summary Section */}
               <div className="space-y-4">
                 <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
                   <Package className="w-4 h-4 text-emerald-600" />
                   Tóm tắt phạm vi đã chọn
                 </h3>
-                <div className="bg-linear-to-br from-emerald-600 to-teal-700 p-6 rounded-3xl text-white shadow-xl space-y-6 relative overflow-hidden">
-                  {/* Decorative blobs */}
-                  <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-                  <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-24 h-24 bg-black/10 rounded-full blur-2xl" />
-
-                  <div className="flex items-start gap-4 relative z-10">
-                    <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg ring-1 ring-white/30">
+                <div className="bg-linear-to-br from-emerald-600 to-teal-700 p-6 rounded-3xl text-white shadow-xl space-y-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center">
                       <MapPin className="w-7 h-7 text-white" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-emerald-100 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">
+                      <p className="text-emerald-100 text-[10px] font-bold uppercase tracking-widest mb-1">
                         Khu vực nuôi trồng thủy sản
                       </p>
-                      <h4 className="text-2xl font-black leading-tight tracking-tight">
+                      <h4 className="text-xl font-black leading-tight">
                         {regions
                           .filter((r) =>
                             formData.selectedRegionIds.includes(
@@ -491,64 +503,91 @@ export default function PlanAquacultureGrowthEditPage({
                           .join(", ") || "Chưa chọn vùng"}
                       </h4>
                       <div className="flex items-center gap-3 mt-2">
-                        <Badge
-                          variant="secondary"
-                          className="bg-white/20 text-white border-transparent text-[10px] font-bold h-5"
-                        >
-                          {formData.selectedPlotIds.length} LÔ NUÔI
+                        <Badge className="bg-white/20 text-white font-bold h-5">
+                          {formData.selectedPlotIds.length} LÔ ĐẤT
                         </Badge>
-                        <Badge
-                          variant="secondary"
-                          className="bg-white/20 text-white border-transparent text-[10px] font-bold h-5"
-                        >
+                        <Badge className="bg-white/20 text-white font-bold h-5">
                           {calculateArea()} HA
                         </Badge>
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 relative z-10">
+                  <div className="grid grid-cols-1 gap-3">
                     <div className="bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-sm">
-                      <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider mb-1">
-                        Loài nuôi
+                      <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider mb-2">
+                        Nhân sự quản lý
                       </p>
-                      <p className="font-bold text-sm truncate">
-                        {formData.crop || "---"}
-                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {formData.managementPersonnelIds.length > 0 ? (
+                          formData.managementPersonnelIds.map((id) => {
+                            const person = personnel.find(
+                              (item) => String(item.id) === String(id),
+                            );
+                            return person ? (
+                              <Badge
+                                key={id}
+                                variant="secondary"
+                                className="bg-white/20 text-white border-transparent text-[10px] h-5"
+                              >
+                                {person.fullName}
+                              </Badge>
+                            ) : null;
+                          })
+                        ) : (
+                          <span className="text-xs text-white/60">---</span>
+                        )}
+                      </div>
                     </div>
+
                     <div className="bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-sm">
-                      <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider mb-1">
-                        Giống
+                      <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider mb-2">
+                        Kiểm định chất lượng
                       </p>
-                      <p className="font-bold text-sm truncate">
-                        {formData.variety || "---"}
-                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {formData.qualityInspectorPersonnelIds.length > 0 ? (
+                          formData.qualityInspectorPersonnelIds.map((id) => {
+                            const person = personnel.find(
+                              (item) => String(item.id) === String(id),
+                            );
+                            return person ? (
+                              <Badge
+                                key={id}
+                                variant="secondary"
+                                className="bg-white/20 text-white border-transparent text-[10px] h-5"
+                              >
+                                {person.fullName}
+                              </Badge>
+                            ) : null;
+                          })
+                        ) : (
+                          <span className="text-xs text-white/60">---</span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   {selectionSummary.length > 0 && (
-                    <div className="space-y-3 relative z-10">
-                      <div className="flex items-center justify-between">
-                        <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider">
-                          Chi tiết phạm vi
-                        </p>
-                      </div>
-                      <ScrollArea className="h-32 pr-2">
+                    <div className="space-y-3">
+                      <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider">
+                        Chi tiết phạm vi
+                      </p>
+                      <ScrollArea className="h-40 pr-2">
                         <div className="space-y-3">
                           {selectionSummary.map((group) => (
                             <div key={group.regionId} className="space-y-1.5">
-                              <div className="text-[10px] font-bold text-emerald-100 uppercase tracking-wider opacity-60">
+                              <div className="text-[10px] font-bold text-emerald-100 uppercase opacity-60">
                                 {group.regionName}
                               </div>
                               {group.items.map((item, idx) => (
                                 <div
                                   key={idx}
-                                  className="flex items-center justify-between p-2 rounded-xl bg-white/10 border border-white/5 hover:bg-white/15 transition-colors"
+                                  className="flex items-center justify-between p-2 rounded-xl bg-white/10 border border-white/5"
                                 >
                                   <div className="flex items-center gap-2">
                                     <div
                                       className={cn(
-                                        "w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.5)]",
+                                        "w-1.5 h-1.5 rounded-full",
                                         item.type === "region"
                                           ? "bg-amber-400"
                                           : item.type === "area"
@@ -556,24 +595,10 @@ export default function PlanAquacultureGrowthEditPage({
                                             : "bg-emerald-400",
                                       )}
                                     />
-                                    <div className="flex flex-col">
-                                      <span className="text-[10px] uppercase font-black opacity-40 leading-none mb-0.5">
-                                        {item.type === "region"
-                                          ? "Toàn vùng"
-                                          : item.type === "area"
-                                            ? "Khu vực"
-                                            : "Lô nuôi"}
-                                      </span>
-                                      <span className="text-xs font-medium truncate max-w-[150px]">
-                                        {item.name}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  {item.parentName && (
-                                    <span className="text-[9px] font-bold opacity-50 italic truncate max-w-[80px]">
-                                      {item.parentName}
+                                    <span className="text-xs font-medium">
+                                      {item.name}
                                     </span>
-                                  )}
+                                  </div>
                                 </div>
                               ))}
                             </div>
@@ -582,19 +607,6 @@ export default function PlanAquacultureGrowthEditPage({
                       </ScrollArea>
                     </div>
                   )}
-
-                  <div className="bg-black/20 p-4 rounded-2xl border border-white/10 relative z-10">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Info className="w-4 h-4 text-emerald-300" />
-                      <span className="text-[10px] font-black text-emerald-200 uppercase tracking-widest">
-                        Lưu ý
-                      </span>
-                    </div>
-                    <p className="text-xs text-emerald-50/80 leading-relaxed italic text-justify">
-                      Quy trình nuôi trồng thủy sản sẽ được áp dụng đồng bộ cho
-                      tất cả các lô nuôi đã chọn trong danh sách trên.
-                    </p>
-                  </div>
                 </div>
               </div>
             </div>
@@ -609,294 +621,88 @@ export default function PlanAquacultureGrowthEditPage({
       description: "Lộ trình nuôi trồng thủy sản",
       content: (
         <div className="max-w-2xl mx-auto space-y-6">
-          {formData.purpose === "harvest" ? null : (
-            <div className="space-y-6">
-              {(formData.purpose === "treatment" ||
-                formData.purpose === "amendment") && (
-                <div className="space-y-4 animation-slide-up bg-slate-50/30 p-6 rounded-3xl border border-slate-100 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
-                      {formData.purpose === "treatment"
-                        ? "Phác đồ điều trị"
-                        : "Phác đồ cải tạo ao"}
-                    </Label>
-                    {formData.regimenId && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            regimenId: "",
-                            selectedStages: [],
-                          }))
-                        }
-                        className="h-7 text-[10px] font-bold text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg px-2"
-                      >
-                        XÓA PHÁC ĐỒ
-                      </Button>
-                    )}
-                  </div>
-                  <RegimenSelector
-                    regimens={regimens}
-                    selectedRegimenId={formData.regimenId}
-                    type={formData.purpose as "treatment" | "amendment"}
-                    onSelect={(regimen) => {
-                      const stages =
-                        regimen.steps && regimen.steps.length > 0
-                          ? regimen.steps.map(
-                              (step) => `${regimen.id}:${step.title}`,
-                            )
-                          : [`${regimen.id}:${regimen.name}`];
-                      setFormData((prev) => ({
-                        ...prev,
-                        regimenId: regimen.id,
-                        selectedStages: stages,
-                      }));
-                    }}
-                  />
-
-                  {!formData.regimenId && (
-                    <div className="space-y-4 pt-4 border-t border-dashed border-slate-200">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-[10px] uppercase font-black text-slate-400">
-                          Hoặc Tự nhập các giai đoạn xử lý
-                        </Label>
-                        <Badge
-                          variant="outline"
-                          className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
-                        >
-                          {formData.selectedStages.length} giai đoạn
-                        </Badge>
-                      </div>
-
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Nhập tên giai đoạn (VD: Bón vôi, Làm đất...)"
-                          value={newManualStage}
-                          onChange={(e) => setNewManualStage(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              const name = newManualStage.trim();
-                              if (
-                                name &&
-                                !formData.selectedStages.includes(name)
-                              ) {
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  selectedStages: [
-                                    ...prev.selectedStages,
-                                    name,
-                                  ],
-                                }));
-                                setNewManualStage("");
-                              }
-                            }
-                          }}
-                          className="bg-white border-slate-200 h-11 text-sm rounded-xl"
-                        />
-                        <Button
-                          type="button"
-                          onClick={() => {
-                            const name = newManualStage.trim();
-                            if (
-                              name &&
-                              !formData.selectedStages.includes(name)
-                            ) {
-                              setFormData((prev) => ({
-                                ...prev,
-                                selectedStages: [...prev.selectedStages, name],
-                              }));
-                              setNewManualStage("");
-                            }
-                          }}
-                          className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
-                        >
-                          THÊM
-                        </Button>
-                      </div>
-
-                      {formData.selectedStages.length > 0 && (
-                        <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                          {formData.selectedStages.map((stage) => (
-                            <Badge
-                              key={stage}
-                              variant="secondary"
-                              className="bg-slate-100 text-slate-700 pr-1 py-1 pl-3 h-8 rounded-lg flex items-center gap-2 border-transparent group hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
-                            >
-                              <span className="font-bold text-xs">{stage}</span>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    selectedStages: prev.selectedStages.filter(
-                                      (s) => s !== stage,
-                                    ),
-                                  }))
-                                }
-                                className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
-                              >
-                                <X className="w-3 h-3" />
-                              </Button>
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
-                        <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <p className="text-[10px] text-amber-700 font-medium">
-                          Nhập tên các giai đoạn công việc bạn muốn triển khai.
-                          Bạn sẽ phân bổ vật tư cho từng giai đoạn ở bước tiếp
-                          theo.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
+          <div className="space-y-6">
+            {isTreatmentOrAmendment && (
+              <div className="space-y-4 animation-slide-up bg-slate-50/30 p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
+                    {purpose === "treatment"
+                      ? "Phác đồ điều trị"
+                      : "Phác đồ cải tạo ao trại"}
+                  </Label>
                   {formData.regimenId && (
-                    <div className="p-5 rounded-2xl bg-blue-50/50 border border-blue-100 flex gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center border border-blue-200 text-blue-500 shrink-0 shadow-sm">
-                        <Clock className="w-5 h-5" />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-xs font-bold text-blue-900">
-                          Tính chất lộ trình
-                        </p>
-                        <p className="text-[11px] text-blue-700 leading-relaxed">
-                          Phác đồ này được thiết kế để xử lý vấn đề hiện tại.
-                          Bạn có thể phân bổ vật tư điều trị ở bước tiếp theo.
-                        </p>
-                      </div>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          regimenId: "",
+                          selectedStages: prev.selectedStages.filter(
+                            (stage) => !stage.startsWith(`${prev.regimenId}:`),
+                          ),
+                        }))
+                      }
+                      className="h-7 text-[10px] font-bold text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg px-2"
+                    >
+                      XÓA PHÁC ĐỒ
+                    </Button>
                   )}
                 </div>
-              )}
+                <RegimenSelector
+                  regimens={regimens}
+                  selectedRegimenId={formData.regimenId}
+                  type={formData.purpose as "treatment" | "amendment"}
+                  onSelect={(regimen) => {
+                    const regimenStages =
+                      regimen.steps && regimen.steps.length > 0
+                        ? regimen.steps.map(
+                            (step) => `${regimen.id}:${step.title}`,
+                          )
+                        : [`${regimen.id}:${regimen.name}`];
+                    setFormData((prev) => ({
+                      ...prev,
+                      regimenId: regimen.id,
+                      selectedStages: [
+                        ...prev.selectedStages.filter(
+                          (stage) => !stage.includes(":"),
+                        ),
+                        ...regimenStages,
+                      ],
+                    }));
+                  }}
+                />
 
-              {isCultivationLike && (
-                <div className="space-y-6 animation-slide-up">
-                  {(() => {
-                    const season = seasons.find(
-                      (s) => s.id === formData.seasonId,
+                {formData.regimenId &&
+                  (() => {
+                    const regimenStages = formData.selectedStages.filter(
+                      (stage) => stage.startsWith(`${formData.regimenId}:`),
                     );
-                    const seasonCycles = (season?.growthCycleIds || [])
-                      .map((cid) => growthCycles.find((gc) => gc.id === cid))
-                      .filter(Boolean);
-
-                    if (!season) {
-                      return (
-                        <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
-                          <p className="text-slate-400 font-medium">
-                            Vui lòng chọn mùa vụ ở bước 1
-                          </p>
-                        </div>
-                      );
-                    }
-
-                    if (seasonCycles.length === 0) {
-                      return (
-                        <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
-                          <p className="text-slate-400 font-medium italic">
-                            Ao nuôi/Vụ nuôi này chưa được gán quy trình mẫu.
-                          </p>
-                          <p className="text-[10px] text-slate-400 mt-2">
-                            Vui lòng kiểm tra lại cấu hình mùa vụ.
-                          </p>
-                        </div>
-                      );
-                    }
+                    if (!regimenStages.length) return null;
 
                     return (
-                      <div className="space-y-8">
-                        {seasonCycles.map((cycle) => (
-                          <div
-                            key={cycle!.id}
-                            className="space-y-4 animation-fade-in"
-                          >
-                            <div className="flex items-center justify-between px-2">
-                              <div className="space-y-0.5">
-                                <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                                  <ClipboardList className="w-4 h-4 text-emerald-500" />
-                                  {cycle!.name}
-                                </h4>
-                                <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-                                  {cycle!.totalDays} ngày •{" "}
-                                  {cycle!.stages.length} giai đoạn
-                                </p>
-                              </div>
-                              <Badge
-                                variant="secondary"
-                                className="bg-emerald-100 text-emerald-700 text-[9px] font-bold border-transparent"
-                              >
-                                {
-                                  formData.selectedStages.filter((s) =>
-                                    s.startsWith(`${cycle!.id}:`),
-                                  ).length
-                                }{" "}
-                                / {cycle!.stages.length}
-                              </Badge>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
-                              {cycle!.stages.map((stage, idx) => {
-                                const stageKey = `${cycle!.id}:${stage.name}`;
-
-                                return (
-                                  <StageItem
-                                    key={stage.id}
-                                    index={idx}
-                                    stage={stage.name}
-                                    checked={formData.selectedStages.includes(
-                                      stageKey,
-                                    )}
-                                    onChange={(c) => {
-                                      setFormData((prev) => {
-                                        const current = prev.selectedStages;
-                                        if (c && !current.includes(stageKey))
-                                          return {
-                                            ...prev,
-                                            selectedStages: [
-                                              ...current,
-                                              stageKey,
-                                            ],
-                                          };
-                                        if (!c && current.includes(stageKey))
-                                          return {
-                                            ...prev,
-                                            selectedStages: current.filter(
-                                              (s) => s !== stageKey,
-                                            ),
-                                          };
-                                        return prev;
-                                      });
-                                    }}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ))}
-
-                        <div className="flex gap-3 text-[11px] text-muted-foreground bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                          <Info className="w-4 h-4 text-blue-500 shrink-0" />
-                          <p className="leading-relaxed">
-                            {isCultivationLike
-                              ? "Các giai đoạn được hiển thị dựa trên quy trình mẫu đã gán cho vụ nuôi. Bạn có thể chọn lọc các giai đoạn thực tế sẽ triển khai."
-                              : "Các giai đoạn được hiển thị từ quy trình nuôi trồng thủy sản chuẩn để bạn có thể tùy chỉnh lộ trình xử lý riêng."}
-                          </p>
+                      <div className="space-y-2 pt-4 border-t border-dashed border-slate-200">
+                        <Label className="text-[10px] uppercase font-black text-slate-400">
+                          Hạng mục công việc của phác đồ
+                        </Label>
+                        <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                          {regimenStages.map((stage) => (
+                            <Badge
+                              key={stage}
+                              variant="outline"
+                              className="bg-slate-50 text-slate-700 border-slate-200 text-[10px] font-bold py-1 px-2.5 h-auto"
+                            >
+                              {stage.split(":").slice(1).join(":")}
+                            </Badge>
+                          ))}
                         </div>
                       </div>
                     );
                   })()}
-                </div>
-              )}
-              {isWorkItemPurpose && (
-                <div className="space-y-3 animation-slide-up">
+
+                <div className="space-y-4 pt-4 border-t border-dashed border-slate-200">
                   <div className="flex items-center justify-between">
-                    <Label className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+                    <Label className="text-[10px] uppercase font-black text-slate-400">
                       Hạng mục công việc dự kiến
                     </Label>
                     <Badge
@@ -914,14 +720,17 @@ export default function PlanAquacultureGrowthEditPage({
 
                   <div className="flex gap-2">
                     <Input
-                      placeholder="Nhập tên hạng mục (VD: Tập kết, Kiểm tra, Bốc dỡ...)"
+                      placeholder="Nhập tên hạng mục (VD: Bón vôi, Làm ao trại...)"
                       value={newManualStage}
                       onChange={(e) => setNewManualStage(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
                           const name = newManualStage.trim();
-                          if (name && !formData.selectedStages.includes(name)) {
+                          if (
+                            name &&
+                            !formData.selectedStages.includes(name)
+                          ) {
                             setFormData((prev) => ({
                               ...prev,
                               selectedStages: [...prev.selectedStages, name],
@@ -930,7 +739,7 @@ export default function PlanAquacultureGrowthEditPage({
                           }
                         }
                       }}
-                      className="bg-white border-slate-200 h-10 text-sm rounded-lg"
+                      className="bg-white border-slate-200 h-11 text-sm rounded-xl"
                     />
                     <Button
                       type="button"
@@ -944,7 +753,7 @@ export default function PlanAquacultureGrowthEditPage({
                           setNewManualStage("");
                         }
                       }}
-                      className="px-5 h-10 rounded-lg font-bold uppercase text-xs"
+                      className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
                     >
                       THÊM
                     </Button>
@@ -953,14 +762,14 @@ export default function PlanAquacultureGrowthEditPage({
                   {formData.selectedStages.filter(
                     (stage) => !stage.includes(":"),
                   ).length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
                       {formData.selectedStages
                         .filter((stage) => !stage.includes(":"))
                         .map((stage) => (
                           <Badge
                             key={stage}
                             variant="secondary"
-                            className="bg-slate-100 text-slate-700 pr-1 py-0 pl-2.5 h-7 rounded-md flex items-center gap-1 border-transparent hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
+                            className="bg-slate-100 text-slate-700 pr-1 py-1 pl-3 h-8 rounded-lg flex items-center gap-2 border-transparent group hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
                           >
                             <span className="font-bold text-xs">{stage}</span>
                             <Button
@@ -974,7 +783,7 @@ export default function PlanAquacultureGrowthEditPage({
                                   ),
                                 }))
                               }
-                              className="h-5 w-5 rounded hover:bg-red-100 hover:text-red-600 shrink-0"
+                              className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
                             >
                               <X className="w-3 h-3" />
                             </Button>
@@ -983,15 +792,201 @@ export default function PlanAquacultureGrowthEditPage({
                     </div>
                   )}
 
-                  <p className="flex items-start gap-1.5 text-[10px] text-muted-foreground leading-relaxed">
-                    <Info className="w-3 h-3 text-blue-500 shrink-0 mt-0.5" />
+                  <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
+                    <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <p className="text-[10px] text-amber-700 font-medium">
+                      Nhập tên các hạng mục công việc bạn muốn triển khai thêm
+                      ngoài phác đồ. Bạn sẽ phân bổ vật tư cho từng hạng mục ở
+                      bước tiếp theo.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isCultivationLike && (
+              <div className="space-y-4 animation-slide-up bg-slate-50/30 p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
+                    Hạng mục công việc dự kiến
+                  </Label>
+                  <Badge
+                    variant="outline"
+                    className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
+                  >
+                    {formData.selectedStages.length} mục
+                  </Badge>
+                </div>
+
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Nhập tên hạng mục (VD: Bón phân, Tưới nước...)"
+                    value={newManualStage}
+                    onChange={(e) => setNewManualStage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        const name = newManualStage.trim();
+                        if (name && !formData.selectedStages.includes(name)) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            selectedStages: [...prev.selectedStages, name],
+                          }));
+                          setNewManualStage("");
+                        }
+                      }
+                    }}
+                    className="bg-white border-slate-200 h-11 text-sm rounded-xl"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const name = newManualStage.trim();
+                      if (name && !formData.selectedStages.includes(name)) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          selectedStages: [...prev.selectedStages, name],
+                        }));
+                        setNewManualStage("");
+                      }
+                    }}
+                    className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
+                  >
+                    THÊM
+                  </Button>
+                </div>
+
+                {formData.selectedStages.length > 0 && (
+                  <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                    {formData.selectedStages.map((stage) => (
+                      <Badge
+                        key={stage}
+                        variant="secondary"
+                        className="bg-slate-100 text-slate-700 pr-1 py-1 pl-3 h-8 rounded-lg flex items-center gap-2 border-transparent group hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
+                      >
+                        <span className="font-bold text-xs">{stage}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              selectedStages: prev.selectedStages.filter(
+                                (s) => s !== stage,
+                              ),
+                            }))
+                          }
+                          className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
+                  <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <p className="text-[10px] text-amber-700 font-medium">
+                    {purpose === "facility-upgrade"
+                      ? "Nhập tên các hạng mục nâng cấp cơ sở vật chất bạn muốn triển khai."
+                      : "Nhập tên các hạng mục công việc dự kiến. Bạn sẽ phân bổ vật tư cho từng hạng mục ở bước tiếp theo."}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {isHarvest && (
+              <div className="space-y-4 animation-slide-up bg-slate-50/30 p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
+                    Hạng mục công việc dự kiến
+                  </Label>
+                  <Badge
+                    variant="outline"
+                    className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
+                  >
+                    {formData.selectedStages.length} mục
+                  </Badge>
+                </div>
+
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Nhập tên hạng mục (VD: Tập kết, Kiểm tra, Bốc dỡ...)"
+                    value={newManualStage}
+                    onChange={(e) => setNewManualStage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        const name = newManualStage.trim();
+                        if (name && !formData.selectedStages.includes(name)) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            selectedStages: [...prev.selectedStages, name],
+                          }));
+                          setNewManualStage("");
+                        }
+                      }
+                    }}
+                    className="bg-white border-slate-200 h-11 text-sm rounded-xl"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const name = newManualStage.trim();
+                      if (name && !formData.selectedStages.includes(name)) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          selectedStages: [...prev.selectedStages, name],
+                        }));
+                        setNewManualStage("");
+                      }
+                    }}
+                    className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
+                  >
+                    THÊM
+                  </Button>
+                </div>
+
+                {formData.selectedStages.length > 0 && (
+                  <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                    {formData.selectedStages.map((stage) => (
+                      <Badge
+                        key={stage}
+                        variant="secondary"
+                        className="bg-slate-100 text-slate-700 pr-1 py-1 pl-3 h-8 rounded-lg flex items-center gap-2 border-transparent group hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
+                      >
+                        <span className="font-bold text-xs">{stage}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              selectedStages: prev.selectedStages.filter(
+                                (s) => s !== stage,
+                              ),
+                            }))
+                          }
+                          className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
+                  <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <p className="text-[10px] text-amber-700 font-medium">
                     Nhập các hạng mục công việc dự kiến để phân bổ vật tư và
                     nhân sự ở bước tiếp theo.
                   </p>
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       ),
       isValid:
@@ -1006,7 +1001,7 @@ export default function PlanAquacultureGrowthEditPage({
       title:
         formData.purpose === "harvest"
           ? "Vật tư - Nhân sự & cách thức"
-          : isCultivationLike
+          : formData.purpose === "cultivation"
             ? "Phân bổ & Công việc"
             : formData.purpose === "amendment"
               ? "Vật tư & Nhân lực"
@@ -1018,7 +1013,7 @@ export default function PlanAquacultureGrowthEditPage({
             <h3 className="text-xl font-bold text-slate-900">
               {formData.purpose === "harvest"
                 ? "Cách thức & Nguồn lực Thu hoạch"
-                : isCultivationLike
+                : formData.purpose === "cultivation"
                   ? "Định mức Vật tư & Giai đoạn"
                   : formData.purpose === "amendment"
                     ? "Vật tư & Công việc Cải tạo"
@@ -1027,10 +1022,10 @@ export default function PlanAquacultureGrowthEditPage({
             <p className="text-slate-500 text-sm mt-1 max-w-lg mx-auto">
               {formData.purpose === "harvest"
                 ? "Thiết lập các yêu cầu về vật tư, nhân sự và mô tả cách thức triển khai thu hoạch."
-                : isCultivationLike
-                  ? "Thiết lập chi tiết các hạng mục đầu tư và quy trình kỹ thuật cho từng giai đoạn của mùa vụ."
+                : formData.purpose === "cultivation"
+                  ? "Thiết lập chi tiết các hạng mục đầu tư và quy trình kỹ thuật cho từng giai đoạn của vụ nuôi."
                   : formData.purpose === "amendment"
-                    ? "Phân bổ vật tư và công việc cụ thể để thực hiện quy trình cải tạo ao đã chọn."
+                    ? "Phân bổ vật tư và công việc cụ thể để thực hiện quy trình cải tạo ao trại đã chọn."
                     : "Phân bổ vật tư và công việc cụ thể để thực hiện phác đồ điều trị đã chọn."}
             </p>
           </div>
@@ -1051,7 +1046,7 @@ export default function PlanAquacultureGrowthEditPage({
                   )}
                   regions={regions}
                   masterSelections={selections}
-                  enterpriseId=""
+                  enterpriseId={selectedEnterpriseId}
                   onAddMaterial={(item) =>
                     handleAddMaterial({ ...item, stageId: "Thu hoạch" })
                   }
@@ -1088,7 +1083,7 @@ export default function PlanAquacultureGrowthEditPage({
                     )}
                     regions={regions}
                     masterSelections={selections}
-                    enterpriseId=""
+                    enterpriseId={selectedEnterpriseId}
                     onAddMaterial={(item) =>
                       handleAddMaterial({ ...item, stageId: stageKey })
                     }
@@ -1179,23 +1174,25 @@ export default function PlanAquacultureGrowthEditPage({
               </CardHeader>
               <CardContent className="pt-4 space-y-5">
                 <div className="grid grid-cols-2 gap-4">
+                  {!isWorkflowContext && (
+                    <div>
+                      <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                        Vụ nuôi
+                      </label>
+                      <p className="font-medium mt-1 text-slate-800">
+                        {formData.seasonName}
+                      </p>
+                    </div>
+                  )}
                   <div>
                     <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                      Vụ nuôi
-                    </label>
-                    <p className="font-medium mt-1 text-slate-800">
-                      {formData.seasonName}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                      Loài nuôi
+                      Đối tượng nuôi
                     </label>
                     <p className="font-medium mt-1 text-slate-800">
                       {formData.crop} - {formData.variety}
                     </p>
                   </div>
-                  {isCultivationLike ? (
+                  {formData.purpose === "cultivation" ? (
                     <div>
                       <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                         Quy trình
@@ -1208,7 +1205,7 @@ export default function PlanAquacultureGrowthEditPage({
                     <div>
                       <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                         {formData.purpose === "amendment"
-                          ? "Phác đồ cải tạo ao"
+                          ? "Phác đồ cải tạo ao trại"
                           : formData.purpose === "harvest"
                             ? "Loại hình"
                             : "Phác đồ điều trị"}
@@ -1310,7 +1307,7 @@ export default function PlanAquacultureGrowthEditPage({
                                   ? "Vùng"
                                   : item.type === "area"
                                     ? "Khu"
-                                    : "Lô nuôi"}
+                                    : "Lô"}
                               </span>
                               {item.name}
                               {item.parentName && (
@@ -1337,7 +1334,7 @@ export default function PlanAquacultureGrowthEditPage({
                   </div>
                   <div>
                     <p className="text-[10px] text-emerald-700 font-black uppercase tracking-wider mb-1">
-                      Loài nuôi & Giống
+                      Đối tượng nuôi & Giống
                     </p>
                     <p className="text-xl font-black text-emerald-800">
                       {formData.crop} - {formData.variety}
@@ -1357,7 +1354,7 @@ export default function PlanAquacultureGrowthEditPage({
                   formData.purpose === "treatment" && "bg-blue-100/50",
                   formData.purpose === "amendment" && "bg-amber-100/50",
                   formData.purpose === "harvest" && "bg-orange-100/50",
-                  isCultivationLike && "bg-emerald-100/50",
+                  formData.purpose === "cultivation" && "bg-emerald-100/50",
                 )}
               >
                 <Layers
@@ -1366,7 +1363,7 @@ export default function PlanAquacultureGrowthEditPage({
                     formData.purpose === "treatment" && "text-blue-600",
                     formData.purpose === "amendment" && "text-amber-600",
                     formData.purpose === "harvest" && "text-orange-600",
-                    isCultivationLike && "text-emerald-600",
+                    formData.purpose === "cultivation" && "text-emerald-600",
                   )}
                 />
               </div>
@@ -1426,7 +1423,7 @@ export default function PlanAquacultureGrowthEditPage({
                               </Badge>
                             )}
                           </div>
-                          {!isCultivationLike && (
+                          {formData.purpose !== "cultivation" && (
                             <p
                               className={cn(
                                 "text-[10px] font-bold uppercase tracking-wider",
@@ -1438,7 +1435,7 @@ export default function PlanAquacultureGrowthEditPage({
                               )}
                             >
                               {formData.purpose === "amendment"
-                                ? "Hoạt động cải tạo ao"
+                                ? "Hoạt động cải tạo ao trại"
                                 : formData.purpose === "harvest"
                                   ? "Hoạt động thu hoạch"
                                   : "Hoạt động điều trị bệnh"}

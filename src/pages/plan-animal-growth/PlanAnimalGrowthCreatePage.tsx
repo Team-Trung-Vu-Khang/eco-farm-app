@@ -37,17 +37,19 @@ import {
   Leaf,
   MapPin,
   Package,
+  Search,
   Sprout,
   Users,
   Wrench,
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { PersonnelMultiSelectCard } from "../plan-growth/components/PersonnelMultiSelectCard";
 import GeographicalSelector from "./components/GeographicalSelector";
+import { PersonnelMultiSelectCard } from "./components/PersonnelMultiSelectCard";
 import { RegimenSelector } from "./components/RegimenSelector";
 import { StageAllocation } from "./components/StageAllocation";
 import { StageItem } from "./components/StageItem";
+import { TASK_OPTIONS } from "./data/mocks";
 import { useAnimalGrowthForm } from "./hooks/useAnimalGrowthForm";
 
 interface PlanAnimalGrowthCreatePageProps {
@@ -61,7 +63,8 @@ export default function PlanAnimalGrowthCreatePage({
     formData,
     setFormData,
     selections,
-    personnel,
+    setSelections,
+    selectedEnterpriseId,
     seasons,
     regions,
     regimens,
@@ -69,6 +72,7 @@ export default function PlanAnimalGrowthCreatePage({
     selectionSummary,
     calculateArea,
     summarizeTaskSelections: getTaskSelectionSummary,
+    personnel,
     handleSeasonChange,
     handleDurationPartChange,
     handleGeographicalConfirm,
@@ -84,17 +88,129 @@ export default function PlanAnimalGrowthCreatePage({
   } = useAnimalGrowthForm("create", basePath);
 
   const [newManualStage, setNewManualStage] = useState("");
+  const [stageSearch, setStageSearch] = useState("");
   const purpose = formData.purpose as string;
   const isCultivationLike =
     purpose === "cultivation" || purpose === "facility-upgrade";
+  const isTreatmentOrAmendment =
+    purpose === "treatment" || purpose === "amendment";
   const isHarvest = purpose === "harvest";
-  const isWorkItemPurpose = isCultivationLike || isHarvest;
+  const stageSearchTerm = stageSearch.trim().toLowerCase();
+
+  const purposeOptions = [
+    {
+      id: "cultivation",
+      label: "Chăn nuôi",
+      icon: Layers,
+      borderColor: "border-blue-500",
+      bgColor: "bg-blue-50/50",
+      activeColor: "bg-blue-500",
+      textColor: "text-blue-700",
+      description: "Sử dụng quy trình chuẩn",
+    },
+    {
+      id: "facility-upgrade",
+      label: "Nâng cấp cơ sở vật chất",
+      icon: Wrench,
+      borderColor: "border-slate-500",
+      bgColor: "bg-slate-50/80",
+      activeColor: "bg-slate-700",
+      textColor: "text-slate-700",
+      description: "Nhập hạng mục công việc dự kiến",
+    },
+    {
+      id: "treatment",
+      label: "Điều trị",
+      icon: Bug,
+      borderColor: "border-red-500",
+      bgColor: "bg-red-50/50",
+      activeColor: "bg-red-500",
+      textColor: "text-red-700",
+      description: "Áp dụng phác đồ xử lý",
+    },
+    {
+      id: "amendment",
+      label: "Cải tạo chuồng trại",
+      icon: Sprout,
+      borderColor: "border-green-500",
+      bgColor: "bg-green-50/50",
+      activeColor: "bg-green-500",
+      textColor: "text-green-700",
+      description: "Xử lý và phục hồi",
+    },
+    {
+      id: "harvest",
+      label: "Xuất bán",
+      icon: Apple,
+      borderColor: "border-orange-500",
+      bgColor: "bg-orange-50/50",
+      activeColor: "bg-orange-500",
+      textColor: "text-orange-700",
+      description: "Nhập hạng mục dự kiến",
+    },
+  ] as const;
+
+  const harvestSuggestions = TASK_OPTIONS.map((item) => item.label).filter(
+    (label) =>
+      /xuất bán|phân loại|đóng gói|vận chuyển|bốc xếp|kiểm tra/i.test(label),
+  );
+
+  const purposeSelector = (
+    <div className="space-y-4">
+      <Label className="text-base font-bold text-slate-800">
+        Mục đích kế hoạch
+      </Label>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {purposeOptions.map((type) => (
+          <button
+            key={type.id}
+            type="button"
+            onClick={() => {
+              setFormData((prev) => ({
+                ...prev,
+                purpose: type.id as any,
+                selectedStages: [],
+                regimenId:
+                  type.id === "treatment" || type.id === "amendment"
+                    ? prev.regimenId
+                    : "",
+              }));
+              setStageSearch("");
+            }}
+            className={cn(
+              "cursor-pointer p-4 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-1 group relative overflow-hidden",
+              formData.purpose === type.id
+                ? `${type.borderColor} ${type.bgColor} ${type.textColor} shadow-md`
+                : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm",
+            )}
+          >
+            <div
+              className={cn(
+                "w-10 h-10 rounded-xl flex items-center justify-center mb-1 group-hover:scale-110 transition-transform",
+                formData.purpose === type.id
+                  ? `${type.activeColor} text-white`
+                  : "bg-slate-50 text-slate-400",
+              )}
+            >
+              <type.icon className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-black uppercase tracking-tight">
+              {type.label}
+            </span>
+            <span className="text-[10px] opacity-60 font-medium">
+              {type.description}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   const steps: Step[] = [
     {
       id: "general",
       title: "Thông tin chung",
-      description: "Vụ nuôi và thời gian",
+      description: "Lứa nuôi và thời gian",
       content: (
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="flex items-center gap-4 p-4 bg-blue-50 text-blue-900 rounded-lg border border-blue-100">
@@ -102,24 +218,23 @@ export default function PlanAnimalGrowthCreatePage({
               <Sprout className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h3 className="font-semibold">Thiết lập kế hoạch chăn nuôi</h3>
+              <h3 className="font-semibold">Thiết lập kế hoạch</h3>
               <p className="text-sm text-blue-700">
-                Bắt đầu bằng việc chọn vụ nuôi và đặt tên cho kế hoạch của bạn.
+                Chọn lứa nuôi, nhập thời gian dự kiến và đặt tên cho kế hoạch của
+                bạn.
               </p>
             </div>
           </div>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>
-                Vụ nuôi <span className="text-red-500">*</span>
-              </Label>
+              <Label required>Lứa nuôi</Label>
               <Select
                 value={formData.seasonId}
                 onValueChange={handleSeasonChange}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Chọn vụ nuôi..." />
+                  <SelectValue placeholder="Chọn lứa nuôi..." />
                 </SelectTrigger>
                 <SelectContent>
                   {seasons.map((s) => (
@@ -130,7 +245,6 @@ export default function PlanAnimalGrowthCreatePage({
                 </SelectContent>
               </Select>
             </div>
-
             <div className="space-y-2">
               <Label required>Tên kế hoạch</Label>
               <Input
@@ -141,7 +255,6 @@ export default function PlanAnimalGrowthCreatePage({
                 placeholder="VD: Kế hoạch Đông Xuân"
               />
             </div>
-
             <div className="space-y-2">
               <Label required>Thời gian dự kiến</Label>
               <div className="flex items-center gap-4 rounded-lg border px-4 shadow-sm">
@@ -207,107 +320,9 @@ export default function PlanAnimalGrowthCreatePage({
                 rows={3}
               />
             </div>
-
-            <div className="space-y-4">
-              <Label className="text-base font-bold text-slate-800">
-                Mục đích kế hoạch
-              </Label>
-              <div className="grid grid-cols-5 gap-4">
-                {[
-                  {
-                    id: "cultivation",
-                    label: "Chăn nuôi",
-                    icon: Layers,
-                    borderColor: "border-blue-500",
-                    bgColor: "bg-blue-50/50",
-                    activeColor: "bg-blue-500",
-                    textColor: "text-blue-700",
-                    description: "Sử dụng quy trình chuẩn",
-                  },
-                  {
-                    id: "facility-upgrade",
-                    label: "Cải tạo cơ sở vật chất",
-                    icon: Wrench,
-                    borderColor: "border-slate-500",
-                    bgColor: "bg-slate-50/80",
-                    activeColor: "bg-slate-700",
-                    textColor: "text-slate-700",
-                    description: "Nhập hạng mục công việc dự kiến",
-                  },
-                  {
-                    id: "treatment",
-                    label: "Điều trị",
-                    icon: Bug,
-                    borderColor: "border-red-500",
-                    bgColor: "bg-red-50/50",
-                    activeColor: "bg-red-500",
-                    textColor: "text-red-700",
-                    description: "Áp dụng phác đồ xử lý",
-                  },
-                  {
-                    id: "amendment",
-                    label: "Cải tạo đất",
-                    icon: Sprout,
-                    borderColor: "border-green-500",
-                    bgColor: "bg-green-50/50",
-                    activeColor: "bg-green-500",
-                    textColor: "text-green-700",
-                    description: "Xử lý và phục hồi",
-                  },
-                  {
-                    id: "harvest",
-                    label: "Thu hoạch",
-                    icon: Apple,
-                    borderColor: "border-orange-500",
-                    bgColor: "bg-orange-50/50",
-                    activeColor: "bg-orange-500",
-                    textColor: "text-orange-700",
-                    description: "Thu hoạch",
-                  },
-                ].map((type) => (
-                  <button
-                    key={type.id}
-                    type="button"
-                    onClick={() =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        purpose: type.id as any,
-                        selectedStages:
-                          type.id === "harvest" ? ["Thu hoạch"] : [],
-                        regimenId:
-                          type.id === "treatment" || type.id === "amendment"
-                            ? prev.regimenId
-                            : "",
-                      }))
-                    }
-                    className={cn(
-                      "cursor-pointer p-4 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-1 group relative overflow-hidden",
-                      formData.purpose === type.id
-                        ? `${type.borderColor} ${type.bgColor} ${type.textColor} shadow-md`
-                        : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm",
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "w-10 h-10 rounded-xl flex items-center justify-center mb-1 group-hover:scale-110 transition-transform",
-                        formData.purpose === type.id
-                          ? `${type.activeColor} text-white`
-                          : "bg-slate-50 text-slate-400",
-                      )}
-                    >
-                      <type.icon className="w-5 h-5" />
-                    </div>
-                    <span className="text-xs font-black uppercase tracking-tight">
-                      {type.label}
-                    </span>
-                    <span className="text-[10px] opacity-60 font-medium">
-                      {type.description}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
+
+          {purposeSelector}
         </div>
       ),
       isValid:
@@ -321,30 +336,32 @@ export default function PlanAnimalGrowthCreatePage({
     },
     {
       id: "scope",
-      title: "Phạm vi & Vật nuôi",
-      description: "Chọn khu chăn nuôi và con giống",
+      title: "Phạm vi chăn nuôi & sản xuất",
+      description: "Chọn vùng và nhân sự",
       content: (
         <div className="max-w-4xl mx-auto space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-6">
-              {/* Khu chăn nuôi Selection */}
               <div className="space-y-4">
                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 text-xs font-bold">
                     1
                   </span>
-                  Phạm vi chăn nuôi
+                  Phạm vi chăn nuôi & sản xuất
                 </h3>
                 <div className="p-5 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm space-y-4 relative">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs text-muted-foreground font-black uppercase tracking-widest">
-                        Vùng chăn nuôi <span className="text-red-500">*</span>
+                        Vùng sản xuất <span className="text-red-500">*</span>
                       </label>
+                      <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full font-semibold">
+                        Chọn 1-n khu vực/lô từ sơ đồ ban đầu
+                      </span>
                     </div>
                     <GeographicalSelector
                       regions={regions || []}
-                      enterpriseId=""
+                      enterpriseId={selectedEnterpriseId}
                       existingSelections={selections}
                       onConfirm={handleGeographicalConfirm}
                     />
@@ -381,7 +398,7 @@ export default function PlanAnimalGrowthCreatePage({
                                         ? "Vùng"
                                         : item.type === "area"
                                           ? "Khu"
-                                          : "Chuồng"}
+                                          : "Lô"}
                                     </span>
                                     {item.name}
                                     {item.parentName && (
@@ -400,6 +417,7 @@ export default function PlanAnimalGrowthCreatePage({
                   </div>
                 </div>
               </div>
+
               <div className="space-y-4">
                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-bold">
@@ -438,6 +456,7 @@ export default function PlanAnimalGrowthCreatePage({
                   />
                 </div>
               </div>
+
               {/* Ghi chú Section */}
               <div className="space-y-2">
                 <Label className="text-slate-700 font-bold">Ghi chú</Label>
@@ -470,7 +489,7 @@ export default function PlanAnimalGrowthCreatePage({
                     </div>
                     <div className="flex-1">
                       <p className="text-emerald-100 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">
-                        Khu chuồng trại
+                        Khu vực chăn nuôi
                       </p>
                       <h4 className="text-2xl font-black leading-tight tracking-tight">
                         {regions
@@ -487,7 +506,7 @@ export default function PlanAnimalGrowthCreatePage({
                           variant="secondary"
                           className="bg-white/20 text-white border-transparent text-[10px] font-bold h-5"
                         >
-                          {formData.selectedPlotIds.length} CHUỒNG
+                          {formData.selectedPlotIds.length} LÔ ĐẤT
                         </Badge>
                         <Badge
                           variant="secondary"
@@ -515,6 +534,60 @@ export default function PlanAnimalGrowthCreatePage({
                       <p className="font-bold text-sm truncate">
                         {formData.variety || "---"}
                       </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 relative z-10">
+                    <div className="bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-sm">
+                      <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider mb-2">
+                        Nhân sự quản lý
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {formData.managementPersonnelIds.length > 0 ? (
+                          formData.managementPersonnelIds.map((id) => {
+                            const person = personnel.find(
+                              (item) => String(item.id) === String(id),
+                            );
+                            return person ? (
+                              <Badge
+                                key={id}
+                                variant="secondary"
+                                className="bg-white/20 text-white border-transparent text-[10px] h-5"
+                              >
+                                {person.fullName}
+                              </Badge>
+                            ) : null;
+                          })
+                        ) : (
+                          <span className="text-xs text-white/60">---</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-sm">
+                      <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wider mb-2">
+                        Kiểm định chất lượng
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {formData.qualityInspectorPersonnelIds.length > 0 ? (
+                          formData.qualityInspectorPersonnelIds.map((id) => {
+                            const person = personnel.find(
+                              (item) => String(item.id) === String(id),
+                            );
+                            return person ? (
+                              <Badge
+                                key={id}
+                                variant="secondary"
+                                className="bg-white/20 text-white border-transparent text-[10px] h-5"
+                              >
+                                {person.fullName}
+                              </Badge>
+                            ) : null;
+                          })
+                        ) : (
+                          <span className="text-xs text-white/60">---</span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -554,7 +627,7 @@ export default function PlanAnimalGrowthCreatePage({
                                           ? "Toàn vùng"
                                           : item.type === "area"
                                             ? "Khu vực"
-                                            : "Chuồng"}
+                                            : "Ô chuồng"}
                                       </span>
                                       <span className="text-xs font-medium truncate max-w-[150px]">
                                         {item.name}
@@ -584,7 +657,7 @@ export default function PlanAnimalGrowthCreatePage({
                     </div>
                     <p className="text-xs text-emerald-50/80 leading-relaxed italic text-justify">
                       Quy trình chăn nuôi sẽ được áp dụng đồng bộ cho tất cả các
-                      khu/ô chuồng đã chọn trong danh sách trên.
+                      ô chuồng đã chọn trong danh sách trên.
                     </p>
                   </div>
                 </div>
@@ -601,75 +674,343 @@ export default function PlanAnimalGrowthCreatePage({
       description: "Lộ trình chăn nuôi",
       content: (
         <div className="max-w-2xl mx-auto space-y-6">
-          {formData.purpose === "harvest" ? null : (
-            <div className="space-y-6">
-              {(formData.purpose === "treatment" ||
-                formData.purpose === "amendment") && (
-                <div className="space-y-4 animation-slide-up bg-slate-50/30 p-6 rounded-3xl border border-slate-100 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
-                      {formData.purpose === "treatment"
-                        ? "Phác đồ điều trị"
-                        : "Phác đồ cải tạo đất"}
-                    </Label>
-                    {formData.regimenId && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            regimenId: "",
-                            selectedStages: [],
-                          }))
-                        }
-                        className="h-7 text-[10px] font-bold text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg px-2"
-                      >
-                        XÓA PHÁC ĐỒ
-                      </Button>
-                    )}
-                  </div>
-                  <RegimenSelector
-                    regimens={regimens}
-                    selectedRegimenId={formData.regimenId}
-                    type={formData.purpose as "treatment" | "amendment"}
-                    onSelect={(regimen) => {
-                      const stages =
-                        regimen.steps && regimen.steps.length > 0
-                          ? regimen.steps.map(
-                              (step) => `${regimen.id}:${step.title}`,
-                            )
-                          : [`${regimen.id}:${regimen.name}`];
-                      setFormData((prev) => ({
-                        ...prev,
-                        regimenId: regimen.id,
-                        selectedStages: stages,
-                      }));
-                    }}
-                  />
+          <div className="space-y-6">
+            {isTreatmentOrAmendment && (
+              <div className="space-y-4 animation-slide-up bg-slate-50/30 p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
+                    {purpose === "treatment"
+                      ? "Phác đồ điều trị"
+                      : "Phác đồ cải tạo chuồng trại"}
+                  </Label>
+                  {formData.regimenId && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          regimenId: "",
+                          selectedStages: [],
+                        }))
+                      }
+                      className="h-7 text-[10px] font-bold text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg px-2"
+                    >
+                      XÓA PHÁC ĐỒ
+                    </Button>
+                  )}
+                </div>
+                <RegimenSelector
+                  regimens={regimens}
+                  selectedRegimenId={formData.regimenId}
+                  type={formData.purpose as "treatment" | "amendment"}
+                  onSelect={(regimen) => {
+                    const stages =
+                      regimen.steps && regimen.steps.length > 0
+                        ? regimen.steps.map(
+                            (step) => `${regimen.id}:${step.title}`,
+                          )
+                        : [`${regimen.id}:${regimen.name}`];
+                    setFormData((prev) => ({
+                      ...prev,
+                      regimenId: regimen.id,
+                      selectedStages: stages,
+                    }));
+                  }}
+                />
 
-                  {!formData.regimenId && (
-                    <div className="space-y-4 pt-4 border-t border-dashed border-slate-200">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-[10px] uppercase font-black text-slate-400">
-                          Hoặc Tự nhập các giai đoạn xử lý
-                        </Label>
-                        <Badge
-                          variant="outline"
-                          className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
-                        >
-                          {formData.selectedStages.length} giai đoạn
-                        </Badge>
+                {!formData.regimenId && (
+                  <div className="space-y-4 pt-4 border-t border-dashed border-slate-200">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] uppercase font-black text-slate-400">
+                        Hoặc Tự nhập các giai đoạn xử lý
+                      </Label>
+                      <Badge
+                        variant="outline"
+                        className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
+                      >
+                        {formData.selectedStages.length} giai đoạn
+                      </Badge>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Nhập tên giai đoạn (VD: Bón vôi, Làm chuồng trại...)"
+                        value={newManualStage}
+                        onChange={(e) => setNewManualStage(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            const name = newManualStage.trim();
+                            if (
+                              name &&
+                              !formData.selectedStages.includes(name)
+                            ) {
+                              setFormData((prev) => ({
+                                ...prev,
+                                selectedStages: [...prev.selectedStages, name],
+                              }));
+                              setNewManualStage("");
+                            }
+                          }
+                        }}
+                        className="bg-white border-slate-200 h-11 text-sm rounded-xl"
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          const name = newManualStage.trim();
+                          if (name && !formData.selectedStages.includes(name)) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              selectedStages: [...prev.selectedStages, name],
+                            }));
+                            setNewManualStage("");
+                          }
+                        }}
+                        className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
+                      >
+                        THÊM
+                      </Button>
+                    </div>
+
+                    {formData.selectedStages.length > 0 && (
+                      <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                        {formData.selectedStages.map((stage) => (
+                          <Badge
+                            key={stage}
+                            variant="secondary"
+                            className="bg-slate-100 text-slate-700 pr-1 py-1 pl-3 h-8 rounded-lg flex items-center gap-2 border-transparent group hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
+                          >
+                            <span className="font-bold text-xs">{stage}</span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  selectedStages: prev.selectedStages.filter(
+                                    (s) => s !== stage,
+                                  ),
+                                }))
+                              }
+                              className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
+                      <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <p className="text-[10px] text-amber-700 font-medium">
+                        Nhập tên các giai đoạn công việc bạn muốn triển khai.
+                        Bạn sẽ phân bổ vật tư cho từng giai đoạn ở bước tiếp
+                        theo.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isCultivationLike && (
+              <div className="space-y-6 animation-slide-up">
+                {(() => {
+                  const season = seasons.find(
+                    (s) => s.id === formData.seasonId,
+                  );
+                  const seasonCycles = (season?.growthCycleIds || [])
+                    .map((cid) => growthCycles.find((gc) => gc.id === cid))
+                    .filter(Boolean);
+                  const filteredSeasonCycles = seasonCycles
+                    .map((cycle) => {
+                      const matchedStages = cycle!.stages.filter((stage) => {
+                        if (!stageSearchTerm) return true;
+                        return (
+                          cycle!.name.toLowerCase().includes(stageSearchTerm) ||
+                          stage.name.toLowerCase().includes(stageSearchTerm)
+                        );
+                      });
+
+                      return { cycle, stages: matchedStages };
+                    })
+                    .filter((group) => group.stages.length > 0);
+
+                  if (!season) {
+                    return (
+                      <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
+                        <p className="text-slate-400 font-medium">
+                          Vui lòng chọn lứa nuôi ở bước 1
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  if (seasonCycles.length === 0) {
+                    return (
+                      <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
+                        <p className="text-slate-400 font-medium italic">
+                          Khu chăn nuôi/Lứa nuôi này chưa được gán quy trình mẫu.
+                        </p>
+                        <p className="text-[10px] text-slate-400 mt-2">
+                          Vui lòng kiểm tra lại cấu hình lứa nuôi.
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  const selectedManualStages = formData.selectedStages.filter(
+                    (stage) => !stage.includes(":"),
+                  );
+
+                  return (
+                    <div className="space-y-8">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between px-2">
+                          <Label className="text-[10px] uppercase font-black text-slate-400">
+                            Tìm giai đoạn có sẵn
+                          </Label>
+                          <Badge
+                            variant="outline"
+                            className="bg-slate-50 text-slate-600 border-slate-200 text-[10px] font-bold"
+                          >
+                            {stageSearchTerm ? "Đang lọc" : "Tất cả"}
+                          </Badge>
+                        </div>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                          <Input
+                            value={stageSearch}
+                            onChange={(e) => setStageSearch(e.target.value)}
+                            placeholder="Tìm theo tên giai đoạn hoặc tên quy trình..."
+                            className="pl-10 h-11 rounded-xl bg-white border-slate-200"
+                          />
+                        </div>
                       </div>
 
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Nhập tên giai đoạn (VD: Bón vôi, Làm đất...)"
-                          value={newManualStage}
-                          onChange={(e) => setNewManualStage(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
+                      {filteredSeasonCycles.length === 0 ? (
+                        <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
+                          <p className="text-slate-400 font-medium">
+                            Không tìm thấy giai đoạn phù hợp.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-8">
+                          {filteredSeasonCycles.map(({ cycle, stages }) => (
+                            <div
+                              key={cycle!.id}
+                              className="space-y-4 animation-fade-in"
+                            >
+                              <div className="flex items-center justify-between px-2">
+                                <div className="space-y-0.5">
+                                  <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                                    <ClipboardList className="w-4 h-4 text-emerald-500" />
+                                    {cycle!.name}
+                                  </h4>
+                                  <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                                    {cycle!.totalDays} ngày • {stages.length} /{" "}
+                                    {cycle!.stages.length} giai đoạn
+                                  </p>
+                                </div>
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-emerald-100 text-emerald-700 text-[9px] font-bold border-transparent"
+                                >
+                                  {
+                                    formData.selectedStages.filter((s) =>
+                                      s.startsWith(`${cycle!.id}:`),
+                                    ).length
+                                  }{" "}
+                                  / {cycle!.stages.length}
+                                </Badge>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                                {stages.map((stage, idx) => {
+                                  const stageKey = `${cycle!.id}:${stage.name}`;
+                                  return (
+                                    <StageItem
+                                      key={stage.id}
+                                      index={idx}
+                                      stage={stage.name}
+                                      checked={formData.selectedStages.includes(
+                                        stageKey,
+                                      )}
+                                      onChange={(c) => {
+                                        setFormData((prev) => {
+                                          const current = prev.selectedStages;
+                                          if (c && !current.includes(stageKey))
+                                            return {
+                                              ...prev,
+                                              selectedStages: [
+                                                ...current,
+                                                stageKey,
+                                              ],
+                                            };
+                                          if (!c && current.includes(stageKey))
+                                            return {
+                                              ...prev,
+                                              selectedStages: current.filter(
+                                                (s) => s !== stageKey,
+                                              ),
+                                            };
+                                          return prev;
+                                        });
+                                      }}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="space-y-4 pt-4 border-t border-dashed border-slate-200">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-[10px] uppercase font-black text-slate-400">
+                            Hoặc tự nhập hạng mục công việc dự kiến
+                          </Label>
+                          <Badge
+                            variant="outline"
+                            className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
+                          >
+                            {selectedManualStages.length} mục
+                          </Badge>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Nhập tên hạng mục (VD: Bón phân, Tưới nước...)"
+                            value={newManualStage}
+                            onChange={(e) => setNewManualStage(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                const name = newManualStage.trim();
+                                if (
+                                  name &&
+                                  !formData.selectedStages.includes(name)
+                                ) {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    selectedStages: [
+                                      ...prev.selectedStages,
+                                      name,
+                                    ],
+                                  }));
+                                  setNewManualStage("");
+                                }
+                              }
+                            }}
+                            className="bg-white border-slate-200 h-11 text-sm rounded-xl"
+                          />
+                          <Button
+                            type="button"
+                            onClick={() => {
                               const name = newManualStage.trim();
                               if (
                                 name &&
@@ -684,13 +1025,161 @@ export default function PlanAnimalGrowthCreatePage({
                                 }));
                                 setNewManualStage("");
                               }
-                            }
-                          }}
-                          className="bg-white border-slate-200 h-11 text-sm rounded-xl"
-                        />
-                        <Button
-                          type="button"
-                          onClick={() => {
+                            }}
+                            className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
+                          >
+                            THÊM
+                          </Button>
+                        </div>
+
+                        {selectedManualStages.length > 0 && (
+                          <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                            {selectedManualStages.map((stage) => (
+                              <Badge
+                                key={stage}
+                                variant="secondary"
+                                className="bg-slate-100 text-slate-700 pr-1 py-1 pl-3 h-8 rounded-lg flex items-center gap-2 border-transparent group hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
+                              >
+                                <span className="font-bold text-xs">
+                                  {stage}
+                                </span>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() =>
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      selectedStages:
+                                        prev.selectedStages.filter(
+                                          (s) => s !== stage,
+                                        ),
+                                    }))
+                                  }
+                                  className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex gap-3 text-[11px] text-muted-foreground bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                          <Info className="w-4 h-4 text-blue-500 shrink-0" />
+                          <p className="leading-relaxed">
+                            {purpose === "facility-upgrade"
+                              ? "Các giai đoạn được dùng để liệt kê các hạng mục nâng cấp dự kiến. Bạn có thể tìm nhanh mục có sẵn hoặc tự nhập hạng mục riêng."
+                              : "Các giai đoạn được hiển thị dựa trên quy trình mẫu đã gán cho Lứa nuôi. Bạn có thể tìm nhanh giai đoạn có sẵn hoặc tự nhập hạng mục riêng."}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {isHarvest && (
+              <div className="space-y-4 animation-slide-up bg-slate-50/30 p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base uppercase tracking-wider text-slate-500 font-bold text-[10px]">
+                    Hạng mục công việc dự kiến
+                  </Label>
+                </div>
+                <div className="space-y-4 pt-4 border-t border-dashed border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[10px] uppercase font-black text-slate-400">
+                      Hạng mục có sẵn
+                    </Label>
+                    <Badge
+                      variant="outline"
+                      className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
+                    >
+                      {
+                        harvestSuggestions.filter((item) =>
+                          item.toLowerCase().includes(stageSearchTerm),
+                        ).length
+                      }{" "}
+                      mục
+                    </Badge>
+                  </div>
+
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Input
+                      value={stageSearch}
+                      onChange={(e) => setStageSearch(e.target.value)}
+                      placeholder="Tìm hạng mục có sẵn..."
+                      className="pl-10 h-11 rounded-xl bg-white border-slate-200"
+                    />
+                  </div>
+
+                  {harvestSuggestions.filter((item) =>
+                    item.toLowerCase().includes(stageSearchTerm),
+                  ).length === 0 ? (
+                    <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
+                      <p className="text-slate-400 font-medium">
+                        Không tìm thấy hạng mục phù hợp.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                      {harvestSuggestions
+                        .filter((item) =>
+                          item.toLowerCase().includes(stageSearchTerm),
+                        )
+                        .map((item, idx) => (
+                          <StageItem
+                            key={item}
+                            index={idx}
+                            stage={item}
+                            checked={formData.selectedStages.includes(item)}
+                            onChange={(checked) => {
+                              setFormData((prev) => {
+                                const current = prev.selectedStages;
+                                if (checked && !current.includes(item)) {
+                                  return {
+                                    ...prev,
+                                    selectedStages: [...current, item],
+                                  };
+                                }
+                                if (!checked && current.includes(item)) {
+                                  return {
+                                    ...prev,
+                                    selectedStages: current.filter(
+                                      (s) => s !== item,
+                                    ),
+                                  };
+                                }
+                                return prev;
+                              });
+                            }}
+                          />
+                        ))}
+                    </div>
+                  )}
+
+                  <div className="space-y-4 pt-4 border-t border-dashed border-slate-200">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] uppercase font-black text-slate-400">
+                        Hoặc tự nhập hạng mục công việc dự kiến
+                      </Label>
+                      <Badge
+                        variant="outline"
+                        className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
+                      >
+                        {formData.selectedStages.length} hạng mục
+                      </Badge>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Nhập tên hạng mục (VD: Tập kết, Kiểm tra, Bốc dỡ...)"
+                        value={newManualStage}
+                        onChange={(e) => setNewManualStage(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
                             const name = newManualStage.trim();
                             if (
                               name &&
@@ -702,216 +1191,13 @@ export default function PlanAnimalGrowthCreatePage({
                               }));
                               setNewManualStage("");
                             }
-                          }}
-                          className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
-                        >
-                          THÊM
-                        </Button>
-                      </div>
-
-                      {formData.selectedStages.length > 0 && (
-                        <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                          {formData.selectedStages.map((stage) => (
-                            <Badge
-                              key={stage}
-                              variant="secondary"
-                              className="bg-slate-100 text-slate-700 pr-1 py-1 pl-3 h-8 rounded-lg flex items-center gap-2 border-transparent group hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
-                            >
-                              <span className="font-bold text-xs">{stage}</span>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    selectedStages: prev.selectedStages.filter(
-                                      (s) => s !== stage,
-                                    ),
-                                  }))
-                                }
-                                className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
-                              >
-                                <X className="w-3 h-3" />
-                              </Button>
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
-                        <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <p className="text-[10px] text-amber-700 font-medium">
-                          Nhập tên các giai đoạn công việc bạn muốn triển khai.
-                          Bạn sẽ phân bổ vật tư cho từng giai đoạn ở bước tiếp
-                          theo.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {formData.regimenId && (
-                    <div className="p-5 rounded-2xl bg-blue-50/50 border border-blue-100 flex gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center border border-blue-200 text-blue-500 shrink-0 shadow-sm">
-                        <Clock className="w-5 h-5" />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-xs font-bold text-blue-900">
-                          Tính chất lộ trình
-                        </p>
-                        <p className="text-[11px] text-blue-700 leading-relaxed">
-                          Phác đồ này được thiết kế để xử lý vấn đề hiện tại.
-                          Bạn có thể phân bổ vật tư điều trị ở bước tiếp theo.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {isCultivationLike && (
-                <div className="space-y-6 animation-slide-up">
-                  {(() => {
-                    const season = seasons.find(
-                      (s) => s.id === formData.seasonId,
-                    );
-                    const seasonCycles = (season?.growthCycleIds || [])
-                      .map((cid) => growthCycles.find((gc) => gc.id === cid))
-                      .filter(Boolean);
-
-                    if (!season) {
-                      return (
-                        <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
-                          <p className="text-slate-400 font-medium">
-                            Vui lòng chọn mùa vụ ở bước 1
-                          </p>
-                        </div>
-                      );
-                    }
-
-                    if (seasonCycles.length === 0) {
-                      return (
-                        <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
-                          <p className="text-slate-400 font-medium italic">
-                            Khu chăn nuôi/lứa nuôi này chưa được gán quy trình
-                            mẫu.
-                          </p>
-                          <p className="text-[10px] text-slate-400 mt-2">
-                            Vui lòng kiểm tra lại cấu hình mùa vụ.
-                          </p>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div className="space-y-8">
-                        {seasonCycles.map((cycle) => (
-                          <div
-                            key={cycle!.id}
-                            className="space-y-4 animation-fade-in"
-                          >
-                            <div className="flex items-center justify-between px-2">
-                              <div className="space-y-0.5">
-                                <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                                  <ClipboardList className="w-4 h-4 text-emerald-500" />
-                                  {cycle!.name}
-                                </h4>
-                                <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-                                  {cycle!.totalDays} ngày •{" "}
-                                  {cycle!.stages.length} giai đoạn
-                                </p>
-                              </div>
-                              <Badge
-                                variant="secondary"
-                                className="bg-emerald-100 text-emerald-700 text-[9px] font-bold border-transparent"
-                              >
-                                {
-                                  formData.selectedStages.filter((s) =>
-                                    s.startsWith(`${cycle!.id}:`),
-                                  ).length
-                                }{" "}
-                                / {cycle!.stages.length}
-                              </Badge>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
-                              {cycle!.stages.map((stage, idx) => {
-                                const stageKey = `${cycle!.id}:${stage.name}`;
-                                return (
-                                  <StageItem
-                                    key={stage.id}
-                                    index={idx}
-                                    stage={stage.name}
-                                    checked={formData.selectedStages.includes(
-                                      stageKey,
-                                    )}
-                                    onChange={(c) => {
-                                      setFormData((prev) => {
-                                        const current = prev.selectedStages;
-                                        if (c && !current.includes(stageKey))
-                                          return {
-                                            ...prev,
-                                            selectedStages: [
-                                              ...current,
-                                              stageKey,
-                                            ],
-                                          };
-                                        if (!c && current.includes(stageKey))
-                                          return {
-                                            ...prev,
-                                            selectedStages: current.filter(
-                                              (s) => s !== stageKey,
-                                            ),
-                                          };
-                                        return prev;
-                                      });
-                                    }}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ))}
-
-                        <div className="flex gap-3 text-[11px] text-muted-foreground bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                          <Info className="w-4 h-4 text-blue-500 shrink-0" />
-                          <p className="leading-relaxed">
-                            {isCultivationLike
-                              ? "Các giai đoạn được hiển thị dựa trên quy trình mẫu đã gán cho lứa nuôi. Bạn có thể chọn lọc các giai đoạn thực tế sẽ triển khai."
-                              : "Các giai đoạn được hiển thị từ quy trình chăn nuôi chuẩn để bạn có thể tùy chỉnh lộ trình xử lý riêng."}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              )}
-              {isWorkItemPurpose && (
-                <div className="space-y-3 animation-slide-up">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
-                      Hạng mục công việc dự kiến
-                    </Label>
-                    <Badge
-                      variant="outline"
-                      className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold"
-                    >
-                      {
-                        formData.selectedStages.filter(
-                          (stage) => !stage.includes(":"),
-                        ).length
-                      }{" "}
-                      mục
-                    </Badge>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Nhập tên hạng mục (VD: Tập kết, Kiểm tra, Bốc dỡ...)"
-                      value={newManualStage}
-                      onChange={(e) => setNewManualStage(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
+                          }
+                        }}
+                        className="bg-white border-slate-200 h-11 text-sm rounded-xl"
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => {
                           const name = newManualStage.trim();
                           if (name && !formData.selectedStages.includes(name)) {
                             setFormData((prev) => ({
@@ -920,39 +1206,20 @@ export default function PlanAnimalGrowthCreatePage({
                             }));
                             setNewManualStage("");
                           }
-                        }
-                      }}
-                      className="bg-white border-slate-200 h-10 text-sm rounded-lg"
-                    />
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        const name = newManualStage.trim();
-                        if (name && !formData.selectedStages.includes(name)) {
-                          setFormData((prev) => ({
-                            ...prev,
-                            selectedStages: [...prev.selectedStages, name],
-                          }));
-                          setNewManualStage("");
-                        }
-                      }}
-                      className="px-5 h-10 rounded-lg font-bold uppercase text-xs"
-                    >
-                      THÊM
-                    </Button>
-                  </div>
+                        }}
+                        className="px-6 h-11 rounded-xl font-bold uppercase text-xs"
+                      >
+                        THÊM
+                      </Button>
+                    </div>
 
-                  {formData.selectedStages.filter(
-                    (stage) => !stage.includes(":"),
-                  ).length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {formData.selectedStages
-                        .filter((stage) => !stage.includes(":"))
-                        .map((stage) => (
+                    {formData.selectedStages.length > 0 && (
+                      <div className="flex flex-wrap gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                        {formData.selectedStages.map((stage) => (
                           <Badge
                             key={stage}
                             variant="secondary"
-                            className="bg-slate-100 text-slate-700 pr-1 py-0 pl-2.5 h-7 rounded-md flex items-center gap-1 border-transparent hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
+                            className="bg-slate-100 text-slate-700 pr-1 py-1 pl-3 h-8 rounded-lg flex items-center gap-2 border-transparent group hover:bg-red-50 hover:text-red-700 transition-colors cursor-default"
                           >
                             <span className="font-bold text-xs">{stage}</span>
                             <Button
@@ -966,133 +1233,104 @@ export default function PlanAnimalGrowthCreatePage({
                                   ),
                                 }))
                               }
-                              className="h-5 w-5 rounded hover:bg-red-100 hover:text-red-600 shrink-0"
+                              className="h-6 w-6 rounded-md hover:bg-red-100 hover:text-red-600 shrink-0"
                             >
                               <X className="w-3 h-3" />
                             </Button>
                           </Badge>
                         ))}
-                    </div>
-                  )}
+                      </div>
+                    )}
 
-                  <p className="flex items-start gap-1.5 text-[10px] text-muted-foreground leading-relaxed">
-                    <Info className="w-3 h-3 text-blue-500 shrink-0 mt-0.5" />
-                    Nhập các hạng mục công việc dự kiến để phân bổ vật tư và
-                    nhân sự ở bước tiếp theo.
-                  </p>
+                    <div className="flex items-center gap-2 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50">
+                      <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <p className="text-[10px] text-amber-700 font-medium">
+                        Nhập các hạng mục công việc dự kiến để phân bổ vật tư và
+                        nhân sự ở bước tiếp theo.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       ),
-      isValid:
-        formData.purpose === "harvest"
-          ? true
-          : formData.purpose === "treatment" || formData.purpose === "amendment"
-            ? !!formData.regimenId || formData.selectedStages.length > 0
-            : formData.selectedStages.length > 0,
+      isValid: isTreatmentOrAmendment
+        ? !!formData.regimenId || formData.selectedStages.length > 0
+        : formData.selectedStages.length > 0,
     },
     {
       id: "resources",
-      title:
-        formData.purpose === "harvest"
-          ? "Vật tư - Nhân sự & cách thức"
-          : isCultivationLike
-            ? "Phân bổ & Công việc"
-            : formData.purpose === "amendment"
-              ? "Vật tư & Nhân lực"
-              : "Vật tư & Phác đồ",
+      title: isHarvest
+        ? "Vật tư - Nhân sự & cách thức"
+        : isCultivationLike
+          ? "Phân bổ & Công việc"
+          : purpose === "amendment"
+            ? "Vật tư & Nhân lực"
+            : "Vật tư & Phác đồ",
       description: "Hoạch định nguồn lực chi tiết",
       content: (
         <div className="max-w-3xl mx-auto space-y-6">
           <div className="text-center mb-6">
             <h3 className="text-xl font-bold text-slate-900">
-              {formData.purpose === "harvest"
-                ? "Cách thức & Nguồn lực Thu hoạch"
+              {isHarvest
+                ? "Cách thức & Nguồn lực Xuất bán"
                 : isCultivationLike
                   ? "Định mức Vật tư & Giai đoạn"
-                  : formData.purpose === "amendment"
+                  : purpose === "amendment"
                     ? "Vật tư & Công việc Cải tạo"
                     : "Vật tư & Công việc Điều trị"}
             </h3>
             <p className="text-slate-500 text-sm mt-1 max-w-lg mx-auto">
-              {formData.purpose === "harvest"
-                ? "Thiết lập các yêu cầu về vật tư, nhân sự và mô tả cách thức triển khai thu hoạch."
+              {isHarvest
+                ? "Thiết lập các yêu cầu về vật tư, nhân sự và mô tả cách thức triển khai xuất bán."
                 : isCultivationLike
-                  ? "Thiết lập chi tiết các hạng mục đầu tư và quy trình kỹ thuật cho từng giai đoạn của mùa vụ."
-                  : formData.purpose === "amendment"
-                    ? "Phân bổ vật tư và công việc cụ thể để thực hiện quy trình cải tạo đất đã chọn."
+                  ? "Thiết lập chi tiết các hạng mục đầu tư và quy trình kỹ thuật cho từng giai đoạn của lứa nuôi."
+                  : purpose === "amendment"
+                    ? "Phân bổ vật tư và công việc cụ thể để thực hiện quy trình cải tạo chuồng trại đã chọn."
                     : "Phân bổ vật tư và công việc cụ thể để thực hiện phác đồ điều trị đã chọn."}
             </p>
           </div>
 
           <div className="space-y-4">
-            {formData.purpose === "harvest" ? (
-              <div className="animation-slide-up">
+            {formData.selectedStages.map((stageKey, idx) => {
+              const [cycleId, stageName] = stageKey.includes(":")
+                ? stageKey.split(":")
+                : [null, stageKey];
+
+              const cycleName = cycleId
+                ? growthCycles.find((c) => c.id === cycleId)?.name ||
+                  regimens.find((r) => r.id === cycleId)?.name
+                : null;
+
+              return (
                 <StageAllocation
                   isDetail={false}
-                  index={0}
-                  stageName="Thu hoạch"
-                  cycleName="Kế hoạch thu hoạch"
+                  key={idx}
+                  stageName={stageName}
+                  cycleName={cycleName}
+                  index={idx}
                   allocations={formData.materialAllocations.filter(
-                    (m) => m.stageId === "Thu hoạch",
+                    (m) => m.stageId === stageKey,
                   )}
                   tasks={formData.taskAllocations.filter(
-                    (t) => t.stageId === "Thu hoạch",
+                    (t) => t.stageId === stageKey,
                   )}
                   regions={regions}
                   masterSelections={selections}
-                  enterpriseId=""
+                  enterpriseId={selectedEnterpriseId}
                   onAddMaterial={(item) =>
-                    handleAddMaterial({ ...item, stageId: "Thu hoạch" })
+                    handleAddMaterial({ ...item, stageId: stageKey })
                   }
                   onRemoveMaterial={handleRemoveMaterial}
                   onAddTask={(item) =>
-                    handleAddTask({ ...item, stageId: "Thu hoạch" })
+                    handleAddTask({ ...item, stageId: stageKey })
                   }
                   onRemoveTask={handleRemoveTask}
                 />
-              </div>
-            ) : (
-              formData.selectedStages.map((stageKey, idx) => {
-                const [cycleId, stageName] = stageKey.includes(":")
-                  ? stageKey.split(":")
-                  : [null, stageKey];
-
-                const cycleName = cycleId
-                  ? growthCycles.find((c) => c.id === cycleId)?.name ||
-                    regimens.find((r) => r.id === cycleId)?.name
-                  : null;
-
-                return (
-                  <StageAllocation
-                    isDetail={false}
-                    key={idx}
-                    stageName={stageName}
-                    cycleName={cycleName}
-                    index={idx}
-                    allocations={formData.materialAllocations.filter(
-                      (m) => m.stageId === stageKey,
-                    )}
-                    tasks={formData.taskAllocations.filter(
-                      (t) => t.stageId === stageKey,
-                    )}
-                    regions={regions}
-                    masterSelections={selections}
-                    enterpriseId=""
-                    onAddMaterial={(item) =>
-                      handleAddMaterial({ ...item, stageId: stageKey })
-                    }
-                    onRemoveMaterial={handleRemoveMaterial}
-                    onAddTask={(item) =>
-                      handleAddTask({ ...item, stageId: stageKey })
-                    }
-                    onRemoveTask={handleRemoveTask}
-                  />
-                );
-              })
-            )}
+              );
+            })}
           </div>
         </div>
       ),
@@ -1188,7 +1426,7 @@ export default function PlanAnimalGrowthCreatePage({
                       {formData.crop} - {formData.variety}
                     </p>
                   </div>
-                  {isCultivationLike ? (
+                  {formData.purpose === "cultivation" ? (
                     <div>
                       <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                         Quy trình
@@ -1201,7 +1439,7 @@ export default function PlanAnimalGrowthCreatePage({
                     <div>
                       <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                         {formData.purpose === "amendment"
-                          ? "Phác đồ cải tạo đất"
+                          ? "Phác đồ cải tạo chuồng trại"
                           : formData.purpose === "harvest"
                             ? "Loại hình"
                             : "Phác đồ điều trị"}
@@ -1217,7 +1455,7 @@ export default function PlanAnimalGrowthCreatePage({
                         )}
                       >
                         {formData.purpose === "harvest"
-                          ? "Kế hoạch thu hoạch"
+                          ? "Kế hoạch xuất bán"
                           : regimens.find((r) => r.id === formData.regimenId)
                               ?.name || "---"}
                       </p>
@@ -1303,7 +1541,7 @@ export default function PlanAnimalGrowthCreatePage({
                                   ? "Vùng"
                                   : item.type === "area"
                                     ? "Khu"
-                                    : "Chuồng"}
+                                    : "Lô"}
                               </span>
                               {item.name}
                               {item.parentName && (
@@ -1350,7 +1588,7 @@ export default function PlanAnimalGrowthCreatePage({
                   formData.purpose === "treatment" && "bg-blue-100/50",
                   formData.purpose === "amendment" && "bg-amber-100/50",
                   formData.purpose === "harvest" && "bg-orange-100/50",
-                  isCultivationLike && "bg-emerald-100/50",
+                  formData.purpose === "cultivation" && "bg-emerald-100/50",
                 )}
               >
                 <Layers
@@ -1359,7 +1597,7 @@ export default function PlanAnimalGrowthCreatePage({
                     formData.purpose === "treatment" && "text-blue-600",
                     formData.purpose === "amendment" && "text-amber-600",
                     formData.purpose === "harvest" && "text-orange-600",
-                    isCultivationLike && "text-emerald-600",
+                    formData.purpose === "cultivation" && "text-emerald-600",
                   )}
                 />
               </div>
@@ -1419,7 +1657,7 @@ export default function PlanAnimalGrowthCreatePage({
                               </Badge>
                             )}
                           </div>
-                          {!isCultivationLike && (
+                          {formData.purpose !== "cultivation" && (
                             <p
                               className={cn(
                                 "text-[10px] font-bold uppercase tracking-wider",
@@ -1431,9 +1669,9 @@ export default function PlanAnimalGrowthCreatePage({
                               )}
                             >
                               {formData.purpose === "amendment"
-                                ? "Hoạt động cải tạo đất"
+                                ? "Hoạt động cải tạo chuồng trại"
                                 : formData.purpose === "harvest"
-                                  ? "Hoạt động thu hoạch"
+                                  ? "Hoạt động xuất bán"
                                   : "Hoạt động điều trị bệnh"}
                             </p>
                           )}

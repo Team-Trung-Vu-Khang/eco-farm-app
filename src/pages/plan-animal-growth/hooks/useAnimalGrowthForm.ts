@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useToast, type Step } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import useRegionStore from "@/stores/useRegionStore";
-import usePersonnelStore from "@/stores/usePersonnelStore";
 import useSeasonStore from "@/stores/useSeasonStore";
-import usePlanStore from "../../../stores/usePlanStore";
+import usePersonnelStore from "@/stores/usePersonnelStore";
+import useAnimalGrowthPlanStore from "../../../stores/useAnimalGrowthPlanStore";
 import { useTreatmentStore } from "../../../stores/useTreatmentStore";
 import { useAmendmentRegimenStore } from "../../../stores/useAmendmentRegimenStore";
 import type {
@@ -21,6 +21,9 @@ import {
   summarizeSelections,
   summarizeTaskSelections,
 } from "../utils/location";
+import { useAnimalGrowthWorkflowDraftStore } from "./useAnimalGrowthWorkflowDraftStore";
+
+const WORKFLOW_BASE_PATH = "/plan-animal-growth/create/workflow";
 
 type DurationParts = {
   years: string;
@@ -144,7 +147,7 @@ function createEmptyFormData(): PlanFormData {
   };
 }
 
-type UseAnimalGrowthFormOptions = {
+type UsePlanFormOptions = {
   onSaved?: (planId: number) => void;
   onCancel?: () => void;
 };
@@ -152,7 +155,7 @@ type UseAnimalGrowthFormOptions = {
 export function useAnimalGrowthForm(
   mode: "create" | "edit",
   basePath = "/plan-animal-growth",
-  options?: UseAnimalGrowthFormOptions,
+  options?: UsePlanFormOptions,
 ) {
   const [, setLocation] = useLocation();
   const params = useParams();
@@ -160,9 +163,15 @@ export function useAnimalGrowthForm(
   const [dateWarning, setDateWarning] = useState<string | null>(null);
   const [selectedEnterpriseId, setSelectedEnterpriseId] = useState("");
 
-  const addPlan = usePlanStore((state) => state.addPlan);
-  const updatePlan = usePlanStore((state) => state.updatePlan);
-  const getPlanById = usePlanStore((state) => state.getPlanById);
+  const isWorkflowContext = basePath.startsWith(WORKFLOW_BASE_PATH);
+  const infoNodes = useAnimalGrowthWorkflowDraftStore((state) => state.infoNodes);
+  const workflowInfo = isWorkflowContext
+    ? (infoNodes.find((node) => node.isActive) ?? infoNodes[0])
+    : undefined;
+
+  const addPlan = useAnimalGrowthPlanStore((state) => state.addPlan);
+  const updatePlan = useAnimalGrowthPlanStore((state) => state.updatePlan);
+  const getPlanById = useAnimalGrowthPlanStore((state) => state.getPlanById);
   const seasons = useSeasonStore((state) => state.seasons);
   const personnel = usePersonnelStore((state) => state.personnel);
   const { regions } = useRegionStore();
@@ -291,6 +300,29 @@ export function useAnimalGrowthForm(
     setSelectedEnterpriseId(initialSelectionState?.enterpriseId || "");
   }, [initialSelectionState, mode, plan, regions.length]);
 
+  // Plans created inside a workflow diagram don't pick their own cultivation
+  // scope — they inherit whatever region/zone/plot the diagram's info node
+  // was set up with, so the field can't drift out of sync with the diagram.
+  useEffect(() => {
+    if (!isWorkflowContext || !workflowInfo || regions.length === 0) return;
+
+    const nextSelectionState = deriveSelectionState(
+      workflowInfo.selections,
+      regions,
+      formData.crop,
+      formData.variety,
+    );
+
+    setSelections(workflowInfo.selections);
+    setFormData((prev) => ({ ...prev, ...nextSelectionState }));
+
+    const firstRegionId = nextSelectionState.selectedRegionIds[0];
+    const firstRegion = regions.find(
+      (region) => String(region.id) === String(firstRegionId),
+    );
+    setSelectedEnterpriseId(firstRegion?.enterpriseId || "");
+  }, [isWorkflowContext, workflowInfo, regions]);
+
   const selectionSummary = useMemo(
     () => summarizeSelections(selections, regions),
     [regions, selections],
@@ -317,18 +349,24 @@ export function useAnimalGrowthForm(
       ...prev,
       ...nextSelectionState,
     }));
+
+    const firstRegionId = nextSelectionState.selectedRegionIds[0];
+    const firstRegion = regions.find(
+      (region) => String(region.id) === String(firstRegionId),
+    );
+    setSelectedEnterpriseId(firstRegion?.enterpriseId || "");
   };
 
   const handleSeasonChange = (seasonId: string) => {
     const season = seasons.find((item) => item.id === seasonId);
     if (!season) return;
-    const durationParts = getSeasonDurationParts(season as any);
+    const durationParts = getSeasonDurationParts(season);
 
     setFormData((prev) => ({
       ...prev,
       seasonId: season.id,
       seasonName: season.name,
-      code: prev.code || buildAutoPlanCode(season.id, season.name),
+      code: mode === "create" ? buildAutoPlanCode(season.id, season.name) : prev.code,
       endDate:
         addDurationPartsToDate(prev.startDate, {
           years: prev.plannedDurationYears || durationParts.years,
@@ -347,27 +385,34 @@ export function useAnimalGrowthForm(
     value: string,
   ) => {
     setFormData((prev) => {
-      const next = {
-        ...prev,
-        plannedDurationYears:
-          part === "years" ? value.replace(/[^0-9]/g, "") : prev.plannedDurationYears,
-        plannedDurationMonths:
-          part === "months" ? value.replace(/[^0-9]/g, "") : prev.plannedDurationMonths,
-        plannedDurationDays:
-          part === "days" ? value.replace(/[^0-9]/g, "") : prev.plannedDurationDays,
+      const nextParts = {
+        years: part === "years" ? value : prev.plannedDurationYears,
+        months: part === "months" ? value : prev.plannedDurationMonths,
+        days: part === "days" ? value : prev.plannedDurationDays,
       };
-
-      const endDate = addDurationPartsToDate(prev.startDate, {
-        years: next.plannedDurationYears,
-        months: next.plannedDurationMonths,
-        days: next.plannedDurationDays,
-      });
 
       return {
-        ...next,
-        endDate: endDate || prev.endDate,
+        ...prev,
+        plannedDurationYears: nextParts.years,
+        plannedDurationMonths: nextParts.months,
+        plannedDurationDays: nextParts.days,
+        endDate:
+          addDurationPartsToDate(prev.startDate, nextParts) || prev.endDate,
       };
     });
+  };
+
+  const handleStartDateChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      startDate: value,
+      endDate:
+        addDurationPartsToDate(value, {
+          years: prev.plannedDurationYears,
+          months: prev.plannedDurationMonths,
+          days: prev.plannedDurationDays,
+        }) || prev.endDate,
+    }));
   };
 
   const handleAddMaterial = useCallback(
@@ -441,7 +486,7 @@ export function useAnimalGrowthForm(
       description: `Đã tạo kế hoạch ${formData.name}`,
     });
     if (options?.onSaved) {
-      const created = usePlanStore.getState().plans.at(-1);
+      const created = useAnimalGrowthPlanStore.getState().plans.at(-1);
       if (created) {
         options.onSaved(created.id);
         return;
@@ -461,17 +506,20 @@ export function useAnimalGrowthForm(
     selectedEnterpriseId,
     setSelectedEnterpriseId,
     seasons,
-    personnel,
     regions,
     regimens,
     growthCycles,
+    isWorkflowContext,
+    workflowInfo,
     selectionSummary,
     dateWarning,
     calculateArea,
     summarizeTaskSelections: (taskSelections: any[] | undefined) =>
       summarizeTaskSelections(taskSelections as any, regions),
+    personnel,
     handleSeasonChange,
     handleDurationPartChange,
+    handleStartDateChange,
     handleGeographicalConfirm,
     handleAddMaterial,
     handleRemoveMaterial,
@@ -490,7 +538,7 @@ export function useAnimalGrowthForm(
     pageDescription:
       mode === "edit" && plan
         ? `Cập nhật thông tin chi tiết cho kế hoạch ${plan.code}`
-        : "Xây dựng lộ trình trồng trọt, phân bổ nguồn lực và giám sát",
+        : "Xây dựng lộ trình chăn nuôi, phân bổ nguồn lực và giám sát",
     completeLabel: mode === "edit" ? "Lưu thay đổi" : "Kích hoạt Kế hoạch",
   };
 }

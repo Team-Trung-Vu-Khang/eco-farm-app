@@ -1,6 +1,7 @@
 import { applyEdgeChanges, applyNodeChanges } from "reactflow";
 import type { Edge, EdgeChange, Node, NodeChange } from "reactflow";
 import { create } from "zustand";
+import type { GeographicalSelection } from "../types";
 
 export type WorkflowSetupKind = "plan" | "stage" | "detail";
 
@@ -27,6 +28,15 @@ export type WorkflowNodeData =
   | { setupKind: "detail"; payload: DetailPayload; parentId: string };
 
 export type DraftNode = Node<WorkflowNodeData>;
+
+export type DiagramInfoRecord = {
+  id: string;
+  name: string;
+  description: string;
+  selections: GeographicalSelection[];
+  isActive: boolean;
+  position: { x: number; y: number };
+};
 
 export function getStagePayload(node: DraftNode): StagePayload {
   return node.data.setupKind === "stage"
@@ -87,9 +97,15 @@ function placeNewNode(nodes: DraftNode[], parentId: string | undefined) {
   return { x: maxSiblingX + CHILD_GAP, y };
 }
 
-interface AquacultureWorkflowDraftState {
+interface AquacultureGrowthWorkflowDraftState {
   nodes: DraftNode[];
   edges: Edge[];
+  infoNodes: DiagramInfoRecord[];
+  // Which saved workflow (if any) this draft currently mirrors. null means
+  // "unsaved fresh draft" — used to tell that apart from "draft still holds
+  // a previously opened saved workflow" so a bare /create/workflow visit
+  // knows when it must reset instead of reusing stale state.
+  activeWorkflowId: string | null;
   onNodesChange: (changes: NodeChange[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
   setEdges: (updater: Edge[] | ((current: Edge[]) => Edge[])) => void;
@@ -97,15 +113,36 @@ interface AquacultureWorkflowDraftState {
   addNodeWithEdge: (node: DraftNode, edge: Edge) => void;
   updateNodePayload: (nodeId: string, payload: StagePayload | DetailPayload) => void;
   removeNodeCascade: (nodeId: string) => void;
+  setInfoNodes: (updater: DiagramInfoRecord[] | ((current: DiagramInfoRecord[]) => DiagramInfoRecord[])) => void;
+  loadWorkflow: (data: {
+    nodes: DraftNode[];
+    edges: Edge[];
+    infoNodes: DiagramInfoRecord[];
+    activeWorkflowId: string;
+  }) => void;
+  resetDraft: () => void;
 }
 
-export const useAquacultureWorkflowDraftStore =
-  create<AquacultureWorkflowDraftState>()((set, get) => ({
+export const useAquacultureGrowthWorkflowDraftStore = create<AquacultureGrowthWorkflowDraftState>()((set, get) => ({
   nodes: [],
   edges: [],
+  infoNodes: [],
+  activeWorkflowId: null,
 
   onNodesChange: (changes) => {
-    set({ nodes: applyNodeChanges(changes, get().nodes) as DraftNode[] });
+    set((state) => {
+      const knownIds = new Set(state.nodes.map((node) => node.id));
+      const relevantChanges = changes.filter((change) =>
+        "id" in change ? knownIds.has(change.id) : true,
+      );
+      // Nodes rendered outside this store (e.g. DiagramInfo cards) still emit
+      // dimension/position changes here. Returning the same state reference
+      // (instead of a fresh array with no matching ids) lets zustand skip the
+      // update — otherwise those foreign, ever-unmeasured nodes trigger an
+      // infinite re-render loop.
+      if (relevantChanges.length === 0) return state;
+      return { ...state, nodes: applyNodeChanges(relevantChanges, state.nodes) as DraftNode[] };
+    });
   },
 
   onEdgesChange: (changes) => {
@@ -164,4 +201,18 @@ export const useAquacultureWorkflowDraftStore =
       edges: edges.filter((edge) => !removable.has(edge.source) && !removable.has(edge.target)),
     });
   },
-  }));
+
+  setInfoNodes: (updater) => {
+    set((state) => ({
+      infoNodes: typeof updater === "function" ? updater(state.infoNodes) : updater,
+    }));
+  },
+
+  loadWorkflow: ({ nodes, edges, infoNodes, activeWorkflowId }) => {
+    set({ nodes, edges, infoNodes, activeWorkflowId });
+  },
+
+  resetDraft: () => {
+    set({ nodes: [], edges: [], infoNodes: [], activeWorkflowId: null });
+  },
+}));

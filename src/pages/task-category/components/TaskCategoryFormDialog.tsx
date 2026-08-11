@@ -18,11 +18,16 @@ import {
   SelectValue,
   Textarea,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import {
+  taskCategoryDomainLabel,
+  taskCategoryDomainOptions,
+} from "../data/constants";
 import type { TaskCategoryFormData } from "../types/types";
 
 const formSchema = z.object({
   name: z.string().min(1, { message: "Tên công việc là bắt buộc" }),
   description: z.string().optional(),
+  domain: z.enum(["crop", "animal", "aquaculture"]),
   status: z.enum(["active", "inactive"]).optional(),
 });
 
@@ -48,6 +53,7 @@ export function TaskCategoryFormDialog({
     defaultValues: {
       name: "",
       description: "",
+      domain: "crop",
       status: "active",
     },
   });
@@ -57,6 +63,7 @@ export function TaskCategoryFormDialog({
       form.reset({
         name: initialData.name || "",
         description: initialData.description || "",
+        domain: initialData.domain || "crop",
         status: initialData.status || "active",
       });
     }
@@ -66,6 +73,7 @@ export function TaskCategoryFormDialog({
     onSubmit({
       name: values.name,
       description: values.description || "",
+      domain: values.domain,
       status: values.status,
     });
   };
@@ -96,6 +104,33 @@ export function TaskCategoryFormDialog({
                     {...field}
                   />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="domain"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Nhóm công việc
+                  <span className="text-destructive ml-1">*</span>
+                </FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger data-testid="select-domain">
+                      <SelectValue placeholder="Chọn nhóm công việc" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {taskCategoryDomainOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {taskCategoryDomainLabel[option.value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

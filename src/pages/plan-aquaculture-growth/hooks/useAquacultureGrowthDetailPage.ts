@@ -4,7 +4,7 @@ import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import useRegionStore from "@/stores/useRegionStore";
 import useSeasonStore from "@/stores/useSeasonStore";
-import usePlanStore from "../../../stores/usePlanStore";
+import useAquacultureGrowthPlanStore from "../../../stores/useAquacultureGrowthPlanStore";
 import { useTreatmentStore } from "../../../stores/useTreatmentStore";
 import { useAmendmentRegimenStore } from "../../../stores/useAmendmentRegimenStore";
 import {
@@ -17,8 +17,8 @@ export function useAquacultureGrowthDetailPage(basePath = "/plan-aquaculture-gro
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const getPlanById = usePlanStore((state) => state.getPlanById);
-  const deletePlan = usePlanStore((state) => state.deletePlan);
+  const getPlanById = useAquacultureGrowthPlanStore((state) => state.getPlanById);
+  const deletePlan = useAquacultureGrowthPlanStore((state) => state.deletePlan);
   const { regions } = useRegionStore();
   const { growthCycles } = useGrowthCycleStore();
   const { seasons } = useSeasonStore();

@@ -21,6 +21,9 @@ import {
   summarizeSelections,
   summarizeTaskSelections,
 } from "../utils/location";
+import { usePlanWorkflowDraftStore } from "./usePlanWorkflowDraftStore";
+
+const WORKFLOW_BASE_PATH = "/plan-growth/create/workflow";
 
 type DurationParts = {
   years: string;
@@ -160,6 +163,12 @@ export function usePlanForm(
   const [dateWarning, setDateWarning] = useState<string | null>(null);
   const [selectedEnterpriseId, setSelectedEnterpriseId] = useState("");
 
+  const isWorkflowContext = basePath.startsWith(WORKFLOW_BASE_PATH);
+  const infoNodes = usePlanWorkflowDraftStore((state) => state.infoNodes);
+  const workflowInfo = isWorkflowContext
+    ? (infoNodes.find((node) => node.isActive) ?? infoNodes[0])
+    : undefined;
+
   const addPlan = usePlanStore((state) => state.addPlan);
   const updatePlan = usePlanStore((state) => state.updatePlan);
   const getPlanById = usePlanStore((state) => state.getPlanById);
@@ -290,6 +299,29 @@ export function usePlanForm(
     setSelections(initialSelectionState?.selections || []);
     setSelectedEnterpriseId(initialSelectionState?.enterpriseId || "");
   }, [initialSelectionState, mode, plan, regions.length]);
+
+  // Plans created inside a workflow diagram don't pick their own cultivation
+  // scope — they inherit whatever region/zone/plot the diagram's info node
+  // was set up with, so the field can't drift out of sync with the diagram.
+  useEffect(() => {
+    if (!isWorkflowContext || !workflowInfo || regions.length === 0) return;
+
+    const nextSelectionState = deriveSelectionState(
+      workflowInfo.selections,
+      regions,
+      formData.crop,
+      formData.variety,
+    );
+
+    setSelections(workflowInfo.selections);
+    setFormData((prev) => ({ ...prev, ...nextSelectionState }));
+
+    const firstRegionId = nextSelectionState.selectedRegionIds[0];
+    const firstRegion = regions.find(
+      (region) => String(region.id) === String(firstRegionId),
+    );
+    setSelectedEnterpriseId(firstRegion?.enterpriseId || "");
+  }, [isWorkflowContext, workflowInfo, regions]);
 
   const selectionSummary = useMemo(
     () => summarizeSelections(selections, regions),
@@ -477,6 +509,8 @@ export function usePlanForm(
     regions,
     regimens,
     growthCycles,
+    isWorkflowContext,
+    workflowInfo,
     selectionSummary,
     dateWarning,
     calculateArea,

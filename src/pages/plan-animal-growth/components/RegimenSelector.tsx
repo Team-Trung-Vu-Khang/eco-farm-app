@@ -175,7 +175,7 @@ export const RegimenSelector = ({
                     : "Chọn phác đồ điều trị..."}
                 </p>
                 <p className="text-[10px] text-slate-400">
-                  Tìm kiếm dựa trên hiện trạng chuồng trại, dịch bệnh, vật nuôi
+                  Tìm kiếm dựa trên hiện trạng chuồng trại, bệnh hại, vật nuôi
                 </p>
               </>
             )}
@@ -207,7 +207,7 @@ export const RegimenSelector = ({
               <div className="flex flex-col">
                 <span>
                   {type === "amendment"
-                    ? "Kho quy trình cải tạo đất"
+                    ? "Kho quy trình cải tạo chuồng trại"
                     : "Kho phác đồ điều trị bệnh"}
                 </span>
                 <span className="text-xs text-muted-foreground font-normal">
@@ -253,7 +253,7 @@ export const RegimenSelector = ({
 
               <div className="space-y-1.5">
                 <label className="text-[10px] uppercase tracking-widest font-black text-slate-400 ml-1">
-                  {type === "amendment" ? "Hiện trạng đất" : "Nhóm bệnh hại"}
+                  {type === "amendment" ? "Hiện trạng chuồng trại" : "Nhóm bệnh hại"}
                 </label>
                 <Select
                   value={filterCategory}
@@ -284,7 +284,7 @@ export const RegimenSelector = ({
 
               <div className="space-y-1.5">
                 <label className="text-[10px] uppercase tracking-widest font-black text-slate-400 ml-1">
-                  Cây trồng
+                  Vật nuôi
                 </label>
                 <Select value={filterCrop} onValueChange={setFilterCrop}>
                   <SelectTrigger className="h-10 bg-slate-50/50 border-slate-200">

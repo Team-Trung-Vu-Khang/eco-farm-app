@@ -1,5 +1,5 @@
 import { Badge } from "@Team-Trung-Vu-Khang/eco-shared-ui";
-import type { PlanStatus } from "../aquacultureGrowthTypes";
+import type { PlanStatus } from "../types";
 
 export function getPlanStatusBadge(status: PlanStatus | string) {
   const statusConfig = {

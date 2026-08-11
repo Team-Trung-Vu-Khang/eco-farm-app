@@ -1,17 +1,16 @@
 import PageWrapper from "@/components/PageWrapper";
-import {
-  Button,
-  DataTable,
-  DeleteDialog,
-} from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { Button, DataTable } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
+import useAnimalGrowthWorkflowStore from "@/stores/useAnimalGrowthWorkflowStore";
+import { useAnimalGrowthWorkflowDraftStore } from "./hooks/useAnimalGrowthWorkflowDraftStore";
 import {
-  animalGrowthFilters,
-  AnimalGrowthStatisticsCards,
-  createAnimalGrowthColumns,
-} from "./data/animalGrowthTable";
+  createWorkflowColumns,
+  PlanAnimalGrowthStatisticsCards,
+  UNASSIGNED_WORKFLOW_ID,
+  type WorkflowRow,
+} from "./data/table";
 import { useAnimalGrowthPage } from "./hooks/useAnimalGrowthPage";
 
 interface PlanAnimalGrowthPageProps {
@@ -22,89 +21,111 @@ export default function PlanAnimalGrowthPage({
   basePath = "/plan-animal-growth",
 }: PlanAnimalGrowthPageProps) {
   const [search, setSearch] = useState("");
-  const {
-    plans,
-    statistics,
-    deleteOpen,
-    setDeleteOpen,
-    handleDelete,
-    handleConfirmDelete,
-    goToView,
-    goToEdit,
-  } = useAnimalGrowthPage(basePath);
+  const [, setLocation] = useLocation();
+  const { plans, statistics } = useAnimalGrowthPage(basePath);
+  const workflows = useAnimalGrowthWorkflowStore((state) => state.workflows);
+  const resetWorkflowDraft = useAnimalGrowthWorkflowDraftStore(
+    (state) => state.resetDraft,
+  );
+
+  const handleCreatePlan = () => {
+    // Start a clean canvas — otherwise a workflow opened earlier via
+    // "Mở workflow" would still be sitting in the draft store.
+    resetWorkflowDraft();
+    setLocation(`${basePath}/create/workflow`);
+  };
+
+  const workflowRows = useMemo<WorkflowRow[]>(() => {
+    const rows = workflows.map((workflow) => {
+      const workflowPlans = plans.filter(
+        (plan) => plan.workflowId === workflow.id,
+      );
+      return {
+        id: workflow.id,
+        name: workflow.name,
+        description: workflow.description,
+        totalCount: workflowPlans.length,
+        activeCount: workflowPlans.filter((p) => p.status === "active").length,
+        draftCount: workflowPlans.filter((p) => p.status === "draft").length,
+        completedCount: workflowPlans.filter((p) => p.status === "completed")
+          .length,
+        cancelledCount: workflowPlans.filter((p) => p.status === "cancelled")
+          .length,
+      };
+    });
+
+    const unassignedPlans = plans.filter((plan) => !plan.workflowId);
+    if (unassignedPlans.length) {
+      rows.push({
+        id: UNASSIGNED_WORKFLOW_ID,
+        name: "Kế hoạch chưa gắn sơ đồ",
+        description:
+          "Kế hoạch được tạo trước khi lưu sơ đồ quy trình hoặc chưa bấm Lưu quy trình.",
+        totalCount: unassignedPlans.length,
+        activeCount: unassignedPlans.filter((p) => p.status === "active")
+          .length,
+        draftCount: unassignedPlans.filter((p) => p.status === "draft").length,
+        completedCount: unassignedPlans.filter((p) => p.status === "completed")
+          .length,
+        cancelledCount: unassignedPlans.filter((p) => p.status === "cancelled")
+          .length,
+      });
+    }
+
+    return rows;
+  }, [workflows, plans]);
 
   const columns = useMemo(
     () =>
-      createAnimalGrowthColumns({
-        onView: (item) => goToView(item.id),
-        onEdit: (item) => goToEdit(item.id),
-        onDelete: handleDelete,
+      createWorkflowColumns({
+        onView: (row) => setLocation(`${basePath}/workflow/${row.id}`),
+        onOpenWorkflow: (row) =>
+          setLocation(`${basePath}/create/workflow/${row.id}`),
       }),
-    [goToView, goToEdit, handleDelete],
+    [basePath, setLocation],
   );
 
-  const filteredPlans = useMemo(() => {
+  const filteredWorkflowRows = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return plans;
+    if (!query) return workflowRows;
 
-    return plans.filter((plan) => {
-      const searchable = [
-        plan.code,
-        plan.name,
-        plan.description,
-        plan.seasonName,
-        plan.startDate,
-        plan.endDate,
-        plan.cultivationRegion,
-        plan.zone,
-        plan.crop,
-        plan.variety,
-        plan.status,
-      ]
+    return workflowRows.filter((row) =>
+      [row.name, row.description]
         .filter(Boolean)
         .join(" ")
-        .toLowerCase();
-
-      return searchable.includes(query);
-    });
-  }, [plans, search]);
+        .toLowerCase()
+        .includes(query),
+    );
+  }, [workflowRows, search]);
 
   return (
     <PageWrapper
       title="Quản lý chăn nuôi"
       description="Lập và quản lý kế hoạch chăn nuôi theo lứa nuôi"
       actions={
-        <Link href={`${basePath}/create/workflow`}>
-          <Button data-testid="add-plan">
-            <Plus className="w-4 h-4 mr-2" />
-            Khởi tạo kế hoạch chăn nuôi mới
-          </Button>
-        </Link>
+        <Button data-testid="add-plan" onClick={handleCreatePlan}>
+          <Plus className="w-4 h-4 mr-2" />
+          Khởi tạo kế hoạch chăn nuôi mới
+        </Button>
       }
     >
       <div className="space-y-6">
-        <AnimalGrowthStatisticsCards
+        <PlanAnimalGrowthStatisticsCards
           totalCount={statistics.total}
           activeCount={statistics.active}
           draftCount={statistics.draft}
           completedCount={statistics.completed}
+          cancelledCount={statistics.cancelled}
         />
 
         <DataTable
           columns={columns}
-          data={filteredPlans}
+          data={filteredWorkflowRows}
           searchable
           onSearch={setSearch}
-          searchPlaceholder="Tìm kiếm kế hoạch chăn nuôi..."
-          filters={animalGrowthFilters}
+          searchPlaceholder="Tìm kiếm sơ đồ quy trình chăn nuôi..."
         />
       </div>
-
-      <DeleteDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        onConfirm={handleConfirmDelete}
-      />
     </PageWrapper>
   );
 }

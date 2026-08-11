@@ -22,9 +22,7 @@ import {
 import {
   CheckCircle2,
   Clock,
-  Layers,
   Leaf,
-  MapPin,
   Package,
   Plus,
   Search,
@@ -34,17 +32,15 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { memo, useMemo, useState } from "react";
+import { memo, useState } from "react";
 import usePersonnelStore from "../../../stores/usePersonnelStore";
-import GeographicalSelector from "./GeographicalSelector";
 import type { GeographicalSelection } from "../types";
 import {
-  ANIMAL_LABOR_OPTIONS,
-  ANIMAL_MATERIAL_OPTIONS,
-  ANIMAL_MATERIAL_TYPES,
-  ANIMAL_MATERIAL_UNITS,
-  ANIMAL_TASK_OPTIONS,
-} from "../data/animalGrowthMocks";
+  MATERIAL_OPTIONS,
+  MATERIAL_TYPES,
+  MATERIAL_UNITS,
+  TASK_OPTIONS,
+} from "../data/mocks";
 import type { MaterialAllocation, TaskAllocation } from "../types";
 
 export const StageAllocation = memo(
@@ -58,9 +54,7 @@ export const StageAllocation = memo(
     onRemoveMaterial,
     onAddTask,
     onRemoveTask,
-    regions = [],
     masterSelections = [],
-    enterpriseId = "",
     isDetail = true,
   }: {
     stageName: string;
@@ -82,7 +76,7 @@ export const StageAllocation = memo(
       name: "",
       qty: "",
       unit: "kg",
-      type: "Thức ăn chăn nuôi",
+      type: "Thức ăn",
     });
 
     const specificPersonnel = isDetail;
@@ -103,136 +97,6 @@ export const StageAllocation = memo(
     const { personnel } = usePersonnelStore();
     const [personnelSearch, setPersonnelSearch] = useState("");
 
-    const availableRegions = useMemo(() => {
-      if (!regions || !masterSelections || masterSelections.length === 0)
-        return regions;
-
-      return regions
-        .map((r) => {
-          const regionIdStr = String(r.id);
-          const isRegionSelected = masterSelections.some(
-            (s) => s.type === "region" && String(s.regionId) === regionIdStr,
-          );
-
-          if (isRegionSelected) return r;
-
-          const areasInMaster = masterSelections.filter(
-            (s) => String(s.regionId) === regionIdStr,
-          );
-          if (areasInMaster.length === 0) return null;
-
-          const newSubAreas = r.subAreas
-            ?.map((a: any) => {
-              const areaIdStr = String(a.id);
-              const isAreaSelected = masterSelections.some(
-                (s) =>
-                  s.type === "area" &&
-                  String(s.regionId) === regionIdStr &&
-                  String(s.areaId) === areaIdStr,
-              );
-
-              if (isAreaSelected) return a;
-
-              const plotsInMaster = masterSelections.filter(
-                (s) =>
-                  s.type === "plot" &&
-                  String(s.regionId) === regionIdStr &&
-                  String(s.areaId) === areaIdStr,
-              );
-              if (plotsInMaster.length === 0) return null;
-
-              const newPlots = a.plots?.filter((p: any) =>
-                masterSelections.some(
-                  (s) =>
-                    s.type === "plot" &&
-                    String(s.regionId) === regionIdStr &&
-                    String(s.areaId) === areaIdStr &&
-                    String(s.plotId) === String(p.id),
-                ),
-              );
-
-              return newPlots?.length > 0 ? { ...a, plots: newPlots } : null;
-            })
-            .filter(Boolean);
-
-          return newSubAreas?.length > 0
-            ? { ...r, subAreas: newSubAreas }
-            : null;
-        })
-        .filter(Boolean);
-    }, [regions, masterSelections]);
-
-    const getSelectionSummary = (selections: GeographicalSelection[]) => {
-      const summary: {
-        regionId: string;
-        regionName: string;
-        items: {
-          type: "region" | "area" | "plot";
-          id: string;
-          name: string;
-          parentName?: string;
-        }[];
-      }[] = [];
-
-      selections.forEach((sel) => {
-        const region = (regions || []).find(
-          (r) => String(r.id) === String(sel.regionId),
-        );
-        if (!region) return;
-
-        let regionGroup = summary.find((s) => s.regionId === String(region.id));
-        if (!regionGroup) {
-          regionGroup = {
-            regionId: String(region.id),
-            regionName: region.name,
-            items: [],
-          };
-          summary.push(regionGroup);
-        }
-
-        if (sel.type === "region") {
-          regionGroup.items.push({
-            type: "region",
-            id: String(region.id),
-            name: "Toàn bộ vùng",
-          });
-        } else if (sel.type === "area") {
-          const area = region.subAreas?.find(
-            (a: any) => String(a.id) === String(sel.areaId),
-          );
-          if (area) {
-            regionGroup.items.push({
-              type: "area",
-              id: String(area.id),
-              name: area.name,
-            });
-          }
-        } else if (sel.type === "plot") {
-          const area = region.subAreas?.find(
-            (a: any) => String(a.id) === String(sel.areaId),
-          );
-          const plot = area?.plots?.find(
-            (p: any) => String(p.id) === String(sel.plotId),
-          );
-          if (plot) {
-            regionGroup.items.push({
-              type: "plot",
-              id: String(plot.id),
-              name: plot.name,
-              parentName: area?.name,
-            });
-          }
-        }
-      });
-
-      return summary;
-    };
-
-    const newTaskSummary = useMemo(
-      () => getSelectionSummary(newTask.geographicalSelections),
-      [newTask.geographicalSelections, regions],
-    );
-
     const filteredPersonnel = personnelSearch.trim()
       ? personnel.filter((p) =>
           p.fullName.toLowerCase().includes(personnelSearch.toLowerCase()),
@@ -249,7 +113,7 @@ export const StageAllocation = memo(
         quantity: newItem.qty,
         unit: newItem.unit,
       });
-      setNewItem({ name: "", qty: "", unit: "kg", type: "Phân bón" });
+      setNewItem({ name: "", qty: "", unit: "kg", type: "Thức ăn" });
     };
 
     const handleAddTask = () => {
@@ -432,8 +296,8 @@ export const StageAllocation = memo(
                           value={newItem.type}
                           onValueChange={(v) => {
                             const defaultUnit =
-                              ANIMAL_MATERIAL_UNITS[
-                                v as keyof typeof ANIMAL_MATERIAL_UNITS
+                              MATERIAL_UNITS[
+                                v as keyof typeof MATERIAL_UNITS
                               ]?.[0] || "kg";
                             setNewItem({
                               ...newItem,
@@ -447,7 +311,7 @@ export const StageAllocation = memo(
                             <SelectValue placeholder="Loại..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {ANIMAL_MATERIAL_TYPES.map((type) => (
+                            {MATERIAL_TYPES.map((type) => (
                               <SelectItem key={type.value} value={type.value}>
                                 {type.label}
                               </SelectItem>
@@ -461,8 +325,8 @@ export const StageAllocation = memo(
                           value={newItem.name}
                           onValueChange={(v) => {
                             const category =
-                              ANIMAL_MATERIAL_OPTIONS[
-                                newItem.type as keyof typeof ANIMAL_MATERIAL_OPTIONS
+                              MATERIAL_OPTIONS[
+                                newItem.type as keyof typeof MATERIAL_OPTIONS
                               ] || [];
                             const item = category.find((i) => i.value === v);
                             setNewItem({
@@ -477,8 +341,8 @@ export const StageAllocation = memo(
                           </SelectTrigger>
                           <SelectContent>
                             {(
-                              ANIMAL_MATERIAL_OPTIONS[
-                                newItem.type as keyof typeof ANIMAL_MATERIAL_OPTIONS
+                              MATERIAL_OPTIONS[
+                                newItem.type as keyof typeof MATERIAL_OPTIONS
                               ] || []
                             ).map((opt) => (
                               <SelectItem key={opt.value} value={opt.value}>
@@ -515,8 +379,8 @@ export const StageAllocation = memo(
                           </SelectTrigger>
                           <SelectContent>
                             {(
-                              ANIMAL_MATERIAL_UNITS[
-                                newItem.type as keyof typeof ANIMAL_MATERIAL_UNITS
+                              MATERIAL_UNITS[
+                                newItem.type as keyof typeof MATERIAL_UNITS
                               ] || ["kg"]
                             ).map((u) => (
                               <SelectItem key={u} value={u}>
@@ -603,43 +467,6 @@ export const StageAllocation = memo(
                             </div>
                           </div>
 
-                          {/* Geographical summary for the task item */}
-                          {t.geographicalSelections &&
-                            t.geographicalSelections.length > 0 && (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 pt-1 border-t border-slate-50 mt-1">
-                                {getSelectionSummary(
-                                  t.geographicalSelections,
-                                ).map((group) => (
-                                  <div
-                                    key={group.regionId}
-                                    className="flex flex-col gap-1 border-l border-slate-100 pl-2 py-0.5"
-                                  >
-                                    <div className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wide">
-                                      <MapPin className="w-2.5 h-2.5 text-slate-300" />
-                                      {group.regionName}
-                                    </div>
-                                    <div className="flex flex-wrap gap-1">
-                                      {group.items.map((item, idx) => (
-                                        <Badge
-                                          key={idx}
-                                          variant="outline"
-                                          className={cn(
-                                            "text-[9px] py-0 px-1.5 h-4 font-medium border-slate-100 shadow-none",
-                                            item.type === "region"
-                                              ? "bg-emerald-50/30 text-emerald-600 border-emerald-100/30"
-                                              : item.type === "area"
-                                                ? "bg-blue-50/30 text-blue-500 border-blue-100/30"
-                                                : "bg-white text-slate-400 border-slate-100",
-                                          )}
-                                        >
-                                          {item.name}
-                                        </Badge>
-                                      ))}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
                         </div>
                       ))
                     )}
@@ -657,7 +484,7 @@ export const StageAllocation = memo(
                         <SelectValue placeholder="Chọn công việc..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {ANIMAL_TASK_OPTIONS.map((opt) => (
+                        {TASK_OPTIONS.map((opt) => (
                           <SelectItem key={opt.value} value={opt.value}>
                             {opt.label}
                           </SelectItem>
@@ -807,72 +634,6 @@ export const StageAllocation = memo(
                     </div>
                   </div>
 
-                  {/* Geographical Scope Selection */}
-                  <div className="space-y-2 pt-2 border-t mt-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                        <MapPin className="w-3 h-3" /> Phạm vi áp dụng
-                      </span>
-                      <GeographicalSelector
-                        regions={availableRegions}
-                        enterpriseId={enterpriseId}
-                        existingSelections={newTask.geographicalSelections}
-                        onConfirm={(selections) =>
-                          setNewTask((prev) => ({
-                            ...prev,
-                            geographicalSelections: selections,
-                          }))
-                        }
-                      />
-                    </div>
-
-                    {newTaskSummary.length > 0 && (
-                      <div className="p-3 rounded-xl bg-emerald-50/30 border border-emerald-100/50 space-y-3">
-                        <div className="text-xs font-bold text-emerald-800/60 uppercase tracking-widest flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Layers className="w-3.5 h-3.5" /> PHẠM VI ÁP DỤNG
-                          </div>
-                          <Badge
-                            variant="secondary"
-                            className="bg-emerald-100 text-emerald-700 border-none text-[10px] font-bold h-5"
-                          >
-                            {newTask.geographicalSelections.length} vùng/lô
-                          </Badge>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-                          {newTaskSummary.map((group) => (
-                            <div
-                              key={group.regionId}
-                              className="flex flex-col gap-1.5"
-                            >
-                              <div className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5 group/region">
-                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.4)]" />
-                                {group.regionName}
-                              </div>
-                              <div className="flex flex-wrap gap-1.5 pl-3">
-                                {group.items.map((item, idx) => (
-                                  <Badge
-                                    key={idx}
-                                    variant="outline"
-                                    className={cn(
-                                      "text-[10px] py-0.5 px-2 h-5 font-semibold border-emerald-50/50 shadow-sm",
-                                      item.type === "region"
-                                        ? "bg-emerald-50/80 text-emerald-700 border-emerald-100/50"
-                                        : item.type === "area"
-                                          ? "bg-blue-50/80 text-blue-600 border-blue-100/50"
-                                          : "bg-white text-slate-500 border-slate-100",
-                                    )}
-                                  >
-                                    {item.name}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </TabsContent>
             </Tabs>

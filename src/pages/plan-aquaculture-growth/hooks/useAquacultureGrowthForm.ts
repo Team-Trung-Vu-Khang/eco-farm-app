@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useToast, type Step } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import useRegionStore from "@/stores/useRegionStore";
-import usePersonnelStore from "@/stores/usePersonnelStore";
 import useSeasonStore from "@/stores/useSeasonStore";
-import usePlanStore from "../../../stores/usePlanStore";
+import usePersonnelStore from "@/stores/usePersonnelStore";
+import useAquacultureGrowthPlanStore from "../../../stores/useAquacultureGrowthPlanStore";
 import { useTreatmentStore } from "../../../stores/useTreatmentStore";
 import { useAmendmentRegimenStore } from "../../../stores/useAmendmentRegimenStore";
 import type {
@@ -13,7 +13,7 @@ import type {
   MaterialAllocation,
   PlanFormData,
   TaskAllocation,
-} from "../aquacultureGrowthTypes";
+} from "../types";
 import {
   calculateSelectedArea,
   deriveSelectionState,
@@ -21,6 +21,9 @@ import {
   summarizeSelections,
   summarizeTaskSelections,
 } from "../utils/location";
+import { useAquacultureGrowthWorkflowDraftStore } from "./useAquacultureGrowthWorkflowDraftStore";
+
+const WORKFLOW_BASE_PATH = "/plan-aquaculture-growth/create/workflow";
 
 type DurationParts = {
   years: string;
@@ -144,7 +147,7 @@ function createEmptyFormData(): PlanFormData {
   };
 }
 
-type UseAquacultureGrowthFormOptions = {
+type UsePlanFormOptions = {
   onSaved?: (planId: number) => void;
   onCancel?: () => void;
 };
@@ -152,7 +155,7 @@ type UseAquacultureGrowthFormOptions = {
 export function useAquacultureGrowthForm(
   mode: "create" | "edit",
   basePath = "/plan-aquaculture-growth",
-  options?: UseAquacultureGrowthFormOptions,
+  options?: UsePlanFormOptions,
 ) {
   const [, setLocation] = useLocation();
   const params = useParams();
@@ -160,9 +163,15 @@ export function useAquacultureGrowthForm(
   const [dateWarning, setDateWarning] = useState<string | null>(null);
   const [selectedEnterpriseId, setSelectedEnterpriseId] = useState("");
 
-  const addPlan = usePlanStore((state) => state.addPlan);
-  const updatePlan = usePlanStore((state) => state.updatePlan);
-  const getPlanById = usePlanStore((state) => state.getPlanById);
+  const isWorkflowContext = basePath.startsWith(WORKFLOW_BASE_PATH);
+  const infoNodes = useAquacultureGrowthWorkflowDraftStore((state) => state.infoNodes);
+  const workflowInfo = isWorkflowContext
+    ? (infoNodes.find((node) => node.isActive) ?? infoNodes[0])
+    : undefined;
+
+  const addPlan = useAquacultureGrowthPlanStore((state) => state.addPlan);
+  const updatePlan = useAquacultureGrowthPlanStore((state) => state.updatePlan);
+  const getPlanById = useAquacultureGrowthPlanStore((state) => state.getPlanById);
   const seasons = useSeasonStore((state) => state.seasons);
   const personnel = usePersonnelStore((state) => state.personnel);
   const { regions } = useRegionStore();
@@ -206,16 +215,13 @@ export function useAquacultureGrowthForm(
     return [...mappedTreatments, ...mappedAmendments];
   }, [treatments, amendmentRegimensRaw]);
 
-  const getSeasonDurationParts = useCallback(
-    (season: { duration?: number } | null | undefined) => {
-      if (!season || typeof season.duration !== "number") {
-        return { years: "", months: "", days: "" };
-      }
+  const getSeasonDurationParts = useCallback((season: { duration?: number } | null | undefined) => {
+    if (!season || typeof season.duration !== "number") {
+      return { years: "", months: "", days: "" };
+    }
 
-      return parseDaysToParts(season.duration);
-    },
-    [],
-  );
+    return parseDaysToParts(season.duration);
+  }, []);
 
   const plan = mode === "edit" ? getPlanById(Number(params.id)) : undefined;
   const initialSelectionState = useMemo(
@@ -294,6 +300,29 @@ export function useAquacultureGrowthForm(
     setSelectedEnterpriseId(initialSelectionState?.enterpriseId || "");
   }, [initialSelectionState, mode, plan, regions.length]);
 
+  // Plans created inside a workflow diagram don't pick their own cultivation
+  // scope — they inherit whatever region/zone/plot the diagram's info node
+  // was set up with, so the field can't drift out of sync with the diagram.
+  useEffect(() => {
+    if (!isWorkflowContext || !workflowInfo || regions.length === 0) return;
+
+    const nextSelectionState = deriveSelectionState(
+      workflowInfo.selections,
+      regions,
+      formData.crop,
+      formData.variety,
+    );
+
+    setSelections(workflowInfo.selections);
+    setFormData((prev) => ({ ...prev, ...nextSelectionState }));
+
+    const firstRegionId = nextSelectionState.selectedRegionIds[0];
+    const firstRegion = regions.find(
+      (region) => String(region.id) === String(firstRegionId),
+    );
+    setSelectedEnterpriseId(firstRegion?.enterpriseId || "");
+  }, [isWorkflowContext, workflowInfo, regions]);
+
   const selectionSummary = useMemo(
     () => summarizeSelections(selections, regions),
     [regions, selections],
@@ -337,10 +366,7 @@ export function useAquacultureGrowthForm(
       ...prev,
       seasonId: season.id,
       seasonName: season.name,
-      code:
-        mode === "create"
-          ? buildAutoPlanCode(season.id, season.name)
-          : prev.code,
+      code: mode === "create" ? buildAutoPlanCode(season.id, season.name) : prev.code,
       endDate:
         addDurationPartsToDate(prev.startDate, {
           years: prev.plannedDurationYears || durationParts.years,
@@ -460,7 +486,7 @@ export function useAquacultureGrowthForm(
       description: `Đã tạo kế hoạch ${formData.name}`,
     });
     if (options?.onSaved) {
-      const created = usePlanStore.getState().plans.at(-1);
+      const created = useAquacultureGrowthPlanStore.getState().plans.at(-1);
       if (created) {
         options.onSaved(created.id);
         return;
@@ -480,15 +506,17 @@ export function useAquacultureGrowthForm(
     selectedEnterpriseId,
     setSelectedEnterpriseId,
     seasons,
-    personnel,
     regions,
     regimens,
     growthCycles,
+    isWorkflowContext,
+    workflowInfo,
     selectionSummary,
     dateWarning,
     calculateArea,
     summarizeTaskSelections: (taskSelections: any[] | undefined) =>
       summarizeTaskSelections(taskSelections as any, regions),
+    personnel,
     handleSeasonChange,
     handleDurationPartChange,
     handleStartDateChange,
@@ -510,7 +538,7 @@ export function useAquacultureGrowthForm(
     pageDescription:
       mode === "edit" && plan
         ? `Cập nhật thông tin chi tiết cho kế hoạch ${plan.code}`
-        : "Xây dựng lộ trình trồng trọt, phân bổ nguồn lực và giám sát",
+        : "Xây dựng lộ trình nuôi trồng thủy sản, phân bổ nguồn lực và giám sát",
     completeLabel: mode === "edit" ? "Lưu thay đổi" : "Kích hoạt Kế hoạch",
   };
 }

@@ -1,6 +1,6 @@
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import usePlanStore from "../../../stores/usePlanStore";
 
 export function usePlanPage(basePath = "/plan-growth") {
@@ -46,6 +46,7 @@ export function usePlanPage(basePath = "/plan-growth") {
     handleDuplicate,
     goToCreate: () => setLocation(`${basePath}/create/workflow`),
     goToView: (id: number) => setLocation(`${basePath}/${id}`),
-    goToEdit: (id: number) => setLocation(`${basePath}/${id}/workflow`),
+    goToEdit: (id: number) =>
+      setLocation(`${basePath}/create/workflow/plan/${id}/edit`),
   };
 }

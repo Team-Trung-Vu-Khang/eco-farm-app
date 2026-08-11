@@ -1,8 +1,7 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import { initialPlans } from "./planWorkflowSeed";
+import { initialAquacultureGrowthPlans } from "./aquacultureGrowthWorkflowSeed";
 
-// Interface cho vật tư chi tiết
 export interface MaterialAllocation {
   id: number;
   stageId: string;
@@ -22,7 +21,7 @@ export interface TaskAllocation {
   description: string;
   labor: string;
   duration: string;
-  geographicalSelections?: import("../pages/plan/types").GeographicalSelection[];
+  geographicalSelections?: import("../pages/plan-aquaculture-growth/types").GeographicalSelection[];
   isRepeating?: boolean;
   repeatDays?: number[];
   repeatWeeks?: number;
@@ -38,8 +37,6 @@ export interface Plan {
   seasonName: string;
   startDate: string;
   endDate: string;
-
-  // Location & Crop
   selectedRegionIds: string[];
   selectedZoneIds: string[];
   selectedPlotIds: string[];
@@ -52,33 +49,23 @@ export interface Plan {
     | "amendment"
     | "harvest"
     | "incurred";
-
-  // Additional display fields
   zone?: string;
   cultivationRegion?: string;
   plot?: string;
   area?: string;
   expectedYield?: string;
-
-  // Process
   growthCycleId: string;
   regimenId?: string;
   selectedStages: string[];
-
-  // Resources
   materialAllocations: MaterialAllocation[];
   taskAllocations: TaskAllocation[];
-
-  // Status
   status: "draft" | "active" | "completed" | "cancelled";
   createdAt: string;
 }
 
+export { initialAquacultureGrowthPlans };
 
-export { initialPlans };
-
-
-interface PlanStore {
+interface AquacultureGrowthPlanStore {
   plans: Plan[];
   getPlanById: (id: number) => Plan | undefined;
   addPlan: (plan: Omit<Plan, "id" | "createdAt">) => void;
@@ -95,15 +82,13 @@ interface PlanStore {
   };
 }
 
-const usePlanStore = create<PlanStore>()(
+const useAquacultureGrowthPlanStore = create<AquacultureGrowthPlanStore>()(
   devtools(
     persist(
       (set, get) => ({
-        plans: initialPlans,
+        plans: initialAquacultureGrowthPlans,
 
-        getPlanById: (id) => {
-          return get().plans.find((p) => p.id === id);
-        },
+        getPlanById: (id) => get().plans.find((p) => p.id === id),
 
         addPlan: (planData) => {
           const newId =
@@ -115,9 +100,7 @@ const usePlanStore = create<PlanStore>()(
             id: newId,
             createdAt: new Date().toISOString().split("T")[0],
           };
-          set((state) => ({
-            plans: [...state.plans, newPlan],
-          }));
+          set((state) => ({ plans: [...state.plans, newPlan] }));
         },
 
         updatePlan: (id, updates) => {
@@ -136,27 +119,25 @@ const usePlanStore = create<PlanStore>()(
 
         duplicatePlan: (id) => {
           const plan = get().plans.find((p) => p.id === id);
-          if (plan) {
-            const newId =
-              get().plans.length > 0
-                ? Math.max(...get().plans.map((p) => p.id)) + 1
-                : 1;
-            const newPlan: Plan = {
-              ...plan,
-              id: newId,
-              name: `${plan.name} (Bản sao)`,
-              code: `${plan.code}-COPY`,
-              status: "draft",
-              createdAt: new Date().toISOString().split("T")[0],
-            };
-            set((state) => ({
-              plans: [...state.plans, newPlan],
-            }));
-          }
+          if (!plan) return;
+
+          const newId =
+            get().plans.length > 0
+              ? Math.max(...get().plans.map((p) => p.id)) + 1
+              : 1;
+          const newPlan: Plan = {
+            ...plan,
+            id: newId,
+            name: `${plan.name} (Bản sao)`,
+            code: `${plan.code}-COPY`,
+            status: "draft",
+            createdAt: new Date().toISOString().split("T")[0],
+          };
+          set((state) => ({ plans: [...state.plans, newPlan] }));
         },
 
         resetPlans: () => {
-          set({ plans: initialPlans });
+          set({ plans: initialAquacultureGrowthPlans });
         },
 
         getStatistics: () => {
@@ -171,13 +152,11 @@ const usePlanStore = create<PlanStore>()(
         },
       }),
       {
-        // v2: reseeded with the "5 sơ đồ x 5-6 kế hoạch" demo dataset and
-        // workflowId links — bumped so old persisted plans don't mix in.
-        name: "plan-reset-storage-v2",
+        name: "aquaculture-growth-plan-storage-v1",
       },
     ),
-    { name: "PlanStore" },
+    { name: "AquacultureGrowthPlanStore" },
   ),
 );
 
-export default usePlanStore;
+export default useAquacultureGrowthPlanStore;
