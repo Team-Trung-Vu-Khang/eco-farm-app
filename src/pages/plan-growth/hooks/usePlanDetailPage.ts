@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-import { useLocation, useParams } from "wouter";
-import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import useGrowthCycleStore from "@/stores/useGrowthCycleStore";
 import useRegionStore from "@/stores/useRegionStore";
 import useSeasonStore from "@/stores/useSeasonStore";
+import { useToast } from "@Team-Trung-Vu-Khang/eco-shared-ui";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useParams } from "wouter";
+import { useAmendmentRegimenStore } from "../../../stores/useAmendmentRegimenStore";
 import usePlanStore from "../../../stores/usePlanStore";
 import { useTreatmentStore } from "../../../stores/useTreatmentStore";
-import { useAmendmentRegimenStore } from "../../../stores/useAmendmentRegimenStore";
 import {
   summarizePlanSelections,
   summarizeTaskSelections,
@@ -23,7 +23,9 @@ export function usePlanDetailPage(basePath = "/plan-growth") {
   const { growthCycles } = useGrowthCycleStore();
   const { seasons } = useSeasonStore();
   const treatments = useTreatmentStore((state) => state.treatments);
-  const amendmentRegimensRaw = useAmendmentRegimenStore((state) => state.regimens);
+  const amendmentRegimensRaw = useAmendmentRegimenStore(
+    (state) => state.regimens,
+  );
 
   const regimens = useMemo(() => {
     const mappedTreatments = treatments.map((t) => ({
@@ -34,12 +36,13 @@ export function usePlanDetailPage(basePath = "/plan-growth") {
       provider: t.author || "Chưa rõ",
       category: t.disease || "Điều trị",
       crop: t.crop || "Tất cả",
-      steps: t.procedures?.map((p: any) => ({
-        id: String(p.id),
-        day: p.startDay ? `Ngày ${p.startDay}` : `Ngày ${p.stepNumber}`,
-        title: p.name,
-        description: p.description,
-      })) || [],
+      steps:
+        t.procedures?.map((p: any) => ({
+          id: String(p.id),
+          day: p.startDay ? `Ngày ${p.startDay}` : `Ngày ${p.stepNumber}`,
+          title: p.name,
+          description: p.description,
+        })) || [],
     }));
 
     const mappedAmendments = amendmentRegimensRaw.map((t) => ({
@@ -50,12 +53,13 @@ export function usePlanDetailPage(basePath = "/plan-growth") {
       provider: t.authors?.[0]?.name || "Chưa rõ",
       category: t.soilIssue || "Cải tạo",
       crop: t.cropType || "Tất cả",
-      steps: t.procedures?.map((p: any) => ({
-        id: String(p.id),
-        day: p.timing || `Ngày ${p.stepNumber}`,
-        title: p.name,
-        description: p.description,
-      })) || [],
+      steps:
+        t.procedures?.map((p: any) => ({
+          id: String(p.id),
+          day: p.timing || `Ngày ${p.stepNumber}`,
+          title: p.name,
+          description: p.description,
+        })) || [],
     }));
 
     return [...mappedTreatments, ...mappedAmendments];
@@ -92,7 +96,8 @@ export function usePlanDetailPage(basePath = "/plan-growth") {
     selectionSummary,
     summarizeTaskSelections: (selections: any[] | undefined) =>
       summarizeTaskSelections(selections as any, regions),
-    handleEdit: () => setLocation(`${basePath}/${params.id}/edit`),
+    handleEdit: () =>
+      setLocation(`${basePath}/create/workflow/plan/${params.id}/edit`),
     handleDelete: () => setDeleteOpen(true),
     goToWorkflow: () => setLocation(`${basePath}/${params.id}/workflow`),
     handleConfirmDelete: () => {
