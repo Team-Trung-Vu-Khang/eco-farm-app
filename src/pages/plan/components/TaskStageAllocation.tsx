@@ -11,12 +11,16 @@ import {
   Input,
   Label,
   ScrollArea,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   cn,
 } from "@Team-Trung-Vu-Khang/eco-shared-ui";
 import {
   CalendarIcon,
   CheckCircle2,
-  MapPin,
   Plus,
   RefreshCw,
   Search,
@@ -25,7 +29,7 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { memo, useMemo, useState } from "react";
+import { memo, useState } from "react";
 import { MATERIAL_OPTIONS, TASK_OPTIONS } from "../data/mocks";
 import type {
   GeographicalSelection,
@@ -33,7 +37,6 @@ import type {
   TaskAllocation,
 } from "../types";
 import { DAYS_OF_WEEK, getFrequencyText } from "../utils/task";
-import GeographicalSelector from "./GeographicalSelector";
 
 export const TaskStageAllocation = memo(
   ({
@@ -46,9 +49,7 @@ export const TaskStageAllocation = memo(
     onAddTask,
     onRemoveTask,
     onUpdateTask,
-    regions = [],
     masterSelections = [],
-    enterpriseId = "",
     availableTasks,
     availableMaterials,
     personnel = [],
@@ -132,9 +133,7 @@ export const TaskStageAllocation = memo(
                   onRemoveTask={onRemoveTask}
                   onAddMaterial={onAddMaterial}
                   onRemoveMaterial={onRemoveMaterial}
-                  regions={regions}
                   personnel={personnel}
-                  enterpriseId={enterpriseId}
                   stageName={stageName}
                   availableTasks={availableTasks}
                   availableMaterials={availableMaterials}
@@ -156,9 +155,7 @@ const TaskBlock = ({
   onRemoveTask,
   onAddMaterial,
   onRemoveMaterial,
-  regions,
   personnel,
-  enterpriseId,
   stageName,
   availableTasks,
   availableMaterials,
@@ -166,11 +163,33 @@ const TaskBlock = ({
 }: any) => {
   const [isPersonnelDialogOpen, setIsPersonnelDialogOpen] = useState(false);
   const [personnelSearch, setPersonnelSearch] = useState("");
-  const filteredPersonnel = personnelSearch.trim()
-    ? personnel.filter((p: any) =>
-        p.fullName.toLowerCase().includes(personnelSearch.toLowerCase()),
-      )
-    : personnel;
+  const [personnelGroupFilter, setPersonnelGroupFilter] = useState("all");
+  const getPersonnelGroups = (person: any): string[] => {
+    if (Array.isArray(person.teams)) {
+      return person.teams.map((team: any) => team?.name).filter(Boolean);
+    }
+    if (person.teamName) return [person.teamName];
+    if (typeof person.team === "string") return [person.team];
+    if (person.team?.name) return [person.team.name];
+    return [];
+  };
+
+  const personnelGroupOptions: string[] = Array.from(
+    new Set(personnel.flatMap((person: any) => getPersonnelGroups(person))),
+  ).filter((group): group is string => Boolean(group));
+
+  const filteredPersonnel = personnel.filter((person: any) => {
+    const search = personnelSearch.trim().toLowerCase();
+    const groups = getPersonnelGroups(person);
+    const matchesSearch =
+      !search ||
+      person.fullName?.toLowerCase().includes(search) ||
+      person.position?.toLowerCase().includes(search);
+    const matchesGroup =
+      personnelGroupFilter === "all" || groups.includes(personnelGroupFilter);
+
+    return matchesSearch && matchesGroup;
+  });
 
   const [exceedWarning, setExceedWarning] = useState<{
     message: string;
@@ -178,84 +197,7 @@ const TaskBlock = ({
     onCancel?: () => void;
   } | null>(null);
 
-  const [confirmedExceedValues, setConfirmedExceedValues] = useState<
-    Record<number, string>
-  >({});
-
   const [materialSearch, setMaterialSearch] = useState("");
-
-  const allowedRegions = useMemo(() => {
-    const planTask = availableTasks?.find((t: any) => t.name === task.name);
-    if (
-      !planTask ||
-      !planTask.geographicalSelections ||
-      planTask.geographicalSelections.length === 0
-    ) {
-      return regions;
-    }
-
-    const isAllowed = (
-      type: "region" | "area" | "plot",
-      rid: string,
-      aid?: string,
-      pid?: string,
-    ) => {
-      return planTask.geographicalSelections.some((s: any) => {
-        if (s.regionId !== rid) return false;
-        if (s.type === "region") return true;
-        if (s.type === "area" && aid && s.areaId === aid) {
-          return type === "area" || type === "plot";
-        }
-        if (
-          s.type === "plot" &&
-          aid &&
-          pid &&
-          s.areaId === aid &&
-          s.plotId === pid
-        ) {
-          return true;
-        }
-        return false;
-      });
-    };
-
-    return regions
-      .map((r: any) => {
-        const rid = String(r.id);
-        const regionAllowed = isAllowed("region", rid);
-        const hasVisibleArea = r.subAreas?.some((a: any) => {
-          const aid = String(a.id);
-          const areaAllowed = isAllowed("area", rid, aid);
-          const hasVisiblePlot = a.plots?.some((p: any) =>
-            isAllowed("plot", rid, aid, String(p.id)),
-          );
-          return areaAllowed || hasVisiblePlot;
-        });
-
-        if (regionAllowed || hasVisibleArea) {
-          if (regionAllowed) return r;
-
-          const filteredAreas = r.subAreas
-            ?.map((a: any) => {
-              const aid = String(a.id);
-              const areaAllowed = isAllowed("area", rid, aid);
-              const filteredPlots = a.plots?.filter((p: any) =>
-                isAllowed("plot", rid, aid, String(p.id)),
-              );
-
-              if (areaAllowed || filteredPlots?.length > 0) {
-                return areaAllowed ? a : { ...a, plots: filteredPlots };
-              }
-              return null;
-            })
-            .filter(Boolean);
-
-          return { ...r, subAreas: filteredAreas };
-        }
-        return null;
-      })
-      .filter(Boolean);
-  }, [regions, availableTasks, task.name]);
 
   const groupedMaterials =
     (availableMaterials || []).length > 0
@@ -294,68 +236,6 @@ const TaskBlock = ({
     },
     {},
   );
-
-  const getSelectionSummary = (selections: GeographicalSelection[]) => {
-    if (!selections || selections.length === 0) return [];
-    const summary: {
-      regionId: string;
-      regionName: string;
-      items: {
-        type: "region" | "area" | "plot";
-        id: string;
-        name: string;
-        parentName?: string;
-      }[];
-    }[] = [];
-
-    selections.forEach((sel) => {
-      const region = (regions || []).find(
-        (r: any) => String(r.id) === String(sel.regionId),
-      );
-      if (!region) return;
-      let regionGroup = summary.find((s) => s.regionId === String(region.id));
-      if (!regionGroup) {
-        regionGroup = {
-          regionId: String(region.id),
-          regionName: region.name,
-          items: [],
-        };
-        summary.push(regionGroup);
-      }
-      if (sel.type === "region") {
-        regionGroup.items.push({
-          type: "region",
-          id: String(region.id),
-          name: `Toàn bộ ${region.name}`,
-        });
-      } else if (sel.type === "area") {
-        const area = region.subAreas?.find(
-          (a: any) => String(a.id) === String(sel.areaId),
-        );
-        if (area)
-          regionGroup.items.push({
-            type: "area",
-            id: String(area.id),
-            name: area.name,
-          });
-      } else if (sel.type === "plot") {
-        const area = region.subAreas?.find(
-          (a: any) => String(a.id) === String(sel.areaId),
-        );
-        const plot = area?.plots?.find(
-          (p: any) => String(p.id) === String(sel.plotId),
-        );
-        if (plot)
-          regionGroup.items.push({
-            type: "plot",
-            id: String(plot.id),
-            name: plot.name,
-            parentName: area?.name,
-          });
-      }
-    });
-    return summary;
-  };
 
   const syncDates = (newStart: string, newEnd: string) => {
     if (!newStart || !newEnd) {
@@ -505,12 +385,13 @@ const TaskBlock = ({
                     const person = personnel.find(
                       (p: any) => p.fullName === name,
                     );
+                    const groups = person ? getPersonnelGroups(person) : [];
                     return (
                       <div
                         key={name}
                         className="flex items-center justify-between p-2 rounded-xl border bg-slate-50/50 border-slate-100 group hover:border-blue-200 transition-all animation-in fade-in"
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
                           <div className="h-7 w-7 overflow-hidden rounded-full border bg-white flex items-center justify-center shrink-0">
                             {person?.avatar ? (
                               <img
@@ -522,9 +403,16 @@ const TaskBlock = ({
                               <User className="w-3.5 h-3.5 text-slate-400" />
                             )}
                           </div>
-                          <span className="text-[11px] font-bold text-slate-700 truncate">
-                            {name}
-                          </span>
+                          <div className="min-w-0">
+                            <span className="block truncate text-[11px] font-bold text-slate-700">
+                              {name}
+                            </span>
+                            {groups.length > 0 && (
+                              <span className="block truncate text-[10px] font-medium text-emerald-500">
+                                {groups.join(", ")}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <button
                           onClick={() => togglePersonnel(name)}
@@ -547,71 +435,6 @@ const TaskBlock = ({
               <Users className="w-4 h-4 mr-2" />
               Chọn nhân sự
             </Button>
-
-            {/* Scope */}
-            <div className="space-y-1.5">
-              <div className="space-y-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Phạm vi:
-                </span>
-                <GeographicalSelector
-                  regions={allowedRegions}
-                  disabled={false}
-                  enterpriseId={enterpriseId}
-                  existingSelections={task.geographicalSelections || []}
-                  onConfirm={(selections: any) =>
-                    onUpdateTask?.(task.id, {
-                      geographicalSelections: selections,
-                    })
-                  }
-                />
-              </div>
-              {(() => {
-                const summary = getSelectionSummary(
-                  task.geographicalSelections || [],
-                );
-                if (summary.length === 0) {
-                  return (
-                    <p className="text-[10px] text-slate-400 italic">
-                      Chưa chọn phạm vi
-                    </p>
-                  );
-                }
-                return (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 pt-1 border-t border-slate-100 mt-2">
-                    {summary.map((group) => (
-                      <div
-                        key={group.regionId}
-                        className="flex flex-col gap-1 border-l border-slate-100 pl-2 py-0.5"
-                      >
-                        <div className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wide">
-                          <MapPin className="w-2.5 h-2.5 text-slate-300" />
-                          {group.regionName}
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {group.items.map((item, idx) => (
-                            <Badge
-                              key={idx}
-                              variant="outline"
-                              className={cn(
-                                "text-[9px] py-0.5 px-1.5 h-auto min-h-4 font-medium border-slate-100 shadow-none whitespace-normal wrap-break-word inline-flex items-center text-left",
-                                item.type === "region"
-                                  ? "bg-emerald-50/30 text-emerald-600 border-emerald-100/30"
-                                  : item.type === "area"
-                                    ? "bg-blue-50/30 text-blue-500 border-blue-100/30"
-                                    : "bg-white text-slate-400 border-slate-100",
-                              )}
-                            >
-                              {item.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
-            </div>
           </div>
 
           <div className="space-y-4 pt-2 border-t border-slate-100">
@@ -754,6 +577,56 @@ const TaskBlock = ({
             </div>
           </div>
 
+          <div className="border-b border-slate-200 bg-white/80 px-5 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <h5 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                Vật tư đã chọn
+              </h5>
+              <Badge
+                variant="outline"
+                className="h-5 border-emerald-100 bg-emerald-50 text-[10px] font-bold text-emerald-600"
+              >
+                {materials.length} vật tư
+              </Badge>
+            </div>
+
+            {materials.length === 0 ? (
+              <p className="mt-3 text-xs italic text-slate-400">
+                Chưa chọn vật tư nào
+              </p>
+            ) : (
+              <div className="mt-3 max-h-36 space-y-2 overflow-y-auto pr-1">
+                {materials.map((material: any) => (
+                  <div
+                    key={material.id}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-emerald-100 bg-emerald-50/40 px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-slate-700">
+                        {material.materialName || material.name}
+                      </p>
+                      <p className="text-[10px] font-medium text-slate-400">
+                        {material.materialCategory || material.materialType}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="rounded-lg bg-white px-2 py-1 text-xs font-black text-emerald-700 shadow-sm">
+                        {material.quantity || 0} {material.unit}
+                      </span>
+                      <button
+                        type="button"
+                        className="flex h-6 w-6 items-center justify-center rounded-full text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                        onClick={() => onRemoveMaterial(material.id)}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <ScrollArea className="flex-1 max-h-[400px]">
             <div className="p-5 space-y-6">
               {Object.entries(filteredGroupedMaterials).length === 0 ? (
@@ -825,12 +698,7 @@ const TaskBlock = ({
                                   min={0}
                                   className={cn(
                                     "h-8 text-right font-bold bg-white",
-                                    allocation &&
-                                      item.maxQty &&
-                                      Number(allocation.quantity) >
-                                        Number(item.maxQty)
-                                      ? "text-rose-500 border-rose-200"
-                                      : "text-emerald-600 border-slate-200",
+                                    "text-emerald-600 border-slate-200",
                                   )}
                                   value={isSelected ? allocation.quantity : ""}
                                   disabled={!isSelected}
@@ -841,53 +709,6 @@ const TaskBlock = ({
                                       onUpdateMaterial(allocation.id, {
                                         quantity: val,
                                       });
-                                    }
-                                  }}
-                                  onBlur={(e) => {
-                                    const newVal = e.target.value;
-                                    if (isSelected && item.maxQty) {
-                                      const isExceeded =
-                                        Number(newVal) > Number(item.maxQty);
-                                      if (isExceeded) {
-                                        if (
-                                          confirmedExceedValues[
-                                            allocation.id
-                                          ] !== newVal
-                                        ) {
-                                          setExceedWarning({
-                                            message: `Số lượng "${item.name}" là ${newVal} ${item.unit}, vượt quá định mức kế hoạch là ${item.maxQty} ${item.unit}. Bạn có muốn tiếp tục không?`,
-                                            onConfirm: () => {
-                                              setConfirmedExceedValues(
-                                                (prev) => ({
-                                                  ...prev,
-                                                  [allocation.id]: newVal,
-                                                }),
-                                              );
-                                            },
-                                            onCancel: () => {
-                                              if (onUpdateMaterial) {
-                                                onUpdateMaterial(
-                                                  allocation.id,
-                                                  {
-                                                    quantity: item.maxQty,
-                                                  },
-                                                );
-                                              }
-                                            },
-                                          });
-                                        }
-                                      } else {
-                                        // Clear confirmation if it was previously exceeded and now within quota
-                                        if (
-                                          confirmedExceedValues[allocation.id]
-                                        ) {
-                                          setConfirmedExceedValues((prev) => {
-                                            const next = { ...prev };
-                                            delete next[allocation.id];
-                                            return next;
-                                          });
-                                        }
-                                      }
                                     }
                                   }}
                                 />
@@ -913,7 +734,10 @@ const TaskBlock = ({
         open={isPersonnelDialogOpen}
         onOpenChange={(open) => {
           setIsPersonnelDialogOpen(open);
-          if (!open) setPersonnelSearch("");
+          if (!open) {
+            setPersonnelSearch("");
+            setPersonnelGroupFilter("all");
+          }
         }}
       >
         <DialogContent className="max-w-md p-0 overflow-hidden">
@@ -924,16 +748,32 @@ const TaskBlock = ({
             </DialogTitle>
           </DialogHeader>
 
-          <div className="px-5 pb-3">
+          <div className="space-y-3 px-5 pb-3">
             <div className="relative">
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <Input
                 placeholder="Tìm theo tên..."
-                className="pl-9 h-9 text-sm"
+                className="pl-10 h-9 text-sm"
                 value={personnelSearch}
                 onChange={(e) => setPersonnelSearch(e.target.value)}
               />
             </div>
+            <Select
+              value={personnelGroupFilter}
+              onValueChange={setPersonnelGroupFilter}
+            >
+              <SelectTrigger className="h-9 text-sm">
+                <SelectValue placeholder="Lọc theo nhóm" />
+              </SelectTrigger>
+              <SelectContent className="max-h-64">
+                <SelectItem value="all">Tất cả nhóm</SelectItem>
+                {personnelGroupOptions.map((group) => (
+                  <SelectItem key={group} value={group}>
+                    {group}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <ScrollArea className="h-75 px-3">
@@ -974,6 +814,11 @@ const TaskBlock = ({
                       <p className="text-[11px] text-slate-400 truncate">
                         {p.position}
                       </p>
+                      {getPersonnelGroups(p).length > 0 && (
+                        <p className="text-[10px] text-emerald-500 truncate">
+                          {getPersonnelGroups(p).join(", ")}
+                        </p>
+                      )}
                     </div>
                     {isSelected && (
                       <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
