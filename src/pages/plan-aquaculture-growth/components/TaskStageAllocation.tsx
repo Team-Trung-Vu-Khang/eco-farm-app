@@ -26,12 +26,12 @@ import {
   X,
 } from "lucide-react";
 import { memo, useMemo, useState } from "react";
-import { AQUACULTURE_MATERIAL_OPTIONS, AQUACULTURE_TASK_OPTIONS } from "../data/aquacultureGrowthMocks";
+import { MATERIAL_OPTIONS, TASK_OPTIONS } from "../data/mocks";
 import type {
   GeographicalSelection,
   MaterialAllocation,
   TaskAllocation,
-} from "../aquacultureGrowthTypes";
+} from "../types";
 import { DAYS_OF_WEEK, getFrequencyText } from "../utils/task";
 import GeographicalSelector from "./GeographicalSelector";
 
@@ -273,7 +273,7 @@ const TaskBlock = ({
           }
           return acc;
         }, {})
-      : Object.entries(AQUACULTURE_MATERIAL_OPTIONS).reduce((acc: any, [cat, opts]) => {
+      : Object.entries(MATERIAL_OPTIONS).reduce((acc: any, [cat, opts]) => {
           acc[cat] = opts.map((o) => ({
             name: o.value,
             unit: o.unit,
@@ -465,7 +465,7 @@ const TaskBlock = ({
                       value: t.name,
                       label: t.name,
                     }))
-                  : (AQUACULTURE_TASK_OPTIONS as any[])
+                  : (TASK_OPTIONS as any[])
               }
               value={task.name}
               onChange={(val) => {

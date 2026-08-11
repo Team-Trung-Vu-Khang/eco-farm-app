@@ -175,7 +175,7 @@ export const RegimenSelector = ({
                     : "Chọn phác đồ điều trị..."}
                 </p>
                 <p className="text-[10px] text-slate-400">
-                  Tìm kiếm dựa trên hiện trạng ao nuôi, bệnh hại, loài nuôi
+                  Tìm kiếm dựa trên hiện trạng ao trại, bệnh hại, đối tượng nuôi
                 </p>
               </>
             )}
@@ -207,7 +207,7 @@ export const RegimenSelector = ({
               <div className="flex flex-col">
                 <span>
                   {type === "amendment"
-                    ? "Kho quy trình cải tạo ao"
+                    ? "Kho quy trình cải tạo ao trại"
                     : "Kho phác đồ điều trị bệnh"}
                 </span>
                 <span className="text-xs text-muted-foreground font-normal">
@@ -253,7 +253,7 @@ export const RegimenSelector = ({
 
               <div className="space-y-1.5">
                 <label className="text-[10px] uppercase tracking-widest font-black text-slate-400 ml-1">
-                  {type === "amendment" ? "Hiện trạng ao nuôi" : "Nhóm bệnh hại"}
+                  {type === "amendment" ? "Hiện trạng ao trại" : "Nhóm bệnh hại"}
                 </label>
                 <Select
                   value={filterCategory}
@@ -284,16 +284,16 @@ export const RegimenSelector = ({
 
               <div className="space-y-1.5">
                 <label className="text-[10px] uppercase tracking-widest font-black text-slate-400 ml-1">
-                  Loài nuôi
+                  Đối tượng nuôi
                 </label>
                 <Select value={filterCrop} onValueChange={setFilterCrop}>
                   <SelectTrigger className="h-10 bg-slate-50/50 border-slate-200">
-                    <SelectValue placeholder="Tất cả loài nuôi" />
+                    <SelectValue placeholder="Tất cả đối tượng nuôi" />
                   </SelectTrigger>
                   <SelectContent>
                     {crops.map((c) => (
                       <SelectItem key={c} value={c}>
-                        {c === "all" ? "Tất cả loài nuôi" : c}
+                        {c === "all" ? "Tất cả đối tượng nuôi" : c}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -358,7 +358,7 @@ export const RegimenSelector = ({
                     </div>
                     <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 bg-slate-100/50 px-2 py-1 rounded-lg">
                       <Calendar className="w-3 h-3" />
-                      Loài: {regimen.crop}
+                      Cây: {regimen.crop}
                     </div>
                   </div>
                 </div>

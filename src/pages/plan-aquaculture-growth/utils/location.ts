@@ -1,9 +1,9 @@
-import type { Plan } from "../../../stores/usePlanStore";
+import type { Plan } from "../../../stores/useAquacultureGrowthPlanStore";
 import type {
   GeographicalSelection,
   PlanFormData,
   SelectionSummaryGroup,
-} from "../aquacultureGrowthTypes";
+} from "../types";
 
 export function summarizeSelections(
   selections: GeographicalSelection[],

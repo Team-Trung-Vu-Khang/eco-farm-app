@@ -114,6 +114,12 @@ const PlanAquacultureGrowthWorkflowPage = lazy(
   () =>
     import("./pages/plan-aquaculture-growth/PlanAquacultureGrowthWorkflowPage"),
 );
+const PlanAquacultureGrowthWorkflowPlansPage = lazy(
+  () =>
+    import(
+      "./pages/plan-aquaculture-growth/PlanAquacultureGrowthWorkflowPlansPage"
+    ),
+);
 const PlanAquacultureGrowthCreateWorkflowPage = lazy(
   () =>
     import(
@@ -853,7 +859,23 @@ const PlanAquacultureGrowthWorkflowDetailEditRoute = () => (
 const PlanAquacultureGrowthWorkflowRoute = () => (
   <PlanAquacultureGrowthWorkflowPage />
 );
-const PlanAquacultureGrowthEditRoute = () => <PlanAquacultureGrowthEditPage />;
+const PlanAquacultureGrowthWorkflowPlansRoute = () => (
+  <PlanAquacultureGrowthWorkflowPlansPage />
+);
+const PlanAquacultureGrowthEditRoute = () => {
+  const [, setLocation] = useLocation();
+  const params = useParams<{ id: string }>();
+
+  useEffect(() => {
+    if (params.id) {
+      setLocation(
+        `/plan-aquaculture-growth/create/workflow/plan/${params.id}/edit`,
+      );
+    }
+  }, [params.id, setLocation]);
+
+  return null;
+};
 const PlanAquacultureGrowthDetailRoute = () => (
   <PlanAquacultureGrowthDetailPage />
 );
@@ -1649,8 +1671,16 @@ function Router() {
         component={PlanAquacultureGrowthCreateWorkflowRoute}
       />
       <Route
+        path="/plan-aquaculture-growth/create/workflow/:workflowId"
+        component={PlanAquacultureGrowthCreateWorkflowRoute}
+      />
+      <Route
         path="/plan-aquaculture-growth/create"
         component={PlanAquacultureGrowthCreateRoute}
+      />
+      <Route
+        path="/plan-aquaculture-growth/workflow/:workflowId"
+        component={PlanAquacultureGrowthWorkflowPlansRoute}
       />
       <Route
         path="/plan-aquaculture-growth/:id/workflow"

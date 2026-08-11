@@ -29,7 +29,6 @@ import {
   Sprout,
   Trash2,
   Users,
-  Workflow,
   Wrench,
 } from "lucide-react";
 import { useMemo } from "react";
@@ -47,13 +46,13 @@ export default function PlanAquacultureGrowthDetailPage({
     plan,
     regions,
     growthCycles,
+    seasons,
     regimens,
     deleteOpen,
     setDeleteOpen,
     selectionSummary,
     summarizeTaskSelections: getTaskSelectionSummary,
     handleEdit,
-    goToWorkflow,
     handleDelete,
     handleConfirmDelete,
     goBack,
@@ -123,10 +122,6 @@ export default function PlanAquacultureGrowthDetailPage({
             <Button variant="outline" onClick={handleEdit} className="gap-2">
               <Edit className="w-4 h-4" />
               Chỉnh sửa
-            </Button>
-            <Button variant="outline" onClick={goToWorkflow} className="gap-2">
-              <Workflow className="w-4 h-4" />
-              Workflow
             </Button>
             <Button
               variant="destructive"
@@ -210,7 +205,7 @@ export default function PlanAquacultureGrowthDetailPage({
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                    Loài nuôi
+                    Đối tượng nuôi
                   </label>
                   <p className="font-medium mt-1 text-slate-800">
                     {plan.crop} - {plan.variety}
@@ -229,7 +224,7 @@ export default function PlanAquacultureGrowthDetailPage({
                   <div>
                     <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                       {plan.purpose === "amendment"
-                        ? "Phác đồ cải tạo ao"
+                        ? "Phác đồ cải tạo ao trại"
                         : plan.purpose === "harvest"
                           ? "Mục đích"
                           : "Phác đồ điều trị"}
@@ -465,7 +460,7 @@ export default function PlanAquacultureGrowthDetailPage({
                             )}
                           >
                             {plan.purpose === "amendment"
-                              ? "Hoạt động cải tạo ao"
+                              ? "Hoạt động cải tạo ao trại"
                               : plan.purpose === "harvest"
                                 ? "Hoạt động thu hoạch"
                                 : "Hoạt động điều trị bệnh"}

@@ -13,7 +13,7 @@ import {
 } from "reactflow";
 import { Copy, Eye, PencilLine, Workflow } from "lucide-react";
 import { useEffect, useMemo } from "react";
-import type { Plan } from "../../../stores/usePlanStore";
+import type { Plan } from "../../../stores/useAquacultureGrowthPlanStore";
 import { WorkflowCardNode } from "../../growth-cycle/components/workflow/WorkflowCardNode";
 import type {
   WorkflowCardNodeData,
@@ -82,9 +82,9 @@ function getPlanNodeStatus(status: Plan["status"]): WorkflowNodeStatus {
 }
 
 function getPurposeLabel(plan: Plan) {
-  if (plan.purpose === "cultivation") return "Nuôi trồng";
-  if (plan.purpose === "treatment") return "Điều trị bệnh";
-  if (plan.purpose === "amendment") return "Cải tạo ao";
+  if (plan.purpose === "cultivation") return "Nuôi trồng thủy sản";
+  if (plan.purpose === "treatment") return "Điều trị";
+  if (plan.purpose === "amendment") return "Cải tạo";
   if (plan.purpose === "harvest") return "Thu hoạch";
   return "Phát sinh";
 }
@@ -110,7 +110,7 @@ function summarizePlanMaterials(plan: Plan) {
     {},
   );
 
-  const preferred = ["Máy móc", "Chế phẩm xử lý nước", "Con giống"];
+  const preferred = ["Máy móc", "Chế phẩm thủy sản", "Thức ăn thủy sản"];
   const ordered = [
     ...preferred
       .filter((label) => categories[label])
@@ -236,7 +236,7 @@ export function PlanWorkflowCanvas({
         wide: true,
         summaries: [
           { label: "Tổng số", value: `${plans.length} kế hoạch` },
-          { label: "Vụ nuôi", value: `${overviewMetrics.seasonCount} mùa vụ` },
+          { label: "Vụ nuôi", value: `${overviewMetrics.seasonCount} vụ nuôi` },
           { label: "Giai đoạn", value: `${overviewMetrics.totalStages} giai đoạn` },
           { label: "Nhân lực", value: `${overviewMetrics.totalTasks} nhóm` },
           { label: "Vật tư", value: `${overviewMetrics.totalMaterials} nhóm` },
@@ -252,7 +252,7 @@ export function PlanWorkflowCanvas({
     const laneGapY = 260;
     const rowGapY = 280;
 
-    statusOrder.forEach((lane) => {
+    statusOrder.forEach((lane, laneIndex) => {
       const lanePlans = groupedPlans[lane.key];
 
       lanePlans.forEach((plan, rowIndex) => {

@@ -13,9 +13,9 @@ import { useState } from "react";
 import { useLocation, useParams } from "wouter";
 import {
   getStagePayload,
-  useAquacultureWorkflowDraftStore,
+  useAquacultureGrowthWorkflowDraftStore,
   type StagePayload,
-} from "./hooks/useAquacultureWorkflowDraftStore";
+} from "./hooks/useAquacultureGrowthWorkflowDraftStore";
 
 const WORKFLOW_PATH = "/plan-aquaculture-growth/create/workflow";
 
@@ -25,12 +25,10 @@ export default function PlanAquacultureGrowthWorkflowStageEditPage() {
   const params = useParams();
   const nodeId = params.nodeId as string;
 
-  const node = useAquacultureWorkflowDraftStore((state) =>
+  const node = useAquacultureGrowthWorkflowDraftStore((state) =>
     state.nodes.find((item) => item.id === nodeId),
   );
-  const updateNodePayload = useAquacultureWorkflowDraftStore(
-    (state) => state.updateNodePayload,
-  );
+  const updateNodePayload = useAquacultureGrowthWorkflowDraftStore((state) => state.updateNodePayload);
 
   const [draft, setDraft] = useState<StagePayload>(() =>
     node ? getStagePayload(node) : { stageName: "", stageDescription: "", duration: "" },

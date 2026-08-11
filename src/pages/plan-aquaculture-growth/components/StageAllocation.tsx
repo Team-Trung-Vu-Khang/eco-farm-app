@@ -37,17 +37,15 @@ import {
 import { memo, useMemo, useState } from "react";
 import usePersonnelStore from "../../../stores/usePersonnelStore";
 import GeographicalSelector from "./GeographicalSelector";
-import type { GeographicalSelection } from "../aquacultureGrowthTypes";
+import type { GeographicalSelection } from "../types";
 import {
-  AQUACULTURE_MATERIAL_OPTIONS,
-  AQUACULTURE_MATERIAL_TYPES,
-  AQUACULTURE_MATERIAL_UNITS,
-  AQUACULTURE_TASK_OPTIONS,
-} from "../data/aquacultureGrowthMocks";
-import type {
-  MaterialAllocation,
-  TaskAllocation,
-} from "../aquacultureGrowthTypes";
+  LABOR_OPTIONS,
+  MATERIAL_OPTIONS,
+  MATERIAL_TYPES,
+  MATERIAL_UNITS,
+  TASK_OPTIONS,
+} from "../data/mocks";
+import type { MaterialAllocation, TaskAllocation } from "../types";
 
 export const StageAllocation = memo(
   ({
@@ -84,7 +82,7 @@ export const StageAllocation = memo(
       name: "",
       qty: "",
       unit: "kg",
-      type: "Phân bón",
+      type: "Thức ăn thủy sản",
     });
 
     const specificPersonnel = isDetail;
@@ -251,7 +249,7 @@ export const StageAllocation = memo(
         quantity: newItem.qty,
         unit: newItem.unit,
       });
-      setNewItem({ name: "", qty: "", unit: "kg", type: "Phân bón" });
+      setNewItem({ name: "", qty: "", unit: "kg", type: "Thức ăn thủy sản" });
     };
 
     const handleAddTask = () => {
@@ -434,8 +432,8 @@ export const StageAllocation = memo(
                           value={newItem.type}
                           onValueChange={(v) => {
                             const defaultUnit =
-                              AQUACULTURE_MATERIAL_UNITS[
-                                v as keyof typeof AQUACULTURE_MATERIAL_UNITS
+                              MATERIAL_UNITS[
+                                v as keyof typeof MATERIAL_UNITS
                               ]?.[0] || "kg";
                             setNewItem({
                               ...newItem,
@@ -449,7 +447,7 @@ export const StageAllocation = memo(
                             <SelectValue placeholder="Loại..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {AQUACULTURE_MATERIAL_TYPES.map((type) => (
+                            {MATERIAL_TYPES.map((type) => (
                               <SelectItem key={type.value} value={type.value}>
                                 {type.label}
                               </SelectItem>
@@ -463,8 +461,8 @@ export const StageAllocation = memo(
                           value={newItem.name}
                           onValueChange={(v) => {
                             const category =
-                              AQUACULTURE_MATERIAL_OPTIONS[
-                                newItem.type as keyof typeof AQUACULTURE_MATERIAL_OPTIONS
+                              MATERIAL_OPTIONS[
+                                newItem.type as keyof typeof MATERIAL_OPTIONS
                               ] || [];
                             const item = category.find((i) => i.value === v);
                             setNewItem({
@@ -479,8 +477,8 @@ export const StageAllocation = memo(
                           </SelectTrigger>
                           <SelectContent>
                             {(
-                              AQUACULTURE_MATERIAL_OPTIONS[
-                                newItem.type as keyof typeof AQUACULTURE_MATERIAL_OPTIONS
+                              MATERIAL_OPTIONS[
+                                newItem.type as keyof typeof MATERIAL_OPTIONS
                               ] || []
                             ).map((opt) => (
                               <SelectItem key={opt.value} value={opt.value}>
@@ -517,8 +515,8 @@ export const StageAllocation = memo(
                           </SelectTrigger>
                           <SelectContent>
                             {(
-                              AQUACULTURE_MATERIAL_UNITS[
-                                newItem.type as keyof typeof AQUACULTURE_MATERIAL_UNITS
+                              MATERIAL_UNITS[
+                                newItem.type as keyof typeof MATERIAL_UNITS
                               ] || ["kg"]
                             ).map((u) => (
                               <SelectItem key={u} value={u}>
@@ -659,7 +657,7 @@ export const StageAllocation = memo(
                         <SelectValue placeholder="Chọn công việc..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {AQUACULTURE_TASK_OPTIONS.map((opt) => (
+                        {TASK_OPTIONS.map((opt) => (
                           <SelectItem key={opt.value} value={opt.value}>
                             {opt.label}
                           </SelectItem>
